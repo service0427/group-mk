@@ -1,0 +1,16 @@
+{
+  "USER.MENU.PUBLIC_PROFILE": "الملف الشخصي العام",
+  "USER.MENU.MY_PROFILE": "الملف الشخصي الخاص بي",
+  "USER.MENU.MY_ACCOUNT": "حسابي",
+  "USER.MENU.GET_STARTED": "البدء",
+  "USER.MENU.BILLING": "الفواتير",
+  "USER.MENU.SECURITY": "حماية",
+  "USER.MENU.MEMBERS_&_ROLES": "الأعضاء والأدوار",
+  "USER.MENU.INTEGRATIONS": "التكاملات",
+  "USER.MENU.NOTIFICATIONS": "إشعارات",
+  "USER.MENU.DEV_FORUM": "منتدى المطورين",
+  "USER.MENU.PAYMENT_&_SUBSCRIPTION_INFO": "معلومات الدفع والاشتراك",
+  "USER.MENU.DARK_MODE": "الوضع المظلم",
+  "USER.MENU.LOGOUT": "تسجيل الخروج",
+  "USER.MENU.LANGUAGE": "لغة"
+}

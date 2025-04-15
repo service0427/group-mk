@@ -24,22 +24,19 @@ const Error500Page = () => {
       <span className="badge badge-primary badge-outline mb-3">500 Error</span>
 
       <h3 className="text-2.5xl font-semibold text-gray-900 text-center mb-2">
-        Internal Server Error
+        서버 오류
       </h3>
 
       <div className="text-md text-center text-gray-700 mb-10">
-        Server error occurred. Please try again later or &nbsp;
-        <a
-          href="https://devs.keenthemes.com"
-          className="text-primary font-medium hover:text-primary-active"
-        >
-          Contact Us
-        </a>
-        &nbsp; for assistance.
+        서버 오류가 발생했습니다. 잠시 후 다시 시도해주시거나&nbsp;
+        <Link to="/" className="text-primary font-medium hover:text-primary-active">
+          홈으로
+        </Link>
+        &nbsp;돌아갑니다.
       </div>
 
       <Link to="/" className="btn btn-primary flex justify-center">
-        Back to Home
+        홈으로
       </Link>
     </Fragment>
   );

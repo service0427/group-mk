@@ -1,13 +1,13 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents}) => {
+export default plugin(({ addComponents }) => {
 	addComponents({
 		'.btn-group': {
 			'display': 'flex',
 			'align-items': 'stretch',
 			'.btn + .btn': {
-				'border-top-inline-start-radius': '0', 
+				'border-top-inline-start-radius': '0',
 				'border-bottom-inline-start-radius': '0',
 				'border-inline-start': '0'
 			},

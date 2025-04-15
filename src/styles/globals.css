@@ -8,3 +8,8 @@
 
 /* Shadcn UI */
 @import "shadcn.ui";
+
+/* Custom styles */
+@import "active-parent-dot.css";
+
+@import "index";

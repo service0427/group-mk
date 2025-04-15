@@ -1,0 +1,23 @@
+/* 
+  상위 메뉴에 점 표시를 위한 CSS - 브라우저에서 실제 구조 기반
+*/
+
+/* 상위 메뉴(여기서는 NP 트래픽)가 'here' 상태일 때 점 스타일 적용 */
+.menu-item.here:not(.active) > .menu-link .menu-bullet::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  width: 6px !important;
+  height: 6px !important;
+  top: 50% !important;
+  left: 0 !important;
+  transform: translateY(-50%) !important;
+  border-radius: 50% !important;
+  background-color: #03c75a !important; /* 네이버 초록색 */
+}
+
+/* 어떤 클래스가 점을 숨기고 있는지 확인하기 위한 디버깅 스타일 */
+.menu-bullet {
+  position: relative !important;
+  display: flex !important;
+}

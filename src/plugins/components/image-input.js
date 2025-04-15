@@ -1,15 +1,15 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents}) => {
-  // Base
-  addComponents({
-    '.image-input': {			
-      'display': 'inline-flex',
+export default plugin(({ addComponents }) => {
+	// Base
+	addComponents({
+		'.image-input': {
+			'display': 'inline-flex',
 			'position': 'relative',
-      'align-items': 'stretch',
+			'align-items': 'stretch',
 			'justify-content': 'center',
-      'input[type="file"]': {
+			'input[type="file"]': {
 				'appearance': 'none',
 				'position': 'absolute',
 				'width': '0 !important',
@@ -34,6 +34,6 @@ export default plugin(({addComponents}) => {
 				'background-size': 'cover',
 				'background-repeat': 'no-repeat',
 			}
-    },
-  }); 
+		},
+	});
 });

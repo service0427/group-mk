@@ -12,9 +12,9 @@ export interface IMenusProps {
 
 const initialProps: IMenusProps = {
   configs: new Map(),
-  setMenuConfig: () => {},
+  setMenuConfig: () => { },
   getMenuConfig: () => null,
-  setCurrentMenuItem: () => {},
+  setCurrentMenuItem: () => { },
   getCurrentMenuItem: () => null
 };
 

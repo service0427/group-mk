@@ -7,7 +7,8 @@ import {
   MegaMenuSubAccount,
   MegaMenuSubNetwork,
   MegaMenuSubAuth,
-  MegaMenuSubHelp
+  MegaMenuSubHelp,
+  MegaMenuSubService
 } from '@/partials/menu/mega-menu';
 import { useDemo1Layout } from '../Demo1LayoutProvider';
 import { MENU_MEGA } from '@/config';
@@ -37,7 +38,7 @@ const MegaMenuInner = () => {
 
   const build = (items: TMenuConfig) => {
     const homeItem = items[0];
-    const publicProfilesItem = items[1];
+    const serviceItem = items[1];
     const myAccountItem = items[2];
     const networkItem = items[3];
     const authItem = items[4];
@@ -56,7 +57,7 @@ const MegaMenuInner = () => {
         </MenuItem>
 
         <MenuItem
-          key="public-profiles"
+          key="services"
           toggle={desktopMode ? 'dropdown' : 'accordion'}
           trigger={desktopMode ? 'hover' : 'click'}
           dropdownProps={{
@@ -64,10 +65,10 @@ const MegaMenuInner = () => {
           }}
         >
           <MenuLink className={linkClass}>
-            <MenuTitle className={titleClass}>{publicProfilesItem.title}</MenuTitle>
+            <MenuTitle className={titleClass}>{serviceItem.title}</MenuTitle>
             {buildArrow()}
           </MenuLink>
-          {MegaMenuSubProfiles(items)}
+          {MegaMenuSubService(items)}
         </MenuItem>
 
         <MenuItem

@@ -1,3 +1,4 @@
+export * from './AdMiscFaq';
 export * from './MiscCreateTeam';
 export * from './MiscEngage';
 export * from './MiscFaq';

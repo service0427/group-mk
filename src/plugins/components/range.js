@@ -1,7 +1,7 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents}) => {
+export default plugin(({ addComponents }) => {
 	addComponents({
 		'.range': {
 			'width': '100%',
@@ -10,10 +10,10 @@ export default plugin(({addComponents}) => {
 			'appearance': 'none',
 			'&:focus': {
 				'outline': 0
-			},		
+			},
 			'&::-moz-focus-outer': {
 				'border': '0'
-			},		
+			},
 			'&::-webkit-slider-thumb': {
 				'width': '1.625rem',
 				'height': '1.625rem',
@@ -22,7 +22,7 @@ export default plugin(({addComponents}) => {
 				'appearance': 'none',
 				'border': '1px solid var(--tw-gray-200)',
 				'transition': 'background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out',
-				'border-radius': '50%',		
+				'border-radius': '50%',
 				'background-color': 'var(--tw-light)',
 				'&:active': {
 					'background-color': 'var(--tw-light)'
@@ -36,12 +36,12 @@ export default plugin(({addComponents}) => {
 				'appearance': 'none',
 				'border': '1px solid var(--tw-gray-200)',
 				'transition': 'background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out',
-				'border-radius': '50%',		
+				'border-radius': '50%',
 				'background-color': 'var(--tw-light)',
 				'&:active': {
 					'background-color': 'var(--tw-light)'
 				}
-			},		
+			},
 			'&::-moz-range-track': {
 				'width': '100%',
 				'height': '0.5rem',
@@ -59,9 +59,9 @@ export default plugin(({addComponents}) => {
 				'background-color': 'var(--tw-gray-200)',
 				'border-color': 'transparent',
 				'border-radius': '0.188rem'
-			},		
+			},
 			'&:disabled': {
-				'pointer-events': 'none',		
+				'pointer-events': 'none',
 				'&::-webkit-slider-thumb': {
 					'background-color': 'var(--tw-gray-100)'
 				},

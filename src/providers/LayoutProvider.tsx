@@ -33,9 +33,9 @@ const initialProps: ILayoutProps = {
     return {};
   },
   hasLayout: (name: string): boolean => false,
-  updateLayout: (name: string, config: Partial<ILayoutConfig>) => {},
+  updateLayout: (name: string, config: Partial<ILayoutConfig>) => { },
   currentLayout: null,
-  setCurrentLayout: (layoutProvider: any) => {}
+  setCurrentLayout: (layoutProvider: any) => { }
 };
 
 const LayoutContext = createContext<ILayoutProps>(initialProps);

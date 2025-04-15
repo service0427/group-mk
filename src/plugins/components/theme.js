@@ -1,11 +1,11 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
 const convertToKebabCase = (str) => {
 	return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-export default plugin(({addBase, theme}) => {
+export default plugin(({ addBase, theme }) => {
 	const getGrayColors = (mode) => {
 		const gray = theme('base.colors.gray')[mode];
 		const vars = {};
@@ -114,35 +114,35 @@ export default plugin(({addBase, theme}) => {
 		return vars;
 	}
 
-  addBase({
-    ':root': {
-			...getDefaultGrayColors('light'), 
-			...getDefaultGrayColors('dark'), 
-			...getDefaultContextualColors('light'), 
+	addBase({
+		':root': {
+			...getDefaultGrayColors('light'),
+			...getDefaultGrayColors('dark'),
+			...getDefaultContextualColors('light'),
 			...getDefaultContextualColors('dark'),
 			...getCoalColors()
 		}
-  });
+	});
 
 	addBase({
-    ':root, .light': {
+		':root, .light': {
 			...getGrayColors('light'),
 			...getContextualColors('light'),
 			...getContextualBoxShadows('light'),
 			...getComponentBackgroundColors('light'),
 			...getComponentBorders('light'),
-			...getComponentsBoxShadows('light')	
+			...getComponentsBoxShadows('light')
 		}
-  });
+	});
 
 	addBase({
-    '.dark': {
+		'.dark': {
 			...getGrayColors('dark'),
 			...getContextualColors('dark'),
 			...getContextualBoxShadows('dark'),
 			...getComponentBackgroundColors('dark'),
 			...getComponentBorders('dark'),
-			...getComponentsBoxShadows('dark')			
+			...getComponentsBoxShadows('dark')
 		}
-  });
+	});
 });

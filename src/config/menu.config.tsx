@@ -2,18 +2,178 @@ import { type TMenuConfig } from '@/components/menu';
 
 export const MENU_SIDEBAR: TMenuConfig = [
   {
-    title: 'Dashboards',
+    title: 'Dashboard',
     icon: 'element-11',
+    path: '/',
+  },
+  {
+    heading: '서비스'
+  },
+  {
+    title: 'NAVER 쇼핑',
+    icon: 'shop text-success',
     children: [
       {
-        title: 'Light Sidebar',
-        path: '/'
+        title: 'NS 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/shopping/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/shopping/traffic/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
+    title: 'NAVER 플레이스',
+    icon: 'geolocation text-success',
+    children: [
+      {
+        title: 'NP 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/place/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/place/traffic/campaign'
+          }
+        ]
       },
       {
-        title: 'Dark Sidebar',
-        path: '/dark-sidebar'
+        title: 'NP 위치저장',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/place/save/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/place/save/campaign'
+          }
+        ]
+      },
+      {
+        title: 'NP 블로그공유',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/place/share/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/place/share/campaign'
+          }
+        ]
       }
     ]
+  },
+  {
+    title: 'NAVER 자동완성',
+    icon: 'filter-search text-success',
+    children: [
+      {
+        title: 'N 자동완성',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/auto/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/auto/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
+    title: 'NAVER 트래픽',
+    icon: 'icon text-success',
+    children: [
+      {
+        title: 'N 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/naver/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/naver/traffic/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
+    title: '오늘의집',
+    icon: 'home-3 text-primary',
+    children: [
+      {
+        title: 'OH 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/ohouse/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/ohouse/traffic/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
+    title: 'COUPANG 쇼핑',
+    icon: 'handcart text-danger',
+    children: [
+      {
+        title: 'CP 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/coupang/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/coupang/traffic/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
+    title: '블로그 리뷰',
+    icon: 'message-edit text-info',
+    children: [
+      {
+        title: '블로그 리뷰',
+        path: '/advertise/blog/'
+      },
+    ]
+  },
+  {
+    heading: '부가 기능 관리'
+  },
+  {
+    title: '순위 분석',
+    icon: 'ranking',
+    disabled: true
+  },
+  {
+    heading: '관리'
+  },
+  {
+    title: '사용자 관리',
+    icon: 'users',
+    disabled: true
   },
   {
     heading: 'User'
@@ -521,172 +681,70 @@ export const MENU_SIDEBAR: TMenuConfig = [
 
 export const MENU_MEGA: TMenuConfig = [
   {
-    title: 'Home',
+    title: 'Dashboard',
     path: '/'
   },
   {
-    title: 'Profiles',
+    title: '서비스',
     children: [
       {
-        title: 'Profiles',
+        heading: 'NAVER 서비스',
         children: [
-          {
-            children: [
-              {
-                title: 'Default',
-                icon: 'badge',
-                path: '/public-profile/profiles/default'
-              },
-              {
-                title: 'Creator',
-                icon: 'coffee',
-                path: '/public-profile/profiles/creator'
-              },
-              {
-                title: 'Company',
-                icon: 'abstract-41',
-                path: '/public-profile/profiles/company'
-              },
-              {
-                title: 'NFT',
-                icon: 'bitcoin',
-                path: '/public-profile/profiles/nft'
-              },
-              {
-                title: 'Blogger',
-                icon: 'message-text',
-                path: '/public-profile/profiles/blogger'
-              },
-              {
-                title: 'CRM',
-                icon: 'devices',
-                path: '/public-profile/profiles/crm'
-              },
-              {
-                title: 'Gamer',
-                icon: 'ghost',
-                path: '/public-profile/profiles/gamer'
-              }
-            ]
+          { 
+            title: 'NAVER 쇼핑',
+            icon: 'shop',
+            path: '/advertise/naver/shopping/traffic/intro'
           },
-          {
-            children: [
-              {
-                title: 'Feeds',
-                icon: 'book',
-                path: '/public-profile/profiles/feeds'
-              },
-              {
-                title: 'Plain',
-                icon: 'files',
-                path: '/public-profile/profiles/plain'
-              },
-              {
-                title: 'Modal',
-                icon: 'mouse-square',
-                path: '/public-profile/profiles/modal'
-              },
-              {
-                title: 'Freelancer',
-                icon: 'financial-schedule',
-                path: '#',
-                disabled: true
-              },
-              {
-                title: 'Developer',
-                icon: 'technology-4',
-                path: '#',
-                disabled: true
-              },
-              {
-                title: 'Team',
-                icon: 'users',
-                path: '#',
-                disabled: true
-              },
-              {
-                title: 'Events',
-                icon: 'calendar-tick',
-                path: '#',
-                disabled: true
-              }
-            ]
+          { 
+            title: 'NAVER 플레이스',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/traffic/intro' 
+          },
+          { 
+            title: 'NAVER 자동완성',
+            icon: 'filter-search',
+            path: '/advertise/naver/auto/intro'
+          },
+          { 
+            title: 'NAVER 트래픽',
+            icon: 'chart-line',
+            path: '/advertise/naver/traffic/intro'
           }
         ]
       },
       {
-        title: 'Other Pages',
+        heading: '기타 서비스',
         children: [
-          {
-            children: [
-              {
-                title: 'Projects - 3 Columns',
-                icon: 'element-6',
-                path: '/public-profile/projects/3-columns'
-              },
-              {
-                title: 'Projects - 2 Columns',
-                icon: 'element-4',
-                path: '/public-profile/projects/2-columns'
-              },
-              {
-                title: 'Works',
-                icon: 'office-bag',
-                path: '/public-profile/works'
-              },
-              {
-                title: 'Teams',
-                icon: 'people',
-                path: '/public-profile/teams'
-              },
-              {
-                title: 'Network',
-                icon: 'icon',
-                path: '/public-profile/network'
-              },
-              {
-                title: 'Activity',
-                icon: 'chart-line-up-2',
-                path: '/public-profile/activity'
-              },
-              {
-                title: 'Campaigns - Card',
-                icon: 'element-11',
-                path: '/public-profile/campaigns/card'
-              }
-            ]
+          { 
+            title: '오늘의집',
+            icon: 'home-3',
+            path: '/advertise/ohouse/traffic/intro'
           },
-          {
-            children: [
-              {
-                title: 'Campaigns - List',
-                icon: 'kanban',
-                path: '/public-profile/campaigns/list'
-              },
-              {
-                title: 'Empty',
-                icon: 'file-sheet',
-                path: '/public-profile/empty'
-              },
-              {
-                title: 'Documents',
-                icon: 'document',
-                path: '#',
-                disabled: true
-              },
-              {
-                title: 'Badges',
-                icon: 'award',
-                path: '#',
-                disabled: true
-              },
-              {
-                title: 'Awards',
-                icon: 'gift',
-                path: '#',
-                disabled: true
-              }
-            ]
+          { 
+            title: 'COUPANG 쇼핑',
+            icon: 'handcart',
+            path: '/advertise/coupang/traffic/intro'
+          },
+          { 
+            title: '블로그 리뷰',
+            icon: 'message-edit',
+            path: '/advertise/blog/'
+          }
+        ]
+      },
+      {
+        heading: '부가 서비스',
+        className: 'bg-gray-100 dark:bg-gray-800 px-3 py-4 rounded',
+        children: [
+          { 
+            title: '순위분석',
+            icon: 'ranking',
+            path: '#'
+          },
+          { 
+            title: '사용자관리',
+            icon: 'users',
+            path: '#'
           }
         ]
       }

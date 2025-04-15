@@ -28,9 +28,9 @@ const ResetPasswordEnterEmail = () => {
 
         <Link
           to={
-            currentLayout?.name === 'auth-branded'
+            currentLayout?.name === 'auth'
               ? '/auth/reset-password/check-email'
-              : '/auth/classic/reset-password/check-email'
+              : '/auth/branded/reset-password/check-email'
           }
           className="btn btn-primary flex justify-center grow"
         >

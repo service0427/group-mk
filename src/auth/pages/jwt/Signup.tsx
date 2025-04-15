@@ -5,15 +5,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 
 import { useAuthContext } from '../../useAuthContext';
-import { toAbsoluteUrl } from '@/utils';
 import { Alert, KeenIcon } from '@/components';
 import { useLayout } from '@/providers';
 
 const initialValues = {
   email: '',
   password: '',
-  changepassword: '',
-  acceptTerms: false
+  changepassword: ''
 };
 
 const signupSchema = Yup.object().shape({
@@ -30,8 +28,7 @@ const signupSchema = Yup.object().shape({
     .min(3, 'Minimum 3 symbols')
     .max(50, 'Maximum 50 symbols')
     .required('Password confirmation is required')
-    .oneOf([Yup.ref('password')], "Password and Confirm Password didn't match"),
-  acceptTerms: Yup.bool().required('You must accept the terms and conditions')
+    .oneOf([Yup.ref('password')], "Password and Confirm Password didn't match")
 });
 
 const Signup = () => {
@@ -53,6 +50,7 @@ const Signup = () => {
         if (!register) {
           throw new Error('JWTProvider is required for this form.');
         }
+        // Set acceptTerms to true automatically since we removed the checkbox
         await register(values.email, values.password, values.changepassword);
         navigate(from, { replace: true });
       } catch (error) {
@@ -86,40 +84,12 @@ const Signup = () => {
           <div className="flex items-center justify-center font-medium">
             <span className="text-2sm text-gray-600 me-1.5">Already have an Account ?</span>
             <Link
-              to={currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login'}
+              to={currentLayout?.name === 'auth' ? '/auth/login' : '/auth/branded/login'}
               className="text-2sm link"
             >
               Sign In
             </Link>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5">
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/google.svg')}
-              className="size-3.5 shrink-0"
-            />
-            Use Google
-          </a>
-
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-black.svg')}
-              className="size-3.5 shrink-0 dark:hidden"
-            />
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-white.svg')}
-              className="size-3.5 shrink-0 light:hidden"
-            />
-            Use Apple
-          </a>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="border-t border-gray-200 w-full"></span>
-          <span className="text-2xs text-gray-500 font-medium uppercase">Or</span>
-          <span className="border-t border-gray-200 w-full"></span>
         </div>
 
         {formik.status && <Alert variant="danger">{formik.status}</Alert>}
@@ -216,26 +186,6 @@ const Signup = () => {
             </span>
           )}
         </div>
-
-        <label className="checkbox-group">
-          <input
-            className="checkbox checkbox-sm"
-            type="checkbox"
-            {...formik.getFieldProps('acceptTerms')}
-          />
-          <span className="checkbox-label">
-            I accept{' '}
-            <Link to="#" className="text-2sm link">
-              Terms & Conditions
-            </Link>
-          </span>
-        </label>
-
-        {formik.touched.acceptTerms && formik.errors.acceptTerms && (
-          <span role="alert" className="text-danger text-xs mt-1">
-            {formik.errors.acceptTerms}
-          </span>
-        )}
 
         <button
           type="submit"

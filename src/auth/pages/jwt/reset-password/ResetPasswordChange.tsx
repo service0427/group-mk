@@ -51,9 +51,9 @@ const ResetPasswordChange = () => {
         await changePassword(email, token, values.newPassword, values.confirmPassword);
         setHasErrors(false);
         navigate(
-          currentLayout?.name === 'auth-branded'
+          currentLayout?.name === 'auth'
             ? '/auth/reset-password/changed'
-            : '/auth/classic/reset-password/changed'
+            : '/auth/branded/reset-password/changed'
         );
       } catch (error) {
         if (error instanceof AxiosError && error.response) {

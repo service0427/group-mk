@@ -41,7 +41,7 @@ __snapshots__/
 *.spec.ts
 
 # --- package manager locks (선택적 무시) ---
-# yarn.lock
+yarn.lock
 # package-lock.json
 # pnpm-lock.yaml
 

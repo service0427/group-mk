@@ -74,7 +74,8 @@ import {
 } from '@/pages/network';
 import {
   ServiceIntroPage,
-  ServiceCampaignPage
+  ServiceCampaignPage,
+  BlogReviewPage
 } from '@/pages/advertise';
 
 // 새로 추가한 페이지 임포트
@@ -212,6 +213,9 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 네이버 쇼핑 트래픽 인트로 페이지 리디렉션 */}
           <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/intro" />} />
+
+          {/* 블로그 리뷰 페이지 */}
+          <Route path="/advertise/blog/" element={<BlogReviewPage />} />
 
           {/* 동적 광고 페이지 라우트 */}
           {/* 2단계 경로 */}

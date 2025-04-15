@@ -97,7 +97,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: 'NAVER 트래픽',
-    icon: 'icon text-success',
+    icon: 'chart-line text-success',
     path: '/advertise/naver/traffic/intro',
     children: [
       {
@@ -110,26 +110,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: '캠페인 리스트',
             path: '/advertise/naver/traffic/campaign'
-          }
-        ]
-      },
-    ]
-  },
-  {
-    title: '오늘의집',
-    icon: 'home-3 text-primary',
-    path: '/advertise/ohouse/traffic/intro',
-    children: [
-      {
-        title: 'OH 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/ohouse/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/ohouse/traffic/campaign'
           }
         ]
       },
@@ -156,6 +136,26 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '오늘의집',
+    icon: 'home-3 text-primary',
+    path: '/advertise/ohouse/traffic/intro',
+    children: [
+      {
+        title: 'OH 트래픽',
+        children: [
+          {
+            title: '캠페인 소개',
+            path: '/advertise/ohouse/traffic/intro'
+          },
+          {
+            title: '캠페인 리스트',
+            path: '/advertise/ohouse/traffic/campaign'
+          }
+        ]
+      },
+    ]
+  },
+  {
     title: '블로그 리뷰',
     icon: 'message-edit text-info',
     path: '/advertise/blog/',
@@ -165,6 +165,14 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/advertise/blog/'
       },
     ]
+  },
+  {
+    heading: '부가 서비스'
+  },
+  {
+    title: '순위 분석',
+    icon: 'ranking',
+    disabled: true
   },
   {
     heading: '내 정보 관리'
@@ -277,11 +285,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '슬롯 관리',
-    icon: 'grid-9',
+    icon: 'cube-2',
     children: [
       { 
         title: '슬롯 정보 관리',
-        icon: 'grid-9',
+        icon: 'cube-2',
         path: '/admin/slots/info'
       },
       { 
@@ -290,14 +298,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/admin/slots/approve'
       }
     ]
-  },
-  {
-    heading: '부가 기능 관리'
-  },
-  {
-    title: '순위 분석',
-    icon: 'ranking',
-    disabled: true
   },
   {
     heading: 'Metronic Template'
@@ -419,14 +419,14 @@ export const MENU_MEGA: TMenuConfig = [
         heading: '기타 서비스',
         children: [
           { 
-            title: '오늘의집',
-            icon: 'home-3',
-            path: '/advertise/ohouse/traffic/intro'
-          },
-          { 
             title: 'COUPANG 쇼핑',
             icon: 'handcart',
             path: '/advertise/coupang/traffic/intro'
+          },
+          { 
+            title: '오늘의집',
+            icon: 'home-3',
+            path: '/advertise/ohouse/traffic/intro'
           },
           { 
             title: '블로그 리뷰',
@@ -441,11 +441,6 @@ export const MENU_MEGA: TMenuConfig = [
           { 
             title: '순위분석',
             icon: 'ranking',
-            path: '#'
-          },
-          { 
-            title: '사용자관리',
-            icon: 'users',
             path: '#'
           }
         ]
@@ -560,7 +555,7 @@ export const MENU_MEGA: TMenuConfig = [
         children: [
           { 
             title: '슬롯 정보 관리',
-            icon: 'grid-9',
+            icon: 'cube-2',
             path: '/admin/slots/info'
           },
           { 

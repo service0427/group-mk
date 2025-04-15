@@ -73,23 +73,29 @@ import {
   NetworkVisitorsPage
 } from '@/pages/network';
 import {
-  CoupangTrafficIntroPage,
-  CoupangTrafficCampaignPage,
-  NAutoIntroPage,
-  NAutoCampaignPage,
-  NPlaceSaveIntroPage,
-  NPlaceSaveCampaignPage,
-  NPlaceShareIntroPage,
-  NPlaceShareCampaignPage,
-  NPlaceTrafficIntroPage,
-  NPlaceTrafficCampaignPage,
-  NShoppingTrafficIntroPage,
-  NShoppingTrafficCampaignPage,
-  NTrafficIntroPage,
-  NTrafficCampaignPage,
-  OhouseTrafficIntroPage,
-  OhouseTrafficCampaignPage
+  ServiceIntroPage,
+  ServiceCampaignPage
 } from '@/pages/advertise';
+
+// 새로 추가한 페이지 임포트
+import {
+  ProfilePage,
+  ServicesPage,
+  CashRequestsPage
+} from '@/pages/myinfo';
+import {
+  GuidePage,
+  ChargePage,
+  HistoryPage as CashHistoryPage
+} from '@/pages/cash';
+import {
+  HistoryPage as PointHistoryPage
+} from '@/pages/point';
+import {
+  UsersPage,
+  Campaigns,
+  Slots
+} from '@/pages/admin';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
@@ -106,7 +112,6 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/advertise/naver/shopping/traffic" element={<NShoppingTrafficIntroPage />} />
           <Route path="/" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<Demo1DarkSidebarPage />} />
           <Route path="/public-profile/profiles/default" element={<ProfileDefaultPage />} />
@@ -205,31 +210,45 @@ const AppRoutingSetup = (): ReactElement => {
           />
           <Route path="/authentication/get-started" element={<AuthenticationGetStartedPage />} />
 
+          {/* 네이버 쇼핑 트래픽 인트로 페이지 리디렉션 */}
+          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/intro" />} />
 
-          <Route path="/advertise/coupang/traffic/intro" element={<CoupangTrafficIntroPage />} />
-          <Route path="/advertise/coupang/traffic/campaign" element={<CoupangTrafficCampaignPage />} />
+          {/* 동적 광고 페이지 라우트 */}
+          {/* 2단계 경로 */}
+          <Route path="/advertise/:platform/:type/intro" element={<ServiceIntroPage />} />
+          <Route path="/advertise/:platform/:type/campaign" element={<ServiceCampaignPage />} />
+          
+          {/* 3단계 경로 */}
+          <Route path="/advertise/:platform/:subservice/:type/intro" element={<ServiceIntroPage />} />
+          <Route path="/advertise/:platform/:subservice/:type/campaign" element={<ServiceCampaignPage />} />
 
-          <Route path="/advertise/naver/auto/intro" element={<NAutoIntroPage />} />
-          <Route path="/advertise/naver/auto/campaign" element={<NAutoCampaignPage />} />
+          {/* 내 정보 관리 라우트 */}
+          <Route path="/myinfo/profile" element={<ProfilePage />} />
+          <Route path="/myinfo/services" element={<ServicesPage />} />
+          <Route path="/myinfo/cash-requests" element={<CashRequestsPage />} />
 
-          <Route path="/advertise/naver/place/save/intro" element={<NPlaceSaveIntroPage />} />
-          <Route path="/advertise/naver/place/save/campaign" element={<NPlaceSaveCampaignPage />} />
+          {/* 캐쉬 관련 라우트 */}
+          <Route path="/cash/guide" element={<GuidePage />} />
+          <Route path="/cash/charge" element={<ChargePage />} />
+          <Route path="/cash/history" element={<CashHistoryPage />} />
 
-          <Route path="/advertise/naver/place/share/intro" element={<NPlaceShareIntroPage />} />
-          <Route path="/advertise/naver/place/share/campaign" element={<NPlaceShareCampaignPage />} />
+          {/* 포인트 관련 라우트 */}
+          <Route path="/point/history" element={<PointHistoryPage />} />
 
-          <Route path="/advertise/naver/place/traffic/intro" element={<NPlaceTrafficIntroPage />} />
-          <Route path="/advertise/naver/place/traffic/campaign" element={<NPlaceTrafficCampaignPage />} />
+          {/* 관리자 메뉴 라우트 */}
+          <Route path="/admin/users" element={<UsersPage />} />
 
-          <Route path="/advertise/naver/shopping/traffic/intro" element={<NShoppingTrafficIntroPage />} />
-          <Route path="/advertise/naver/shopping/traffic/campaign" element={<NShoppingTrafficCampaignPage />} />
+          {/* 캠페인 관리 라우트 */}
+          <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
+          <Route path="/admin/campaigns/naver-place" element={<Campaigns.NaverPlacePage />} />
+          <Route path="/admin/campaigns/naver-auto" element={<Campaigns.NaverAutoPage />} />
+          <Route path="/admin/campaigns/naver-traffic" element={<Campaigns.NaverTrafficPage />} />
+          <Route path="/admin/campaigns/coupang" element={<Campaigns.CoupangPage />} />
+          <Route path="/admin/campaigns/ohouse" element={<Campaigns.OhousePage />} />
 
-          <Route path="/advertise/naver/traffic/intro" element={<NTrafficIntroPage />} />
-          <Route path="/advertise/naver/traffic/campaign" element={<NTrafficCampaignPage />} />
-
-          <Route path="/advertise/ohouse/traffic/intro" element={<OhouseTrafficIntroPage />} />
-          <Route path="/advertise/ohouse/traffic/campaign" element={<OhouseTrafficCampaignPage />} />
-
+          {/* 슬롯 관리 라우트 */}
+          <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
+          <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

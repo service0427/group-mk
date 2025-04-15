@@ -18,4 +18,5 @@ export interface IToolbarDescriptionProps {
 
 export interface IToolbarPageTitleProps {
   text?: string;
+  customTitle?: string;
 }

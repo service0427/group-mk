@@ -12,6 +12,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'NAVER 쇼핑',
     icon: 'shop text-success',
+    path: '/advertise/naver/shopping/traffic/intro',
     children: [
       {
         title: 'NS 트래픽',
@@ -31,6 +32,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'NAVER 플레이스',
     icon: 'geolocation text-success',
+    path: '/advertise/naver/place/traffic/intro',
     children: [
       {
         title: 'NP 트래픽',
@@ -76,6 +78,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'NAVER 자동완성',
     icon: 'filter-search text-success',
+    path: '/advertise/naver/auto/intro',
     children: [
       {
         title: 'N 자동완성',
@@ -95,6 +98,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'NAVER 트래픽',
     icon: 'icon text-success',
+    path: '/advertise/naver/traffic/intro',
     children: [
       {
         title: 'N 트래픽',
@@ -114,6 +118,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '오늘의집',
     icon: 'home-3 text-primary',
+    path: '/advertise/ohouse/traffic/intro',
     children: [
       {
         title: 'OH 트래픽',
@@ -133,6 +138,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'COUPANG 쇼핑',
     icon: 'handcart text-danger',
+    path: '/advertise/coupang/traffic/intro',
     children: [
       {
         title: 'CP 트래픽',
@@ -152,11 +158,137 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '블로그 리뷰',
     icon: 'message-edit text-info',
+    path: '/advertise/blog/',
     children: [
       {
         title: '블로그 리뷰',
         path: '/advertise/blog/'
       },
+    ]
+  },
+  {
+    heading: '내 정보 관리'
+  },
+  {
+    title: '내 정보 관리',
+    icon: 'user-edit',
+    children: [
+      {
+        title: '기본 관리',
+        children: [
+          { 
+            title: '내 정보 관리',
+            icon: 'user',
+            path: '/myinfo/profile'
+          }
+        ]
+      },
+      {
+        title: '내 서비스 관리',
+        children: [
+          { 
+            title: '이용 중 서비스 관리',
+            icon: 'setting-2',
+            path: '/myinfo/services'
+          }
+        ]
+      },
+      {
+        title: '캐쉬/포인트 관리',
+        children: [
+          { 
+            title: '캐쉬/포인트 이용안내',
+            icon: 'information',
+            path: '/cash/guide'
+          },
+          { 
+            title: '캐쉬 충전',
+            icon: 'dollar',
+            path: '/cash/charge'
+          },
+          { 
+            title: '캐쉬 충전 요청 확인',
+            icon: 'dollar',
+            path: '/myinfo/cash-requests'
+          },
+          { 
+            title: '캐쉬 충전/사용내역',
+            icon: 'document',
+            path: '/cash/history'
+          },
+          { 
+            title: '포인트 사용내역',
+            icon: 'document',
+            path: '/point/history'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    heading: '관리자 메뉴'
+  },
+  {
+    title: '사용자 관리',
+    icon: 'users',
+    children: [
+      { 
+        title: '사용자 관리',
+        icon: 'users',
+        path: '/admin/users'
+      }
+    ]
+  },
+  {
+    title: '캠페인 관리',
+    icon: 'setting-3',
+    children: [
+      { 
+        title: 'NAVER 쇼핑',
+        icon: 'shop',
+        path: '/admin/campaigns/naver-shopping'
+      },
+      { 
+        title: 'NAVER 플레이스',
+        icon: 'geolocation',
+        path: '/admin/campaigns/naver-place'
+      },
+      { 
+        title: 'NAVER 자동완성',
+        icon: 'filter-search',
+        path: '/admin/campaigns/naver-auto'
+      },
+      { 
+        title: 'NAVER 트래픽',
+        icon: 'chart-line',
+        path: '/admin/campaigns/naver-traffic'
+      },
+      { 
+        title: 'COUPANG 쇼핑',
+        icon: 'handcart',
+        path: '/admin/campaigns/coupang'
+      },
+      { 
+        title: '오늘의집',
+        icon: 'home-3',
+        path: '/admin/campaigns/ohouse'
+      }
+    ]
+  },
+  {
+    title: '슬롯 관리',
+    icon: 'grid-9',
+    children: [
+      { 
+        title: '슬롯 정보 관리',
+        icon: 'grid-9',
+        path: '/admin/slots/info'
+      },
+      { 
+        title: '슬롯 승인 관리',
+        icon: 'verify',
+        path: '/admin/slots/approve'
+      }
     ]
   },
   {
@@ -168,15 +300,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
     disabled: true
   },
   {
-    heading: '관리'
-  },
-  {
-    title: '사용자 관리',
-    icon: 'users',
-    disabled: true
-  },
-  {
-    heading: 'User'
+    heading: 'Metronic Template'
   },
   {
     title: 'Public Profile',
@@ -200,64 +324,8 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: 'NFT',
             path: '/public-profile/profiles/nft'
-          },
-          {
-            title: 'Blogger',
-            path: '/public-profile/profiles/blogger'
-          },
-          {
-            title: 'CRM',
-            path: '/public-profile/profiles/crm'
-          },
-          {
-            title: 'More',
-            collapse: true,
-            collapseTitle: 'Show less',
-            expandTitle: 'Show 4 more',
-            dropdownProps: {
-              placement: 'right-start'
-            },
-            children: [
-              {
-                title: 'Gamer',
-                path: '/public-profile/profiles/gamer'
-              },
-              {
-                title: 'Feeds',
-                path: '/public-profile/profiles/feeds'
-              },
-              {
-                title: 'Plain',
-                path: '/public-profile/profiles/plain'
-              },
-              {
-                title: 'Modal',
-                path: '/public-profile/profiles/modal'
-              }
-            ]
           }
         ]
-      },
-      {
-        title: 'Projects',
-        children: [
-          {
-            title: '3 Columns',
-            path: '/public-profile/projects/3-columns'
-          },
-          {
-            title: '2 Columns',
-            path: '/public-profile/projects/2-columns'
-          }
-        ]
-      },
-      {
-        title: 'Works',
-        path: '/public-profile/works'
-      },
-      {
-        title: 'Teams',
-        path: '/public-profile/teams'
       },
       {
         title: 'Network',
@@ -266,29 +334,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: 'Activity',
         path: '/public-profile/activity'
-      },
-      {
-        title: 'More',
-        collapse: true,
-        collapseTitle: 'Show less',
-        expandTitle: 'Show 3 more',
-        dropdownProps: {
-          placement: 'right-start'
-        },
-        children: [
-          {
-            title: 'Campaigns - Card',
-            path: '/public-profile/campaigns/card'
-          },
-          {
-            title: 'Campaigns - List',
-            path: '/public-profile/campaigns/list'
-          },
-          {
-            title: 'Empty',
-            path: '/public-profile/empty'
-          }
-        ]
       }
     ]
   },
@@ -310,156 +355,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: 'Company Profile',
             path: '/account/home/company-profile'
-          },
-          {
-            title: 'Settings - With Sidebar',
-            path: '/account/home/settings-sidebar'
-          },
-          {
-            title: 'Settings - Enterprise',
-            path: '/account/home/settings-enterprise'
-          },
-          {
-            title: 'Settings - Plain',
-            path: '/account/home/settings-plain'
-          },
-          {
-            title: 'Settings - Modal',
-            path: '/account/home/settings-modal'
-          }
-        ]
-      },
-      {
-        title: 'Billing',
-        children: [
-          {
-            title: 'Billing - Basic',
-            path: '/account/billing/basic'
-          },
-          {
-            title: 'Billing - Enterprise',
-            path: '/account/billing/enterprise'
-          },
-          {
-            title: 'Plans',
-            path: '/account/billing/plans'
-          },
-          {
-            title: 'Billing History',
-            path: '/account/billing/history'
-          }
-        ]
-      },
-      {
-        title: 'Security',
-        children: [
-          {
-            title: 'Get Started',
-            path: '/account/security/get-started'
-          },
-          {
-            title: 'Security Overview',
-            path: '/account/security/overview'
-          },
-          {
-            title: 'Allowed IP Addresses',
-            path: '/account/security/allowed-ip-addresses'
-          },
-          {
-            title: 'Privacy Settings',
-            path: '/account/security/privacy-settings'
-          },
-          {
-            title: 'Device Management',
-            path: '/account/security/device-management'
-          },
-          {
-            title: 'Backup & Recovery',
-            path: '/account/security/backup-and-recovery'
-          },
-          {
-            title: 'Current Sessions',
-            path: '/account/security/current-sessions'
-          },
-          {
-            title: 'Security Log',
-            path: '/account/security/security-log'
-          }
-        ]
-      },
-      {
-        title: 'Members & Roles',
-        children: [
-          {
-            title: 'Teams Starter',
-            path: '/account/members/team-starter'
-          },
-          {
-            title: 'Teams',
-            path: '/account/members/teams'
-          },
-          {
-            title: 'Team Info',
-            path: '/account/members/team-info'
-          },
-          {
-            title: 'Members Starter',
-            path: '/account/members/members-starter'
-          },
-          {
-            title: 'Team Members',
-            path: '/account/members/team-members'
-          },
-          {
-            title: 'Import Members',
-            path: '/account/members/import-members'
-          },
-          {
-            title: 'Roles',
-            path: '/account/members/roles'
-          },
-          {
-            title: 'Permissions - Toggler',
-            path: '/account/members/permissions-toggle'
-          },
-          {
-            title: 'Permissions - Check',
-            path: '/account/members/permissions-check'
-          }
-        ]
-      },
-      {
-        title: 'Integrations',
-        path: '/account/integrations'
-      },
-      {
-        title: 'Notifications',
-        path: '/account/notifications'
-      },
-      {
-        title: 'API Keys',
-        path: '/account/api-keys'
-      },
-      {
-        title: 'More',
-        collapse: true,
-        collapseTitle: 'Show less',
-        expandTitle: 'Show 3 more',
-        dropdownProps: {
-          placement: 'right-start'
-        },
-        children: [
-          {
-            title: 'Appearance',
-            path: '/account/appearance'
-          },
-          {
-            title: 'Invite a Friend',
-            path: '/account/invite-a-friend'
-          },
-          {
-            title: 'Activity',
-            path: '/account/activity'
           }
         ]
       }
@@ -472,75 +367,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: 'Get Started',
         path: '/network/get-started'
-      },
-      {
-        title: 'User Cards',
-        children: [
-          {
-            title: 'Mini Cards',
-            path: '/network/user-cards/mini-cards'
-          },
-          {
-            title: 'Team Crew',
-            path: '/network/user-cards/team-crew'
-          },
-          {
-            title: 'Author',
-            path: '/network/user-cards/author'
-          },
-          {
-            title: 'NFT',
-            path: '/network/user-cards/nft'
-          },
-          {
-            title: 'Social',
-            path: '/network/user-cards/social'
-          }
-        ]
-      },
-      {
-        title: 'User Table',
-        children: [
-          {
-            title: 'Team Crew',
-            path: '/network/user-table/team-crew'
-          },
-          {
-            title: 'App Roster',
-            path: '/network/user-table/app-roster'
-          },
-          {
-            title: 'Market Authors',
-            path: '/network/user-table/market-authors'
-          },
-          {
-            title: 'SaaS Users',
-            path: '/network/user-table/saas-users'
-          },
-          {
-            title: 'Store Clients',
-            path: '/network/user-table/store-clients'
-          },
-          {
-            title: 'Visitors',
-            path: '/network/user-table/visitors'
-          }
-        ]
-      },
-      {
-        title: 'Cooperations',
-        path: '/network/cooperations',
-        disabled: true
-      },
-      {
-        title: 'Leads',
-        path: '/network/leads',
-        disabled: true
-      },
-      {
-        title: 'Donators',
-        path: '/network/donators',
-        disabled: true
       }
     ]
   },
@@ -549,133 +375,10 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'security-user',
     children: [
       {
-        title: 'Classic',
-        children: [
-          {
-            title: 'Sign In',
-            path: '/auth/classic/login'
-          },
-          {
-            title: 'Sign Up',
-            path: '/auth/classic/signup'
-          },
-          {
-            title: '2FA',
-            path: '/auth/classic/2fa'
-          },
-          {
-            title: 'Check Email',
-            path: '/auth/classic/check-email'
-          },
-          {
-            title: 'Reset Password',
-            children: [
-              {
-                title: 'Enter Email',
-                path: '/auth/classic/reset-password/enter-email'
-              },
-              {
-                title: 'Check Email',
-                path: '/auth/classic/reset-password/check-email'
-              },
-              {
-                title: 'Change Password',
-                path: '/auth/classic/reset-password/change'
-              },
-              {
-                title: 'Password Changed',
-                path: '/auth/classic/reset-password/changed'
-              }
-            ]
-          }
-        ]
-      },
-      {
-        title: 'Branded',
-        children: [
-          {
-            title: 'Sign In',
-            path: '/auth/login'
-          },
-          {
-            title: 'Sign Up',
-            path: '/auth/signup'
-          },
-          {
-            title: '2FA',
-            path: '/auth/2fa'
-          },
-          {
-            title: 'Check Email',
-            path: '/auth/check-email'
-          },
-          {
-            title: 'Reset Password',
-            children: [
-              {
-                title: 'Enter Email',
-                path: '/auth/reset-password/enter-email'
-              },
-              {
-                title: 'Check Email',
-                path: '/auth/reset-password/check-email'
-              },
-              {
-                title: 'Change Password',
-                path: '/auth/reset-password/change'
-              },
-              {
-                title: 'Password Changed',
-                path: '/auth/reset-password/changed'
-              }
-            ]
-          }
-        ]
-      },
-      {
-        title: 'Welcome Message',
-        path: '/auth/welcome-message'
-      },
-      {
-        title: 'Account Deactivated',
-        path: '/auth/account-deactivated'
-      },
-      {
-        title: 'Error 404',
-        path: '/error/404'
-      },
-      {
-        title: 'Error 500',
-        path: '/error/500'
+        title: 'Get Started',
+        path: '/authentication/get-started'
       }
     ]
-  },
-  { heading: 'Apps' },
-  {
-    title: 'User Management',
-    icon: 'users',
-    disabled: true
-  },
-  {
-    title: 'Projects',
-    icon: 'questionnaire-tablet',
-    disabled: true
-  },
-  {
-    title: 'eCommerce',
-    icon: 'handcart',
-    disabled: true
-  },
-  { heading: 'Miscellaneous' },
-  {
-    title: 'Modals',
-    icon: 'some-files',
-    disabled: true
-  },
-  {
-    title: 'Wizards',
-    icon: 'note-2',
-    disabled: true
   }
 ];
 
@@ -734,7 +437,6 @@ export const MENU_MEGA: TMenuConfig = [
       },
       {
         heading: '부가 서비스',
-        className: 'bg-gray-100 dark:bg-gray-800 px-3 py-4 rounded',
         children: [
           { 
             title: '순위분석',
@@ -745,6 +447,126 @@ export const MENU_MEGA: TMenuConfig = [
             title: '사용자관리',
             icon: 'users',
             path: '#'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    title: '내 정보 관리',
+    children: [
+      {
+        heading: '기본 관리',
+        children: [
+          { 
+            title: '내 정보 관리',
+            icon: 'user',
+            path: '/myinfo/profile'
+          }
+        ]
+      },
+      {
+        heading: '내 서비스 관리',
+        children: [
+          { 
+            title: '이용 중 서비스 관리',
+            icon: 'setting-2',
+            path: '/myinfo/services'
+          }
+        ]
+      },
+      {
+        heading: '캐쉬/포인트 관리',
+        children: [
+          { 
+            title: '캐쉬/포인트 이용안내',
+            icon: 'information',
+            path: '/cash/guide'
+          },
+          { 
+            title: '캐쉬 충전',
+            icon: 'dollar',
+            path: '/cash/charge'
+          },
+          { 
+            title: '캐쉬 충전 요청 확인',
+            icon: 'dollar',
+            path: '/myinfo/cash-requests'
+          },
+          { 
+            title: '캐쉬 충전/사용내역',
+            icon: 'document',
+            path: '/cash/history'
+          },
+          { 
+            title: '포인트 사용내역',
+            icon: 'document',
+            path: '/point/history'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    title: '관리자 메뉴',
+    children: [
+      {
+        heading: '사용자 관리',
+        children: [
+          { 
+            title: '사용자 관리',
+            icon: 'users',
+            path: '/admin/users'
+          }
+        ]
+      },
+      {
+        heading: '캠페인 관리',
+        children: [
+          { 
+            title: 'NAVER 쇼핑',
+            icon: 'shop',
+            path: '/admin/campaigns/naver-shopping'
+          },
+          { 
+            title: 'NAVER 플레이스',
+            icon: 'geolocation',
+            path: '/admin/campaigns/naver-place'
+          },
+          { 
+            title: 'NAVER 자동완성',
+            icon: 'filter-search',
+            path: '/admin/campaigns/naver-auto'
+          },
+          { 
+            title: 'NAVER 트래픽',
+            icon: 'chart-line',
+            path: '/admin/campaigns/naver-traffic'
+          },
+          { 
+            title: 'COUPANG 쇼핑',
+            icon: 'handcart',
+            path: '/admin/campaigns/coupang'
+          },
+          { 
+            title: '오늘의집',
+            icon: 'home-3',
+            path: '/admin/campaigns/ohouse'
+          }
+        ]
+      },
+      {
+        heading: '슬롯 관리',
+        children: [
+          { 
+            title: '슬롯 정보 관리',
+            icon: 'grid-9',
+            path: '/admin/slots/info'
+          },
+          { 
+            title: '슬롯 승인 관리',
+            icon: 'verify',
+            path: '/admin/slots/approve'
           }
         ]
       }

@@ -20,8 +20,8 @@ const getStoredSettings = (): Partial<ISettings> => {
 
 const initialProps: ISettingsProps = {
   settings: { ...defaultSettings, ...getStoredSettings() },
-  updateSettings: (settings: Partial<ISettings>) => {},
-  storeSettings: (settings: Partial<ISettings>) => {},
+  updateSettings: (settings: Partial<ISettings>) => { },
+  storeSettings: (settings: Partial<ISettings>) => { },
   getThemeMode: () => 'light'
 };
 

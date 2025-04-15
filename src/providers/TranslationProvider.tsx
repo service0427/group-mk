@@ -34,7 +34,7 @@ const getInitialLanguage = () => {
 
 const initialProps: ITranslationProviderProps = {
   currentLanguage: getInitialLanguage(),
-  changeLanguage: (_: TLanguage) => {},
+  changeLanguage: (_: TLanguage) => { },
   isRTL: () => false
 };
 

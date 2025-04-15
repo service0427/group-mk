@@ -20,7 +20,7 @@ interface ICampaignsContentItem {
     value: number;
   };
 }
-interface ICampaignsContentItems extends Array<ICampaignsContentItem> {}
+type ICampaignsContentItems = Array<ICampaignsContentItem>
 
 interface ICampaignsContentProps {
   mode: string;

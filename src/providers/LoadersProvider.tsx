@@ -15,11 +15,11 @@ export interface ILoadersProvider {
 
 const initialProps: ILoadersProvider = {
   contentLoader: false,
-  setContentLoader: (state: boolean) => {},
+  setContentLoader: (state: boolean) => { },
   progressBarLoader: false,
-  setProgressBarLoader: (state: boolean) => {},
+  setProgressBarLoader: (state: boolean) => { },
   screenLoader: false,
-  setScreenLoader: (state: boolean) => {}
+  setScreenLoader: (state: boolean) => { }
 };
 
 const LoadersContext = createContext<ILoadersProvider>(initialProps);

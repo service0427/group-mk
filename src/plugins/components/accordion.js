@@ -1,9 +1,9 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents}) => {
-  addComponents({
-    '.accordion-item': {
+export default plugin(({ addComponents }) => {
+	addComponents({
+		'.accordion-item': {
 			'display': 'flex',
 			'flex-direction': 'column',
 		},
@@ -22,5 +22,5 @@ export default plugin(({addComponents}) => {
 				'transition': 'height 300ms ease'
 			}
 		}
-  });   
+	});
 });

@@ -7,7 +7,10 @@ import {
   MegaMenuSubAccount,
   MegaMenuSubNetwork,
   MegaMenuSubAuth,
-  MegaMenuSubHelp
+  MegaMenuSubHelp,
+  MegaMenuSubService,
+  MegaMenuSubMyInfo,
+  MegaMenuSubAdmin
 } from '@/partials/menu/mega-menu';
 import { useDemo1Layout } from '../Demo1LayoutProvider';
 import { MENU_MEGA } from '@/config';
@@ -37,11 +40,13 @@ const MegaMenuInner = () => {
 
   const build = (items: TMenuConfig) => {
     const homeItem = items[0];
-    const publicProfilesItem = items[1];
-    const myAccountItem = items[2];
-    const networkItem = items[3];
-    const authItem = items[4];
-    const helpItem = items[5];
+    const serviceItem = items[1];
+    const myInfoItem = items[2];
+    const adminItem = items[3];
+    const myAccountItem = items[4];
+    const networkItem = items[5];
+    const authItem = items[6];
+    const helpItem = items[7];
 
     const linkClass =
       'menu-link text-sm text-gray-700 font-medium menu-link-hover:text-primary menu-item-active:text-gray-900 menu-item-show:text-primary menu-item-here:text-gray-900';
@@ -56,7 +61,7 @@ const MegaMenuInner = () => {
         </MenuItem>
 
         <MenuItem
-          key="public-profiles"
+          key="services"
           toggle={desktopMode ? 'dropdown' : 'accordion'}
           trigger={desktopMode ? 'hover' : 'click'}
           dropdownProps={{
@@ -64,10 +69,41 @@ const MegaMenuInner = () => {
           }}
         >
           <MenuLink className={linkClass}>
-            <MenuTitle className={titleClass}>{publicProfilesItem.title}</MenuTitle>
+            <MenuTitle className={titleClass}>{serviceItem.title}</MenuTitle>
             {buildArrow()}
           </MenuLink>
-          {MegaMenuSubProfiles(items)}
+          {MegaMenuSubService(items)}
+        </MenuItem>
+
+
+        <MenuItem
+          key="my-info"
+          toggle={desktopMode ? 'dropdown' : 'accordion'}
+          trigger={desktopMode ? 'hover' : 'click'}
+          dropdownProps={{
+            placement: isRTL() ? 'bottom-end' : 'bottom-start'
+          }}
+        >
+          <MenuLink className={linkClass}>
+            <MenuTitle className={titleClass}>{myInfoItem.title}</MenuTitle>
+            {buildArrow()}
+          </MenuLink>
+          {MegaMenuSubMyInfo(items)}
+        </MenuItem>
+
+        <MenuItem
+          key="admin"
+          toggle={desktopMode ? 'dropdown' : 'accordion'}
+          trigger={desktopMode ? 'hover' : 'click'}
+          dropdownProps={{
+            placement: isRTL() ? 'bottom-end' : 'bottom-start'
+          }}
+        >
+          <MenuLink className={linkClass}>
+            <MenuTitle className={titleClass}>{adminItem.title}</MenuTitle>
+            {buildArrow()}
+          </MenuLink>
+          {MegaMenuSubAdmin(items)}
         </MenuItem>
 
         <MenuItem

@@ -1,5 +1,6 @@
 import '@/components/keenicons/assets/styles.css';
 import './styles/globals.css';
+import './styles/active-parent-dot.js'; // 상위 메뉴 점 표시를 위한 JavaScript
 
 import axios from 'axios';
 import ReactDOM from 'react-dom/client';

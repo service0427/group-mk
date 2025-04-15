@@ -1,3 +1,5 @@
+export * from './CardAdCampaign'
+export * from './CardAdCampaignRow'
 export * from './CardAddNew';
 export * from './CardAddNewRow';
 export * from './CardAuthor';

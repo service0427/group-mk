@@ -46,7 +46,7 @@ const Main = () => {
   return (
     <Fragment>
       <Helmet>
-        <title>{menuItem?.title}</title>
+        <title>마케팅의 정석 :: The standard of Marketing - {menuItem?.title}</title>
       </Helmet>
 
       <Sidebar />

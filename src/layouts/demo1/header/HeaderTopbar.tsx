@@ -11,32 +11,32 @@ import { useLanguage } from '@/i18n';
 
 const HeaderTopbar = () => {
   const { isRTL } = useLanguage();
-  const itemChatRef = useRef<any>(null);
-  const itemAppsRef = useRef<any>(null);
+  // const itemChatRef = useRef<any>(null);
+  // const itemAppsRef = useRef<any>(null);
   const itemUserRef = useRef<any>(null);
-  const itemNotificationsRef = useRef<any>(null);
+  // const itemNotificationsRef = useRef<any>(null);
 
-  const handleShow = () => {
-    window.dispatchEvent(new Event('resize'));
-  };
+  // const handleShow = () => {
+  //   window.dispatchEvent(new Event('resize'));
+  // };
 
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const handleOpen = () => setSearchModalOpen(true);
-  const handleClose = () => {
-    setSearchModalOpen(false);
-  };
+  // const [searchModalOpen, setSearchModalOpen] = useState(false);
+  // const handleOpen = () => setSearchModalOpen(true);
+  // const handleClose = () => {
+  //   setSearchModalOpen(false);
+  // };
 
   return (
     <div className="flex items-center gap-2 lg:gap-3.5">
-      <button
+      {/* <button
         onClick={handleOpen}
         className="btn btn-icon btn-icon-lg size-9 rounded-full hover:bg-primary-light hover:text-primary text-gray-500"
       >
         <KeenIcon icon="magnifier" />
       </button>
-      <ModalSearch open={searchModalOpen} onOpenChange={handleClose} />
+      <ModalSearch open={searchModalOpen} onOpenChange={handleClose} /> */}
 
-      <Menu>
+      {/* <Menu>
         <MenuItem
           ref={itemChatRef}
           onShow={handleShow}
@@ -109,7 +109,7 @@ const HeaderTopbar = () => {
           </MenuToggle>
           {DropdownNotifications({ menuTtemRef: itemNotificationsRef })}
         </MenuItem>
-      </Menu>
+      </Menu>*/}
 
       <Menu>
         <MenuItem

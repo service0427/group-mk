@@ -52,7 +52,7 @@ const ProfileGamerContent = () => {
 
           <CommunityBadges title="Badges" />
 
-          <Users title="Floydâ€™s Team" items={items} />
+          <Users title="Floyd?™s Team" items={items} />
 
           <Network title="Network" data={data} />
         </div>

@@ -1,7 +1,7 @@
 module.exports = {
   content: ['index.html', './src/**/*.{ts,tsx}'],
   safelist: [
-    'demo1',
+    'stand',
     'hidden',
     'ki-filled',
     'ki-outline',
@@ -234,7 +234,7 @@ module.exports = {
         }
       },
       layouts: {
-        demo1: {
+        stand: {
           sidebar: {
             width: {
               desktop: '280px',
@@ -903,7 +903,7 @@ module.exports = {
         }
       },
       layouts: {
-        demo1: {
+        stand: {
           sidebar: {
             width: {
               desktop: '280px',

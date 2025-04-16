@@ -24,7 +24,7 @@ const Error500Page = () => {
       <span className="badge badge-primary badge-outline mb-3">500 Error</span>
 
       <h3 className="text-2.5xl font-semibold text-gray-900 text-center mb-2">
-        서버 오류
+        서버 내부 오류
       </h3>
 
       <div className="text-md text-center text-gray-700 mb-10">

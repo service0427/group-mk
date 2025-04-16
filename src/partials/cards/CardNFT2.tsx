@@ -122,7 +122,7 @@ const CardNFT2 = ({ avatar, bgImage, name, email, info, statistics }: INFT2Props
 
       <div className="card-footer justify-center">
         <Link to="/public-profile/profiles/nft" className="btn btn-link">
-          View NFTâ€™s
+          View NFT?™s
         </Link>
       </div>
     </div>

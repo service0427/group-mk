@@ -66,7 +66,7 @@ const Replies = () => {
   return (
     <div className="card">
       <div className="card-header">
-        <h3 className="card-title">Jennyâ€™s Replies</h3>
+        <h3 className="card-title">Jenny?™s Replies</h3>
 
         <Link to="/public-profile/profiles/feeds" className="btn btn-link">
           View All

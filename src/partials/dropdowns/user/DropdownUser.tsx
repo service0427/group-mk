@@ -1,4 +1,4 @@
-import { ChangeEvent, Fragment } from 'react';
+import { ChangeEvent, Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import { useAuthContext } from '@/auth';
@@ -16,6 +16,7 @@ import {
   MenuArrow,
   MenuIcon
 } from '@/components/menu';
+import { useSupabaseAuth } from '@/auth/supabase/SupabaseAuthProvider';
 
 interface IDropdownUserProps {
   menuItemRef: any;
@@ -24,7 +25,55 @@ interface IDropdownUserProps {
 const DropdownUser = ({ menuItemRef }: IDropdownUserProps) => {
   const { settings, storeSettings } = useSettings();
   const { logout } = useAuthContext();
+  const supabaseAuth = useSupabaseAuth();
   const { isRTL } = useLanguage();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    
+    try {
+      console.log('로그아웃 시작 - DropdownUser');
+      
+      // 두 가지 인증 메서드로 모두 로그아웃 시도
+      if (supabaseAuth.signOut) {
+        try {
+          await supabaseAuth.signOut();
+          console.log('Supabase 로그아웃 성공');
+        } catch (error) {
+          console.error('Supabase 로그아웃 오류:', error);
+        }
+      }
+      
+      if (logout) {
+        try {
+          await logout();
+          console.log('AuthContext 로그아웃 성공');
+        } catch (error) {
+          console.error('AuthContext 로그아웃 오류:', error);
+        }
+      }
+      
+      // 로컬 스토리지 클리어 (로그아웃 함수들이 실패했을 경우 대비)
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('supabase.') || 
+            key.includes('token') || 
+            key.includes('auth')) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // 로그인 페이지로 강제 이동
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('로그아웃 처리 중 오류 발생:', error);
+      setIsLoggingOut(false);
+      
+      // 오류 발생해도 로그인 페이지로 이동
+      window.location.href = '/auth/login';
+    }
+  };
 
   const handleThemeMode = (event: ChangeEvent<HTMLInputElement>) => {
     const newThemeMode = event.target.checked ? 'dark' : 'light';
@@ -239,9 +288,22 @@ const DropdownUser = ({ menuItemRef }: IDropdownUserProps) => {
         </div>
 
         <div className="menu-item px-4 py-1.5">
-          <a onClick={logout} className="btn btn-sm btn-light justify-center">
-            <FormattedMessage id="USER.MENU.LOGOUT" />
-          </a>
+          <button 
+            onClick={handleLogout} 
+            disabled={isLoggingOut}
+            className={`btn btn-sm w-full btn-light justify-center ${isLoggingOut ? 'opacity-50 cursor-not-allowed flex items-center' : ''}`}
+          >
+            {isLoggingOut ? (
+              <>
+                <span className="animate-spin mr-2">
+                  <KeenIcon icon="spinner" className="size-4" />
+                </span>
+                <FormattedMessage id="USER.MENU.LOGGING_OUT" defaultMessage="Logging out..." />
+              </>
+            ) : (
+              <FormattedMessage id="USER.MENU.LOGOUT" />
+            )}
+          </button>
         </div>
       </div>
     );

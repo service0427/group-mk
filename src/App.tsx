@@ -5,6 +5,7 @@ import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/auth/useAuthContext';
+import SupabaseAuthProvider from '@/auth/supabase/SupabaseAuthProvider';
 
 const { BASE_URL } = import.meta.env;
 
@@ -25,11 +26,13 @@ const App = () => {
         v7_startTransition: true
       }}
     >
-      <AuthProvider>
-        <PathnameProvider>
-          <AppRouting />
-        </PathnameProvider>
-      </AuthProvider>
+      <SupabaseAuthProvider>
+        <AuthProvider>
+          <PathnameProvider>
+            <AppRouting />
+          </PathnameProvider>
+        </AuthProvider>
+      </SupabaseAuthProvider>
       <Toaster />
     </BrowserRouter>
   );

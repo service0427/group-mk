@@ -106,8 +106,9 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/advertise/naver/shopping/traffic" element={<NShoppingTrafficIntroPage />} />
+          {/* 루트 경로와 모든 보호된 라우트가 여기에 포함 */}
           <Route path="/" element={<DefaultPage />} />
+          <Route path="/dashboard" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<Demo1DarkSidebarPage />} />
           <Route path="/public-profile/profiles/default" element={<ProfileDefaultPage />} />
           <Route path="/public-profile/profiles/creator" element={<ProfileCreatorPage />} />
@@ -204,32 +205,23 @@ const AppRoutingSetup = (): ReactElement => {
             element={<AuthenticationAccountDeactivatedPage />}
           />
           <Route path="/authentication/get-started" element={<AuthenticationGetStartedPage />} />
-
-
           <Route path="/advertise/coupang/traffic/intro" element={<CoupangTrafficIntroPage />} />
           <Route path="/advertise/coupang/traffic/campaign" element={<CoupangTrafficCampaignPage />} />
-
           <Route path="/advertise/naver/auto/intro" element={<NAutoIntroPage />} />
           <Route path="/advertise/naver/auto/campaign" element={<NAutoCampaignPage />} />
-
           <Route path="/advertise/naver/place/save/intro" element={<NPlaceSaveIntroPage />} />
           <Route path="/advertise/naver/place/save/campaign" element={<NPlaceSaveCampaignPage />} />
-
           <Route path="/advertise/naver/place/share/intro" element={<NPlaceShareIntroPage />} />
           <Route path="/advertise/naver/place/share/campaign" element={<NPlaceShareCampaignPage />} />
-
           <Route path="/advertise/naver/place/traffic/intro" element={<NPlaceTrafficIntroPage />} />
           <Route path="/advertise/naver/place/traffic/campaign" element={<NPlaceTrafficCampaignPage />} />
-
           <Route path="/advertise/naver/shopping/traffic/intro" element={<NShoppingTrafficIntroPage />} />
           <Route path="/advertise/naver/shopping/traffic/campaign" element={<NShoppingTrafficCampaignPage />} />
-
           <Route path="/advertise/naver/traffic/intro" element={<NTrafficIntroPage />} />
           <Route path="/advertise/naver/traffic/campaign" element={<NTrafficCampaignPage />} />
-
           <Route path="/advertise/ohouse/traffic/intro" element={<OhouseTrafficIntroPage />} />
           <Route path="/advertise/ohouse/traffic/campaign" element={<OhouseTrafficCampaignPage />} />
-
+          <Route path="/advertise/naver/shopping/traffic" element={<NShoppingTrafficIntroPage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

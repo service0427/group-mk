@@ -1,54 +1,51 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ScreenLoader } from '@/components/loaders';
-import { useEffect, useState } from 'react';
-import { supabase } from './supabase/supabaseClient';
+import { useEffect, useState, useRef } from 'react';
+import { useSupabaseAuth } from './supabase/SupabaseAuthProvider';
 
-// 간소화된 인증 필요 라우트 보호 컴포넌트
+// 인증 필요 라우트 보호 컴포넌트
 const RequireAuth = () => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // 컴포넌트 마운트 시 인증 상태 확인
+  const { session, isLoading } = useSupabaseAuth();
+  const [initialCheck, setInitialCheck] = useState(true);
+  const isNavigatingRef = useRef(false);
+  
+  // 로깅 추가
+  console.log('App routing path:', location.pathname, 'Auth state:', !!session, 'Loading:', isLoading);
+  
+  // 초기 체크 완료 후 상태 업데이트 (최대 500ms 후 강제 진행)
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        console.log('Checking authentication status...');
-        // Supabase 세션 직접 확인
-        const { data } = await supabase.auth.getSession();
-        
-        const hasSession = !!data.session;
-        console.log('Session check result:', { hasSession });
-        
-        setIsAuthenticated(hasSession);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, []);
+    if (!isLoading) {
+      setInitialCheck(false);
+    } else {
+      // 안전장치: 최대 500ms 후 강제로 초기 체크 완료 처리
+      const timer = setTimeout(() => {
+        if (initialCheck) {
+          console.warn('RequireAuth: 초기 체크 강제 완료 (500ms 타임아웃)');
+          setInitialCheck(false);
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, initialCheck]);
 
-  // 로딩 중이면 로딩 화면 표시
-  if (isLoading) {
+  // 로그아웃 감지 및 처리
+  useEffect(() => {
+    if (!session && !isLoading && !initialCheck && !isNavigatingRef.current) {
+      // 세션이 없고, 로딩 중이 아니며, 초기 체크가 완료되었고, 아직 네비게이팅 중이 아니면
+      isNavigatingRef.current = true;
+      console.log('세션 없음, 로그인 페이지로 이동');
+    }
+  }, [session, isLoading, initialCheck]);
+
+  // 짧은 시간만 로딩 표시 (최대 300ms)
+  if (isLoading && initialCheck) {
     return <ScreenLoader />;
   }
 
   // 인증 상태에 따라 콘텐츠 또는 로그인 페이지로 리디렉션
-  if (isAuthenticated) {
-    return <Outlet />;
-  } else {
-    // 로컬 스토리지 정리
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('supabase.') || key.includes('token') || key.includes('auth')) {
-        localStorage.removeItem(key);
-      }
-    }
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
-  }
+  return session ? <Outlet /> : <Navigate to="/auth/login" state={{ from: location }} replace />;
 };
 
 export { RequireAuth };

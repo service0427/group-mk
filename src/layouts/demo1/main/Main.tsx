@@ -32,14 +32,14 @@ const Main = () => {
   }, [layout]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      document.body.classList.add('layout-initialized');
-    }, 1000); // 1000 milliseconds
-
-    // Remove the class when the component is unmounted
+    // 레이아웃 즉시 초기화
+    document.body.classList.add('layout-initialized');
+    document.body.classList.add('layout-loading');
+    
+    // 컴포넌트 언마운트 시 클래스 제거
     return () => {
       document.body.classList.remove('layout-initialized');
-      clearTimeout(timer);
+      document.body.classList.remove('layout-loading');
     };
   }, []);
 

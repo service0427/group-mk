@@ -40,7 +40,7 @@ export const useSupabaseAuth = () => useContext(SupabaseAuthContext);
 export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // 초기값을 false로 변경
+  const [isLoading, setIsLoading] = useState<boolean>(true); // 초기값을 true로 설정하여 항상 로딩 상태로 시작
   const [profile, setProfile] = useState<any | null>(null);
   const loadingTimeoutRef = useRef<number | null>(null);
   const initializingRef = useRef<boolean>(true);
@@ -52,10 +52,32 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
     // 기존 타임아웃 제거
     clearLoadingTimeout();
     
-    // 새 타임아웃 설정 (3초 후 강제 해제)
+    // 새 타임아웃 설정 - 기본값 3초로 복원하되 오류 처리 개선
     loadingTimeoutRef.current = window.setTimeout(() => {
-      console.warn('로딩 타임아웃으로 인한 강제 해제');
+      console.warn('로딩 타임아웃으로 인한 강제 해제 - UI 응답성 유지');
       setIsLoading(false);
+      
+      // 중요: 타임아웃 후에도 계속 인증 시도
+      const currentPath = window.location.pathname;
+      const isAuthPath = currentPath.startsWith('/auth/') && 
+                          currentPath !== '/auth/login' && 
+                          currentPath !== '/auth/signup';
+      
+      if (!isAuthPath) {
+        // 인증 필요 경로에서는 추가 체크 없이 진행
+        console.log('인증 상태를 다시 확인하는 중...');
+        
+        // 세션 상태 재확인 (백그라운드)
+        supabase.auth.getSession().then(({data}) => {
+          const hasSession = !!data.session;
+          if (!hasSession && currentPath !== '/auth/login') {
+            // 세션이 없으면 로그인으로
+            window.location.href = '/auth/login';
+          }
+        }).catch(err => {
+          console.error('세션 재확인 오류', err);
+        });
+      }
     }, 3000);
   };
 
@@ -103,6 +125,8 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       if (!initializingRef.current) return;
       
       try {
+        startLoading(); // 초기화 시작 시 명시적으로 로딩 상태 시작
+        
         // 세션 가져오기
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -125,6 +149,8 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       } finally {
         initializingRef.current = false;
         stopLoading(); // 초기화 후 로딩 상태 해제
+        
+        // 명시적 리디렉션 제거 - RequireAuth에서 처리하도록 변경
       }
     };
 
@@ -176,6 +202,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         stopLoading();
         isAuthStateChangingRef.current = false;
         console.log('인증 상태 변경 처리 완료, 로딩 상태:', isLoading);
+        // 자동 리디렉션 제거 - React Router가 처리하도록 함
       }
     });
 
@@ -269,7 +296,20 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
     try {
       console.log('로그아웃 시도');
       
-      // 먼저 상태 초기화
+      // 서버 로그아웃 먼저 시도 (3초 타임아웃)
+      try {
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Logout timeout')), 3000)
+          )
+        ]);
+        console.log('서버 로그아웃 성공');
+      } catch (signOutError) {
+        console.warn('서버 로그아웃 타임아웃 - 클라이언트 측 정리 진행', signOutError);
+      }
+      
+      // 클라이언트 상태 정리 (항상 실행)
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -283,11 +323,10 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         }
       }
       
-      // 서버 로그아웃 (3초 타임아웃)
-      await Promise.race([
-        supabase.auth.signOut(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Logout timeout')), 3000))
-      ]);
+      // 세션 쿠키 삭제 시도
+      document.cookie.split(';').forEach(c => {
+        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+      });
       
       stopLoading();
       
@@ -295,9 +334,16 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       window.location.href = '/auth/login';
     } catch (error) {
       console.error('로그아웃 오류:', error);
+      
+      // 상태 강제 초기화
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      localStorage.clear(); // 강제 스토리지 초기화
+      
       stopLoading();
       
-      // 로그인 페이지로 이동
+      // 오류가 발생해도 로그인 페이지로 이동
       window.location.href = '/auth/login';
     }
   };

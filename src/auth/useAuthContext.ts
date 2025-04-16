@@ -158,8 +158,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('인증 상태 변경:', event);
+      
       setSession(session);
       setIsAuthorized(!!session);
+      
       if (session?.user) {
         const { data } = await supabase
           .from('users')
@@ -167,6 +170,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           .eq('id', session.user.id)
           .single();
         setHasProfile(!!data);
+        
+        // 로그인 상태가 되면 현재 경로가 인증 관련 경로인 경우 루트 경로(/)로 리디렉션
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/auth/')) {
+          console.log('인증됨, 루트 경로(/)로 리디렉션');
+          window.location.href = '/';
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // 로그아웃 이벤트 감지 시 추가 처리
+        setIsAuthorized(false);
+        setSession(null);
+        setHasProfile(false);
+        
+        // 로그아웃 시 비인증 접근 불가 경로에 있으면 로그인 페이지로 리디렉션
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/auth/login' && currentPath !== '/auth/signup') {
+          console.log('로그아웃됨, 로그인 페이지로 리디렉션');
+          window.location.href = '/auth/login';
+        }
       }
     });
 

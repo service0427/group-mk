@@ -6,3 +6,4 @@ export * from './LocalStorage';
 export * from './Router';
 export * from './String';
 export * from './Common';
+export * from './email';

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase/supabaseClient';
 
@@ -32,11 +32,7 @@ export const useAuthContext = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -158,8 +154,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('인증 상태 변경:', event);
+      
       setSession(session);
       setIsAuthorized(!!session);
+      
       if (session?.user) {
         const { data } = await supabase
           .from('users')
@@ -167,6 +166,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           .eq('id', session.user.id)
           .single();
         setHasProfile(!!data);
+      } else if (event === 'SIGNED_OUT') {
+        // 로그아웃 이벤트 감지 시 추가 처리
+        setIsAuthorized(false);
+        setSession(null);
+        setHasProfile(false);
       }
     });
 
@@ -186,10 +190,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuth
   };
 
-  // React.createElement를 사용하여 JSX 없이 Provider 생성
-  return React.createElement(
-    AuthContext.Provider,
-    { value: contextValue },
-    children
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
   );
 };

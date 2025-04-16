@@ -1,44 +1,28 @@
+/**
+ * 인증 페이지 라우팅
+ * 
+ * Supabase 인증 시스템 전용
+ */
+
 import { Navigate, Route, Routes } from 'react-router';
-import {
-  Login,
-  ResetPassword,
-  ResetPasswordChange,
-  ResetPasswordChanged,
-  ResetPasswordCheckEmail,
-  ResetPasswordEnterEmail,
-  Signup,
-  TwoFactorAuth
-} from './pages/jwt';
+import { Login, Signup } from './pages/supabase-auth';
 import { AuthBrandedLayout } from '@/layouts/auth-branded';
 import { AuthLayout } from '@/layouts/auth';
-import { CheckEmail } from '@/auth/pages/jwt';
 
 const AuthPage = () => (
   <Routes>
+    {/* Supabase 인증 라우트 */}
     <Route element={<AuthLayout />}>
-      <Route index element={<Login />} />
+      <Route index element={<Navigate to="/auth/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/2fa" element={<TwoFactorAuth />} />
-      <Route path="/check-email" element={<CheckEmail />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/reset-password/enter-email" element={<ResetPasswordEnterEmail />} />
-      <Route path="/reset-password/check-email" element={<ResetPasswordCheckEmail />} />
-      <Route path="/reset-password/change" element={<ResetPasswordChange />} />
-      <Route path="/reset-password/changed" element={<ResetPasswordChanged />} />
+      {/* 비밀번호 재설정 등 기타 기능은 필요시 나중에 추가 */}
       <Route path="*" element={<Navigate to="/error/404" />} />
     </Route>
 
     <Route element={<AuthBrandedLayout />}>
       <Route path="/branded/login" element={<Login />} />
       <Route path="/branded/signup" element={<Signup />} />
-      <Route path="/branded/2fa" element={<TwoFactorAuth />} />
-      <Route path="/branded/check-email" element={<CheckEmail />} />
-      <Route path="/branded/reset-password" element={<ResetPassword />} />
-      <Route path="/branded/reset-password/enter-email" element={<ResetPasswordEnterEmail />} />
-      <Route path="/branded/reset-password/check-email" element={<ResetPasswordCheckEmail />} />
-      <Route path="/branded/reset-password/change" element={<ResetPasswordChange />} />
-      <Route path="/branded/reset-password/changed" element={<ResetPasswordChanged />} />
       <Route path="*" element={<Navigate to="/error/404" />} />
     </Route>
   </Routes>

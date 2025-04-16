@@ -1,7 +1,7 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { AuthProvider } from '@/auth/providers/JWTProvider';
+import { SupabaseAuthProvider } from '@/auth/supabase/SupabaseAuthProvider';
 import {
   LayoutProvider,
   LoadersProvider,
@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 const ProvidersWrapper = ({ children }: PropsWithChildren) => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <SupabaseAuthProvider>
         <SettingsProvider>
           <TranslationProvider>
             <HelmetProvider>
@@ -29,7 +29,7 @@ const ProvidersWrapper = ({ children }: PropsWithChildren) => {
             </HelmetProvider>
           </TranslationProvider>
         </SettingsProvider>
-      </AuthProvider>
+      </SupabaseAuthProvider>
     </QueryClientProvider>
   );
 };

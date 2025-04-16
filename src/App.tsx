@@ -4,6 +4,7 @@ import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/auth/useAuthContext';
 
 const { BASE_URL } = import.meta.env;
 
@@ -24,9 +25,11 @@ const App = () => {
         v7_startTransition: true
       }}
     >
-      <PathnameProvider>
-        <AppRouting />
-      </PathnameProvider>
+      <AuthProvider>
+        <PathnameProvider>
+          <AppRouting />
+        </PathnameProvider>
+      </AuthProvider>
       <Toaster />
     </BrowserRouter>
   );

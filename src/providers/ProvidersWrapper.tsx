@@ -1,7 +1,7 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
-import { AuthProvider } from '@/auth/providers/JWTProvider';
+import { AuthProvider } from '@/auth/providers/AuthProvider';
 import {
   LayoutProvider,
   LoadersProvider,

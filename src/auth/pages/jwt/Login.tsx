@@ -23,8 +23,8 @@ const loginSchema = Yup.object().shape({
 });
 
 const initialValues = {
-  email: 'demo@keenthemes.com',
-  password: 'demo1234',
+  email: 'jicho@jicho.com',
+  password: '13241324',
   remember: false
 };
 
@@ -42,13 +42,17 @@ const Login = () => {
     validationSchema: loginSchema,
     onSubmit: async (values, { setStatus, setSubmitting }) => {
       setLoading(true);
+      console.log('로그인 양식 제출:', values.email);
 
       try {
         if (!login) {
-          throw new Error('JWTProvider is required for this form.');
+          console.error('login 함수가 없음');
+          throw new Error('AuthProvider is required for this form.');
         }
 
+        console.log('login 함수 호출 전');
         await login(values.email, values.password);
+        console.log('login 함수 호출 후, 성공');
 
         if (values.remember) {
           localStorage.setItem('email', values.email);
@@ -56,12 +60,20 @@ const Login = () => {
           localStorage.removeItem('email');
         }
 
-        navigate(from, { replace: true });
-      } catch {
-        setStatus('The login details are incorrect');
+        // 로그인 성공 처리 및 리다이렉션
+        console.log('로그인 성공, 리다이렉트 시도:', from);
+        
+        // 약간의 지연 후 리다이렉트 (비동기 상태 업데이트 완료를 위해)
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 100);
+        
+      } catch (error: any) {
+        console.error('로그인 제출 중 오류:', error);
+        setStatus('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
         setSubmitting(false);
+        setLoading(false);
       }
-      setLoading(false);
     }
   });
 
@@ -78,18 +90,19 @@ const Login = () => {
         noValidate
       >
         <div className="text-center mb-2.5">
-          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">Sign in</h3>
+          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">로그인</h3>
           <div className="flex items-center justify-center font-medium">
-            <span className="text-2sm text-gray-600 me-1.5">Need an account?</span>
+            <span className="text-2sm text-gray-600 me-1.5">계정이 없으십니까?</span>
             <Link
               to={currentLayout?.name === 'auth-branded' ? '/auth/signup' : '/auth/classic/signup'}
               className="text-2sm link"
             >
-              Sign up
+              지금 바로 시작하기
             </Link>
           </div>
         </div>
 
+        {/*
         <div className="grid grid-cols-2 gap-2.5">
           <a href="#" className="btn btn-light btn-sm justify-center">
             <img
@@ -123,6 +136,7 @@ const Login = () => {
           <span className="font-semibold text-gray-900">demo1234</span> password.
         </Alert>
 
+          */}
         {formik.status && <Alert variant="danger">{formik.status}</Alert>}
 
         <div className="flex flex-col gap-1">
@@ -197,7 +211,7 @@ const Login = () => {
           className="btn btn-primary flex justify-center grow"
           disabled={loading || formik.isSubmitting}
         >
-          {loading ? 'Please wait...' : 'Sign In'}
+          {loading ? '잠시만 기달려주세요...' : '로그인'}
         </button>
       </form>
     </div>

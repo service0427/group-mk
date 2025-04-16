@@ -22,3 +22,16 @@ export interface UserModel {
   language?: TLanguageCode;
   auth?: AuthModel;
 }
+
+export interface CustomUser {
+  id?: string;
+  email?: string;
+  password?: string | undefined;
+  full_name?: string;
+  phone_number?: string;
+  role?: string;
+  status?: string;
+  create_at?: string;
+  update_dt?: string;
+  //auth?: AuthModel;
+}

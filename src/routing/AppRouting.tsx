@@ -14,12 +14,13 @@ const AppRouting = (): ReactElement => {
 
   useEffect(() => {
     if (firstLoad) {
+        setFirstLoad(false);
       verify().finally(() => {
         setLoading(false);
         setFirstLoad(false);
       });
     }
-  });
+  }, [firstLoad, verify, setLoading]);
 
   useEffect(() => {
     if (!firstLoad) {

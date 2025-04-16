@@ -3,8 +3,13 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-/* Demos */
-@import "demos/demo1";
+/* Layouts */
+@import "demos/stand";
 
 /* Shadcn UI */
 @import "shadcn.ui";
+
+/* Custom styles */
+@import "active-parent-dot.css";
+
+@import "index";

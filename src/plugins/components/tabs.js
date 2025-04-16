@@ -1,7 +1,7 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
   // Base
   addComponents({
     '.tabs': {
@@ -33,6 +33,6 @@ export default plugin(({addComponents, theme}) => {
       '&.active': {
         'border-bottom-color': 'var(--tw-primary)'
       }
-    } 
-  }); 
+    }
+  });
 });

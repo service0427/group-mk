@@ -1,13 +1,13 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 import svgToDataUri from 'mini-svg-data-uri';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
 	// Base
-  addComponents({
-    '.table': {
+	addComponents({
+		'.table': {
 			'width': '100%',
-      'caption-side': 'bottom',
+			'caption-side': 'bottom',
 			'border-collapse': 'collapse',
 			'vertical-align': 'middle',
 			'text-align': 'left',
@@ -43,21 +43,21 @@ export default plugin(({addComponents, theme}) => {
 			'tbody': {
 				'vertical-align': 'inherit',
 				'tr': {
-					'td, th': {										
-						'border-bottom':  'var(--tw-table-border)'
+					'td, th': {
+						'border-bottom': 'var(--tw-table-border)'
 					},
 					'&:last-child': {
 						'td, th': {
 							'border-bottom': '0',
 						},
 					},
-				}	
-			}			
-    },
+				}
+			}
+		},
 		'[dir=rtl] .table': {
 			'text-align': 'right',
 		},
-  });
+	});
 
 	// Sizes
 	addComponents({
@@ -72,16 +72,16 @@ export default plugin(({addComponents, theme}) => {
 			},
 			'tbody': {
 				'tr': {
-					'td, th': {						
+					'td, th': {
 						'padding-inline-start': theme('custom.components.table.px.DEFAULT'),
 						'padding-inline-end': theme('custom.components.table.px.DEFAULT'),
 						'padding-top': theme('custom.components.table.py.DEFAULT.body'),
 						'padding-bottom': theme('custom.components.table.py.DEFAULT.body')
 					}
 				}
-			}			
-    },
-    '.table-xs': {
+			}
+		},
+		'.table-xs': {
 			'thead, tfoot': {
 				'td, th': {
 					'padding-inline-start': theme('custom.components.table.px.xs'),
@@ -92,15 +92,15 @@ export default plugin(({addComponents, theme}) => {
 			},
 			'tbody': {
 				'tr': {
-					'td, th': {						
+					'td, th': {
 						'padding-inline-start': theme('custom.components.table.px.xs'),
 						'padding-inline-end': theme('custom.components.table.px.xs'),
 						'padding-top': theme('custom.components.table.py.xs.body'),
 						'padding-bottom': theme('custom.components.table.py.xs.body')
 					}
 				}
-			}			
-    },
+			}
+		},
 		'.table-sm': {
 			'thead, tfoot': {
 				'td, th': {
@@ -112,15 +112,15 @@ export default plugin(({addComponents, theme}) => {
 			},
 			'tbody': {
 				'tr': {
-					'td, th': {						
+					'td, th': {
 						'padding-inline-start': theme('custom.components.table.px.sm'),
 						'padding-inline-end': theme('custom.components.table.px.sm'),
 						'padding-top': theme('custom.components.table.py.sm.body'),
 						'padding-bottom': theme('custom.components.table.py.sm.body')
 					}
 				}
-			}			
-    },
+			}
+		},
 		'.table-lg': {
 			'thead, tfoot': {
 				'td, th': {
@@ -132,20 +132,20 @@ export default plugin(({addComponents, theme}) => {
 			},
 			'tbody': {
 				'tr': {
-					'td, th': {						
+					'td, th': {
 						'padding-inline-start': theme('custom.components.table.px.lg'),
 						'padding-inline-end': theme('custom.components.table.px.lg'),
 						'padding-top': theme('custom.components.table.py.lg.body'),
 						'padding-bottom': theme('custom.components.table.py.lg.body')
 					}
 				}
-			}			
-    }
-  });
-	
+			}
+		}
+	});
+
 	// Border
 	addComponents({
-    '.table-border': {
+		'.table-border': {
 			'border': 'var(--tw-table-border)',
 			'td, th': {
 				'border-right': 'var(--tw-table-border)',
@@ -153,31 +153,31 @@ export default plugin(({addComponents, theme}) => {
 					'border-right': '0'
 				}
 			}
-    },
+		},
 		'.table-border-s': {
 			'border-inline-start': 'var(--tw-table-border)'
-    },
+		},
 		'.table-border-e': {
 			'border-inline-end': 'var(--tw-table-border)'
-    },
+		},
 		'.table-border-t': {
 			'border-top': 'var(--tw-table-border)'
-    },
+		},
 		'.table-border-b': {
 			'border-bottom': 'var(--tw-table-border)'
-    }
-  });
+		}
+	});
 
 	// Sort
 	addComponents({
-		'.sort': {			
+		'.sort': {
 			'display': 'inline-flex',
 			'align-items': 'center',
 			'gap': '0.35rem',
 			'cursor': 'pointer',
 			'line-height': '1'
 		},
-    '.sort-icon': {			
+		'.sort-icon': {
 			'display': 'inline-flex',
 			'flex-direction': 'column',
 			'justify-content': 'center',
@@ -188,7 +188,7 @@ export default plugin(({addComponents, theme}) => {
 			'line-height': '1',
 			'&:before': {
 				'display': 'inline-block',
-				'content': '""',				
+				'content': '""',
 				'height': '0.25rem',
 				'width': '0.438rem',
 				'background-repeat': 'no-repeat',
@@ -228,6 +228,6 @@ export default plugin(({addComponents, theme}) => {
 			'align-items': 'center',
 			'gap': '0.35rem'
 		}
-  });
-	
+	});
+
 });

@@ -103,7 +103,7 @@ export default plugin(({ addVariant, addComponents, theme, e }) => {
         'font-size': theme('fontSize.md'),
       },
     },
-    '[dir=rtl] .switch': {      
+    '[dir=rtl] .switch': {
       'input[type=checkbox]': {
         '&:checked, &[aria-checked="true"]': {
           '&:before': {

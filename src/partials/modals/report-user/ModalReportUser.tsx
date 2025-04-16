@@ -71,7 +71,7 @@ const ModalReportUser = forwardRef<HTMLDivElement, IModalReportUserProps>(
       return (
         <div className="flex flex-col gap-5 px-5">
           <div className="text-2sm text-gray-900 font-semibold">
-            Let us know why youâ€™re reporing this person
+            Let us know why you?™re reporing this person
           </div>
           <div className="flex flex-col gap-3.5">
             {items.map((item, index) => (

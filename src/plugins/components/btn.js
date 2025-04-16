@@ -1,7 +1,7 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
   // Base
   addComponents({
     '.btn': {
@@ -9,12 +9,12 @@ export default plugin(({addComponents, theme}) => {
       'align-items': 'center',
       'cursor': 'pointer',
       'line-height': '1',
-      'border-radius': theme('custom.components.common.borderRadius.btn'), 
+      'border-radius': theme('custom.components.common.borderRadius.btn'),
       'height': theme('custom.components.btn.DEFAULT.height'),
       'padding-inline-start': theme('custom.components.btn.DEFAULT.px'),
       'padding-inline-end': theme('custom.components.btn.DEFAULT.px'),
       'gap': theme('custom.components.btn.DEFAULT.gap'),
-      'border': '1px solid transparent',      
+      'border': '1px solid transparent',
       'font-weight': theme('custom.components.btn.DEFAULT.fontWeight'),
       'font-size': theme('custom.components.btn.DEFAULT.fontSize'),
       'outline': 'none'
@@ -23,7 +23,7 @@ export default plugin(({addComponents, theme}) => {
       'flex-shrink': '0',
       'padding': '0',
       'gap': '0',
-      'width': theme('custom.components.btn.DEFAULT.height'),    
+      'width': theme('custom.components.btn.DEFAULT.height'),
       'i': {
         'line-height': '0 !important'
       }
@@ -36,7 +36,7 @@ export default plugin(({addComponents, theme}) => {
       'font-size': theme('custom.components.btn.xs.fontSize'),
       'gap': theme('custom.components.btn.xs.gap'),
       '&.btn-icon': {
-        'width': theme('custom.components.btn.xs.height')      
+        'width': theme('custom.components.btn.xs.height')
       }
     },
     '.btn-sm': {
@@ -47,7 +47,7 @@ export default plugin(({addComponents, theme}) => {
       'font-size': theme('custom.components.btn.sm.fontSize'),
       'gap': theme('custom.components.btn.sm.gap'),
       '&.btn-icon': {
-        'width': theme('custom.components.btn.sm.height')   
+        'width': theme('custom.components.btn.sm.height')
       }
     },
     '.btn-lg': {
@@ -58,14 +58,14 @@ export default plugin(({addComponents, theme}) => {
       'font-size': theme('custom.components.btn.lg.fontSize'),
       'gap': theme('custom.components.btn.lg.gap'),
       '&.btn-icon': {
-        'width': theme('custom.components.btn.lg.height')       
+        'width': theme('custom.components.btn.lg.height')
       }
     }
   });
 
   // Disabled state
   addComponents({
-    '.btn': {    
+    '.btn': {
       '&[disabled], &.disabled': {
         'opacity': '0.5',
         'pointer-events': 'none'
@@ -75,21 +75,21 @@ export default plugin(({addComponents, theme}) => {
 
   // Only icon option
   addComponents({
-    '.btn-icon': {   
-      'justify-content': 'center', 
+    '.btn-icon': {
+      'justify-content': 'center',
       'flex-shrink': '0',
       'padding': '0',
       'gap': '0',
-      'width': theme('custom.components.btn.DEFAULT.height')   
+      'width': theme('custom.components.btn.DEFAULT.height')
     },
     '.btn-icon.btn-xs': {
       'width': theme('custom.components.btn.xs.height')
     },
     '.btn-icon.btn-sm': {
-      'width': theme('custom.components.btn.sm.height') 
+      'width': theme('custom.components.btn.sm.height')
     },
     '.btn-icon.btn-lg': {
-      'width': theme('custom.components.btn.lg.height')       
+      'width': theme('custom.components.btn.lg.height')
     }
   });
 
@@ -100,8 +100,8 @@ export default plugin(({addComponents, theme}) => {
         'font-size': theme('custom.components.btn.DEFAULT.iconFontSize'),
         'line-height': '0 !important',
       }
-    },    
-    '.btn-icon': {  
+    },
+    '.btn-icon': {
       'i': {
         'font-size': theme('custom.components.btn.DEFAULT.onlyIconFontSize'),
       }
@@ -109,8 +109,8 @@ export default plugin(({addComponents, theme}) => {
     '.btn-xs': {
       'i': {
         'font-size': theme('custom.components.btn.xs.iconFontSize'),
-      },      
-      '&.btn-icon': {  
+      },
+      '&.btn-icon': {
         'i': {
           'font-size': theme('custom.components.btn.xs.onlyIconFontSize'),
         }
@@ -119,8 +119,8 @@ export default plugin(({addComponents, theme}) => {
     '.btn-sm': {
       'i': {
         'font-size': theme('custom.components.btn.sm.iconFontSize'),
-      },      
-      '&.btn-icon': {  
+      },
+      '&.btn-icon': {
         'i': {
           'font-size': theme('custom.components.btn.sm.onlyIconFontSize'),
         }
@@ -129,8 +129,8 @@ export default plugin(({addComponents, theme}) => {
     '.btn-lg': {
       'i': {
         'font-size': theme('custom.components.btn.lg.iconFontSize'),
-      },      
-      '&.btn-icon': {  
+      },
+      '&.btn-icon': {
         'i': {
           'font-size': theme('custom.components.btn.lg.onlyIconFontSize'),
         }
@@ -196,7 +196,7 @@ export default plugin(({addComponents, theme}) => {
           'font-size': `${theme('fontSize.2xl')}`
         }
       }
-    }    
+    }
   });
 
   // Link varaint
@@ -209,10 +209,10 @@ export default plugin(({addComponents, theme}) => {
       'padding-inline-start': '0',
       'padding-inline-end': '0',
       'border-radius': '0',
-      'background-color': 'transparent',      
+      'background-color': 'transparent',
       'border-bottom': '1px dashed var(--tw-primary)',
-      '&:hover, &:focus, &:active, &.active' : {
-        'background-color': 'transparent',   
+      '&:hover, &:focus, &:active, &.active': {
+        'background-color': 'transparent',
         'border-bottom': '1px dashed var(--tw-primary-active)',
         'color': 'var(--tw-primary-active)',
       },
@@ -231,15 +231,15 @@ export default plugin(({addComponents, theme}) => {
       'display': 'inline-flex',
       'align-items': 'center',
       'line-height': '1',
-      'background-color': 'var(--tw-gray-100)',  
+      'background-color': 'var(--tw-gray-100)',
       'border': '1px solid var(--tw-gray-200)',
       '.btn': {
         'color': 'var(--tw-gray-700)',
         'i': {
           'color': 'var(--tw-gray-400)',
         },
-        '&:hover, &:focus, &:active, &.active' : {
-          'background-color': 'var(--tw-light)',   
+        '&:hover, &:focus, &:active, &.active': {
+          'background-color': 'var(--tw-light)',
           'border': '1px solid var(--tw-gray-200)',
           'color': 'var(--tw-gray-900)',
           'box-shadow': 'var(--tw-light-box-shadow)',
@@ -254,7 +254,7 @@ export default plugin(({addComponents, theme}) => {
   // Tabs sizes
   addComponents({
     '.btn-tabs': {
-      'border-radius': theme('custom.components.common.borderRadius.btn'), 
+      'border-radius': theme('custom.components.common.borderRadius.btn'),
       'height': theme('custom.components.btn.DEFAULT.height'),
       'padding': theme('custom.components.btn.DEFAULT.tabsGap'),
       'gap': theme('custom.components.btn.DEFAULT.tabsGap'),
@@ -303,14 +303,14 @@ export default plugin(({addComponents, theme}) => {
     '.btn-input': {
       'cursor': 'auto',
       'color': 'var(--tw-gray-700)',
-      'border-color':  'var(--tw-gray-300)',
+      'border-color': 'var(--tw-gray-300)',
       'background-color': 'var(--tw-light-active)',
       'i': {
         'color': 'var(--tw-gray-500)',
       }
     }
   });
-  
+
   // Color varaints
   const colors = ['primary', 'success', 'danger', 'warning', 'info', 'dark', 'light', 'secondary'];
 
@@ -319,13 +319,13 @@ export default plugin(({addComponents, theme}) => {
       addComponents({
         '.btn-light': {
           'color': 'var(--tw-gray-700)',
-          'border-color':  'var(--tw-gray-300)',
-          'background-color': 'var(--tw-light)',      
+          'border-color': 'var(--tw-gray-300)',
+          'background-color': 'var(--tw-light)',
           'i': {
             'color': 'var(--tw-gray-500)',
           },
-          '&:hover, &:focus, &:active, &.active' : {
-            'border-color':  'var(--tw-gray-300)',
+          '&:hover, &:focus, &:active, &.active': {
+            'border-color': 'var(--tw-gray-300)',
             'background-color': 'var(--tw-light-active)',
             'box-shadow': 'var(--tw-default-box-shadow)',
             'color': 'var(--tw-gray-800)',
@@ -336,21 +336,21 @@ export default plugin(({addComponents, theme}) => {
           '&[disabled], &.disabled': {
             'opacity': '1',
             'color': 'var(--tw-gray-500)',
-            'border-color':  'var(--tw-gray-200)',
-            'background-color': 'var(--tw-light)',   
+            'border-color': 'var(--tw-gray-200)',
+            'background-color': 'var(--tw-light)',
             'i': {
               'color': 'var(--tw-gray-400)',
             }
           }
         },
         '.btn-light.btn-clear': {
-          'border-color':  'transparent',
-          'background-color': 'transparent',     
-          'color': 'var(--tw-gray-700)',   
+          'border-color': 'transparent',
+          'background-color': 'transparent',
+          'color': 'var(--tw-gray-700)',
           'i': {
             'color': 'var(--tw-gray-600)',
           },
-          '&:hover, &:focus, &:active, &.active' : {
+          '&:hover, &:focus, &:active, &.active': {
             'background-color': 'var(--tw-gray-200)',
             'border-color': 'transparent',
             'box-shadow': 'none',
@@ -362,8 +362,8 @@ export default plugin(({addComponents, theme}) => {
           '&[disabled], &.disabled': {
             'opacity': '1',
             'color': 'var(--tw-gray-500)',
-            'border-color':  'transparent',
-            'background-color': 'transparent',     
+            'border-color': 'transparent',
+            'background-color': 'transparent',
             'i': {
               'color': 'var(--tw-gray-400)',
             }
@@ -374,13 +374,13 @@ export default plugin(({addComponents, theme}) => {
       addComponents({
         '.btn-secondary': {
           'color': 'var(--tw-gray-700)',
-          'border-color':  'var(--tw-gray-200)',
-          'background-color': 'var(--tw-secondary)',      
+          'border-color': 'var(--tw-gray-200)',
+          'background-color': 'var(--tw-secondary)',
           'i': {
             'color': 'var(--tw-gray-500)',
           },
-          '&:hover, &:focus, &:active, &.active' : {
-            'border-color':  'var(--tw-gray-300)',
+          '&:hover, &:focus, &:active, &.active': {
+            'border-color': 'var(--tw-gray-300)',
             'background-color': 'var(--tw-secondary-active)',
             'box-shadow': 'var(--tw-default-box-shadow)',
             'color': 'var(--tw-gray-800)',
@@ -391,8 +391,8 @@ export default plugin(({addComponents, theme}) => {
           '&[disabled], &.disabled': {
             'opacity': '1',
             'color': 'var(--tw-gray-500)',
-            'border-color':  'var(--tw-gray-200)',
-            'background-color': 'var(--tw-light)',   
+            'border-color': 'var(--tw-gray-200)',
+            'background-color': 'var(--tw-light)',
             'i': {
               'color': 'var(--tw-gray-400)',
             }
@@ -404,7 +404,7 @@ export default plugin(({addComponents, theme}) => {
         [`.btn-${color}`]: {
           'color': theme('colors.white'),
           'background-color': `var(--tw-${color})`,
-          '&:hover, &:focus, &:active, &.active' : {
+          '&:hover, &:focus, &:active, &.active': {
             'background-color': `var(--tw-${color}-active)`,
             'box-shadow': `var(--tw-${color}-box-shadow)`,
           }
@@ -416,7 +416,7 @@ export default plugin(({addComponents, theme}) => {
           'i': {
             'color': `var(--tw-${color})`,
           },
-          '&:hover, &:focus, &:active, &.active' : {
+          '&:hover, &:focus, &:active, &.active': {
             'color': `var(--tw-${color}-inverse)`,
             'background-color': `var(--tw-${color})`,
             'border-color': `var(--tw-${color})`,
@@ -427,10 +427,10 @@ export default plugin(({addComponents, theme}) => {
           }
         },
         [`.btn-clear.btn-${color}`]: {
-          'border-color':  'transparent',
-          'background-color': 'transparent',     
+          'border-color': 'transparent',
+          'background-color': 'transparent',
           'color': `var(--tw-${color})`,
-          '&:hover, &:focus, &:active, &.active' : {
+          '&:hover, &:focus, &:active, &.active': {
             'color': `var(--tw-${color}-inverse)`,
             'background-color': `var(--tw-${color})`,
             'border-color': `var(--tw-${color})`,
@@ -441,16 +441,16 @@ export default plugin(({addComponents, theme}) => {
           }
         },
         [`.btn-subtle.btn-${color}`]: {
-          'border-color':  'transparent',
-          'background-color': 'transparent',  
+          'border-color': 'transparent',
+          'background-color': 'transparent',
           'color': `var(--tw-${color})`,
           'i': {
             'color': `var(--tw-${color})`
           },
-          '&:hover, &:focus, &:active, &.active' : {
+          '&:hover, &:focus, &:active, &.active': {
             'color': `var(--tw-${color})`,
             'background-color': `var(--tw-${color}-light)`,
-            'border-color':  `var(--tw-${color}-light)`,
+            'border-color': `var(--tw-${color}-light)`,
             'box-shadow': `none`,
             'i': {
               'color': `var(--tw-${color})`
@@ -459,12 +459,12 @@ export default plugin(({addComponents, theme}) => {
         }
       });
     }
-  });   
+  });
 
-   // Utilities
-   addComponents({
+  // Utilities
+  addComponents({
     '.btn-rounded': {
       'border-radius': theme('custom.components.common.borderRadius.btn')
     }
-  });  
+  });
 });

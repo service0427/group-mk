@@ -1,7 +1,7 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
 	// Form input
 	addComponents({
 		'.textarea': {
@@ -11,11 +11,11 @@ export default plugin(({addComponents, theme}) => {
 			'box-shadow': 'none',
 			'outline': 'none',
 			'font-weight': theme('custom.components.btn.DEFAULT.fontWeight'),
-      'font-size': theme('custom.components.btn.DEFAULT.fontSize'),
+			'font-size': theme('custom.components.btn.DEFAULT.fontSize'),
 			'line-height': theme('leading.5'),
 			'background-color': 'var(--tw-light-active)',
-			'border-radius': theme('custom.components.common.borderRadius.btn'), 
-      'padding': `${theme('custom.components.btn.DEFAULT.py')} ${theme('custom.components.input.DEFAULT.px')}`,
+			'border-radius': theme('custom.components.common.borderRadius.btn'),
+			'padding': `${theme('custom.components.btn.DEFAULT.py')} ${theme('custom.components.input.DEFAULT.px')}`,
 			'border': '1px solid var(--tw-gray-300)',
 			'color': 'var(--tw-gray-700)',
 			'&::placeholder': {
@@ -56,12 +56,12 @@ export default plugin(({addComponents, theme}) => {
 		},
 		'.textarea-sm': {
 			'font-weight': theme('custom.components.btn.sm.fontWeight'),
-      'font-size': theme('custom.components.btn.sm.fontSize'),
+			'font-size': theme('custom.components.btn.sm.fontSize'),
 			'padding': `${theme('custom.components.btn.sm.py')} ${theme('custom.components.input.sm.px')}`
 		},
 		'.textarea-lg': {
 			'font-weight': theme('custom.components.btn.lg.fontWeight'),
-      'font-size': theme('custom.components.btn.lg.fontSize'),
+			'font-size': theme('custom.components.btn.lg.fontSize'),
 			'padding': `${theme('custom.components.btn.lg.py')} ${theme('custom.components.input.lg.px')}`
 		}
 	});

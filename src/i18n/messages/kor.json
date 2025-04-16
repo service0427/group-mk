@@ -1,0 +1,16 @@
+{
+  "USER.MENU.PUBLIC_PROFILE": "공개 프로필",
+  "USER.MENU.MY_PROFILE": "내 프로필",
+  "USER.MENU.MY_ACCOUNT": "내 계정",
+  "USER.MENU.GET_STARTED": "시작하기",
+  "USER.MENU.BILLING": "지불",
+  "USER.MENU.SECURITY": "보안",
+  "USER.MENU.MEMBERS_&_ROLES": "회원 & 정책",
+  "USER.MENU.INTEGRATIONS": "통합",
+  "USER.MENU.NOTIFICATIONS": "알림",
+  "USER.MENU.DEV_FORUM": "개발자 포럼",
+  "USER.MENU.PAYMENT_&_SUBSCRIPTION_INFO": "지불 & 구독 정보",
+  "USER.MENU.DARK_MODE": "다크모드",
+  "USER.MENU.LOGOUT": "로그아웃",
+  "USER.MENU.LANGUAGE": "언어"
+}

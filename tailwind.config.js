@@ -1,7 +1,7 @@
 module.exports = {
   content: ['index.html', './src/**/*.{ts,tsx}'],
   safelist: [
-    'demo1',
+    'stand',
     'hidden',
     'ki-filled',
     'ki-outline',
@@ -12,6 +12,245 @@ module.exports = {
   ],
   darkMode: 'class',
   theme: {
+    custom: ({ theme }) => ({
+      components: {
+        common: {
+          backgrounds: {
+            light: {
+              card: 'white',
+              tooltip: '#0F1014',
+              popover: 'white',
+              modal: 'white',
+              drawer: 'white',
+              dropdown: 'white',
+              backdrop: 'rgba(0, 0, 0, 0.80)',
+              tableHead: 'var(--tw-light-active)'
+            },
+            dark: {
+              card: '#111217',
+              tooltip: '#0B0C10',
+              popover: '#0B0C10',
+              modal: '#0B0C10',
+              drawer: '#0B0C10',
+              dropdown: '#0B0C10',
+              backdrop: 'rgba(0, 0, 0, 0.80)',
+              tableHead: '#13141A'
+            }
+          },
+          borders: {
+            light: {
+              card: '1px solid var(--tw-gray-200)',
+              table: '1px solid var(--tw-gray-200)',
+              dropdown: '1px solid var(--tw-gray-200)',
+              popover: '1px solid var(--tw-gray-200)',
+              tooltip: '0'
+            },
+            dark: {
+              card: '1px solid #15171C',
+              table: '1px solid #15171C',
+              dropdown: '1px solid #15171C',
+              tooltip: '1px solid #15171C',
+              popover: '1px solid #15171C'
+            }
+          },
+          boxShadows: {
+            light: {
+              card: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              tooltip: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              popover: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              modal: '0px 10px 14px 0px rgba(15, 42, 81, 0.03)',
+              drawer: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              dropdown: '0px 7px 18px 0px rgba(0, 0, 0, 0.09)',
+              input: '0px 0px 10px 0px rgba(0, 0, 0, 0.10)'
+            },
+            dark: {
+              card: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              tooltip: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              popover: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              modal: '0px 10px 14px 0px rgba(15, 42, 81, 0.03)',
+              drawer: '0px 3px 4px 0px rgba(0, 0, 0, 0.03)',
+              dropdown: '0px 7px 18px 0px rgba(0, 0, 0, 0.09)',
+              input: '0px 0px 10px 0px rgba(0, 0, 0, 0.10)'
+            }
+          },
+          borderRadius: {
+            btn: '0.375rem',
+            progress: '0.5rem',
+            dropdown: '0.75rem',
+            badge: '0.25rem',
+            card: '0.75rem',
+            tooltip: '0.5rem',
+            popover: '0.5rem',
+            modal: '0.75rem'
+          }
+        },
+        container: {
+          fixed: {
+            px: {
+              DEFAULT: '1.5rem',
+              xl: '1.875rem'
+            },
+            'max-width': '1280px'
+          },
+          fluid: {
+            px: {
+              DEFAULT: '1.5rem',
+              xl: '1.875rem'
+            }
+          }
+        },
+        btn: {
+          xs: {
+            height: '1.75rem',
+            px: '0.5rem',
+            py: '0.35rem',
+            gap: '0.25rem',
+            fontSize: '0.6875rem',
+            fontWeight: '500',
+            iconFontSize: '0.75rem',
+            onlyIconFontSize: '1rem'
+          },
+          sm: {
+            height: '2rem',
+            px: '0.75rem',
+            py: '0.45rem',
+            gap: '0.275rem',
+            fontSize: '0.75rem',
+            fontWeight: '500',
+            iconFontSize: '0.875rem',
+            onlyIconFontSize: '1.125rem',
+            tabsGap: '0.188rem'
+          },
+          DEFAULT: {
+            height: '2.5rem',
+            px: '1rem',
+            py: '0.55rem',
+            gap: '0.375rem',
+            fontSize: '0.8125rem',
+            fontWeight: '500',
+            iconFontSize: '1.125rem',
+            onlyIconFontSize: '1.5rem',
+            tabsGap: '0.25rem'
+          },
+          lg: {
+            height: '3rem',
+            px: '1.25rem',
+            py: '0.75rem',
+            gap: '0.5rem',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            iconFontSize: '1.25rem',
+            onlyIconFontSize: '1.75rem',
+            tabsGap: '0.313rem'
+          }
+        },
+        input: {
+          sm: {
+            px: '0.625rem'
+          },
+          DEFAULT: {
+            px: '0.75rem'
+          },
+          lg: {
+            gap: '0.875rem'
+          }
+        },
+        checkbox: {
+          sm: {
+            size: '1.125rem',
+            borderRadius: '0.25rem'
+          },
+          DEFAULT: {
+            size: '1.375rem',
+            borderRadius: '0.375rem'
+          },
+          lg: {
+            size: '1.625rem',
+            borderRadius: '0.5rem'
+          }
+        },
+        radio: {
+          sm: {
+            size: '1.125rem'
+          },
+          DEFAULT: {
+            size: '1.375rem'
+          },
+          lg: {
+            size: '1.625rem'
+          }
+        },
+        switch: {
+          sm: {
+            height: '1.125rem',
+            width: '1.875rem'
+          },
+          DEFAULT: {
+            height: '1.375rem',
+            width: '2.125rem'
+          },
+          lg: {
+            height: '1.625rem',
+            width: '2.375rem'
+          }
+        },
+        card: {
+          px: '1.875rem',
+          py: {
+            header: '0.75rem',
+            body: '1.25rem',
+            footer: '0.75rem',
+            group: '0.75rem'
+          },
+          grid: {
+            px: '1.25rem'
+          }
+        },
+        table: {
+          px: {
+            xs: '0.5rem',
+            sm: '0.75rem',
+            DEFAULT: '1rem',
+            lg: '1.25rem'
+          },
+          py: {
+            xs: {
+              head: '0.225rem',
+              body: '0.35rem'
+            },
+            sm: {
+              head: '0.425rem',
+              body: '0.5rem'
+            },
+            DEFAULT: {
+              head: '0.625rem',
+              body: '0.75rem'
+            },
+            lg: {
+              head: '0.825rem',
+              body: '0.95rem'
+            }
+          }
+        }
+      },
+      layouts: {
+        stand: {
+          sidebar: {
+            width: {
+              desktop: '280px',
+              desktopCollapse: '80px',
+              mobile: '280px'
+            }
+          },
+          header: {
+            height: {
+              desktop: '70px',
+              mobile: '60px'
+            }
+          }
+        }
+      }
+    }),
     extend: {
       base: {
         colors: {
@@ -201,45 +440,45 @@ module.exports = {
       colors: {
         //begin: Shadcn UI Colors
         background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			},
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        chart: {
+          '1': 'hsl(var(--chart-1))',
+          '2': 'hsl(var(--chart-2))',
+          '3': 'hsl(var(--chart-3))',
+          '4': 'hsl(var(--chart-4))',
+          '5': 'hsl(var(--chart-5))'
+        },
         //end
         gray: {
           100: 'var(--tw-gray-100)',
@@ -326,7 +565,7 @@ module.exports = {
           600: '#0B0C10',
           black: '#000000',
           clarity: 'rgba(24, 25, 31, 0.50)'
-        },        
+        },
       },
       boxShadow: {
         card: 'var(--tw-card-box-shadow)',
@@ -515,20 +754,20 @@ module.exports = {
           }
         },
         container: {
-					fixed: {
-						px: {
-							DEFAULT: theme('spacing')['6'],
-							xl: theme('spacing')['7.5']
-						},
-						'max-width': theme('screens.xl')
-					},
-					fluid: {
-						px: {
-							DEFAULT: theme('spacing')['6'],
-							xl: theme('spacing')['7.5']
-						}
-					}
-				},
+          fixed: {
+            px: {
+              DEFAULT: theme('spacing')['6'],
+              xl: theme('spacing')['7.5']
+            },
+            'max-width': theme('screens.xl')
+          },
+          fluid: {
+            px: {
+              DEFAULT: theme('spacing')['6'],
+              xl: theme('spacing')['7.5']
+            }
+          }
+        },
         btn: {
           xs: {
             height: '1.75rem',
@@ -664,7 +903,7 @@ module.exports = {
         }
       },
       layouts: {
-        demo1: {
+        stand: {
           sidebar: {
             width: {
               desktop: '280px',
@@ -683,7 +922,7 @@ module.exports = {
     })
   },
   plugins: [
-    require('tailwindcss-animate'), 
+    require('tailwindcss-animate'),
     require('./src/plugins/plugin'),
     require('./src/plugins/components/theme'),
     require('./src/plugins/components/breakpoints'),

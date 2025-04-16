@@ -1,15 +1,15 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
 	// Base	
-  addComponents({
-    '.tooltip': {
+	addComponents({
+		'.tooltip': {
 			'display': 'none',
-			'color': 'white', 
+			'color': 'white',
 			'z-index': theme('custom.components.common.zIndex.tooltip'),
-      'box-shadow': 'var(--tw-tooltip-box-shadow)', 
-      'background-color': 'var(--tw-tooltip-background-color)',
+			'box-shadow': 'var(--tw-tooltip-box-shadow)',
+			'background-color': 'var(--tw-tooltip-background-color)',
 			'border': 'var(--tw-tooltip-border)',
 			'border-radius': theme('custom.components.common.borderRadius.tooltip'),
 			'padding': '0.375rem 0.6rem',
@@ -19,6 +19,6 @@ export default plugin(({addComponents, theme}) => {
 			'&.show': {
 				'display': 'block'
 			}
-    }
-  });   
+		}
+	});
 });

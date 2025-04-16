@@ -5,9 +5,9 @@ export default plugin(({ addComponents }) => {
     '.drawer': {
       'transition': 'transform 300ms ease',
       'position': 'fixed',
-      'background-color': 'var(--tw-drawer-background-color)', 
-      '&.open': {			
-        'box-shadow': 'var(--tw-drawer-box-shadow)', 
+      'background-color': 'var(--tw-drawer-background-color)',
+      '&.open': {
+        'box-shadow': 'var(--tw-drawer-box-shadow)',
         'transition': 'transform 300ms ease'
       },
     },

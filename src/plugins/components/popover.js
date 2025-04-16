@@ -1,17 +1,17 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
-  addComponents({
-    '.popover': {
+export default plugin(({ addComponents, theme }) => {
+	addComponents({
+		'.popover': {
 			'display': 'none',
-      'box-shadow': 'var(--tw-popover-box-shadow)', 
-      'background-color': 'var(--tw-popover-background-color)',
-			'border-radius': theme('custom.components.common.borderRadius.popover'),	
+			'box-shadow': 'var(--tw-popover-box-shadow)',
+			'background-color': 'var(--tw-popover-background-color)',
+			'border-radius': theme('custom.components.common.borderRadius.popover'),
 			'border': 'var(--tw-popover-border)',
 			'&.show': {
 				'display': 'block'
-			}	
+			}
 		},
 		'.popover-header': {
 			'padding': '0.50rem 0.75rem',
@@ -28,5 +28,5 @@ export default plugin(({addComponents, theme}) => {
 			'font-weight': theme('fontWeight.normal'),
 			'color': 'var(--tw-gray-700)'
 		}
-  });   
+	});
 });

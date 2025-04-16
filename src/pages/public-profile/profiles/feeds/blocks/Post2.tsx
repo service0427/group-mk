@@ -11,7 +11,7 @@ const Post2 = () => {
       avatar: '300-1.png',
       author: 'Mr. Anderson',
       date: '1 Day ago',
-      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. Iâ€™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
+      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I?™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
     },
     {
       avatar: '300-15.png',
@@ -30,8 +30,8 @@ const Post2 = () => {
       />
 
       <p className="mb-5 text-sm text-gray-800 leading-5.5 px-7.5">
-        I can hear your objections already. â€œBut Dan, I have to blog for a cardboard box
-        manufacturing company.â€ I feel your pain, I really do.
+        I can hear your objections already. ?œBut Dan, I have to blog for a cardboard box
+        manufacturing company.??I feel your pain, I really do.
       </p>
 
       <div>

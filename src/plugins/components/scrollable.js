@@ -1,7 +1,7 @@
- 
+
 import plugin from 'tailwindcss/plugin';
 
-export default plugin(({addComponents, theme}) => {
+export default plugin(({ addComponents, theme }) => {
   addComponents({
     '.scrollable, .scrollable-y, .scrollable-x, .scrollable-hover, .scrollable-y-hover, .scrollable-x-hover, .scrollable-auto, .scrollable-y-auto, .scrollable-x-auto': {
       'scrollbar-width': 'thin',
@@ -15,7 +15,7 @@ export default plugin(({addComponents, theme}) => {
         'background-color': 'transparent'
       },
       '&::-webkit-scrollbar-thumb': {
-        'border-radius': '1.25rem',        
+        'border-radius': '1.25rem',
       },
       '&::-webkit-scrollbar-corner': {
         'background-color': 'transparent'
@@ -40,9 +40,9 @@ export default plugin(({addComponents, theme}) => {
       'overflow-x': 'auto',
     },
     '.scrollable, .scrollable-y, .scrollable-x, .scrollable-auto, .scrollable-y-auto, .scrollable-x-auto, .scrollable-hover:hover, .scrollable-y-hover:hover, .scrollable-x-hover:hover': {
-      'scrollbar-color': 'var(--tw-scrollbar-thumb-color, var(--tw-gray-200)) transparent',      
+      'scrollbar-color': 'var(--tw-scrollbar-thumb-color, var(--tw-gray-200)) transparent',
       '&::-webkit-scrollbar-thumb': {
-        'background-color': 'var(--tw-scrollbar-thumb-color, var(--tw-gray-200))', 
+        'background-color': 'var(--tw-scrollbar-thumb-color, var(--tw-gray-200))',
       },
       '&::-webkit-scrollbar-corner': {
         'background-color': 'transparent'

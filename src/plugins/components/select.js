@@ -80,7 +80,7 @@ export default plugin(({ addComponents, theme }) => {
     },
     '[dir=rtl]': {
       '.select': {
-       'background-position': `left 0.675rem center`, // Logical property for RTL/LTR
+        'background-position': `left 0.675rem center`, // Logical property for RTL/LTR
       }
     }
   });

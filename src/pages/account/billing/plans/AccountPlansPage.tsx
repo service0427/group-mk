@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Container } from '@/components/container';
-import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/toolbar';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/stand/toolbar';
 import { Link } from 'react-router-dom';
 import { PageNavbar } from '@/pages/account';
 import { AccountPlansContent } from '.';
@@ -13,7 +13,7 @@ const AccountPlansPage = () => {
     <Fragment>
       <PageNavbar />
 
-      {currentLayout?.name === 'demo1-layout' && (
+      {currentLayout?.name === 'stand-layout' && (
         <Container>
           <Toolbar>
             <ToolbarHeading title="Plans" description="Central Hub for Personal Customization" />

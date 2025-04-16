@@ -1,8 +1,8 @@
 import { TMenuConfig, IMenuItemConfig, MenuSub } from '@/components/menu';
-import { MegaMenuSubDefault, MegaMenuSubHighlighted, MegaMenuFooter } from './components';
+import { MegaMenuSubDefault, MegaMenuSubHighlighted } from './components';
 
 const MegaMenuSubNetwork = (items: TMenuConfig) => {
-  const networkItem = items[3];
+  const networkItem = items[5];
   const networkItemGeneral = networkItem.children ? networkItem.children[0] : {};
   const networkItemOthers = networkItem.children ? networkItem.children[1] : {};
 
@@ -39,7 +39,6 @@ const MegaMenuSubNetwork = (items: TMenuConfig) => {
           </div>
         </div>
       </div>
-      <MegaMenuFooter />
     </MenuSub>
   );
 };

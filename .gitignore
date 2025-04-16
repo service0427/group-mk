@@ -1,4 +1,4 @@
-# --- logs ---
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -7,23 +7,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# --- dependencies ---
 node_modules
-
-# --- build ---
 dist
 dist-ssr
 *.local
-*.tsbuildinfo
-build
-.cache/
 
-# --- dotenv files ---
-.env
-.env.*
-!.env.example
-
-# --- IDE / OS settings ---
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -33,19 +22,3 @@ build
 *.njsproj
 *.sln
 *.sw?
-
-# --- testing ---
-coverage/
-__snapshots__/
-*.test.ts
-*.spec.ts
-
-# --- package manager locks (선택적 무시) ---
-yarn.lock
-# package-lock.json
-# pnpm-lock.yaml
-
-# --- Cursor AI (참고용, 추후 활성화 가능) ---
-# .cursor/
-# .cursor-data/
-# cursor.json

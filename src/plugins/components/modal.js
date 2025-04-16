@@ -3,7 +3,7 @@ import plugin from 'tailwindcss/plugin';
 export default plugin(({ addComponents, theme }) => {
   // Base
   addComponents({
-    '.modal': {				
+    '.modal': {
       'width': '100%',
       'display': 'none',
       'opacity': '0',
@@ -17,13 +17,13 @@ export default plugin(({ addComponents, theme }) => {
         'transition': 'opacity 300ms ease',
       },
     },
-    '.modal-content': {		
+    '.modal-content': {
       'position': 'relative',
       'margin-left': 'auto',
       'margin-right': 'auto',
       'border-radius': theme('custom.components.common.borderRadius.modal'),
-      'box-shadow': 'var(--tw-modal-box-shadow)', 
-      'background-color': 'var(--tw-modal-background-color)', 
+      'box-shadow': 'var(--tw-modal-box-shadow)',
+      'background-color': 'var(--tw-modal-background-color)',
       'display': 'flex',
       'flex-direction': 'column',
       'outline': 'none',

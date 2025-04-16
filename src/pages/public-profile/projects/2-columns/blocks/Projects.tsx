@@ -23,7 +23,7 @@ interface IProjectsItem {
   };
 }
 
-interface IProjectsItems extends Array<IProjectsItem> {}
+interface IProjectsItems extends Array<IProjectsItem> { }
 
 const Projects = () => {
   const [activeView, setActiveView] = useState('cards');

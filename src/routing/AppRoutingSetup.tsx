@@ -95,7 +95,8 @@ import {
 import {
   UsersPage,
   Campaigns,
-  Slots
+  Slots,
+  Site
 } from '@/pages/admin';
 
 import { AuthPage } from '@/auth';
@@ -255,6 +256,10 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 슬롯 관리 라우트 */}
           <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
           <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
+
+          {/* 사이트 관리 라우트 */}
+          <Route path="/admin/site/notice" element={<Site.NoticePage />} />
+          <Route path="/admin/site/faq" element={<Site.FAQPage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

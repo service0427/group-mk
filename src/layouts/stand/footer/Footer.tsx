@@ -20,9 +20,6 @@ const Footer = () => {
             <a href={generalSettings.faqLink} className="hover:text-primary">
               FAQ
             </a>
-            <a href={generalSettings.supportLink} className="hover:text-primary">
-              Support
-            </a>
           </nav>
         </div>
       </Container>

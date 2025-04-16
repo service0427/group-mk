@@ -237,6 +237,22 @@ export const MENU_SIDEBAR: TMenuConfig = [
     heading: '관리자 메뉴'
   },
   {
+    title: '사이트 관리',
+    icon: 'home-2',
+    children: [
+      { 
+        title: '공지사항 관리',
+        icon: 'notification-1',
+        path: '/admin/site/notice'
+      },
+      { 
+        title: 'FAQ 관리',
+        icon: 'information',
+        path: '/admin/site/faq'
+      }
+    ]
+  },
+  {
     title: '사용자 관리',
     icon: 'users',
     children: [
@@ -780,6 +796,21 @@ export const MENU_MEGA: TMenuConfig = [
   {
     title: '관리자 메뉴',
     children: [
+      {
+        heading: '사이트 관리',
+        children: [
+          { 
+            title: '공지사항 관리',
+            icon: 'notification-1',
+            path: '/admin/site/notice'
+          },
+          { 
+            title: 'FAQ 관리',
+            icon: 'information',
+            path: '/admin/site/faq'
+          }
+        ]
+      },
       {
         heading: '사용자 관리',
         children: [

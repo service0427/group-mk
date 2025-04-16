@@ -1,0 +1,43 @@
+tailwind.config.js에 추가해야 할 내용:
+
+1. safelist에 'stand' 추가:
+safelist: [
+  'demo1',
+  'stand',
+  'hidden',
+  ...
+]
+
+2. layouts 설정에 stand 추가:
+layouts: {
+  demo1: {
+    sidebar: {
+      width: {
+        desktop: '280px',
+        desktopCollapse: '80px',
+        mobile: '280px'
+      }
+    },
+    header: {
+      height: {
+        desktop: '70px',
+        mobile: '60px'
+      }
+    }
+  },
+  stand: {
+    sidebar: {
+      width: {
+        desktop: '280px',
+        desktopCollapse: '80px',
+        mobile: '280px'
+      }
+    },
+    header: {
+      height: {
+        desktop: '70px',
+        mobile: '60px'
+      }
+    }
+  }
+}

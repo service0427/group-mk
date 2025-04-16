@@ -48,7 +48,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         ]
       },
       {
-        title: 'NP 위치저장',
+        title: 'NP 저장하기',
         children: [
           {
             title: '캠페인 소개',
@@ -252,32 +252,42 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'setting-3',
     children: [
       { 
-        title: 'NAVER 쇼핑',
+        title: 'NS 트래픽',
         icon: 'shop',
         path: '/admin/campaigns/naver-shopping'
       },
       { 
-        title: 'NAVER 플레이스',
+        title: 'NP 트래픽',
         icon: 'geolocation',
-        path: '/admin/campaigns/naver-place'
+        path: '/admin/campaigns/naver-place-traffic'
       },
       { 
-        title: 'NAVER 자동완성',
+        title: 'NP 저장하기',
+        icon: 'geolocation',
+        path: '/admin/campaigns/naver-place-save'
+      },
+      { 
+        title: 'NP 블로그공유',
+        icon: 'geolocation',
+        path: '/admin/campaigns/naver-place-share'
+      },
+      { 
+        title: 'N 자동완성',
         icon: 'filter-search',
         path: '/admin/campaigns/naver-auto'
       },
       { 
-        title: 'NAVER 트래픽',
+        title: 'N 트래픽',
         icon: 'chart-line',
         path: '/admin/campaigns/naver-traffic'
       },
       { 
-        title: 'COUPANG 쇼핑',
+        title: 'CP 트래픽',
         icon: 'handcart',
         path: '/admin/campaigns/coupang'
       },
       { 
-        title: '오늘의집',
+        title: 'OH 트래픽',
         icon: 'home-3',
         path: '/admin/campaigns/ohouse'
       }
@@ -324,8 +334,37 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: 'NFT',
             path: '/public-profile/profiles/nft'
+          },
+          {
+            title: 'Blogger',
+            path: '/public-profile/profiles/blogger'
+          },
+          {
+            title: 'CRM',
+            path: '/public-profile/profiles/crm'
           }
         ]
+      },
+      {
+        title: 'Projects',
+        children: [
+          {
+            title: '3 Columns',
+            path: '/public-profile/projects/3-columns'
+          },
+          {
+            title: '2 Columns',
+            path: '/public-profile/projects/2-columns'
+          }
+        ]
+      },
+      {
+        title: 'Works',
+        path: '/public-profile/works'
+      },
+      {
+        title: 'Teams',
+        path: '/public-profile/teams'
       },
       {
         title: 'Network',
@@ -355,8 +394,94 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: 'Company Profile',
             path: '/account/home/company-profile'
+          },
+          {
+            title: 'Settings - With Sidebar',
+            path: '/account/home/settings-sidebar'
+          },
+          {
+            title: 'Settings - Enterprise',
+            path: '/account/home/settings-enterprise'
+          },
+          {
+            title: 'Settings - Plain',
+            path: '/account/home/settings-plain'
+          },
+          {
+            title: 'Settings - Modal',
+            path: '/account/home/settings-modal'
           }
         ]
+      },
+      {
+        title: 'Billing',
+        children: [
+          {
+            title: 'Billing - Basic',
+            path: '/account/billing/basic'
+          },
+          {
+            title: 'Billing - Enterprise',
+            path: '/account/billing/enterprise'
+          },
+          {
+            title: 'Plans',
+            path: '/account/billing/plans'
+          },
+          {
+            title: 'Billing History',
+            path: '/account/billing/history'
+          }
+        ]
+      },
+      {
+        title: 'Security',
+        children: [
+          {
+            title: 'Get Started',
+            path: '/account/security/get-started'
+          },
+          {
+            title: 'Security Overview',
+            path: '/account/security/overview'
+          },
+          {
+            title: 'Allowed IP Addresses',
+            path: '/account/security/allowed-ip-addresses'
+          },
+          {
+            title: 'Privacy Settings',
+            path: '/account/security/privacy-settings'
+          },
+          {
+            title: 'Device Management',
+            path: '/account/security/device-management'
+          },
+          {
+            title: 'Backup & Recovery',
+            path: '/account/security/backup-and-recovery'
+          },
+          {
+            title: 'Current Sessions',
+            path: '/account/security/current-sessions'
+          },
+          {
+            title: 'Security Log',
+            path: '/account/security/security-log'
+          }
+        ]
+      },
+      {
+        title: 'Integrations',
+        path: '/account/integrations'
+      },
+      {
+        title: 'Notifications',
+        path: '/account/notifications'
+      },
+      {
+        title: 'API Keys',
+        path: '/account/api-keys'
       }
     ]
   },
@@ -367,6 +492,60 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: 'Get Started',
         path: '/network/get-started'
+      },
+      {
+        title: 'User Cards',
+        children: [
+          {
+            title: 'Mini Cards',
+            path: '/network/user-cards/mini-cards'
+          },
+          {
+            title: 'Team Crew',
+            path: '/network/user-cards/team-crew'
+          },
+          {
+            title: 'Author',
+            path: '/network/user-cards/author'
+          },
+          {
+            title: 'NFT',
+            path: '/network/user-cards/nft'
+          },
+          {
+            title: 'Social',
+            path: '/network/user-cards/social'
+          }
+        ]
+      },
+      {
+        title: 'User Table',
+        children: [
+          {
+            title: 'Team Crew',
+            path: '/network/user-table/team-crew'
+          },
+          {
+            title: 'App Roster',
+            path: '/network/user-table/app-roster'
+          },
+          {
+            title: 'Market Authors',
+            path: '/network/user-table/market-authors'
+          },
+          {
+            title: 'SaaS Users',
+            path: '/network/user-table/saas-users'
+          },
+          {
+            title: 'Store Clients',
+            path: '/network/user-table/store-clients'
+          },
+          {
+            title: 'Visitors',
+            path: '/network/user-table/visitors'
+          }
+        ]
       }
     ]
   },
@@ -375,8 +554,104 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'security-user',
     children: [
       {
-        title: 'Get Started',
-        path: '/authentication/get-started'
+        title: 'Classic',
+        children: [
+          {
+            title: 'Sign In',
+            path: '/auth/classic/login'
+          },
+          {
+            title: 'Sign Up',
+            path: '/auth/classic/signup'
+          },
+          {
+            title: '2FA',
+            path: '/auth/classic/2fa'
+          },
+          {
+            title: 'Check Email',
+            path: '/auth/classic/check-email'
+          },
+          {
+            title: 'Reset Password',
+            children: [
+              {
+                title: 'Enter Email',
+                path: '/auth/classic/reset-password/enter-email'
+              },
+              {
+                title: 'Check Email',
+                path: '/auth/classic/reset-password/check-email'
+              },
+              {
+                title: 'Change Password',
+                path: '/auth/classic/reset-password/change'
+              },
+              {
+                title: 'Password Changed',
+                path: '/auth/classic/reset-password/changed'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Branded',
+        children: [
+          {
+            title: 'Sign In',
+            path: '/auth/login'
+          },
+          {
+            title: 'Sign Up',
+            path: '/auth/signup'
+          },
+          {
+            title: '2FA',
+            path: '/auth/2fa'
+          },
+          {
+            title: 'Check Email',
+            path: '/auth/check-email'
+          },
+          {
+            title: 'Reset Password',
+            children: [
+              {
+                title: 'Enter Email',
+                path: '/auth/reset-password/enter-email'
+              },
+              {
+                title: 'Check Email',
+                path: '/auth/reset-password/check-email'
+              },
+              {
+                title: 'Change Password',
+                path: '/auth/reset-password/change'
+              },
+              {
+                title: 'Password Changed',
+                path: '/auth/reset-password/changed'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Welcome Message',
+        path: '/auth/welcome-message'
+      },
+      {
+        title: 'Account Deactivated',
+        path: '/auth/account-deactivated'
+      },
+      {
+        title: 'Error 404',
+        path: '/error/404'
+      },
+      {
+        title: 'Error 500',
+        path: '/error/500'
       }
     ]
   }
@@ -578,9 +853,7 @@ export const MENU_MEGA: TMenuConfig = [
           { title: 'API Keys', icon: 'key', path: '/account/api-keys' },
           { title: 'Appearance', icon: 'eye', path: '/account/appearance' },
           { title: 'Invite a Friend', icon: 'user-tick', path: '/account/invite-a-friend' },
-          { title: 'Activity', icon: 'support', path: '/account/activity' },
-          { title: 'Brand', icon: 'verify', disabled: true },
-          { title: 'Get Paid', icon: 'euro', disabled: true }
+          { title: 'Activity', icon: 'support', path: '/account/activity' }
         ]
       },
       {
@@ -604,10 +877,7 @@ export const MENU_MEGA: TMenuConfig = [
               { title: 'Basic Billing', path: '/account/billing/basic' },
               { title: 'Enterprise', path: '/account/billing/enterprise' },
               { title: 'Plans', path: '/account/billing/plans' },
-              { title: 'Billing History', path: '/account/billing/history' },
-              { title: 'Tax Info', disabled: true },
-              { title: 'Invoices', disabled: true },
-              { title: 'Gateaways', disabled: true }
+              { title: 'Billing History', path: '/account/billing/history' }
             ]
           },
           {
@@ -622,31 +892,6 @@ export const MENU_MEGA: TMenuConfig = [
               { title: 'Current Sessions', path: '/account/security/current-sessions' },
               { title: 'Security Log', path: '/account/security/security-log' }
             ]
-          },
-          {
-            title: 'Members & Roles',
-            children: [
-              { title: 'Teams Starter', path: '/account/members/team-starter' },
-              { title: 'Teams', path: '/account/members/teams' },
-              { title: 'Team Info', path: '/account/members/team-info' },
-              { title: 'Members Starter', path: '/account/members/members-starter' },
-              { title: 'Team Members', path: '/account/members/team-members' },
-              { title: 'Import Members', path: '/account/members/import-members' },
-              { title: 'Roles', path: '/account/members/roles' },
-              { title: 'Permissions - Toggler', path: '/account/members/permissions-toggle' },
-              { title: 'Permissions - Check', path: '/account/members/permissions-check' }
-            ]
-          },
-          {
-            title: 'Other Pages',
-            children: [
-              { title: 'Integrations', path: '/account/integrations' },
-              { title: 'Notifications', path: '/account/notifications' },
-              { title: 'API Keys', path: '/account/api-keys' },
-              { title: 'Appearance', path: '/account/appearance' },
-              { title: 'Invite a Friend', path: '/account/invite-a-friend' },
-              { title: 'Activity', path: '/account/activity' }
-            ]
           }
         ]
       }
@@ -658,10 +903,7 @@ export const MENU_MEGA: TMenuConfig = [
       {
         title: 'General Pages',
         children: [
-          { title: 'Get Started', icon: 'flag', path: '/network/get-started' },
-          { title: 'Colleagues', icon: 'users', path: '#', disabled: true },
-          { title: 'Donators', icon: 'heart', path: '#', disabled: true },
-          { title: 'Leads', icon: 'abstract-21', path: '#', disabled: true }
+          { title: 'Get Started', icon: 'flag', path: '/network/get-started' }
         ]
       },
       {
@@ -674,8 +916,7 @@ export const MENU_MEGA: TMenuConfig = [
               { title: 'Team Members', path: '/network/user-cards/team-crew' },
               { title: 'Authors', path: '/network/user-cards/author' },
               { title: 'NFT Users', path: '/network/user-cards/nft' },
-              { title: 'Social Users', path: '/network/user-cards/social' },
-              { title: 'Gamers', path: '#', disabled: true }
+              { title: 'Social Users', path: '/network/user-cards/social' }
             ]
           },
           {
@@ -706,28 +947,7 @@ export const MENU_MEGA: TMenuConfig = [
               { title: 'Sign In', path: '/auth/classic/login' },
               { title: 'Sign Up', path: '/auth/classic/signup' },
               { title: '2FA', path: '/auth/classic/2fa' },
-              { title: 'Check Email', path: '/auth/classic/check-email' },
-              {
-                title: 'Reset Password',
-                children: [
-                  {
-                    title: 'Enter Email',
-                    path: '/auth/classic/reset-password/enter-email'
-                  },
-                  {
-                    title: 'Check Email',
-                    path: '/auth/classic/reset-password/check-email'
-                  },
-                  {
-                    title: 'Change Password',
-                    path: '/auth/classic/reset-password/change'
-                  },
-                  {
-                    title: 'Password is Changed',
-                    path: '/auth/classic/reset-password/changed'
-                  }
-                ]
-              }
+              { title: 'Check Email', path: '/auth/classic/check-email' }
             ]
           },
           {
@@ -736,28 +956,7 @@ export const MENU_MEGA: TMenuConfig = [
               { title: 'Sign In', path: '/auth/login' },
               { title: 'Sign Up', path: '/auth/signup' },
               { title: '2FA', path: '/auth/2fa' },
-              { title: 'Check Email', path: '/auth/check-email' },
-              {
-                title: 'Reset Password',
-                children: [
-                  {
-                    title: 'Enter Email',
-                    path: '/auth/reset-password/enter-email'
-                  },
-                  {
-                    title: 'Check Email',
-                    path: '/auth/reset-password/check-email'
-                  },
-                  {
-                    title: 'Change Password',
-                    path: '/auth/reset-password/change'
-                  },
-                  {
-                    title: 'Password is Changed',
-                    path: '/auth/reset-password/changed'
-                  }
-                ]
-              }
+              { title: 'Check Email', path: '/auth/check-email' }
             ]
           }
         ]
@@ -766,11 +965,7 @@ export const MENU_MEGA: TMenuConfig = [
         title: 'Other Pages',
         children: [
           { title: 'Welcome Message', icon: 'like-2', path: '/auth/welcome-message' },
-          {
-            title: 'Account Deactivated',
-            icon: 'shield-cross',
-            path: '/auth/account-deactivated'
-          },
+          { title: 'Account Deactivated', icon: 'shield-cross', path: '/auth/account-deactivated' },
           { title: 'Error 404', icon: 'message-question', path: '/error/404' },
           { title: 'Error 500', icon: 'information', path: '/error/500' }
         ]
@@ -786,45 +981,9 @@ export const MENU_MEGA: TMenuConfig = [
         path: 'https://keenthemes.com/metronic/tailwind/docs/getting-started/installation'
       },
       {
-        title: 'Support Forum',
-        icon: 'information',
-        children: [
-          {
-            title: 'All Questions',
-            icon: 'questionnaire-tablet',
-            path: 'https://devs.keenthemes.com'
-          },
-          {
-            title: 'Popular Questions',
-            icon: 'star',
-            path: 'https://devs.keenthemes.com/popular'
-          },
-          {
-            title: 'Ask Question',
-            icon: 'message-question',
-            path: 'https://devs.keenthemes.com/question/create'
-          }
-        ]
-      },
-      {
-        title: 'Licenses & FAQ',
-        tooltip: {
-          title: 'Learn more about licenses',
-          placement: 'right'
-        },
-        icon: 'subtitle',
-        path: 'https://keenthemes.com/metronic/tailwind/docs/getting-started/license'
-      },
-      {
         title: 'Documentation',
         icon: 'questionnaire-tablet',
         path: 'https://keenthemes.com/metronic/tailwind/docs'
-      },
-      { separator: true },
-      {
-        title: 'Contact Us',
-        icon: 'share',
-        path: 'https://keenthemes.com/contact'
       }
     ]
   }

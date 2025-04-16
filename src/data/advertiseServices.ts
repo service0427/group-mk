@@ -1,4 +1,4 @@
-// 광고 서비스 데이터 정의
+// 광고 서비스 데이터의
 export interface ServiceData {
   name: string;
   description: string;
@@ -38,21 +38,21 @@ export const serviceData: Record<string, any> = {
   coupang: {
     traffic: {
       name: "쿠팡 트래픽",
-      description: "쿠팡 마케팅을 통해 웹사이트 트래픽을 증가시키세요.",
+      description: "쿠팡 마켓을 통해 사이트 트래픽을 증가시키세요.",
       features: [
         {
           title: "고객 타겟팅",
-          description: "쿠팡 사용자의 쇼핑 행동 데이터를 활용한 정밀 타겟팅",
+          description: "쿠팡 사용자의 쇼핑 활동 패턴을 분석해 타겟팅",
           icon: "target"
         },
         {
-          title: "상품 연계 광고",
-          description: "구매 가능성이 높은 관련 상품과 함께 노출",
+          title: "제품 연계 광고",
+          description: "구매 가능성이 높은 관련제품에 노출",
           icon: "link"
         },
         {
           title: "실시간 리포트",
-          description: "광고 성과를 실시간으로 확인하고 최적화",
+          description: "광고 효과를 실시간으로 확인하고 최적화",
           icon: "chart"
         }
       ],
@@ -72,11 +72,11 @@ export const serviceData: Record<string, any> = {
   naver: {
     auto: {
       name: "네이버 자동완성",
-      description: "네이버 검색창 자동완성에 키워드를 노출시키는 마케팅 솔루션",
+      description: "네이버 검색창 자동완성에 파워링크 노출시키는 마케팅 솔루션",
       features: [
         {
-          title: "키워드 노출",
-          description: "관련 검색어 입력 시 자동완성에 브랜드/상품명 노출",
+          title: "파워풀 노출",
+          description: "관련 검색어 입력 시 자동완성에 브랜드나 제품이 노출",
           icon: "key"
         },
         {
@@ -109,7 +109,7 @@ export const serviceData: Record<string, any> = {
         features: [
           {
             title: "입소문 마케팅",
-            description: "사용자간 공유를 통한 자연스러운 홍보 효과",
+            description: "사용자간 공유를 통한 자연스러운 정보 확산",
             icon: "share"
           },
           {
@@ -121,16 +121,16 @@ export const serviceData: Record<string, any> = {
       },
       traffic: {
         name: "네이버 플레이스 트래픽",
-        description: "네이버 플레이스를 통한 웹사이트 트래픽 증대 마케팅",
+        description: "네이버 플레이스를 통한 사이트 트래픽 증가 마케팅",
         features: [
           {
-            title: "웹사이트 연결",
-            description: "네이버 플레이스 정보에서 웹사이트로 직접 연결",
+            title: "사이트 연결",
+            description: "네이버 플레이스 정보에서 사이트로 직접 연결",
             icon: "external-link"
           },
           {
             title: "방문 전환",
-            description: "매장 정보 확인 후 웹사이트 방문으로 전환",
+            description: "매장 정보 확인 후 사이트 방문으로 전환",
             icon: "refresh-cw"
           }
         ]
@@ -139,11 +139,11 @@ export const serviceData: Record<string, any> = {
     shopping: {
       traffic: {
         name: "네이버 쇼핑 트래픽",
-        description: "네이버 쇼핑을 통한 웹사이트 트래픽 증대 마케팅",
+        description: "네이버 쇼핑을 통한 사이트 트래픽 증가 마케팅",
         features: [
           {
-            title: "상품 노출 최적화",
-            description: "네이버 쇼핑에서 상품 노출을 극대화하여 트래픽 유도",
+            title: "제품 노출 최적화",
+            description: "네이버 쇼핑에서 제품 노출을 극대화하여 트래픽 유도",
             icon: "maximize"
           },
           {
@@ -156,16 +156,16 @@ export const serviceData: Record<string, any> = {
     },
     traffic: {
       name: "네이버 트래픽",
-      description: "네이버 검색 및 배너를 통한 웹사이트 트래픽 증대 마케팅",
+      description: "네이버 검색과 배너를 통한 사이트 트래픽 증가 마케팅",
       features: [
         {
           title: "키워드 광고",
-          description: "관련 키워드 검색 시 상위 노출 광고",
+          description: "관련 키워드 검색시 상위 노출 광고",
           icon: "type"
         },
         {
           title: "배너 광고",
-          description: "네이버 서비스 내 배너를 통한 노출",
+          description: "네이버 서비스에 배너를 통한 노출",
           icon: "image"
         }
       ]
@@ -174,16 +174,16 @@ export const serviceData: Record<string, any> = {
   ohouse: {
     traffic: {
       name: "오늘의집 트래픽",
-      description: "오늘의집을 통한 웹사이트 트래픽 증대 마케팅",
+      description: "오늘의집을 통한 사이트 트래픽 증가 마케팅",
       features: [
         {
           title: "인테리어 콘텐츠 연계",
-          description: "인테리어 컨텐츠와 연계한 자연스러운 제품 노출",
+          description: "인테리어 컨텐츠와 연계해 자연스럽게 제품 노출",
           icon: "home"
         },
         {
-          title: "타겟 고객 접근",
-          description: "인테리어와 홈퍼니싱에 관심 있는 고객층에게 직접 접근",
+          title: "특정 고객 접근",
+          description: "인테리어와 쇼퍼홀릭에 관심있는 고객층에게 직접 접근",
           icon: "users"
         }
       ]
@@ -203,12 +203,13 @@ export const getServiceData = (
     }
     return serviceData[platform][type];
   } catch (error) {
+    console.log( error );
     console.error(`Service data not found for ${platform}/${subservice}/${type}`);
     return null;
   }
 };
 
-// 캠페인 데이터 (하드코딩된 예시)
+// 캠페인 데이터(하드코딩된 예시)
 export const campaignData: Record<string, Array<any>> = {
   "coupang-traffic": [
     {
@@ -290,7 +291,7 @@ export const campaignData: Record<string, Array<any>> = {
   "naver-place-traffic": [
     {
       id: "camp-006",
-      name: "네이버 플레이스 웹사이트 연결 캠페인",
+      name: "네이버 플레이스 사이트 연결 캠페인",
       status: "active",
       budget: 250000,
       spent: 75000,
@@ -372,6 +373,7 @@ export const getCampaignData = (
       campaigns: campaignData[key]
     };
   } catch (error) {
+    console.log( error )
     console.error(`Campaign data not found for ${platform}/${subservice}/${type}`);
     return null;
   }

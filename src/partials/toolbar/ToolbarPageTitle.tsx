@@ -11,7 +11,7 @@ const ToolbarPageTitle = ({ text, customTitle }: IToolbarPageTitleProps) => {
   const menuConfig = getMenuConfig('primary');
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
 
-  // 우선순위: 1. text (명시적 props), 2. customTitle (추가 props), 3. menuItem?.title (자동)
+  // ?�선?�위: 1. text (명시??props), 2. customTitle (추�? props), 3. menuItem?.title (?�동)
   const title = text ?? customTitle ?? menuItem?.title;
 
   return (

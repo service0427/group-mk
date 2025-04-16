@@ -41,7 +41,7 @@ const ApiCredentials = () => {
 
       <div className="card-footer justify-center">
         <Link to="/account/api-keys" className="btn btn-link">
-          Check APIâ€™s
+          Check API?™s
         </Link>
       </div>
     </div>

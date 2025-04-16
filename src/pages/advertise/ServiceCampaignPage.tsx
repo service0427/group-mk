@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CampaignTemplate } from './templates';
+import { CampaignTemplate } from './components';
 import { getCampaignData, CampaignData } from '@/data/advertiseServices';
 
 const ServiceCampaignPage: React.FC = () => {
@@ -23,17 +23,17 @@ const ServiceCampaignPage: React.FC = () => {
 
     try {
       const data = getCampaignData(platform, type, subservice);
-      
+
       if (!data) {
         setError('캠페인 데이터를 찾을 수 없습니다.');
         setLoading(false);
         return;
       }
-      
+
       setCampaignData(data);
       setLoading(false);
     } catch (err) {
-      // TODO: 에러일 경우 파라미터를 입력하여 변경할 것
+      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것      
       console.error('캠페인 정보 로드 오류:', err);
       setError('캠페인 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);

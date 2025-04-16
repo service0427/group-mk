@@ -74,7 +74,7 @@ const CardNFT2Row = ({ avatar, name, email, info, statistics }: INFT2Props) => {
           </div>
 
           <Link to="/public-profile/profiles/nft" className="btn btn-link">
-            View NFTâ€™s
+            View NFT?™s
           </Link>
 
           <KeenIcon icon="setting-2" className="text-gray-600 text-lg" />

@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { DefaultPage, Demo1DarkSidebarPage } from '@/pages/dashboards';
+import { DefaultPage, StandDarkSidebarPage } from '@/pages/dashboards';
 import {
   ProfileActivityPage,
   ProfileBloggerPage,
@@ -100,7 +100,7 @@ import {
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
-import { Demo1Layout } from '@/layouts/demo1';
+import { StandLayout } from '@/layouts/stand';
 import { ErrorsRouting } from '@/errors';
 import {
   AuthenticationWelcomeMessagePage,
@@ -112,9 +112,9 @@ const AppRoutingSetup = (): ReactElement => {
   return (
     <Routes>
       <Route element={<RequireAuth />}>
-        <Route element={<Demo1Layout />}>
+        <Route element={<StandLayout />}>
           <Route path="/" element={<DefaultPage />} />
-          <Route path="/dark-sidebar" element={<Demo1DarkSidebarPage />} />
+          <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
           <Route path="/public-profile/profiles/default" element={<ProfileDefaultPage />} />
           <Route path="/public-profile/profiles/creator" element={<ProfileCreatorPage />} />
           <Route path="/public-profile/profiles/company" element={<ProfileCompanyPage />} />
@@ -244,7 +244,9 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 캠페인 관리 라우트 */}
           <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
-          <Route path="/admin/campaigns/naver-place" element={<Campaigns.NaverPlacePage />} />
+          <Route path="/admin/campaigns/naver-place-traffic" element={<Campaigns.NaverPlaceTrafficPage />} />
+          <Route path="/admin/campaigns/naver-place-save" element={<Campaigns.NaverPlaceSavePage />} />
+          <Route path="/admin/campaigns/naver-place-share" element={<Campaigns.NaverPlaceSharePage />} />
           <Route path="/admin/campaigns/naver-auto" element={<Campaigns.NaverAutoPage />} />
           <Route path="/admin/campaigns/naver-traffic" element={<Campaigns.NaverTrafficPage />} />
           <Route path="/admin/campaigns/coupang" element={<Campaigns.CoupangPage />} />

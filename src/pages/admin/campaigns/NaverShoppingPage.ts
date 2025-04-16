@@ -1,10 +1,11 @@
 import React from 'react';
-import BasicTemplate from '../templates/BasicTemplate';
+import { CampaignTemplate } from './components';
 
 const NaverShoppingPage = () => {
-  return React.createElement(BasicTemplate, {
+  return React.createElement(CampaignTemplate, {
     title: "NAVER 쇼핑 관리",
-    description: "관리자 메뉴 > 캠페인 관리 > NAVER 쇼핑"
+    description: "관리자 메뉴 > 캠페인 관리 > NAVER 쇼핑",
+    serviceCode: "NS 트래픽"
   });
 };
 

@@ -104,7 +104,7 @@ const Tournaments = () => {
   return (
     <div className="card">
       <div className="card-header">
-        <h3 className="card-title">Floydâ€™s Tournaments</h3>
+        <h3 className="card-title">Floyd?™s Tournaments</h3>
 
         <div className="justify-center">
           <a href="#" className="btn btn-link">

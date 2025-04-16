@@ -1,10 +1,11 @@
 import React from 'react';
-import BasicTemplate from '../templates/BasicTemplate';
+import { CampaignTemplate } from './components';
 
 const OhousePage = () => {
-  return React.createElement(BasicTemplate, {
+  return React.createElement(CampaignTemplate, {
     title: "오늘의집 관리",
-    description: "관리자 메뉴 > 캠페인 관리 > 오늘의집"
+    description: "관리자 메뉴 > 캠페인 관리 > 오늘의집",
+    serviceCode: "OH 트래픽"
   });
 };
 

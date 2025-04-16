@@ -20,7 +20,7 @@ const Post1 = () => {
       avatar: '300-3.png',
       author: 'Mr. Anderson',
       date: '1 Day ago',
-      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. Iâ€™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
+      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I?™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
     },
     {
       avatar: '300-15.png',
@@ -39,10 +39,10 @@ const Post1 = () => {
       />
       <div className="grid gap-5 mb-5 px-7.5">
         <p className="text-sm text-gray-800 leading-5.5">
-          Now that Iâ€™m done thoroughly mangling that vague metaphor, letâ€™s get down to business. You
-          know you need to start blogging to grow your business, but you donâ€™t know how. In this
-          post, Iâ€™ll show you how to write a great blog post in five simple steps that people will
-          actually want to read. Ready? Letâ€™s get started.
+          Now that I?™m done thoroughly mangling that vague metaphor, let?™s get down to business. You
+          know you need to start blogging to grow your business, but you don?™t know how. In this
+          post, I?™ll show you how to write a great blog post in five simple steps that people will
+          actually want to read. Ready? Let?™s get started.
         </p>
 
         <div className="grid grid-cols-2 gap-2.5 xl:gap-7.5">

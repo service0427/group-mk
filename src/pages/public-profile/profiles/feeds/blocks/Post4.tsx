@@ -11,7 +11,7 @@ const Post4 = () => {
       avatar: '300-3.png',
       author: 'Mr. Anderson',
       date: '1 Day ago',
-      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. Iâ€™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
+      text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I?™ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
     },
     {
       avatar: '300-15.png',
@@ -30,9 +30,8 @@ const Post4 = () => {
       />
 
       <p className="text-sm text-gray-800 leading-5.5 mb-5 px-7.5">
-        This doesnâ€™t mean that all bloggers are insincere fakers. On the contrary, many bloggersâ€™
-        natural curiosity is what makes them great at what they do. If you blog for a living, you
-        have to be comfortable jumping from one topic to the next, even if you donâ€™t know anything
+        This doesn?™t mean that all bloggers are insincere fakers. On the contrary, many bloggers??        natural curiosity is what makes them great at what they do. If you blog for a living, you
+        have to be comfortable jumping from one topic to the next, even if you don?™t know anything
         about it.
       </p>
 

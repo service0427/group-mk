@@ -1,5 +1,5 @@
 import React from 'react';
-import BasicTemplate from './templates/BasicTemplate';
+import BasicTemplate from './components/BasicTemplate';
 
 const UsersPage = () => {
   return React.createElement(BasicTemplate, {

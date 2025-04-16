@@ -9,7 +9,7 @@ const PageNavbar = () => {
   const menuConfig = getMenuConfig('primary');
   const accountMenuConfig = menuConfig?.['3']?.children;
 
-  if (accountMenuConfig && currentLayout?.name === 'demo1-layout') {
+  if (accountMenuConfig && currentLayout?.name === 'stand-layout') {
     return (
       <Navbar>
         <Container>

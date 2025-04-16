@@ -15,7 +15,7 @@ const AccountSecurityLogPage = () => {
     <Fragment>
       <PageNavbar />
 
-      {currentLayout?.name === 'demo1-layout' && (
+      {currentLayout?.name === 'stand-layout' && (
         <Container>
           <Toolbar>
             <ToolbarHeading>

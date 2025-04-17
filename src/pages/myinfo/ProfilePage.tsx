@@ -55,35 +55,122 @@ const ProfilePage = () => {
     }
 
     try {
-      // 비밀번호 변경하기 전에 현재 비밀번호로 로그인 시도 해보고 성공하면 맞는 비밀번호
-      // 틀리다면 에러처리
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: currentUser?.email || '',
+      // 현재 비밀번호 확인
+      const verifyPassword = await supabase.rpc('verify_password', {
         password: password,
-      })
-
-      if (error) {
-        alert('현재 비밀번호가 맞지 않습니다.');
+        user_id: currentUser?.id,
+      });
+  
+      if (!verifyPassword.data || verifyPassword.error) {
+        console.error('비밀번호 확인 오류:', verifyPassword.error);
+        alert('현재 비밀번호가 일치하지 않습니다.');
         return;
       }
+      
+      console.log('비밀번호 확인 성공:', verifyPassword.data);
+      
+      // 1. 먼저 users 테이블에 새 비밀번호의 해시값 저장
+      const hashPassword = await supabase.rpc('hash_password', {
+        password: change_password // 새 비밀번호 해싱
+      });
+      
+      if (hashPassword.error) {
+        console.error('비밀번호 해싱 오류:', hashPassword.error);
+        throw new Error(hashPassword.error.message);
+      }
+  
+      // 2. users 테이블 업데이트
+      const {error: updateDBError} = await supabase
+        .from('users')
+        .update({password_hash: hashPassword.data})
+        .eq('id', currentUser?.id);
+  
+      if (updateDBError) {
+        console.error('DB 업데이트 오류:', updateDBError);
+        throw new Error(updateDBError.message);
+      }
+      
+      // 3. 마지막으로 Supabase Auth 업데이트
+      console.log('비밀번호 변경 시도');
+      const { error: updateAuthError } = await supabase.auth.updateUser({
+        password: change_password,
+      });
+      
+      if (updateAuthError) {
+        console.error('Auth 비밀번호 변경 실패:', updateAuthError);
+        throw new Error(updateAuthError.message);
+      }
+      
+      console.log('비밀번호 변경 완료');
+      setMessage('비밀번호가 변경되었습니다.');
+      
+      // 입력 필드 초기화
+      setPassword('');
+      setChangePassword('');
+      
+      // 페이지 새로고침 방지를 위해 딜레이 추가 (선택사항)
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 2000);
+      
+    } catch (error: any) {
+      console.error('비밀번호 변경 중 오류가 발생했습니다.', error);
+      setMessage('비밀번호 변경에 실패했습니다: ' + error.message);
+    }
+/*
+    try {
 
+      const verifyPassword = await supabase.rpc('verify_password', {
+        password: password,
+        user_id: currentUser?.id,
+      });
+
+      if (!verifyPassword.data || verifyPassword.error) {
+        console.error('비밀번호 확인 오류:', verifyPassword.error);
+        alert('현재 비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      
+      console.log('비밀번호 확인 성공:', verifyPassword.data);
+      // 비밀번호 변경 로직
+
+      
       // 비밀번호 변경하기 바뀌었다고 하자
-
+      console.log('비밀번호 변경 시도');
       const { error: updateError } = await supabase.auth.updateUser({
         password: change_password,
       })
+      console.log('비밀번호 변경 종료');
 
-      if (error) {
+      if (updateError) {
         console.error('비밀번호 변경에 실패했습니다.');
         return;
       }
 
+      // public.users 테이블에 비밀번호 sync
+      const hashPassword = await supabase.rpc('hash_password', {
+        password: password
+    });
+    if (hashPassword.error) {
+        throw new Error(hashPassword.error.message);
+    }
 
+    const {error: UpdateError} = await supabase
+        .from('users')
+        .update({encrypted_password: hashPassword.data})
+        .eq('id', currentUser?.id);
+
+    if (UpdateError) {
+        throw new Error(UpdateError.message);
+    }
+
+      console.log('message 설정');
       setMessage('비밀번호가 변경되었습니다.');
     } catch (error) {
       console.error('비밀번호 변경 중 오류가 발생했습니다.', error);
       setMessage('비밀번호 변경에 실패했습니다.');
     }
+*/
   }
 
   return (

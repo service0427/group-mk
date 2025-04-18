@@ -44,8 +44,8 @@ const CardAdCampaign = ({
     campaignName: title,
     description: description,
     logo: logo,
-    efficiency: statistics.find(stat => stat.description.includes('효율'))?.total || '0%',
-    minQuantity: statistics.find(stat => stat.description.includes('수량'))?.total || '0',
+    efficiency: `${statistics.find(stat => stat.description.includes('효율'))?.total || '0'}`,
+    minQuantity: `${statistics.find(stat => stat.description.includes('수량'))?.total || '0'}`,
     deadline: statistics.find(stat => stat.description.includes('시간'))?.total || '-',
     status: {
       label: status.label,
@@ -54,12 +54,20 @@ const CardAdCampaign = ({
   };
 
   const renderItem = (statistic: IAdCampaignItem, index: number) => {
+    // 설명에 따라 적절한 단위 추가
+    let displayValue = statistic.total;
+    if (statistic.description.includes('효율')) {
+      displayValue = `${statistic.total}%`;
+    } else if (statistic.description.includes('로직') || statistic.description.includes('수량')) {
+      displayValue = `${statistic.total}개`;
+    }
+
     return (
       <div
         key={index}
         className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
       >
-        <span className="text-gray-900 text-sm leading-none font-medium">{statistic.total}</span>
+        <span className="text-gray-900 text-sm leading-none font-medium">{displayValue}</span>
         <span className="text-gray-700 text-xs">{statistic.description}</span>
       </div>
     );
@@ -73,7 +81,7 @@ const CardAdCampaign = ({
             <span className={`badge ${status.variant} badge-outline`}>{status.label}</span>
             
             <button 
-              className="btn btn-sm btn-light"
+              className="btn btn-sm btn-info"
               onClick={() => setModalOpen(true)}
             >
               <KeenIcon icon="eye" className="me-1.5" />

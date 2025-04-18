@@ -1,19 +1,19 @@
-import { NaverShoppingPage } from './NaverShoppingPage';
-import { NaverPlaceSavePage } from './NaverPlaceSavePage';
-import { NaverPlaceSharePage } from './NaverPlaceSharePage';
-import { NaverPlaceTrafficPage } from './NaverPlaceTrafficPage';
-import { NaverAutoPage } from './NaverAutoPage';
-import { NaverTrafficPage } from './NaverTrafficPage';
-import { CoupangPage } from './CoupangPage';
-import { OhousePage } from './OhousePage';
+import { CampaignNShopTrafficPage } from './CampaignNShopTrafficPage';
+import { CampaignNPlaceSavePage } from './CampaignNPlaceSavePage';
+import { CampaignNPlaceSharePage } from './CampaignNPlaceSharePage';
+import { CampaignNPlaceTrafficPage } from './CampaignNPlaceTrafficPage';
+import { CampaignNAutoPage } from './CampaignNAutoPage';
+import { CampaignNTrafficPage } from './CampaignNTrafficPage';
+import { CampaignCPTrafficPage } from './CampaignCPTrafficPage';
+import { CampaignOHTrafficPage } from './CampaignOHTrafficPage';
 
 export {
-  NaverShoppingPage,
-  NaverPlaceSavePage,
-  NaverPlaceSharePage,
-  NaverPlaceTrafficPage,
-  NaverAutoPage,
-  NaverTrafficPage,
-  CoupangPage,
-  OhousePage
+  CampaignNShopTrafficPage as NaverShoppingPage,
+  CampaignNPlaceSavePage as NaverPlaceSavePage,
+  CampaignNPlaceSharePage as NaverPlaceSharePage,
+  CampaignNPlaceTrafficPage as NaverPlaceTrafficPage,
+  CampaignNAutoPage as NaverAutoPage,
+  CampaignNTrafficPage as NaverTrafficPage,
+  CampaignCPTrafficPage as CoupangPage,
+  CampaignOHTrafficPage as OhousePage
 };

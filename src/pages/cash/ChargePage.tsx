@@ -1,18 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import BasicTemplate from './components/BasicTemplate';
 import { 
   Card, 
   CardContent
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/supabase'; // 프로젝트 구조에 맞게 경로 수정
+import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 
-
+// 충전 요청 타입 정의
+interface ChargeRequest {
+  id: string;
+  amount: number;
+  status: string;
+  requested_at: string; 
+  free_cash_percentage: number;
+}
 
 const ChargePage: React.FC = () => {
-  // 사용자 정보 가져오기 (프로젝트에 맞는 훅 사용)
+  // AuthContext에서 currentUser 가져오기
+
   const { currentUser } = useAuthContext();
+  console.log(currentUser);
   
   // 상태 관리
   const [customAmount, setCustomAmount] = useState<string>('');
@@ -20,6 +29,8 @@ const ChargePage: React.FC = () => {
   const [koreanAmount, setKoreanAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [recentRequests, setRecentRequests] = useState<ChargeRequest[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
   
   // 금액 선택 핸들러 (누적 방식)
   const handleAmountSelect = (amount: string) => {
@@ -71,6 +82,58 @@ const ChargePage: React.FC = () => {
     return result.trim();
   };
   
+  // 최근 충전 요청 내역 가져오기
+  const fetchRecentRequests = async () => {
+    console.log("fetchRecentRequests 시작, currentUser:", currentUser);
+    if (!currentUser) {
+      console.log("currentUser가 없어서 종료");
+      return;
+    }
+    
+    setIsLoadingHistory(true);
+    console.log("로딩 상태 true로 설정");
+    
+    try {
+      console.log("Supabase 요청 시작, user_id:", currentUser.id);
+      
+      // 타임아웃 설정 (10초)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('요청 시간 초과')), 10000)
+      );
+      
+      const fetchPromise = supabase
+        .from('cash_charge_requests')
+        .select('id, amount, status, requested_at, free_cash_percentage')
+        .eq('user_id', currentUser.id)
+        .order('requested_at', { ascending: false })
+        .limit(5);
+      
+      // Promise.race를 사용하여 타임아웃 처리
+      const result = await Promise.race([
+        fetchPromise,
+        timeoutPromise.then(() => {
+          throw new Error('요청 시간 초과');
+        })
+      ]);
+      
+      const { data, error } = result;
+      console.log("Supabase 응답 받음", { dataLength: data?.length, error });
+      
+      if (error) throw error;
+      
+      setRecentRequests(data || []);
+      console.log("recentRequests 상태 업데이트됨, 개수:", data?.length);
+    } catch (err) {
+      console.error('최근 충전 내역 조회 오류:', err);
+      // 에러 발생 시 빈 배열로 처리하여 로딩 상태 종료
+      setRecentRequests([]);
+    } finally {
+      console.log("finally 블록 실행");
+      setIsLoadingHistory(false);
+      console.log("로딩 상태 false로 설정");
+    }
+  };
+  
   // 금액이 변경될 때마다 한글 단위 표시 업데이트
   useEffect(() => {
     if (customAmount) {
@@ -79,10 +142,52 @@ const ChargePage: React.FC = () => {
       setKoreanAmount('');
     }
   }, [customAmount]);
+
+  // 컴포넌트 마운트 시 최근 충전 내역 가져오기
+  useEffect(() => {
+    // currentUser가 있고, id 속성이 있는지 확인
+    if (currentUser && currentUser.id) {
+      console.log("useEffect에서 fetchRecentRequests 호출, currentUser ID:", currentUser.id);
+      fetchRecentRequests();
+    } else {
+      console.log("useEffect: currentUser 없거나 ID 속성 없음:", currentUser);
+    }
+  }, [currentUser]); // currentUser에 의존
+  
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  
+  // 상태에 따른 배지 색상
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  // 상태 한글 표시
+  const getStatusText = (status: string) => {
+    switch(status) {
+      case 'approved':
+        return '승인';
+      case 'rejected':
+        return '거절';
+      case 'pending':
+        return '대기중';
+      default:
+        return status;
+    }
+  };
   
   // Supabase에 충전 요청 데이터 삽입
   const insertChargeRequest = async () => {
-    // 에러 초기화
     setError(null);
     
     if (!currentUser) {
@@ -96,15 +201,8 @@ const ChargePage: React.FC = () => {
     }
     
     setIsLoading(true);
-
-    console.log(currentUser);
     
     try {
-      console.log('충전 요청 시작:', { 
-        userId: currentUser.id, 
-        amount: Number(customAmount) 
-      });
-      
       // cash_charge_requests 테이블에 데이터 삽입
       const { data, error } = await supabase
         .from('cash_charge_requests')
@@ -112,21 +210,20 @@ const ChargePage: React.FC = () => {
           user_id: currentUser.id,
           amount: Number(customAmount),
           status: 'pending',
-          free_cash_percentage: 0 // 기본값
+          free_cash_percentage: 5 // 기본값
         })
         .select();
       
       if (error) {
-        console.error('Supabase 에러:', error);
         throw error;
       }
       
-      console.log('충전 요청 성공:', data);
       alert(`${formatNumberWithCommas(Number(customAmount))}원 충전이 요청되었습니다.`);
       
-      // 성공 후 폼 초기화
+      // 성공 후 폼 초기화 및 내역 갱신
       setCustomAmount('');
       setSelectedAmount('');
+      fetchRecentRequests();
       
     } catch (err: any) {
       console.error('충전 요청 오류:', err);
@@ -213,31 +310,50 @@ const ChargePage: React.FC = () => {
               </button>
             </div>
             
-            {/* 출금 계좌 */}
+            {/* 최근 충전 요청 내역 */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-medium">출금 계좌</p>
-                <button className="text-gray-400" type="button">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
+              <div className="mb-3">
+                <p className="text-sm font-medium">최근 충전 요청 내역</p>
               </div>
               
-              <div className="flex items-center border border-gray-200 rounded-md p-3 cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white mr-3">
-                  <span className="text-xs">IBK</span>
+              {isLoadingHistory ? (
+                <div className="text-center py-4 text-gray-500">
+                  내역을 불러오는 중...
                 </div>
-                <div className="flex flex-col">
-                  <p className="font-medium">IBK기업</p>
-                  <p className="text-sm text-gray-500">IBK기업 694******1016</p>
+              ) : recentRequests.length > 0 ? (
+                <div className="border border-gray-200 rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-medium text-gray-500">날짜</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-500">금액</th>
+                        <th className="px-4 py-2 text-center font-medium text-gray-500">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {recentRequests.map((request) => (
+                        <tr key={request.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatDate(request.requested_at)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-900 font-medium">
+                            {formatNumberWithCommas(request.amount)}원
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
+                              {getStatusText(request.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="ml-auto">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
+              ) : (
+                <div className="border border-gray-200 rounded-md p-4 text-center text-gray-500">
+                  최근 충전 요청 내역이 없습니다.
                 </div>
-              </div>
+              )}
             </div>
             
             {/* 충전 버튼 */}

@@ -1,4 +1,6 @@
 export * from './AdMiscFaq';
+export * from './AdMiscFaqModal';
+export * from './FaqAccordionItem';
 export * from './MiscCreateTeam';
 export * from './MiscEngage';
 export * from './MiscFaq';

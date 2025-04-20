@@ -69,15 +69,15 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   };
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <ModalContent className="w-full max-w-2xl mx-auto rounded-lg bg-white shadow-lg">
+    <Modal open={open} onClose={onClose} className="bg-background">
+      <ModalContent className="w-full max-w-2xl mx-auto rounded-lg bg-background shadow-lg">
         <ModalHeader className="border-b p-4">
-          <ModalTitle>캠페인 내용 수정</ModalTitle>
+          <ModalTitle className="text-foreground">캠페인 내용 수정</ModalTitle>
           <button onClick={onClose} className="btn btn-icon btn-sm btn-ghost absolute right-4 top-4">
             <KeenIcon icon="cross" className="size-5" />
           </button>
         </ModalHeader>
-        <ModalBody className="p-6">
+        <ModalBody className="p-6 bg-background">
           <div className="space-y-6">
             {/* 헤더 정보 */}
             <div className="flex items-center gap-4">
@@ -87,7 +87,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                 alt={campaign.campaignName}
               />
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">{campaign.campaignName}</h2>
+                <h2 className="text-xl font-semibold text-foreground">{campaign.campaignName}</h2>
                 <div className="mt-1">
                   <span className={`badge badge-${campaign.status.color} badge-outline rounded-[30px]`}>
                     <span className={`size-1.5 rounded-full bg-${campaign.status.color} me-1.5`}></span>
@@ -98,19 +98,19 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
             </div>
 
             {/* 캠페인 정보 테이블 */}
-            <div className="overflow-hidden border border-gray-200 rounded-lg mb-6">
-              <table className="min-w-full divide-y divide-gray-200">
-                <tbody className="divide-y divide-gray-200">
+            <div className="overflow-hidden border border-border rounded-lg mb-6">
+              <table className="min-w-full divide-y divide-border">
+                <tbody className="divide-y divide-border">
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider w-1/3">
                       캠페인 ID
                     </th>
-                    <td className="px-4 py-3 text-md text-gray-900">
+                    <td className="px-4 py-3 text-md text-foreground">
                       {editedCampaign.id}
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       건당 단가
                     </th>
                     <td className="px-4 py-3">
@@ -121,14 +121,14 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="100"
                           value={editedCampaign.unitPrice}
                           onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                          className="input w-24 border-gray-300 rounded-md text-md text-gray-900"
+                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
                         />
-                        <span className="ml-2 text-md font-medium text-gray-700">원</span>
+                        <span className="ml-2 text-md font-medium text-foreground">원</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       최소수량
                     </th>
                     <td className="px-4 py-3">
@@ -139,14 +139,14 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="1"
                           value={editedCampaign.minQuantity}
                           onChange={(e) => handleNumberChange('minQuantity', e.target.value)}
-                          className="input w-24 border-gray-300 rounded-md text-md text-gray-900"
+                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
                         />
-                        <span className="ml-2 text-md font-medium text-gray-700">개</span>
+                        <span className="ml-2 text-md font-medium text-foreground">개</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       추가로직
                     </th>
                     <td className="px-4 py-3">
@@ -157,14 +157,14 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="1"
                           value={editedCampaign.additionalLogic}
                           onChange={(e) => handleNumberChange('additionalLogic', e.target.value)}
-                          className="input w-24 border-gray-300 rounded-md text-md text-gray-900"
+                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
                         />
-                        <span className="ml-2 text-md font-medium text-gray-700">개</span>
+                        <span className="ml-2 text-md font-medium text-foreground">개</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       상승효율
                     </th>
                     <td className="px-4 py-3">
@@ -176,14 +176,14 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="0.1"
                           value={editedCampaign.efficiency}
                           onChange={(e) => handleNumberChange('efficiency', e.target.value)}
-                          className="input w-24 border-gray-300 rounded-md text-md text-gray-900"
+                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
                         />
-                        <span className="ml-2 text-md font-medium text-gray-700">%</span>
+                        <span className="ml-2 text-md font-medium text-foreground">%</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       접수마감시간
                     </th>
                     <td className="px-4 py-3">
@@ -191,32 +191,32 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         type="time"
                         value={editedCampaign.deadline}
                         onChange={(e) => handleChange('deadline', e.target.value)}
-                        className="input w-36 border-gray-300 rounded-md text-md text-gray-900"
+                        className="input w-36 border-border bg-background text-foreground rounded-md text-md"
                       />
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       캠페인 설명
                     </th>
                     <td className="px-4 py-3">
                       <textarea
                         value={editedCampaign.description}
                         onChange={(e) => handleChange('description', e.target.value)}
-                        className="input w-full border-gray-300 rounded-md text-md text-gray-900 min-h-[80px]"
+                        className="input w-full border-border bg-background text-foreground rounded-md text-md min-h-[80px]"
                         rows={3}
                       />
                     </td>
                   </tr>
                   <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
                       캠페인 상세설명
                     </th>
                     <td className="px-4 py-3">
                       <textarea
                         value={editedCampaign.detailedDescription}
                         onChange={(e) => handleChange('detailedDescription', e.target.value)}
-                        className="input w-full border-gray-300 rounded-md text-md text-gray-900 min-h-[150px]"
+                        className="input w-full border-border bg-background text-foreground rounded-md text-md min-h-[150px]"
                         rows={6}
                       />
                     </td>

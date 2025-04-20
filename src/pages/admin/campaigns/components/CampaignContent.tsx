@@ -170,9 +170,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
 
   return (
     <>
-    <div className="card">
+    <div className="card bg-card">
       <div className="card-header flex-wrap gap-2 border-b-0 px-5">
-        <h3 className="card-title font-medium text-sm">
+        <h3 className="card-title font-medium text-sm text-card-foreground">
           전체 {campaigns.length}개 {serviceTitle} 캠페인
         </h3>
 
@@ -213,19 +213,19 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
       
       <div className="card-body px-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="w-full min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '60px' }}>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
                   No
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   캠페인명
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   캠페인 설명
                 </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   상승효율
                 </th>
                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -234,7 +234,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   접수마감시간
                 </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '140px' }}>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ minWidth: '140px' }}>
                   상태
                 </th>
                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -242,11 +242,11 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-background divide-y divide-border">
               {filteredData.map((campaign, index) => (
                 <tr key={campaign.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-foreground">
                       {index + 1}
                     </span>
                   </td>
@@ -257,13 +257,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName}
                       />
-                      <Link to={`/admin/campaigns/${serviceType}/${campaign.id}`} className="text-sm font-medium text-gray-900 hover:text-primary-active">
+                      <Link to={`/admin/campaigns/${serviceType}/${campaign.id}`} className="text-sm font-medium text-foreground hover:text-primary-active">
                         {campaign.campaignName}
                       </Link>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-700 max-w-[300px] line-clamp-2">
+                    <div className="text-sm text-foreground max-w-[300px] line-clamp-2">
                       {campaign.description}
                     </div>
                   </td>
@@ -273,7 +273,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-foreground">
                       {campaign.minQuantity}
                     </span>
                   </td>

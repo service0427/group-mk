@@ -1,4 +1,5 @@
 import { forwardRef, ReactNode, CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 
 interface IModalBodyProps {
   className?: string;
@@ -11,7 +12,7 @@ interface IModalBodyProps {
 const ModalBody = forwardRef<HTMLDivElement, IModalBodyProps>(
   ({ className, children, style, tabIndex = -1 }, ref) => {
     return (
-      <div ref={ref} tabIndex={tabIndex} className={`modal-body ${className}`} style={style}>
+      <div ref={ref} tabIndex={tabIndex} className={cn('modal-body bg-background', className)} style={style}>
         {children}
       </div>
     );

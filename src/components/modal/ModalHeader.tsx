@@ -1,4 +1,5 @@
 import { forwardRef, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface IModalHeaderProps {
   className?: string;
@@ -9,7 +10,7 @@ interface IModalHeaderProps {
 const ModalHeader = forwardRef<HTMLDivElement, IModalHeaderProps>(
   ({ className, children }, ref) => {
     return (
-      <div ref={ref} className={`modal-header ${className}`}>
+      <div ref={ref} className={cn('modal-header border-border', className)}>
         {children}
       </div>
     );

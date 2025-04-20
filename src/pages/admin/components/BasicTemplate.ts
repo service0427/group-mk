@@ -1,8 +1,7 @@
 import React, { Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
-import { Navbar } from '@/partials/navbar';
-import { ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
+import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
 
@@ -33,12 +32,15 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
     React.createElement(
       Container,
       null,
-      React.createElement(Navbar, null),
       React.createElement(
-        ToolbarHeading,
+        Toolbar,
         null,
-        React.createElement(ToolbarPageTitle, { customTitle: pageTitle }),
-        React.createElement(ToolbarDescription, null, pageDescription)
+        React.createElement(
+          ToolbarHeading,
+          null,
+          React.createElement(ToolbarPageTitle, { customTitle: pageTitle }),
+          React.createElement(ToolbarDescription, null, pageDescription)
+        )
       )
     ),
     React.createElement(
@@ -46,19 +48,27 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
       null,
       React.createElement(
         'div',
-        { className: "flex flex-col items-stretch gap-5 lg:gap-7.5" },
+        { className: "grid gap-5 lg:gap-7.5" },
         React.createElement(
           'div',
-          { className: "flex flex-col p-5 bg-white rounded-lg shadow-sm" },
+          { className: "bg-card rounded-lg shadow-sm overflow-hidden" },
           React.createElement(
-            'h3',
-            { className: "text-lg font-medium text-gray-900 mb-4" },
-            `${pageTitle} 페이지입니다`
+            'div',
+            { className: "p-5 flex justify-between items-center border-b" },
+            React.createElement(
+              'h3',
+              { className: "text-lg font-medium text-card-foreground" },
+              `${pageTitle} 정보`
+            )
           ),
           React.createElement(
-            'p',
-            { className: "text-gray-600" },
-            "이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다"
+            'div',
+            { className: "p-5" },
+            React.createElement(
+              'p',
+              { className: "text-foreground" },
+              "이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다"
+            )
           )
         )
       )

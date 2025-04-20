@@ -11,7 +11,7 @@ import { IntroLogo } from '@/partials/intro-logo';
 import { toAbsoluteUrl } from '@/utils';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem, KeenIcon } from '@/components';
-import { CardAdCampaign, CardAdCampaignRow } from '@/partials/cards';
+import { CardAdCampaign, CardAdCampaignRow } from './campaign-cards';
 
 interface IntroTemplateProps {
   serviceData: ServiceData;

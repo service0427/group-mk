@@ -1,3 +1,4 @@
-import CampaignTemplate from './CampaignTemplate';
+import { CampaignTemplate } from './CampaignTemplate';
+import { CampaignContent } from './CampaignContent';
 
-export { CampaignTemplate };
+export { CampaignTemplate, CampaignContent };

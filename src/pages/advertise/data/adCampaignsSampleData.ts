@@ -13,15 +13,15 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '60%',
+        total: '60',
         description: '🚀상승효율'
       },
       {
-        total: '3종 세트',
+        total: '3',
         description: '📌추가로직'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -45,15 +45,15 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '55%',
+        total: '55',
         description: '🚀상승효율'
       },
       {
-        total: '2종 세트',
+        total: '2',
         description: '📌추가로직'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -77,15 +77,15 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '53%',
+        total: '53',
         description: '🚀상승효율'
       },
       {
-        total: '1종 세트',
+        total: '1',
         description: '📌추가로직'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -109,11 +109,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '40%',
+        total: '40',
         description: '🚀상승효율'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -137,11 +137,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '39%',
+        total: '39',
         description: '🚀상승효율'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -165,11 +165,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '39%',
+        total: '39',
         description: '🚀상승효율'
       },
       {
-        total: '100개',
+        total: '100',
         description: '🧺최소수량'
       },
       {
@@ -193,11 +193,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '-%',
+        total: '-',
         description: '🚀상승효율'
       },
       {
-        total: '50개',
+        total: '50',
         description: '🧺최소수량'
       },
       {
@@ -221,11 +221,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '-%',
+        total: '-',
         description: '🚀상승효율'
       },
       {
-        total: '50개',
+        total: '50',
         description: '🧺최소수량'
       },
       {
@@ -249,11 +249,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '-%',
+        total: '-',
         description: '🚀상승효율'
       },
       {
-        total: '50개',
+        total: '50',
         description: '🧺최소수량'
       },
       {
@@ -277,11 +277,11 @@ export const sampleCampaigns: IAdCampaignsContentItem[] = [
     },
     statistics: [
       {
-        total: '-%',
+        total: '-',
         description: '🚀상승효율'
       },
       {
-        total: '50개',
+        total: '50',
         description: '🧺최소수량'
       },
       {

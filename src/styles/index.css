@@ -6,3 +6,15 @@
 /* body {
     font-family: 'Jua-Regular';
 } */
+
+/* 테두리가 명확한 textarea 스타일 */
+.textarea-visible-border {
+    border: 1px solid #d1d5db !important; /* light mode 테두리 색상 */
+    box-shadow: 0 0 0 1px rgba(209, 213, 219, 0.5);
+}
+
+/* 다크모드에서의 테두리 색상 */
+.dark .textarea-visible-border {
+    border-color: #4b5563 !important; /* dark mode 테두리 색상 */
+    box-shadow: 0 0 0 1px rgba(75, 85, 99, 0.5);
+}

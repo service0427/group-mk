@@ -1,6 +1,8 @@
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button"; 
 import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
+import { KeenIcon } from "@/components";
 
 interface ChargeHistoryModalProps {
     open: boolean;
@@ -87,19 +89,19 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
 
         switch(status) {
             case 'active':
-                badgeClass = 'bg-success/10 text-success';
+                badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
                 statusText = '활성';
                 break;
             case 'inactive':
-                badgeClass = 'bg-danger/10 text-danger';
+                badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
                 statusText = '비활성';
                 break;
             case 'pending':
-                badgeClass = 'bg-warning/10 text-warning';
+                badgeClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
                 statusText = '대기중';
                 break;
             default:
-                badgeClass = 'bg-gray-100 text-gray-700';
+                badgeClass = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
                 statusText = status;
         }
 
@@ -132,7 +134,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                 'status': selectedStatus,
                 'role': selectedRole
             })
-            . eq('id', user_id);
+            .eq('id', user_id);
             
         if (updateDBError) {
             console.log('사용자 업데이트 오류:', updateDBError);
@@ -144,36 +146,25 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
     }
 
     return (
-        <Modal open={open} onClose={onClose}>
-            <ModalContent className="w-full max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                <ModalHeader className="px-6 py-4 border-b border-gray-200">
-                    <div className="flex justify-between items-center w-full">
-                        <h2 className="text-xl font-bold text-gray-800">회원 정보</h2>
-                        <button 
-                            onClick={onClose} 
-                            className="text-gray-500 hover:text-gray-700 ml-auto"
-                            aria-label="닫기"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </ModalHeader>
-                <ModalBody className="p-6">
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+                <div className="bg-background py-4 px-6 border-b">
+                    <DialogTitle className="text-xl font-bold text-foreground">회원 정보</DialogTitle>
+                </div>
+                <div className="p-6 bg-background">
                     {loading ? (
                         <div className="flex justify-center items-center py-8">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                         </div>
                     ) : userData ? (
                         <div className="overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <tbody className="divide-y divide-gray-200 bg-white">
+                            <table className="min-w-full divide-y divide-border">
+                                <tbody className="divide-y divide-border">
                                     {/* 이름 */}
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
                                             <div className="flex items-center">
-                                                <span className="text-sm font-medium text-gray-700">이름</span>
+                                                <span className="text-sm font-medium text-foreground">이름</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 w-2/3">
@@ -181,7 +172,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                                 <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
                                                     {userData.full_name ? userData.full_name.charAt(0) : '?'}
                                                 </div>
-                                                <span className="text-gray-800 font-medium">{userData.full_name}</span>
+                                                <span className="text-foreground font-medium">{userData.full_name}</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -190,7 +181,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
                                             <div className="flex items-center">
-                                                <span className="text-sm font-medium text-gray-700">상태</span>
+                                                <span className="text-sm font-medium text-foreground">상태</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 w-2/3">
@@ -199,7 +190,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                                     {renderStatusBadge(userData.status)}
                                                 </div>
                                                 <select 
-                                                    className="select select-bordered w-full max-w-xs focus:ring-2 focus:ring-primary"
+                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                                     value={selectedStatus}
                                                     onChange={handleStatusChange}
                                                 >
@@ -217,11 +208,11 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
                                             <div className="flex items-center">
-                                                <span className="text-sm font-medium text-gray-700">이메일</span>
+                                                <span className="text-sm font-medium text-foreground">이메일</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 w-2/3">
-                                            <span className="text-gray-800 font-medium">{userData.email}</span>
+                                            <span className="text-foreground font-medium">{userData.email}</span>
                                         </td>
                                     </tr>
                                     
@@ -229,15 +220,14 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
                                             <div className="flex items-center">
-                                                <span className="text-sm font-medium text-gray-700">비밀번호</span>
+                                                <span className="text-sm font-medium text-foreground">비밀번호</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 w-2/3">
                                             <div className="flex items-center">
-                                                <button className="btn btn-sm btn-danger flex items-center gap-1.5" 
-                                                        title="비밀번호 초기화">
-                                                    <span>비밀번호 초기화</span>
-                                                </button>
+                                                <Button variant="destructive" size="sm">
+                                                    비밀번호 초기화
+                                                </Button>
                                             </div>
                                         </td>
                                     </tr>
@@ -246,18 +236,18 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
                                             <div className="flex items-center">
-                                                <span className="text-sm font-medium text-gray-700">권한</span>
+                                                <span className="text-sm font-medium text-foreground">권한</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 w-2/3">
                                             <div className="flex items-center gap-4">
                                                 <div className="min-w-24">
-                                                    <span className="text-gray-800 font-medium">
+                                                    <span className="text-foreground font-medium">
                                                         {getRoleDisplayName(userData.role)}
                                                     </span>
                                                 </div>
                                                 <select 
-                                                    className="select select-bordered w-full max-w-xs focus:ring-2 focus:ring-primary"
+                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                                     value={selectedRole}
                                                     onChange={handleRoleChange}
                                                 >
@@ -273,23 +263,28 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
                                 </tbody>
                             </table>
                             
-                            <div className="mt-6 flex justify-end space-x-3">
-                                <button className="btn btn-light" onClick={onClose}>
-                                    닫기
-                                </button>
-                                <button className="btn btn-primary" onClick={handleUpdateUser}>
+                            <div className="mt-6 flex justify-end space-x-3 pt-2 border-t">
+                                <Button 
+                                    onClick={handleUpdateUser}
+                                >
                                     회원정보 수정
-                                </button>
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={onClose}
+                                >
+                                    닫기
+                                </Button>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-8 text-gray-500">
+                        <div className="text-center py-8 text-muted-foreground">
                             회원 정보를 불러올 수 없습니다.
                         </div>
                     )}
-                </ModalBody>
-            </ModalContent>
-        </Modal>
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }
 

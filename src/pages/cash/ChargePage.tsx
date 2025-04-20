@@ -333,26 +333,26 @@ const ChargePage: React.FC = () => {
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 </div>
               ) : recentRequests.length > 0 ? (
-                <div className="border border-input rounded-md overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border border-input rounded-md overflow-hidden shadow-sm">
+                  <table className="w-full text-sm divide-y divide-border">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="px-4 py-2 text-left font-medium text-muted-foreground">날짜</th>
-                        <th className="px-4 py-2 text-right font-medium text-muted-foreground">금액</th>
-                        <th className="px-4 py-2 text-center font-medium text-muted-foreground">상태</th>
+                        <th className="px-4 py-2 text-center font-medium text-muted-foreground w-1/3">신청일자</th>
+                        <th className="px-4 py-2 text-center font-medium text-muted-foreground w-1/3">충전요청금액</th>
+                        <th className="px-4 py-2 text-center font-medium text-muted-foreground w-1/3">처리상태</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {recentRequests.map((request) => (
                         <tr key={request.id} className="hover:bg-muted/40">
-                          <td className="px-4 py-3 text-foreground">
+                          <td className="px-4 py-3.5 text-center text-foreground">
                             {formatDate(request.requested_at)}
                           </td>
-                          <td className="px-4 py-3 text-right text-foreground font-medium">
+                          <td className="px-4 py-3.5 text-center text-foreground font-medium">
                             {formatNumberWithCommas(request.amount)}원
                           </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
+                          <td className="px-4 py-3.5 text-center">
+                            <span className={`inline-block px-2.5 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
                               {getStatusText(request.status)}
                             </span>
                           </td>
@@ -378,8 +378,6 @@ const ChargePage: React.FC = () => {
               <div className="space-y-2 text-muted-foreground">
                 <p>• 충전 요청 후 관리자 승인 절차를 거쳐 캐시가 충전됩니다.</p>
                 <p>• 승인은 영업일 기준 최대 24시간 이내에 처리됩니다.</p>
-                <p>• 충전 취소는 승인 전에만 가능하며, 고객센터로 문의해 주세요.</p>
-                <p>• 대량 충전(100만원 이상)은 고객센터에 문의하시면 더 빠르게 처리 가능합니다.</p>
               </div>
             </CardContent>
           </Card>

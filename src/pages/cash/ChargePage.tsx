@@ -210,7 +210,7 @@ const ChargePage: React.FC = () => {
           user_id: currentUser.id,
           amount: Number(customAmount),
           status: 'pending',
-          free_cash_percentage: 5 // 기본값
+          free_cash_percentage: 0 // 기본값
         })
         .select();
       

@@ -3,9 +3,12 @@ import { Container } from '@/components';
 import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import {
   Card,
-  CardContent
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 
@@ -20,14 +23,12 @@ interface ChargeRequest {
 
 const ChargePage: React.FC = () => {
   // AuthContext에서 currentUser 가져오기
-
   const { currentUser } = useAuthContext();
-  console.log(currentUser);
 
   // 상태 관리
-  const [customAmount, setCustomAmount] = useState<string>('');
+  const [customAmount, setCustomAmount] = useState<string>('0');
   const [selectedAmount, setSelectedAmount] = useState<string>('');
-  const [koreanAmount, setKoreanAmount] = useState<string>('');
+  const [koreanAmount, setKoreanAmount] = useState<string>('0원');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [recentRequests, setRecentRequests] = useState<ChargeRequest[]>([]);
@@ -35,7 +36,7 @@ const ChargePage: React.FC = () => {
 
   // 금액 선택 핸들러 (누적 방식)
   const handleAmountSelect = (amount: string) => {
-    const currentAmount = customAmount ? parseInt(customAmount) : 0;
+    const currentAmount = customAmount === '0' ? 0 : parseInt(customAmount);
     const addAmount = parseInt(amount);
     const newAmount = (currentAmount + addAmount).toString();
 
@@ -47,7 +48,15 @@ const ChargePage: React.FC = () => {
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // 숫자만 입력 가능하도록
     const value = e.target.value.replace(/[^0-9]/g, '');
-    setCustomAmount(value);
+
+    // 0만 입력된 경우 '0'으로 설정
+    if (value === '' || value === '0') {
+      setCustomAmount('0');
+    } else {
+      // 앞에 0이 있는 경우 제거 (예: '01234' -> '1234')
+      setCustomAmount(value.replace(/^0+/, ''));
+    }
+
     setSelectedAmount('');
   };
 
@@ -58,9 +67,9 @@ const ChargePage: React.FC = () => {
 
   // 금액을 한글 단위로 변환 (억, 만)
   const formatToKorean = (value: string): string => {
-    if (!value || value === '0') return '';
-
     const num = parseInt(value);
+
+    if (num === 0) return '0원';
 
     const eok = Math.floor(num / 100000000);
     const man = Math.floor((num % 100000000) / 10000);
@@ -80,23 +89,18 @@ const ChargePage: React.FC = () => {
       result += formatNumberWithCommas(rest);
     }
 
-    return result.trim();
+    return result.trim() + '원';
   };
 
   // 최근 충전 요청 내역 가져오기
   const fetchRecentRequests = async () => {
-    console.log("fetchRecentRequests 시작, currentUser:", currentUser);
     if (!currentUser) {
-      console.log("currentUser가 없어서 종료");
       return;
     }
 
     setIsLoadingHistory(true);
-    console.log("로딩 상태 true로 설정");
 
     try {
-      console.log("Supabase 요청 시작, user_id:", currentUser.id);
-
       // 타임아웃 설정 (10초)
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('요청 시간 초과')), 10000)
@@ -118,40 +122,28 @@ const ChargePage: React.FC = () => {
       ]);
 
       const { data, error } = result;
-      console.log("Supabase 응답 받음", { dataLength: data?.length, error });
 
       if (error) throw error;
 
       setRecentRequests(data || []);
-      console.log("recentRequests 상태 업데이트됨, 개수:", data?.length);
     } catch (err) {
       console.error('최근 충전 내역 조회 오류:', err);
       // 에러 발생 시 빈 배열로 처리하여 로딩 상태 종료
       setRecentRequests([]);
     } finally {
-      console.log("finally 블록 실행");
       setIsLoadingHistory(false);
-      console.log("로딩 상태 false로 설정");
     }
   };
 
   // 금액이 변경될 때마다 한글 단위 표시 업데이트
   useEffect(() => {
-    if (customAmount) {
-      setKoreanAmount(formatToKorean(customAmount));
-    } else {
-      setKoreanAmount('');
-    }
+    setKoreanAmount(formatToKorean(customAmount));
   }, [customAmount]);
 
   // 컴포넌트 마운트 시 최근 충전 내역 가져오기
   useEffect(() => {
-    // currentUser가 있고, id 속성이 있는지 확인
     if (currentUser && currentUser.id) {
-      console.log("useEffect에서 fetchRecentRequests 호출, currentUser ID:", currentUser.id);
       fetchRecentRequests();
-    } else {
-      console.log("useEffect: currentUser 없거나 ID 속성 없음:", currentUser);
     }
   }, [currentUser]); // currentUser에 의존
 
@@ -165,11 +157,11 @@ const ChargePage: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -196,7 +188,7 @@ const ChargePage: React.FC = () => {
       return;
     }
 
-    if (!customAmount || Number(customAmount) <= 0) {
+    if (customAmount === '0') {
       setError('충전할 금액을 입력해주세요.');
       return;
     }
@@ -222,7 +214,7 @@ const ChargePage: React.FC = () => {
       alert(`${formatNumberWithCommas(Number(customAmount))}원 충전이 요청되었습니다.`);
 
       // 성공 후 폼 초기화 및 내역 갱신
-      setCustomAmount('');
+      setCustomAmount('0');
       setSelectedAmount('');
       fetchRecentRequests();
 
@@ -234,86 +226,81 @@ const ChargePage: React.FC = () => {
     }
   };
 
-  // 충전 버튼 핸들러
-  const handleCharge = () => {
-    insertChargeRequest();
-  };
-
   return (
     <>
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarPageTitle customTitle="회원 관리" />
-            <ToolbarDescription>관리자 메뉴 &gt; 회원 관리</ToolbarDescription>
+            <ToolbarPageTitle customTitle="캐시 충전" />
+            <ToolbarDescription>마이페이지 &gt; 캐시 충전</ToolbarDescription>
           </ToolbarHeading>
         </Toolbar>
       </Container>
 
       <Container>
-        <div className="w-full max-w-lg mx-auto">
-          <Card className="border-0 shadow-none">
-            <CardContent className="p-0">
-              {/* 네이버페이 로고와 헤더 */}
-              <div className="flex items-center mb-8">
+        <div className="grid gap-5 lg:gap-7.5">
+          {/* 충전 카드 */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white mr-3">
                   <span className="font-bold">M</span>
                 </div>
-                <span className="font-medium text-lg">Npay 머니로</span>
+                <CardTitle className="text-lg font-medium">Npay 머니로 충전하기</CardTitle>
               </div>
+            </CardHeader>
 
+            <CardContent className="pt-0">
               {/* 에러 메시지 표시 */}
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
+                <div className="bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 px-4 py-3 rounded mb-4">
                   {error}
                 </div>
               )}
 
               {/* 금액 입력 필드 */}
               <div className="mb-6">
-                <p className="text-gray-500 text-sm mb-2">충전할 금액을 입력해 주세요.</p>
+                <p className="text-muted-foreground text-sm mb-2">충전할 금액을 입력해 주세요.</p>
                 <div className="relative">
                   <Input
                     type="text"
-                    value={customAmount ? formatNumberWithCommas(parseInt(customAmount)) : ''}
+                    value={customAmount === '0' ? '0' : formatNumberWithCommas(parseInt(customAmount))}
                     onChange={handleCustomAmountChange}
                     placeholder="0"
-                    className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-gray-300 text-lg focus:border-b-gray-500 pl-0"
+                    className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-input text-lg focus:border-b-primary pl-0"
                   />
-                  {koreanAmount && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      {koreanAmount}원
-                    </div>
-                  )}
+                  <div className="text-sm text-muted-foreground mt-1 h-6">
+                    {koreanAmount}
+                  </div>
                 </div>
-                <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
+                <div className="h-[1px] w-full bg-border mt-1"></div>
               </div>
 
               {/* 금액 빠른 선택 */}
               <div className="grid grid-cols-4 gap-2 mb-8">
                 <button
-                  className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+                  className="py-3 border border-input rounded text-sm bg-background hover:bg-accent text-foreground"
                   onClick={() => handleAmountSelect('10000')}
                   type="button"
                 >
                   +1만
                 </button>
                 <button
-                  className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+                  className="py-3 border border-input rounded text-sm bg-background hover:bg-accent text-foreground"
                   onClick={() => handleAmountSelect('50000')}
                   type="button"
                 >
                   +5만
                 </button>
                 <button
-                  className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+                  className="py-3 border border-input rounded text-sm bg-background hover:bg-accent text-foreground"
                   onClick={() => handleAmountSelect('100000')}
                   type="button"
                 >
                   +10만
                 </button>
                 <button
-                  className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+                  className="py-3 border border-input rounded text-sm bg-background hover:bg-accent text-foreground"
                   onClick={() => handleAmountSelect('1000000')}
                   type="button"
                 >
@@ -321,66 +308,78 @@ const ChargePage: React.FC = () => {
                 </button>
               </div>
 
-              {/* 최근 충전 요청 내역 */}
-              <div className="mb-8">
-                <div className="mb-3">
-                  <p className="text-sm font-medium">최근 충전 요청 내역</p>
-                </div>
-
-                {isLoadingHistory ? (
-                  <div className="text-center py-4 text-gray-500">
-                    내역을 불러오는 중...
-                  </div>
-                ) : recentRequests.length > 0 ? (
-                  <div className="border border-gray-200 rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">날짜</th>
-                          <th className="px-4 py-2 text-right font-medium text-gray-500">금액</th>
-                          <th className="px-4 py-2 text-center font-medium text-gray-500">상태</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {recentRequests.map((request) => (
-                          <tr key={request.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-gray-700">
-                              {formatDate(request.requested_at)}
-                            </td>
-                            <td className="px-4 py-3 text-right text-gray-900 font-medium">
-                              {formatNumberWithCommas(request.amount)}원
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
-                                {getStatusText(request.status)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="border border-gray-200 rounded-md p-4 text-center text-gray-500">
-                    최근 충전 요청 내역이 없습니다.
-                  </div>
-                )}
-              </div>
-
               {/* 충전 버튼 */}
-              <div className="mt-auto">
-                <button
-                  onClick={handleCharge}
-                  disabled={isLoading || !customAmount}
-                  type="button"
-                  className={`w-full py-4 ${customAmount && !isLoading
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 text-gray-600'
-                    } font-medium rounded-md transition-colors mt-5 ${isLoading ? 'cursor-not-allowed opacity-70' : ''
-                    }`}
-                >
-                  {isLoading ? '처리 중...' : '충전하기'}
-                </button>
+              <Button
+                onClick={insertChargeRequest}
+                disabled={isLoading || customAmount === '0'}
+                className={`w-full py-6 ${customAmount === '0' || isLoading
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white'
+                  }`}
+              >
+                {isLoading ? '처리 중...' : '충전하기'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 최근 충전 요청 내역 카드 */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">최근 충전 요청 내역</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {isLoadingHistory ? (
+                <div className="flex justify-center items-center py-10">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                </div>
+              ) : recentRequests.length > 0 ? (
+                <div className="border border-input rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-medium text-muted-foreground">날짜</th>
+                        <th className="px-4 py-2 text-right font-medium text-muted-foreground">금액</th>
+                        <th className="px-4 py-2 text-center font-medium text-muted-foreground">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {recentRequests.map((request) => (
+                        <tr key={request.id} className="hover:bg-muted/40">
+                          <td className="px-4 py-3 text-foreground">
+                            {formatDate(request.requested_at)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-foreground font-medium">
+                            {formatNumberWithCommas(request.amount)}원
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
+                              {getStatusText(request.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="border border-input rounded-md p-4 text-center text-muted-foreground">
+                  최근 충전 요청 내역이 없습니다.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 캐시 충전 안내 카드 */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">캐시 충전 안내</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 text-muted-foreground">
+                <p>• 충전 요청 후 관리자 승인 절차를 거쳐 캐시가 충전됩니다.</p>
+                <p>• 승인은 영업일 기준 최대 24시간 이내에 처리됩니다.</p>
+                <p>• 충전 취소는 승인 전에만 가능하며, 고객센터로 문의해 주세요.</p>
+                <p>• 대량 충전(100만원 이상)은 고객센터에 문의하시면 더 빠르게 처리 가능합니다.</p>
               </div>
             </CardContent>
           </Card>

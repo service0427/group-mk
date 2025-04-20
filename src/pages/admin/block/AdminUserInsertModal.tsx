@@ -1,4 +1,6 @@
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/supabase";
 import { useState } from "react";
 
@@ -113,10 +115,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                 throw new Error(authError.message);
             }
             
-            // 2. users 테이블에 사용자 정보 저장 (이미 Auth 테이블에 추가됐을 경우 필요 없을 수 있음)
-            // Supabase 설정에 따라 이 부분은 필요할 수도 있고 필요 없을 수도 있음
-            // 필요한 경우 아래 주석을 해제하고 사용
-            
+            // 2. users 테이블에 사용자 정보 저장
             const { error: dbError } = await supabase
                 .from('users')
                 .insert({
@@ -130,7 +129,6 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
             if (dbError) {
                 throw new Error(dbError.message);
             }
-            
             
             // 성공 메시지 및 모달 닫기
             alert('사용자가 성공적으로 추가되었습니다.');
@@ -157,97 +155,73 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
     };
 
     return (
-        <Modal open={open} onClose={handleClose}>
-            <ModalContent className="w-full max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                <ModalHeader className="px-6 py-4 border-b border-gray-200">
-                    <div className="flex justify-between items-center w-full">
-                        <h2 className="text-xl font-bold text-gray-800">신규 회원 추가</h2>
-                        <button 
-                            onClick={handleClose} 
-                            className="text-gray-500 hover:text-gray-700 ml-auto"
-                            aria-label="닫기"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </ModalHeader>
-                <ModalBody className="p-6">
+        <Dialog open={open} onOpenChange={handleClose}>
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+                <div className="bg-background py-4 px-6 border-b">
+                    <DialogTitle className="text-xl font-bold text-foreground">신규 회원 추가</DialogTitle>
+                </div>
+                <div className="p-6 bg-background">
                     <div className="space-y-6">
                         {/* 이름 입력 */}
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-medium text-gray-700">이름</span>
-                            </label>
-                            <input 
-                                type="text" 
+                        <div className="space-y-2">
+                            <label htmlFor="full_name" className="text-sm font-medium text-foreground">이름</label>
+                            <Input
+                                id="full_name"
                                 name="full_name"
                                 value={newUserData.full_name}
                                 onChange={handleInputChange}
-                                placeholder="사용자 이름을 입력하세요" 
-                                className={`input input-bordered w-full ${errors.full_name ? 'input-error' : ''}`}
+                                placeholder="사용자 이름을 입력하세요"
+                                className={errors.full_name ? "border-destructive" : ""}
                             />
                             {errors.full_name && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">{errors.full_name}</span>
-                                </label>
+                                <p className="text-xs text-destructive mt-1">{errors.full_name}</p>
                             )}
                         </div>
 
                         {/* 이메일 입력 */}
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-medium text-gray-700">이메일</span>
-                            </label>
-                            <input 
-                                type="email" 
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-sm font-medium text-foreground">이메일</label>
+                            <Input
+                                id="email"
                                 name="email"
+                                type="email"
                                 value={newUserData.email}
                                 onChange={handleInputChange}
-                                placeholder="이메일 주소를 입력하세요" 
-                                className={`input input-bordered w-full ${errors.email ? 'input-error' : ''}`}
+                                placeholder="이메일 주소를 입력하세요"
+                                className={errors.email ? "border-destructive" : ""}
                             />
                             {errors.email && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">{errors.email}</span>
-                                </label>
+                                <p className="text-xs text-destructive mt-1">{errors.email}</p>
                             )}
                         </div>
 
                         {/* 비밀번호 입력 */}
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-medium text-gray-700">비밀번호</span>
-                            </label>
-                            <input 
-                                type="password" 
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="text-sm font-medium text-foreground">비밀번호</label>
+                            <Input
+                                id="password"
                                 name="password"
+                                type="password"
                                 value={newUserData.password}
                                 onChange={handleInputChange}
-                                placeholder="비밀번호를 입력하세요" 
-                                className={`input input-bordered w-full ${errors.password ? 'input-error' : ''}`}
+                                placeholder="비밀번호를 입력하세요"
+                                className={errors.password ? "border-destructive" : ""}
                             />
                             {errors.password && (
-                                <label className="label">
-                                    <span className="label-text-alt text-error">{errors.password}</span>
-                                </label>
+                                <p className="text-xs text-destructive mt-1">{errors.password}</p>
                             )}
-                            <label className="label">
-                                <span className="label-text-alt text-gray-500">비밀번호는 최소 6자 이상이어야 합니다</span>
-                            </label>
+                            <p className="text-xs text-muted-foreground mt-1">비밀번호는 최소 6자 이상이어야 합니다</p>
                         </div>
 
                         {/* 역할 선택 */}
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-medium text-gray-700">권한</span>
-                            </label>
+                        <div className="space-y-2">
+                            <label htmlFor="role" className="text-sm font-medium text-foreground">권한</label>
                             <select 
+                                id="role"
                                 name="role"
                                 value={newUserData.role}
                                 onChange={handleInputChange}
-                                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                             >
                                 {roles_array.map((option) => (
                                     <option key={option.code} value={option.code}>
@@ -258,15 +232,14 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                         </div>
 
                         {/* 상태 선택 */}
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text font-medium text-gray-700">상태</span>
-                            </label>
+                        <div className="space-y-2">
+                            <label htmlFor="status" className="text-sm font-medium text-foreground">상태</label>
                             <select 
+                                id="status"
                                 name="status"
                                 value={newUserData.status}
                                 onChange={handleInputChange}
-                                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                             >
                                 {status_array.map((option) => (
                                     <option key={option.code} value={option.code}>
@@ -277,30 +250,29 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                         </div>
                     </div>
                     
-                    <div className="mt-8 flex justify-end space-x-3">
-                        <button 
-                            className="btn btn-light" 
-                            onClick={handleClose}
-                            disabled={loading}
-                        >
-                            취소
-                        </button>
-                        <button 
-                            className="btn btn-primary" 
+                    <div className="mt-8 flex justify-end space-x-3 pt-2 border-t">
+                        <Button 
                             onClick={handleAddUser}
                             disabled={loading}
                         >
                             {loading ? (
                                 <>
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="animate-spin mr-2 size-4 border-2 border-background border-t-transparent rounded-full" />
                                     처리 중...
                                 </>
                             ) : '회원 추가'}
-                        </button>
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={handleClose}
+                            disabled={loading}
+                        >
+                            취소
+                        </Button>
                     </div>
-                </ModalBody>
-            </ModalContent>
-        </Modal>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 

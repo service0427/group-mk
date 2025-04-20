@@ -74,7 +74,6 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
         )
       )
     )
->>>>>>> feature/jhjang:src/pages/admin/components/BasicTemplate.ts
   );
 };
 

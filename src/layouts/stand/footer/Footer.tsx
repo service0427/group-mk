@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Container } from '@/components/container';
 import { generalSettings } from '@/config';
+import { AdMiscFaqModal } from '@/partials/misc/AdMiscFaqModal';
 
 const Footer = () => {
-
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
+  
   return (
     <footer className="footer">
       <Container>
@@ -17,12 +20,26 @@ const Footer = () => {
             </a>
           </div>
           <nav className="flex order-1 md:order-2 gap-4 font-normal text-2sm text-gray-600">
-            <a href={generalSettings.faqLink} className="hover:text-primary">
+            {/* 일반 텍스트 형태로 복원하되, 클릭 시 모달 오픈 */}
+            <a 
+              href="#" 
+              className="hover:text-primary"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsFaqModalOpen(true);
+              }}
+            >
               FAQ
             </a>
           </nav>
         </div>
       </Container>
+      
+      {/* FAQ 모달 */}
+      <AdMiscFaqModal 
+        isOpen={isFaqModalOpen} 
+        onClose={() => setIsFaqModalOpen(false)} 
+      />
     </footer>
   );
 };

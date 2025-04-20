@@ -1,18 +1,16 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
-import { Navbar } from '@/partials/navbar';
-import { ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
+import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
 
 interface BasicTemplateProps {
   title: string;
   description?: string;
-  children?: React.ReactNode; // children 추가
 }
 
-const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, children }) => {
+const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
@@ -31,25 +29,23 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
   return (
     <>
       <Container>
-        <Navbar />
-        <ToolbarHeading>
-          <ToolbarPageTitle customTitle={pageTitle} />
-          <ToolbarDescription>{pageDescription}</ToolbarDescription>
-        </ToolbarHeading>
+        <Toolbar>
+          <ToolbarHeading>
+            <ToolbarPageTitle customTitle={pageTitle} />
+            <ToolbarDescription>{pageDescription}</ToolbarDescription>
+          </ToolbarHeading>
+        </Toolbar>
       </Container>
+      
       <Container>
-        <div className="flex flex-col items-stretch gap-5 lg:gap-7.5">
-          <div className="flex flex-col p-5 bg-white rounded-lg shadow-sm">
-            {children || (
-              <>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {`${pageTitle} 페이지입니다`}
-                </h3>
-                <p className="text-gray-600">
-                  이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다
-                </p>
-              </>
-            )}
+        <div className="grid gap-5 lg:gap-7.5">
+          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+            <div className="p-5 flex justify-between items-center border-b">
+              <h3 className="text-lg font-medium text-card-foreground">{pageTitle} 정보</h3>
+            </div>
+            <div className="p-5">
+              <p className="text-foreground">이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다</p>
+            </div>
           </div>
         </div>
       </Container>

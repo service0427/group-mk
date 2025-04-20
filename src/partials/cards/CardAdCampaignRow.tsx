@@ -1,7 +1,7 @@
-import { KeenIcon, Menu, MenuItem, MenuToggle } from '@/components';
+import { KeenIcon } from '@/components';
+import { useState } from 'react';
 import { toAbsoluteUrl } from '@/utils/Assets';
-import { useLanguage } from '@/i18n';
-import { DropdownCard2 } from '../dropdowns/general';
+import { CampaignDetailViewModal } from '@/pages/advertise/components';
 import { IAdCampaignItem, IAdCampaignProps } from './CardAdCampaign';
 
 const CardAdCampaignRow = ({
@@ -13,7 +13,22 @@ const CardAdCampaignRow = ({
   statistics,
   url
 }: IAdCampaignProps) => {
-  const { isRTL } = useLanguage();
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  // 모달에 표시할 캠페인 데이터 객체
+  const campaignData = {
+    id: "", // ID 표시하지 않음
+    campaignName: title,
+    description: description,
+    logo: logo,
+    efficiency: statistics.find(stat => stat.description.includes('효율'))?.total || '0%',
+    minQuantity: statistics.find(stat => stat.description.includes('수량'))?.total || '0',
+    deadline: statistics.find(stat => stat.description.includes('시간'))?.total || '-',
+    status: {
+      label: status.label,
+      color: status.variant
+    }
+  };
 
   const renderItem = (statistic: IAdCampaignItem, index: number) => {
     return (
@@ -28,62 +43,56 @@ const CardAdCampaignRow = ({
   };
 
   return (
-    <div className="card p-5 lg:p-7.5">
-      <div className="flex items-center flex-wrap justify-between gap-5">
-        <div className="flex items-center gap-3.5">
-          <div className="flex items-center justify-center w-[50px]">
-            <img
-              src={toAbsoluteUrl(`/media/animal/svg/${logo}`)}
-              className={`size-[${logoSize}] shrink-0`}
-              alt=""
-            />
+    <>
+      <div className="card p-5 lg:p-7.5">
+        <div className="flex items-center flex-wrap justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex items-center justify-center w-[50px]">
+              <img
+                src={toAbsoluteUrl(`/media/animal/svg/${logo}`)}
+                className={`size-[${logoSize}] shrink-0`}
+                alt=""
+              />
+            </div>
+
+            <div className="">
+              <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
+                {title}
+              </a>
+
+              <div className="flex items-center text-sm text-gray-700">{description}</div>
+            </div>
           </div>
 
-          <div className="">
-            <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
-              {title}
-            </a>
+          <div className="flex items-center flex-wrap justify-between gap-5 lg:gap-12">
+            <div className="flex items-center flex-wrap gap-2 lg:gap-5">
+              {statistics.map((statistic, index) => {
+                return renderItem(statistic, index);
+              })}
+            </div>
 
-            <div className="flex items-center text-sm text-gray-700">{description}</div>
-          </div>
-        </div>
+            <div className="flex justify-center w-20">
+              <span className={`badge ${status.variant} badge-outline`}>{status.label}</span>
+            </div>
 
-        <div className="flex items-center flex-wrap justify-between gap-5 lg:gap-12">
-          <div className="flex items-center flex-wrap gap-2 lg:gap-5">
-            {statistics.map((statistic, index) => {
-              return renderItem(statistic, index);
-            })}
-          </div>
-
-          <div className="flex justify-center w-20">
-            <span className={`badge ${status.variant} badge-outline`}>{status.label}</span>
-          </div>
-
-          <Menu className="items-stretch">
-            <MenuItem
-              toggle="dropdown"
-              trigger="click"
-              dropdownProps={{
-                placement: isRTL() ? 'bottom-start' : 'bottom-end',
-                modifiers: [
-                  {
-                    name: 'offset',
-                    options: {
-                      offset: isRTL() ? [0, -10] : [0, 10] // [skid, distance]
-                    }
-                  }
-                ]
-              }}
+            <button 
+              className="btn btn-sm btn-light"
+              onClick={() => setModalOpen(true)}
             >
-              <MenuToggle className="btn btn-sm btn-icon btn-light btn-clear">
-                <KeenIcon icon="dots-vertical" />
-              </MenuToggle>
-              {DropdownCard2()}
-            </MenuItem>
-          </Menu>
+              <KeenIcon icon="eye" className="me-1.5" />
+              상세보기
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* 상세보기 모달 */}
+      <CampaignDetailViewModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        campaign={campaignData}
+      />
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
-export * from './CardAdCampaign'
-export * from './CardAdCampaignRow'
+// CardAdCampaign은 pages/advertise/components/campaign-cards로 이동됨
+// CardAdCampaignRow는 pages/advertise/components/campaign-cards로 이동됨
 export * from './CardAddNew';
 export * from './CardAddNewRow';
 export * from './CardAuthor';

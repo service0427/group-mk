@@ -11,6 +11,7 @@ import { useLayout } from '@/providers';
 
 const initialValues = {
   email: '',
+  full_name: '',
   password: '',
   changepassword: '',
   acceptTerms: false
@@ -22,6 +23,10 @@ const signupSchema = Yup.object().shape({
     .min(3, 'Minimum 3 symbols')
     .max(50, 'Maximum 50 symbols')
     .required('Email is required'),
+  full_name: Yup.string()
+    .min(2, 'Minimum 2 symbols')
+    .max(50, 'Maximum 50 symbols')
+    .required('Name is required'),
   password: Yup.string()
     .min(3, 'Minimum 3 symbols')
     .max(50, 'Maximum 50 symbols')
@@ -53,7 +58,7 @@ const Signup = () => {
         if (!register) {
           throw new Error('JWTProvider is required for this form.');
         }
-        await register(values.email, values.password, values.changepassword);
+        await register(values.email, values.full_name, values.password, values.changepassword);
         navigate(from, { replace: true });
       } catch (error) {
         console.error(error);
@@ -82,18 +87,18 @@ const Signup = () => {
         onSubmit={formik.handleSubmit}
       >
         <div className="text-center mb-2.5">
-          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">Sign up</h3>
+          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">회원가입</h3>
           <div className="flex items-center justify-center font-medium">
-            <span className="text-2sm text-gray-600 me-1.5">Already have an Account ?</span>
+            <span className="text-2sm text-gray-600 me-1.5">계정이 있습니까? ?</span>
             <Link
               to={currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login'}
               className="text-2sm link"
             >
-              Sign In
+              로그인
             </Link>
           </div>
         </div>
-
+        {/*
         <div className="grid grid-cols-2 gap-2.5">
           <a href="#" className="btn btn-light btn-sm justify-center">
             <img
@@ -115,6 +120,7 @@ const Signup = () => {
             Use Apple
           </a>
         </div>
+        */}
 
         <div className="flex items-center gap-2">
           <span className="border-t border-gray-200 w-full"></span>
@@ -144,6 +150,30 @@ const Signup = () => {
           {formik.touched.email && formik.errors.email && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.email}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="form-label text-gray-900">Name</label>
+          <label className="input">
+            <input
+              placeholder="Enter Name"
+              type="text"
+              autoComplete="off"
+              {...formik.getFieldProps('full_name')}
+              className={clsx(
+                'form-control bg-transparent',
+                { 'is-invalid': formik.touched.full_name && formik.errors.full_name },
+                {
+                  'is-valid': formik.touched.full_name && !formik.errors.full_name
+                }
+              )}
+            />
+          </label>
+          {formik.touched.full_name && formik.errors.full_name && (
+            <span role="alert" className="text-danger text-xs mt-1">
+              {formik.errors.full_name}
             </span>
           )}
         </div>
@@ -216,7 +246,7 @@ const Signup = () => {
             </span>
           )}
         </div>
-
+        {/*
         <label className="checkbox-group">
           <input
             className="checkbox checkbox-sm"
@@ -236,13 +266,14 @@ const Signup = () => {
             {formik.errors.acceptTerms}
           </span>
         )}
+        */}
 
         <button
           type="submit"
           className="btn btn-primary flex justify-center grow"
           disabled={loading || formik.isSubmitting}
         >
-          {loading ? 'Please wait...' : 'Sign UP'}
+          {loading ? '잠시만 기달려주세요...' : '가입하기'}
         </button>
       </form>
     </div>

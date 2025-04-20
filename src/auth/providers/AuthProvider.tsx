@@ -207,6 +207,23 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 console.log('인증 상태 변경 감지:', event);
+
+                // 비밀번호 변경 이벤트 (PASSWORD_RECOVERY)는 별도 처리
+                if (event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') {
+                    // 토큰만 갱신하고 전체 로그인 프로세스는 실행하지 않음
+                    if (session) {
+                    const authData: AuthModel = {
+                        access_token: session.access_token,
+                        refreshToken: session.refresh_token,
+                        api_token: session.access_token
+                    };
+                    
+                    setAuth(authData);
+                    authHelper.setAuth(authData);
+                    console.log('비밀번호 변경 후 토큰 갱신됨');
+                    }
+                    return;
+                }
                 
                 if (session) {
                     const authData: AuthModel = {
@@ -320,6 +337,23 @@ const AuthProvider = ({children} : PropsWithChildren) => {
 
             if (error) {
                 throw new Error(error.message);
+            }
+
+            // public.users 테이블에 비밀번호 sync
+            const hashPassword = await supabase.rpc('hash_password', {
+                password: password
+            });
+            if (hashPassword.error) {
+                throw new Error(hashPassword.error.message);
+            }
+
+            const {error: UpdateError} = await supabase
+                .from('users')
+                .update({password_hash: hashPassword.data})
+                .eq('id', data.user?.id);
+
+            if (UpdateError) {
+                throw new Error(UpdateError.message);
             }
             
             return data;

@@ -39,6 +39,16 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '공지사항',
+    icon: 'notification',
+    path: '/notice'
+  },
+  {
+    title: 'FAQ',
+    icon: 'message-question',
+    path: '/faq'
+  },
+  {
     heading: '서비스'
   },
   {
@@ -279,7 +289,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
       { 
         title: 'FAQ 관리',
-        icon: 'information',
+        icon: 'message-question',
         path: '/admin/site/faq'
       }
     ]
@@ -711,6 +721,21 @@ export const MENU_MEGA: TMenuConfig = [
     path: '/',
     children: [
       {
+        heading: '주요 메뉴',
+        children: [
+          { 
+            title: '공지사항',
+            icon: 'notification',
+            path: '/notice'
+          },
+          { 
+            title: 'FAQ',
+            icon: 'message-question',
+            path: '/faq'
+          }
+        ]
+      },
+      {
         heading: '역할별 대시보드',
         children: [
           { 
@@ -791,12 +816,13 @@ export const MENU_MEGA: TMenuConfig = [
         ]
       },
       {
-        heading: '부가 서비스',
+        heading: '정보',
         children: [
           { 
             title: '순위분석',
             icon: 'ranking',
-            path: '#'
+            path: '#',
+            disabled: true
           }
         ]
       }
@@ -870,7 +896,7 @@ export const MENU_MEGA: TMenuConfig = [
           },
           { 
             title: 'FAQ 관리',
-            icon: 'information',
+            icon: 'question-square',
             path: '/admin/site/faq'
           }
         ]

@@ -435,7 +435,7 @@ module.exports = {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif']
+        sans: ['Pretendard GOV', 'Inter', 'system-ui', 'sans-serif']
       },
       colors: {
         //begin: Shadcn UI Colors

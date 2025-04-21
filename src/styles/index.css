@@ -1,11 +1,14 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css");
+
 @font-face {
     font-family: 'Jua-Regular';
     src: url('fonts/Jua-Regular.ttf');
 }
 
-/* body {
-    font-family: 'Jua-Regular';
-} */
+/* 전역 폰트 설정 - Pretendard GOV를 기본 폰트로 적용 */
+body {
+    font-family: 'Pretendard GOV', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+}
 
 /* 테두리가 명확한 textarea 스타일 */
 .textarea-visible-border {

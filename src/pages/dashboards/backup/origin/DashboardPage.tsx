@@ -1,5 +1,5 @@
 import { Container } from '@/components/container';
-import { DashboardContent } from './DashboardContent';
+import { DashboardContent } from '.';
 
 const DashboardPage = () => {
   return (

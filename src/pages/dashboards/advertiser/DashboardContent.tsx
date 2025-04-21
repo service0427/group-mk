@@ -149,82 +149,104 @@ export const DashboardContent: React.FC = () => {
                 </h3>
               </div>
               <div className="card-body py-3">
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">캠페인 이름</label>
-                  <input
-                    type="text"
-                    className="input w-full px-2 py-1 border rounded"
-                    placeholder="캠페인 이름을 입력하세요"
-                    name="name"
-                    value={campaignForm.name}
-                    onChange={handleFormChange}
-                  />
-                </div>
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">목표</label>
-                  <select
-                    className="form-select w-full px-2 py-1 border rounded"
-                    aria-label="캠페인 목표 선택"
-                    name="goal"
-                    value={campaignForm.goal}
-                    onChange={handleFormChange}
-                  >
-                    <option value="">목표를 선택하세요</option>
-                    <option value="awareness">브랜드 인지도</option>
-                    <option value="consideration">고려</option>
-                    <option value="conversion">전환</option>
-                  </select>
-                </div>
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">예산</label>
-                  <div className="input-group flex">
-                    <span className="input-group-text px-2 py-1 border rounded-l-md border-r-0 bg-gray-100">₩</span>
-                    <input
-                      type="number"
-                      className="input w-full px-2 py-1 border rounded-r-md border-l-0"
-                      placeholder="예산을 입력하세요"
-                      name="budget"
-                      value={campaignForm.budget}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-                </div>
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">일일 예산 한도</label>
-                  <div className="input-group flex">
-                    <span className="input-group-text px-2 py-1 border rounded-l-md border-r-0 bg-gray-100">₩</span>
-                    <input
-                      type="number"
-                      className="input w-full px-2 py-1 border rounded-r-md border-l-0"
-                      placeholder="일일 한도를 입력하세요"
-                      name="dailyBudget"
-                      value={campaignForm.dailyBudget}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-                </div>
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">기간</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="date"
-                        className="input w-full px-2 py-1 border rounded"
-                        name="startDate"
-                        value={campaignForm.startDate}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="date"
-                        className="input w-full px-2 py-1 border rounded"
-                        name="endDate"
-                        value={campaignForm.endDate}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
+                <div className="overflow-hidden border border-border rounded-lg mb-6">
+                  <table className="min-w-full divide-y divide-border">
+                    <tbody className="divide-y divide-border">
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground w-1/3">
+                          캠페인 이름
+                        </th>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            className="input w-full bg-background text-foreground border border-input rounded"
+                            placeholder="캠페인 이름을 입력하세요"
+                            name="name"
+                            value={campaignForm.name}
+                            onChange={handleFormChange}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
+                          목표
+                        </th>
+                        <td className="px-4 py-3">
+                          <select
+                            className="select w-full bg-background text-foreground border border-input rounded"
+                            aria-label="캠페인 목표 선택"
+                            name="goal"
+                            value={campaignForm.goal}
+                            onChange={handleFormChange}
+                          >
+                            <option value="" className="bg-background text-foreground">목표를 선택하세요</option>
+                            <option value="awareness" className="bg-background text-foreground">브랜드 인지도</option>
+                            <option value="consideration" className="bg-background text-foreground">고려</option>
+                            <option value="conversion" className="bg-background text-foreground">전환</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
+                          예산
+                        </th>
+                        <td className="px-4 py-3">
+                          <div className="input-group flex">
+                            <span className="input-group-text px-2 py-1 border rounded-l-md border-r-0 bg-muted text-muted-foreground">₩</span>
+                            <input
+                              type="number"
+                              className="input w-full bg-background text-foreground border rounded-r-md border-l-0"
+                              placeholder="예산을 입력하세요"
+                              name="budget"
+                              value={campaignForm.budget}
+                              onChange={handleFormChange}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
+                          일일 예산 한도
+                        </th>
+                        <td className="px-4 py-3">
+                          <div className="input-group flex">
+                            <span className="input-group-text px-2 py-1 border rounded-l-md border-r-0 bg-muted text-muted-foreground">₩</span>
+                            <input
+                              type="number"
+                              className="input w-full bg-background text-foreground border rounded-r-md border-l-0"
+                              placeholder="일일 한도를 입력하세요"
+                              name="dailyBudget"
+                              value={campaignForm.dailyBudget}
+                              onChange={handleFormChange}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
+                          기간
+                        </th>
+                        <td className="px-4 py-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <input
+                              type="date"
+                              className="input bg-background text-foreground border border-input rounded"
+                              name="startDate"
+                              value={campaignForm.startDate}
+                              onChange={handleFormChange}
+                            />
+                            <input
+                              type="date"
+                              className="input bg-background text-foreground border border-input rounded"
+                              name="endDate"
+                              value={campaignForm.endDate}
+                              onChange={handleFormChange}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
                 <button
                   className="btn btn-primary w-100 px-4 py-2 bg-blue-600 text-white rounded"
@@ -315,14 +337,14 @@ export const DashboardContent: React.FC = () => {
                 </h3>
                 <div className="card-toolbar">
                   <select
-                    className="form-select form-select-sm form-select-solid px-2 py-1 border rounded"
+                    className="select bg-background text-foreground border border-input rounded px-2 py-1"
                     style={{ maxWidth: '200px' }}
                     value={selectedCampaign}
                     onChange={(e) => setSelectedCampaign(e.target.value)}
                   >
-                    <option value="여름 신상품 프로모션">여름 신상품 프로모션</option>
-                    <option value="가을 시즌 특별 할인">가을 시즌 특별 할인</option>
-                    <option value="겨울 선물 기획전">겨울 선물 기획전</option>
+                    <option value="여름 신상품 프로모션" className="bg-background text-foreground">여름 신상품 프로모션</option>
+                    <option value="가을 시즌 특별 할인" className="bg-background text-foreground">가을 시즌 특별 할인</option>
+                    <option value="겨울 선물 기획전" className="bg-background text-foreground">겨울 선물 기획전</option>
                   </select>
                 </div>
               </div>

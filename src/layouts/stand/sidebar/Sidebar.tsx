@@ -33,7 +33,7 @@ export const Sidebar = () => {
   }, [viewportHeight]);
 
   const desktopMode = useResponsive('up', 'lg');
-  const { mobileSidebarOpen, setSidebarMouseLeave, setMobileSidebarOpen } = useStandLayout();
+  const { mobileSidebarOpen, setMobileSidebarOpen } = useStandLayout();
   const { layout } = useStandLayout();
   const themeClass: string =
     layout.options.sidebar.theme === 'dark' || pathname === '/dark-sidebar'
@@ -44,20 +44,13 @@ export const Sidebar = () => {
     setMobileSidebarOpen(false);
   };
 
-  const handleMouseEnter = () => {
-    setSidebarMouseLeave(false);
-  };
-
-  const handleMouseLeave = () => {
-    setSidebarMouseLeave(true);
-  };
+  // PC 버전에서는 마우스 오버 이벤트 사용하지 않고 토글 버튼만 사용
 
   const renderContent = () => {
     return (
       <div
         ref={selfRef}
-        onMouseLeave={handleMouseLeave}
-        onMouseEnter={handleMouseEnter}
+        // 마우스 오버/아웃 이벤트 핸들러 제거
         className={clsx(
           'sidebar bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0',
           themeClass
@@ -82,7 +75,7 @@ export const Sidebar = () => {
     return (
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent
-          className="border-0 p-0 w-[--tw-sidebar-width] scrollable-y-auto"
+          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px] scrollable-y-auto"
           forceMount={true}
           side="left"
           close={false}

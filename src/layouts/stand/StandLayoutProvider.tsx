@@ -82,6 +82,20 @@ const StandLayoutProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     setCurrentLayout(layout);
   });
+  
+  // PC 버전에서 사이드바가 항상 열린 상태로 시작되도록 설정
+  useEffect(() => {
+    // 사이드바 확장 상태로 초기화 (collapse: false)
+    const updatedLayout = {
+      options: {
+        sidebar: {
+          collapse: false
+        }
+      }
+    };
+    updateLayout(standLayoutConfig.name, updatedLayout);
+    setLayout(getLayoutConfig());
+  }, []);
 
   const [megaMenuEnabled, setMegaMenuEnabled] = useState(false); // State for mega menu toggle
 
@@ -89,7 +103,8 @@ const StandLayoutProvider = ({ children }: PropsWithChildren) => {
 
   const [mobileMegaMenuOpen, setMobileMegaMenuOpen] = useState(false); // State for mobile mega menu
 
-  const [sidebarMouseLeave, setSidebarMouseLeave] = useState(false); // State for sidebar mouse leave
+  // PC 버전에서는 마우스 오버 이벤트 사용 안함, 항상 false로 설정
+  const [sidebarMouseLeave, setSidebarMouseLeave] = useState(false);
 
   const scrollPosition = useScrollPosition(); // Tracks the scroll position
 

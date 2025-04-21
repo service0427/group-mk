@@ -3,7 +3,6 @@ import { useResponsive } from '@/hooks';
 import { KeenIcon } from '@/components';
 import { TMenuConfig, MenuItem, MenuLink, MenuTitle, MenuArrow, Menu } from '@/components/menu';
 import {
-  MegaMenuSubProfiles,
   MegaMenuSubAccount,
   MegaMenuSubNetwork,
   MegaMenuSubAuth,
@@ -20,9 +19,9 @@ const MegaMenuInner = () => {
   const desktopMode = useResponsive('up', 'lg');
   const { isRTL } = useLanguage();
   const [disabled, setDisabled] = useState(true); // Initially set disabled to true
-  const { layout, sidebarMouseLeave, setMegaMenuEnabled } = useStandLayout();
+  const { layout, setMegaMenuEnabled } = useStandLayout();
 
-  // Change disabled state to false after a certain time (e.g., 5 seconds)
+  // 사이드바의 collapsed 상태만 감지하여 메가메뉴 활성화
   useEffect(() => {
     setDisabled(true);
 
@@ -32,7 +31,7 @@ const MegaMenuInner = () => {
 
     // Cleanup the timer when the component unmounts
     return () => clearTimeout(timer);
-  }, [layout.options.sidebar.collapse, sidebarMouseLeave]);
+  }, [layout.options.sidebar.collapse]); // sidebarMouseLeave 의존성 제거
 
   useEffect(() => {
     setMegaMenuEnabled(true);
@@ -44,7 +43,6 @@ const MegaMenuInner = () => {
     const myInfoItem = items[2];
     const adminItem = items[3];
     
-    // ?�이?�이 4�??�상 ?�을 경우?�만 ?�당
     const myAccountItem = items.length > 4 ? items[4] : null;
     const networkItem = items.length > 5 ? items[5] : null;
     const authItem = items.length > 6 ? items[6] : null;

@@ -8,6 +8,8 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { AdminUserInsertModal } from './block/AdminUserInsertModal';
+import { useResponsive } from '@/hooks';
+import { formatCurrency, formatCurrencyInTenThousand } from '@/utils/Format';
 
 import {
     Table,
@@ -43,6 +45,9 @@ const UsersPage = () => {
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [masterChecked, setMasterChecked] = useState<boolean>(false);
     const [checkedUsers, setCheckedUsers] = useState<Record<string, boolean>>({});
+
+    // 화면 크기 감지 (md 이하인지 여부)
+    const isMobile = useResponsive('down', 'md');
 
     // 회원 추가 모달 열기
     const openInsertModal = () => setInsertModalOpen(true);
@@ -452,7 +457,16 @@ const UsersPage = () => {
                                                         {renderStatusBadge(user.status)}
                                                     </TableCell>
                                                     <TableCell className="hidden lg:table-cell">
-                                                        <span className="font-medium">₩{user.cash || 0}{user?.bonus_cash > 0 ? `(+${user?.bonus_cash})` : ''}</span>
+                                                        <span className="font-medium">
+                                                            {isMobile
+                                                                ? formatCurrencyInTenThousand(user.cash || 0)
+                                                                : formatCurrency(user.cash || 0)}
+                                                            {user?.bonus_cash > 0 
+                                                                ? isMobile
+                                                                    ? `(+${formatCurrencyInTenThousand(user?.bonus_cash).replace('₩', '')})`
+                                                                    : `(+${formatCurrency(user?.bonus_cash).replace('₩', '')})`
+                                                                : ''}
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex justify-center space-x-2">

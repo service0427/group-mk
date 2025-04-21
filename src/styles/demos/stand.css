@@ -12,6 +12,12 @@
 		--tw-sidebar-width: theme('custom.layouts.stand.sidebar.width.mobile');
 		--tw-header-height: theme('custom.layouts.stand.header.height.mobile');
 	}
+	
+	/* 모바일에서 사이드바가 잘려서 나오지 않도록 너비 확보 */
+	.stand .sidebar {
+		width: 100%;
+		max-width: 280px;
+	}
 }
 
 /* Base */
@@ -74,38 +80,40 @@
 		pointer-events: none;
 	}
 
+	/* 마우스 오버 이벤트를 비활성화하고 토글 버튼만 사용하도록 수정 */
 	.stand.sidebar-collapse .sidebar:hover:not(.animating) {
-		width: var(--tw-sidebar-default-width);
-		transition: width var(--tw-sidebar-transition-duration) var(--tw-sidebar-transition-timing);
+		/* 마우스 오버 시 사이드바가 확장되지 않도록 수정 */
+		width: var(--tw-sidebar-width);
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .default-logo {
+	/* 토글 시에만 로고 변경이 되도록 수정 */
+	.stand.sidebar-collapse .sidebar .default-logo {
 		display: none;
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .small-logo {
+	.stand.sidebar-collapse .sidebar .small-logo {
 		display: flex;
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-link .menu-title,
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-link .menu-arrow,
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-link .menu-badge,
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-label .menu-title,
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-label .menu-arrow,
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-label .menu-badge {
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-link .menu-title,
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-link .menu-arrow,
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-link .menu-badge,
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-label .menu-title,
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-label .menu-arrow,
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-label .menu-badge {
 		display: none;
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-accordion {
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-accordion {
 		display: none;
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-heading {
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-heading {
 		visibility: hidden;
 		position: relative;
 	}
 
-	.stand.sidebar-collapse .sidebar:not(:hover) .menu > .menu-item > .menu-heading::before {
+	.stand.sidebar-collapse .sidebar .menu > .menu-item > .menu-heading::before {
 		content: "...";
 		color: currentColor;
 		font-size: inherit;

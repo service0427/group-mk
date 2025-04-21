@@ -1,6 +1,17 @@
 import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { DefaultPage, StandDarkSidebarPage } from '@/pages/dashboards';
+import { 
+  DefaultPage, 
+  StandDarkSidebarPage
+} from '@/pages/dashboards';
+
+// 역할별 대시보드 별도 임포트
+import { DeveloperDashboardPage } from '@/pages/dashboards/developer';
+import { OperatorDashboardPage } from '@/pages/dashboards/operator';
+import { DistributorDashboardPage } from '@/pages/dashboards/distributor';
+import { AgencyDashboardPage } from '@/pages/dashboards/agency';
+import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
+
 import {
   ProfileActivityPage,
   ProfileBloggerPage,
@@ -114,8 +125,17 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<StandLayout />}>
+          {/* 기본 대시보드 라우트 */}
           <Route path="/" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
+          
+          {/* 역할별 대시보드 라우트 */}
+          <Route path="/dashboard/developer" element={<DeveloperDashboardPage />} />
+          <Route path="/dashboard/operator" element={<OperatorDashboardPage />} />
+          <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
+          <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
+          <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
+          
           <Route path="/public-profile/profiles/default" element={<ProfileDefaultPage />} />
           <Route path="/public-profile/profiles/creator" element={<ProfileCreatorPage />} />
           <Route path="/public-profile/profiles/company" element={<ProfileCompanyPage />} />

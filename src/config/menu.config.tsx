@@ -5,6 +5,38 @@ export const MENU_SIDEBAR: TMenuConfig = [
     title: 'Dashboard',
     icon: 'element-11',
     path: '/',
+    children: [
+      {
+        title: '역할별 대시보드',
+        children: [
+          {
+            title: '개발자 대시보드',
+            path: '/dashboard/developer',
+            icon: 'code-1'
+          },
+          {
+            title: '운영자 대시보드',
+            path: '/dashboard/operator',
+            icon: 'shield-tick'
+          },
+          {
+            title: '총판 대시보드',
+            path: '/dashboard/distributor',
+            icon: 'shop'
+          },
+          {
+            title: '대행사 대시보드',
+            path: '/dashboard/agency',
+            icon: 'briefcase'
+          },
+          {
+            title: '광고주 대시보드',
+            path: '/dashboard/advertiser',
+            icon: 'presentation-chart'
+          }
+        ]
+      }
+    ]
   },
   {
     heading: '서비스'
@@ -676,7 +708,39 @@ export const MENU_SIDEBAR: TMenuConfig = [
 export const MENU_MEGA: TMenuConfig = [
   {
     title: 'Dashboard',
-    path: '/'
+    path: '/',
+    children: [
+      {
+        heading: '역할별 대시보드',
+        children: [
+          { 
+            title: '개발자 대시보드',
+            icon: 'code-1',
+            path: '/dashboard/developer'
+          },
+          { 
+            title: '운영자 대시보드',
+            icon: 'shield-tick',
+            path: '/dashboard/operator'
+          },
+          { 
+            title: '총판 대시보드',
+            icon: 'shop',
+            path: '/dashboard/distributor'
+          },
+          { 
+            title: '대행사 대시보드',
+            icon: 'briefcase',
+            path: '/dashboard/agency'
+          },
+          { 
+            title: '광고주 대시보드',
+            icon: 'presentation-chart',
+            path: '/dashboard/advertiser'
+          }
+        ]
+      }
+    ]
   },
   {
     title: '서비스',

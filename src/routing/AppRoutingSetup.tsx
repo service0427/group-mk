@@ -109,6 +109,9 @@ import {
   Slots,
   Site
 } from '@/pages/admin';
+// 일반 사용자용 공지사항 페이지 임포트
+import NoticePage from '@/pages/notice';
+import FAQPage from '@/pages/faq';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
@@ -259,6 +262,10 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 포인트 관련 라우트 */}
           <Route path="/point/history" element={<PointHistoryPage />} />
+
+          {/* 일반 사용자용 공지사항 및 FAQ 페이지 */}
+          <Route path="/notice" element={<NoticePage />} />
+          <Route path="/faq" element={<FAQPage />} />
 
           {/* 관리자 메뉴 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />

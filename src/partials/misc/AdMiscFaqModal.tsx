@@ -1,14 +1,134 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FaqAccordionItem } from './FaqAccordionItem';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Collapse } from '@mui/material';
+import { KeenIcon } from '@/components/keenicons';
+import clsx from 'clsx';
+import { supabase } from '@/supabase';
 
-interface IAdFaqItem {
-  title: string;
-  text: string;
+// 카테고리별 배경색 설정
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case '결제':
+      return 'bg-blue-100 text-blue-800';
+    case '포인트':
+      return 'bg-green-100 text-green-800';
+    case '계정':
+      return 'bg-purple-100 text-purple-800';
+    case '광고':
+      return 'bg-orange-100 text-orange-800';
+    case '기타':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-blue-100 text-blue-800';
+  }
+};
+
+// FAQ 데이터 타입 정의
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
   category: string;
+  is_active: boolean;
+  author_id: string;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
 }
-type IAdFaqItems = Array<IAdFaqItem>;
+
+// FaqAccordionItem 컴포넌트 내부로 이동
+interface IFaqAccordionItemProps {
+  faq: FAQ;
+  onToggle?: () => void;
+  isDefaultOpen?: boolean;
+}
+
+const FaqAccordionItem = ({ 
+  faq,
+  onToggle,
+  isDefaultOpen = false
+}: IFaqAccordionItemProps) => {
+  const [isOpen, setIsOpen] = useState(isDefaultOpen);
+
+  const toggleAccordion = () => {
+    setIsOpen(!isOpen);
+    
+    // 토글 이벤트 호출
+    if (onToggle) {
+      // 약간의 지연을 주어 상태 변경 후 호출
+      setTimeout(() => {
+        onToggle();
+      }, 50);
+    }
+  };
+  
+  // 초기 열린 상태에서도 토글 이벤트 호출
+  useEffect(() => {
+    if (isDefaultOpen && onToggle) {
+      onToggle();
+    }
+  }, [isDefaultOpen, onToggle]);
+
+  // 조회수 증가 함수
+  const incrementViewCount = async () => {
+    try {
+      await supabase
+        .from('faq')
+        .update({ view_count: (faq.view_count || 0) + 1 })
+        .eq('id', faq.id);
+    } catch (error) {
+      console.error('조회수 업데이트 중 오류 발생:', error);
+    }
+  };
+
+  const categoryColor = getCategoryColor(faq.category);
+
+  const handleClick = () => {
+    toggleAccordion();
+    incrementViewCount();
+  };
+
+  return (
+    <div className={clsx(
+      'accordion-item [&:not(:last-child)]:border-b border-b-border', 
+      isOpen && 'active'
+    )}>
+      <button 
+        type="button" 
+        className="accordion-toggle py-4 cursor-pointer w-full flex items-center"
+        onClick={handleClick}
+      >
+        <div className="flex items-start flex-1 text-left">
+          <div className="flex">
+            <span className="text-primary font-bold mr-3 text-lg">Q.</span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColor} mr-3`}>
+              {faq.category}
+            </span>
+          </div>
+          <span className="text-base text-foreground pt-0.5">{faq.question}</span>
+        </div>
+        <span className="accordion-indicator ml-2">
+          {isOpen ? (
+            <KeenIcon icon="minus" style="outline" className="text-muted-foreground text-sm" />
+          ) : (
+            <KeenIcon icon="plus" style="outline" className="text-muted-foreground text-sm" />
+          )}
+        </span>
+      </button>
+      <Collapse in={isOpen} onEntered={onToggle} onExited={onToggle}>
+        <div className="accordion-content bg-gray-50 mx-2 my-2 rounded-md">
+          <div className="text-foreground text-md py-4 px-4">
+            <div className="flex items-start">
+              <span className="text-primary font-bold mr-3 text-lg">A.</span>
+              <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+            </div>
+          </div>
+        </div>
+      </Collapse>
+    </div>
+  );
+};
 
 // FAQ 카테고리 목록
 const faqCategories = ['전체', '결제', '포인트', '계정', '광고', '기타'];
@@ -22,66 +142,67 @@ const AdMiscFaqModal: React.FC<AdMiscFaqModalProps> = ({ isOpen, onClose }) => {
   const [activeCategory, setActiveCategory] = useState('전체');
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [faqs, setFAQs] = useState<FAQ[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // FAQ 목록 가져오기 - 활성화된 FAQ만 표시
+  const fetchFAQs = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('faq')
+        .select('*')
+        .eq('is_active', true)  // 활성화된 FAQ만 조회
+        .order('category', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFAQs(data || []);
+    } catch (err: any) {
+      console.error('FAQ를 가져오는 중 오류가 발생했습니다:', err);
+      setError('FAQ를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 FAQ 가져오기
+  useEffect(() => {
+    if (isOpen) {
+      fetchFAQs();
+    }
+  }, [isOpen]);
   
   // 초기 높이를 설정하는 함수
   useEffect(() => {
     if (isOpen && contentRef.current) {
-      // 500px 이하인 경우 실제 높이로, 500px보다 크면 500px로 고정
-      const containerHeight = contentRef.current.scrollHeight;
-      const initialHeight = Math.min(containerHeight, 500);
-      setContentHeight(initialHeight);
+      // setTimeout을 사용하여 DOM이 완전히 렌더링된 후 높이를 계산
+      setTimeout(() => {
+        if (contentRef.current) {
+          // 콘텐츠의 실제 높이를 계산할 때 여유 공간 추가
+          const containerHeight = contentRef.current.scrollHeight;
+          // 가능한 경우 콘텐츠가 모두 표시되도록 함
+          const initialHeight = Math.min(containerHeight + 5, 500); // 5px의 여유 공간 추가
+          setContentHeight(initialHeight);
+        }
+      }, 50); // 약간의 지연 시간을 줌
     }
-  }, [isOpen, activeCategory]);
-  
-  const items: IAdFaqItems = [
-    {
-      title: '캐시 충전은 어떻게 하나요?',
-      text: "캐시 충전은 마이페이지 > 캐시관리 메뉴에서 진행할 수 있습니다. 신용카드, 실시간 계좌이체, 가상계좌 등 다양한 결제수단을 지원합니다.",
-      category: '결제'
-    },
-    {
-      title: '환불 정책은 어떻게 되나요?',
-      text: "충전한 캐시는 미사용 상태에서 결제일로부터 7일 이내에 환불이 가능합니다. 이후에는 부분 사용된 경우 사용 금액을 제외한 금액만 환불됩니다.",
-      category: '결제'
-    },
-    {
-      title: '포인트는 어떻게 사용하나요?',
-      text: "적립된 포인트는 캐시 충전 시 1 포인트 = 1원으로 사용 가능합니다. 최소 1,000 포인트부터 사용 가능하며, 유효기간은 적립일로부터 1년입니다.",
-      category: '포인트'
-    },
-    {
-      title: '계정 정보는 어떻게 변경하나요?',
-      text: "계정 정보 변경은 마이페이지 > 내 정보 관리 메뉴에서 가능합니다. 비밀번호, 연락처, 이메일 등의 정보를 변경할 수 있습니다.",
-      category: '계정'
-    },
-    {
-      title: '광고 집행 결과는 어디서 확인할 수 있나요?',
-      text: "광고 집행 결과는 마이페이지 > 광고 관리 > 집행 현황 메뉴에서 확인할 수 있습니다. 일별, 주별, 월별 통계와 함께 상세 리포트를 제공합니다.",
-      category: '광고'
-    },
-    {
-      title: '회원 등급은 어떻게 결정되나요?',
-      text: "회원 등급은 월간 사용 금액과 누적 사용 금액에 따라 결정됩니다. 자세한 등급별 혜택은 마이페이지 > 회원 등급 안내에서 확인하실 수 있습니다.",
-      category: '계정'
-    },
-    {
-      title: '기타 문의사항은 어디로 연락하면 되나요?',
-      text: "기타 문의사항은 고객센터(1588-0000)로 전화 문의하시거나, 홈페이지 하단의 1:1 문의하기를 통해 접수해 주시기 바랍니다.",
-      category: '기타'
-    },
-  ];
+  }, [isOpen, activeCategory, isLoading]);
 
   // 카테고리별 필터링된 FAQ 목록
-  const filteredItems = activeCategory === '전체'
-    ? items
-    : items.filter(item => item.category === activeCategory);
+  const filteredFAQs = activeCategory === '전체'
+    ? faqs
+    : faqs.filter(faq => faq.category === activeCategory);
 
   // 아코디언 아이템 클릭시 콘텐츠 높이 조정
   const handleAccordionToggle = () => {
     // 아코디언이 열린 후 약간의 딜레이를 주고 높이를 다시 계산
     setTimeout(() => {
       if (contentRef.current) {
-        const newHeight = contentRef.current.scrollHeight + 20; // 여분의 공간을 위해 20px 추가
+        const newHeight = contentRef.current.scrollHeight + 10; // 여유 공간 조정
         setContentHeight(newHeight);
       }
     }, 100);
@@ -89,10 +210,13 @@ const AdMiscFaqModal: React.FC<AdMiscFaqModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby="faq-dialog-description">
         {/* 모달 헤더 */}
         <DialogHeader className="bg-background py-4 px-8 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">자주 묻는 질문 (FAQ)</DialogTitle>
+          <DialogDescription id="faq-dialog-description" className="sr-only">
+            자주 묻는 질문 및 답변 모음입니다. 카테고리별로 질문을 필터링할 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="p-6 bg-background">
@@ -117,19 +241,35 @@ const AdMiscFaqModal: React.FC<AdMiscFaqModalProps> = ({ isOpen, onClose }) => {
           <div 
             ref={contentRef}
             className="overflow-y-auto pr-2 transition-all duration-300 ease-in-out"
-            style={{ maxHeight: contentHeight ? `${contentHeight}px` : '350px', minHeight: '250px' }}
+            style={{ 
+              maxHeight: contentHeight ? `${contentHeight}px` : '350px', 
+              minHeight: '250px',
+              overflowY: filteredFAQs.length > 0 ? 'auto' : 'hidden' // 아이템이 없으면 스크롤바 숨김
+            }}
           >
-            {filteredItems.length > 0 ? (
+            {isLoading ? (
+              <div className="p-8 flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : error ? (
+              <div className="p-8 text-center text-red-500">
+                <p>{error}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchFAQs}
+                  className="mt-4"
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : filteredFAQs.length > 0 ? (
               <div className="faq-accordion">
-                {filteredItems.map((item, index) => (
+                {filteredFAQs.map((faq) => (
                   <FaqAccordionItem
-                    key={index}
-                    title={item.title}
-                    category={item.category}
+                    key={faq.id}
+                    faq={faq}
                     onToggle={handleAccordionToggle}
-                  >
-                    {item.text}
-                  </FaqAccordionItem>
+                  />
                 ))}
               </div>
             ) : (

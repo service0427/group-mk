@@ -150,73 +150,95 @@ export const DashboardContent: React.FC = () => {
                 </h3>
               </div>
               <div className="card-body py-3">
-                <div className="bg-light-success rounded p-4 mb-4">
-                  <div className="d-flex align-items-center">
-                    <div className="flex-grow-1">
-                      <div className="text-gray-800 fw-bold fs-6 mb-1">현재 보유 캐시</div>
-                      <div className="text-success fw-bold fs-2">{formatCurrency(3850000)}</div>
-                    </div>
-                    <div className="ms-2">
-                      <span className="badge badge-success fs-7">+₩192,500 (5%)</span>
-                    </div>
+                <div className="bg-light-success p-4 mb-5 rounded">
+                  <div className="d-flex justify-between items-center mb-2">
+                    <span className="text-foreground fw-bolder font-bold text-xl">현재 보유 캐시</span>
+                    <span className="text-success fw-bolder font-bold text-xl pl-6">{formatCurrency(3850000)}</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="badge badge-success text-xs">+₩192,500 (5%)</span>
                   </div>
                 </div>
-                <div className="form-group mb-3">
-                  <label className="form-label fw-semibold">충전 금액 (원)</label>
-                  <input
-                    type="text"
-                    className="input w-full px-2 py-1 border rounded"
-                    placeholder="충전할 금액을 입력하세요"
-                    value={chargeAmount}
-                    onChange={handleAmountChange}
-                  />
-                  <div className="text-gray-600 fs-7 mt-2">
-                    *최소 금액: ₩100,000원
-                  </div>
+
+                <div className="overflow-hidden border border-border rounded-lg mb-6">
+                  <table className="min-w-full divide-y divide-border">
+                    <tbody className="divide-y divide-border">
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground w-1/3">
+                          충전 금액
+                        </th>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <input
+                              type="text"
+                              className="input w-full bg-background text-foreground border border-input rounded"
+                              placeholder="충전할 금액을 입력하세요"
+                              value={chargeAmount}
+                              onChange={handleAmountChange}
+                            />
+                            <div className="text-gray-600 text-xs mt-2">
+                              *최소 금액: ₩100,000원
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
+                          결제 방법
+                        </th>
+                        <td className="px-4 py-3">
+                          <div className="d-flex space-x-5">
+                            <div className="form-check form-check-custom form-check-solid form-check-sm">
+                              <input
+                                className="input-radio"
+                                type="radio"
+                                name="payment_method"
+                                id="payment_card"
+                                checked={paymentMethod === 'card'}
+                                onChange={() => setPaymentMethod('card')}
+                              />
+                              <label className="form-check-label ml-2" htmlFor="payment_card">
+                                신용카드
+                              </label>
+                            </div>
+                            <div className="form-check form-check-custom form-check-solid form-check-sm">
+                              <input
+                                className="input-radio"
+                                type="radio"
+                                name="payment_method"
+                                id="payment_bank"
+                                checked={paymentMethod === 'bank'}
+                                onChange={() => setPaymentMethod('bank')}
+                              />
+                              <label className="form-check-label ml-2" htmlFor="payment_bank">
+                                계좌이체
+                              </label>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <div className="d-flex mb-3">
-                  <div className="form-check form-check-custom form-check-solid form-check-sm me-5">
-                    <input
-                      className="input-radio"
-                      type="radio"
-                      name="payment_method"
-                      id="payment_card"
-                      checked={paymentMethod === 'card'}
-                      onChange={() => setPaymentMethod('card')}
-                    />
-                    <label className="form-check-label" htmlFor="payment_card">
-                      신용카드
-                    </label>
-                  </div>
-                  <div className="form-check form-check-custom form-check-solid form-check-sm">
-                    <input
-                      className="input-radio"
-                      type="radio"
-                      name="payment_method"
-                      id="payment_bank"
-                      checked={paymentMethod === 'bank'}
-                      onChange={() => setPaymentMethod('bank')}
-                    />
-                    <label className="form-check-label" htmlFor="payment_bank">
-                      계좌이체
-                    </label>
-                  </div>
+
+                <div className="text-sm bg-gray-100 p-4 rounded mb-4">
+                  <span className="block font-medium mb-2">입금 시 혜택:</span>
+                  <ul className="pl-5 space-y-1">
+                    <li className="d-flex items-center">
+                      <i className="fas fa-arrow-up text-success me-2"></i>
+                      <span className="text-gray-800 fs-7">100만원 이상: 2% 보너스 캐시</span>
+                    </li>
+                    <li className="d-flex items-center">
+                      <i className="fas fa-arrow-up text-success me-2"></i>
+                      <span className="text-gray-800 fs-7">300만원 이상: 3% 보너스 캐시</span>
+                    </li>
+                    <li className="d-flex items-center">
+                      <i className="fas fa-arrow-up text-success me-2"></i>
+                      <span className="text-gray-800 fs-7">500만원 이상: 5% 보너스 캐시</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="card bg-light p-4 mb-3">
-                  <h5 className="fw-bold mb-2 fs-6">입금 시 혜택</h5>
-                  <div className="d-flex align-items-center mb-2">
-                    <i className="fas fa-arrow-up text-success me-2"></i>
-                    <span className="text-gray-800 fs-7">100만원 이상: 2% 보너스 캐시</span>
-                  </div>
-                  <div className="d-flex align-items-center mb-2">
-                    <i className="fas fa-arrow-up text-success me-2"></i>
-                    <span className="text-gray-800 fs-7">300만원 이상: 3% 보너스 캐시</span>
-                  </div>
-                  <div className="d-flex align-items-center">
-                    <i className="fas fa-arrow-up text-success me-2"></i>
-                    <span className="text-gray-800 fs-7">500만원 이상: 5% 보너스 캐시</span>
-                  </div>
-                </div>
+                
                 <button
                   className="btn btn-primary w-100"
                   onClick={handleDeposit}

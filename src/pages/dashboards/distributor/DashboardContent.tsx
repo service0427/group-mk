@@ -200,7 +200,7 @@ export const DashboardContent: React.FC = () => {
                   <div className="d-flex flex-col mb-2">
                     <div className="d-flex justify-between items-center mb-2">
                       <span className="text-foreground fw-bolder font-bold text-xl">현재 보유 캐시</span>
-                      <span className="text-primary fw-bolder font-bold text-xl">{formatCurrency(2500000)}</span>
+                      <span className="text-primary fw-bolder font-bold text-xl pl-6">{formatCurrency(2500000)}</span>
                     </div>
                     <div className="text-left">
                       <span className="badge badge-light-primary text-xs">최소 출금: ₩10,000</span>

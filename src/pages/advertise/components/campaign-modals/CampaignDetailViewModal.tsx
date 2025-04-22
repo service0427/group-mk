@@ -8,29 +8,14 @@ import {
 } from '@/components/modal';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
+import { getStatusColorClass, CampaignDetailData as ICampaignDetailData } from '@/utils/CampaignFormat';
 
-// 캠페인 데이터 인터페이스
-export interface CampaignDetailData {
-  id: string;
-  campaignName: string;
-  description: string;
-  logo: string;
-  efficiency: string;
-  minQuantity: string;
-  deadline: string;
-  unitPrice?: string;
-  additionalLogic?: string;
-  detailedDescription?: string;
-  status: {
-    label: string;
-    color: string;
-  };
-}
+// 기존 인터페이스를 유틸리티에서 가져온 인터페이스로 대체
 
 interface CampaignDetailViewModalProps {
   open: boolean;
   onClose: () => void;
-  campaign: CampaignDetailData | null;
+  campaign: ICampaignDetailData | null;
 }
 
 const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
@@ -39,6 +24,8 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   campaign
 }) => {
   if (!campaign) return null;
+
+  // 유틸리티 함수를 사용하므로 로컬 함수가 필요 없습니다
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -54,15 +41,19 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
             {/* 헤더 정보 */}
             <div className="flex items-center gap-4">
               <img
-                src={toAbsoluteUrl(`/media/animal/svg/${campaign.logo}`)}
+                src={campaign.logo.startsWith('/media') ? toAbsoluteUrl(campaign.logo) : toAbsoluteUrl(`/media/${campaign.logo}`)}
                 className="rounded-full size-16 shrink-0"
                 alt={campaign.campaignName}
+                onError={(e) => {
+                  // 이미지 로드 실패 시 기본 이미지 사용
+                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                }}
               />
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">{campaign.campaignName}</h2>
                 <div className="mt-1">
-                  <span className={`badge badge-${campaign.status.color} badge-outline rounded-[30px]`}>
-                    <span className={`size-1.5 rounded-full bg-${campaign.status.color} me-1.5`}></span>
+                  <span className={`badge ${campaign.status.color} badge-outline rounded-[30px] h-auto py-1`}>
+                    <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign.status.color)} me-1.5`}></span>
                     {campaign.status.label}
                   </span>
                 </div>
@@ -78,7 +69,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                       건당 단가
                     </th>
                     <td className="px-4 py-3 text-md text-gray-900">
-                      {campaign.unitPrice || '1,000'} 원
+                      {campaign.unitPrice ? (campaign.unitPrice.endsWith('원') ? campaign.unitPrice : `${campaign.unitPrice} 원`) : '1,000 원'}
                     </td>
                   </tr>
                   <tr>
@@ -86,23 +77,25 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                       최소수량
                     </th>
                     <td className="px-4 py-3 text-md text-gray-900">
-                      {campaign.minQuantity} 개
+                      {campaign.minQuantity ? (campaign.minQuantity.endsWith('개') ? campaign.minQuantity : `${campaign.minQuantity} 개`) : '0 개'}
                     </td>
                   </tr>
-                  <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                      추가로직
-                    </th>
-                    <td className="px-4 py-3 text-md text-gray-900">
-                      {campaign.additionalLogic || '0'} 개
-                    </td>
-                  </tr>
+                  {campaign.additionalLogic && campaign.additionalLogic !== '없음' && (
+                    <tr>
+                      <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                        추가로직
+                      </th>
+                      <td className="px-4 py-3 text-md text-gray-900">
+                        {campaign.additionalLogic ? (campaign.additionalLogic.endsWith('개') ? campaign.additionalLogic : `${campaign.additionalLogic} 개`) : '0 개'}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <th className="px-4 py-3 bg-gray-50 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
                       상승효율
                     </th>
                     <td className="px-4 py-3 text-md text-gray-900">
-                      {campaign.efficiency} %
+                      {campaign.efficiency ? (campaign.efficiency.endsWith('%') ? campaign.efficiency : `${campaign.efficiency} %`) : '0 %'}
                     </td>
                   </tr>
                   <tr>
@@ -129,7 +122,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-2">캠페인 상세설명</h3>
               <div className="bg-white border border-gray-200 p-4 rounded text-md text-gray-900 whitespace-pre-line">
-                {campaign.detailedDescription || '상세 설명이 없습니다.'}
+                {campaign.detailedDescription ? 
+                  campaign.detailedDescription : 
+                  (campaign.description || '상세 설명이 없습니다.')}
               </div>
             </div>
             
@@ -141,6 +136,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                   <li>해당 캠페인 건당 단가는 {campaign.unitPrice || '1,000'}원입니다.</li>
                   <li>캠페인 접수 시간은 {campaign.deadline}까지 입니다.</li>
                   <li>최소 작업 수량은 {campaign.minQuantity}개 입니다.</li>
+                  {campaign.additionalLogic && campaign.additionalLogic !== '없음' && (
+                    <li>추가로직 필요 수량은 {campaign.additionalLogic}입니다.</li>
+                  )}
                   <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
                 </ul>
               </div>

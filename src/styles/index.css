@@ -1,5 +1,10 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css");
 
+/* 캠페인 프로그레스바 스타일 */
+@import "campaign-progress.css";
+
+/* 메뉴 블릿 포인트는 컴포넌트에서 직접 관리함 */
+
 @font-face {
     font-family: 'Jua-Regular';
     src: url('fonts/Jua-Regular.ttf');

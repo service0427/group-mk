@@ -1,7 +1,6 @@
 import React, { Fragment, useState, useEffect } from 'react';
 import { ServiceData } from '@/data/advertiseServices';
 import { IAdCampaignsContentItem } from '../data/adCampaignTypes';
-import { sampleCampaigns, getCampaignsData } from '../data/adCampaignsSampleData';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Navbar } from '@/partials/navbar';
@@ -12,13 +11,21 @@ import { toAbsoluteUrl } from '@/utils';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem, KeenIcon } from '@/components';
 import { CardAdCampaign, CardAdCampaignRow } from './campaign-cards';
+import { supabase } from '@/supabase';
+import { getServiceTypeFromPath } from '@/data/advertiseServices';
+import { 
+  formatCampaignData, 
+  CampaignData, 
+  getStatusBadgeClass, 
+  getStatusLabel 
+} from '@/utils/CampaignFormat';
 
 interface IntroTemplateProps {
   serviceData: ServiceData;
   campaignPath: string;
 }
 
-const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
+const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
@@ -30,24 +37,79 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
   const [items, setItems] = useState<IAdCampaignsContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // 상태값 관련 함수는 유틸리티로 이동했습니다.
+  
   // 페이지 로딩 시 데이터 가져오기
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 실제 환경에서는 getCampaignsData 함수를 호출하여 Supabase에서 데이터 가져옴
-        // const data = await getCampaignsData();
+        setLoading(true);
         
-        // 현재는 샘플 데이터 사용
-        setItems(sampleCampaigns);
+        // URL 경로에서 서비스 타입 추출
+        const pathSegments = pathname.split('/').filter(Boolean);
+        
+        console.log('Path segments:', pathSegments);
+        
+        // /advertise/platform/type/intro 와 /advertise/platform/subservice/type/intro 구분
+        let platform = '';
+        let type = '';
+        let subservice = '';
+        
+        if (pathSegments.length >= 4) {
+          platform = pathSegments[1]; // advertise가 0번 인덱스
+          
+          if (pathSegments.length === 4) {
+            // /advertise/naver/auto/intro 형태
+            type = pathSegments[2];
+            subservice = '';
+          } else if (pathSegments.length === 5) {
+            // /advertise/naver/place/save/intro 형태
+            subservice = pathSegments[2];
+            type = pathSegments[3];
+          }
+        }
+        
+        console.log('Parsed URL params:', {platform, subservice, type});
+        
+        // 서비스 타입 코드 변환
+        const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
+        
+        if (!serviceTypeCode) {
+          console.error('Service type code not found for the given path');
+          setLoading(false);
+          return;
+        }
+        
+        // Supabase에서 해당 서비스 타입의 캠페인 가져오기 (표시안함 상태 제외)
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('service_type', serviceTypeCode)
+          .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
+          .order('id', { ascending: true });
+          
+        if (error) {
+          console.error('Error fetching campaign data:', error);
+          setLoading(false);
+          return;
+        }
+        
+        // 유틸리티 함수를 사용하여 데이터 변환 (인덱스 전달)
+        const formattedItems: IAdCampaignsContentItem[] = data.map((campaign, index) => 
+          formatCampaignData(campaign as CampaignData, index)
+        );
+        
+        setItems(formattedItems);
         setLoading(false);
       } catch (error) {
         console.error('캠페인 데이터 로딩 오류:', error);
+        setItems([]);
         setLoading(false);
       }
     };
     
     fetchData();
-  }, []);
+  }, [pathname]);
   
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
@@ -115,7 +177,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
         status={item.status}
         statistics={item.statistics}
         progress={item.progress}
-        url="#"
+        url={campaignPath}
         key={index}
       />
     );
@@ -130,7 +192,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
         description={data.description}
         status={data.status}
         statistics={data.statistics}
-        url="#"
+        url={campaignPath}
         key={index}
       />
     );
@@ -195,21 +257,31 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
               </div>
             </div>
 
-            <div id="campaigns_cards" className={currentMode === 'list' ? 'hidden' : ''}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7.5">
-                {items.map((item, index) => {
-                  return renderProject(item, index);
-                })}
+            {items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow">
+                <KeenIcon icon="information-circle" className="size-16 mb-4 text-gray-400" />
+                <p className="text-lg font-medium text-gray-500 mb-2">캠페인 데이터가 없습니다</p>
+                <p className="text-sm text-gray-400">현재 제공 가능한 캠페인이 없습니다. 나중에 다시 확인해 주세요.</p>
               </div>
-            </div>
+            ) : (
+              <>
+                <div id="campaigns_cards" className={currentMode === 'list' ? 'hidden' : ''}>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7.5">
+                    {items.map((item, index) => {
+                      return renderProject(item, index);
+                    })}
+                  </div>
+                </div>
 
-            <div id="campaigns_list" className={currentMode === 'cards' ? 'hidden' : ''}>
-              <div className="flex flex-col gap-5 lg:gap-7.5">
-                {items.map((data, index) => {
-                  return renderItem(data, index);
-                })}
-              </div>
-            </div>
+                <div id="campaigns_list" className={currentMode === 'cards' ? 'hidden' : ''}>
+                  <div className="flex flex-col gap-5 lg:gap-7.5">
+                    {items.map((data, index) => {
+                      return renderItem(data, index);
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </Container>
@@ -217,4 +289,4 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData }) => {
   );
 };
 
-export default IntroTemplate;
+export { IntroTemplate };

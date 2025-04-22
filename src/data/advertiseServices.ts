@@ -1,4 +1,6 @@
 // 광고 서비스 데이터의
+import { supabase } from '@/supabase';
+
 export interface ServiceData {
   name: string;
   description: string;
@@ -16,20 +18,7 @@ export interface ServiceData {
 
 export interface CampaignData {
   serviceData: ServiceData;
-  campaigns: Array<{
-    id: string;
-    name: string;
-    status: 'active' | 'paused' | 'completed';
-    budget: number;
-    spent: number;
-    startDate: string;
-    endDate?: string;
-    performance?: {
-      impressions: number;
-      clicks: number;
-      conversions: number;
-    };
-  }>;
+  campaigns: Array<any>;
 }
 
 // 서비스 데이터 계층 구조
@@ -209,172 +198,126 @@ export const getServiceData = (
   }
 };
 
-// 캠페인 데이터(하드코딩된 예시)
-export const campaignData: Record<string, Array<any>> = {
-  "coupang-traffic": [
-    {
-      id: "camp-001",
-      name: "쿠팡 여름 프로모션",
-      status: "active",
-      budget: 500000,
-      spent: 235000,
-      startDate: "2025-04-01",
-      endDate: "2025-06-30",
-      performance: {
-        impressions: 45600,
-        clicks: 3200,
-        conversions: 128
-      }
-    },
-    {
-      id: "camp-002",
-      name: "신상품 출시 캠페인",
-      status: "paused",
-      budget: 300000,
-      spent: 120000,
-      startDate: "2025-03-15",
-      endDate: "2025-04-15",
-      performance: {
-        impressions: 25800,
-        clicks: 1840,
-        conversions: 76
-      }
-    }
-  ],
-  "naver-auto": [
-    {
-      id: "camp-003",
-      name: "브랜드명 자동완성 캠페인",
-      status: "active",
-      budget: 200000,
-      spent: 85000,
-      startDate: "2025-02-01",
-      endDate: "2025-05-01",
-      performance: {
-        impressions: 188000,
-        clicks: 5400,
-        conversions: 210
-      }
-    }
-  ],
-  "naver-place-save": [
-    {
-      id: "camp-004",
-      name: "매장 저장 유도 캠페인",
-      status: "active",
-      budget: 150000,
-      spent: 37500,
-      startDate: "2025-04-01",
-      performance: {
-        impressions: 12400,
-        clicks: 1750,
-        conversions: 420
-      }
-    }
-  ],
-  "naver-place-share": [
-    {
-      id: "camp-005",
-      name: "친구 초대 이벤트",
-      status: "completed",
-      budget: 100000,
-      spent: 100000,
-      startDate: "2025-01-15",
-      endDate: "2025-03-15",
-      performance: {
-        impressions: 34500,
-        clicks: 4200,
-        conversions: 380
-      }
-    }
-  ],
-  "naver-place-traffic": [
-    {
-      id: "camp-006",
-      name: "네이버 플레이스 사이트 연결 캠페인",
-      status: "active",
-      budget: 250000,
-      spent: 75000,
-      startDate: "2025-03-10",
-      performance: {
-        impressions: 28700,
-        clicks: 3650,
-        conversions: 145
-      }
-    }
-  ],
-  "naver-shopping-traffic": [
-    {
-      id: "camp-007",
-      name: "쇼핑 트래픽 최적화 캠페인",
-      status: "active",
-      budget: 450000,
-      spent: 180000,
-      startDate: "2025-02-15",
-      performance: {
-        impressions: 65400,
-        clicks: 7820,
-        conversions: 310
-      }
-    }
-  ],
-  "naver-traffic": [
-    {
-      id: "camp-008",
-      name: "검색 키워드 광고",
-      status: "active",
-      budget: 350000,
-      spent: 120000,
-      startDate: "2025-03-01",
-      performance: {
-        impressions: 42000,
-        clicks: 5600,
-        conversions: 224
-      }
-    }
-  ],
-  "ohouse-traffic": [
-    {
-      id: "camp-009",
-      name: "인테리어 특집 광고",
-      status: "active",
-      budget: 280000,
-      spent: 95000,
-      startDate: "2025-04-05",
-      performance: {
-        impressions: 31500,
-        clicks: 4700,
-        conversions: 156
-      }
-    }
-  ]
+// URL 경로를 Supabase의 serviceTypeCode로 변환하는 함수
+export const getServiceTypeFromPath = (
+  platform: string,
+  type: string,
+  subservice?: string
+): string => {
+  console.log('getServiceTypeFromPath:', {platform, type, subservice});
+  
+  if (platform === 'naver' && subservice === 'shopping' && type === 'traffic') {
+    return 'NaverShopTraffic';
+  } else if (platform === 'naver' && subservice === 'place' && type === 'traffic') {
+    return 'NaverPlaceTraffic';
+  } else if (platform === 'naver' && subservice === 'place' && type === 'save') {
+    return 'NaverPlaceSave';
+  } else if (platform === 'naver' && subservice === 'place' && type === 'share') {
+    return 'NaverPlaceShare';
+  } else if (platform === 'naver' && type === 'auto') {
+    return 'NaverAuto';
+  } else if (platform === 'naver' && type === 'traffic') {
+    return 'NaverTraffic';
+  } else if (platform === 'coupang' && type === 'traffic') {
+    return 'CoupangTraffic';
+  } else if (platform === 'ohouse' && type === 'traffic') {
+    return 'OhouseTraffic';
+  }
+  
+  // 일치하는 서비스 타입이 없는 경우
+  console.error('No matching service type for:', {platform, type, subservice});
+  return '';
 };
 
-// 캠페인 데이터 조회 함수
+// 기존 하드코딩 캠페인 데이터 조회 함수 (호환성 유지)
 export const getCampaignData = (
   platform: string, 
   type: string, 
   subservice?: string
 ): CampaignData | null => {
   try {
-    let key = `${platform}-${type}`;
-    if (subservice) {
-      key = `${platform}-${subservice}-${type}`;
-    }
-    
+    // 서비스 정보 가져오기
     const serviceInfo = getServiceData(platform, type, subservice);
-    
-    if (!serviceInfo || !campaignData[key]) {
+    if (!serviceInfo) {
       return null;
     }
     
+    // 빈 캠페인 배열 반환 (백업 데이터 사용 안함)
     return {
       serviceData: serviceInfo,
-      campaigns: campaignData[key]
+      campaigns: []
     };
   } catch (error) {
-    console.log( error )
+    console.log(error);
     console.error(`Campaign data not found for ${platform}/${subservice}/${type}`);
+    return null;
+  }
+};
+
+// 실제 Supabase에서 캠페인 데이터를 가져오는 함수
+export const fetchRealCampaignData = async (
+  platform: string,
+  type: string,
+  subservice?: string
+): Promise<CampaignData | null> => {
+  try {
+    // 서비스 정보 가져오기
+    const serviceInfo = getServiceData(platform, type, subservice);
+    if (!serviceInfo) {
+      console.error('Service info not found');
+      return null;
+    }
+
+    // supabase 서비스 타입 코드 매핑
+    const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
+    
+    if (!serviceTypeCode) {
+      console.error('Service type code not found for the given path');
+      return null;
+    }
+
+    // supabase에서 해당 서비스 타입의 캠페인 가져오기
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('service_type', serviceTypeCode)
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching campaign data:', error);
+      return null;
+    }
+
+    // 데이터가 없으면 빈 배열 반환
+    if (!data || data.length === 0) {
+      console.warn('No data found in Supabase');
+      return {
+        serviceData: serviceInfo,
+        campaigns: []
+      };
+    }
+
+    // 가져온 데이터를 원하는 포맷으로 변환
+    const formattedCampaigns = data.map(campaign => ({
+      id: campaign.id.toString(),
+      name: campaign.campaign_name,
+      status: campaign.status as 'active' | 'paused' | 'completed',
+      description: campaign.description || '',
+      logo: campaign.logo,
+      efficiency: campaign.efficiency ? `${campaign.efficiency}%` : '-',
+      minQuantity: campaign.min_quantity ? `${campaign.min_quantity}개` : '-',
+      deadline: campaign.deadline || '22:00',
+      unitPrice: campaign.unit_price || 100,
+      additionalLogic: campaign.additional_logic,
+      originalData: campaign
+    }));
+
+    return {
+      serviceData: serviceInfo,
+      campaigns: formattedCampaigns
+    };
+  } catch (error) {
+    console.error('Error in fetchRealCampaignData:', error);
     return null;
   }
 };

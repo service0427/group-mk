@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toAbsoluteUrl } from '@/utils/Assets';
 import { CampaignDetailViewModal } from '@/pages/advertise/components';
 import { IAdCampaignItem, IAdCampaignProps } from './CardAdCampaign';
+import { getStatusColorClass, formatCampaignDetailData } from '@/utils/CampaignFormat';
 
 const CardAdCampaignRow = ({
   logo,
@@ -15,36 +16,25 @@ const CardAdCampaignRow = ({
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   
-  // 모달에 표시할 캠페인 데이터 객체
-  const campaignData = {
-    id: "", // ID 표시하지 않음
-    campaignName: title,
-    description: description,
-    logo: logo,
-    efficiency: `${statistics.find(stat => stat.description.includes('효율'))?.total || '0'}%`,
-    minQuantity: `${statistics.find(stat => stat.description.includes('수량'))?.total || '0'}개`,
-    deadline: statistics.find(stat => stat.description.includes('시간'))?.total || '-',
-    status: {
-      label: status.label,
-      color: status.variant
-    }
-  };
+  // 유틸리티 함수를 사용하여 모달 데이터 생성
+  const campaignData = formatCampaignDetailData({
+    logo, 
+    logoSize, 
+    title, 
+    description, 
+    status, 
+    statistics, 
+    progress: { variant: 'progress-primary', value: 100 }
+  });
 
   const renderItem = (statistic: IAdCampaignItem, index: number) => {
-    // 설명에 따라 적절한 단위 추가
-    let displayValue = statistic.total;
-    if (statistic.description.includes('효율')) {
-      displayValue = `${statistic.total}%`;
-    } else if (statistic.description.includes('로직') || statistic.description.includes('수량')) {
-      displayValue = `${statistic.total}개`;
-    }
-
+    // 표시할 값 그대로 사용 (IntroTemplate에서 이미 적절한 형식으로 변환했음)
     return (
       <div
         key={index}
         className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
       >
-        <span className="text-gray-900 text-sm leading-none font-medium">{displayValue}</span>
+        <span className="text-gray-900 text-sm leading-none font-medium">{statistic.total}</span>
         <span className="text-gray-700 text-xs">{statistic.description}</span>
       </div>
     );
@@ -57,9 +47,13 @@ const CardAdCampaignRow = ({
           <div className="flex items-center gap-3.5">
             <div className="flex items-center justify-center w-[50px]">
               <img
-                src={toAbsoluteUrl(`/media/animal/svg/${logo}`)}
+                src={logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/${logo}`)}
                 className={`size-[${logoSize}] shrink-0`}
                 alt=""
+                onError={(e) => {
+                  console.error(`이미지 로드 실패:`, e);
+                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                }}
               />
             </div>
 
@@ -68,7 +62,10 @@ const CardAdCampaignRow = ({
                 <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
                   {title}
                 </a>
-                <span className={`badge ${status.variant} badge-outline`}>{status.label}</span>
+                <span className={`badge ${status.variant} badge-outline rounded-[30px] h-auto py-1`}>
+                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
+                  {status.label}
+                </span>
               </div>
 
               <div className="flex items-center text-sm text-gray-700">{description}</div>

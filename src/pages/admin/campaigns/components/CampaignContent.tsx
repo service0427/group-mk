@@ -245,10 +245,6 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                 <SelectItem value="pause">표시안함</SelectItem>
               </SelectContent>
             </Select>
-
-            <button className="btn btn-sm btn-outline btn-primary">
-              <KeenIcon icon="setting-4" /> 고급 필터
-            </button>
           </div>
         </div>
       </div>

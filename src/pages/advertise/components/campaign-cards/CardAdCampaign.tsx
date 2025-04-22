@@ -29,12 +29,12 @@ interface IAdCampaignProps {
 
 const CardAdCampaign = ({
   logo,
-  logoSize,
+  logoSize = '50px', // 기본값 제공
   title,
   description,
   status,
   statistics,
-  progress,
+  progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
   url
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);

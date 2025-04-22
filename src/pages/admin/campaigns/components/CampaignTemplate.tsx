@@ -97,14 +97,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
               {pageDescription}
             </ToolbarDescription>
           </ToolbarHeading>
-          <ToolbarActions>
-            <a href="#" className="btn btn-sm btn-light">
-              양식 엑셀 다운로드
-            </a>
-            <a href="#" className="btn btn-sm btn-primary">
-              엑셀 업로드
-            </a>
-          </ToolbarActions>
         </Toolbar>
       </Container>
 

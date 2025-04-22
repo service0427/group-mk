@@ -1,0 +1,1 @@
+export { SitemapPage as default } from './SitemapPage';

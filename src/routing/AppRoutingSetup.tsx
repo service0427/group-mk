@@ -109,9 +109,12 @@ import {
   Slots,
   Site
 } from '@/pages/admin';
-// 일반 사용자용 공지사항 페이지 임포트
+
+// 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
 import NoticePage from '@/pages/notice';
 import FAQPage from '@/pages/faq';
+import SitemapPage from '@/pages/sitemap';
+import NotificationsPage from '@/pages/myinfo/notifications';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
@@ -263,9 +266,11 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 포인트 관련 라우트 */}
           <Route path="/point/history" element={<PointHistoryPage />} />
 
-          {/* 일반 사용자용 공지사항 및 FAQ 페이지 */}
+          {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/faq" element={<FAQPage />} />
+          <Route path="/sitemap" element={<SitemapPage />} />
+          <Route path="/myinfo/notifications" element={<NotificationsPage />} />
 
           {/* 관리자 메뉴 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />
@@ -287,6 +292,7 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
+          <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

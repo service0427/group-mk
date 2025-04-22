@@ -6,7 +6,7 @@ const CampaignNShopTrafficPage: React.FC = () => {
     <CampaignTemplate
       title="NS 트래픽 캠페인 관리"
       description="관리자 메뉴 > 캠페인 관리 > NS 트래픽"
-      serviceCode="NaverShopping"
+      serviceCode="NaverShopTraffic"
     />
   );
 };

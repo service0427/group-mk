@@ -17,24 +17,26 @@ import {
   MenuTitle
 } from '@/components/menu';
 import { useMenus } from '@/providers';
+import { useResponsive } from '@/hooks';
 
 const SidebarMenu = () => {
-  const linkPl = 'ps-[10px]';
-  const linkPr = 'pe-[10px]';
-  const linkPy = 'py-[6px]';
-  const itemsGap = 'gap-0.5';
-  const subLinkPy = 'py-[8px]';
-  const rightOffset = 'me-[-10px]';
-  const iconWidth = 'w-[20px]';
-  const iconSize = 'text-lg';
-  const accordionLinkPl = 'ps-[10px]';
+  const isMobile = !useResponsive('up', 'md');
+  const linkPl = isMobile ? 'ps-[6px]' : 'ps-[8px]';
+  const linkPr = isMobile ? 'pe-[6px]' : 'pe-[8px]';
+  const linkPy = isMobile ? 'py-[5px]' : 'py-[6px]';
+  const itemsGap = isMobile ? 'gap-0.25' : 'gap-0.5';
+  const subLinkPy = isMobile ? 'py-[6px]' : 'py-[8px]';
+  const rightOffset = isMobile ? 'me-[-8px]' : 'me-[-10px]';
+  const iconWidth = isMobile ? 'w-[16px]' : 'w-[20px]';
+  const iconSize = isMobile ? 'text-base' : 'text-lg';
+  const accordionLinkPl = isMobile ? 'ps-[8px]' : 'ps-[10px]';
   const accordionLinkGap = [
-    'gap-[10px]',
-    'gap-[14px]',
-    'gap-[5px]',
-    'gap-[5px]',
-    'gap-[5px]',
-    'gap-[5px]'
+    'gap-[5px]',  // 10px에서 5px로 줄임
+    'gap-[8px]',  // 14px에서 8px로 줄임
+    'gap-[3px]',  // 5px에서 3px로 줄임
+    'gap-[3px]',  // 5px에서 3px로 줄임
+    'gap-[3px]',  // 5px에서 3px로 줄임
+    'gap-[3px]'   // 5px에서 3px로 줄임
   ];
   const accordionPl = [
     'ps-[10px]',
@@ -173,7 +175,8 @@ const SidebarMenu = () => {
               accordionLinkGap[level],
               accordionLinkPl,
               linkPr,
-              subLinkPy
+              subLinkPy,
+              isMobile && 'mobile-submenu-link' // 모바일용 클래스 추가
             )}
           >
             {buildMenuBullet()}
@@ -198,7 +201,8 @@ const SidebarMenu = () => {
               itemsGap,
               !item.collapse && accordionBorderLeft[level],
               !item.collapse && accordionPl[level],
-              !item.collapse && 'relative before:absolute'
+              !item.collapse && 'relative before:absolute',
+              isMobile && 'mobile-submenu' // 모바일용 클래스 추가
             )}
           >
             {buildMenuItemChildren(item.children, index, item.collapse ? level : level + 1)}
@@ -215,7 +219,8 @@ const SidebarMenu = () => {
               accordionLinkGap[level],
               accordionLinkPl,
               linkPr,
-              subLinkPy
+              subLinkPy,
+              isMobile && 'mobile-menu-link' // 모바일용 클래스 추가
             )}
           >
             {buildMenuBullet()}
@@ -270,8 +275,12 @@ const SidebarMenu = () => {
   };
 
   const buildMenuBullet = () => {
+    // 모바일 및 PC 환경에 따라 다른 클래스 적용
     return (
-      <MenuBullet className="flex w-[6px] -start-[3px] rtl:start-0 relative before:absolute before:top-0 before:size-[6px] before:rounded-full rtl:before:translate-x-1/2 before:-translate-y-1/2 menu-item-active:before:bg-primary menu-item-hover:before:bg-primary"></MenuBullet>
+      <MenuBullet className={clsx(
+        "flex w-[6px] relative before:absolute before:top-0 before:size-[6px] before:rounded-full rtl:start-0 rtl:before:translate-x-1/2 before:-translate-y-1/2 menu-item-active:before:bg-primary menu-item-hover:before:bg-primary",
+        isMobile ? "-start-[2px]" : "-start-[3px]" // 모바일에서는 더 왼쪽으로(-1px→-2px), PC에서는 기존 위치 유지
+      )}></MenuBullet>
     );
   };
 
@@ -287,7 +296,7 @@ const SidebarMenu = () => {
   const menuConfig = getMenuConfig('primary');
 
   return (
-    <Menu highlight={true} multipleExpand={false} className={clsx('flex flex-col grow', itemsGap)}>
+    <Menu highlight={true} multipleExpand={false} className={clsx('flex flex-col grow sidebar-menu', itemsGap)}>
       {menuConfig && buildMenu(menuConfig)}
     </Menu>
   );

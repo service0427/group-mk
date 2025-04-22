@@ -52,7 +52,7 @@ export const Sidebar = () => {
         ref={selfRef}
         // 마우스 오버/아웃 이벤트 핸들러 제거
         className={clsx(
-          'sidebar bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0',
+          'sidebar sidebar-enhanced bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0',
           themeClass
         )}
       >
@@ -79,6 +79,10 @@ export const Sidebar = () => {
           forceMount={true}
           side="left"
           close={false}
+          style={{ 
+            paddingRight: '12px', 
+            overflowX: 'hidden' 
+          }}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Mobile Menu</SheetTitle>

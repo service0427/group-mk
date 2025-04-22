@@ -7,11 +7,12 @@ import { getStatusColorClass, formatCampaignDetailData } from '@/utils/CampaignF
 
 const CardAdCampaignRow = ({
   logo,
-  logoSize,
+  logoSize = '50px', // 기본값 제공
   title,
   description,
   status,
   statistics,
+  progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
   url
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -24,7 +25,7 @@ const CardAdCampaignRow = ({
     description, 
     status, 
     statistics, 
-    progress: { variant: 'progress-primary', value: 100 }
+    progress
   });
 
   const renderItem = (statistic: IAdCampaignItem, index: number) => {

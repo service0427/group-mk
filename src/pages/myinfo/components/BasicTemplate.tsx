@@ -8,9 +8,10 @@ import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
 interface BasicTemplateProps {
   title: string;
   description?: string;
+  children?: React.ReactNode; // children 속성 추가
 }
 
-const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => {
+const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, children }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
@@ -44,7 +45,11 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
               <h3 className="text-lg font-medium text-card-foreground">{pageTitle} 정보</h3>
             </div>
             <div className="p-5">
-              <p className="text-foreground">이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다</p>
+              {children ? (
+                children
+              ) : (
+                <p className="text-foreground">이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다</p>
+              )}
             </div>
           </div>
         </div>

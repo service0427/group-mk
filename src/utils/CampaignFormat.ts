@@ -21,7 +21,7 @@ export interface CampaignData {
  */
 export interface FormattedCampaignData {
   logo: string;
-  logoSize: string;
+  logoSize?: string; // 옵셔널로 변경
   title: string;
   description: string;
   status: {
@@ -32,7 +32,7 @@ export interface FormattedCampaignData {
     total: string; 
     description: string;
   }>;
-  progress: {
+  progress?: { // 옵셔널로 변경
     variant: string;
     value: number;
   };

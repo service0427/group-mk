@@ -43,10 +43,26 @@ const Main = () => {
     };
   }, []);
 
+  // 페이지 타이틀 결정
+  const getPageTitle = () => {
+    // 알림센터 페이지 경로 확인
+    if (pathname === '/notifications') {
+      return '알림센터';
+    }
+    
+    // 사이트맵 페이지 경로 확인
+    if (pathname === '/sitemap') {
+      return '사이트맵';
+    }
+    
+    // 기본적으로 메뉴 아이템의 제목 사용, 없으면 빈 문자열
+    return menuItem?.title || '';
+  };
+
   return (
     <Fragment>
       <Helmet>
-        <title>마케팅의 정석 :: The standard of Marketing - {menuItem?.title}</title>
+        <title>{`마케팅의 정석 :: The standard of Marketing${getPageTitle() ? ` - ${getPageTitle()}` : ''}`}</title>
       </Helmet>
 
       <Sidebar />

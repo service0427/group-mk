@@ -12,7 +12,7 @@ export interface IAdCampaignsContentItem {
     total: string; 
     description: string 
   }>;
-  progress: {
+  progress?: {
     variant: string;
     value: number;
   };

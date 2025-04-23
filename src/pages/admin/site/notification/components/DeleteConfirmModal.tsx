@@ -24,14 +24,14 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         {/* 헤더 */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 className="text-lg font-medium text-danger">{title}</h3>
-          <button 
+          <button
             className="text-muted-foreground hover:text-card-foreground p-1 rounded-full"
             onClick={onClose}
           >
             <KeenIcon icon="cross" className="text-lg" />
           </button>
         </div>
-        
+
         {/* 본문 */}
         <div className="p-5 bg-background">
           <div className="mb-4 text-center">
@@ -42,9 +42,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             </div>
             <p className="text-muted-foreground">{message}</p>
           </div>
-          
+
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <button 
+            <button
               className="btn btn-sm btn-danger w-full text-center justify-center"
               onClick={() => {
                 onConfirm();
@@ -53,7 +53,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               <KeenIcon icon="trash" className="me-1" />
               삭제
             </button>
-            <button 
+            <button
               className="btn btn-sm btn-light-secondary w-full text-center justify-center"
               onClick={onClose}
             >

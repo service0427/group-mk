@@ -20,75 +20,75 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  
+
   // 페이지네이션 상태 추가
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = 30; // 한 페이지당 표시할 항목 수
-  
+
   // 사용자 데이터 가져오기 - 페이지네이션 적용
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // 총 레코드 수 먼저 조회
       let countQuery = supabase
         .from('users')
         .select('id', { count: 'exact', head: true });
-      
+
       // 역할 필터링
       if (roleFilter !== 'all') {
         countQuery = countQuery.eq('role', roleFilter);
       }
-      
+
       // 검색어 필터링
       if (search) {
         countQuery = countQuery.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
       }
-      
+
       const { count, error: countError } = await countQuery;
-      
+
       if (countError) {
         console.error('사용자 수를 가져오는 중 오류 발생:', countError.message);
       } else if (count !== null) {
         setTotalRecords(count);
         setTotalPages(Math.ceil(count / itemsPerPage));
-        
+
         // 조회된 레코드가 없거나 현재 페이지가 전체 페이지보다 크면 페이지 1로 설정
         if (count === 0 || page > Math.ceil(count / itemsPerPage)) {
           setPage(1);
         }
       }
-      
+
       // 페이지네이션 데이터 조회
       let query = supabase
         .from('users')
         .select('id, full_name, email, role')
         .order('full_name');
-      
+
       // 역할 필터링
       if (roleFilter !== 'all') {
         query = query.eq('role', roleFilter);
       }
-      
+
       // 검색어 필터링
       if (search) {
         query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
       }
-      
+
       // 페이지네이션 설정
       const from = (page - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
       query = query.range(from, to);
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('사용자 목록을 가져오는 중 오류 발생:', error.message);
         return;
       }
-      
+
       setUsers(data || []);
     } catch (error: any) {
       console.error('사용자 목록을 가져오는 중 오류 발생:', error.message);
@@ -97,22 +97,22 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
       setLoading(false);
     }
   }, [search, roleFilter, page, itemsPerPage]);
-  
+
   // 컴포넌트 마운트 시 사용자 목록 가져오기
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-  
+
   // 검색 조건 변경 시 페이지 초기화
   useEffect(() => {
     setPage(1);
   }, [search, roleFilter]);
-  
+
   // 사용자 선택 토글
   const toggleUserSelection = (user: User) => {
     setSelectedUsers(prev => {
       const isSelected = prev.some(u => u.id === user.id);
-      
+
       if (isSelected) {
         return prev.filter(u => u.id !== user.id);
       } else {
@@ -120,7 +120,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
       }
     });
   };
-  
+
   // 모든 사용자 선택/해제
   const toggleSelectAll = (select: boolean) => {
     if (select) {
@@ -129,7 +129,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
       setSelectedUsers([]);
     }
   };
-  
+
   // 역할에 따른 아이콘 및 배경색 클래스
   const getRoleClasses = (role: string) => {
     switch (role) {
@@ -147,7 +147,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
         return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
     }
   };
-  
+
   // 역할 한글명
   const getRoleName = (role: string) => {
     switch (role) {
@@ -165,7 +165,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
         return role;
     }
   };
-  
+
   // 선택 완료
   const handleSelectComplete = () => {
     onSelectComplete(selectedUsers.map(user => ({
@@ -173,7 +173,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
       name: user.full_name
     })));
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-card rounded-lg shadow-xl w-full max-w-3xl mx-auto border border-gray-200 dark:border-gray-700">
@@ -186,7 +186,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
             <KeenIcon icon="cross" className="text-lg" />
           </button>
         </div>
-        
+
         <div className="p-4">
           {/* 검색 및 필터 */}
           <div className="flex flex-wrap gap-3 mb-4">
@@ -204,7 +204,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                 />
               </div>
             </div>
-            
+
             <select
               className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 rounded text-md px-3 py-2 min-w-[160px] w-auto"
               value={roleFilter}
@@ -217,7 +217,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
               <option value="agency">대행사</option>
               <option value="advertiser">광고주</option>
             </select>
-            
+
             <button
               className="btn btn-sm btn-light-primary"
               onClick={() => fetchUsers()}
@@ -226,7 +226,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
               검색
             </button>
           </div>
-          
+
           {/* 선택된 사용자 표시 */}
           <div className="mb-4">
             <div className="d-flex justify-content-between align-items-center mb-2">
@@ -246,14 +246,14 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                 )}
               </div>
             </div>
-            
+
             <div className="bg-light-primary dark:bg-dark p-3 rounded-lg max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700">
               {selectedUsers.length === 0 ? (
                 <p className="text-gray-500 dark:text-white dark:opacity-60 fs-7 mb-0">선택된 회원이 없습니다</p>
               ) : (
                 <div className="d-flex flex-wrap gap-3 p-1">
                   {selectedUsers.map(user => (
-                    <span 
+                    <span
                       key={user.id}
                       className="badge badge-primary d-inline-flex align-items-center py-2 px-3 m-1"
                     >
@@ -271,7 +271,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
               )}
             </div>
           </div>
-          
+
           {/* 사용자 목록 테이블 - 페이지네이션 적용 */}
           <div className="card card-bordered">
             <div className="table-responsive" style={{ height: '300px', overflow: 'auto', marginBottom: '15px' }}>
@@ -306,18 +306,18 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                   ) : users.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        {search || roleFilter !== 'all' 
-                          ? '검색 결과가 없습니다' 
+                        {search || roleFilter !== 'all'
+                          ? '검색 결과가 없습니다'
                           : '사용자가 없습니다'}
                       </td>
                     </tr>
                   ) : (
                     users.map(user => {
                       const isSelected = selectedUsers.some(u => u.id === user.id);
-                      
+
                       return (
-                        <tr 
-                          key={user.id} 
+                        <tr
+                          key={user.id}
                           className={isSelected ? 'bg-light-primary dark:bg-primary/10' : ''}
                           onClick={() => toggleUserSelection(user)}
                           style={{ cursor: 'pointer' }}
@@ -355,7 +355,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                 </tbody>
               </table>
             </div>
-            
+
             {totalPages > 1 && (
               <div className="card-footer pt-0">
                 <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t gap-3">
@@ -366,24 +366,24 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       '표시할 사용자가 없습니다'
                     )}
                   </div>
-                  
+
                   <div className="flex items-center justify-center gap-2">
-                    <button 
+                    <button
                       className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
                       onClick={() => setPage(1)}
                       disabled={page === 1}
                     >
                       <KeenIcon icon="double-left" className="fs-7" />
                     </button>
-                    
-                    <button 
+
+                    <button
                       className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
                       onClick={() => page > 1 && setPage(page - 1)}
                       disabled={page <= 1}
                     >
                       <KeenIcon icon="arrow-left" className="fs-6" />
                     </button>
-                    
+
                     <div className="flex items-center">
                       {(() => {
                         // 페이지 번호 계산 로직
@@ -391,7 +391,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                         const maxPagesToShow = 5;
                         let startPage: number;
                         let endPage: number;
-                        
+
                         if (totalPages <= maxPagesToShow) {
                           // 전체 페이지가 5개 이하면 모두 표시
                           startPage = 1;
@@ -409,38 +409,37 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                           startPage = page - 2;
                           endPage = page + 2;
                         }
-                        
+
                         // 페이지 버튼 배열 생성
                         const pages = [];
                         for (let i = startPage; i <= endPage; i++) {
                           pages.push(
-                            <button 
-                              key={i} 
-                              className={`flex items-center justify-center w-8 h-8 rounded-md ${
-                                i === page 
-                                  ? 'bg-primary text-white' 
+                            <button
+                              key={i}
+                              className={`flex items-center justify-center w-8 h-8 rounded-md ${i === page
+                                  ? 'bg-primary text-white'
                                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300'
-                              }`}
+                                }`}
                               onClick={() => setPage(i)}
                             >
                               {i}
                             </button>
                           );
                         }
-                        
+
                         return pages;
                       })()}
                     </div>
-                    
-                    <button 
+
+                    <button
                       className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
                       onClick={() => page < totalPages && setPage(page + 1)}
                       disabled={page >= totalPages}
                     >
                       <KeenIcon icon="arrow-right" className="fs-6" />
                     </button>
-                    
-                    <button 
+
+                    <button
                       className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
                       onClick={() => setPage(totalPages)}
                       disabled={page === totalPages}
@@ -453,7 +452,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
             )}
           </div>
         </div>
-        
+
         <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
           <button
             className="btn btn-primary"

@@ -30,26 +30,26 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // 입력 유효성 검사
     if (!title.trim()) {
       setError('알림 제목을 입력해주세요.');
       return;
     }
-    
+
     if (!message.trim()) {
       setError('알림 내용을 입력해주세요.');
       return;
     }
-    
+
     if (notificationType === 'role' && !document.getElementById('targetRole')) {
       setError('대상 회원 유형을 선택해주세요.');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       // 알림 데이터 준비
       const notificationData: Omit<INotification, 'id' | 'userId' | 'createdAt'> = {
@@ -60,10 +60,10 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
         priority,
         status: NotificationStatus.UNREAD,
       };
-      
+
       // 알림 전송
       await onSend(notificationData);
-      
+
       // 성공적으로 전송된 경우
       onClose();
     } catch (err: any) {
@@ -87,7 +87,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
             <KeenIcon icon="cross" className="text-lg" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="p-4 bg-background">
             {error && (
@@ -95,7 +95,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 {error}
               </div>
             )}
-            
+
             {notificationType === 'role' ? (
               <div className="mb-4">
                 <label htmlFor="targetRole" className="block text-sm font-medium text-foreground mb-1">
@@ -127,7 +127,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {selectedUsers.map(user => (
-                        <span 
+                        <span
                           key={user.id}
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary-lighter dark:bg-primary-dark text-primary dark:text-primary-light"
                         >
@@ -139,7 +139,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 </div>
               </div>
             )}
-            
+
             <div className="mb-4">
               <label htmlFor="notificationType" className="block text-sm font-medium text-foreground mb-1">
                 알림 타입
@@ -158,7 +158,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 <option value={NotificationType.MARKETING}>마케팅</option>
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="priority" className="block text-sm font-medium text-foreground mb-1">
                 중요도
@@ -175,7 +175,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 <option value={NotificationPriority.HIGH}>높음</option>
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1">
                 알림 제목
@@ -190,7 +190,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">
                 알림 내용
@@ -205,7 +205,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="link" className="block text-sm font-medium text-foreground mb-1">
                 링크 URL (선택사항)
@@ -220,7 +220,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               />
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
             <button
               type="submit"

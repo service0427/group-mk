@@ -383,6 +383,22 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '캐시 관리',
+    icon: 'dollar',
+    children: [
+      { 
+        title: '신청 관리',
+        icon: 'dollar',
+        path: '/admin/cash'
+      },
+      { 
+        title: '설정 관리',
+        icon: 'dollar',
+        path: '/admin/cash_setting'
+      }
+    ]
+  },
+  {
     heading: 'Metronic Template'
   },
   {

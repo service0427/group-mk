@@ -5,10 +5,11 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { 
   NotificationType, 
   NotificationStatus, 
-  INotification 
+  INotification,
+  NotificationPriority
 } from '@/types/notification';
 import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
-import DeleteConfirmModal from '@/components/notifications/DeleteConfirmModal';
+import DeleteConfirmModal from '@/pages/admin/site/notification/components/DeleteConfirmModal';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -517,6 +518,13 @@ const NotificationsPage = () => {
                             }`}></i>
                           </div>
                           
+                          {/* 중요도 표시 - 고중요도는 아이콘 표시 */}
+                          {notification.priority === NotificationPriority.HIGH && (
+                            <div className="absolute -top-1 -left-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                              <i className="ki-notification-bing text-[10px]"></i>
+                            </div>
+                          )}
+                          
                           {/* 선택 시 체크 아이콘 오버레이 */}
                           {selectedNotifications.includes(notification.id) && (
                             <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
@@ -591,6 +599,24 @@ const NotificationsPage = () => {
                                   {getStatusText(notification.status)}
                                 </span>
                               )}
+                              
+                              {/* 중요도 배지 */}
+                              {notification.priority === NotificationPriority.HIGH && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <span className="mr-1 flex-shrink-0">
+                                    <i className="ki-notification-bing text-xs"></i>
+                                  </span>
+                                  중요
+                                </span>
+                              )}
+                              {notification.priority === NotificationPriority.MEDIUM && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  <span className="mr-1 flex-shrink-0">
+                                    <i className="ki-notification text-xs"></i>
+                                  </span>
+                                  중간
+                                </span>
+                              )}
                             </div>
                             <span className="text-sm text-gray-600 font-medium">
                               {formatDate(notification.createdAt)}
@@ -598,19 +624,41 @@ const NotificationsPage = () => {
                           </div>
                           <p className="text-gray-600 mt-1">{notification.message}</p>
                           
-                          <button 
-                            className="text-primary hover:underline text-sm mt-2 inline-block"
-                            onClick={(e) => {
-                              e.stopPropagation(); // 이벤트 전파 중단
-                              e.preventDefault();
-                              setSelectedNotification(notification);
-                              if (notification.status === NotificationStatus.UNREAD) {
-                                markAsRead(notification.id);
-                              }
-                            }}
-                          >
-                            자세히 보기
-                          </button>
+                          {/* 액션 버튼 영역 */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <button 
+                              className="text-primary hover:underline text-sm inline-block"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 이벤트 전파 중단
+                                e.preventDefault();
+                                setSelectedNotification(notification);
+                                if (notification.status === NotificationStatus.UNREAD) {
+                                  markAsRead(notification.id);
+                                }
+                              }}
+                            >
+                              자세히 보기
+                            </button>
+                            
+                            {/* 링크가 있으면 링크 액션 버튼으로 표시 */}
+                            {notification.link && (
+                              <a 
+                                href={notification.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // 이벤트 전파 중단
+                                  if (notification.status === NotificationStatus.UNREAD) {
+                                    markAsRead(notification.id);
+                                  }
+                                }}
+                              >
+                                <i className="ki-arrow-right text-xs mr-1"></i>
+                                바로가기
+                              </a>
+                            )}
+                          </div>
                         </div>
                         
                         {/* 알림 액션 버튼 */}

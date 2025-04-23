@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
-import { INotification, NotificationType, NotificationStatus } from '@/types/notification';
+import { INotification, NotificationType, NotificationStatus, NotificationPriority } from '@/types/notification';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import NotificationIcon from './NotificationIcon';
@@ -12,11 +12,11 @@ interface NotificationDropdownProps {
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) => {
-  const { notifications, markAsRead, markAllAsRead, loading, unreadCount } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, loading, unreadCount, fetchNotifications } = useNotifications();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [selectedNotification, setSelectedNotification] = useState<INotification | null>(null);
-  
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -24,13 +24,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
         onClose();
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
-  
+
   // 날짜 포맷팅
   const formatDate = (dateString: string | Date) => {
     try {
@@ -40,19 +40,19 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
       return '날짜 없음';
     }
   };
-  
+
   // 알림 클릭 처리
   const handleNotificationClick = (notification: INotification) => {
     // 읽지 않은 알림인 경우 읽음 처리
     if (notification.status === NotificationStatus.UNREAD) {
       markAsRead(notification.id);
     }
-    
+
     // 자세히 보기 모달 표시
     setSelectedNotification(notification);
   };
-  
-  // 모두 보기 클릭 처리
+
+  // 알림 센터 바로가기 클릭 처리
   const handleViewAllClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClose();
@@ -61,54 +61,48 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
       navigate('/myinfo/notifications');
     }, 10);
   };
-  
-  // 알림 설정 클릭 처리
-  const handleSettingsClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onClose();
-    // 약간의 지연 후 페이지 이동 (드롭다운 닫힘 애니메이션 완료 후)
-    setTimeout(() => {
-      navigate('/myinfo/profile');
-    }, 10);
+
+  // 중요도 아이콘 (고중요도만 표시)
+  const renderPriorityIcon = (priority: NotificationPriority) => {
+    if (priority === NotificationPriority.HIGH) {
+      return (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center shadow-sm z-10">
+          <i className="ki-notification-bing text-[8px]"></i>
+        </span>
+      );
+    }
+    return null;
   };
-  
+
   return (
-    <div 
+    <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-1 w-96 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+      className="absolute top-full right-0 mt-1 w-[400px] bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
       style={{ maxHeight: '80vh', overflowY: 'auto' }}
     >
       <div className="p-3 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
           <h3 className="text-base font-medium text-card-foreground">알림</h3>
-          <div className="flex items-center gap-3">
-            <button 
+          <div className="flex items-center">
+            <button
               onClick={async (e) => {
                 e.preventDefault();
                 await markAllAsRead();
                 // 상태 갱신을 위해 명시적으로 알림 데이터 다시 가져오기
                 fetchNotifications();
               }}
-              className={`text-xs ${
-                unreadCount > 0 
-                  ? 'text-primary hover:text-primary-dark dark:hover:text-primary-light hover:underline cursor-pointer' 
-                  : 'text-muted-foreground cursor-not-allowed'
-              }`}
+              className={`text-xs ${unreadCount > 0
+                ? 'text-primary hover:text-primary-dark dark:hover:text-primary-light hover:underline cursor-pointer'
+                : 'text-muted-foreground cursor-not-allowed'
+                }`}
               disabled={unreadCount === 0}
             >
               모두 읽음
             </button>
-            <a 
-              href="#" 
-              onClick={handleViewAllClick} 
-              className="text-xs text-primary hover:underline"
-            >
-              모두 보기
-            </a>
           </div>
         </div>
       </div>
-      
+
       <div className="max-h-96 overflow-y-auto">
         {loading ? (
           <div className="p-4 text-center text-muted-foreground">
@@ -130,63 +124,103 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
                 읽지 않은 알림 ({unreadCount})
               </div>
             )}
-            
+
             {notifications
               .filter(notification => notification.status === NotificationStatus.UNREAD)
               .slice(0, 5)
               .map(notification => (
-                <div 
+                <div
                   key={notification.id}
                   className="p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer bg-blue-50 dark:bg-blue-900/20"
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
-                    <div className="mt-1">
+                    <div className="mt-1 relative">
                       <NotificationIcon type={notification.type} size="sm" />
+                      {renderPriorityIcon(notification.priority)}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium text-card-foreground">{notification.title}</h4>
-                        <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
-                          notification.type === NotificationType.SYSTEM 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300' 
-                          : notification.type === NotificationType.TRANSACTION 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
-                          : notification.type === NotificationType.SERVICE
-                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
-                          : notification.type === NotificationType.SLOT
-                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
-                          : notification.type === NotificationType.MARKETING
-                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                        }`}>
-                          <span className={`inline-block w-1 h-1 rounded-full ${
-                            notification.type === NotificationType.SYSTEM 
-                              ? 'bg-blue-500 dark:bg-blue-400' 
-                            : notification.type === NotificationType.TRANSACTION 
-                              ? 'bg-green-500 dark:bg-green-400'
-                            : notification.type === NotificationType.SERVICE
-                              ? 'bg-purple-500 dark:bg-purple-400'
-                            : notification.type === NotificationType.SLOT
-                              ? 'bg-orange-500 dark:bg-orange-400'
-                            : notification.type === NotificationType.MARKETING
-                              ? 'bg-yellow-500 dark:bg-yellow-400'
-                            : 'bg-gray-500 dark:bg-gray-400'
-                          }`}></span>
-                          {notification.type === NotificationType.SYSTEM 
-                            ? '시스템' 
-                            : notification.type === NotificationType.TRANSACTION 
-                              ? '결제/캐시'
-                            : notification.type === NotificationType.SERVICE
-                              ? '서비스'
-                            : notification.type === NotificationType.SLOT
-                              ? '슬롯'
-                            : notification.type === NotificationType.MARKETING
-                              ? '마케팅'
-                            : '기타'}
-                        </span>
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-card-foreground truncate max-w-[240px]">{notification.title}</h4>
+                        <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                          <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${notification.type === NotificationType.SYSTEM
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
+                            : notification.type === NotificationType.TRANSACTION
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
+                              : notification.type === NotificationType.SERVICE
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
+                                : notification.type === NotificationType.SLOT
+                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
+                                  : notification.type === NotificationType.MARKETING
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
+                                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                            }`}>
+                            <span className={`inline-block w-1 h-1 rounded-full ${notification.type === NotificationType.SYSTEM
+                              ? 'bg-blue-500 dark:bg-blue-400'
+                              : notification.type === NotificationType.TRANSACTION
+                                ? 'bg-green-500 dark:bg-green-400'
+                                : notification.type === NotificationType.SERVICE
+                                  ? 'bg-purple-500 dark:bg-purple-400'
+                                  : notification.type === NotificationType.SLOT
+                                    ? 'bg-orange-500 dark:bg-orange-400'
+                                    : notification.type === NotificationType.MARKETING
+                                      ? 'bg-yellow-500 dark:bg-yellow-400'
+                                      : 'bg-gray-500 dark:bg-gray-400'
+                              }`}></span>
+                            {notification.type === NotificationType.SYSTEM
+                              ? '시스템'
+                              : notification.type === NotificationType.TRANSACTION
+                                ? '결제/캐시'
+                                : notification.type === NotificationType.SERVICE
+                                  ? '서비스'
+                                  : notification.type === NotificationType.SLOT
+                                    ? '슬롯'
+                                    : notification.type === NotificationType.MARKETING
+                                      ? '마케팅'
+                                      : '기타'}
+                          </span>
+
+                          {notification.priority === NotificationPriority.HIGH && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                              <span className="mr-0.5 flex-shrink-0">
+                                <i className="ki-notification-bing text-[8px]"></i>
+                              </span>
+                              중요
+                            </span>
+                          )}
+                          {notification.priority === NotificationPriority.MEDIUM && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                              <span className="mr-0.5 flex-shrink-0">
+                                <i className="ki-notification text-[8px]"></i>
+                              </span>
+                              중간
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">{notification.message}</p>
+
+                      <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+
+                      {notification.link && (
+                        <div className="mt-1.5">
+                          <a
+                            href={notification.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 부모 클릭 이벤트 방지
+                              if (notification.status === NotificationStatus.UNREAD) {
+                                markAsRead(notification.id);
+                              }
+                            }}
+                          >
+                            <i className="ki-arrow-right text-[8px] mr-0.5"></i>
+                            바로가기
+                          </a>
+                        </div>
+                      )}
+
                       <span className="text-2xs text-muted-foreground mt-1 block">
                         {formatDate(notification.createdAt)}
                       </span>
@@ -194,7 +228,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
                   </div>
                 </div>
               ))}
-            
+
             {notifications
               .filter(notification => notification.status === NotificationStatus.READ)
               .length > 0 && (
@@ -202,63 +236,101 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
                   이전 알림
                 </div>
               )}
-            
+
             {notifications
               .filter(notification => notification.status === NotificationStatus.READ)
               .slice(0, 5 - Math.min(5, notifications.filter(n => n.status === NotificationStatus.UNREAD).length))
               .map(notification => (
-                <div 
+                <div
                   key={notification.id}
                   className="p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
-                    <div className="mt-1">
+                    <div className="mt-1 relative">
                       <NotificationIcon type={notification.type} size="sm" className="opacity-60" />
+                      {renderPriorityIcon(notification.priority)}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">{notification.title}</h4>
-                        <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
-                          notification.type === NotificationType.SYSTEM 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300' 
-                          : notification.type === NotificationType.TRANSACTION 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
-                          : notification.type === NotificationType.SERVICE
-                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
-                          : notification.type === NotificationType.SLOT
-                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
-                          : notification.type === NotificationType.MARKETING
-                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                        }`}>
-                          <span className={`inline-block w-1 h-1 rounded-full ${
-                            notification.type === NotificationType.SYSTEM 
-                              ? 'bg-blue-500 dark:bg-blue-400' 
-                            : notification.type === NotificationType.TRANSACTION 
-                              ? 'bg-green-500 dark:bg-green-400'
-                            : notification.type === NotificationType.SERVICE
-                              ? 'bg-purple-500 dark:bg-purple-400'
-                            : notification.type === NotificationType.SLOT
-                              ? 'bg-orange-500 dark:bg-orange-400'
-                            : notification.type === NotificationType.MARKETING
-                              ? 'bg-yellow-500 dark:bg-yellow-400'
-                            : 'bg-gray-500 dark:bg-gray-400'
-                          }`}></span>
-                          {notification.type === NotificationType.SYSTEM 
-                            ? '시스템' 
-                            : notification.type === NotificationType.TRANSACTION 
-                              ? '결제/캐시'
-                            : notification.type === NotificationType.SERVICE
-                              ? '서비스'
-                            : notification.type === NotificationType.SLOT
-                              ? '슬롯'
-                            : notification.type === NotificationType.MARKETING
-                              ? '마케팅'
-                            : '기타'}
-                        </span>
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-muted-foreground truncate max-w-[240px]">{notification.title}</h4>
+
+                        <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                          <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${notification.type === NotificationType.SYSTEM
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
+                            : notification.type === NotificationType.TRANSACTION
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
+                              : notification.type === NotificationType.SERVICE
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
+                                : notification.type === NotificationType.SLOT
+                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
+                                  : notification.type === NotificationType.MARKETING
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
+                                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                            }`}>
+                            <span className={`inline-block w-1 h-1 rounded-full ${notification.type === NotificationType.SYSTEM
+                              ? 'bg-blue-500 dark:bg-blue-400'
+                              : notification.type === NotificationType.TRANSACTION
+                                ? 'bg-green-500 dark:bg-green-400'
+                                : notification.type === NotificationType.SERVICE
+                                  ? 'bg-purple-500 dark:bg-purple-400'
+                                  : notification.type === NotificationType.SLOT
+                                    ? 'bg-orange-500 dark:bg-orange-400'
+                                    : notification.type === NotificationType.MARKETING
+                                      ? 'bg-yellow-500 dark:bg-yellow-400'
+                                      : 'bg-gray-500 dark:bg-gray-400'
+                              }`}></span>
+                            {notification.type === NotificationType.SYSTEM
+                              ? '시스템'
+                              : notification.type === NotificationType.TRANSACTION
+                                ? '결제/캐시'
+                                : notification.type === NotificationType.SERVICE
+                                  ? '서비스'
+                                  : notification.type === NotificationType.SLOT
+                                    ? '슬롯'
+                                    : notification.type === NotificationType.MARKETING
+                                      ? '마케팅'
+                                      : '기타'}
+                          </span>
+
+                          {notification.priority === NotificationPriority.HIGH && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                              <span className="mr-0.5 flex-shrink-0">
+                                <i className="ki-notification-bing text-[8px]"></i>
+                              </span>
+                              중요
+                            </span>
+                          )}
+                          {notification.priority === NotificationPriority.MEDIUM && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                              <span className="mr-0.5 flex-shrink-0">
+                                <i className="ki-notification text-[8px]"></i>
+                              </span>
+                              중간
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">{notification.message}</p>
+
+                      <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+
+                      {notification.link && (
+                        <div className="mt-1.5">
+                          <a
+                            href={notification.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 부모 클릭 이벤트 방지
+                            }}
+                          >
+                            <i className="ki-arrow-right text-[8px] mr-0.5"></i>
+                            바로가기
+                          </a>
+                        </div>
+                      )}
+
                       <span className="text-2xs text-muted-foreground mt-1 block">
                         {formatDate(notification.createdAt)}
                       </span>
@@ -269,18 +341,17 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
           </div>
         )}
       </div>
-      
+
       <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-        <a 
-          href="#" 
-          className="text-xs text-muted-foreground hover:text-primary w-full block text-center"
-          onClick={handleSettingsClick}
+        <a
+          href="#"
+          className="text-xs text-primary hover:underline w-full block text-center"
+          onClick={handleViewAllClick}
         >
-          알림 설정
+          알림 센터 바로가기
         </a>
       </div>
-      
-      {/* 알림 상세 모달 */}
+
       {selectedNotification && (
         <NotificationDetailModal
           notification={selectedNotification}

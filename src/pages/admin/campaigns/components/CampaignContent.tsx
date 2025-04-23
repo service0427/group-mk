@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { toAbsoluteUrl } from '@/utils';
 import { CampaignDetailModal } from './campaign-modals';
+import { updateCampaignStatus } from '../services/campaignService';
 
 // 캠페인 데이터 인터페이스 정의
 export interface ICampaign {
@@ -26,40 +27,65 @@ export interface ICampaign {
   };
   additionalLogic?: string;
   detailedDescription?: string;
+  originalData?: any; // DB에서 가져온 원본 데이터
 }
 
 // 캠페인 콘텐츠 컴포넌트 props 정의
 interface CampaignContentProps {
   campaigns: ICampaign[];
   serviceType: string; // 서비스 유형(naver-shopping, naver-place 등)
+  onCampaignUpdated?: () => void; // 캠페인 업데이트 시 호출할 콜백 함수
 }
 
-const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCampaigns, serviceType }) => {
+const CampaignContent: React.FC<CampaignContentProps> = ({ 
+  campaigns: initialCampaigns, 
+  serviceType, 
+  onCampaignUpdated 
+}) => {
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(null);
   const [campaigns, setCampaigns] = useState<ICampaign[]>(initialCampaigns);
+  const [loadingStatus, setLoadingStatus] = useState<{[key: string]: boolean}>({});
   
   // 캠페인 상태 변경 처리 함수
-  const handleStatusChange = (campaignId: string, newStatus: string) => {
-    // 상태 업데이트 로직
-    setCampaigns(prevCampaigns => 
-      prevCampaigns.map(campaign => 
-        campaign.id === campaignId 
-          ? { 
-              ...campaign, 
-              status: { 
-                label: getStatusLabel(newStatus), 
-                color: getStatusColor(newStatus) 
-              } 
-            } 
-          : campaign
-      )
-    );
+  const handleStatusChange = async (campaignId: string, newStatus: string) => {
+    // 로딩 상태 설정
+    setLoadingStatus(prev => ({ ...prev, [campaignId]: true }));
     
-    // 실제 환경에서는 여기서 API 호출을 수행할 수 있습니다
-    console.log(`캠페인 ID: ${campaignId}의 상태를 ${newStatus}로 변경합니다.`);
+    try {
+      // DB 상태 업데이트
+      const success = await updateCampaignStatus(parseInt(campaignId), newStatus);
+      
+      if (success) {
+        // UI 상태 업데이트
+        setCampaigns(prevCampaigns => 
+          prevCampaigns.map(campaign => 
+            campaign.id === campaignId 
+              ? { 
+                  ...campaign, 
+                  status: { 
+                    label: getStatusLabel(newStatus), 
+                    color: getStatusColor(newStatus) 
+                  } 
+                } 
+              : campaign
+          )
+        );
+        
+        console.log(`캠페인 ID: ${campaignId}의 상태를 ${newStatus}로 변경했습니다.`);
+      } else {
+        console.error(`캠페인 ID: ${campaignId}의 상태 변경에 실패했습니다.`);
+        alert('상태 변경 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('상태 변경 중 오류:', error);
+      alert('상태 변경 중 오류가 발생했습니다.');
+    } finally {
+      // 로딩 상태 해제
+      setLoadingStatus(prev => ({ ...prev, [campaignId]: false }));
+    }
   };
   
   // 상태값에 따른 라벨 반환
@@ -100,20 +126,34 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
   
   // 상세 정보 모달 열기
   const openDetailModal = (campaign: ICampaign) => {
-    setSelectedCampaign(campaign);
+    // 항상 최신 데이터를 사용하기 위해 campaigns 배열에서 해당 캠페인 찾기
+    const currentCampaign = campaigns.find(c => c.id === campaign.id) || campaign;
+    setSelectedCampaign(currentCampaign);
     setDetailModalOpen(true);
   };
   
   // 캠페인 정보 저장 핸들러
   const handleSaveCampaign = (updatedCampaign: ICampaign) => {
+    // 로컬 상태 업데이트 - 수정된 캠페인 정보 반영
     setCampaigns(prevCampaigns => 
       prevCampaigns.map(campaign => 
         campaign.id === updatedCampaign.id ? updatedCampaign : campaign
       )
     );
     
-    // 실제 환경에서는 여기서 API 호출을 수행할 수 있습니다
+    // 선택된 캠페인도 업데이트 - 모달이 다시 열릴 때 최신 데이터 표시
+    setSelectedCampaign(updatedCampaign);
+    
     console.log(`캠페인 ID: ${updatedCampaign.id}의 정보가 업데이트되었습니다.`, updatedCampaign);
+    
+    // 부모 컴포넌트에게 업데이트 알림 (있을 경우만)
+    // 이렇게 하면 Template 컴포넌트에서 최신 데이터를 다시 가져올 수 있음
+    if (onCampaignUpdated) {
+      // 약간의 지연을 두고 호출하여 DB 업데이트가 완료되도록 함
+      setTimeout(() => {
+        onCampaignUpdated();
+      }, 500);
+    }
   };
   
   // 상태값의 실제 값(value) 반환
@@ -155,12 +195,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
     return campaigns.filter(campaign => {
       // 검색어 필터링
       const matchesSearch = campaign.campaignName.toLowerCase().includes(searchInput.toLowerCase()) ||
-                          campaign.description.toLowerCase().includes(searchInput.toLowerCase());
+                          (campaign.description?.toLowerCase().includes(searchInput.toLowerCase()) || false);
       
       // 상태 필터링
       const matchesStatus = statusFilter === 'all' || 
                           (statusFilter === 'active' && campaign.status.label === '진행중') ||
-                          (statusFilter === 'pending' && campaign.status.label === '준비중');
+                          (statusFilter === 'pending' && campaign.status.label === '준비중') ||
+                          (statusFilter === 'pause' && campaign.status.label === '표시안함');
       
       return matchesSearch && matchesStatus;
     });
@@ -201,12 +242,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                 <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="active">진행중</SelectItem>
                 <SelectItem value="pending">준비중</SelectItem>
+                <SelectItem value="pause">표시안함</SelectItem>
               </SelectContent>
             </Select>
-
-            <button className="btn btn-sm btn-outline btn-primary">
-              <KeenIcon icon="setting-4" /> 고급 필터
-            </button>
           </div>
         </div>
       </div>
@@ -256,6 +294,10 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                         src={toAbsoluteUrl(`/media/${campaign.logo}`)}
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName}
+                        onError={(e) => {
+                          // 이미지 로드 실패 시 기본 이미지 사용
+                          (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
+                        }}
                       />
                       <Link to={`/admin/campaigns/${serviceType}/${campaign.id}`} className="text-sm font-medium text-foreground hover:text-primary-active">
                         {campaign.campaignName}
@@ -264,7 +306,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-foreground max-w-[300px] line-clamp-2">
-                      {campaign.description}
+                      {campaign.description || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -286,10 +328,20 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                     <Select 
                       value={getStatusValue(campaign.status.label)} 
                       onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                      disabled={loadingStatus[campaign.id]}
                     >
                       <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
-                        <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                        <SelectValue>{campaign.status.label}</SelectValue>
+                        {loadingStatus[campaign.id] ? (
+                          <span className="flex items-center">
+                            <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                            처리중...
+                          </span>
+                        ) : (
+                          <>
+                            <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                            <SelectValue>{campaign.status.label}</SelectValue>
+                          </>
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">진행중</SelectItem>
@@ -311,6 +363,17 @@ const CampaignContent: React.FC<CampaignContentProps> = ({ campaigns: initialCam
                   </td>
                 </tr>
               ))}
+              
+              {filteredData.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+                      <p>표시할 캠페인 데이터가 없습니다.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

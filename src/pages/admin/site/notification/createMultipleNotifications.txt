@@ -1,0 +1,117 @@
+  // 다중 알림 생성 함수 (역할별 또는 특정 사용자에게) - 배치 처리 적용
+  const createMultipleNotifications = async (
+    notificationData: Omit<INotification, 'id' | 'userId' | 'createdAt'>,
+    target: { type: 'role' | 'user', value: string | string[] }
+  ) => {
+    try {
+      let userIds: string[] = [];
+      
+      if (target.type === 'role') {
+        let query = supabase.from('users').select('id');
+        
+        // 'all'이 아닌 경우에만 특정 역할로 필터링
+        if (target.value !== 'all') {
+          query = query.eq('role', target.value);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('사용자 ID 조회 중 오류 발생:', error.message);
+          toast.error('사용자 ID 조회 중 오류가 발생했습니다.');
+          return false;
+        }
+        
+        userIds = data.map(user => user.id);
+      } else if (target.type === 'user') {
+        // 특정 사용자 ID 배열 사용
+        userIds = Array.isArray(target.value) ? target.value : [target.value];
+      }
+      
+      if (userIds.length === 0) {
+        console.error('알림을 보낼 사용자가 없습니다.');
+        toast.error('알림을 보낼 사용자가 없습니다.');
+        return false;
+      }
+      
+      // 배치 크기 설정 (작은 그룹으로 처리)
+      const batchSize = 5; // 한 번에 5명씩만 처리하도록 줄임
+      let successCount = 0;
+      let failCount = 0;
+      
+      // 전송 진행 상태 메시지 표시
+      toast.loading(`알림 전송 중... (0/${userIds.length})`);
+      
+      // 배치 처리
+      for (let i = 0; i < userIds.length; i += batchSize) {
+        const batch = userIds.slice(i, i + batchSize);
+        
+        // 진행 상태 업데이트
+        toast.loading(`알림 전송 중... (${Math.min(i + batchSize, userIds.length)}/${userIds.length})`);
+        
+        // 각 사용자에 대해 개별적으로 처리
+        const results = await Promise.all(
+          batch.map(async (userId) => {
+            try {
+              // 각 사용자에 대해 개별적으로 알림 생성 (RLS 문제 우회)
+              const { error } = await supabase
+                .from('notifications')
+                .insert({
+                  user_id: userId,
+                  type: notificationData.type,
+                  title: notificationData.title,
+                  message: notificationData.message,
+                  link: notificationData.link,
+                  icon: notificationData.icon,
+                  priority: notificationData.priority,
+                  status: NotificationStatus.UNREAD,
+                  expires_at: notificationData.expiresAt
+                });
+              
+              if (error) {
+                console.error(`사용자 ${userId} 알림 생성 실패:`, error.message);
+                return { success: false, userId, error };
+              }
+              
+              return { success: true, userId };
+            } catch (err) {
+              console.error(`사용자 ${userId}에 대한 알림 생성 실패:`, err);
+              return { success: false, userId, error: err };
+            }
+          })
+        );
+        
+        // 결과 처리
+        const batchSuccessCount = results.filter(r => r.success).length;
+        const batchFailCount = results.filter(r => !r.success).length;
+        
+        successCount += batchSuccessCount;
+        failCount += batchFailCount;
+        
+        // 서버 부하 방지를 위해 약간의 지연 추가
+        if (i + batchSize < userIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      // 결과 메시지 표시
+      toast.dismiss();
+      if (failCount > 0) {
+        if (successCount > 0) {
+          toast.info(`알림 전송 완료: 성공 ${successCount}건, 실패 ${failCount}건`);
+        } else {
+          toast.error(`알림 전송 실패: ${failCount}건`);
+        }
+      } else {
+        toast.success(`알림 전송 완료: ${successCount}건`);
+      }
+      
+      // 알림 목록 새로고침
+      await fetchNotifications();
+      return successCount > 0;
+    } catch (error: any) {
+      console.error('알림 생성 중 오류 발생:', error.message);
+      toast.error(`알림 전송 중 오류가 발생했습니다: ${error.message}`);
+      return false;
+    }
+  };

@@ -85,7 +85,7 @@ const DropdownNotificationsAll = () => {
         <div className="border-b border-b-gray-200"></div>
         <div className="grid grid-cols-2 p-5 gap-2.5">
           <button className="btn btn-sm btn-light justify-center">Archive all</button>
-          <button className="btn btn-sm btn-light justify-center">Mark all as read</button>
+          <button className="btn btn-sm btn-light justify-center">모두 읽음</button>
         </div>
       </>
     );

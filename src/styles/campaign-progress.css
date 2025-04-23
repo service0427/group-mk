@@ -1,0 +1,14 @@
+/* 캠페인 상태에 따른 프로그레스 바 스타일 */
+.progress.progress-gray-300 {
+  background-color: #e5e7eb;
+}
+.progress.progress-gray-300 .progress-bar {
+  background-color: #9ca3af;
+}
+
+.progress.progress-danger-light {
+  background-color: #fee2e2;
+}
+.progress.progress-danger-light .progress-bar {
+  background-color: #fca5a5;
+}

@@ -1,6 +1,17 @@
 import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { DefaultPage, StandDarkSidebarPage } from '@/pages/dashboards';
+import { 
+  DefaultPage, 
+  StandDarkSidebarPage
+} from '@/pages/dashboards';
+
+// 역할별 대시보드 별도 임포트
+import { DeveloperDashboardPage } from '@/pages/dashboards/developer';
+import { OperatorDashboardPage } from '@/pages/dashboards/operator';
+import { DistributorDashboardPage } from '@/pages/dashboards/distributor';
+import { AgencyDashboardPage } from '@/pages/dashboards/agency';
+import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
+
 import {
   ProfileActivityPage,
   ProfileBloggerPage,
@@ -100,6 +111,12 @@ import {
   ManageCashPage
 } from '@/pages/admin';
 
+// 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
+import NoticePage from '@/pages/notice';
+import FAQPage from '@/pages/faq';
+import SitemapPage from '@/pages/sitemap';
+import NotificationsPage from '@/pages/myinfo/notifications';
+
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
 import { StandLayout } from '@/layouts/stand';
@@ -116,8 +133,17 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<StandLayout />}>
+          {/* 기본 대시보드 라우트 */}
           <Route path="/" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
+          
+          {/* 역할별 대시보드 라우트 */}
+          <Route path="/dashboard/developer" element={<DeveloperDashboardPage />} />
+          <Route path="/dashboard/operator" element={<OperatorDashboardPage />} />
+          <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
+          <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
+          <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
+          
           <Route path="/public-profile/profiles/default" element={<ProfileDefaultPage />} />
           <Route path="/public-profile/profiles/creator" element={<ProfileCreatorPage />} />
           <Route path="/public-profile/profiles/company" element={<ProfileCompanyPage />} />
@@ -242,6 +268,12 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 포인트 관련 라우트 */}
           <Route path="/point/history" element={<PointHistoryPage />} />
 
+          {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
+          <Route path="/notice" element={<NoticePage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/sitemap" element={<SitemapPage />} />
+          <Route path="/myinfo/notifications" element={<NotificationsPage />} />
+
           {/* 관리자 메뉴 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />
 
@@ -262,10 +294,12 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
+          <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
 
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<ManageCashPage />} />
           <Route path="/admin/cash_setting" element={<ManageSettingPage />} />
+
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

@@ -5,6 +5,53 @@ export const MENU_SIDEBAR: TMenuConfig = [
     title: 'Dashboard',
     icon: 'element-11',
     path: '/',
+    children: [
+      {
+        title: '역할별 대시보드',
+        children: [
+          {
+            title: '개발자 대시보드',
+            path: '/dashboard/developer',
+            icon: 'code-1'
+          },
+          {
+            title: '운영자 대시보드',
+            path: '/dashboard/operator',
+            icon: 'shield-tick'
+          },
+          {
+            title: '총판 대시보드',
+            path: '/dashboard/distributor',
+            icon: 'shop'
+          },
+          {
+            title: '대행사 대시보드',
+            path: '/dashboard/agency',
+            icon: 'briefcase'
+          },
+          {
+            title: '광고주 대시보드',
+            path: '/dashboard/advertiser',
+            icon: 'presentation-chart'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    title: '공지사항',
+    icon: 'notification text-warning',
+    path: '/notice'
+  },
+  {
+    title: 'FAQ',
+    icon: 'message-question text-info',
+    path: '/faq'
+  },
+  {
+    title: '사이트맵',
+    icon: 'tree text-primary',
+    path: '/sitemap'
   },
   {
     heading: '서비스'
@@ -179,7 +226,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '내 정보 관리',
-    icon: 'user-edit',
+    icon: 'user-edit text-danger',
     children: [
       {
         title: '기본 관리',
@@ -188,6 +235,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: '내 정보 관리',
             icon: 'user',
             path: '/myinfo/profile'
+          },
+          { 
+            title: '알림 센터',
+            icon: 'notification text-warning',
+            path: '/myinfo/notifications'
           }
         ]
       },
@@ -238,7 +290,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '사이트 관리',
-    icon: 'home-2',
+    icon: 'home-2 text-success',
     children: [
       { 
         title: '공지사항 관리',
@@ -247,14 +299,19 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
       { 
         title: 'FAQ 관리',
-        icon: 'information',
+        icon: 'message-question',
         path: '/admin/site/faq'
+      },
+      { 
+        title: '알림 관리',
+        icon: 'notification',
+        path: '/admin/site/notification'
       }
     ]
   },
   {
     title: '사용자 관리',
-    icon: 'users',
+    icon: 'users text-info',
     children: [
       { 
         title: '사용자 관리',
@@ -265,7 +322,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '캠페인 관리',
-    icon: 'setting-3',
+    icon: 'setting-3 text-warning',
     children: [
       { 
         title: 'NS 트래픽',
@@ -311,7 +368,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '슬롯 관리',
-    icon: 'cube-2',
+    icon: 'cube-2 text-primary',
     children: [
       { 
         title: '슬롯 정보 관리',
@@ -692,7 +749,59 @@ export const MENU_SIDEBAR: TMenuConfig = [
 export const MENU_MEGA: TMenuConfig = [
   {
     title: 'Dashboard',
-    path: '/'
+    path: '/',
+    children: [
+      {
+        heading: '주요 메뉴',
+        children: [
+          { 
+            title: '공지사항',
+            icon: 'notification',
+            path: '/notice'
+          },
+          { 
+            title: 'FAQ',
+            icon: 'message-question text-info',
+            path: '/faq'
+          },
+          { 
+            title: '사이트맵',
+            icon: 'tree text-primary',
+            path: '/sitemap'
+          }
+        ]
+      },
+      {
+        heading: '역할별 대시보드',
+        children: [
+          { 
+            title: '개발자 대시보드',
+            icon: 'code-1',
+            path: '/dashboard/developer'
+          },
+          { 
+            title: '운영자 대시보드',
+            icon: 'shield-tick',
+            path: '/dashboard/operator'
+          },
+          { 
+            title: '총판 대시보드',
+            icon: 'shop',
+            path: '/dashboard/distributor'
+          },
+          { 
+            title: '대행사 대시보드',
+            icon: 'briefcase',
+            path: '/dashboard/agency'
+          },
+          { 
+            title: '광고주 대시보드',
+            icon: 'presentation-chart',
+            path: '/dashboard/advertiser'
+          }
+        ]
+      }
+    ]
   },
   {
     title: '서비스',
@@ -743,12 +852,13 @@ export const MENU_MEGA: TMenuConfig = [
         ]
       },
       {
-        heading: '부가 서비스',
+        heading: '정보',
         children: [
           { 
             title: '순위분석',
             icon: 'ranking',
-            path: '#'
+            path: '#',
+            disabled: true
           }
         ]
       }
@@ -764,6 +874,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: '내 정보 관리',
             icon: 'user',
             path: '/myinfo/profile'
+          },
+          { 
+            title: '알림 센터',
+            icon: 'notification',
+            path: '/myinfo/notifications'
           }
         ]
       },
@@ -822,13 +937,13 @@ export const MENU_MEGA: TMenuConfig = [
           },
           { 
             title: 'FAQ 관리',
-            icon: 'information',
+            icon: 'question-square',
             path: '/admin/site/faq'
           },
           { 
-            title: '캐시 신청 관리',
-            icon: 'dollar',
-            path: '/admin/cash'
+            title: '알림 관리',
+            icon: 'notification',
+            path: '/admin/site/notification'
           }
         ]
       },

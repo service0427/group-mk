@@ -38,15 +38,17 @@ const CardAdCampaign = ({
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   
-  // 모달에 표시할 캠페인 데이터 객체
+  // 모달에 표시할 캠페인 데이터 객체 - 누락된 속성 추가
   const campaignData = {
     id: "", // ID 표시하지 않음
     campaignName: title,
     description: description,
     logo: logo,
     efficiency: statistics.find(stat => stat.description.includes('효율'))?.total || '0%',
-    minQuantity: statistics.find(stat => stat.description.includes('수량'))?.total || '0',
+    minQuantity: statistics.find(stat => stat.description.includes('수량'))?.total || '0개',
     deadline: statistics.find(stat => stat.description.includes('시간'))?.total || '-',
+    unitPrice: statistics.find(stat => stat.description.includes('단가'))?.total || '0원', // 추가
+    additionalLogic: statistics.find(stat => stat.description.includes('추가로직'))?.total || '없음', // 추가
     status: {
       label: status.label,
       color: status.variant

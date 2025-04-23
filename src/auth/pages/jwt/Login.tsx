@@ -1,4 +1,4 @@
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import * as Yup from 'yup';
@@ -29,6 +29,12 @@ const initialValues = {
 };
 
 const Login = () => {
+  // 페이지 진입 시 localStorage 초기화
+  useEffect(() => {
+    // localStorage 전체 비우기
+    localStorage.clear();
+    console.log('로그인 페이지 진입: localStorage가 초기화되었습니다.');
+  }, []);
   const [loading, setLoading] = useState(false);
   const { login } = useAuthContext();
   const navigate = useNavigate();

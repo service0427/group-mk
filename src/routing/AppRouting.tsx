@@ -6,7 +6,7 @@ import { AppRoutingSetup } from '.';
 
 const AppRouting = (): ReactElement => {
   const { setProgressBarLoader } = useLoaders();
-  const { verify, setLoading } = useAuthContext();
+  const { verify, setLoading, logout } = useAuthContext();
   const [previousLocation, setPreviousLocation] = useState('');
   const [firstLoad, setFirstLoad] = useState(true);
   const location = useLocation();

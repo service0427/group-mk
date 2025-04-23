@@ -96,7 +96,8 @@ import {
   UsersPage,
   Campaigns,
   Slots,
-  Site
+  Site,
+  ManageCashPage
 } from '@/pages/admin';
 
 import { AuthPage } from '@/auth';
@@ -108,6 +109,7 @@ import {
   AuthenticationAccountDeactivatedPage,
   AuthenticationGetStartedPage
 } from '@/pages/authentication';
+import { ManageSettingPage } from '@/pages/admin/cash';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -260,6 +262,10 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
+
+          {/* 캐시 관리 라우트 */}
+          <Route path="/admin/cash" element={<ManageCashPage />} />
+          <Route path="/admin/cash_setting" element={<ManageSettingPage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorsRouting />} />

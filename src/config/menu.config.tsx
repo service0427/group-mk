@@ -326,6 +326,22 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '캐시 관리',
+    icon: 'dollar',
+    children: [
+      { 
+        title: '신청 관리',
+        icon: 'dollar',
+        path: '/admin/cash'
+      },
+      { 
+        title: '설정 관리',
+        icon: 'dollar',
+        path: '/admin/cash_setting'
+      }
+    ]
+  },
+  {
     heading: 'Metronic Template'
   },
   {
@@ -808,6 +824,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: 'FAQ 관리',
             icon: 'information',
             path: '/admin/site/faq'
+          },
+          { 
+            title: '캐시 신청 관리',
+            icon: 'dollar',
+            path: '/admin/cash'
           }
         ]
       },

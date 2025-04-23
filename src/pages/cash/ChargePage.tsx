@@ -17,9 +17,17 @@ interface ChargeRequest {
   free_cash_percentage: number;
 }
 
+// 캐시 설정 타입 정의
+interface CashSetting {
+  min_request_amount: number;
+  free_cash_percentage: number;
+  expiry_months: number;
+  min_usage_amount: number;
+  min_usage_percentage: number;
+}
+
 const ChargePage: React.FC = () => {
   // AuthContext에서 currentUser 가져오기
-
   const { currentUser } = useAuthContext();
   console.log(currentUser);
   
@@ -31,6 +39,10 @@ const ChargePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [recentRequests, setRecentRequests] = useState<ChargeRequest[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [cashSetting, setCashSetting] = useState<CashSetting | null>(null);
+  const [bonusAmount, setBonusAmount] = useState<number>(0);
+  const [isEligibleForBonus, setIsEligibleForBonus] = useState<boolean>(false);
+  const [isLoadingSetting, setIsLoadingSetting] = useState<boolean>(false);
   
   // 금액 선택 핸들러 (누적 방식)
   const handleAmountSelect = (amount: string) => {
@@ -80,6 +92,64 @@ const ChargePage: React.FC = () => {
     }
     
     return result.trim();
+  };
+  
+  // 캐시 설정 불러오기
+  const fetchCashSetting = async () => {
+    if (!currentUser) return;
+    
+    setIsLoadingSetting(true);
+    
+    try {
+      // 1. 사용자별 설정 확인
+      const { data: userSetting, error: userSettingError } = await supabase
+        .from('cash_user_settings')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      // 2. 전역 설정 확인
+      const { data: globalSetting, error: globalSettingError } = await supabase
+        .from('cash_global_settings')
+        .select('*')
+        .single();
+      
+      if (globalSettingError) {
+        console.error("전역 설정 로딩 오류:", globalSettingError);
+        return;
+      }
+      
+      // 3. 사용자별 설정이 있으면 사용자 설정, 없으면 전역 설정 사용
+      const setting = userSetting || globalSetting;
+      setCashSetting(setting);
+      
+    } catch (err) {
+      console.error("캐시 설정 로딩 오류:", err);
+    } finally {
+      setIsLoadingSetting(false);
+    }
+  };
+  
+  // 보너스(무료캐시) 금액 계산
+  const calculateBonusAmount = () => {
+    if (!cashSetting || !customAmount) {
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
+      return;
+    }
+    
+    const amount = parseInt(customAmount);
+    
+    // 최소 충전 금액 이상인지 확인
+    if (amount >= cashSetting.min_request_amount) {
+      const bonus = Math.floor((amount * cashSetting.free_cash_percentage) / 100);
+      setBonusAmount(bonus);
+      setIsEligibleForBonus(true);
+    } else {
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
+    }
   };
   
   // 최근 충전 요청 내역 가져오기
@@ -134,14 +204,17 @@ const ChargePage: React.FC = () => {
     }
   };
   
-  // 금액이 변경될 때마다 한글 단위 표시 업데이트
+  // 금액이 변경될 때마다 한글 단위 표시 업데이트 및 보너스 금액 계산
   useEffect(() => {
     if (customAmount) {
       setKoreanAmount(formatToKorean(customAmount));
+      calculateBonusAmount();
     } else {
       setKoreanAmount('');
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
     }
-  }, [customAmount]);
+  }, [customAmount, cashSetting]);
 
   // 컴포넌트 마운트 시 최근 충전 내역 가져오기
   useEffect(() => {
@@ -149,6 +222,7 @@ const ChargePage: React.FC = () => {
     if (currentUser && currentUser.id) {
       console.log("useEffect에서 fetchRecentRequests 호출, currentUser ID:", currentUser.id);
       fetchRecentRequests();
+      fetchCashSetting();
     } else {
       console.log("useEffect: currentUser 없거나 ID 속성 없음:", currentUser);
     }
@@ -210,7 +284,7 @@ const ChargePage: React.FC = () => {
           user_id: currentUser.id,
           amount: Number(customAmount),
           status: 'pending',
-          free_cash_percentage: 0 // 기본값
+          free_cash_percentage: cashSetting?.free_cash_percentage || 0
         })
         .select();
       
@@ -262,13 +336,28 @@ const ChargePage: React.FC = () => {
             <div className="mb-6">
               <p className="text-gray-500 text-sm mb-2">충전할 금액을 입력해 주세요.</p>
               <div className="relative">
-                <Input
-                  type="text"
-                  value={customAmount ? formatNumberWithCommas(parseInt(customAmount)) : ''}
-                  onChange={handleCustomAmountChange}
-                  placeholder="0"
-                  className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-gray-300 text-lg focus:border-b-gray-500 pl-0"
-                />
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={customAmount ? formatNumberWithCommas(parseInt(customAmount)) : ''}
+                    onChange={handleCustomAmountChange}
+                    placeholder="0"
+                    className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-gray-300 text-lg focus:border-b-gray-500 pl-0 pr-8"
+                  />
+                  {customAmount && (
+                    <button 
+                      onClick={() => setCustomAmount('')}
+                      type="button"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 {koreanAmount && (
                   <div className="text-sm text-gray-500 mt-1">
                     {koreanAmount}원
@@ -276,6 +365,37 @@ const ChargePage: React.FC = () => {
                 )}
               </div>
               <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
+              
+              {/* 보너스 캐시 정보 표시 */}
+              {customAmount && cashSetting && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                  {isEligibleForBonus ? (
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-700">충전 금액:</span>
+                        <span className="font-medium">{formatNumberWithCommas(parseInt(customAmount))}원</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-gray-700">무료 보너스 캐시 ({cashSetting.free_cash_percentage}%):</span>
+                        <span className="font-medium text-green-600">+{formatNumberWithCommas(bonusAmount)}원</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-gray-700">총 충전 금액:</span>
+                        <span className="font-medium text-lg">{formatNumberWithCommas(parseInt(customAmount) + bonusAmount)}원</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        * 무료 캐시는 {cashSetting.expiry_months > 0 ? `${cashSetting.expiry_months}개월` : '무기한'}
+                        {cashSetting.min_usage_amount > 0 && `, ${formatNumberWithCommas(cashSetting.min_usage_amount)}원 이상 결제`} 시 사용 가능합니다.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">
+                      {formatNumberWithCommas(cashSetting.min_request_amount)}원 이상 충전 시 
+                      <span className="text-green-600 font-medium"> {cashSetting.free_cash_percentage}% 무료 캐시</span>를 추가로 받을 수 있습니다.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* 금액 빠른 선택 */}
@@ -338,6 +458,11 @@ const ChargePage: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-right text-gray-900 font-medium">
                             {formatNumberWithCommas(request.amount)}원
+                            {request.free_cash_percentage > 0 && request.status === 'approved' && (
+                              <div className="text-xs text-green-600">
+                                +{formatNumberWithCommas(Math.floor((request.amount * request.free_cash_percentage) / 100))}원 보너스
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
@@ -372,6 +497,11 @@ const ChargePage: React.FC = () => {
               >
                 {isLoading ? '처리 중...' : '충전하기'}
               </button>
+              {isEligibleForBonus && (
+                <div className="text-center text-sm mt-2 text-green-600">
+                  {formatNumberWithCommas(bonusAmount)}원 무료 캐시가 추가로 지급됩니다!
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

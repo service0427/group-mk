@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { getHeight } from '@/utils';
 import { useViewport } from '@/hooks';
-import {
-  DropdownNotificationsItem1,
-  DropdownNotificationsItem2,
-  DropdownNotificationsItem3,
-  DropdownNotificationsItem4,
-  DropdownNotificationsItem5,
-  DropdownNotificationsItem6
-} from './items';
+import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationDropdownItem } from './items/NotificationDropdownItem';
+import { NotificationStatus } from '@/types/notification';
 
 const DropdownNotificationsAll = () => {
   const footerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState<number>(0);
   const [viewportHeight] = useViewport();
   const offset = 300;
+
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    archiveNotification,
+    loading
+  } = useNotifications();
 
   useEffect(() => {
     if (footerRef.current) {
@@ -25,56 +28,43 @@ const DropdownNotificationsAll = () => {
   }, [viewportHeight]);
 
   const buildList = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center p-5">
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+        </div>
+      );
+    }
+
+    if (notifications.length === 0) {
+      return (
+        <div className="py-8 px-5 text-center text-gray-500">
+          <div className="flex justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+              <i className="ki-notification text-gray-400 text-xl"></i>
+            </div>
+          </div>
+          <p>알림이 없습니다.</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-col gap-5 pt-3 pb-4 divider-y divider-gray-200">
-        <DropdownNotificationsItem1
-          userName="Joe Lincoln"
-          avatar="300-4.png"
-          description="mentioned you in"
-          link="Latest Trends"
-          label="topic"
-          time="18 mins ago"
-          specialist="Web Design 2024"
-          text="For an expert opinion, check out what Mike has to say on this topic!"
-        />
-
-        <div className="border-b border-b-gray-200"></div>
-
-        <DropdownNotificationsItem2 />
-
-        <div className="border-b border-b-gray-200"></div>
-
-        <DropdownNotificationsItem3
-          userName="Guy Hawkins"
-          avatar="300-27.png"
-          badgeColor="bg-gray-400"
-          description="requested access to"
-          link="AirSpace"
-          day="project"
-          date="14 hours ago"
-          info="Dev Team"
-        />
-
-        <div className="border-b border-b-gray-200"></div>
-
-        <DropdownNotificationsItem4 />
-
-        <div className="border-b border-b-gray-200"></div>
-
-        <DropdownNotificationsItem5
-          userName="Raymond Pawell"
-          avatar="300-11.png"
-          badgeColor="badge-success"
-          description="posted a new article"
-          link="2024 Roadmap"
-          day=""
-          date="1 hour ago"
-          info="Roadmap"
-        />
-
-        <div className="border-b border-b-gray-200"></div>
-
-        <DropdownNotificationsItem6 />
+      <div className="flex flex-col gap-3 pt-3 pb-4">
+        {notifications.map(notification => (
+          <div key={notification.id}>
+            <NotificationDropdownItem
+              notification={notification}
+              onRead={markAsRead}
+              onArchive={archiveNotification}
+            />
+            <div className="border-b border-b-gray-200 mt-3"></div>
+          </div>
+        ))}
       </div>
     );
   };
@@ -84,8 +74,26 @@ const DropdownNotificationsAll = () => {
       <>
         <div className="border-b border-b-gray-200"></div>
         <div className="grid grid-cols-2 p-5 gap-2.5">
-          <button className="btn btn-sm btn-light justify-center">Archive all</button>
-          <button className="btn btn-sm btn-light justify-center">모두 읽음</button>
+          <button
+            className="btn btn-sm btn-light justify-center"
+            onClick={() => {
+              const unreadNotifications = notifications
+                .filter(n => n.status === NotificationStatus.UNREAD)
+                .map(n => n.id);
+
+              if (unreadNotifications.length > 0) {
+                unreadNotifications.forEach(id => archiveNotification(id));
+              }
+            }}
+          >
+            모두 보관
+          </button>
+          <button
+            className="btn btn-sm btn-light justify-center"
+            onClick={() => markAllAsRead()}
+          >
+            모두 읽음
+          </button>
         </div>
       </>
     );

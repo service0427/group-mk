@@ -10,14 +10,14 @@ interface NotificationIconProps {
 /**
  * 알림 유형에 따른 아이콘 컴포넌트
  */
-const NotificationIcon: React.FC<NotificationIconProps> = ({ 
-  type, 
+const NotificationIcon: React.FC<NotificationIconProps> = ({
+  type,
   size = 'md',
   className = ''
 }) => {
   // 아이콘 이름 선택
   const getIconName = () => {
-    switch(type) {
+    switch (type) {
       case NotificationType.SYSTEM:
         return 'info-circle';
       case NotificationType.TRANSACTION:
@@ -32,10 +32,10 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({
         return 'notification';
     }
   };
-  
+
   // 아이콘 배경 색상 선택
   const getBackgroundClass = () => {
-    switch(type) {
+    switch (type) {
       case NotificationType.SYSTEM:
         return 'bg-blue-100 text-blue-600';
       case NotificationType.TRANSACTION:
@@ -50,10 +50,10 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({
         return 'bg-gray-100 text-gray-600';
     }
   };
-  
+
   // 아이콘 크기 선택
   const getSizeClass = () => {
-    switch(size) {
+    switch (size) {
       case 'sm':
         return 'w-8 h-8';
       case 'lg':
@@ -63,7 +63,7 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({
         return 'w-10 h-10';
     }
   };
-  
+
   return (
     <div className={`
       ${getSizeClass()} 

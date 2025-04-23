@@ -23,7 +23,7 @@ const NotificationStatsCard: React.FC<NotificationStatsCardProps> = ({
     <div className="bg-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center mb-4">
         <div className="w-10 h-10 rounded-lg bg-primary-lighter dark:bg-primary-dark flex items-center justify-center mr-3">
-          <KeenIcon icon={icon} className="text-primary dark:text-primary-light text-xl" />
+          <KeenIcon icon={icon} className="text-primary dark:text-white text-xl" />
         </div>
         <h3 className="text-base font-medium text-card-foreground">{title}</h3>
       </div>

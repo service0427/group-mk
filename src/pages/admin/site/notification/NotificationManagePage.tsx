@@ -109,9 +109,9 @@ const NotificationManagePage: React.FC = () => {
   }, [currentUser?.role, statsUseFallback, refreshStats]);
 
   // 모달 상태
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [showUserSelectModal, setShowUserSelectModal] = useState(false);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [isOpenSendModal, setIsOpenSendModal] = useState(false);
+  const [isOpenUserSelectModal, setIsOpenUserSelectModal] = useState(false);
+  const [isOpenDeleteConfirmModal, setIsOpenDeleteConfirmModal] = useState(false);
   const [selectedNotificationType, setSelectedNotificationType] = useState<'role' | 'user'>('role');
   const [deleteOption, setDeleteOption] = useState<{
     type: 'selected' | 'older' | 'all';
@@ -125,17 +125,17 @@ const NotificationManagePage: React.FC = () => {
     setSelectedNotificationType(type);
 
     if (type === 'user') {
-      setShowUserSelectModal(true);
+      setIsOpenUserSelectModal(true);
     } else {
-      setShowSendModal(true);
+      setIsOpenSendModal(true);
     }
   };
 
   // 사용자 선택 완료 핸들러
   const handleUserSelectComplete = (users: { id: string, name: string }[]) => {
     setSelectedUsers(users);
-    setShowUserSelectModal(false);
-    setShowSendModal(true);
+    setIsOpenUserSelectModal(false);
+    setIsOpenSendModal(true);
   };
 
   // 알림 전송 처리 핸들러
@@ -171,7 +171,7 @@ const NotificationManagePage: React.FC = () => {
 
     if (success) {
       toast.success('알림이 성공적으로 전송되었습니다.');
-      setShowSendModal(false);
+      setIsOpenSendModal(false);
       setSelectedUsers([]);
 
       // 알림 생성 후 통계 갱신
@@ -190,7 +190,7 @@ const NotificationManagePage: React.FC = () => {
     olderThan?: Date;
   }) => {
     setDeleteOption(option);
-    setShowDeleteConfirmModal(true);
+    setIsOpenDeleteConfirmModal(true);
   };
 
   // 알림 삭제 실행 핸들러
@@ -209,7 +209,7 @@ const NotificationManagePage: React.FC = () => {
       toast.error('알림 삭제에 실패했습니다. 다시 시도해주세요.');
     }
 
-    setShowDeleteConfirmModal(false);
+    setIsOpenDeleteConfirmModal(false);
     setDeleteOption(null);
   };
 
@@ -426,31 +426,29 @@ const NotificationManagePage: React.FC = () => {
         </div>
       </Container>
 
-      {/* 모달 컴포넌트들 */}
-      {showSendModal && (
-        <SendNotificationModal
-          onClose={() => {
-            setShowSendModal(false);
-            setSelectedUsers([]);
-          }}
-          onSend={handleSendNotification}
-          notificationType={selectedNotificationType}
-          selectedUsers={selectedUsers}
-        />
-      )}
+      {/* 모달 컴포넌트들 - Dialog 방식으로 변경 */}
+      <SendNotificationModal
+        isOpen={isOpenSendModal}
+        onClose={() => {
+          setIsOpenSendModal(false);
+          setSelectedUsers([]);
+        }}
+        onSend={handleSendNotification}
+        notificationType={selectedNotificationType}
+        selectedUsers={selectedUsers}
+      />
 
-      {showUserSelectModal && (
-        <UserSelectModal
-          onClose={() => setShowUserSelectModal(false)}
-          onSelectComplete={handleUserSelectComplete}
-        />
-      )}
+      <UserSelectModal
+        isOpen={isOpenUserSelectModal}
+        onClose={() => setIsOpenUserSelectModal(false)}
+        onSelectComplete={handleUserSelectComplete}
+      />
 
-      {showDeleteConfirmModal && deleteOption && (
+      {deleteOption && (
         <DeleteConfirmModal
-          isOpen={showDeleteConfirmModal}
+          isOpen={isOpenDeleteConfirmModal}
           onClose={() => {
-            setShowDeleteConfirmModal(false);
+            setIsOpenDeleteConfirmModal(false);
             setDeleteOption(null);
           }}
           onConfirm={handleDeleteConfirmed}

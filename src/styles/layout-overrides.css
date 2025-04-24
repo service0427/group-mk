@@ -1,0 +1,157 @@
+/* 레이아웃 오버라이드 스타일 */
+
+/* 전체 레이아웃 스타일 */
+html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
+/* 사이드바 스타일 변경 */
+.sidebar {
+  transition: width 0.3s ease;
+  will-change: width; /* 성능 최적화 */
+  contain: layout style size; /* 레이아웃 컨테인먼트 추가 */
+}
+
+/* 모바일 스타일 */
+@media (max-width: 1023px) {
+  .header {
+    left: 0 !important;
+    width: 100% !important;
+  }
+
+  main.content {
+    margin-top: 4rem;
+  }
+}
+
+/* 헤더 위치 및 스타일 조정 */
+@media (min-width: 1024px) {
+  .stand.sidebar-fixed.header-fixed .header {
+    left: var(--tw-sidebar-width) !important; /* 사이드바 너비만큼 왼쪽으로 이동 */
+    width: calc(100% - var(--tw-sidebar-width)) !important; /* 너비 재조정 */
+    z-index: 20; /* z-index 설정 */
+    will-change: transform; /* 성능 최적화 */
+    contain: layout paint; /* 레이아웃 컨테인먼트 추가 */
+  }
+}
+
+/* 사이드바 축소 시 메뉴 라벨과 서브메뉴 변경 */
+.sidebar-collapse .sidebar .menu-item-text {
+  display: none;
+}
+
+.sidebar-collapse .sidebar .menu-sub {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 200px;
+  background: var(--tw-page-bg);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+/* 다크 모드 조정 */
+.dark .sidebar-collapse .sidebar .menu-sub {
+  background: var(--tw-page-bg-dark);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 메인 컨텐츠 영역 조정 */
+.wrapper {
+  transition: padding-left 0.3s ease;
+  overflow: hidden;
+  height: 100vh;
+  padding-left: 0 !important; /* 왼쪽 패딩 제거 */
+  margin-left: 0 !important; /* 왼쪽 마진 제거 */
+  contain: layout; /* 레이아웃 컨테인먼트 추가 */
+}
+
+/* 사이드바 고정 시 wrapper 패딩 오버라이드 */
+.stand.sidebar-fixed .wrapper,
+.stand.header-fixed .wrapper,
+.stand.sidebar-fixed.header-fixed .wrapper,
+.stand.layout-initialized .wrapper {
+  padding-inline-start: 0 !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  /* 상단 패딩/마진은 제거하지 않고 기본값 유지 */
+}
+
+/* 레이아웃 컨테이너 구조 오버라이드 */
+.stand .flex.h-screen.overflow-hidden {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh; /* 전체 높이 설정 */
+  overflow: hidden;
+}
+
+/* 메인 콘텐츠 영역 스타일 재정의 */
+main.content {
+  padding-top: 2.5rem !important; /* 상단 패딩 줄임 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%; /* 콘텐츠 영역 너비 100%로 설정 */
+  margin-top: 64px; /* 헤더 높이(h-16)에 해당하는 값 */
+  height: calc(100vh - var(--tw-header-height)); /* 헤더 높이를 뺀 나머지 영역 */
+  position: relative; /* 로더 포지셔닝 위해 추가 */
+  contain: content; /* 컨텐츠 컨테인먼트 추가 */
+}
+
+/* 컨텐츠 영역 페이드 트랜지션 - 로딩 중/로딩 완료 상태 */
+.content-loading {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.content-loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* 컨텐츠 로더 스타일 개선 */
+.content .MuiCircularProgress-root {
+  z-index: 15;
+}
+
+/* 사이드바 및 wrapper 영역의 상대적 너비 설정 */
+@media (min-width: 1024px) {
+  .stand .sidebar {
+    flex-shrink: 0; /* 사이드바 크기 고정 */
+    contain: layout size style; /* 컨테인먼트 추가 */
+  }
+  
+  .stand .wrapper {
+    flex-grow: 1; /* wrapper가 나머지 공간 차지 */
+    width: calc(100% - var(--tw-sidebar-width)); /* wrapper 너비를 명시적으로 설정 */
+    contain: layout; /* 레이아웃 컨테인먼트 추가 */
+  }
+}
+
+/* 레이아웃 리렌더링을 최소화하기 위한 추가 CSS 변수 사용 */
+:root {
+  --content-transition: opacity 0.15s ease-in-out;
+  --content-background: var(--tw-page-bg);
+  --content-background-dark: var(--tw-page-bg-dark);
+}
+
+/* 컨텐츠 영역에 대한 추가 최적화 */
+main.content {
+  transition: var(--content-transition);
+  background-color: var(--content-background);
+  transform: translateZ(0); /* GPU 가속 활성화 */
+  backface-visibility: hidden; /* 렌더링 성능 향상 */
+}
+
+.dark main.content {
+  background-color: var(--content-background-dark);
+}
+
+/* 헤더와 사이드바의 렌더링 성능 향상 */
+.header, .sidebar {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

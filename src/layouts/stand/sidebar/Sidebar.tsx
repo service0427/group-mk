@@ -44,17 +44,18 @@ export const Sidebar = () => {
     setMobileSidebarOpen(false);
   };
 
-  // PC 버전에서는 마우스 오버 이벤트 사용하지 않고 토글 버튼만 사용
-
   const renderContent = () => {
     return (
       <div
         ref={selfRef}
-        // 마우스 오버/아웃 이벤트 핸들러 제거
         className={clsx(
-          'sidebar sidebar-enhanced bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0',
+          'sidebar sidebar-enhanced bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:h-screen lg:flex flex-col items-stretch shrink-0 z-30',
           themeClass
         )}
+        style={{
+          width: layout.options.sidebar.collapse ? '80px' : '280px',
+          transition: 'width 0.3s ease'
+        }}
       >
         {desktopMode && <SidebarHeader ref={headerRef} />}
         <SidebarContent {...(desktopMode && { height: scrollableHeight })} />
@@ -63,7 +64,7 @@ export const Sidebar = () => {
   };
 
   useEffect(() => {
-    // Hide drawer on route chnage after menu link click
+    // Hide drawer on route change after menu link click
     if (!desktopMode && prevPathname !== pathname) {
       handleMobileSidebarClose();
     }

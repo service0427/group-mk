@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  ModalContent, 
-  ModalHeader, 
-  ModalBody, 
-  ModalTitle 
-} from '@/components/modal';
 import { KeenIcon } from '@/components';
 import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
 import { toAbsoluteUrl } from '@/utils';
 import { updateCampaign, formatTimeHHMM } from '../../services/campaignService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 // 확장된 캠페인 인터페이스
 interface ExtendedCampaign extends ICampaign {
@@ -133,23 +128,25 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   };
 
   return (
-    <Modal open={open} onClose={onClose} className="bg-background">
-      <ModalContent className="w-full max-w-2xl mx-auto rounded-lg bg-background shadow-lg">
-        <ModalHeader className="border-b p-4">
-          <ModalTitle className="text-foreground">캠페인 내용 수정</ModalTitle>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-4 px-6 border-b">
+          <DialogTitle className="text-lg font-medium text-foreground">캠페인 내용 수정</DialogTitle>
           <button 
             onClick={onClose} 
-            className="btn btn-icon btn-sm btn-ghost absolute right-4 top-4"
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
             disabled={loading}
           >
             <KeenIcon icon="cross" className="size-5" />
+            <span className="sr-only">Close</span>
           </button>
-        </ModalHeader>
-        <ModalBody className="p-6 bg-background">
+        </DialogHeader>
+        
+        <div className="p-6 bg-background">
           <div className="space-y-6">
             {/* 오류 메시지 */}
             {error && (
-              <div className="alert alert-danger mb-4">
+              <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 rounded-md flex items-center mb-4">
                 <KeenIcon icon="warning-triangle" className="size-5 mr-2" />
                 {error}
               </div>
@@ -201,7 +198,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="100"
                           value={editedCampaign.unitPrice}
                           onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
+                          className="w-24 h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
                           disabled={loading}
                         />
                         <span className="ml-2 text-md font-medium text-foreground">원</span>
@@ -220,7 +217,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="1"
                           value={editedCampaign.minQuantity}
                           onChange={(e) => handleNumberChange('minQuantity', e.target.value)}
-                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
+                          className="w-24 h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
                           disabled={loading}
                         />
                         <span className="ml-2 text-md font-medium text-foreground">개</span>
@@ -239,7 +236,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="1"
                           value={editedCampaign.additionalLogic}
                           onChange={(e) => handleNumberChange('additionalLogic', e.target.value)}
-                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
+                          className="w-24 h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
                           disabled={loading}
                         />
                         <span className="ml-2 text-md font-medium text-foreground">개</span>
@@ -259,7 +256,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           step="0.1"
                           value={editedCampaign.efficiency}
                           onChange={(e) => handleNumberChange('efficiency', e.target.value)}
-                          className="input w-24 border-border bg-background text-foreground rounded-md text-md"
+                          className="w-24 h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
                           disabled={loading}
                         />
                         <span className="ml-2 text-md font-medium text-foreground">%</span>
@@ -275,7 +272,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         type="time"
                         value={editedCampaign.deadline}
                         onChange={(e) => handleChange('deadline', e.target.value)}
-                        className="input w-36 border-border bg-background text-foreground rounded-md text-md"
+                        className="w-36 h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
                         disabled={loading}
                       />
                     </td>
@@ -288,7 +285,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       <textarea
                         value={editedCampaign.description}
                         onChange={(e) => handleChange('description', e.target.value)}
-                        className="input w-full border-border bg-background text-foreground rounded-md text-md min-h-[80px]"
+                        className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md text-md min-h-[80px]"
                         rows={3}
                         disabled={loading}
                       />
@@ -302,7 +299,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       <textarea
                         value={editedCampaign.detailedDescription}
                         onChange={(e) => handleChange('detailedDescription', e.target.value)}
-                        className="input w-full border-border bg-background text-foreground rounded-md text-md min-h-[150px]"
+                        className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md text-md min-h-[150px]"
                         rows={6}
                         disabled={loading}
                       />
@@ -314,9 +311,9 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
             {/* 버튼 */}
             <div className="flex justify-end gap-3 mt-6">
-              <button 
+              <Button 
                 onClick={handleSave} 
-                className="btn btn-md btn-primary"
+                className="bg-primary hover:bg-primary/90 text-white"
                 disabled={loading}
               >
                 {loading ? (
@@ -325,19 +322,19 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                     저장 중...
                   </span>
                 ) : '저장'}
-              </button>
-              <button 
+              </Button>
+              <Button 
                 onClick={onClose} 
-                className="btn btn-md btn-light"
+                variant="outline"
                 disabled={loading}
               >
                 취소
-              </button>
+              </Button>
             </div>
           </div>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

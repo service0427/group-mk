@@ -3,12 +3,14 @@ import { Helmet } from 'react-helmet-async';
 import { Outlet, useLocation } from 'react-router';
 import { useMenuCurrentItem } from '@/components/menu';
 import { Footer, Header, Sidebar, useStandLayout } from '../';
-import { useMenus } from '@/providers';
+import { useMenus, useLoaders } from '@/providers';
+import { ContentLoader } from '@/components/loaders';
 
 const Main = () => {
   const { layout } = useStandLayout();
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
+  const { contentLoader } = useLoaders();
   const menuConfig = getMenuConfig('primary');
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
 
@@ -59,22 +61,41 @@ const Main = () => {
     return menuItem?.title || '';
   };
 
+  // 컨텐츠 영역의 클래스를 로딩 상태에 따라 동적으로 결정
+  const contentClassName = `grow content pt-5 overflow-y-auto relative ${
+    contentLoader ? 'content-loading' : 'content-loaded'
+  }`;
+
   return (
     <Fragment>
       <Helmet>
         <title>{`마케팅의 정석 :: The standard of Marketing${getPageTitle() ? ` - ${getPageTitle()}` : ''}`}</title>
+        {/* 라우트 이동 시 중요한 렌더링 최적화를 위한 메타 태그 */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta http-equiv="Cache-Control" content="no-store" />
       </Helmet>
 
-      <Sidebar />
-
-      <div className="wrapper flex grow flex-col">
-        <Header />
-
-        <main className="grow content pt-5" role="content">
-          <Outlet />
-        </main>
-
-        <Footer />
+      <div className="flex h-screen overflow-hidden">
+        {/* 사이드바 컴포넌트 - 고정 영역 */}
+        <Sidebar />
+        
+        {/* 메인 콘텐츠 영역 */}
+        <div className="flex grow flex-col overflow-hidden">
+          {/* 헤더 컴포넌트 - 고정 영역 */}
+          <Header />
+          
+          {/* 스크롤 가능한 콘텐츠 영역 - 동적 영역 */}
+          <main className={contentClassName} role="content">
+            {/* 컨텐츠 로더가 활성화되면 콘텐츠 영역에만 표시 */}
+            {contentLoader && <ContentLoader />}
+            <div className={`content-container ${contentLoader ? 'pointer-events-none' : ''}`}>
+              <Outlet />
+            </div>
+          </main>
+          
+          {/* 푸터 컴포넌트 - 고정 영역 */}
+          <Footer />
+        </div>
       </div>
     </Fragment>
   );

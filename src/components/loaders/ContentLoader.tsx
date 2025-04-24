@@ -2,8 +2,13 @@ import { CircularProgress } from '@mui/material';
 
 const ContentLoader = () => {
   return (
-    <div className="flex flex-col items-center justify-center self-center relative top-1/2 -translate-x-1/2">
-      <CircularProgress color="primary" />
+    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 z-10 rounded-md">
+      <CircularProgress 
+        size={40}
+        sx={{
+          color: 'var(--tw-primary)',
+        }}
+      />
     </div>
   );
 };

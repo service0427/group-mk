@@ -2,7 +2,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, type PropsWithChildren, useContext, useState } from 'react';
 
-import { ProgressBarLoader, ScreenLoader } from '@/components/loaders';
+import { ContentLoader, ProgressBarLoader, ScreenLoader } from '@/components/loaders';
 
 export interface ILoadersProvider {
   contentLoader: boolean;
@@ -44,6 +44,7 @@ const LoadersProvider = ({ children }: PropsWithChildren) => {
       {children}
       {progressBarLoader && <ProgressBarLoader />}
       {screenLoader && <ScreenLoader />}
+      {/* ContentLoader는 이 컴포넌트에서 렌더링하지 않고 Main.tsx에서 직접 사용합니다 */}
     </LoadersContext.Provider>
   );
 };

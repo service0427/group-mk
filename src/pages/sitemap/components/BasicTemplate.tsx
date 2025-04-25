@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { useMenus } from '@/providers';
@@ -90,8 +90,8 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
           )}
 
           {item.path ? (
-            <a
-              href={item.path}
+            <Link
+              to={item.path}
               className="text-gray-700 hover:text-primary font-medium"
               style={{
                 fontSize: depth === 0 ? '1rem' : '0.875rem',
@@ -99,7 +99,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
               }}
             >
               {item.title}
-            </a>
+            </Link>
           ) : (
             <span
               className="text-gray-700 font-medium"

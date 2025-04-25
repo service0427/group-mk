@@ -1,5 +1,7 @@
 import React from 'react';
 import { KeenIcon } from '@/components/keenicons';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -16,23 +18,13 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   title = '알림 삭제',
   message = '이 알림을 정말 삭제하시겠습니까?'
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-lg shadow-xl w-full max-w-sm mx-auto border border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
-        {/* 헤더 */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="text-lg font-medium text-danger">{title}</h3>
-          <button
-            className="text-muted-foreground hover:text-card-foreground p-1 rounded-full"
-            onClick={onClose}
-          >
-            <KeenIcon icon="cross" className="text-lg" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-3 px-6 border-b">
+          <DialogTitle className="text-lg font-medium text-danger">{title}</DialogTitle>
+        </DialogHeader>
 
-        {/* 본문 */}
         <div className="p-5 bg-background">
           <div className="mb-4 text-center">
             <div className="flex justify-center mb-4">
@@ -44,25 +36,26 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              className="btn btn-sm btn-danger w-full text-center justify-center"
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
               onClick={() => {
                 onConfirm();
               }}
             >
-              <KeenIcon icon="trash" className="me-1" />
+              <KeenIcon icon="trash" className="mr-1" />
               삭제
-            </button>
-            <button
-              className="btn btn-sm btn-light-secondary w-full text-center justify-center"
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={onClose}
             >
               취소
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

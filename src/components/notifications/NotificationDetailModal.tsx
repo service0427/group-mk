@@ -4,9 +4,37 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import NotificationIcon from './NotificationIcon';
 import { KeenIcon } from '@/components/keenicons';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
+
+// 모달용 스타일을 추가합니다
+const modalStyles = `
+  .notification-modal-content {
+    position: fixed !important;
+    z-index: 9999 !important;
+    max-width: 500px !important;
+    width: 95% !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+  }
+  
+  .notification-modal-overlay {
+    position: fixed !important;
+    z-index: 9998 !important;
+    inset: 0 !important;
+  }
+`;
 
 interface NotificationDetailModalProps {
   notification: INotification;
+  open?: boolean;
   onClose: () => void;
   onMarkAsRead?: (id: string) => Promise<void>;
   onArchive?: (id: string) => Promise<void>;
@@ -15,6 +43,7 @@ interface NotificationDetailModalProps {
 
 const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
   notification,
+  open = true,
   onClose,
   onMarkAsRead,
   onArchive,
@@ -53,35 +82,21 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
     }
   };
 
-  // 중요도 텍스트 변환
-  const getPriorityText = (priority: NotificationPriority) => {
-    switch (priority) {
-      case NotificationPriority.HIGH:
-        return '높음';
-      case NotificationPriority.MEDIUM:
-        return '중간';
-      case NotificationPriority.LOW:
-        return '낮음';
-      default:
-        return '일반';
-    }
-  };
-
   // 배경색 선택
   const getBgColorClass = () => {
     switch (notification.type) {
       case NotificationType.SYSTEM:
-        return 'bg-blue-50';
+        return 'bg-blue-50 dark:bg-blue-950/30';
       case NotificationType.TRANSACTION:
-        return 'bg-green-50';
+        return 'bg-green-50 dark:bg-green-950/30';
       case NotificationType.SERVICE:
-        return 'bg-purple-50';
+        return 'bg-purple-50 dark:bg-purple-950/30';
       case NotificationType.SLOT:
-        return 'bg-orange-50';
+        return 'bg-orange-50 dark:bg-orange-950/30';
       case NotificationType.MARKETING:
-        return 'bg-yellow-50';
+        return 'bg-yellow-50 dark:bg-yellow-950/30';
       default:
-        return 'bg-gray-50';
+        return 'bg-gray-50 dark:bg-gray-800/50';
     }
   };
 
@@ -89,118 +104,126 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
   const getPriorityBorderClass = () => {
     switch (notification.priority) {
       case NotificationPriority.HIGH:
-        return 'border-t-4 border-t-red-500';
+        return '';
       case NotificationPriority.MEDIUM:
-        return 'border-t-4 border-t-orange-500';
+        return '';
       default:
         return '';
     }
   };
 
+  if (!notification) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center p-4 z-50">
-      <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-md mx-auto ${getPriorityBorderClass()}`}
-        onClick={(e) => e.stopPropagation()}
+    <>
+      {/* 필요한 스타일을 동적으로 삽입 */}
+      <style dangerouslySetInnerHTML={{ __html: modalStyles }} />
+      
+      <Dialog 
+        open={open} 
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            onClose();
+          }
+        }}
       >
-        {/* 헤더 */}
-        <div className={`${getBgColorClass()} p-4 rounded-t-lg flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <NotificationIcon type={notification.type} size="sm" />
-            <div>
-              <h3 className="text-lg font-medium">{notification.title}</h3>
-              <div className="text-sm text-gray-600 mt-1">
-                {formatDate(notification.createdAt)}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${notification.type === NotificationType.SYSTEM
-                    ? 'bg-blue-100 text-blue-700'
-                    : notification.type === NotificationType.TRANSACTION
-                      ? 'bg-green-100 text-green-700'
-                      : notification.type === NotificationType.SERVICE
-                        ? 'bg-purple-100 text-purple-700'
-                        : notification.type === NotificationType.SLOT
-                          ? 'bg-orange-100 text-orange-700'
-                          : notification.type === NotificationType.MARKETING
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-gray-100 text-gray-600'
-                  }`}>
-                  <span className={`inline-block w-2 h-2 rounded-full ${notification.type === NotificationType.SYSTEM
-                      ? 'bg-blue-500'
+        <DialogContent 
+          className="relative max-w-md notification-modal-content"
+          style={{ padding: 0, overflow: 'hidden' }}
+        >
+          {/* 닫기 버튼은 Dialog 컴포넌트에 기본으로 포함된 것을 사용 */}
+          
+          <DialogHeader className={`${getBgColorClass()} p-4 mb-4 rounded-t-lg`}>
+            <div className="flex items-center gap-3">
+              <NotificationIcon type={notification.type} size="sm" />
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-medium">{notification.title}</DialogTitle>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {formatDate(notification.createdAt)}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                    notification.type === NotificationType.SYSTEM
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
                       : notification.type === NotificationType.TRANSACTION
-                        ? 'bg-green-500'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
                         : notification.type === NotificationType.SERVICE
-                          ? 'bg-purple-500'
+                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
                           : notification.type === NotificationType.SLOT
-                            ? 'bg-orange-500'
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
                             : notification.type === NotificationType.MARKETING
-                              ? 'bg-yellow-500'
-                              : 'bg-gray-500'
+                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                  }`}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${
+                      notification.type === NotificationType.SYSTEM
+                        ? 'bg-blue-500 dark:bg-blue-400'
+                        : notification.type === NotificationType.TRANSACTION
+                          ? 'bg-green-500 dark:bg-green-400'
+                          : notification.type === NotificationType.SERVICE
+                            ? 'bg-purple-500 dark:bg-purple-400'
+                            : notification.type === NotificationType.SLOT
+                              ? 'bg-orange-500 dark:bg-orange-400'
+                              : notification.type === NotificationType.MARKETING
+                                ? 'bg-yellow-500 dark:bg-yellow-400'
+                                : 'bg-gray-500 dark:bg-gray-400'
                     }`}></span>
-                  {getNotificationTypeText(notification.type)}
-                </span>
+                    {getNotificationTypeText(notification.type)}
+                  </span>
 
-                {/* 중요도 표시 */}
-                {notification.priority === NotificationPriority.HIGH && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    <span className="mr-1 flex-shrink-0">
-                      <i className="ki-notification-bing text-xs"></i>
+                  {/* 중요도 표시 */}
+                  {notification.priority === NotificationPriority.HIGH && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                      <span className="mr-1 flex-shrink-0">
+                        <i className="ki-notification-bing text-xs"></i>
+                      </span>
+                      중요
                     </span>
-                    중요
-                  </span>
-                )}
-                {notification.priority === NotificationPriority.MEDIUM && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    <span className="mr-1 flex-shrink-0">
-                      <i className="ki-notification text-xs"></i>
+                  )}
+                  {notification.priority === NotificationPriority.MEDIUM && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                      <span className="mr-1 flex-shrink-0">
+                        <i className="ki-notification text-xs"></i>
+                      </span>
+                      중간
                     </span>
-                    중간
-                  </span>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <button
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded-full"
-            onClick={onClose}
-          >
-            <KeenIcon icon="cross" className="text-lg" />
-          </button>
-        </div>
+          </DialogHeader>
 
-        {/* 본문 */}
-        <div className="p-5">
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-500 mb-1">알림 내용</h4>
-            <div className="border border-gray-100 rounded-md p-3 bg-gray-50/50">
-              <p className="text-gray-700 whitespace-pre-wrap">{notification.message}</p>
-            </div>
-          </div>
-
-          {/* 알림 정보 섹션 제거 */}
-
-          {/* 링크가 있는 경우 링크 버튼 표시 - 크기를 더 작게 수정 */}
-          {notification.link && (
+          <DialogBody className="px-4 py-2">
             <div className="mb-4">
-              <a
-                href={notification.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-1.5 rounded text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
-              >
-                <i className="ki-external text-sm mr-1.5"></i>
-                관련 페이지로 이동
-              </a>
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">알림 내용</h4>
+              <div className="border border-gray-200 dark:border-gray-700 rounded-md p-3 bg-gray-50/50 dark:bg-gray-800/50">
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{notification.message}</p>
+              </div>
             </div>
-          )}
 
-          <div className="mt-6 flex justify-between">
+            {/* 링크가 있는 경우 링크 버튼 표시 */}
+            {notification.link && (
+              <div className="mb-4">
+                <a
+                  href={notification.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-1.5 rounded text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                >
+                  <i className="ki-external text-sm mr-1.5"></i>
+                  관련 페이지로 이동
+                </a>
+              </div>
+            )}
+          </DialogBody>
+
+          <DialogFooter className="flex flex-row justify-between gap-2 items-center px-4 py-3">
             <div className="flex gap-2">
               <button
                 className="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white px-6"
-                onClick={() => {
+                onClick={async () => {
                   if (onArchive) {
-                    onArchive(notification.id);
+                    await onArchive(notification.id);
                   }
                   onClose();
                 }}
@@ -209,9 +232,9 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
               </button>
               <button
                 className="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-6"
-                onClick={() => {
+                onClick={async () => {
                   if (onDelete) {
-                    onDelete(notification.id);
+                    await onDelete(notification.id);
                   }
                   onClose();
                 }}
@@ -225,10 +248,10 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
             >
               닫기
             </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

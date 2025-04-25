@@ -6,8 +6,11 @@ import {
   NotificationStatus
 } from '@/types/notification';
 import { KeenIcon } from '@/components/keenicons';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface SendNotificationModalProps {
+  isOpen: boolean;
   onClose: () => void;
   onSend: (notification: Omit<INotification, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
   notificationType: 'role' | 'user';
@@ -15,6 +18,7 @@ interface SendNotificationModalProps {
 }
 
 const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
+  isOpen,
   onClose,
   onSend,
   notificationType,
@@ -74,22 +78,16 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-lg shadow-xl w-full max-w-xl mx-auto border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-card-foreground">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-4 px-6 border-b">
+          <DialogTitle className="text-lg font-medium text-foreground">
             {notificationType === 'role' ? '권한별 알림 전송' : '회원별 알림 전송'}
-          </h3>
-          <button
-            className="text-muted-foreground hover:text-card-foreground p-1 rounded-full"
-            onClick={onClose}
-          >
-            <KeenIcon icon="cross" className="text-lg" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="p-4 bg-background">
+          <div className="p-6 bg-background">
             {error && (
               <div className="mb-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-3 rounded-lg">
                 {error}
@@ -103,7 +101,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 </label>
                 <select
                   id="targetRole"
-                  className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full rounded text-md px-3 py-2"
+                  className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                   defaultValue=""
                   required
                 >
@@ -146,7 +144,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <select
                 id="notificationType"
-                className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full rounded text-md px-3 py-2"
+                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                 value={type}
                 onChange={(e) => setType(e.target.value as NotificationType)}
                 required
@@ -165,7 +163,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <select
                 id="priority"
-                className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full rounded text-md px-3 py-2"
+                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as NotificationPriority)}
                 required
@@ -183,7 +181,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               <input
                 id="title"
                 type="text"
-                className="form-control border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full"
+                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="알림 제목을 입력하세요"
@@ -197,8 +195,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <textarea
                 id="message"
-                className="form-control border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full"
-                rows={4}
+                className="w-full min-h-[200px] p-3 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary resize-none"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="알림 내용을 입력하세요"
@@ -213,7 +210,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               <input
                 id="link"
                 type="text"
-                className="form-control border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 w-full"
+                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
                 placeholder="예: /notice/123"
@@ -222,9 +219,9 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
           </div>
 
           <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary"
+              className="bg-primary hover:bg-primary/90 text-white"
               disabled={loading}
             >
               {loading ? (
@@ -234,23 +231,23 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 </span>
               ) : (
                 <>
-                  <KeenIcon icon="send" className="me-1" />
+                  <KeenIcon icon="send" className="mr-1" />
                   알림 전송
                 </>
               )}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn-light-secondary"
+              variant="outline"
               onClick={onClose}
               disabled={loading}
             >
               취소
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

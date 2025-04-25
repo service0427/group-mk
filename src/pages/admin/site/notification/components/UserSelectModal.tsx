@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/supabase';
 import { KeenIcon } from '@/components/keenicons';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface User {
   id: string;
@@ -10,11 +13,12 @@ interface User {
 }
 
 interface UserSelectModalProps {
+  isOpen: boolean;
   onClose: () => void;
   onSelectComplete: (users: { id: string, name: string }[]) => void;
 }
 
-const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComplete }) => {
+const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSelectComplete }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,8 +104,10 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
 
   // 컴포넌트 마운트 시 사용자 목록 가져오기
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [fetchUsers, isOpen]);
 
   // 검색 조건 변경 시 페이지 초기화
   useEffect(() => {
@@ -175,30 +181,24 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-lg shadow-xl w-full max-w-3xl mx-auto border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-card-foreground">회원 선택</h3>
-          <button
-            className="text-muted-foreground hover:text-card-foreground p-1 rounded-full"
-            onClick={onClose}
-          >
-            <KeenIcon icon="cross" className="text-lg" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-3 px-6 border-b">
+          <DialogTitle className="text-lg font-medium text-foreground">회원 선택</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-4">
+        <div className="p-4 bg-background">
           {/* 검색 및 필터 */}
           <div className="flex flex-wrap gap-3 mb-4">
             <div className="flex-1">
-              <div className="position-relative">
-                <span className="position-absolute top-50 translate-middle-y ms-4">
-                  <KeenIcon icon="search" className="fs-4 text-muted" />
+              <div className="relative">
+                <span className="absolute top-1/2 transform -translate-y-1/2 left-3">
+                  <KeenIcon icon="search" className="text-muted-foreground" />
                 </span>
-                <input
+                <Input
                   type="text"
                   placeholder="이름 또는 이메일로 검색"
-                  className="form-control border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 ps-12"
+                  className="pl-10"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -206,7 +206,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
             </div>
 
             <select
-              className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 rounded text-md px-3 py-2 min-w-[160px] w-auto"
+              className="p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary min-w-[160px] w-auto"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
@@ -218,52 +218,55 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
               <option value="advertiser">광고주</option>
             </select>
 
-            <button
-              className="btn btn-sm btn-light-primary"
+            <Button
+              variant="outline"
               onClick={() => fetchUsers()}
+              size="sm"
+              className="flex items-center gap-1"
             >
-              <KeenIcon icon="filter" className="me-1" />
+              <KeenIcon icon="filter" />
               검색
-            </button>
+            </Button>
           </div>
 
           {/* 선택된 사용자 표시 */}
           <div className="mb-4">
-            <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-3">
-                <h4 className="fs-6 fw-semibold text-gray-900 dark:text-white">
+                <h4 className="text-sm font-medium text-foreground">
                   선택된 회원 ({selectedUsers.length}명)
                 </h4>
                 {selectedUsers.length > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-danger py-1 px-2 h-8"
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => toggleSelectAll(false)}
+                    className="h-8 py-1 px-2"
                   >
-                    <KeenIcon icon="trash" className="me-1 fs-6" />
+                    <KeenIcon icon="trash" className="mr-1 text-sm" />
                     모두 해제
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
 
             <div className="bg-light-primary dark:bg-dark p-3 rounded-lg max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700">
               {selectedUsers.length === 0 ? (
-                <p className="text-gray-500 dark:text-white dark:opacity-60 fs-7 mb-0">선택된 회원이 없습니다</p>
+                <p className="text-muted-foreground text-sm">선택된 회원이 없습니다</p>
               ) : (
-                <div className="d-flex flex-wrap gap-3 p-1">
+                <div className="flex flex-wrap gap-2">
                   {selectedUsers.map(user => (
                     <span
                       key={user.id}
-                      className="badge badge-primary d-inline-flex align-items-center py-2 px-3 m-1"
+                      className="inline-flex items-center py-1 px-3 bg-primary/10 text-primary rounded-full text-sm"
                     >
-                      <span className="me-1">{user.full_name}</span>
+                      <span className="mr-1">{user.full_name}</span>
                       <button
                         type="button"
-                        className="btn btn-icon btn-sm btn-active-light-primary ms-2 p-0"
+                        className="text-primary hover:text-primary/80 focus:outline-none"
                         onClick={() => toggleUserSelection(user)}
                       >
-                        <KeenIcon icon="cross" className="fs-8" />
+                        <KeenIcon icon="cross" className="text-xs" />
                       </button>
                     </span>
                   ))}
@@ -273,34 +276,34 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
           </div>
 
           {/* 사용자 목록 테이블 - 페이지네이션 적용 */}
-          <div className="card card-bordered">
-            <div className="table-responsive" style={{ height: '300px', overflow: 'auto', marginBottom: '15px' }}>
-              <table className="table table-hover table-rounded table-striped border gy-5">
-                <thead>
-                  <tr className="fw-bold fs-6 text-gray-800 dark:text-gray-200 border-bottom border-gray-200 dark:border-gray-700">
-                    <th style={{ width: '25px' }}>
-                      <div className="form-check form-check-sm form-check-custom form-check-solid">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="relative overflow-x-auto" style={{ height: '300px' }}>
+              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+                  <tr>
+                    <th scope="col" className="p-4 w-[25px]">
+                      <div className="flex items-center">
                         <input
-                          className="form-check-input"
                           type="checkbox"
+                          className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                           checked={users.length > 0 && selectedUsers.length === users.length}
                           onChange={(e) => toggleSelectAll(e.target.checked)}
                         />
                       </div>
                     </th>
-                    <th>이름</th>
-                    <th>이메일</th>
-                    <th>회원 유형</th>
+                    <th scope="col" className="px-6 py-3">이름</th>
+                    <th scope="col" className="px-6 py-3">이메일</th>
+                    <th scope="col" className="px-6 py-3">회원 유형</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center">
-                        <div className="d-flex justify-content-center align-items-center column-gap-2">
-                          <span className="spinner-border spinner-border-sm text-primary"></span>
+                        <div className="flex justify-center items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-gray-600 dark:text-gray-400">사용자 목록을 불러오는 중...</span>
                         </div>
-                        <div className="mt-2 text-gray-600 dark:text-gray-400">사용자 목록을 불러오는 중...</div>
                       </td>
                     </tr>
                   ) : users.length === 0 ? (
@@ -318,32 +321,27 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       return (
                         <tr
                           key={user.id}
-                          className={isSelected ? 'bg-light-primary dark:bg-primary/10' : ''}
+                          className={`${isSelected ? 'bg-primary/5' : ''} border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer`}
                           onClick={() => toggleUserSelection(user)}
-                          style={{ cursor: 'pointer' }}
                         >
-                          <td>
-                            <div className="form-check form-check-sm form-check-custom form-check-solid">
+                          <td className="p-4 w-4">
+                            <div className="flex items-center">
                               <input
-                                className="form-check-input widget-9-check"
                                 type="checkbox"
+                                className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                 checked={isSelected}
                                 onChange={() => toggleUserSelection(user)}
                                 onClick={(e) => e.stopPropagation()}
                               />
                             </div>
                           </td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div className="d-flex justify-content-start flex-column">
-                                <span className="text-dark dark:text-white fw-bold text-hover-primary fs-6">{user.full_name}</span>
-                              </div>
-                            </div>
+                          <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            {user.full_name}
                           </td>
-                          <td>
-                            <span className="text-gray-600 dark:text-gray-400 fw-semibold d-block fs-7">{user.email}</span>
+                          <td className="px-6 py-4">
+                            {user.email}
                           </td>
-                          <td>
+                          <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${getRoleClasses(user.role)}`}>
                               {getRoleName(user.role)}
                             </span>
@@ -357,8 +355,8 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
             </div>
 
             {totalPages > 1 && (
-              <div className="card-footer pt-0">
-                <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t gap-3">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-3">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     {totalRecords > 0 ? (
                       <>총 <span className="font-medium text-gray-900 dark:text-white">{totalRecords.toLocaleString('ko-KR')}</span>명 중 <span className="font-medium text-gray-900 dark:text-white">{((page - 1) * itemsPerPage + 1).toLocaleString('ko-KR')}</span>-<span className="font-medium text-gray-900 dark:text-white">{Math.min(page * itemsPerPage, totalRecords).toLocaleString('ko-KR')}</span></>
@@ -373,7 +371,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       onClick={() => setPage(1)}
                       disabled={page === 1}
                     >
-                      <KeenIcon icon="double-left" className="fs-7" />
+                      <KeenIcon icon="double-left" className="text-xs" />
                     </button>
 
                     <button
@@ -381,7 +379,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       onClick={() => page > 1 && setPage(page - 1)}
                       disabled={page <= 1}
                     >
-                      <KeenIcon icon="arrow-left" className="fs-6" />
+                      <KeenIcon icon="arrow-left" className="text-sm" />
                     </button>
 
                     <div className="flex items-center">
@@ -436,7 +434,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       onClick={() => page < totalPages && setPage(page + 1)}
                       disabled={page >= totalPages}
                     >
-                      <KeenIcon icon="arrow-right" className="fs-6" />
+                      <KeenIcon icon="arrow-right" className="text-sm" />
                     </button>
 
                     <button
@@ -444,7 +442,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
                       onClick={() => setPage(totalPages)}
                       disabled={page === totalPages}
                     >
-                      <KeenIcon icon="double-right" className="fs-7" />
+                      <KeenIcon icon="double-right" className="text-xs" />
                     </button>
                   </div>
                 </div>
@@ -454,23 +452,23 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ onClose, onSelectComp
         </div>
 
         <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
-          <button
-            className="btn btn-primary"
+          <Button
+            className="bg-primary hover:bg-primary/90 text-white"
             onClick={handleSelectComplete}
             disabled={selectedUsers.length === 0}
           >
-            <KeenIcon icon="check" className="me-1" />
+            <KeenIcon icon="check" className="mr-1" />
             선택 완료 ({selectedUsers.length}명)
-          </button>
-          <button
-            className="btn btn-light-secondary"
+          </Button>
+          <Button
+            variant="outline"
             onClick={onClose}
           >
             취소
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

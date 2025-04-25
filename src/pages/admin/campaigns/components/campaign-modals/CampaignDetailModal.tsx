@@ -132,14 +132,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 내용 수정</DialogTitle>
-          <button 
-            onClick={onClose} 
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-            disabled={loading}
-          >
-            <KeenIcon icon="cross" className="size-5" />
-            <span className="sr-only">Close</span>
-          </button>
+          {/* shadcn UI의 Dialog 컴포넌트가 이미 닫기 버튼을 제공하므로 중복 버튼을 제거했습니다 */}
         </DialogHeader>
         
         <div className="p-6 bg-background">

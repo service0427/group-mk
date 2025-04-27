@@ -399,6 +399,27 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '필요 페이지',
+    icon: 'other',
+    children: [
+      { 
+        title: '총판 출금 신청',
+        icon: 'dollar',
+        path: '/admin/withdraw'
+      },
+      { 
+        title: '관리자 출금 설정',
+        icon: 'dollar',
+        path: '/admin/withdraw_setting'
+      },
+      { 
+        title: '총판 작업 입력',
+        icon: 'dollar',
+        path: '/admin/work'
+      }
+    ]
+  },
+  {
     heading: 'Metronic Template'
   },
   {

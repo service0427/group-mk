@@ -29,7 +29,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
   
   return (
     <>
-      <Container>
+      <Container fullWidth>
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle={pageTitle} />
@@ -37,7 +37,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
           </ToolbarHeading>
         </Toolbar>
       </Container>
-      <Container>
+      <Container fullWidth>
         {children ? (
           children
         ) : (

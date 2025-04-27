@@ -7,8 +7,20 @@ import { PageMenu } from '@/pages/public-profile';
 import { Toolbar, ToolbarActions, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem, KeenIcon } from '@/components';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdMiscFaq } from '@/partials/misc';
+import { CampaignSlotInsertModal } from './campaign-modals/CampaignSlotInsertModal';
+import { useAuthContext } from '@/auth';
+import {
+  SERVICE_TYPE_MAP,
+  useServiceCategory,
+  useCampaignSlots,
+  useSlotEditing,
+  useEditableCellStyles,
+  SearchForm,
+  SlotList,
+  MemoModal
+} from './campaign-components';
+import { supabase } from '@/supabase';
 
 interface CampaignTemplateProps {
   campaignData: CampaignData;
@@ -21,6 +33,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
   const menuConfig = getMenuConfig('primary');
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
+  const { currentUser } = useAuthContext();
   
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
@@ -28,35 +41,120 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
   // 캠페인 페이지 타이틀 생성
   const pageTitle = "캠페인 리스트";
   
-  // 서비스 카테고리 생성 - NS 트래픽, NP 저장 등의 형식으로 표시
-  let serviceCategory = '';
-  if (pathname.includes('naver/shopping/traffic')) {
-    serviceCategory = 'NS 트래픽';
-  } else if (pathname.includes('naver/place/save')) {
-    serviceCategory = 'NP 저장';
-  } else if (pathname.includes('naver/place/share')) {
-    serviceCategory = 'NP 공유';
-  } else if (pathname.includes('naver/place/traffic')) {
-    serviceCategory = 'NP 트래픽';
-  } else if (pathname.includes('naver/auto')) {
-    serviceCategory = 'N 자동완성';
-  } else if (pathname.includes('naver/traffic')) {
-    serviceCategory = 'N 트래픽';
-  } else if (pathname.includes('coupang/traffic')) {
-    serviceCategory = 'C 트래픽';
-  } else if (pathname.includes('ohouse/traffic')) {
-    serviceCategory = 'OH 트래픽';
-  } else {
-    // URL에서 기본 서비스 정보 추출 (fallback)
-    const pathSegments = pathname.split('/').filter(Boolean);
-    serviceCategory = pathSegments.length >= 3 ? `${pathSegments[1]} > ${pathSegments[2]}` : '';
-  }
+  // URL 기반으로 서비스 카테고리 결정
+  const serviceCategory = useServiceCategory(pathname);
   
-  const [searchInput, setSearchInput] = useState('');
+  // 서비스 카테고리로부터 서비스 타입 코드 가져오기
+  const serviceType = SERVICE_TYPE_MAP[serviceCategory as keyof typeof SERVICE_TYPE_MAP] || '';
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [memoModalOpen, setMemoModalOpen] = useState(false);
+  const [currentMemoSlotId, setCurrentMemoSlotId] = useState<string>('');
+  const [memoText, setMemoText] = useState<string>('');
+
+  // 슬롯 데이터 가져오기 및 필터링
+  const {
+    isLoading,
+    error,
+    slots,
+    setSlots,
+    filteredSlots,
+    setFilteredSlots,
+    totalCount,
+    campaignList,
+    statusFilter,
+    setStatusFilter,
+    searchInput, 
+    setSearchInput,
+    searchDateFrom,
+    setSearchDateFrom,
+    searchDateTo,
+    setSearchDateTo,
+    selectedCampaignId,
+    setSelectedCampaignId,
+    fetchSlots,
+    handleDeleteSlot
+  } = useCampaignSlots(serviceType, currentUser?.id);
+
+  // 슬롯 편집 관련 기능
+  const {
+    editingCell,
+    editingValue,
+    handleEditStart,
+    handleEditChange,
+    saveEdit
+  } = useSlotEditing(slots, setSlots, filteredSlots, setFilteredSlots);
+
+  // 메모 모달 열기
+  const handleOpenMemoModal = (slotId: string) => {
+    const slot = slots.find(item => item.id === slotId);
+    if (slot) {
+      setCurrentMemoSlotId(slotId);
+      setMemoText(slot.userReason || '');
+      setMemoModalOpen(true);
+    }
+  };
+
+  // 메모 저장
+  const handleSaveMemo = async () => {
+    if (!currentMemoSlotId) return;
+
+    try {
+      console.log('메모 저장 시작:', currentMemoSlotId, memoText);
+      
+      // Supabase 업데이트
+      const { data, error } = await supabase
+        .from('slots')
+        .update({ 
+          user_reason: memoText,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentMemoSlotId)
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('메모 저장 성공:', data);
+      
+      // 로컬 상태 업데이트
+      setSlots(prevSlots => prevSlots.map(item => {
+        if (item.id === currentMemoSlotId) {
+          return {
+            ...item,
+            userReason: memoText,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return item;
+      }));
+      
+      setFilteredSlots(prevFiltered => prevFiltered.map(item => {
+        if (item.id === currentMemoSlotId) {
+          return {
+            ...item,
+            userReason: memoText,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return item;
+      }));
+      
+      // 성공 메시지
+      alert('메모가 저장되었습니다.');
+    } catch (err) {
+      console.error('메모 저장 실패:', err);
+      alert('메모 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 인라인 편집 스타일 적용
+  useEditableCellStyles();
 
   return (
     <Fragment>
-      <Container>
+      <Container fullWidth>
         <Navbar>
           <PageMenu />
         </Navbar>
@@ -68,70 +166,154 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
               {serviceCategory} &gt; 캠페인 리스트 페이지
             </ToolbarDescription>
           </ToolbarHeading>
-          <ToolbarActions>
-            <a href="#" className="btn btn-sm btn-light">
+          <ToolbarActions className="flex flex-wrap gap-2">
+            <button className="btn btn-sm btn-light"
+                onClick={() => setModalOpen(true)}
+              >
+              <span className="hidden md:inline">추가</span>
+              <span className="md:hidden"><KeenIcon icon="plus" /></span>
+            </button>
+            <div className="dropdown">
+              <button className="btn btn-sm btn-light dropdown-toggle md:hidden" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <KeenIcon icon="document" />
+              </button>
+              <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <li><a className="dropdown-item" href="#">양식 엑셀 다운로드</a></li>
+                <li><a className="dropdown-item" href="#">엑셀 업로드</a></li>
+              </ul>
+            </div>
+            <a href="#" className="hidden md:inline-flex btn btn-sm btn-light">
               양식 엑셀 다운로드
             </a>
-            <a href="#" className="btn btn-sm btn-primary">
+            <a href="#" className="hidden md:inline-flex btn btn-sm btn-primary">
               엑셀 업로드
             </a>
           </ToolbarActions>
         </Toolbar>
       </Container>
-      <Container>
+      <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
-          <div className="card">
-            <div className="card-header flex-wrap gap-2 border-b-0 px-5">
-              <h3 className="card-title font-medium text-sm">전체 n 건</h3>
+          {/* 검색 영역 */}
+          <SearchForm
+            loading={isLoading}
+            campaignList={campaignList}
+            selectedCampaignId={selectedCampaignId}
+            statusFilter={statusFilter}
+            searchInput={searchInput}
+            searchDateFrom={searchDateFrom}
+            searchDateTo={searchDateTo}
+            onCampaignChange={setSelectedCampaignId}
+            onStatusChange={setStatusFilter}
+            onSearchChange={setSearchInput}
+            onDateFromChange={setSearchDateFrom}
+            onDateToChange={setSearchDateTo}
+            onSearch={fetchSlots}
+          />
 
-              <div className="flex flex-wrap gap-2 lg:gap-5">
-                <div className="flex">
-                  <label className="input input-sm">
-                    <KeenIcon icon="magnifier" />
+          {/* 데이터 표시 영역 */}
+          <div className="card">
+            <div className="card-header border-b-0 px-5">
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <h3 className="card-title font-medium text-sm">전체 {filteredSlots.length} 건</h3>
+                
+                {/* 모바일에서는 검색 콜랩스 버튼 추가 */}
+                <button className="btn btn-sm btn-light md:hidden" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse">
+                  <KeenIcon icon="magnifier" className="me-1" /> 검색
+                </button>
+              </div>
+
+              {/* 모바일용 접을 수 있는 간편 검색 영역 */}
+              <div className="collapse mt-3 md:hidden" id="searchCollapse">
+                <div className="p-3 bg-light rounded">
+                  <div className="mb-2">
                     <input
                       type="text"
-                      placeholder="검색어 입력"
+                      className="form-control form-control-sm"
+                      placeholder="빠른 검색"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                     />
-                  </label>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-28" size="sm">
-                      <SelectValue placeholder="상태" />
-                    </SelectTrigger>
-                    <SelectContent className="w-32">
-                      <SelectItem value="all">전체</SelectItem>
-                      <SelectItem value="approval">승인요청</SelectItem>
-                      <SelectItem value="approved">승인완료</SelectItem>
-                      <SelectItem value="reject">반려</SelectItem>
-                      <SelectItem value="wating">대기중</SelectItem>
-                      <SelectItem value="active">진행중</SelectItem>
-                      <SelectItem value="pause">일시중단</SelectItem>
-                      <SelectItem value="expire">만료</SelectItem>
-                      <SelectItem value="force-stop">강제종료</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <button className="btn btn-sm btn-outline btn-primary">
-                    <KeenIcon icon="setting-4" /> 필터 검색
-                  </button>
+                  </div>
+                  <div className="mb-2">
+                    <select
+                      className="form-select form-select-sm w-100"
+                      value={selectedCampaignId.toString()}
+                      onChange={(e) => setSelectedCampaignId(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                    >
+                      <option value="all">전체 캠페인</option>
+                      {campaignList.map(campaign => (
+                        <option key={campaign.id} value={campaign.id.toString()}>
+                          {campaign.campaignName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <select
+                      className="form-select form-select-sm flex-grow-1"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">전체</option>
+                      <option value="submitted">승인요청</option>
+                      <option value="approved">승인완료</option>
+                      <option value="rejected">반려</option>
+                      <option value="draft">임시저장</option>
+                    </select>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => fetchSlots()}
+                    >
+                      검색
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
             <div className="card-body">
-              {/* 테이블 내용 */}
+              <SlotList
+                filteredSlots={filteredSlots}
+                isLoading={isLoading}
+                error={error}
+                serviceType={serviceType}
+                editingCell={editingCell}
+                editingValue={editingValue}
+                onEditStart={handleEditStart}
+                onEditChange={handleEditChange}
+                onEditSave={saveEdit}
+                onDeleteSlot={handleDeleteSlot}
+                onOpenMemoModal={handleOpenMemoModal}
+              />
             </div>
             <div className="card-footer">
-              {/* 페이지네이션 */}
+              {/* 페이지네이션 컴포넌트는 나중에 추가 가능 */}
+              <div className="d-flex justify-content-center">
+                {/* 페이지네이션 */}
+              </div>
             </div>
           </div>
 
           <AdMiscFaq />
         </div>
       </Container>
+
+      {/* 슬롯 추가 모달 */}
+      <CampaignSlotInsertModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        category={serviceCategory}
+        campaign={campaignData}
+        onSave={() => fetchSlots()} // 저장 후 데이터 다시 가져오기
+      />
+
+      {/* 메모 관리 모달 */}
+      <MemoModal
+        isOpen={memoModalOpen}
+        onClose={() => setMemoModalOpen(false)}
+        memoText={memoText}
+        setMemoText={setMemoText}
+        onSave={handleSaveMemo}
+      />
     </Fragment>
   );
 };

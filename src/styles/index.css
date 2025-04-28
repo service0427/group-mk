@@ -3,7 +3,10 @@
 /* 캠페인 프로그레스바 스타일 */
 @import "campaign-progress.css";
 
-/* 메뉴 블릿 포인트는 컴포넌트에서 직접 관리함 */
+/* 폰트 크기 전역 조정 - 기본 폰트 크기를 10% 증가 */
+html {
+    font-size: 110%;
+}
 
 @font-face {
     font-family: 'Jua-Regular';

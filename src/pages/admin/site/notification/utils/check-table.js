@@ -66,7 +66,3 @@ export const checkAndInitializeTable = async () => {
     return { success: false, error: error.message || '알 수 없는 오류' };
   }
 };
-
-// 메시지 표시
-console.log('테이블 확인 유틸리티가 로드되었습니다.');
-console.log('브라우저 콘솔에서 window.checkNotificationTable() 함수를 호출하여 테이블을 확인할 수 있습니다.');

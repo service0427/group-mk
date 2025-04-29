@@ -127,6 +127,7 @@ import {
   AuthenticationGetStartedPage
 } from '@/pages/authentication';
 import { ManageSettingPage } from '@/pages/admin/cash';
+import { WithdrawSettingPage } from '@/pages/admin/withdraw';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -299,6 +300,9 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<ManageCashPage />} />
           <Route path="/admin/cash_setting" element={<ManageSettingPage />} />
+
+          {/* 출금 관리 라우트 */}
+          <Route path="/admin/withdraw_setting" element={<WithdrawSettingPage />} />
 
         </Route>
       </Route>

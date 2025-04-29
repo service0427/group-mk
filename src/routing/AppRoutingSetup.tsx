@@ -128,6 +128,7 @@ import {
 } from '@/pages/authentication';
 import { ManageSettingPage } from '@/pages/admin/cash';
 import { WithdrawSettingPage } from '@/pages/admin/withdraw';
+import WithdrawRequestPage from '@/pages/withdraw/WithdrawRequestPage';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -303,6 +304,7 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 출금 관리 라우트 */}
           <Route path="/admin/withdraw_setting" element={<WithdrawSettingPage />} />
+          <Route path="/withdraw" element={<WithdrawRequestPage />} />
 
         </Route>
       </Route>

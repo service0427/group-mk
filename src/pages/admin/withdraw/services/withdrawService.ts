@@ -1,4 +1,5 @@
 import { supabase } from "@/supabase";
+import { min } from "date-fns";
 import { id } from "date-fns/locale";
 
 
@@ -40,6 +41,65 @@ export async function getDistributor() {
     if (error) {
         console.error("Error fetching distributor IDs:", error);
         throw new Error("Failed to fetch distributor IDs");
+    }
+    return data;
+}
+
+// 사용자별 출금 설정 정보 저장하는 함수
+export async function saveUserWithdrawSettings(settings) {
+    const { data, error } = await supabase
+        .from("withdraw_user_settings")
+        .upsert({
+             mat_id: settings.user_id,
+             min_request_amount: settings.min_request_amount,
+             min_request_percentage: settings.min_request_percentage,
+             updated_at: new Date()
+            });
+
+    if (error) {
+        console.error("Error saving user settings:", error);
+        throw new Error("Failed to save user settings");
+    }
+    return data;
+}   
+
+// 개별 설정된 사용자 리스트 가져오는 함수
+export async function getUserWithdrawSettings() {
+    // users 테이블과 join해서 사용자 정보와 함께 가져오기
+    const { data, error } = await supabase
+        .from("withdraw_user_settings")
+        .select(`
+            id,
+            mat_id,
+            min_request_amount,
+            min_request_percentage,
+            created_at,
+            updated_at,
+            users:mat_id (
+                id,
+                email,
+                full_name
+            )
+        `)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching user withdraw settings:", error);
+        throw new Error("Failed to fetch user withdraw settings");
+    }
+    return data;
+}
+
+// 개별 설정 삭제 함수
+export async function deleteUserWithdrawSetting(id) {
+    const { data, error } = await supabase
+        .from("withdraw_user_settings")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        console.error("Error deleting user withdraw setting:", error);
+        throw new Error("Failed to delete user withdraw setting");
     }
     return data;
 }

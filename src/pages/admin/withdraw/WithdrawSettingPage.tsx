@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { BasicTemplate } from '../components';
 import WithdrawGlobalForm from './components/WithdrawGlobalForm';
 import { useWithdrawSetting } from './hooks/useWithdrawSetting';
-import { getDistributor, getWithdrawGlobalSettings, updateWithdrawGlobalSettings } from './services/withdrawService';
+import { getDistributor, getWithdrawGlobalSettings, saveUserWithdrawSettings, updateWithdrawGlobalSettings } from './services/withdrawService';
 import WithdrawUserForm from './components/WithdrawUserForm';
+import WithdrawUserList from './components/WithdrawUserList';
 
 
 const WithdrawSettingPage: React.FC = () => {
@@ -15,6 +16,9 @@ const WithdrawSettingPage: React.FC = () => {
         min_request_amount: 10000, // 출금 최소 신청 금액 기본 금액 만원
         min_request_percentage: 5, // 출금 수수료 비율(%)
     });
+
+    // 선택된 사용자 설정 (수정 모드)
+    const [selectedSetting, setSelectedSetting] = useState<any>(null);
 
     // 출금 설정 페이지에 필요한 상태 변수 (로딩 등등)
     const {
@@ -30,6 +34,31 @@ const WithdrawSettingPage: React.FC = () => {
         setUserList,
     }  = useWithdrawSetting();
 
+    // 목록 새로고침 트리거
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    
+    // 목록 새로고침 함수
+    const refreshUserList = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
+    // 알림 표시 핸들러
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ show: true, message, type });
+    };
+
+    // 수정 모드 취소 핸들러
+    const handleCancelEdit = () => {
+        setSelectedSetting(null);
+    };
+
+    // 설정 수정 핸들러
+    const handleEditSetting = (setting: any) => {
+        setSelectedSetting(setting);
+        // 페이지 상단으로 스크롤
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     // 출금 전역 설정 정보 가져오기
     useEffect(() => {
         const fetchGlobalSettings = async () => {
@@ -41,7 +70,7 @@ const WithdrawSettingPage: React.FC = () => {
                 setGlobalSettings(data);
             } catch (error) {
                 console.error('Error fetching global settings:', error);
-                setNotification({ show: true, message: 'Failed to fetch global settings.', type: 'error' });
+                setNotification({ show: true, message: '전역 설정을 불러오는데 실패했습니다.', type: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -164,12 +193,27 @@ const WithdrawSettingPage: React.FC = () => {
                 <WithdrawUserForm
                     users={userList}
                     globalSettings={globalSettings}
+                    selectedSetting={selectedSetting}
+                    onCancelEdit={handleCancelEdit}
                     onSave={async (userSetting) => {
                         setSavingUser(true);
                         try {
                             // Save user settings logic here
-                            console.log(userSetting);
-                            setNotification({ show: true, message: '유저 출금 설정이 저장 되었습니다!', type: 'success' });
+                            await saveUserWithdrawSettings(userSetting);
+                            
+                            // 성공 메시지 표시 (수정 또는 추가에 따라 다른 메시지)
+                            const message = selectedSetting 
+                                ? '유저 출금 설정이 업데이트 되었습니다!' 
+                                : '유저 출금 설정이 저장 되었습니다!';
+                            
+                            setNotification({ show: true, message, type: 'success' });
+                            
+                            // 수정 모드 종료
+                            setSelectedSetting(null);
+                            
+                            // 목록 새로고침
+                            refreshUserList();
+                            
                             return true;
                         } catch (error) {
                             console.error('Error saving user settings:', error);
@@ -179,6 +223,13 @@ const WithdrawSettingPage: React.FC = () => {
                             setSavingUser(false);
                         }
                     }}
+                />
+                
+                {/* 개별 설정된 사용자 목록 */}
+                <WithdrawUserList 
+                    onRefresh={refreshUserList}
+                    showNotification={showNotification}
+                    onEditSetting={handleEditSetting}
                 />
             </div>
         </div>

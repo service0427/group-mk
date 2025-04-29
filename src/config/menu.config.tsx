@@ -405,7 +405,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
       { 
         title: '총판 출금 신청',
         icon: 'dollar',
-        path: '/admin/withdraw'
+        path: '/withdraw'
       },
       { 
         title: '관리자 출금 설정',

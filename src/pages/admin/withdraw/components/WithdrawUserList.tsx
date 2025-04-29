@@ -99,35 +99,41 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
 
     // 모바일 카드 아이템 렌더링
     const renderMobileCard = (setting: UserWithdrawSetting) => (
-        <div key={setting.id} className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+        <div key={setting.id} className="bg-card rounded-lg shadow-sm border border-border p-4 mb-4">
             <div className="flex justify-between items-start mb-3">
                 <div>
-                    <h3 className="font-medium text-gray-900">{setting.users?.full_name || "-"}</h3>
-                    <p className="text-sm text-gray-500">{setting.users?.email || "-"}</p>
+                    <h3 className="font-medium text-foreground">{setting.users?.full_name || "-"}</h3>
+                    <p className="text-sm text-muted-foreground">{setting.users?.email || "-"}</p>
                 </div>
                 <div className="flex space-x-2">
                     <button
                         onClick={() => handleEdit(setting)}
-                        className="text-blue-600 hover:text-blue-900 p-1"
+                        className="btn btn-primary h-10 px-4"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
+                        수정
                     </button>
                     <button
                         onClick={() => handleDelete(setting.id)}
-                        className="text-red-600 hover:text-red-900 p-1"
+                        className="btn btn-danger h-10 px-4"
                         disabled={deleting[setting.id]}
                     >
                         {deleting[setting.id] ? (
-                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <>
+                                <span className="loading loading-spinner loading-xs mr-2"></span>
+                                삭제 중...
+                            </>
                         ) : (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
+                            <>
+                                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                삭제
+                            </>
                         )}
                     </button>
                 </div>
@@ -135,15 +141,15 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
             
             <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                    <p className="text-gray-500">최소 출금 금액</p>
+                    <p className="text-muted-foreground">최소 출금 금액</p>
                     <p className="font-medium">{formatNumber(setting.min_request_amount)}</p>
                 </div>
                 <div>
-                    <p className="text-gray-500">출금 수수료율 (%)</p>
+                    <p className="text-muted-foreground">출금 수수료율 (%)</p>
                     <p className="font-medium">{setting.min_request_percentage || "0"}</p>
                 </div>
                 <div className="col-span-2">
-                    <p className="text-gray-500">마지막 수정일</p>
+                    <p className="text-muted-foreground">마지막 수정일</p>
                     <p className="font-medium">{getLastModifiedDate(setting)}</p>
                 </div>
             </div>
@@ -158,15 +164,12 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
             <div className="flex justify-end mb-4">
                 <button 
                     onClick={fetchUserSettings}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition flex items-center"
+                    className="btn btn-light h-10 px-4"
                     disabled={loading}
                 >
                     {loading ? (
                         <>
-                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span className="loading loading-spinner loading-xs mr-2"></span>
                             새로고침 중...
                         </>
                     ) : (
@@ -181,7 +184,7 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
             </div>
             
             {userSettings.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-500">
+                <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center text-muted-foreground">
                     {loading ? "로딩 중..." : "개별 설정된 사용자가 없습니다."}
                 </div>
             ) : (
@@ -193,70 +196,77 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
                     
                     {/* 데스크탑 테이블 뷰 */}
                     <div className="hidden md:block overflow-x-auto">
-                        <table className="min-w-full bg-white border">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        사용자 이름
+                        <table className="table align-middle text-gray-700 text-sm w-full">
+                            <thead>
+                                <tr className="border-b border-gray-200 bg-gray-50">
+                                    <th className="py-4 px-5 text-start min-w-[180px]">
+                                        <span className="font-medium text-gray-700">사용자 이름</span>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        이메일
+                                    <th className="py-4 px-5 text-start min-w-[180px]">
+                                        <span className="font-medium text-gray-700">이메일</span>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        최소 출금 금액
+                                    <th className="py-4 px-5 text-start min-w-[140px]">
+                                        <span className="font-medium text-gray-700">최소 출금 금액</span>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        출금 수수료율 (%)
+                                    <th className="py-4 px-5 text-start min-w-[140px]">
+                                        <span className="font-medium text-gray-700">출금 수수료율 (%)</span>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        마지막 수정일
+                                    <th className="py-4 px-5 text-start min-w-[180px]">
+                                        <span className="font-medium text-gray-700">마지막 수정일</span>
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        액션
+                                    <th className="py-4 px-5 text-end min-w-[120px]">
+                                        <span className="font-medium text-gray-700">액션</span>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody>
                                 {userSettings.map((setting) => (
-                                    <tr key={setting.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <tr key={setting.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                        <td className="py-4 px-5 text-gray-800 font-medium">
                                             {setting.users?.full_name || "-"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="py-4 px-5 text-gray-500">
                                             {setting.users?.email || "-"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {formatNumber(setting.min_request_amount)}
+                                        <td className="py-4 px-5 text-gray-800">
+                                            ₩{formatNumber(setting.min_request_amount)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {setting.min_request_percentage || "0"}
+                                        <td className="py-4 px-5 text-gray-800">
+                                            {setting.min_request_percentage || "0"}%
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="py-4 px-5 text-gray-800">
                                             {getLastModifiedDate(setting)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex justify-end space-x-3">
+                                        <td className="py-4 px-5 text-end">
+                                            <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleEdit(setting)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="btn btn-primary h-10 px-4"
                                                 >
+                                                    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
                                                     수정
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(setting.id)}
-                                                    className="text-red-600 hover:text-red-900"
+                                                    className="btn btn-danger h-10 px-4"
                                                     disabled={deleting[setting.id]}
                                                 >
                                                     {deleting[setting.id] ? (
-                                                        <span className="flex items-center">
-                                                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
+                                                        <>
+                                                            <span className="loading loading-spinner loading-xs mr-2"></span>
                                                             삭제 중...
-                                                        </span>
+                                                        </>
                                                     ) : (
-                                                        "삭제"
+                                                        <>
+                                                            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                            </svg>
+                                                            삭제
+                                                        </>
                                                     )}
                                                 </button>
                                             </div>

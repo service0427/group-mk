@@ -62,9 +62,7 @@ const Main = () => {
   };
 
   // 컨텐츠 영역의 클래스를 로딩 상태에 따라 동적으로 결정
-  const contentClassName = `grow content pt-5 overflow-y-auto relative ${
-    contentLoader ? 'content-loading' : 'content-loaded'
-  }`;
+  const contentClassName = `grow content pt-5 overflow-y-auto relative pb-16`;
 
   return (
     <Fragment>
@@ -88,7 +86,8 @@ const Main = () => {
           <main className={contentClassName} role="content">
             {/* 컨텐츠 로더가 활성화되면 콘텐츠 영역에만 표시 */}
             {contentLoader && <ContentLoader />}
-            <div className={`content-container ${contentLoader ? 'pointer-events-none' : ''}`}>
+            
+            <div className="content-container">
               <Outlet />
             </div>
           </main>

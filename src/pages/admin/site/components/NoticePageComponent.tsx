@@ -513,7 +513,7 @@ const NoticePageComponent = () => {
 
   return (
     <>
-      <Container>
+      <Container fullWidth>
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle="공지사항 관리" />
@@ -522,7 +522,7 @@ const NoticePageComponent = () => {
         </Toolbar>
       </Container>
 
-      <Container>
+      <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
           <div className="bg-card rounded-lg shadow-sm overflow-hidden">
             <div className="p-5 flex justify-between items-center border-b">

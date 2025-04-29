@@ -537,7 +537,7 @@ const FAQPageComponent = () => {
 
   return (
     <>
-      <Container>
+      <Container fullWidth>
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle="FAQ 관리" />
@@ -546,7 +546,7 @@ const FAQPageComponent = () => {
         </Toolbar>
       </Container>
 
-      <Container>
+      <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
           {/* 카테고리 필터 */}
           <div className="bg-card rounded-lg shadow-sm p-5">

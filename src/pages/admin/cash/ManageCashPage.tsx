@@ -455,7 +455,7 @@ const ManageCashPage = () => {
     <BasicTemplate 
       title="충전 관리" 
       description="회원들의 캐시 충전 신청을 관리합니다">
-        <div className="card p-6 mb-5 shadow-sm bg-white">
+        <div className="card p-6 mb-5 shadow-sm bg-card">
             <div className="card-header pb-5">
                 <h3 className="card-title text-lg font-semibold">캐시 충전 신청 검색</h3>
             </div>
@@ -465,7 +465,7 @@ const ManageCashPage = () => {
                     {/* 상태(status) - select box */}
                     <div className="form-control w-full">
                         <label className="label">
-                            <span className="label-text text-sm font-medium text-gray-700">상태</span>
+                            <span className="label-text text-sm font-medium text-foreground">상태</span>
                         </label>
                         <select className="select select-bordered w-full focus:ring-2 focus:ring-primary"
                                 value={searchStatus}
@@ -481,7 +481,7 @@ const ManageCashPage = () => {
                     {/* 이메일(email) - input */}
                     <div className="form-control w-full">
                         <label className="label">
-                            <span className="label-text text-sm font-medium text-gray-700">이메일</span>
+                            <span className="label-text text-sm font-medium text-foreground">이메일</span>
                         </label>
                         <input 
                             type="text" 
@@ -495,7 +495,7 @@ const ManageCashPage = () => {
                     {/* 이름(user_name) - input */}
                     <div className="form-control w-full">
                         <label className="label">
-                            <span className="label-text text-sm font-medium text-gray-700">이름</span>
+                            <span className="label-text text-sm font-medium text-foreground">이름</span>
                         </label>
                         <input 
                             type="text" 
@@ -511,7 +511,7 @@ const ManageCashPage = () => {
                     {/* 신청일 시작 */}
                     <div className="form-control w-full">
                         <label className="label">
-                            <span className="label-text text-sm font-medium text-gray-700">신청일 (시작)</span>
+                            <span className="label-text text-sm font-medium text-foreground">신청일 (시작)</span>
                         </label>
                         <input 
                             type="date" 
@@ -524,7 +524,7 @@ const ManageCashPage = () => {
                     {/* 신청일 종료 */}
                     <div className="form-control w-full">
                         <label className="label">
-                            <span className="label-text text-sm font-medium text-gray-700">신청일 (종료)</span>
+                            <span className="label-text text-sm font-medium text-foreground">신청일 (종료)</span>
                         </label>
                         <input 
                             type="date" 
@@ -543,7 +543,7 @@ const ManageCashPage = () => {
             </div>
         </div>
 
-        <div className="card mb-5 shadow-sm bg-white">
+        <div className="card mb-5 shadow-sm bg-card">
             <div className="card-header p-6 pb-5 flex justify-between items-center">
                 <h3 className="card-title text-lg font-semibold">캐시 충전 신청 리스트</h3>
                 <div className="flex gap-2">
@@ -570,7 +570,7 @@ const ManageCashPage = () => {
                             {cashRequests.length > 0 ? (
                                 <table className="table align-middle text-gray-700 text-sm w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                        <tr className="border-b border-border bg-muted">
                                             <th className="py-4 px-5 text-start">
                                                 <div className="flex items-center">
                                                     <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
@@ -578,43 +578,43 @@ const ManageCashPage = () => {
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[120px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">회원명</span>
+                                                    <span className="font-medium text-foreground">회원명</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[180px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">이메일</span>
+                                                    <span className="font-medium text-foreground">이메일</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[120px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">충전 금액</span>
+                                                    <span className="font-medium text-foreground">충전 금액</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[140px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">무료캐시</span>
+                                                    <span className="font-medium text-foreground">무료캐시</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[120px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">상태</span>
+                                                    <span className="font-medium text-foreground">상태</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-start min-w-[150px]">
                                                 <div className="flex items-center">
-                                                    <span className="font-medium text-gray-700">신청일시</span>
+                                                    <span className="font-medium text-foreground">신청일시</span>
                                                 </div>
                                             </th>
                                             <th className="py-4 px-5 text-end min-w-[120px]">
-                                                <span className="font-medium text-gray-700">작업</span>
+                                                <span className="font-medium text-foreground">작업</span>
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {
                                             cashRequests.map((request, index) => (
-                                                <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                                                <tr key={index} className="border-b border-border hover:bg-muted/40">
                                                     <td className="py-4 px-5">
                                                         <div className="flex items-center">
                                                             <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
@@ -625,14 +625,14 @@ const ManageCashPage = () => {
                                                             <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
                                                                 {request.full_name ? request.full_name.charAt(0) : '?'}
                                                             </div>
-                                                            <span className="text-gray-800">{request.full_name}</span>
+                                                            <span className="text-foreground">{request.full_name}</span>
                                                         </div>
                                                     </td>
                                                     <td className="py-4 px-5">
-                                                        <span className="text-gray-800">{request.email}</span>
+                                                        <span className="text-foreground">{request.email}</span>
                                                     </td>
                                                     <td className="py-4 px-5">
-                                                        <span className="text-gray-800 font-medium">₩{request.amount.toLocaleString()}</span>
+                                                        <span className="text-foreground font-medium">₩{request.amount.toLocaleString()}</span>
                                                     </td>
                                                     <td className="py-4 px-5">
                                                         {request.isEligibleForFreeCash ? (
@@ -654,7 +654,7 @@ const ManageCashPage = () => {
                                                         {renderStatusBadge(request.status)}
                                                     </td>
                                                     <td className="py-4 px-5">
-                                                        <span className="text-gray-800">{formatDate(request.requested_at)}</span>
+                                                        <span className="text-foreground">{formatDate(request.requested_at)}</span>
                                                     </td>
                                                     <td className="py-4 px-5 text-end">
                                                         <div className="flex justify-end gap-2">
@@ -687,7 +687,7 @@ const ManageCashPage = () => {
                                     </tbody>
                                 </table>
                             ) : (
-                                <div className="text-center py-10 text-gray-500">
+                                <div className="text-center py-10 text-muted-foreground">
                                     데이터가 없습니다.
                                 </div>
                             )}
@@ -698,25 +698,25 @@ const ManageCashPage = () => {
                             {cashRequests.length > 0 ? (
                                 <div className="divide-y divide-gray-200">
                                     {cashRequests.map((request, index) => (
-                                        <div key={index} className="p-4 hover:bg-gray-50">
+                                        <div key={index} className="p-4 hover:bg-muted/40">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center">
                                                     <input type="checkbox" className="checkbox checkbox-sm checkbox-primary mr-3" />
                                                     <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
                                                         {request.full_name ? request.full_name.charAt(0) : '?'}
                                                     </div>
-                                                    <span className="text-gray-800 font-medium">{request.full_name}</span>
+                                                    <span className="text-foreground font-medium">{request.full_name}</span>
                                                 </div>
                                                 {renderStatusBadge(request.status)}
                                             </div>
                                             
                                             <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                                                 <div>
-                                                    <p className="text-gray-500">충전 금액</p>
+                                                    <p className="text-muted-foreground">충전 금액</p>
                                                     <p className="font-medium">₩{request.amount.toLocaleString()}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-gray-500">무료캐시</p>
+                                                    <p className="text-muted-foreground">무료캐시</p>
                                                     {request.isEligibleForFreeCash ? (
                                                         <div>
                                                             <span className="text-green-600 font-medium">+₩{request.freeCashAmount.toLocaleString()}</span>
@@ -729,11 +729,11 @@ const ManageCashPage = () => {
                                                     )}
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <p className="text-gray-500">이메일</p>
+                                                    <p className="text-muted-foreground">이메일</p>
                                                     <p>{request.email}</p>
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <p className="text-gray-500">신청일시</p>
+                                                    <p className="text-muted-foreground">신청일시</p>
                                                     <p>{formatDate(request.requested_at)}</p>
                                                 </div>
                                             </div>
@@ -776,7 +776,7 @@ const ManageCashPage = () => {
             
             <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">페이지당 표시:</span>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
                     <select 
                         className="select select-sm select-bordered flex-grow min-w-[100px]" 
                         name="perpage" 
@@ -791,7 +791,7 @@ const ManageCashPage = () => {
                 </div>
                 
                 <div className="flex items-center gap-3 order-1 md:order-2">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">{getDisplayRange()}</span>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
                     <div className="flex">
                         <button 
                             className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"

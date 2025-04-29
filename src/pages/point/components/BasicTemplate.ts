@@ -31,7 +31,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
     null,
     React.createElement(
       Container,
-      null,
+      { fullWidth: true },
       React.createElement(
         Toolbar,
         null,
@@ -45,7 +45,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
     ),
     React.createElement(
       Container,
-      null,
+      { fullWidth: true },
       React.createElement(
         'div',
         { className: "grid gap-5 lg:gap-7.5" },

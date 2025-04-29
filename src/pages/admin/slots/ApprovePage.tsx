@@ -589,7 +589,7 @@ const ApprovePage: React.FC = () => {
         title="슬롯 승인 관리" 
         description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
       >
-        <div className="card mb-0" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
+        <div className="card mb-0 bg-card" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
           <div className="card-header px-5">
             <div className="card-title">
               <h3>슬롯 승인 관리</h3>
@@ -615,7 +615,7 @@ const ApprovePage: React.FC = () => {
       title="슬롯 승인 관리" 
       description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
     >
-      <div className="card mb-0" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
+      <div className="card mb-0 bg-card" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
         <div className="card-header px-5">
           <div className="card-title">
             <h3>슬롯 승인 관리</h3>

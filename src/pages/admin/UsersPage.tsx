@@ -57,7 +57,7 @@ const MakeUserRow = (user:any) => {
     return(
       <>
         {/* 데스크톱 버전에서만 표시 (md 이상 화면) */}
-        <tr className="border-b border-gray-200 hover:bg-gray-50 hidden md:table-row">
+        <tr className="border-b border-border hover:bg-muted/40 hidden md:table-row">
             <td className="py-4 px-5">
                 <div className="flex items-center">
                     <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
@@ -261,7 +261,7 @@ const UsersPage = () => {
         <BasicTemplate
             title="회원 관리"
             description="시스템을 이용하는 회원을 관리합니다">
-            <div className="card p-6 mb-5 shadow-sm bg-white">
+            <div className="card p-6 mb-5 shadow-sm bg-card">
                 <div className="card-header pb-5">
                     <h3 className="card-title text-lg font-semibold">회원 검색</h3>
                 </div>
@@ -271,7 +271,7 @@ const UsersPage = () => {
                         {/* 권한(role) - select box */}
                         <div className="form-control w-full">
                             <label className="label">
-                                <span className="label-text text-sm font-medium text-gray-700">권한</span>
+                                <span className="label-text text-sm font-medium text-foreground">권한</span>
                             </label>
                             <select className="select select-bordered w-full focus:ring-2 focus:ring-primary" 
                                     value={searchRole}
@@ -287,7 +287,7 @@ const UsersPage = () => {
                         {/* 상태(status) - select box */}
                         <div className="form-control w-full">
                             <label className="label">
-                                <span className="label-text text-sm font-medium text-gray-700">상태</span>
+                                <span className="label-text text-sm font-medium text-foreground">상태</span>
                             </label>
                             <select className="select select-bordered w-full focus:ring-2 focus:ring-primary"
                                     value={searchStatus}
@@ -303,7 +303,7 @@ const UsersPage = () => {
                         {/* 이메일(email) - input */}
                         <div className="form-control w-full">
                             <label className="label">
-                                <span className="label-text text-sm font-medium text-gray-700">이메일</span>
+                                <span className="label-text text-sm font-medium text-foreground">이메일</span>
                             </label>
                             <input 
                                 type="text" 
@@ -317,7 +317,7 @@ const UsersPage = () => {
                         {/* 이름(full_name) - input */}
                         <div className="form-control w-full">
                             <label className="label">
-                                <span className="label-text text-sm font-medium text-gray-700">이름</span>
+                                <span className="label-text text-sm font-medium text-foreground">이름</span>
                             </label>
                             <input 
                                 type="text" 
@@ -337,7 +337,7 @@ const UsersPage = () => {
                 </div>
             </div>
 
-            <div className="card mb-5 shadow-sm bg-white">
+            <div className="card mb-5 shadow-sm bg-card">
                 <div className="card-header p-6 pb-5 flex justify-between items-center">
                     <h3 className="card-title text-lg font-semibold">회원 리스트</h3>
                     <div className="flex gap-2">
@@ -370,7 +370,7 @@ const UsersPage = () => {
                                 {users.length > 0 ? (
                                     <table className="table align-middle text-gray-700 text-sm w-full">
                                         <thead>
-                                            <tr className="border-b border-gray-200 bg-gray-50">
+                                            <tr className="border-b border-border bg-muted">
                                                 <th className="py-4 px-5 text-start">
                                                     <div className="flex items-center">
                                                         <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
@@ -378,7 +378,7 @@ const UsersPage = () => {
                                                 </th>
                                                 <th className="py-4 px-5 text-start min-w-[120px]">
                                                     <div className="flex items-center">
-                                                        <span className="font-medium text-gray-700">이메일</span>
+                                                        <span className="font-medium text-foreground">이메일</span>
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
                                                             <path d="m7 15 5 5 5-5"></path>
                                                             <path d="m7 9 5-5 5 5"></path>
@@ -387,7 +387,7 @@ const UsersPage = () => {
                                                 </th>
                                                 <th className="py-4 px-5 text-start min-w-[120px]">
                                                     <div className="flex items-center">
-                                                        <span className="font-medium text-gray-700">이름</span>
+                                                        <span className="font-medium text-foreground">이름</span>
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
                                                             <path d="m7 15 5 5 5-5"></path>
                                                             <path d="m7 9 5-5 5 5"></path>
@@ -396,7 +396,7 @@ const UsersPage = () => {
                                                 </th>
                                                 <th className="py-4 px-5 text-start min-w-[150px]">
                                                     <div className="flex items-center">
-                                                        <span className="font-medium text-gray-700">권한</span>
+                                                        <span className="font-medium text-foreground">권한</span>
                                                     </div>
                                                 </th>
                                                 <th className="py-4 px-5 text-start min-w-[150px]">
@@ -438,7 +438,7 @@ const UsersPage = () => {
                                 {users.length > 0 ? (
                                     <div className="divide-y divide-gray-200">
                                         {users.map((user, index) => (
-                                            <div key={index} className="p-4 hover:bg-gray-50">
+                                            <div key={index} className="p-4 hover:bg-muted/40">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <div className="flex items-center">
                                                         <input type="checkbox" className="checkbox checkbox-sm checkbox-primary mr-3" />
@@ -476,11 +476,11 @@ const UsersPage = () => {
                                                 
                                                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                                                     <div className="col-span-2">
-                                                        <p className="text-gray-500">이메일</p>
+                                                        <p className="text-muted-foreground">이메일</p>
                                                         <p className="font-medium">{user.email}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-gray-500">권한</p>
+                                                        <p className="text-muted-foreground">권한</p>
                                                         {(() => {
                                                             const roleMap: Record<string, {name: string, class: string}> = {
                                                                 'operator': {name:'관리자', class:'text-primary'},
@@ -496,7 +496,7 @@ const UsersPage = () => {
                                                         })()}
                                                     </div>
                                                     <div>
-                                                        <p className="text-gray-500">보유캐시</p>
+                                                        <p className="text-muted-foreground">보유캐시</p>
                                                         <p className="font-medium">
                                                             ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
                                                             {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
@@ -539,7 +539,7 @@ const UsersPage = () => {
                 
                 <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
-                        <span className="text-sm text-gray-600 whitespace-nowrap">페이지당 표시:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
                         <select 
                             className="select select-sm select-bordered flex-grow min-w-[100px]" 
                             name="perpage" 
@@ -554,7 +554,7 @@ const UsersPage = () => {
                     </div>
                     
                     <div className="flex items-center gap-3 order-1 md:order-2">
-                        <span className="text-sm text-gray-600 whitespace-nowrap">{getDisplayRange()}</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
                         <div className="flex">
                             <button 
                                 className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"

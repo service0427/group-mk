@@ -36,7 +36,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const [isAdvancedSearchVisible, setIsAdvancedSearchVisible] = useState<boolean>(false);
 
   return (
-    <div className="card mb-5 shadow-sm bg-white">
+    <div className="card shadow-sm bg-card">
       <div className="card-header p-6 pb-5 flex justify-between items-center">
         <h3 className="card-title text-lg font-semibold">슬롯 검색</h3>
         <button 
@@ -68,10 +68,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* 캠페인 선택 */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">캠페인</span>
+                <span className="label-text text-sm font-medium text-foreground">캠페인</span>
               </label>
               <select 
-                className="select select-bordered w-full select-sm focus:ring-2 focus:ring-primary"
+                className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                 value={selectedCampaignId.toString()}
                 onChange={(e) => onCampaignChange(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
               >
@@ -82,24 +82,27 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   </option>
                 ))}
               </select>
+              <label className="label">
+                <span className="label-text-alt text-muted-foreground">등록된 캠페인 목록입니다.</span>
+              </label>
             </div>
 
             {/* 검색어 입력 */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">검색어</span>
+                <span className="label-text text-sm font-medium text-foreground">검색어</span>
               </label>
               <div className="input-group">
                 <input 
                   type="text" 
                   placeholder="상품명, MID, URL, 키워드 등 검색" 
-                  className="input input-bordered input-sm w-full focus:ring-2 focus:ring-primary"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                   value={searchInput}
                   onChange={(e) => onSearchChange(e.target.value)}
                 />
                 {searchInput && (
                   <button 
-                    className="btn btn-sm btn-light"
+                    className="btn btn-light"
                     onClick={() => onSearchChange('')}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,15 +112,18 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   </button>
                 )}
               </div>
+              <label className="label">
+                <span className="label-text-alt text-muted-foreground">상품명, MID, URL 등으로 검색합니다.</span>
+              </label>
             </div>
 
             {/* 상태 선택 */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">상태</span>
+                <span className="label-text text-sm font-medium text-foreground">상태</span>
               </label>
               <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
+                className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                 value={statusFilter}
                 onChange={(e) => onStatusChange(e.target.value)}
               >
@@ -125,21 +131,33 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
+              <label className="label">
+                <span className="label-text-alt text-muted-foreground">슬롯의 현재 상태입니다.</span>
+              </label>
             </div>
 
             {/* 검색 버튼 - 상세 검색 모드가 아닐 때만 표시 */}
             {!isAdvancedSearchVisible && (
               <div className="form-control w-full flex items-end">
                 <button 
-                  className="btn btn-sm btn-primary px-4 w-full" 
+                  className="btn btn-primary w-full" 
                   onClick={onSearch}
                   disabled={loading}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="me-1">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  검색
+                  {loading ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs mr-2"></span>
+                      검색 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="me-1">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                      검색
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -151,39 +169,45 @@ const SearchForm: React.FC<SearchFormProps> = ({
               {/* 등록일 시작 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">등록일 (시작)</span>
+                  <span className="label-text text-sm font-medium text-foreground">등록일 (시작)</span>
                 </label>
                 <input 
                   type="date" 
-                  className="input input-sm input-bordered w-full focus:ring-2 focus:ring-primary"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                   value={searchDateFrom}
                   onChange={(e) => onDateFromChange(e.target.value)}
                 />
+                <label className="label">
+                  <span className="label-text-alt text-muted-foreground">검색 시작일을 선택하세요.</span>
+                </label>
               </div>
 
               {/* 등록일 종료 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">등록일 (종료)</span>
+                  <span className="label-text text-sm font-medium text-foreground">등록일 (종료)</span>
                 </label>
                 <input 
                   type="date" 
-                  className="input input-sm input-bordered w-full focus:ring-2 focus:ring-primary"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                   value={searchDateTo}
                   onChange={(e) => onDateToChange(e.target.value)}
                 />
+                <label className="label">
+                  <span className="label-text-alt text-muted-foreground">검색 종료일을 선택하세요.</span>
+                </label>
               </div>
               
               {/* 검색 버튼 */}
               <div className="form-control w-full flex items-end">
                 <button 
-                  className="btn btn-sm btn-primary px-4 w-full" 
+                  className="btn btn-primary w-full" 
                   onClick={onSearch}
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span className="loading loading-spinner loading-xs mr-2"></span>
                       검색 중...
                     </>
                   ) : (
@@ -219,10 +243,12 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </button>
           </div>
           
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">캠페인</label>
+          <div className="form-control w-full mb-4">
+            <label className="label">
+              <span className="label-text text-sm font-medium text-foreground">캠페인</span>
+            </label>
             <select 
-              className="form-select form-select-sm"
+              className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
               value={selectedCampaignId.toString()}
               onChange={(e) => onCampaignChange(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
             >
@@ -235,20 +261,21 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </select>
           </div>
           
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">검색어</label>
-            <div className="input-group input-group-sm">
+          <div className="form-control w-full mb-4">
+            <label className="label">
+              <span className="label-text text-sm font-medium text-foreground">검색어</span>
+            </label>
+            <div className="input-group">
               <input 
                 type="text" 
-                className="form-control" 
+                className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card" 
                 placeholder="상품명, MID, URL, 키워드 등" 
                 value={searchInput}
                 onChange={(e) => onSearchChange(e.target.value)}
               />
               {searchInput && (
                 <button 
-                  className="btn btn-outline-secondary" 
-                  type="button"
+                  className="btn btn-light" 
                   onClick={() => onSearchChange('')}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -260,10 +287,12 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">상태</label>
+          <div className="form-control w-full mb-4">
+            <label className="label">
+              <span className="label-text text-sm font-medium text-foreground">상태</span>
+            </label>
             <select 
-              className="form-select form-select-sm"
+              className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
               value={statusFilter}
               onChange={(e) => onStatusChange(e.target.value)}
             >
@@ -275,21 +304,25 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
           {/* 상세 검색 옵션 - 접었다 펼 수 있음 */}
           {isAdvancedSearchVisible && (
-            <div className="row mb-3">
-              <div className="col-6">
-                <label className="form-label text-sm font-weight-medium">시작일</label>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text text-sm font-medium text-foreground">시작일</span>
+                </label>
                 <input 
                   type="date" 
-                  className="form-control form-control-sm"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                   value={searchDateFrom}
                   onChange={(e) => onDateFromChange(e.target.value)}
                 />
               </div>
-              <div className="col-6">
-                <label className="form-label text-sm font-weight-medium">종료일</label>
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text text-sm font-medium text-foreground">종료일</span>
+                </label>
                 <input 
                   type="date" 
-                  className="form-control form-control-sm"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card"
                   value={searchDateTo}
                   onChange={(e) => onDateToChange(e.target.value)}
                 />
@@ -303,13 +336,13 @@ const SearchForm: React.FC<SearchFormProps> = ({
         {/* 모바일 검색 버튼 */}
         <div className="block md:hidden">
           <button 
-            className={`btn btn-sm btn-primary ${isAdvancedSearchVisible ? 'mt-4' : 'mt-0'} w-100`}
+            className="btn btn-primary w-full"
             onClick={onSearch}
             disabled={loading}
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span className="loading loading-spinner loading-xs mr-2"></span>
                 검색 중...
               </>
             ) : (

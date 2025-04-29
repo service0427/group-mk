@@ -178,7 +178,7 @@ const ProfilePage = () => {
       title="내정보 관리"
       description="기본 관리 > 내정보 관리"
     >
-      <div className="space-y-4">
+      <div className="bg-card rounded-lg shadow-sm p-5 space-y-4">
         {/* 프로필 헤더 */}
         <div className="flex items-center space-x-4 mb-6">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">

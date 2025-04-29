@@ -100,7 +100,7 @@ const NotificationsPage = () => {
   
   return (
     <>
-      <Container>
+      <Container fullWidth>
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle="알림 센터" />
@@ -109,7 +109,7 @@ const NotificationsPage = () => {
         </Toolbar>
       </Container>
       
-      <Container>
+      <Container fullWidth>
         <div className="grid grid-cols-12 gap-6">
           {/* 왼쪽 사이드바 - 필터 */}
           <div className="col-span-12 md:col-span-2">

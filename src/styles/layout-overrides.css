@@ -15,19 +15,21 @@ html, body {
 
 /* 모바일 스타일 */
 @media (max-width: 1023px) {
-  .header {
+  .header, .footer {
     left: 0 !important;
     width: 100% !important;
   }
 
   main.content {
     margin-top: 4rem;
+    padding-bottom: 4rem; /* 푸터 높이만큼 패딩 추가 */
   }
 }
 
-/* 헤더 위치 및 스타일 조정 */
+/* 헤더 및 푸터 위치와 스타일 조정 */
 @media (min-width: 1024px) {
-  .stand.sidebar-fixed.header-fixed .header {
+  .stand.sidebar-fixed.header-fixed .header,
+  .stand.sidebar-fixed.header-fixed .footer {
     left: var(--tw-sidebar-width) !important; /* 사이드바 너비만큼 왼쪽으로 이동 */
     width: calc(100% - var(--tw-sidebar-width)) !important; /* 너비 재조정 */
     z-index: 20; /* z-index 설정 */
@@ -104,12 +106,45 @@ main.content {
 /* 컨텐츠 영역 페이드 트랜지션 - 로딩 중/로딩 완료 상태 */
 .content-loading {
   opacity: 0.6;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .content-loaded {
   opacity: 1;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* 페이지 전환 애니메이션 */
+.content-container {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+  will-change: opacity, transform;
+  transform: translateZ(0);
+  transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
+}
+
+.content-container:not(.pointer-events-none) {
+  animation-name: fadeIn;
+}
+
+/* 페이드 인 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 로딩 상태에서의 스타일 */
+.content-container.pointer-events-none {
+  opacity: 0.6;
+  filter: blur(0.5px);
+  transition: opacity 0.2s ease-in-out, filter 0.2s ease-in-out;
 }
 
 /* 컨텐츠 로더 스타일 개선 */
@@ -136,6 +171,15 @@ main.content {
   --content-transition: opacity 0.15s ease-in-out;
   --content-background: var(--tw-page-bg);
   --content-background-dark: var(--tw-page-bg-dark);
+  --footer-height: 4rem; /* 푸터 높이 CSS 변수 */
+}
+
+/* 푸터 스타일 최적화 */
+.footer {
+  height: var(--footer-height);
+  transition: left 0.3s ease, width 0.3s ease;
+  will-change: transform, left, width;
+  backface-visibility: hidden;
 }
 
 /* 컨텐츠 영역에 대한 추가 최적화 */

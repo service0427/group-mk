@@ -40,7 +40,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const [isAdvancedSearchVisible, setIsAdvancedSearchVisible] = useState<boolean>(false);
 
   return (
-    <div className="card mb-5 shadow-sm bg-white">
+    <div className="card mb-5 shadow-sm bg-card">
       <div className="card-header p-6 pb-5 flex justify-between items-center">
         <h3 className="card-title text-lg font-semibold">슬롯 승인 검색</h3>
         <button 
@@ -72,7 +72,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* 서비스 타입 - select box */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">서비스 타입</span>
+                <span className="label-text text-sm font-medium text-foreground">서비스 타입</span>
               </label>
               <select 
                 className="select select-bordered w-full focus:ring-2 focus:ring-primary"
@@ -91,7 +91,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* 캠페인 - select box */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">캠페인</span>
+                <span className="label-text text-sm font-medium text-foreground">캠페인</span>
               </label>
               <select 
                 className="select select-bordered w-full focus:ring-2 focus:ring-primary"
@@ -110,7 +110,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* 상태(status) - select box */}
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">상태</span>
+                <span className="label-text text-sm font-medium text-foreground">상태</span>
               </label>
               <select 
                 className="select select-bordered w-full focus:ring-2 focus:ring-primary"
@@ -132,7 +132,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               {/* 검색어 - input */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">검색어</span>
+                  <span className="label-text text-sm font-medium text-foreground">검색어</span>
                 </label>
                 <div className="input-group">
                   <input 
@@ -159,7 +159,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               {/* 제출일 시작 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">제출일 (시작)</span>
+                  <span className="label-text text-sm font-medium text-foreground">제출일 (시작)</span>
                 </label>
                 <input 
                   type="date" 
@@ -172,7 +172,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               {/* 제출일 종료 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">제출일 (종료)</span>
+                  <span className="label-text text-sm font-medium text-foreground">제출일 (종료)</span>
                 </label>
                 <input 
                   type="date" 

@@ -50,8 +50,6 @@ export const useNotifications = () => {
         // 데이터 타입 변환
         const typedData = data.map((item: any) => {
           // 로그 추가
-          console.log('Raw notification data:', item);
-          console.log('Creation date from DB:', item.created_at);
           
           const transformed = {
             ...item,
@@ -63,7 +61,6 @@ export const useNotifications = () => {
             expiresAt: item.expires_at
           };
           
-          console.log('Transformed notification:', transformed);
           return transformed;
         });
         
@@ -303,7 +300,6 @@ export const useNotifications = () => {
           filter: `user_id=eq.${currentUser.id}`
         },
         (payload) => {
-          console.log('새 알림 수신:', payload);
           // 새 알림 추가
           const newNotification = payload.new as INotification;
           
@@ -323,7 +319,6 @@ export const useNotifications = () => {
                 icon: '/favicon.ico'
               });
             } catch (e) {
-              console.log('브라우저 알림 표시 중 오류:', e);
             }
           }
         }
@@ -337,7 +332,6 @@ export const useNotifications = () => {
           filter: `user_id=eq.${currentUser.id}`
         },
         (payload) => {
-          console.log('알림 업데이트 수신:', payload);
           // 업데이트된 알림 정보
           const updatedNotification = payload.new as INotification;
           
@@ -367,7 +361,6 @@ export const useNotifications = () => {
           filter: `user_id=eq.${currentUser.id}`
         },
         (payload) => {
-          console.log('알림 삭제 수신:', payload);
           // 삭제된 알림 정보
           const deletedNotification = payload.old as INotification;
           
@@ -383,12 +376,10 @@ export const useNotifications = () => {
         }
       )
       .subscribe((status) => {
-        console.log('알림 실시간 구독 상태:', status);
       });
     
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
-      console.log('알림 구독 해제');
       supabase.removeChannel(channel);
     };
   }, [currentUser?.id, fetchNotifications]);

@@ -221,7 +221,7 @@ class BackgroundTaskManager {
   public resumeAllTasks(): boolean {
     try {
       if (this.isActive) return true; // 이미 활성 상태
-      
+
       this.isActive = true;
       console.log('모든 백그라운드 작업 재개');
 
@@ -306,9 +306,9 @@ class BackgroundTaskManager {
 
         const { config } = taskEntry;
         toast.loading(`백그라운드 작업 실행 중: ${config.id}`);
-        
+
         await this.executeTask(config.task, taskId);
-        
+
         toast.dismiss();
         toast.success(`백그라운드 작업이 실행되었습니다: ${config.id}`);
         resolve(true);

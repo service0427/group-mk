@@ -72,7 +72,7 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
   }, [userId, refreshTrigger]);
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 pt-10">
       <div className="mb-3">
         <p className="text-sm font-medium">최근 출금 요청 내역</p>
       </div>

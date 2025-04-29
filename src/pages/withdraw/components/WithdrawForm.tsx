@@ -427,20 +427,20 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
         
         {/* 수수료 정보 표시 */}
         {customAmount && withdrawSetting && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md">
+          <div className="mt-3 p-3 bg-muted/40 rounded-md">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-700">출금 금액:</span>
+              <span className="text-sm text-foreground">출금 금액:</span>
               <span className="font-medium">{formatNumberWithCommas(parseInt(customAmount) || 0)}원</span>
             </div>
             <div className="flex justify-between items-center mt-1">
-              <span className="text-sm text-gray-700">수수료 ({withdrawSetting.min_request_percentage !== undefined ? withdrawSetting.min_request_percentage : (withdrawSetting.fee_percentage !== undefined ? withdrawSetting.fee_percentage : '3')}%):</span>
+              <span className="text-sm text-foreground">수수료 ({withdrawSetting.min_request_percentage !== undefined ? withdrawSetting.min_request_percentage : (withdrawSetting.fee_percentage !== undefined ? withdrawSetting.fee_percentage : '3')}%):</span>
               <span className="font-medium text-red-600">-{formatNumberWithCommas(feeAmount)}원</span>
             </div>
             <div className="flex justify-between items-center mt-1">
-              <span className="text-sm text-gray-700">실수령액:</span>
+              <span className="text-sm text-foreground">실수령액:</span>
               <span className="font-medium text-lg">{formatNumberWithCommas((parseInt(customAmount) || 0) - feeAmount)}원</span>
             </div>
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-muted-foreground mt-2">
               * 출금 수수료는 {withdrawSetting.min_request_percentage || 0}% 입니다.
             </div>
           </div>
@@ -450,28 +450,28 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       {/* 금액 빠른 선택 */}
       <div className="grid grid-cols-5 gap-2 mb-8">
         <button 
-          className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('10000')}
           type="button"
         >
           +1만
         </button>
         <button 
-          className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('50000')}
           type="button"
         >
           +5만
         </button>
         <button 
-          className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('100000')}
           type="button"
         >
           +10만
         </button>
         <button 
-          className="py-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50"
+          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('1000000')}
           type="button"
         >
@@ -591,30 +591,30 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="bg-gray-50 p-3 rounded-md space-y-2">
+            <div className="bg-muted/40 p-3 rounded-md space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">출금 금액:</span>
+                <span className="text-sm text-foreground">출금 금액:</span>
                 <span className="font-medium">{formatNumberWithCommas(parseInt(customAmount) || 0)}원</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">수수료:</span>
+                <span className="text-sm text-foreground">수수료:</span>
                 <span className="text-red-600">-{formatNumberWithCommas(feeAmount)}원</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">실수령액:</span>
+                <span className="text-sm text-foreground">실수령액:</span>
                 <span className="font-semibold">{formatNumberWithCommas((parseInt(customAmount) || 0) - feeAmount)}원</span>
               </div>
               <div className="h-px my-2 bg-gray-200"></div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">입금 계좌:</span>
+                <span className="text-sm text-foreground">입금 계좌:</span>
                 <span className="font-medium">{bankName}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">계좌번호:</span>
+                <span className="text-sm text-foreground">계좌번호:</span>
                 <span className="font-medium">{accountNumber}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700">예금주:</span>
+                <span className="text-sm text-foreground">예금주:</span>
                 <span className="font-medium">{accountHolder}</span>
               </div>
             </div>
@@ -622,7 +622,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           <DialogFooter className="flex space-x-2 sm:space-x-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100 focus:outline-none"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted/60 focus:outline-none"
               onClick={() => setConfirmModalOpen(false)}
             >
               취소

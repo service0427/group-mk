@@ -200,7 +200,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
 
   return (
     <Fragment>
-      <Container>
+      <Container fullWidth>
         <Navbar>
           <PageMenu />
         </Navbar>
@@ -219,7 +219,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           ]}
         />
       </Container>
-      <Container>
+      <Container fullWidth>
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>

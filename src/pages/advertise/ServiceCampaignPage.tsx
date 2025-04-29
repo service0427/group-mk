@@ -51,7 +51,7 @@ const ServiceCampaignPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -60,7 +60,7 @@ const ServiceCampaignPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">오류 발생</h1>
-        <p className="text-gray-600 mb-6">{error || '알 수 없는 오류가 발생했습니다.'}</p>
+        <p className="text-muted-foreground mb-6">{error || '알 수 없는 오류가 발생했습니다.'}</p>
         <button
           onClick={() => navigate('/')}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"

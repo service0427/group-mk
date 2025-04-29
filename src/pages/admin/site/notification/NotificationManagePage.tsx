@@ -235,7 +235,7 @@ const NotificationManagePage: React.FC = () => {
 
   return (
     <>
-      <Container>
+      <Container fullWidth>
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle="알림 관리" />
@@ -244,7 +244,7 @@ const NotificationManagePage: React.FC = () => {
         </Toolbar>
       </Container>
 
-      <Container>
+      <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
           <div className="bg-card rounded-lg shadow-sm p-5">
             <div className="flex justify-between items-center mb-6">

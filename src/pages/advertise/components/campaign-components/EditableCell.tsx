@@ -42,7 +42,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     >
       {isEditing ? (
         <input
-          className="form-control form-control-sm"
+          className="input input-bordered input-sm w-full focus:ring-2 focus:ring-primary bg-card"
           value={editingValue}
           onChange={(e) => onEditChange(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -56,7 +56,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
       ) : children ? (
         children
       ) : (
-        value
+        <span className="text-foreground">{value}</span>
       )}
     </div>
   );

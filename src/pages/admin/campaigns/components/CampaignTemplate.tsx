@@ -85,7 +85,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
 
   return (
     <Fragment>
-      <Container>
+      <Container fullWidth>
         <Navbar>
           <PageMenu />
         </Navbar>
@@ -100,7 +100,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         </Toolbar>
       </Container>
 
-      <Container>
+      <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
           {loading ? (
             <div className="flex justify-center items-center h-64">

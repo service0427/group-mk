@@ -38,7 +38,7 @@ const WithdrawRequestPage: React.FC = () => {
     >
       <div className="w-full max-w-lg mx-auto">
         <Card className="border-0 shadow-none">
-          <CardContent className="p-0">
+          <CardContent className="p-10">
             {/* 헤더 */}
             <div className="flex items-center mb-8">
               <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
@@ -48,11 +48,11 @@ const WithdrawRequestPage: React.FC = () => {
             </div>
             
             {/* 현재 캐시 잔액 */}
-            <div className="mb-6 bg-blue-50 p-4 rounded-md">
-              <div className="text-sm text-gray-600">현재 보유한 캐시</div>
+            <div className="mb-6 bg-primary/10 p-4 rounded-md">
+              <div className="text-sm text-muted-foreground">현재 보유한 캐시</div>
               <div className="text-lg font-medium">
                 {isLoadingBalance ? (
-                  <span className="text-gray-500">로딩 중...</span>
+                  <span className="text-muted-foreground">로딩 중...</span>
                 ) : (
                   <span>{formatNumberWithCommas(userCashBalance)}원</span>
                 )}

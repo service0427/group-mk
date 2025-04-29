@@ -34,16 +34,14 @@ const SlotList: React.FC<SlotListProps> = ({
   if (isLoading) {
     return (
       <div className="text-center py-4">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">로딩중...</span>
-        </div>
+        <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="alert alert-danger">
+      <div className="alert alert-error">
         {error}
       </div>
     );
@@ -51,7 +49,7 @@ const SlotList: React.FC<SlotListProps> = ({
 
   if (filteredSlots.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-8 text-muted-foreground">
         {serviceType 
           ? '이 서비스 유형에 대한 등록된 슬롯이 없습니다.' 
           : '데이터가 없습니다.'}
@@ -63,23 +61,37 @@ const SlotList: React.FC<SlotListProps> = ({
     <>
       {/* Desktop View - 테이블 형식 (md 이상) */}
       <div className="hidden md:block">
-        <div className="table-responsive">
-          <table className="table table-row-bordered table-row-gray-100 align-middle gs-0 gy-3">
+        <div className="overflow-x-auto">
+          <table className="table align-middle text-gray-700 text-sm w-full">
             <thead>
-              <tr className="fw-bold text-muted">
-                <th className="min-w-150px">상품명</th>
-                <th className="min-w-100px">상태</th>
-                <th className="min-w-100px">MID</th>
-                <th className="min-w-150px">URL</th>
-                <th className="min-w-120px">키워드</th>
-                <th className="min-w-120px">등록일</th>
-                <th className="min-w-100px text-end">관리</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="py-4 px-5 text-start min-w-[180px]">
+                  <span className="font-medium text-gray-700">상품명</span>
+                </th>
+                <th className="py-4 px-5 text-start min-w-[120px]">
+                  <span className="font-medium text-gray-700">상태</span>
+                </th>
+                <th className="py-4 px-5 text-start min-w-[120px]">
+                  <span className="font-medium text-gray-700">MID</span>
+                </th>
+                <th className="py-4 px-5 text-start min-w-[180px]">
+                  <span className="font-medium text-gray-700">URL</span>
+                </th>
+                <th className="py-4 px-5 text-start min-w-[180px]">
+                  <span className="font-medium text-gray-700">키워드</span>
+                </th>
+                <th className="py-4 px-5 text-start min-w-[140px]">
+                  <span className="font-medium text-gray-700">등록일</span>
+                </th>
+                <th className="py-4 px-5 text-end min-w-[120px]">
+                  <span className="font-medium text-gray-700">관리</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredSlots.map((item) => (
-                <tr key={item.id} className="cursor-pointer hover:bg-light-light">
-                  <td>
+                <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                  <td className="py-4 px-5">
                     <EditableCell
                       id={item.id}
                       field="productName"
@@ -91,7 +103,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       onEditSave={onEditSave}
                     />
                   </td>
-                  <td>
+                  <td className="py-4 px-5">
                     {getStatusBadge(item.status)}
                     {item.status === 'rejected' && item.rejectionReason && (
                       <div className="mt-1 text-danger text-sm font-medium">
@@ -99,7 +111,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </div>
                     )}
                   </td>
-                  <td>
+                  <td className="py-4 px-5">
                     <EditableCell
                       id={item.id}
                       field="mid"
@@ -111,7 +123,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       onEditSave={onEditSave}
                     />
                   </td>
-                  <td>
+                  <td className="py-4 px-5">
                     <EditableCell
                       id={item.id}
                       field="url"
@@ -124,7 +136,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       isUrl={true}
                     />
                   </td>
-                  <td>
+                  <td className="py-4 px-5">
                     <EditableCell
                       id={item.id}
                       field="keywords"
@@ -145,14 +157,14 @@ const SlotList: React.FC<SlotListProps> = ({
                       </div>
                     </EditableCell>
                   </td>
-                  <td>{formatDate(item.createdAt)}</td>
-                  <td>
-                    <div className="flex items-center justify-end h-9 gap-2">
+                  <td className="py-4 px-5 text-gray-800">{formatDate(item.createdAt)}</td>
+                  <td className="py-4 px-5 text-end">
+                    <div className="flex justify-end gap-2">
                       {item.userReason && (
                         <div className="px-2 py-1 bg-light-primary text-primary rounded text-xs font-medium">메모</div>
                       )}
                       <button 
-                        className="btn btn-icon btn-sm btn-light"
+                        className="btn btn-sm btn-light"
                         onClick={(e) => {
                           e.stopPropagation();
                           onOpenMemoModal(item.id);
@@ -162,7 +174,7 @@ const SlotList: React.FC<SlotListProps> = ({
                         <KeenIcon icon="note" />
                       </button>
                       <button 
-                        className="btn btn-icon btn-sm btn-light"
+                        className="btn btn-sm btn-danger"
                         onClick={(e) => {
                           e.stopPropagation();
                           onDeleteSlot(item.id);
@@ -184,7 +196,7 @@ const SlotList: React.FC<SlotListProps> = ({
       <div className="block md:hidden">
         <div className="grid grid-cols-1 gap-4">
           {filteredSlots.map((item) => (
-            <div key={item.id} className="card border border-gray-200 p-4">
+            <div key={item.id} className="card bg-card border border-border p-4">
               <div className="flex flex-col mb-3">
                 <div className="flex justify-between items-start">
                   <div className="w-3/4">
@@ -212,7 +224,7 @@ const SlotList: React.FC<SlotListProps> = ({
               
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <p className="text-gray-500 mb-1">MID</p>
+                  <p className="text-muted-foreground mb-1">MID</p>
                   <EditableCell
                     id={item.id}
                     field="mid"
@@ -223,17 +235,17 @@ const SlotList: React.FC<SlotListProps> = ({
                     onEditChange={onEditChange}
                     onEditSave={onEditSave}
                   >
-                    <p>{item.inputData.mid}</p>
+                    <p className="text-foreground">{item.inputData.mid}</p>
                   </EditableCell>
                 </div>
                 
                 <div>
-                  <p className="text-gray-500 mb-1">등록일</p>
-                  <p>{formatDate(item.createdAt)}</p>
+                  <p className="text-muted-foreground mb-1">등록일</p>
+                  <p className="text-foreground">{formatDate(item.createdAt)}</p>
                 </div>
                 
                 <div className="col-span-2">
-                  <p className="text-gray-500 mb-1">URL</p>
+                  <p className="text-muted-foreground mb-1">URL</p>
                   <EditableCell
                     id={item.id}
                     field="url"
@@ -252,7 +264,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 </div>
                 
                 <div className="col-span-2">
-                  <p className="text-gray-500 mb-1">키워드</p>
+                  <p className="text-muted-foreground mb-1">키워드</p>
                   <EditableCell
                     id={item.id}
                     field="keywords"
@@ -275,19 +287,19 @@ const SlotList: React.FC<SlotListProps> = ({
                 </div>
               </div>
               
-              <div className="flex justify-end mt-4 items-center h-9 gap-2">
+              <div className="flex justify-end mt-4 gap-2">
                 {item.userReason && (
-                  <div className="px-2 py-1 bg-light-primary text-primary rounded text-xs font-medium">메모 있음</div>
+                  <div className="px-2 py-1 bg-light-primary text-primary rounded text-xs font-medium flex items-center">메모 있음</div>
                 )}
                 <button 
-                  className="btn btn-icon btn-sm btn-light"
+                  className="btn btn-sm btn-light"
                   onClick={() => onOpenMemoModal(item.id)}
                   title="메모"
                 >
                   <KeenIcon icon="note" />
                 </button>
                 <button 
-                  className="btn btn-icon btn-sm btn-light"
+                  className="btn btn-sm btn-danger"
                   onClick={() => onDeleteSlot(item.id)}
                   title="삭제"
                 >

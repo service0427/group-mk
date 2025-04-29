@@ -30,23 +30,23 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
 
   return (
     <Fragment>
-      <Container>
+      <Container fullWidth>
         <Navbar />
         <ToolbarHeading>
           <ToolbarPageTitle customTitle={pageTitle} />
           <ToolbarDescription>{pageDescription}</ToolbarDescription>
         </ToolbarHeading>
       </Container>
-      <Container>
+      <Container fullWidth>
         <div className="flex flex-col items-stretch gap-5 lg:gap-7.5">
           {children ? (
             children
           ) : (
-            <div className="flex flex-col p-5 bg-white rounded-lg shadow-sm">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className="flex flex-col p-5 bg-card rounded-lg shadow-sm">
+              <h3 className="text-lg font-medium text-foreground mb-4">
                 {`${pageTitle} 페이지입니다`}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 이 페이지는 준비중입니다. 곧 서비스가 제공될 예정입니다
               </p>
             </div>

@@ -337,10 +337,10 @@ const ManageSettingPage = () => {
       )}
       
       {/* 전역 설정 카드 */}
-      <div className="card p-6 mb-5 shadow-sm bg-white">
+      <div className="card p-6 mb-5 shadow-sm bg-card">
         <div className="card-header pb-5">
           <h3 className="card-title text-lg font-semibold">전역 캐시 설정</h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             모든 사용자에게 적용되는 기본 설정입니다. 개별 사용자 설정이 없는 경우 이 설정이 적용됩니다.
           </p>
         </div>
@@ -351,7 +351,7 @@ const ManageSettingPage = () => {
               {/* 최소 요청 금액 설정 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 충전 금액 (원)</span>
+                  <span className="label-text text-sm font-medium text-foreground">무료캐시 최소 충전 금액 (원)</span>
                 </label>
                 <input 
                   type="number" 
@@ -363,14 +363,14 @@ const ManageSettingPage = () => {
                   step="1000"
                 />
                 <label className="label">
-                  <span className="label-text-alt text-gray-500">최소 충전 금액 이상 충전 시 무료 캐시가 지급됩니다.</span>
+                  <span className="label-text-alt text-muted-foreground">최소 충전 금액 이상 충전 시 무료 캐시가 지급됩니다.</span>
                 </label>
               </div>
 
               {/* 무료캐시 퍼센트 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">무료캐시 지급 비율 (%)</span>
+                  <span className="llabel-text text-sm font-medium text-foreground">무료캐시 지급 비율 (%)</span>
                 </label>
                 <input 
                   type="number" 
@@ -390,7 +390,7 @@ const ManageSettingPage = () => {
               {/* 만료 기간 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">무료캐시 만료 기간 (개월)</span>
+                  <span className="llabel-text text-sm font-medium text-foreground">무료캐시 만료 기간 (개월)</span>
                 </label>
                 <input 
                   type="number" 
@@ -412,7 +412,7 @@ const ManageSettingPage = () => {
               {/* 무료캐시 최소 사용 금액 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 사용 금액 (원)</span>
+                  <span className="llabel-text text-sm font-medium text-foreground">무료캐시 최소 사용 금액 (원)</span>
                 </label>
                 <input 
                   type="number" 
@@ -431,7 +431,7 @@ const ManageSettingPage = () => {
               {/* 무료캐시 최소 사용 비율 */}
               <div className="form-control w-full">
                 <label className="label">
-                  <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 사용 비율 (%)</span>
+                  <span className="llabel-text text-sm font-medium text-foreground">무료캐시 최소 사용 비율 (%)</span>
                 </label>
                 <input 
                   type="number" 
@@ -464,10 +464,10 @@ const ManageSettingPage = () => {
       </div>
       
       {/* 사용자별 설정 카드 - 개별 설정 생성/편집 */}
-      <div className="card p-6 mb-5 shadow-sm bg-white">
+      <div className="card p-6 mb-5 shadow-sm bg-card">
         <div className="card-header pb-5">
           <h3 className="card-title text-lg font-semibold">개별 사용자 설정</h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             특정 사용자에게 다른 설정을 적용하려면 여기서 추가하세요. 개별 설정이 전역 설정보다 우선합니다.
           </p>
         </div>
@@ -477,7 +477,7 @@ const ManageSettingPage = () => {
             {/* 사용자 검색 */}
             <div className="form-control w-full mb-5">
               <label className="label">
-                <span className="label-text text-sm font-medium text-gray-700">사용자 이메일</span>
+                <span className="llabel-text text-sm font-medium text-foreground">사용자 이메일</span>
               </label>
               <div className="relative">
                 <input 
@@ -517,7 +517,7 @@ const ManageSettingPage = () => {
                   {/* 최소 요청 금액 설정 */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 충전 금액 (원)</span>
+                      <span className="llabel-text text-sm font-medium text-foreground">무료캐시 최소 충전 금액 (원)</span>
                     </label>
                     <input 
                       type="number" 
@@ -533,7 +533,7 @@ const ManageSettingPage = () => {
                   {/* 무료캐시 퍼센트 */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text text-sm font-medium text-gray-700">무료캐시 지급 비율 (%)</span>
+                      <span className="llabel-text text-sm font-medium text-foreground">무료캐시 지급 비율 (%)</span>
                     </label>
                     <input 
                       type="number" 
@@ -550,7 +550,7 @@ const ManageSettingPage = () => {
                   {/* 만료 기간 */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text text-sm font-medium text-gray-700">무료캐시 만료 기간 (개월)</span>
+                      <span className="llabel-text text-sm font-medium text-foreground">무료캐시 만료 기간 (개월)</span>
                     </label>
                     <input 
                       type="number" 
@@ -569,7 +569,7 @@ const ManageSettingPage = () => {
                   {/* 무료캐시 최소 사용 금액 */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 사용 금액 (원)</span>
+                      <span className="llabel-text text-sm font-medium text-foreground">무료캐시 최소 사용 금액 (원)</span>
                     </label>
                     <input 
                       type="number" 
@@ -588,7 +588,7 @@ const ManageSettingPage = () => {
                   {/* 무료캐시 최소 사용 비율 */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text text-sm font-medium text-gray-700">무료캐시 최소 사용 비율 (%)</span>
+                      <span className="llabel-text text-sm font-medium text-foreground">무료캐시 최소 사용 비율 (%)</span>
                     </label>
                     <input 
                       type="number" 
@@ -618,7 +618,7 @@ const ManageSettingPage = () => {
                     checked={userSetting.is_active} 
                     onChange={(e) => setUserSetting({...userSetting, is_active: e.target.checked})}
                   />
-                  <span className="label-text text-sm font-medium text-gray-700">이 설정 활성화</span>
+                  <span className="llabel-text text-sm font-medium text-foreground">이 설정 활성화</span>
                 </label>
                 <label className="label pl-8">
                   <span className="label-text-alt text-gray-500">비활성화하면 전역 설정이 사용됩니다.</span>
@@ -652,7 +652,7 @@ const ManageSettingPage = () => {
       </div>
       
       {/* 사용자별 설정 목록 */}
-      <div className="card mb-5 shadow-sm bg-white">
+      <div className="card mb-5 shadow-sm bg-card">
         <div className="card-header p-6 pb-5">
           <h3 className="card-title text-lg font-semibold">개별 사용자 설정 목록</h3>
         </div>

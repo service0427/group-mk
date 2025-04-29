@@ -305,7 +305,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-foreground max-w-[300px] line-clamp-2">
+                    <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
                       {campaign.description || '-'}
                     </div>
                   </td>

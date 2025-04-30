@@ -57,160 +57,81 @@ export const MENU_SIDEBAR: TMenuConfig = [
     heading: '서비스'
   },
   {
-    title: 'NAVER 쇼핑',
-    icon: 'shop text-success',
-    path: '/advertise/naver/shopping/traffic/intro',
+    title: '캠페인 소개',
+    icon: 'presentation text-primary',
+    path: '/advertise/naver/traffic/desc',
     children: [
+      {
+        title: 'N 트래픽',
+        path: '/advertise/naver/traffic/desc'
+      },
+      {
+        title: 'N 자동완성',
+        path: '/advertise/naver/auto/desc'
+      },
       {
         title: 'NS 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/shopping/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/shopping/traffic/campaign'
-          }
-        ]
+        path: '/advertise/naver/shopping/traffic/desc'
       },
-    ]
-  },
-  {
-    title: 'NAVER 플레이스',
-    icon: 'geolocation text-success',
-    path: '/advertise/naver/place/traffic/intro',
-    children: [
       {
         title: 'NP 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/place/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/place/traffic/campaign'
-          }
-        ]
+        path: '/advertise/naver/place/traffic/desc'
       },
       {
         title: 'NP 저장하기',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/place/save/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/place/save/campaign'
-          }
-        ]
+        path: '/advertise/naver/place/save/desc'
       },
       {
         title: 'NP 블로그공유',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/place/share/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/place/share/campaign'
-          }
-        ]
+        path: '/advertise/naver/place/share/desc'
+      },
+      {
+        title: 'CP 트래픽',
+        path: '/advertise/coupang/traffic/desc'
+      },
+      {
+        title: 'OH 트래픽',
+        path: '/advertise/ohouse/traffic/desc'
       }
     ]
   },
   {
-    title: 'NAVER 자동완성',
-    icon: 'filter-search text-success',
-    path: '/advertise/naver/auto/intro',
-    children: [
-      {
-        title: 'N 자동완성',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/auto/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/auto/campaign'
-          }
-        ]
-      },
-    ]
-  },
-  {
-    title: 'NAVER 트래픽',
-    icon: 'chart-line text-success',
-    path: '/advertise/naver/traffic/intro',
+    title: '캠페인 관리',
+    icon: 'setting-3 text-warning',
+    path: '/advertise/naver/traffic/campaign',
     children: [
       {
         title: 'N 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/naver/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/naver/traffic/campaign'
-          }
-        ]
+        path: '/advertise/naver/traffic/campaign'
       },
-    ]
-  },
-  {
-    title: 'COUPANG 쇼핑',
-    icon: 'handcart text-danger',
-    path: '/advertise/coupang/traffic/intro',
-    children: [
+      {
+        title: 'N 자동완성',
+        path: '/advertise/naver/auto/campaign'
+      },
+      {
+        title: 'NS 트래픽',
+        path: '/advertise/naver/shopping/traffic/campaign'
+      },
+      {
+        title: 'NP 트래픽',
+        path: '/advertise/naver/place/traffic/campaign'
+      },
+      {
+        title: 'NP 저장하기',
+        path: '/advertise/naver/place/save/campaign'
+      },
+      {
+        title: 'NP 블로그공유',
+        path: '/advertise/naver/place/share/campaign'
+      },
       {
         title: 'CP 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/coupang/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/coupang/traffic/campaign'
-          }
-        ]
+        path: '/advertise/coupang/traffic/campaign'
       },
-    ]
-  },
-  {
-    title: '오늘의집',
-    icon: 'home-3 text-primary',
-    path: '/advertise/ohouse/traffic/intro',
-    children: [
       {
         title: 'OH 트래픽',
-        children: [
-          {
-            title: '캠페인 소개',
-            path: '/advertise/ohouse/traffic/intro'
-          },
-          {
-            title: '캠페인 리스트',
-            path: '/advertise/ohouse/traffic/campaign'
-          }
-        ]
-      },
-    ]
-  },
-  {
-    title: '블로그 리뷰',
-    icon: 'message-edit text-info',
-    path: '/advertise/blog/',
-    children: [
-      {
-        title: '블로그 리뷰',
-        path: '/advertise/blog/'
-      },
+        path: '/advertise/ohouse/traffic/campaign'
+      }
     ]
   },
   {
@@ -828,47 +749,92 @@ export const MENU_MEGA: TMenuConfig = [
     title: '서비스',
     children: [
       {
-        heading: 'NAVER 서비스',
+        heading: '캠페인 소개',
         children: [
           { 
-            title: 'NAVER 쇼핑',
-            icon: 'shop',
-            path: '/advertise/naver/shopping/traffic/intro'
-          },
-          { 
-            title: 'NAVER 플레이스',
-            icon: 'geolocation',
-            path: '/advertise/naver/place/traffic/intro' 
-          },
-          { 
-            title: 'NAVER 자동완성',
-            icon: 'filter-search',
-            path: '/advertise/naver/auto/intro'
-          },
-          { 
-            title: 'NAVER 트래픽',
+            title: 'N 트래픽',
             icon: 'chart-line',
-            path: '/advertise/naver/traffic/intro'
+            path: '/advertise/naver/traffic/desc'
+          },
+          { 
+            title: 'N 자동완성',
+            icon: 'filter-search',
+            path: '/advertise/naver/auto/desc'
+          },
+          { 
+            title: 'NS 트래픽',
+            icon: 'shop',
+            path: '/advertise/naver/shopping/traffic/desc'
+          },
+          { 
+            title: 'NP 트래픽',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/traffic/desc' 
+          },
+          { 
+            title: 'NP 저장하기',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/save/desc'
+          },
+          { 
+            title: 'NP 블로그공유',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/share/desc'
+          },
+          { 
+            title: 'CP 트래픽',
+            icon: 'handcart',
+            path: '/advertise/coupang/traffic/desc'
+          },
+          { 
+            title: 'OH 트래픽',
+            icon: 'home-3',
+            path: '/advertise/ohouse/traffic/desc'
           }
         ]
       },
       {
-        heading: '기타 서비스',
+        heading: '캠페인 관리',
         children: [
           { 
-            title: 'COUPANG 쇼핑',
+            title: 'N 트래픽',
+            icon: 'chart-line',
+            path: '/advertise/naver/traffic/campaign'
+          },
+          { 
+            title: 'N 자동완성',
+            icon: 'filter-search',
+            path: '/advertise/naver/auto/campaign'
+          },
+          { 
+            title: 'NS 트래픽',
+            icon: 'shop',
+            path: '/advertise/naver/shopping/traffic/campaign'
+          },
+          { 
+            title: 'NP 트래픽',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/traffic/campaign' 
+          },
+          { 
+            title: 'NP 저장하기',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/save/campaign'
+          },
+          { 
+            title: 'NP 블로그공유',
+            icon: 'geolocation',
+            path: '/advertise/naver/place/share/campaign'
+          },
+          { 
+            title: 'CP 트래픽',
             icon: 'handcart',
-            path: '/advertise/coupang/traffic/intro'
+            path: '/advertise/coupang/traffic/campaign'
           },
           { 
-            title: '오늘의집',
+            title: 'OH 트래픽',
             icon: 'home-3',
-            path: '/advertise/ohouse/traffic/intro'
-          },
-          { 
-            title: '블로그 리뷰',
-            icon: 'message-edit',
-            path: '/advertise/blog/'
+            path: '/advertise/ohouse/traffic/campaign'
           }
         ]
       },

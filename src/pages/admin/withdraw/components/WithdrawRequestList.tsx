@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { WithdrawRequest } from '../WithdrawApprovePage'
 import { approveWithdrawRequest, rejectWithdrawRequest } from '../services/withdrawService'

@@ -392,7 +392,7 @@ const NotificationManagePage: React.FC = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
-            
+
             {/* 알림 목록 테이블 */}
             <div className="overflow-hidden">
               <NotificationTable
@@ -407,7 +407,7 @@ const NotificationManagePage: React.FC = () => {
                 })}
               />
             </div>
-            
+
             {/* 하단 페이지네이션 */}
             <NotificationPagination
               currentPage={currentPage}

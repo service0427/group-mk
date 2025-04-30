@@ -37,7 +37,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
           </ToolbarHeading>
         </Toolbar>
       </Container>
-      <Container fullWidth>
+      <Container fullWidth className="pb-8"> {/* 하단 패딩 추가 */}
         {children ? (
           children
         ) : (

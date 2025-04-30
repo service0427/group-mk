@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { INotification, NotificationType, NotificationStatus, NotificationPriority } from '@/types/notification';
@@ -25,6 +25,19 @@ const NotificationDropdown: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const itemRef = useRef<any>(null);
   const { isRTL } = useLanguage();
+
+  // 컴포넌트 마운트 시 알림 데이터 가져오기 및 주기적 갱신
+  useEffect(() => {
+    // 컴포넌트 마운트 시 알림 데이터 가져오기
+    fetchNotifications();
+    
+    // 30초마다 알림 데이터 새로고침 (HeaderTopbar의 10초와 중복되지 않도록 30초로 설정)
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // 30초
+    
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   // 날짜 포맷팅
   const formatDate = (dateString: string | Date) => {
@@ -141,8 +154,8 @@ const NotificationDropdown: React.FC = () => {
             ]
           }}
         >
-          <MenuToggle className="btn btn-sm btn-icon btn-light relative">
-            <KeenIcon icon="notification" />
+          <MenuToggle className="btn btn-icon btn-outline-primary transition-all hover:bg-blue-500 hover:text-white ms-1 size-9 rounded-full relative">
+            <KeenIcon icon="notification-status" className="text-base" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
                 {unreadCount > 99 ? '99+' : unreadCount}
@@ -153,7 +166,7 @@ const NotificationDropdown: React.FC = () => {
             {/* 헤더 영역 */}
             <div className="py-2 px-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
-                <h3 className="text-base font-medium text-card-foreground">알림</h3>
+                <h3 className="text-base font-medium text-card-foreground dark:text-white">알림</h3>
                 <div className="flex items-center">
                   <button
                     onClick={async (e) => {
@@ -163,7 +176,7 @@ const NotificationDropdown: React.FC = () => {
                       // 상태 갱신을 위해 명시적으로 알림 데이터 다시 가져오기
                       fetchNotifications();
                     }}
-                    className={`text-xs ${unreadCount > 0
+                    className={`text-sm font-medium ${unreadCount > 0
                       ? 'text-primary hover:text-primary-dark dark:hover:text-primary-light hover:underline cursor-pointer'
                       : 'text-muted-foreground cursor-not-allowed'
                       }`}
@@ -183,13 +196,13 @@ const NotificationDropdown: React.FC = () => {
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                 </div>
-                <div className="mt-2">알림을 불러오는 중...</div>
+                <div className="mt-2 dark:text-gray-300">알림을 불러오는 중...</div>
               </div>
             )}
 
             {/* 알림 없음 상태 */}
             {!loading && notifications.length === 0 && (
-              <div className="p-4 text-center text-muted-foreground">
+              <div className="p-4 text-center text-muted-foreground dark:text-gray-300">
                 새로운 알림이 없습니다
               </div>
             )}
@@ -197,7 +210,7 @@ const NotificationDropdown: React.FC = () => {
             {/* 읽지 않은 알림 섹션 */}
             {!loading && unreadCount > 0 && (
               <>
-                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-muted-foreground font-medium">
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
                   읽지 않은 알림 ({unreadCount})
                 </div>
 
@@ -226,7 +239,7 @@ const NotificationDropdown: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-sm font-medium text-card-foreground truncate max-w-[240px]">{notification.title}</h4>
+                              <h4 className="text-sm font-medium text-card-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
                               <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                                 <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
                                   <span className={`inline-block w-1 h-1 rounded-full ${getTypeDotClass(notification.type)}`}></span>
@@ -262,7 +275,7 @@ const NotificationDropdown: React.FC = () => {
                               </div>
                             </div>
 
-                            <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+                            <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
 
                             {notification.link && (
                               <div className="mt-1.5">
@@ -284,7 +297,7 @@ const NotificationDropdown: React.FC = () => {
                               </div>
                             )}
 
-                            <span className="text-2xs text-muted-foreground mt-1 block">
+                            <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
                               {formatDate(notification.createdAt)}
                             </span>
                           </div>
@@ -298,7 +311,7 @@ const NotificationDropdown: React.FC = () => {
             {/* 이전 알림 섹션 */}
             {!loading && notifications.filter(notification => notification.status === NotificationStatus.READ).length > 0 && (
               <>
-                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-muted-foreground font-medium">
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
                   이전 알림
                 </div>
 
@@ -325,7 +338,7 @@ const NotificationDropdown: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-sm font-medium text-muted-foreground truncate max-w-[240px]">{notification.title}</h4>
+                              <h4 className="text-sm font-medium text-muted-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
 
                               <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                                 <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
@@ -362,7 +375,7 @@ const NotificationDropdown: React.FC = () => {
                               </div>
                             </div>
 
-                            <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+                            <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
 
                             {notification.link && (
                               <div className="mt-1.5">
@@ -381,7 +394,7 @@ const NotificationDropdown: React.FC = () => {
                               </div>
                             )}
 
-                            <span className="text-2xs text-muted-foreground mt-1 block">
+                            <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
                               {formatDate(notification.createdAt)}
                             </span>
                           </div>
@@ -394,18 +407,17 @@ const NotificationDropdown: React.FC = () => {
 
             {/* 바닥글 - 알림 센터 바로가기 */}
             <div className="border-t border-gray-200 dark:border-gray-700">
-              <div className="h-8 flex items-center justify-center">
-                <a 
-                  href="#" 
-                  className="text-xs text-primary hover:underline" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleViewAllClick(e);
-                  }}
-                >
+              <button 
+                className="w-full h-10 flex items-center justify-center bg-transparent hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleViewAllClick(e);
+                }}
+              >
+                <span className="text-sm text-primary dark:text-blue-400 font-medium">
                   알림 센터 바로가기
-                </a>
-              </div>
+                </span>
+              </button>
             </div>
           </MenuSub>
         </MenuItem>

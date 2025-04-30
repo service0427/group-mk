@@ -131,18 +131,17 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
   // 카테고리 필터 렌더링
   const renderCategoryFilter = () => {
     const allCategories = ["전체", ...Object.keys(categories).filter(cat => categories[cat].length > 0)];
-    
+
     return (
       <div className="flex flex-wrap gap-2 mb-6">
         {allCategories.map(category => (
           <button
             key={category}
             onClick={() => setActiveCategory(category)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              activeCategory === category
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === category
                 ? 'bg-primary text-white'
                 : 'bg-gray-100 dark:bg-coal-400 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-coal-300'
-            }`}
+              }`}
           >
             {category}
           </button>
@@ -182,7 +181,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
         {/* 메뉴 구조 트리 뷰 */}
         <div className="bg-white dark:bg-coal-600 rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">서비스 구조</h2>
-          
+
           <div className="grid gap-8 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             {Object.entries(getFilteredCategories())
               .filter(([_, items]) => items.length > 0)
@@ -209,50 +208,50 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
         {/* 자주 사용하는 메뉴 바로가기 */}
         <div className="bg-white dark:bg-coal-600 rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">자주 사용하는 메뉴</h2>
-          
+
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="element-11" className="text-3xl text-primary mb-3" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">대시보드</span>
             </Link>
-            
-            <Link 
-              to="/notice" 
+
+            <Link
+              to="/notice"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="notification" className="text-3xl text-warning mb-3" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">공지사항</span>
             </Link>
-            
-            <Link 
-              to="/faq" 
+
+            <Link
+              to="/faq"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="message-question" className="text-3xl text-info mb-3" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">FAQ</span>
             </Link>
-            
-            <Link 
-              to="/advertise/naver/shopping/traffic/intro" 
+
+            <Link
+              to="/advertise/naver/shopping/traffic/intro"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="shop" className="text-3xl text-success mb-3" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">NAVER 쇼핑</span>
             </Link>
-            
-            <Link 
-              to="/myinfo/profile" 
+
+            <Link
+              to="/myinfo/profile"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="user-edit" className="text-3xl text-danger mb-3" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">내 정보 관리</span>
             </Link>
-            
-            <Link 
-              to="/cash/charge" 
+
+            <Link
+              to="/cash/charge"
               className="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 dark:border-coal-400 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-coal-500 transition-all"
             >
               <KeenIcon icon="dollar" className="text-3xl text-primary mb-3" />

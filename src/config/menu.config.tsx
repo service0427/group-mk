@@ -58,7 +58,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '캠페인 소개',
-    icon: 'presentation text-primary',
+    icon: 'document text-primary',
     path: '/advertise/naver/traffic/desc',
     children: [
       {
@@ -246,6 +246,16 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'setting-3 text-warning',
     children: [
       { 
+        title: 'N 트래픽',
+        icon: 'chart-line',
+        path: '/admin/campaigns/naver-traffic'
+      },
+      { 
+        title: 'N 자동완성',
+        icon: 'filter-search',
+        path: '/admin/campaigns/naver-auto'
+      },
+      { 
         title: 'NS 트래픽',
         icon: 'shop',
         path: '/admin/campaigns/naver-shopping'
@@ -264,16 +274,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: 'NP 블로그공유',
         icon: 'geolocation',
         path: '/admin/campaigns/naver-place-share'
-      },
-      { 
-        title: 'N 자동완성',
-        icon: 'filter-search',
-        path: '/admin/campaigns/naver-auto'
-      },
-      { 
-        title: 'N 트래픽',
-        icon: 'chart-line',
-        path: '/admin/campaigns/naver-traffic'
       },
       { 
         title: 'CP 트래픽',
@@ -305,7 +305,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '캐시 관리',
-    icon: 'dollar',
+    icon: 'dollar text-warning',
     children: [
       { 
         title: '신청 관리',
@@ -750,6 +750,7 @@ export const MENU_MEGA: TMenuConfig = [
     children: [
       {
         heading: '캠페인 소개',
+        icon: 'document',
         children: [
           { 
             title: 'N 트래픽',

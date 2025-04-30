@@ -164,20 +164,20 @@ export const useServiceCategory = (pathname: string) => {
   
   useEffect(() => {
     // URL 기반으로 서비스 카테고리 결정
-    if (pathname.includes('naver/shopping/traffic')) {
-      setServiceCategory('NS 트래픽');
-    } else if (pathname.includes('naver/place/save')) {
-      setServiceCategory('NP 저장');
-    } else if (pathname.includes('naver/place/share')) {
-      setServiceCategory('NP 공유');
-    } else if (pathname.includes('naver/place/traffic')) {
-      setServiceCategory('NP 트래픽');
+    if (pathname.includes('naver/traffic')) {
+      setServiceCategory('N 트래픽');
     } else if (pathname.includes('naver/auto')) {
       setServiceCategory('N 자동완성');
-    } else if (pathname.includes('naver/traffic')) {
-      setServiceCategory('N 트래픽');
+    } else if (pathname.includes('naver/shopping/traffic')) {
+      setServiceCategory('NS 트래픽');
+    } else if (pathname.includes('naver/place/save')) {
+      setServiceCategory('NP 저장하기');
+    } else if (pathname.includes('naver/place/share')) {
+      setServiceCategory('NP 블로그공유');
+    } else if (pathname.includes('naver/place/traffic')) {
+      setServiceCategory('NP 트래픽');
     } else if (pathname.includes('coupang/traffic')) {
-      setServiceCategory('C 트래픽');
+      setServiceCategory('CP 트래픽');
     } else if (pathname.includes('ohouse/traffic')) {
       setServiceCategory('OH 트래픽');
     } else {

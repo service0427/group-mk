@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BasicTemplate } from '../components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import WithdrawGlobalForm from './components/WithdrawGlobalForm';
 import { useWithdrawSetting } from './hooks/useWithdrawSetting';
 import { getDistributor, getWithdrawGlobalSettings, saveUserWithdrawSettings, updateWithdrawGlobalSettings } from './services/withdrawService';
@@ -109,9 +109,10 @@ const WithdrawSettingPage: React.FC = () => {
     }, [notification.show, notification.message]);
 
     return (
-        <BasicTemplate
+        <CommonTemplate
             title={title}
             description={`관리자 메뉴 > 출금 관리 > ${title}`}
+            showPageMenu={false}
         >
             {/* 알림 메시지 - 토스트 형태로 개선 */}
             {notification.show && (
@@ -297,7 +298,7 @@ const WithdrawSettingPage: React.FC = () => {
                 </div>
             </div>
 
-        </BasicTemplate>
+        </CommonTemplate>
     );
 };
 

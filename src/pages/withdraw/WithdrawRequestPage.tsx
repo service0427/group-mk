@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BasicTemplate } from "../admin/components";
+import { CommonTemplate } from '@/components/pageTemplate';
 import { 
   Card, 
   CardContent
@@ -32,9 +32,10 @@ const WithdrawRequestPage: React.FC = () => {
   };
 
   return (
-    <BasicTemplate 
+    <CommonTemplate 
       title="출금 신청"
       description="캐쉬/포인트 관리 > 출금 신청"
+      showPageMenu={false}
     >
       <div className="w-full max-w-lg mx-auto">
         <Card className="border-0 shadow-none">
@@ -78,7 +79,7 @@ const WithdrawRequestPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </BasicTemplate>
+    </CommonTemplate>
   );
 };
 

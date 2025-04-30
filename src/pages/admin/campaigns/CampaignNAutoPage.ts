@@ -5,7 +5,7 @@ const CampaignNAutoPage = () => {
   return React.createElement(CampaignTemplate, {
     title: "N 자동완성 캠페인 관리",
     description: "관리자 메뉴 > 캠페인 관리 > N 자동완성",
-    serviceCode: "NAuto"
+    serviceCode: "NaverAuto" // 수정: NAuto -> NaverAuto
   });
 };
 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import BasicTemplate from './components/BasicTemplate';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
+import { CommonTemplate } from '@/components/pageTemplate';
 
 const ProfilePage = () => {
   const { currentUser } = useAuthContext();
@@ -117,66 +117,13 @@ const ProfilePage = () => {
       console.error('비밀번호 변경 중 오류가 발생했습니다.', error);
       setMessage('비밀번호 변경에 실패했습니다: ' + error.message);
     }
-/*
-    try {
-
-      const verifyPassword = await supabase.rpc('verify_password', {
-        password: password,
-        user_id: currentUser?.id,
-      });
-
-      if (!verifyPassword.data || verifyPassword.error) {
-        console.error('비밀번호 확인 오류:', verifyPassword.error);
-        alert('현재 비밀번호가 일치하지 않습니다.');
-        return;
-      }
-      
-      console.log('비밀번호 확인 성공:', verifyPassword.data);
-      // 비밀번호 변경 로직
-
-      
-      // 비밀번호 변경하기 바뀌었다고 하자
-      console.log('비밀번호 변경 시도');
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: change_password,
-      })
-      console.log('비밀번호 변경 종료');
-
-      if (updateError) {
-        console.error('비밀번호 변경에 실패했습니다.');
-        return;
-      }
-
-      // public.users 테이블에 비밀번호 sync
-      const hashPassword = await supabase.rpc('hash_password', {
-        password: password
-    });
-    if (hashPassword.error) {
-        throw new Error(hashPassword.error.message);
-    }
-
-    const {error: UpdateError} = await supabase
-        .from('users')
-        .update({encrypted_password: hashPassword.data})
-        .eq('id', currentUser?.id);
-
-    if (UpdateError) {
-        throw new Error(UpdateError.message);
-    }
-
-      console.log('message 설정');
-      setMessage('비밀번호가 변경되었습니다.');
-    } catch (error) {
-      console.error('비밀번호 변경 중 오류가 발생했습니다.', error);
-      setMessage('비밀번호 변경에 실패했습니다.');
-    }
-*/
   }
 
   return (
-    <BasicTemplate 
+    <CommonTemplate 
       title="내정보 관리"
       description="기본 관리 > 내정보 관리"
+      showPageMenu={false}
     >
       <div className="bg-card rounded-lg shadow-sm p-5 space-y-4">
         {/* 프로필 헤더 */}
@@ -258,7 +205,7 @@ const ProfilePage = () => {
           </button>
         </div>
       </div>
-    </BasicTemplate>
+    </CommonTemplate>
   );
 };
 

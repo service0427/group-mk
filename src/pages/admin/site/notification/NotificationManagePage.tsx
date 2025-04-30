@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
 import { NotificationPriority, NotificationType } from '@/types/notification';
 import { toast } from 'sonner';
@@ -8,10 +8,7 @@ import { checkNotificationAggregatesTable } from './utils/check-table';
 import SendNotificationModal from './components/SendNotificationModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import UserSelectModal from './components/UserSelectModal';
-import { Container } from '@/components';
-import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
-import { useMenus } from '@/providers';
-import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
 import { ScreenLoader } from '@/components/loaders';
 import { useNotifications } from './hooks/useNotifications';
@@ -28,11 +25,6 @@ import { ko } from 'date-fns/locale';
 // 통계 초기화 기능은 통계 갱신 버튼 클릭으로 대체
 
 const NotificationManagePage: React.FC = () => {
-  const { pathname } = useLocation();
-  const { getMenuConfig } = useMenus();
-  const menuConfig = getMenuConfig('primary');
-  const menuItem = useMenuCurrentItem(pathname, menuConfig);
-  const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
   const { currentUser, loading: authLoading } = useAuthContext();
 
   // 관리자 권한 체크
@@ -233,18 +225,34 @@ const NotificationManagePage: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
+  // 툴바 액션 버튼
+  const toolbarActions = (
+    <div className="flex gap-3">
+      <button
+        className="btn btn-primary"
+        onClick={() => handleOpenSendModal('role')}
+      >
+        <KeenIcon icon="briefcase" className="me-2" />
+        권한별 알림 전송
+      </button>
+      <button
+        className="btn btn-info"
+        onClick={() => handleOpenSendModal('user')}
+      >
+        <KeenIcon icon="user" className="me-2" />
+        회원별 알림 전송
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <Container fullWidth>
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle="알림 관리" />
-            <ToolbarDescription>관리자 메뉴 &gt; 사이트 관리 &gt; 알림 관리</ToolbarDescription>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
-
-      <Container fullWidth>
+      <CommonTemplate
+        title="알림 관리"
+        description="관리자 메뉴 > 사이트 관리 > 알림 관리"
+        toolbarActions={toolbarActions}
+        showPageMenu={false}
+      >
         <div className="grid gap-5 lg:gap-7.5">
           {/* 상단 영역: 통계와 버튼 */}
           <div className="bg-card rounded-lg shadow-sm p-5">
@@ -322,22 +330,6 @@ const NotificationManagePage: React.FC = () => {
                     </span>
                   </div>
                 )}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleOpenSendModal('role')}
-                >
-                  <KeenIcon icon="briefcase" className="me-2" />
-                  권한별 알림 전송
-                </button>
-                <button
-                  className="btn btn-info"
-                  onClick={() => handleOpenSendModal('user')}
-                >
-                  <KeenIcon icon="user" className="me-2" />
-                  회원별 알림 전송
-                </button>
               </div>
             </div>
 
@@ -430,7 +422,7 @@ const NotificationManagePage: React.FC = () => {
             </div>
           </div>
         </div>
-      </Container>
+      </CommonTemplate>
 
       {/* 모달 컴포넌트들 - Dialog 방식으로 변경 */}
       <SendNotificationModal

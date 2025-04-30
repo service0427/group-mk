@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Container } from '@/components';
-import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
-import { useMenus } from '@/providers';
-import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 
@@ -17,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { KeenIcon } from '@/components/keenicons';
 
 // 공지사항 유형 정의
 interface Notice {
@@ -78,7 +76,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
       <div className="border-b pb-4">
         <div className="flex items-center gap-2 mb-2">
           {notice.is_important && (
-            <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+            <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/50 dark:text-red-300">
               중요
             </span>
           )}
@@ -106,92 +104,124 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
   );
 };
 
-// 일반 공지사항 행 컴포넌트
-interface NoticeRowProps {
-  notice: Notice;
-  index: number;
-  onClick: () => void;
+// 페이지네이션 컴포넌트
+interface NoticePaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
-const NoticeRow: React.FC<NoticeRowProps> = ({ notice, index, onClick }) => {
-  // 날짜 형식 변환 함수
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\. /g, '-').replace(/\.$/, '');
+const NoticePagination: React.FC<NoticePaginationProps> = ({
+  currentPage,
+  totalPages,
+  totalCount,
+  itemsPerPage,
+  onPageChange,
+  onItemsPerPageChange
+}) => {
+  // 입력 필드에 표시할 페이지 번호 상태
+  const [inputPage, setInputPage] = useState<string>(currentPage.toString());
+
+  // 페이지가 변경될 때 입력 필드 업데이트
+  useEffect(() => {
+    setInputPage(currentPage.toString());
+  }, [currentPage]);
+
+  // 입력 필드에서 엔터 키 처리
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const pageNum = parseInt(inputPage);
+      if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+        onPageChange(pageNum);
+      } else {
+        // 입력이 유효하지 않으면 현재 페이지로 다시 설정
+        setInputPage(currentPage.toString());
+      }
+    }
+  };
+
+  // 입력 필드 값 변경 처리
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 숫자만 입력 허용
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setInputPage(value);
+  };
+
+  // 입력 필드가 포커스를 잃었을 때 처리
+  const handleInputBlur = () => {
+    const pageNum = parseInt(inputPage);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+    } else {
+      // 입력이 유효하지 않으면 현재 페이지로 다시 설정
+      setInputPage(currentPage.toString());
+    }
   };
 
   return (
-    <TableRow className="cursor-pointer hover:bg-muted/50" onClick={onClick}>
-      <TableCell className="text-center">{index}</TableCell>
-      <TableCell>
-        <div className="flex items-center">
-          {notice.is_important && (
-            <span className="mr-2 inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-              중요
-            </span>
-          )}
-          <span className="hover:text-blue-600 font-medium">
-            {notice.title}
-          </span>
-        </div>
-      </TableCell>
-      <TableCell className="text-center hidden md:table-cell">{notice.view_count || 0}</TableCell>
-      <TableCell className="text-center">{formatDate(notice.created_at)}</TableCell>
-    </TableRow>
-  );
-};
+    <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-border bg-card gap-4">
+      <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+        <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+        <select
+          className="select select-sm select-bordered flex-grow min-w-[100px]"
+          name="perpage"
+          value={itemsPerPage}
+          onChange={onItemsPerPageChange}
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
 
-// 중요 공지사항 컴포넌트
-interface ImportantNoticeProps {
-  notice: Notice;
-  onClick: () => void;
-}
+      <div className="flex items-center gap-3 order-1 md:order-2">
+        <div className="flex items-center gap-2">
+          <button
+            className="btn btn-icon btn-sm btn-light"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"></path>
+            </svg>
+          </button>
 
-const ImportantNotice: React.FC<ImportantNoticeProps> = ({ notice, onClick }) => {
-  // 날짜 형식 변환 함수
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\. /g, '-').replace(/\.$/, '');
-  };
+          {/* 페이지 입력 필드 및 총 페이지 수 */}
+          <div className="flex items-center h-9">
+            <div className="h-full flex items-center border border-border rounded shadow-sm bg-background dark:border-gray-600 dark:bg-gray-800 px-2">
+              <input
+                type="text"
+                className="w-7 h-6 px-0 text-center bg-transparent border-0 focus:outline-none dark:text-gray-200"
+                value={inputPage}
+                onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
+                onBlur={handleInputBlur}
+                aria-label="페이지 번호"
+              />
+            </div>
+            <span className="text-muted-foreground px-2 dark:text-gray-400">/ {totalPages}</span>
+          </div>
 
-  return (
-    <div 
-      className="p-4 bg-red-50 border border-red-100 rounded-lg mb-4 cursor-pointer hover:bg-red-100 transition-colors duration-200"
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center">
-          <span className="mr-2 inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-            중요
-          </span>
-          <h3 className="text-lg font-semibold text-red-900">{notice.title}</h3>
-        </div>
-        <div className="text-sm text-red-700">
-          {formatDate(notice.created_at)}
+          <button
+            className="btn btn-icon btn-sm btn-light"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
         </div>
       </div>
-      <p className="text-red-700 line-clamp-2">{notice.content}</p>
     </div>
   );
 };
 
 const NoticePageComponent = () => {
-  const { pathname } = useLocation();
-  const { getMenuConfig } = useMenus();
-  const menuConfig = getMenuConfig('primary');
-  const menuItem = useMenuCurrentItem(pathname, menuConfig);
-  const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
-
   const [notices, setNotices] = useState<Notice[]>([]);
   const [importantNotices, setImportantNotices] = useState<Notice[]>([]);
   const [normalNotices, setNormalNotices] = useState<Notice[]>([]);
@@ -199,28 +229,59 @@ const NoticePageComponent = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  
+
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // 페이지네이션 관련 상수
+  const MAX_IMPORTANT_NOTICES = 5; // 최대 표시할 중요 공지사항 개수
+
   // 공지사항 목록 가져오기 - 활성화된 공지사항만 표시
   const fetchNotices = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      // 1. 모든 공지사항 가져오기
+      const { data: allNotices, error } = await supabase
         .from('notice')
         .select('*')
-        .eq('is_active', true)  // 활성화된 공지사항만 조회
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // 중요 공지사항과 일반 공지사항 분리
-      const important = data?.filter(notice => notice.is_important) || [];
-      const normal = data?.filter(notice => !notice.is_important) || [];
+      // 2. 중요 공지사항과 일반 공지사항 분리
+      // 중요 공지사항은 최대 MAX_IMPORTANT_NOTICES개까지만 표시
+      const allImportant = allNotices?.filter(notice => notice.is_important) || [];
+      const important = allImportant.slice(0, MAX_IMPORTANT_NOTICES);
+      const normal = allNotices?.filter(notice => !notice.is_important) || [];
+
+      console.log('전체 공지사항 수:', allNotices?.length);
+      console.log('중요 공지사항 전체 수:', allImportant.length);
+      console.log('표시되는 중요 공지사항 수:', important.length);
+      console.log('일반 공지사항 수:', normal.length);
 
       setImportantNotices(important);
-      setNormalNotices(normal);
-      setNotices(data || []);
+
+      // 3. 페이지네이션 계산
+      setTotalCount(normal.length);
+      setTotalPages(Math.max(1, Math.ceil(normal.length / itemsPerPage)));
+
+      // 4. 현재 페이지에 표시할 일반 공지사항 계산
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const paginatedNormal = normal.slice(startIndex, startIndex + itemsPerPage);
+
+      console.log('현재 페이지:', currentPage);
+      console.log('시작 인덱스:', startIndex);
+      console.log('페이지당 항목 수:', itemsPerPage);
+      console.log('페이지네이션된 일반 공지사항 수:', paginatedNormal.length);
+
+      setNormalNotices(paginatedNormal);
+      setNotices([...important, ...paginatedNormal]);
     } catch (err: any) {
       console.error('공지사항을 가져오는 중 오류가 발생했습니다:', err);
       setError('공지사항을 불러오는데 실패했습니다.');
@@ -233,7 +294,20 @@ const NoticePageComponent = () => {
   // 컴포넌트 마운트 시 공지사항 가져오기
   useEffect(() => {
     fetchNotices();
-  }, []);
+  }, [currentPage, itemsPerPage]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // 페이지당 항목 수 변경 핸들러
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // 페이지당 항목 수 변경 시 첫 페이지로 이동
+  };
 
   // 공지사항 상세 열기
   const openDetail = (notice: Notice) => {
@@ -241,107 +315,185 @@ const NoticePageComponent = () => {
     setIsDetailOpen(true);
   };
 
+  // 날짜 형식 변환 함수
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '-').replace(/\.$/, '');
+  };
+
   return (
-    <>
-      <Container fullWidth>
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle="공지사항" />
-            <ToolbarDescription>마케팅의 정석 공지사항</ToolbarDescription>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
+    <CommonTemplate
+      title="공지사항"
+      description="마케팅의 정석 공지사항"
+      showPageMenu={false}
+    >
+      <div className="grid gap-5 lg:gap-7.5">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
+          <div className="p-5 border-b">
+            <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
+          </div>
 
-      <Container fullWidth>
-        <div className="grid gap-5 lg:gap-7.5">
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
-            <div className="p-5 border-b">
-              <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
+          {isLoading ? (
+            <div className="p-8 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              <p>{error}</p>
+              <Button
+                variant="outline"
+                onClick={fetchNotices}
+                className="mt-4"
+              >
+                다시 시도
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* 중요 공지사항 (상단 고정) */}
+              {importantNotices.length > 0 && (
+                <div className="p-4">
+                  {importantNotices.map((notice) => (
+                    <div
+                      key={notice.id}
+                      className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg mb-4 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-200"
+                      onClick={() => openDetail(notice)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <span className="mr-2 inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/50 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:text-red-300">
+                            중요
+                          </span>
+                          <h3 className="text-sm font-medium text-red-900 dark:text-red-300">{notice.title}</h3>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-sm text-red-700 dark:text-red-400 mr-2">
+                            {formatDate(notice.created_at)}
+                          </span>
+                          <KeenIcon icon="arrow-right" className="h-4 w-4 text-red-700 dark:text-red-400" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            <div className="p-4">
-              {isLoading ? (
-                <div className="p-8 flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              {/* 상단 페이지네이션 */}
+              <NoticePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+
+              {/* 일반 공지사항 테이블 */}
+              <div className="bg-card">
+                {/* 데스크톱용 테이블 (md 이상 화면에서만 표시) */}
+                <div className="hidden md:block overflow-x-auto">
+                  {normalNotices.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      {importantNotices.length > 0
+                        ? '일반 공지사항이 없습니다.'
+                        : '공지사항이 없습니다.'}
+                    </div>
+                  ) : (
+                    <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+                      <thead>
+                        <tr className="bg-muted dark:bg-gray-800/60">
+                          <th className="py-3 px-3 text-center font-medium w-[60px]">No</th>
+                          <th className="py-3 px-3 text-start font-medium">제목</th>
+                          <th className="py-3 px-3 text-center font-medium w-[100px] hidden md:table-cell">조회수</th>
+                          <th className="py-3 px-3 text-center font-medium w-[120px]">등록일</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {normalNotices.map((notice, index) => (
+                          <tr key={notice.id} className="border-b border-border hover:bg-muted/40 cursor-pointer" onClick={() => openDetail(notice)}>
+                            <td className="py-3 px-3 text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                            <td className="py-3 px-3">
+                              <div className="flex items-center">
+                                <span className="hover:text-blue-600 font-medium">
+                                  {notice.title}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center hidden md:table-cell">{notice.view_count || 0}</td>
+                            <td className="py-3 px-3 text-center">{formatDate(notice.created_at)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
-              ) : error ? (
-                <div className="p-8 text-center text-red-500">
-                  <p>{error}</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={fetchNotices}
-                    className="mt-4"
-                  >
-                    다시 시도
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {/* 중요 공지사항 (상단 고정) */}
-                  {importantNotices.length > 0 && (
-                    <div className="mb-6">
-                      {importantNotices.map((notice) => (
-                        <ImportantNotice 
-                          key={notice.id}
-                          notice={notice}
-                          onClick={() => openDetail(notice)}
-                        />
+
+                {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
+                <div className="block md:hidden">
+                  {normalNotices.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      {importantNotices.length > 0
+                        ? '일반 공지사항이 없습니다.'
+                        : '공지사항이 없습니다.'}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {normalNotices.map((notice, index) => (
+                        <div key={notice.id} className="p-4 hover:bg-muted/40 cursor-pointer" onClick={() => openDetail(notice)}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm text-muted-foreground">
+                              #{(currentPage - 1) * itemsPerPage + index + 1}
+                            </div>
+                            <span className="text-sm">조회수: {notice.view_count || 0}</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2 text-sm mb-3">
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white text-base">{notice.title}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">{formatDate(notice.created_at)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end">
+                            <KeenIcon icon="arrow-right" className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
-
-                  {/* 일반 공지사항 테이블 */}
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[60px] text-center">No</TableHead>
-                          <TableHead>제목</TableHead>
-                          <TableHead className="w-[100px] text-center hidden md:table-cell">조회수</TableHead>
-                          <TableHead className="w-[120px] text-center">등록일</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {normalNotices.length > 0 ? (
-                          normalNotices.map((notice, index) => (
-                            <NoticeRow 
-                              key={notice.id}
-                              notice={notice}
-                              index={index + 1}
-                              onClick={() => openDetail(notice)}
-                            />
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">
-                              {importantNotices.length > 0 
-                                ? '일반 공지사항이 없습니다.' 
-                                : '공지사항이 없습니다.'}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {notices.length > 0 && (
-              <div className="p-4 flex justify-center">
-                <div className="flex space-x-1">
-                  {/* 페이지네이션은 필요시 구현 */}
-                  <button
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary text-white"
-                  >
-                    1
-                  </button>
                 </div>
               </div>
-            )}
+
+              {/* 하단 페이지네이션 */}
+              <NoticePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </>
+          )}
+        </div>
+
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">공지사항 안내</h3>
+          <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">중요 공지</span>: 상단 표시된 중요 공지사항을 확인해 주세요.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">업데이트 사항</span>: 시스템 업데이트, 이용약관 변경 등의 내용이 공지됩니다.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">이벤트 안내</span>: 마케팅의 정석에서 진행하는 다양한 이벤트를 확인할 수 있습니다.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">서비스 변경</span>: 서비스 정책이나 기능 변경 사항을 안내해 드립니다.</p>
           </div>
         </div>
-      </Container>
+      </div>
 
       {/* 공지사항 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
@@ -357,7 +509,7 @@ const NoticePageComponent = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </CommonTemplate>
   );
 };
 

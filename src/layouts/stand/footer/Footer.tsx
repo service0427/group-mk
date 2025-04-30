@@ -22,17 +22,18 @@ const Footer = () => {
       className={clsx(
         'footer fixed bottom-0 z-10 end-0 flex items-stretch shrink-0',
         'bg-light border-t border-t-gray-200 dark:border-t-coal-100', // 사이드바와 같은 배경색 및 상단 구분선 추가
-        'h-16', // 4rem과 동일
+        '!h-10', // !important로 강제 적용
         themeClass
       )}
       style={{
         left: layout.options.sidebar.collapse ? '80px' : '280px',
         transition: 'left 0.3s ease',
-        width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`
+        width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
+        height: '2.5rem !important' // !important로 최우선 적용
       }}
     >
       {/* Container 대신 직접 패딩을 적용하여 사이드바 근처에 메뉴가 붙도록 함 */}
-      <div className="flex items-center justify-between w-full px-5">
+      <div className="flex items-center justify-between w-full px-4 py-0.5">
         <div className="flex gap-2 font-normal text-2sm">
           <span className="text-gray-500">2025 &copy;</span>
           <a

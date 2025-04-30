@@ -1,11 +1,8 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Container } from '@/components/container';
-import { Navbar } from '@/partials/navbar';
-import { PageMenu } from '@/pages/public-profile';
-import { Toolbar, ToolbarActions, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
-import { useMenus } from '@/providers';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { useMenuBreadcrumbs } from '@/components';
+import { useMenus } from '@/providers';
 import { AdMiscFaq } from '@/partials/misc';
 import { CampaignContent } from './CampaignContent';
 import { fetchCampaigns, getServiceTypeCode } from '../services/campaignService';
@@ -52,18 +49,38 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   const loadCampaigns = async () => {
     setLoading(true);
     try {
+      console.log(`캠페인 데이터 로드 - 경로: ${pathname}, 서비스 타입: ${serviceType}, 서비스 코드: ${serviceCode}`);
+      
       // 서비스 코드를 DB 형식으로 변환
       const dbServiceType = getServiceTypeCode(serviceType);
+      console.log(`변환된 DB 서비스 타입: ${dbServiceType}`);
       
-      // DB에서 캠페인 데이터 가져오기
-      const data = await fetchCampaigns(dbServiceType);
+      let data: ICampaign[] = [];
+      let useBackupData = false;
       
-      if (data.length > 0) {
-        setCampaigns(data);
+      // DB에서 캠페인 데이터 가져오기 (단, 빈 서비스 타입은 시도하지 않음)
+      if (dbServiceType) {
+        try {
+          data = await fetchCampaigns(dbServiceType);
+          console.log(`DB에서 가져온 데이터 수: ${data.length}`);
+        } catch (dbError) {
+          console.error('DB 데이터 조회 오류:', dbError);
+          useBackupData = true;
+        }
       } else {
-        // DB에 데이터가 없으면 하드코딩된 데이터 사용 (개발/테스트 용도)
+        useBackupData = true;
+      }
+      
+      // DB에 데이터가 없거나 오류 발생 시 백업 데이터 사용
+      if (data.length === 0 || useBackupData) {
         console.warn('DB에서 데이터를 가져오지 못했습니다. 백업 데이터를 사용합니다.');
-        setCampaigns(getCampaignsByService(serviceCode));
+        // 서비스 코드를 사용하거나, 없으면 URL에서 추출한 서비스 타입을 사용
+        const backupData = getCampaignsByService(serviceCode || dbServiceType);
+        console.log(`백업 데이터에서 가져온 데이터 수: ${backupData.length}`);
+        setCampaigns(backupData);
+      } else {
+        // DB에서 데이터를 성공적으로 가져온 경우
+        setCampaigns(data);
       }
       
       setError(null);
@@ -71,8 +88,9 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       console.error('캠페인 데이터 로드 중 오류:', err);
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       
-      // 오류 발생 시 기존 하드코딩 데이터 사용
-      setCampaigns(getCampaignsByService(serviceCode));
+      // 오류 발생 시 기본 하드코딩 데이터 사용 (빈 배열 방지)
+      const backupData = getCampaignsByService(serviceCode);
+      setCampaigns(backupData.length > 0 ? backupData : campaignData);
     } finally {
       setLoading(false);
     }
@@ -84,45 +102,32 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   }, [serviceType, serviceCode]);
 
   return (
-    <Fragment>
-      <Container fullWidth>
-        <Navbar>
-          <PageMenu />
-        </Navbar>
-
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle={pageTitle} />
-            <ToolbarDescription>
-              {pageDescription}
-            </ToolbarDescription>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
-
-      <Container fullWidth>
-        <div className="grid gap-5 lg:gap-7.5">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : error ? (
-            <div className="alert alert-danger">
-              <p>{error}</p>
-            </div>
-          ) : customContent ? (
-            customContent
-          ) : (
-            <CampaignContent 
-              campaigns={campaigns} 
-              serviceType={serviceType}
-              onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
-            />
-          )}
-          <AdMiscFaq />
-        </div>
-      </Container>
-    </Fragment>
+    <CommonTemplate
+      title={pageTitle}
+      description={pageDescription}
+      showPageMenu={true}
+    >
+      <div className="grid gap-5 lg:gap-7.5">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="alert alert-danger">
+            <p>{error}</p>
+          </div>
+        ) : customContent ? (
+          customContent
+        ) : (
+          <CampaignContent 
+            campaigns={campaigns} 
+            serviceType={serviceType}
+            onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
+          />
+        )}
+        <AdMiscFaq />
+      </div>
+    </CommonTemplate>
   );
 };
 

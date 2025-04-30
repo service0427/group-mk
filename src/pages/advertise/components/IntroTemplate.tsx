@@ -4,7 +4,7 @@ import { IAdCampaignsContentItem } from '../data/adCampaignTypes';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Navbar } from '@/partials/navbar';
-import { PageMenu } from '@/pages/public-profile';
+import { PageMenu } from '@/partials/pagemenu';
 import { ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { IntroLogo } from '@/partials/intro-logo';
 import { toAbsoluteUrl } from '@/utils';

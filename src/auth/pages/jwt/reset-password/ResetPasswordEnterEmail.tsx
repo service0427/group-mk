@@ -8,19 +8,19 @@ const ResetPasswordEnterEmail = () => {
   const [searchInput, setSearchInput] = useState('');
 
   return (
-    <div className="card max-w-[370px] w-full">
-      <form className="card-body flex flex-col gap-5 p-10">
+    <div className="card max-w-[450px] w-full">
+      <form className="card-body flex flex-col gap-6 p-12">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">Your Email</h3>
-          <span className="text-2sm text-gray-700">Enter your email to reset password</span>
+          <h3 className="text-xl font-medium text-gray-900 mb-3">이메일 입력</h3>
+          <span className="text-sm text-gray-700">비밀번호 재설정을 위해 이메일을 입력하세요</span>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label font-normal text-gray-900">Email</label>
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">이메일</label>
           <input
-            className="input"
+            className="input py-3"
             type="text"
-            placeholder="email@email.com"
+            placeholder="example@email.com"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -32,10 +32,10 @@ const ResetPasswordEnterEmail = () => {
               ? '/auth/reset-password/check-email'
               : '/auth/classic/reset-password/check-email'
           }
-          className="btn btn-primary flex justify-center grow"
+          className="btn btn-primary flex justify-center items-center py-3 text-base"
         >
-          Continue
-          <KeenIcon icon="black-right" />
+          계속하기
+          <KeenIcon icon="black-right" className="ml-2" />
         </Link>
       </form>
     </div>

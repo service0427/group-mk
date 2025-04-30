@@ -10,11 +10,11 @@ import { AxiosError } from 'axios';
 
 const passwordSchema = Yup.object().shape({
   newPassword: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('New password is required'),
+    .min(6, '비밀번호는 최소 6자 이상이어야 합니다')
+    .required('새 비밀번호를 입력해주세요'),
   confirmPassword: Yup.string()
-    .oneOf([Yup.ref('newPassword')], 'Passwords must match')
-    .required('Please confirm your new password')
+    .oneOf([Yup.ref('newPassword')], '비밀번호가 일치하지 않습니다')
+    .required('새 비밀번호를 한번 더 입력해주세요')
 });
 
 const ResetPasswordChange = () => {
@@ -41,7 +41,7 @@ const ResetPasswordChange = () => {
 
       if (!token || !email) {
         setHasErrors(true);
-        setStatus('Token and email properties are required');
+        setStatus('토큰과 이메일 정보가 필요합니다');
         setLoading(false);
         setSubmitting(false);
         return;
@@ -59,7 +59,7 @@ const ResetPasswordChange = () => {
         if (error instanceof AxiosError && error.response) {
           setStatus(error.response.data.message);
         } else {
-          setStatus('Password reset failed. Please try again.');
+          setStatus('비밀번호 재설정에 실패했습니다. 다시 시도해주세요.');
         }
         setHasErrors(true);
       } finally {
@@ -70,32 +70,30 @@ const ResetPasswordChange = () => {
   });
 
   return (
-    <div className="card max-w-[370px] w-full">
+    <div className="card max-w-[450px] w-full">
       <form
-        className="card-body flex flex-col gap-5 p-10"
+        className="card-body flex flex-col gap-6 p-12"
         onSubmit={formik.handleSubmit}
         noValidate
       >
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">Reset Password</h3>
-          <span className="text-2sm text-gray-700">Enter your new password</span>
+          <h3 className="text-xl font-medium text-gray-900 mb-3">비밀번호 재설정</h3>
+          <span className="text-sm text-gray-700">새로운 비밀번호를 입력해주세요</span>
         </div>
 
         {hasErrors && <Alert variant="danger">{formik.status}</Alert>}
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label text-gray-900">New Password</label>
-          <label className="input">
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">새 비밀번호</label>
+          <div className="input" data-toggle-password="true">
             <input
               type={showNewPassword ? 'text' : 'password'}
-              placeholder="Enter a new password"
+              placeholder="새 비밀번호 입력"
               autoComplete="off"
               {...formik.getFieldProps('newPassword')}
-              className={clsx(
-                'form-control bg-transparent',
-                { 'is-invalid': formik.touched.newPassword && formik.errors.newPassword },
-                { 'is-valid': formik.touched.newPassword && !formik.errors.newPassword }
-              )}
+              className={clsx('py-3', {
+                'is-invalid': formik.touched.newPassword && formik.errors.newPassword
+              })}
             />
             <button
               className="btn btn-icon"
@@ -103,6 +101,7 @@ const ResetPasswordChange = () => {
                 e.preventDefault();
                 setShowNewPassword(!showNewPassword);
               }}
+              type="button"
             >
               <KeenIcon icon="eye" className={clsx('text-gray-500', { hidden: showNewPassword })} />
               <KeenIcon
@@ -110,7 +109,7 @@ const ResetPasswordChange = () => {
                 className={clsx('text-gray-500', { hidden: !showNewPassword })}
               />
             </button>
-          </label>
+          </div>
           {formik.touched.newPassword && formik.errors.newPassword && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.newPassword}
@@ -118,19 +117,17 @@ const ResetPasswordChange = () => {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label font-normal text-gray-900">Confirm New Password</label>
-          <label className="input">
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">새 비밀번호 확인</label>
+          <div className="input" data-toggle-password="true">
             <input
               type={showNewPasswordConfirmation ? 'text' : 'password'}
-              placeholder="Re-enter a new Password"
+              placeholder="새 비밀번호 재입력"
               autoComplete="off"
               {...formik.getFieldProps('confirmPassword')}
-              className={clsx(
-                'form-control bg-transparent',
-                { 'is-invalid': formik.touched.confirmPassword && formik.errors.confirmPassword },
-                { 'is-valid': formik.touched.confirmPassword && !formik.errors.confirmPassword }
-              )}
+              className={clsx('py-3', {
+                'is-invalid': formik.touched.confirmPassword && formik.errors.confirmPassword
+              })}
             />
             <button
               className="btn btn-icon"
@@ -138,6 +135,7 @@ const ResetPasswordChange = () => {
                 e.preventDefault();
                 setShowNewPasswordConfirmation(!showNewPasswordConfirmation);
               }}
+              type="button"
             >
               <KeenIcon
                 icon="eye"
@@ -148,7 +146,7 @@ const ResetPasswordChange = () => {
                 className={clsx('text-gray-500', { hidden: !showNewPasswordConfirmation })}
               />
             </button>
-          </label>
+          </div>
           {formik.touched.confirmPassword && formik.errors.confirmPassword && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.confirmPassword}
@@ -158,10 +156,10 @@ const ResetPasswordChange = () => {
 
         <button
           type="submit"
-          className="btn btn-primary flex justify-center grow"
+          className="btn btn-primary flex justify-center grow py-3 text-base"
           disabled={loading}
         >
-          {loading ? 'Please wait...' : 'Submit'}
+          {loading ? '처리 중...' : '확인'}
         </button>
       </form>
     </div>

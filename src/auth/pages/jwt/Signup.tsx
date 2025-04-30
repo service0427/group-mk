@@ -17,26 +17,27 @@ const initialValues = {
   acceptTerms: false
 };
 
+// 유효성 검증 스키마 - 한글 메시지로 변경
 const signupSchema = Yup.object().shape({
   email: Yup.string()
-    .email('Wrong email format')
-    .min(3, 'Minimum 3 symbols')
-    .max(50, 'Maximum 50 symbols')
-    .required('Email is required'),
+    .email('이메일 형식이 올바르지 않습니다')
+    .min(3, '최소 3자 이상 입력해주세요')
+    .max(50, '최대 50자까지 입력 가능합니다')
+    .required('이메일을 입력해주세요'),
   full_name: Yup.string()
-    .min(2, 'Minimum 2 symbols')
-    .max(50, 'Maximum 50 symbols')
-    .required('Name is required'),
+    .min(2, '최소 2자 이상 입력해주세요')
+    .max(50, '최대 50자까지 입력 가능합니다')
+    .required('이름을 입력해주세요'),
   password: Yup.string()
-    .min(3, 'Minimum 3 symbols')
-    .max(50, 'Maximum 50 symbols')
-    .required('Password is required'),
+    .min(3, '최소 3자 이상 입력해주세요')
+    .max(50, '최대 50자까지 입력 가능합니다')
+    .required('비밀번호를 입력해주세요'),
   changepassword: Yup.string()
-    .min(3, 'Minimum 3 symbols')
-    .max(50, 'Maximum 50 symbols')
-    .required('Password confirmation is required')
-    .oneOf([Yup.ref('password')], "Password and Confirm Password didn't match"),
-  acceptTerms: Yup.bool().required('You must accept the terms and conditions')
+    .min(3, '최소 3자 이상 입력해주세요')
+    .max(50, '최대 50자까지 입력 가능합니다')
+    .required('비밀번호 확인이 필요합니다')
+    .oneOf([Yup.ref('password')], "비밀번호가 일치하지 않습니다"),
+  acceptTerms: Yup.bool().required('이용약관에 동의해주세요')
 });
 
 const Signup = () => {
@@ -56,13 +57,13 @@ const Signup = () => {
       setLoading(true);
       try {
         if (!register) {
-          throw new Error('JWTProvider is required for this form.');
+          throw new Error('인증 제공자가 초기화되지 않았습니다.');
         }
         await register(values.email, values.full_name, values.password, values.changepassword);
         navigate(from, { replace: true });
       } catch (error) {
         console.error(error);
-        setStatus('The sign up details are incorrect');
+        setStatus('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');
         setSubmitting(false);
         setLoading(false);
       }
@@ -80,73 +81,40 @@ const Signup = () => {
   };
 
   return (
-    <div className="card max-w-[370px] w-full">
+    <div className="card max-w-[450px] w-full">
       <form
-        className="card-body flex flex-col gap-5 p-10"
+        className="card-body flex flex-col gap-6 p-12"
         noValidate
         onSubmit={formik.handleSubmit}
       >
-        <div className="text-center mb-2.5">
-          <h3 className="text-lg font-semibold text-gray-900 leading-none mb-2.5">회원가입</h3>
+        <div className="text-center mb-3">
+          <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">회원가입</h3>
           <div className="flex items-center justify-center font-medium">
-            <span className="text-2sm text-gray-600 me-1.5">계정이 있습니까? ?</span>
+            <span className="text-sm text-gray-700 me-1.5">이미 계정이 있으신가요?</span>
             <Link
               to={currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login'}
-              className="text-2sm link"
+              className="text-sm link"
             >
               로그인
             </Link>
           </div>
         </div>
-        {/*
-        <div className="grid grid-cols-2 gap-2.5">
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/google.svg')}
-              className="size-3.5 shrink-0"
-            />
-            Use Google
-          </a>
 
-          <a href="#" className="btn btn-light btn-sm justify-center">
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-black.svg')}
-              className="size-3.5 shrink-0 dark:hidden"
-            />
-            <img
-              src={toAbsoluteUrl('/media/brand-logos/apple-white.svg')}
-              className="size-3.5 shrink-0 light:hidden"
-            />
-            Use Apple
-          </a>
-        </div>
-        */}
-
-        <div className="flex items-center gap-2">
-          <span className="border-t border-gray-200 w-full"></span>
-          <span className="text-2xs text-gray-500 font-medium uppercase">Or</span>
-          <span className="border-t border-gray-200 w-full"></span>
-        </div>
+        {/* 소셜 로그인 버튼 및 구분선 제거 */}
 
         {formik.status && <Alert variant="danger">{formik.status}</Alert>}
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label text-gray-900">Email</label>
-          <label className="input">
-            <input
-              placeholder="email@email.com"
-              type="email"
-              autoComplete="off"
-              {...formik.getFieldProps('email')}
-              className={clsx(
-                'form-control bg-transparent',
-                { 'is-invalid': formik.touched.email && formik.errors.email },
-                {
-                  'is-valid': formik.touched.email && !formik.errors.email
-                }
-              )}
-            />
-          </label>
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">이메일</label>
+          <input
+            className={clsx('input py-3', {
+              'is-invalid': formik.touched.email && formik.errors.email
+            })}
+            placeholder="example@email.com"
+            type="email"
+            autoComplete="off"
+            {...formik.getFieldProps('email')}
+          />
           {formik.touched.email && formik.errors.email && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.email}
@@ -154,23 +122,17 @@ const Signup = () => {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label text-gray-900">Name</label>
-          <label className="input">
-            <input
-              placeholder="Enter Name"
-              type="text"
-              autoComplete="off"
-              {...formik.getFieldProps('full_name')}
-              className={clsx(
-                'form-control bg-transparent',
-                { 'is-invalid': formik.touched.full_name && formik.errors.full_name },
-                {
-                  'is-valid': formik.touched.full_name && !formik.errors.full_name
-                }
-              )}
-            />
-          </label>
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">이름</label>
+          <input
+            className={clsx('input py-3', {
+              'is-invalid': formik.touched.full_name && formik.errors.full_name
+            })}
+            placeholder="이름을 입력하세요"
+            type="text"
+            autoComplete="off"
+            {...formik.getFieldProps('full_name')}
+          />
           {formik.touched.full_name && formik.errors.full_name && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.full_name}
@@ -178,32 +140,26 @@ const Signup = () => {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label text-gray-900">Password</label>
-          <label className="input">
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">비밀번호</label>
+          <div className="input" data-toggle-password="true">
             <input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter Password"
+              placeholder="비밀번호 입력"
               autoComplete="off"
               {...formik.getFieldProps('password')}
-              className={clsx(
-                'form-control bg-transparent',
-                {
-                  'is-invalid': formik.touched.password && formik.errors.password
-                },
-                {
-                  'is-valid': formik.touched.password && !formik.errors.password
-                }
-              )}
+              className={clsx('py-3', {
+                'is-invalid': formik.touched.password && formik.errors.password
+              })}
             />
-            <button className="btn btn-icon" onClick={togglePassword}>
+            <button className="btn btn-icon" onClick={togglePassword} type="button">
               <KeenIcon icon="eye" className={clsx('text-gray-500', { hidden: showPassword })} />
               <KeenIcon
                 icon="eye-slash"
                 className={clsx('text-gray-500', { hidden: !showPassword })}
               />
             </button>
-          </label>
+          </div>
           {formik.touched.password && formik.errors.password && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.password}
@@ -211,25 +167,19 @@ const Signup = () => {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="form-label text-gray-900">Confirm Password</label>
-          <label className="input">
+        <div className="flex flex-col gap-2">
+          <label className="form-label font-normal text-gray-900">비밀번호 확인</label>
+          <div className="input" data-toggle-password="true">
             <input
               type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Re-enter Password"
+              placeholder="비밀번호 재입력"
               autoComplete="off"
               {...formik.getFieldProps('changepassword')}
-              className={clsx(
-                'form-control bg-transparent',
-                {
-                  'is-invalid': formik.touched.changepassword && formik.errors.changepassword
-                },
-                {
-                  'is-valid': formik.touched.changepassword && !formik.errors.changepassword
-                }
-              )}
+              className={clsx('py-3', {
+                'is-invalid': formik.touched.changepassword && formik.errors.changepassword
+              })}
             />
-            <button className="btn btn-icon" onClick={toggleConfirmPassword}>
+            <button className="btn btn-icon" onClick={toggleConfirmPassword} type="button">
               <KeenIcon
                 icon="eye"
                 className={clsx('text-gray-500', { hidden: showConfirmPassword })}
@@ -239,14 +189,14 @@ const Signup = () => {
                 className={clsx('text-gray-500', { hidden: !showConfirmPassword })}
               />
             </button>
-          </label>
+          </div>
           {formik.touched.changepassword && formik.errors.changepassword && (
             <span role="alert" className="text-danger text-xs mt-1">
               {formik.errors.changepassword}
             </span>
           )}
         </div>
-        {/*
+
         <label className="checkbox-group">
           <input
             className="checkbox checkbox-sm"
@@ -254,10 +204,9 @@ const Signup = () => {
             {...formik.getFieldProps('acceptTerms')}
           />
           <span className="checkbox-label">
-            I accept{' '}
-            <Link to="#" className="text-2sm link">
-              Terms & Conditions
-            </Link>
+            <Link to="#" className="text-sm link">
+              이용약관
+            </Link>에 동의합니다
           </span>
         </label>
 
@@ -266,14 +215,13 @@ const Signup = () => {
             {formik.errors.acceptTerms}
           </span>
         )}
-        */}
 
         <button
           type="submit"
-          className="btn btn-primary flex justify-center grow"
+          className="btn btn-primary flex justify-center grow py-3 text-base"
           disabled={loading || formik.isSubmitting}
         >
-          {loading ? '잠시만 기달려주세요...' : '가입하기'}
+          {loading ? '처리 중...' : '회원가입'}
         </button>
       </form>
     </div>

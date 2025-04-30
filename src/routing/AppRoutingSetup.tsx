@@ -50,8 +50,8 @@ import { RequireAuth } from '@/auth/RequireAuth';
 import { StandLayout } from '@/layouts/stand';
 import { ErrorsRouting } from '@/errors';
 import { ManageSettingPage } from '@/pages/admin/cash';
-import { WithdrawSettingPage } from '@/pages/admin/withdraw';
-import WithdrawRequestPage from '@/pages/withdraw/WithdrawRequestPage';
+import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw';
+import { WithdrawRequestPage } from '@/pages/withdraw';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -129,6 +129,7 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 출금 관리 라우트 */}
           <Route path="/admin/withdraw_setting" element={<WithdrawSettingPage />} />
           <Route path="/withdraw" element={<WithdrawRequestPage />} />
+          <Route path="/admin/withdraw_approve" element={<WithdrawApprovePage />} />
 
         </Route>
       </Route>

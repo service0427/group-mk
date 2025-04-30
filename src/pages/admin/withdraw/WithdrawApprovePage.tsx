@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import BasicTemplate from '../components/BasicTemplate'
 import WithdrawRequestSearchBar from './components/WithdrawRequestSearchBar'
 import { WithdrawRequestList } from './components/WithdrawRequestList'
+import { getWithdrawApproveList } from './services/withdrawService'
 
 // 출금 요청 인터페이스
 export interface WithdrawRequest {
@@ -36,91 +37,68 @@ export const WithdrawApprovePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [itemsPerPage] = useState<number>(10)
 
-  // 임시 데이터 (실제로는 API 호출로 대체)
-  const fetchData = () => {
+  // 실제 API 호출로 데이터 가져오기
+  const fetchData = async () => {
     setLoading(true)
     
-    // 실제 서비스에서는 API 호출로 대체
-    const mockData: WithdrawRequest[] = [
-      {
-        id: 1,
-        username: '사용자1',
-        requestDate: '2025-04-20',
-        amount: 500000,
-        bankName: '신한은행',
-        accountNumber: '110-123-456789',
-        status: 'pending',
-      },
-      {
-        id: 2,
-        username: '사용자2',
-        requestDate: '2025-04-21',
-        amount: 1000000,
-        bankName: '국민은행',
-        accountNumber: '123-12-123456',
-        status: 'pending',
-      },
-      {
-        id: 3,
-        username: '사용자3',
-        requestDate: '2025-04-22',
-        amount: 750000,
-        bankName: '우리은행',
-        accountNumber: '1002-123-123456',
-        status: 'approved',
-      },
-      {
-        id: 4,
-        username: '사용자4',
-        requestDate: '2025-04-23',
-        amount: 250000,
-        bankName: '하나은행',
-        accountNumber: '123-4567-89012',
-        status: 'rejected',
-      },
-      {
-        id: 5,
-        username: '사용자5',
-        requestDate: '2025-04-24',
-        amount: 1500000,
-        bankName: '농협은행',
-        accountNumber: '352-0123-4567-89',
-        status: 'pending',
-      },
-    ]
-    
-    // 필터링 로직
-    let filteredData = [...mockData]
-    
-    if (searchParams.username) {
-      filteredData = filteredData.filter(item => 
-        item.username.includes(searchParams.username)
-      )
+    try {
+      // API 호출로 실제 데이터 가져오기
+      const response = await getWithdrawApproveList()
+      
+      // 필터링 로직
+      let filteredData = [...response]
+      
+      if (searchParams.username) {
+        filteredData = filteredData.filter(item => 
+          item.users.full_name?.toLowerCase().includes(searchParams.username.toLowerCase())
+        )
+      }
+      
+      if (searchParams.status) {
+        filteredData = filteredData.filter(item => 
+          item.status === searchParams.status
+        )
+      }
+      
+      if (searchParams.startDate && searchParams.endDate) {
+        filteredData = filteredData.filter(item => {
+          // created_at 필드를 사용
+          const itemDate = new Date(item.created_at)
+          const start = new Date(searchParams.startDate)
+          const end = new Date(searchParams.endDate)
+          return itemDate >= start && itemDate <= end
+        })
+      }
+      
+      setTotalItems(filteredData.length)
+      
+      // 페이지네이션 처리
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage)
+      
+      // 데이터 변환 (필요한 경우)
+      const formattedData = paginatedData.map(item => ({
+        id: item.id,
+        username: item.users?.full_name || '알 수 없음',
+        requestDate: new Date(item.created_at).toISOString().split('T')[0],
+        amount: item.amount,
+        bankName: item.bank_name,
+        accountNumber: item.account_number,
+        status: item.status
+      }))
+      
+      setRequests(formattedData)
+    } catch (error) {
+      console.error('Failed to fetch withdraw requests:', error)
+      // 에러 처리 로직
+    } finally {
+      setLoading(false)
     }
-    
-    if (searchParams.status) {
-      filteredData = filteredData.filter(item => 
-        item.status === searchParams.status
-      )
-    }
-    
-    if (searchParams.startDate && searchParams.endDate) {
-      filteredData = filteredData.filter(item => {
-        const itemDate = new Date(item.requestDate)
-        const start = new Date(searchParams.startDate)
-        const end = new Date(searchParams.endDate)
-        return itemDate >= start && itemDate <= end
-      })
-    }
-    
-    setTotalItems(filteredData.length)
-    
-    // 페이지네이션 처리
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage)
-    
-    setRequests(paginatedData)
-    setLoading(false)
+  }
+
+  // 요청 업데이트 후 데이터 다시 가져오기
+  const handleRequestUpdated = () => {
+    fetchData()
   }
 
   // 검색 파라미터 변경 시 데이터 재로딩
@@ -130,7 +108,7 @@ export const WithdrawApprovePage: React.FC = () => {
       username: params.searchKeyword,
       startDate: params.startDate || '',
       endDate: params.endDate || '',
-      status: '',
+      status: params.status || '',
     }
     
     setSearchParams(convertedParams)
@@ -174,6 +152,7 @@ export const WithdrawApprovePage: React.FC = () => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
+              onRequestUpdated={handleRequestUpdated}
             />
           </div>
         </div>

@@ -10,6 +10,7 @@ export interface WithdrawRequest {
   account_number: string;
   account_holder: string;
   fee_amount: number;
+  rejected_reason?: string; // 반려 사유 추가
 }
 
 // 출금 설정 타입 정의
@@ -35,7 +36,7 @@ export const getRecentWithdrawRequests = async (userId: string, limit: number = 
     
     const fetchPromise = supabase
       .from('withdraw_requests')
-      .select('id, amount, status, requested_at, bank_name, account_number, account_holder, fee_amount')
+      .select('id, amount, status, requested_at, bank_name, account_number, account_holder, fee_amount, rejected_reason')
       .eq('user_id', userId)
       .order('requested_at', { ascending: false })
       .limit(limit);
@@ -266,7 +267,7 @@ export const createWithdrawRequest = async (
       .insert({
         user_id: userId,
         transaction_type: 'withdrawal',
-        cash_amount: amount,
+        cash_amount: amount * -1, // 출금은 음수로 기록
         description: `${bankName} ${accountNumber} 계좌로 출금`,
         reference_id: requestData[0].id
       });

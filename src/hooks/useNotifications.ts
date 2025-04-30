@@ -376,6 +376,13 @@ export const useNotifications = () => {
         }
       )
       .subscribe((status) => {
+        // 구독 상태에 따른 처리
+        if (status === 'CHANNEL_ERROR') {
+          // 오류 발생 시 5초 후 재연결 시도
+          setTimeout(() => {
+            fetchNotifications(); // 데이터 다시 가져오기
+          }, 5000);
+        }
       });
     
     // 컴포넌트 언마운트 시 구독 해제

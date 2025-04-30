@@ -37,7 +37,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description, child
           <ToolbarDescription>{pageDescription}</ToolbarDescription>
         </ToolbarHeading>
       </Container>
-      <Container fullWidth>
+      <Container fullWidth className="pb-8"> {/* 하단 패딩 추가 */}
         <div className="flex flex-col items-stretch gap-5 lg:gap-7.5">
           {children ? (
             children

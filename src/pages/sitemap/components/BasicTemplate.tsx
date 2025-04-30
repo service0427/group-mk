@@ -174,7 +174,7 @@ const BasicTemplate: React.FC<BasicTemplateProps> = ({ title, description }) => 
         </Toolbar>
       </Container>
 
-      <Container fullWidth>
+      <Container fullWidth className="pb-8"> {/* 하단 패딩 추가 */}
         {/* 카테고리 필터 */}
         {renderCategoryFilter()}
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DefaultTooltip } from '@/components/tooltip';
 
 interface WithdrawGlobalFormProps {
   settings: any;
@@ -81,69 +82,106 @@ const WithdrawGlobalForm: React.FC<WithdrawGlobalFormProps> = ({ settings, onSav
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* 그리드 레이아웃 적용 - 3개의 동일한 열로 변경 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-end gap-6">
-        {/* 첫 번째 인풋 */}
-        <div className="form-control w-full">
-          <label className="label">
-            <span className="label-text text-sm font-medium text-foreground">최소 출금액</span>
-          </label>
-          <input
-            type="text"
-            name="min_request_amount"
-            className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card h-10"
-            value={formattedValues.min_request_amount}
-            onChange={handleChange}
-          />
-          <label className="label">
-            <span className="label-text-alt text-muted-foreground">최소 출금액 이상부터 출금 가능합니다.</span>
-          </label>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* 최소 출금액 설정 */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1">
+            <label className="text-sm font-medium text-card-foreground mb-1">
+              최소 출금 금액
+            </label>
+            <DefaultTooltip title="최소 출금액 이상부터 출금이 가능합니다. 이 금액보다 적은 금액은 출금 신청할 수 없습니다." arrow placement="top">
+              <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary cursor-help">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </div>
+            </DefaultTooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-muted-foreground sm:text-sm">₩</span>
+            </div>
+            <input
+              type="text"
+              name="min_request_amount"
+              placeholder="예: 10,000"
+              className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary h-10"
+              value={formattedValues.min_request_amount}
+              onChange={handleChange}
+            />
+          </div>
         </div>
 
-        {/* 두 번째 인풋 */}
-        <div className="form-control w-full">
-          <label className="label">
-            <span className="label-text text-sm font-medium text-foreground">출금 수수료 비율(%)</span>
-          </label>
-          <input
-            type="text"
-            name="min_request_percentage"
-            className="input input-bordered w-full focus:ring-2 focus:ring-primary bg-card h-10"
-            value={formattedValues.min_request_percentage}
-            onChange={handleChange}
-          />
-          <label className="label">
-            <span className="label-text-alt text-muted-foreground">출금 시 적용되는 수수료 비율입니다.</span>
-          </label>
+        {/* 출금 수수료 비율 */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1">
+            <label className="text-sm font-medium text-card-foreground mb-1">
+              출금 수수료 비율
+            </label>
+            <DefaultTooltip title="출금 시 적용되는 수수료 비율(%)입니다. 출금 금액에서 이 비율만큼 수수료가 차감됩니다." arrow placement="top">
+              <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary cursor-help">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </div>
+            </DefaultTooltip>
+          </div>
+          <div className="relative">
+            <input
+              type="number"
+              name="min_request_percentage"
+              placeholder="예: 5"
+              className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12 h-10"
+              value={formattedValues.min_request_percentage}
+              onChange={handleChange}
+              min="0"
+              max="100"
+              step="1"
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-muted-foreground sm:text-sm">%</span>
+            </div>
+          </div>
         </div>
 
-        {/* 저장 버튼 - 오른쪽 정렬 */}
-        <div className="form-control">
+        {/* 저장 버튼 */}
+        <div className="flex items-end">
           <button
             type="submit"
-            className="btn btn-primary h-20 px-6"
+            className="inline-flex justify-center items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors h-10"
             disabled={savingGlobal}
           >
             {savingGlobal ? (
               <>
-                <span className="loading loading-spinner loading-xs mr-2"></span>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 저장 중...
               </>
             ) : (
               <>
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                  <polyline points="7 3 7 8 15 8"></polyline>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                저장
+                전역 설정 저장
               </>
             )}
           </button>
         </div>
+      </div>
 
-        {/* 빈 공간 두 개 추가 */}
-        <div className="hidden lg:block"></div>
+      <div className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
+        <p className="flex items-center">
+          <svg className="w-4 h-4 mr-2 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          전역 설정은 개별 사용자 설정이 없는 경우에 적용됩니다.
+        </p>
       </div>
     </form>
   );

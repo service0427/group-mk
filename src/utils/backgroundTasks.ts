@@ -51,12 +51,10 @@ class BackgroundTaskManager {
   public registerTask(config: TaskConfig): boolean {
     try {
       if (this.tasks.has(config.id)) {
-        console.warn(`이미 등록된 작업 ID: ${config.id}`);
         return false;
       }
 
       this.tasks.set(config.id, { config });
-      console.log(`백그라운드 작업 등록 완료: ${config.id}`);
 
       // 즉시 실행 옵션이 있고 관리자가 활성화 상태인 경우 즉시 시작
       if (config.runImmediately && this.isActive) {
@@ -76,7 +74,6 @@ class BackgroundTaskManager {
   public unregisterTask(taskId: string): boolean {
     try {
       if (!this.tasks.has(taskId)) {
-        console.warn(`등록되지 않은 작업 ID: ${taskId}`);
         return false;
       }
 
@@ -86,7 +83,6 @@ class BackgroundTaskManager {
       }
 
       this.tasks.delete(taskId);
-      console.log(`백그라운드 작업 제거 완료: ${taskId}`);
       return true;
     } catch (error) {
       console.error(`작업 제거 중 오류 발생: ${taskId}`, error);
@@ -101,7 +97,6 @@ class BackgroundTaskManager {
     try {
       const taskEntry = this.tasks.get(taskId);
       if (!taskEntry) {
-        console.warn(`등록되지 않은 작업 ID: ${taskId}`);
         return false;
       }
 
@@ -122,7 +117,6 @@ class BackgroundTaskManager {
 
       // 작업 상태 업데이트
       this.tasks.set(taskId, { ...taskEntry, timerId: timerId as unknown as number });
-      console.log(`백그라운드 작업 시작: ${taskId}`);
 
       return true;
     } catch (error) {
@@ -150,7 +144,6 @@ class BackgroundTaskManager {
     try {
       const taskEntry = this.tasks.get(taskId);
       if (!taskEntry) {
-        console.warn(`등록되지 않은 작업 ID: ${taskId}`);
         return false;
       }
 
@@ -158,7 +151,6 @@ class BackgroundTaskManager {
       if (taskEntry.timerId) {
         clearInterval(taskEntry.timerId);
         this.tasks.set(taskId, { ...taskEntry, timerId: undefined });
-        console.log(`백그라운드 작업 중지: ${taskId}`);
       }
 
       return true;
@@ -175,7 +167,6 @@ class BackgroundTaskManager {
     try {
       this.isActive = true;
       this.startTime = new Date();
-      console.log('모든 백그라운드 작업 시작');
 
       let successCount = 0;
       this.tasks.forEach((_, taskId) => {
@@ -197,7 +188,6 @@ class BackgroundTaskManager {
   public pauseAllTasks(): boolean {
     try {
       this.isActive = false;
-      console.log('모든 백그라운드 작업 일시 중지');
 
       let successCount = 0;
       this.tasks.forEach((taskEntry, taskId) => {
@@ -223,7 +213,6 @@ class BackgroundTaskManager {
       if (this.isActive) return true; // 이미 활성 상태
 
       this.isActive = true;
-      console.log('모든 백그라운드 작업 재개');
 
       let successCount = 0;
       this.tasks.forEach((_, taskId) => {
@@ -245,7 +234,6 @@ class BackgroundTaskManager {
   public stopAllTasks(): boolean {
     try {
       this.isActive = false;
-      console.log('모든 백그라운드 작업 중지');
 
       let successCount = 0;
       this.tasks.forEach((taskEntry, taskId) => {
@@ -299,7 +287,6 @@ class BackgroundTaskManager {
       try {
         const taskEntry = this.tasks.get(taskId);
         if (!taskEntry) {
-          console.warn(`등록되지 않은 작업 ID: ${taskId}`);
           resolve(false);
           return;
         }

@@ -44,8 +44,6 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         // URL 경로에서 서비스 타입 추출
         const pathSegments = pathname.split('/').filter(Boolean);
 
-        console.log('Path segments:', pathSegments);
-
         // /advertise/platform/type/desc 와 /advertise/platform/subservice/type/desc 구분
         let platform = '';
         let type = '';
@@ -64,8 +62,6 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
             type = pathSegments[3];
           }
         }
-
-        console.log('Parsed URL params:', { platform, subservice, type });
 
         // 서비스 타입 코드 변환
         const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);

@@ -37,7 +37,7 @@ const Header = () => {
           left: layout.options.sidebar.collapse ? '80px' : '280px',
           transition: 'left 0.3s ease',
           width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
-          height: 'auto' // 고정 높이 대신 auto로 변경
+          height: 'var(--header-height)' // 고정 높이로 변경
         }}
       >
         {/* Container 대신 직접 패딩을 적용하여 사이드바 근처에 메뉴가 붙도록 함 */}
@@ -58,12 +58,20 @@ const Header = () => {
             <HeaderTopbar />
           </div>
         </div>
-
-        {/* 중요 공지사항 롤링 배너 - 헤더 하단에 고정 */}
-        <div className="w-full">
-          <ImportantNoticeMarquee />
-        </div>
       </header>
+
+      {/* 중요 공지사항 롤링 배너 - 헤더 아래 별도로 고정 */}
+      <div 
+        className="fixed z-20 w-full" 
+        style={{
+          top: 'var(--header-height)',
+          left: layout.options.sidebar.collapse ? '80px' : '280px',
+          transition: 'left 0.3s ease',
+          width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
+        }}
+      >
+        <ImportantNoticeMarquee />
+      </div>
     </>
   );
 };

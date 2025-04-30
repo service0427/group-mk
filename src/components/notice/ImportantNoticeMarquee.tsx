@@ -62,16 +62,19 @@ const ImportantNoticeMarquee: React.FC = () => {
       // 공지사항이 있음을 표시하는 클래스 추가
       document.body.classList.add('has-notice');
       document.documentElement.style.setProperty('--notice-visible', '1');
+      document.documentElement.style.setProperty('--notice-height', '36px'); // 9(h-9) * 4 = 36px
     } else {
       // 공지사항이 없는 경우 클래스 제거
       document.body.classList.remove('has-notice');
       document.documentElement.style.setProperty('--notice-visible', '0');
+      document.documentElement.style.setProperty('--notice-height', '0px');
     }
     
     return () => {
       // 컴포넌트 언마운트 시 클래스 초기화
       document.body.classList.remove('has-notice');
       document.documentElement.style.setProperty('--notice-visible', '0');
+      document.documentElement.style.setProperty('--notice-height', '0px');
     };
   }, [notices.length]);
 
@@ -92,22 +95,22 @@ const ImportantNoticeMarquee: React.FC = () => {
   const currentNotice = notices[activeIndex];
 
   return (
-    <div className="w-full bg-amber-50/90 dark:bg-amber-900/30 border-b border-gray-200 dark:border-coal-100">
-      <div className="w-full px-5 py-1">
+    <div className="w-full bg-amber-50/90 dark:bg-amber-900/30 border-b border-gray-200 dark:border-coal-100 h-9 flex items-center">
+      <div className="w-full px-5">
         <div className="flex items-center">
           <div className="flex items-center mr-3">
-            <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-2xs font-medium px-1.5 py-0.5 rounded-full mr-2">
+            <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-medium px-2 py-0.5 rounded-full mr-2">
               중요 공지
             </span>
             {notices.length > 1 && (
-              <div className="text-amber-700 dark:text-amber-300 text-2xs">
+              <div className="text-amber-700 dark:text-amber-300 text-xs">
                 {activeIndex + 1}/{notices.length}
               </div>
             )}
           </div>
           
           <div 
-            className="flex-1 overflow-hidden whitespace-nowrap text-amber-900 dark:text-amber-200 text-2xs font-medium cursor-pointer hover:underline"
+            className="flex-1 overflow-hidden whitespace-nowrap text-amber-900 dark:text-amber-200 text-sm font-medium cursor-pointer hover:underline"
             onClick={handleNoticeClick}
           >
             {currentNotice.title}
@@ -123,7 +126,7 @@ const ImportantNoticeMarquee: React.FC = () => {
                 }}
                 aria-label="이전 공지사항"
               >
-                <span className="text-2xs font-medium">&lt;</span>
+                <span className="text-xs font-medium">&lt;</span>
               </button>
               <button 
                 className="p-0.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/40 rounded-full mx-0.5"
@@ -133,7 +136,7 @@ const ImportantNoticeMarquee: React.FC = () => {
                 }}
                 aria-label="다음 공지사항"
               >
-                <span className="text-2xs font-medium">&gt;</span>
+                <span className="text-xs font-medium">&gt;</span>
               </button>
             </div>
           )}

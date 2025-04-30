@@ -20,6 +20,7 @@ interface CommonTemplateProps {
   description?: string;             // 페이지 설명 (수동 지정) 
   showPageMenu?: boolean;           // 페이지 메뉴 표시 여부
   showBreadcrumb?: boolean;         // 브레드크럼 표시 여부 
+  hideDescription?: boolean;        // 설명 숨김 여부 (기본값: false)
   toolbarActions?: React.ReactNode; // 툴바 액션 버튼 영역
   container?: boolean;              // 컨테이너 사용 여부 (기본값: true)
   fullWidth?: boolean;              // 전체 너비 사용 여부 (기본값: true)
@@ -33,12 +34,13 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   description,
   showPageMenu = true,
   showBreadcrumb = true,
+  hideDescription = false,
   toolbarActions,
   container = true,
   fullWidth = true,
   containerClassName = "",
   children,
-  childrenClassName = "grid gap-4 lg:gap-5 pb-6"  // 더 조밀한 간격으로 조정
+  childrenClassName = "grid gap-2 lg:gap-3 pb-2"  // 간격을 최소화
 }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
@@ -61,12 +63,31 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   // 컨텐츠 클래스 구성 (기본 클래스 + 사용자 정의 클래스)
   const contentClasses = `template-content ${childrenClassName}`;
 
-  // 컨텐츠 렌더링 함수
-  const renderContent = () => (
-    <div className={contentClasses}>
-      {children}
-    </div>
-  );
+  // 컨텐츠 렌더링 함수 - 비어있을 경우 "작업 중" 메시지 표시
+  const renderContent = () => {
+    // 컨텐츠가 비어있는지 확인
+    const isEmpty = !children || 
+      (React.Children.count(children) === 0) || 
+      (React.isValidElement(children) && React.Children.toArray(children).length === 0);
+    
+    return (
+      <div className={contentClasses}>
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-700">
+              <svg className="w-8 h-8 text-gray-400 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-200">이 페이지는 작업 중입니다</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">현재 콘텐츠가 준비되지 않았습니다. 곧 서비스를 제공할 예정입니다.</p>
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={pageTemplateClass}>
@@ -81,9 +102,11 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
         <Toolbar>
           <ToolbarHeading>
             <ToolbarPageTitle customTitle={pageTitle} />
-            <ToolbarDescription>
-              {pageDescription}
-            </ToolbarDescription>
+            {!hideDescription && (
+              <ToolbarDescription>
+                {pageDescription}
+              </ToolbarDescription>
+            )}
           </ToolbarHeading>
 
           {toolbarActions && (

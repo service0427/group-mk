@@ -110,7 +110,6 @@ export async function getWithdrawApproveList() {
         .from("withdraw_requests")
         .select(`*,
             users:user_id (
-
                 id,
                 email,
                 full_name

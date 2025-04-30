@@ -1,0 +1,59 @@
+/* 페이지 마진 긴급 수정 */
+
+/* 공지사항 롤링 영역 높이 지정 */
+:root {
+  --adjusted-margin-top: 16px !important;
+}
+
+/* 페이지 템플릿 마진 직접 지정 */
+.page-template-wrapper {
+  margin-top: var(--adjusted-margin-top) !important;
+  padding-top: 0 !important;
+}
+
+/* 템플릿 내부 컨텐츠 마진 조정 */
+.template-content {
+  margin-top: 12px !important;
+  padding-top: 0 !important;
+}
+
+/* 상단 툴바 마진 조정 */
+.Toolbar {
+  margin-bottom: 12px !important;
+}
+
+/* 그리드 간격 강제 조정 */
+.grid.gap-5,
+.grid.gap-7\.5,
+.grid.gap-4,
+.grid.gap-6,
+.grid.gap-8 {
+  gap: 16px !important;
+}
+
+/* 공지사항 페이지 특정 조정 */
+.CommonTemplate .grid.gap-5.lg\\:gap-7\\.5 {
+  gap: 12px !important;
+}
+
+/* 페이지 컨텐츠 상단 패딩 축소 */
+.container.mx-auto {
+  padding-top: 8px !important;
+}
+
+/* 페이지 내부 섹션 마진 조정 */
+.bg-card, 
+.bg-gray-50,
+.rounded-lg {
+  margin-bottom: 12px !important;
+}
+
+/* 내부 패딩 축소 */
+.p-5, .p-6, .p-8 {
+  padding: 16px !important;
+}
+
+/* 최상위 마진 강제 설정 */
+main.content > div > div:first-child {
+  margin-top: 8px !important;
+}

@@ -6,7 +6,6 @@ import { supabaseAdmin } from '@/supabase';
  */
 export const checkNotificationAggregatesTable = async () => {
   try {
-    console.log('notification_aggregates 테이블 확인 중...');
 
     // 테이블 존재 여부 확인
     const { data, error } = await supabaseAdmin
@@ -17,7 +16,6 @@ export const checkNotificationAggregatesTable = async () => {
     if (error) {
       if (error.message && error.message.includes('does not exist')) {
         console.error('❌ notification_aggregates 테이블이 존재하지 않습니다.');
-        console.log('SQL 스크립트를 실행하여 테이블을 생성해야 합니다.');
         return { exists: false, error: error.message };
       } else {
         console.error('❌ 테이블 확인 중 오류 발생:', error.message);
@@ -25,8 +23,6 @@ export const checkNotificationAggregatesTable = async () => {
       }
     }
 
-    console.log('✅ notification_aggregates 테이블이 존재합니다!');
-    console.log('테이블 데이터:', data);
 
     return {
       exists: true,
@@ -50,7 +46,6 @@ export const checkAndInitializeTable = async () => {
     const result = await checkNotificationAggregatesTable();
 
     if (result.exists) {
-      console.log('테이블이 이미 존재합니다. 추가 작업 필요 없음.');
       return { success: true, message: '테이블이 이미 존재하고 정상 작동 중입니다.' };
     }
 

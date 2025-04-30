@@ -169,7 +169,6 @@ export const useNotificationStats = (options: {
 
       setStats(fallbackStats);
       setLastUpdated(new Date());
-      console.log('폴백 방식으로 통계 데이터 로드 완료');
     } catch (e: any) {
       console.error('폴백 방식 통계 로드 중 오류 발생:', e);
       setError(new Error(e.message || '알림 통계를 불러오는데 실패했습니다'));
@@ -268,11 +267,9 @@ export const useNotificationStats = (options: {
                     const convertedStats = convertAggregateToStats(aggregateData);
                     setStats(convertedStats);
                     setLastUpdated(updatedTime);
-                    console.log('알림 통계 백그라운드 갱신 완료', updatedTime);
                   }
                 } else if (fallbackToOldMethod) {
                   // 집계 데이터가 없으면 폴백으로 전환
-                  console.log('집계 데이터 없음, 폴백 모드로 전환');
                   setUseFallback(true);
                   await loadStatsFallback();
                 }
@@ -281,7 +278,6 @@ export const useNotificationStats = (options: {
                 console.error('통계 테이블 접근 중 오류 발생:', tableError);
 
                 if (fallbackToOldMethod && !useFallback) {
-                  console.log('백그라운드 갱신 오류로 폴백 모드로 전환');
                   setUseFallback(true);
                   await loadStatsFallback();
                 }
@@ -292,7 +288,6 @@ export const useNotificationStats = (options: {
             console.error('백그라운드 작업 실행 중 예외 발생:', e);
 
             if (fallbackToOldMethod && !useFallback) {
-              console.log('예외 발생으로 폴백 모드로 전환');
               setUseFallback(true);
               try {
                 await loadStatsFallback();
@@ -330,7 +325,6 @@ export const useNotificationStats = (options: {
 
         if (initialized && !useFallback) {
           // 테이블이 있고 폴백 모드가 아니면 통계 갱신
-          console.log('통계 테이블 확인됨, 초기 데이터 로드를 위한 갱신 실행');
           await refreshNotificationAggregate();
           await loadStats(); // 갱신된 데이터 다시 로드
         }

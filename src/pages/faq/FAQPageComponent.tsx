@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Container } from '@/components';
-import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
-import { useMenus } from '@/providers';
-import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 
@@ -51,12 +47,6 @@ const getCategoryColor = (category: string) => {
 };
 
 const FAQPageComponent = () => {
-  const { pathname } = useLocation();
-  const { getMenuConfig } = useMenus();
-  const menuConfig = getMenuConfig('primary');
-  const menuItem = useMenuCurrentItem(pathname, menuConfig);
-  const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
-
   const [faqs, setFAQs] = useState<FAQ[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,150 +108,143 @@ const FAQPageComponent = () => {
   });
 
   return (
-    <>
-      <Container fullWidth>
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle="자주 묻는 질문 (FAQ)" />
-            <ToolbarDescription>마케팅의 정석 FAQ</ToolbarDescription>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
-
-      <Container fullWidth>
-        <div className="grid gap-5 lg:gap-7.5">
-          {/* 카테고리 필터 */}
-          <div className="bg-card rounded-lg shadow-sm p-5">
-            <div className="flex flex-wrap gap-2">
-              {faqCategories.map((category) => (
-                <Button
-                  key={category}
-                  variant={activeCategory === category ? "default" : "outline"}
-                  onClick={() => setActiveCategory(category)}
-                  className={`${activeCategory === category ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b">
-              <h3 className="text-lg font-medium text-card-foreground">FAQ ({activeCategory})</h3>
-              <span className="text-sm text-muted-foreground">총 {filteredFAQs.length}개의 FAQ</span>
-            </div>
-
-            <div className="p-4">
-              {isLoading ? (
-                <div className="p-8 flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : error ? (
-                <div className="p-8 text-center text-red-500">
-                  <p>{error}</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={fetchFAQs}
-                    className="mt-4"
-                  >
-                    다시 시도
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {Object.entries(faqsByCategory).length > 0 ? (
-                    activeCategory === '전체' ? (
-                      // 전체 카테고리일 때는 카테고리별로 그룹화하여 표시
-                      Object.entries(faqsByCategory).map(([category, categoryFaqs]) => (
-                        <div key={category} className="mb-8">
-                          <div className="flex items-center mb-4 py-2 border-b">
-                            <h3 className="text-lg font-medium">{category}</h3>
-                            <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {categoryFaqs.length}개
-                            </span>
-                          </div>
-                          <Accordion type="single" collapsible className="w-full">
-                            {categoryFaqs.map((faq, index) => (
-                              <AccordionItem 
-                                key={faq.id} 
-                                value={faq.id}
-                                className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
-                              >
-                                <AccordionTrigger 
-                                  onClick={(e) => {
-                                    incrementViewCount(faq);
-                                  }}
-                                  className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
-                                >
-                                  <div className="flex items-start">
-                                    <span className="text-primary font-bold mr-3 text-lg">Q.</span>
-                                    <span className="pt-0.5">{faq.question}</span>
-                                  </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
-                                  <div className="flex items-start">
-                                    <span className="text-primary font-bold mr-3 text-lg">A.</span>
-                                    <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                          </Accordion>
-                        </div>
-                      ))
-                    ) : (
-                      // 특정 카테고리를 선택했을 때는 해당 카테고리의 FAQ만 표시
-                      <Accordion type="single" collapsible className="w-full">
-                        {filteredFAQs.map((faq) => (
-                          <AccordionItem 
-                            key={faq.id} 
-                            value={faq.id}
-                            className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
-                          >
-                            <AccordionTrigger 
-                              onClick={(e) => {
-                                incrementViewCount(faq);
-                              }}
-                              className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
-                            >
-                              <div className="flex items-start">
-                                <span className="text-primary font-bold mr-3 text-lg">Q.</span>
-                                <span className="pt-0.5">{faq.question}</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
-                              <div className="flex items-start">
-                                <span className="text-primary font-bold mr-3 text-lg">A.</span>
-                                <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    )
-                  ) : (
-                    <div className="p-8 text-center text-muted-foreground">
-                      등록된 FAQ가 없습니다.
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-blue-50 rounded-lg shadow-sm p-5">
-            <h3 className="text-lg font-medium text-blue-900 mb-4">원하는 답변을 찾지 못하셨나요?</h3>
-            <p className="text-blue-700 mb-3">
-              더 자세한 문의사항은 1:1 문의하기를 이용해주세요. 친절하게 답변해 드리겠습니다.
-            </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              1:1 문의하기
-            </Button>
+    <CommonTemplate
+      title="자주 묻는 질문 (FAQ)"
+      description="마케팅의 정석 FAQ"
+      showPageMenu={false}
+    >
+      <div className="grid gap-5 lg:gap-7.5">
+        {/* 카테고리 필터 */}
+        <div className="bg-card rounded-lg shadow-sm p-5">
+          <div className="flex flex-wrap gap-2">
+            {faqCategories.map((category) => (
+              <Button
+                key={category}
+                variant={activeCategory === category ? "default" : "outline"}
+                onClick={() => setActiveCategory(category)}
+                className={`${activeCategory === category ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}
+              >
+                {category}
+              </Button>
+            ))}
           </div>
         </div>
-      </Container>
-    </>
+
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+          <div className="flex justify-between items-center p-5 border-b">
+            <h3 className="text-lg font-medium text-card-foreground">FAQ ({activeCategory})</h3>
+            <span className="text-sm text-muted-foreground">총 {filteredFAQs.length}개의 FAQ</span>
+          </div>
+
+          <div className="p-4">
+            {isLoading ? (
+              <div className="p-8 flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : error ? (
+              <div className="p-8 text-center text-red-500">
+                <p>{error}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchFAQs}
+                  className="mt-4"
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : (
+              <>
+                {Object.entries(faqsByCategory).length > 0 ? (
+                  activeCategory === '전체' ? (
+                    // 전체 카테고리일 때는 카테고리별로 그룹화하여 표시
+                    Object.entries(faqsByCategory).map(([category, categoryFaqs]) => (
+                      <div key={category} className="mb-8">
+                        <div className="flex items-center mb-4 py-2 border-b">
+                          <h3 className="text-lg font-medium">{category}</h3>
+                          <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {categoryFaqs.length}개
+                          </span>
+                        </div>
+                        <Accordion type="single" collapsible className="w-full">
+                          {categoryFaqs.map((faq, index) => (
+                            <AccordionItem 
+                              key={faq.id} 
+                              value={faq.id}
+                              className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
+                            >
+                              <AccordionTrigger 
+                                onClick={(e) => {
+                                  incrementViewCount(faq);
+                                }}
+                                className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
+                              >
+                                <div className="flex items-start">
+                                  <span className="text-primary font-bold mr-3 text-lg">Q.</span>
+                                  <span className="pt-0.5">{faq.question}</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
+                                <div className="flex items-start">
+                                  <span className="text-primary font-bold mr-3 text-lg">A.</span>
+                                  <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </div>
+                    ))
+                  ) : (
+                    // 특정 카테고리를 선택했을 때는 해당 카테고리의 FAQ만 표시
+                    <Accordion type="single" collapsible className="w-full">
+                      {filteredFAQs.map((faq) => (
+                        <AccordionItem 
+                          key={faq.id} 
+                          value={faq.id}
+                          className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
+                        >
+                          <AccordionTrigger 
+                            onClick={(e) => {
+                              incrementViewCount(faq);
+                            }}
+                            className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
+                          >
+                            <div className="flex items-start">
+                              <span className="text-primary font-bold mr-3 text-lg">Q.</span>
+                              <span className="pt-0.5">{faq.question}</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
+                            <div className="flex items-start">
+                              <span className="text-primary font-bold mr-3 text-lg">A.</span>
+                              <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  )
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">
+                    등록된 FAQ가 없습니다.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-blue-50 rounded-lg shadow-sm p-5">
+          <h3 className="text-lg font-medium text-blue-900 mb-4">원하는 답변을 찾지 못하셨나요?</h3>
+          <p className="text-blue-700 mb-3">
+            더 자세한 문의사항은 1:1 문의하기를 이용해주세요. 친절하게 답변해 드리겠습니다.
+          </p>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            1:1 문의하기
+          </Button>
+        </div>
+      </div>
+    </CommonTemplate>
   );
 };
 

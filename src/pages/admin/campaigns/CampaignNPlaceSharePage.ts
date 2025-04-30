@@ -5,7 +5,7 @@ const CampaignNPlaceSharePage = () => {
   return React.createElement(CampaignTemplate, {
     title: "NP 블로그공유 캠페인 관리",
     description: "관리자 메뉴 > 캠페인 관리 > NP 블로그공유",
-    serviceCode: "NPlaceShare"
+    serviceCode: "NaverPlaceShare" // 수정: NPlaceShare -> NaverPlaceShare
   });
 };
 

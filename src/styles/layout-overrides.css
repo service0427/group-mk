@@ -22,7 +22,7 @@ html, body {
 
   main.content {
     margin-top: 4rem;
-    padding-bottom: 4rem; /* 푸터 높이만큼 패딩 추가 */
+    padding-bottom: 2.5rem; /* 푸터 높이만큼 패딩 추가 - 축소된 높이에 맞춤 */
   }
 }
 
@@ -97,10 +97,19 @@ main.content {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%; /* 콘텐츠 영역 너비 100%로 설정 */
-  margin-top: 64px; /* 헤더 높이(h-16)에 해당하는 값 */
   height: calc(100vh - var(--tw-header-height)); /* 헤더 높이를 뺀 나머지 영역 */
   position: relative; /* 로더 포지셔닝 위해 추가 */
   contain: content; /* 컨텐츠 컨테인먼트 추가 */
+}
+
+/* 공지사항이 있는 경우 마진 추가 */
+body.has-notice main.content {
+  margin-top: calc(var(--header-height) + 28px); /* 헤더 + 공지사항 높이 */
+}
+
+/* 공지사항이 없는 경우 기본 마진 */
+body:not(.has-notice) main.content {
+  margin-top: var(--header-height); /* 헤더 높이만큼만 마진 */
 }
 
 /* 컨텐츠 영역 페이드 트랜지션 - 로딩 중/로딩 완료 상태 */
@@ -171,12 +180,18 @@ main.content {
   --content-transition: opacity 0.15s ease-in-out;
   --content-background: var(--tw-page-bg);
   --content-background-dark: var(--tw-page-bg-dark);
-  --footer-height: 4rem; /* 푸터 높이 CSS 변수 */
+  --footer-height: 2.5rem; /* 푸터 높이 CSS 변수 - text-2sm 크기에 맞게 축소 */
+  --header-height: 4rem;  /* 64px 헤더 높이 */
+  --notice-height: 28px;  /* 공지사항 높이 (기본값) */
+  --notice-visible: 0;    /* 공지사항 표시 여부 (0: 숨김, 1: 표시) */
+  --content-top-margin: 70px; /* 컨텐츠 상단 마진 (고정값) */
 }
 
 /* 푸터 스타일 최적화 */
 .footer {
-  height: var(--footer-height);
+  height: var(--footer-height) !important; /* !important 추가로 강제 적용 */
+  min-height: var(--footer-height) !important; /* 최소 높이도 설정 */
+  max-height: var(--footer-height) !important; /* 최대 높이도 설정 */
   transition: left 0.3s ease, width 0.3s ease;
   will-change: transform, left, width;
   backface-visibility: hidden;
@@ -198,4 +213,30 @@ main.content {
 .header, .sidebar {
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* CommonTemplate 스타일 개선 */
+.page-template-wrapper {
+  position: relative;
+  z-index: 10;
+  padding-top: 0.75rem;
+  margin-top: 0 !important; /* 인라인 마진 제거 */
+  min-height: calc(100vh - var(--content-top-margin) - var(--footer-height) - 2rem);
+  contain: content;
+}
+
+/* 공지사항 여부에 따른 마진 처리 */
+body.has-notice .page-template-wrapper {
+  margin-top: calc(var(--content-top-margin) + var(--notice-height) - 5px) !important;
+}
+
+body:not(.has-notice) .page-template-wrapper {
+  margin-top: var(--content-top-margin) !important;
+}
+
+/* 컨텐츠 영역 스타일 */
+.template-content {
+  position: relative;
+  margin-bottom: calc(var(--footer-height) + 0.25rem);
+  min-height: calc(100vh - var(--content-top-margin) - var(--footer-height) - 2rem);
 }

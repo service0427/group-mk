@@ -1,0 +1,60 @@
+/* 메인 콘텐츠 영역 스타일 */
+:root {
+  --header-height: 64px; /* 4rem (헤더 높이) */
+  --notice-height: 0px;  /* 공지사항 높이 (기본값) */
+  --notice-visible: 0;   /* 공지사항 표시 여부 (0: 숨김, 1: 표시) */
+}
+
+/* 메인 콘텐츠 영역 설정 */
+main.content {
+  height: calc(100vh - var(--header-height) - var(--notice-height)) !important;
+  padding-top: 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  margin-top: calc(var(--header-height) + var(--notice-height)) !important;
+}
+
+/* 공지사항 영역 조정 */
+.header + div:has(> div.w-full.bg-amber-50\/90) {
+  position: fixed;
+  top: var(--header-height);
+  z-index: 19;
+}
+
+/* 페이지 템플릿 영역 마진 조정 */
+.page-template-wrapper {
+  margin-top: 12px !important;
+  padding-top: 0 !important;
+}
+
+/* 템플릿 내용 컨테이너 마진 조정 */
+.template-content {
+  margin-top: 12px !important;
+}
+
+/* 템플릿 그리드 간격 조정 */
+.template-content .grid.gap-5,
+.template-content .grid.gap-7\.5,
+.template-content .grid.gap-4,
+.template-content .grid.gap-6 {
+  gap: 16px !important;
+}
+
+/* 스크롤바 스타일 개선 */
+main.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+main.content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+main.content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+main.content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}

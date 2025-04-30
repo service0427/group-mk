@@ -2,8 +2,7 @@ import React, { Fragment, useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Navbar } from '@/partials/navbar';
-import { PageMenu } from '@/pages/public-profile';
-import { Toolbar, ToolbarActions, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
+import { ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { IntroLogo } from '@/partials/intro-logo';
 import { toAbsoluteUrl } from '@/utils';
 import { useMenus } from '@/providers';
@@ -11,12 +10,12 @@ import { useMenuBreadcrumbs, useMenuCurrentItem, KeenIcon } from '@/components';
 import { AdMiscFaq } from '@/partials/misc';
 import { DataGrid, DataGridColumnHeader } from '@/components';
 import { ColumnDef, Column } from '@tanstack/react-table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
@@ -57,10 +56,10 @@ const ColumnInputFilter = <TData, TValue>({ column }: IColumnFilterProps<TData, 
   );
 };
 
-const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({ 
-  serviceTitle, 
-  logoPath, 
-  campaigns 
+const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
+  serviceTitle,
+  logoPath,
+  campaigns
 }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
@@ -68,13 +67,13 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
   const [searchInput, setSearchInput] = useState('');
-  
+
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
-  
+
   // 캠페인 페이지 타이틀 생성
   const pageTitle = "캠페인 소개";
-  
+
   // 서비스 카테고리 생성 - NS 트래픽, NP 저장 등의 형식으로 표시
   let serviceCategory = '';
   if (pathname.includes('naver/shopping/traffic')) {
@@ -113,10 +112,10 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         accessorFn: (row) => row.title,
         id: 'campaignName',
         header: ({ column }) => (
-          <DataGridColumnHeader 
-            title="캠페인명" 
-            filter={<ColumnInputFilter column={column} />} 
-            column={column} 
+          <DataGridColumnHeader
+            title="캠페인명"
+            filter={<ColumnInputFilter column={column} />}
+            column={column}
           />
         ),
         enableSorting: true,
@@ -143,10 +142,10 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         accessorFn: (row) => row.description,
         id: 'description',
         header: ({ column }) => (
-          <DataGridColumnHeader 
-            title="캠페인 설명" 
-            filter={<ColumnInputFilter column={column} />} 
-            column={column} 
+          <DataGridColumnHeader
+            title="캠페인 설명"
+            filter={<ColumnInputFilter column={column} />}
+            column={column}
           />
         ),
         enableSorting: true,
@@ -296,7 +295,7 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
       </div>
     );
   };
-  
+
   return (
     <Fragment>
       <Container>
@@ -307,7 +306,7 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         <ToolbarHeading>
           <ToolbarPageTitle customTitle={pageTitle} />
           <ToolbarDescription>
-            {serviceCategory} &gt; 캠페인 소개 페이지
+            캠페인 소개 &gt; {serviceCategory}
           </ToolbarDescription>
         </ToolbarHeading>
         <IntroLogo
@@ -328,7 +327,7 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
             toolbar={<Toolbar />}
             layout={{ card: true }}
           />
-          
+
           <AdMiscFaq />
         </div>
       </Container>

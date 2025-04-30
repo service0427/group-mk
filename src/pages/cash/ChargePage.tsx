@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import BasicTemplate from './components/BasicTemplate';
+import React, { useState, useEffect } from 'react';
+import { CommonTemplate } from '@/components/pageTemplate';
 import {
   Card,
   CardContent
@@ -29,7 +29,6 @@ interface CashSetting {
 const ChargePage: React.FC = () => {
   // AuthContext에서 currentUser 가져오기
   const { currentUser } = useAuthContext();
-  console.log(currentUser);
 
   // 상태 관리
   const [customAmount, setCustomAmount] = useState<string>('');
@@ -158,18 +157,13 @@ const ChargePage: React.FC = () => {
 
   // 최근 충전 요청 내역 가져오기
   const fetchRecentRequests = async () => {
-    console.log("fetchRecentRequests 시작, currentUser:", currentUser);
     if (!currentUser) {
-      console.log("currentUser가 없어서 종료");
       return;
     }
 
     setIsLoadingHistory(true);
-    console.log("로딩 상태 true로 설정");
 
     try {
-      console.log("Supabase 요청 시작, user_id:", currentUser.id);
-
       // 타임아웃 설정 (10초)
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('요청 시간 초과')), 10000)
@@ -191,20 +185,16 @@ const ChargePage: React.FC = () => {
       ]);
 
       const { data, error } = result;
-      console.log("Supabase 응답 받음", { dataLength: data?.length, error });
 
       if (error) throw error;
 
       setRecentRequests(data || []);
-      console.log("recentRequests 상태 업데이트됨, 개수:", data?.length);
     } catch (err) {
       console.error('최근 충전 내역 조회 오류:', err);
       // 에러 발생 시 빈 배열로 처리하여 로딩 상태 종료
       setRecentRequests([]);
     } finally {
-      console.log("finally 블록 실행");
       setIsLoadingHistory(false);
-      console.log("로딩 상태 false로 설정");
     }
   };
 
@@ -229,11 +219,8 @@ const ChargePage: React.FC = () => {
   useEffect(() => {
     // currentUser가 있고, id 속성이 있는지 확인
     if (currentUser && currentUser.id) {
-      console.log("useEffect에서 fetchRecentRequests 호출, currentUser ID:", currentUser.id);
       fetchRecentRequests();
       fetchCashSetting();
-    } else {
-      console.log("useEffect: currentUser 없거나 ID 속성 없음:", currentUser);
     }
   }, [currentUser]); // currentUser에 의존
 
@@ -322,7 +309,11 @@ const ChargePage: React.FC = () => {
   };
 
   return (
-    <BasicTemplate title="캐쉬 충전" description="캐쉬/포인트 관리 > 캐쉬 충전">
+    <CommonTemplate 
+      title="캐쉬 충전" 
+      description="캐쉬/포인트 관리 > 캐쉬 충전"
+      showPageMenu={false}
+    >
       <div className="w-full max-w-lg mx-auto">
         <Card className="border-0 shadow-none">
           <CardContent className="p-10">
@@ -513,7 +504,7 @@ const ChargePage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </BasicTemplate>
+    </CommonTemplate>
   );
 };
 

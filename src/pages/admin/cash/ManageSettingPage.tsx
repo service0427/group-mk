@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import BasicTemplate from '../components/BasicTemplate';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { supabase } from '@/supabase';
 import { DefaultTooltip } from '@/components/tooltip';
 
@@ -326,9 +326,10 @@ const ManageSettingPage = () => {
   }, [searchUserEmail]);
 
   return (
-    <BasicTemplate
+    <CommonTemplate
       title="캐시 설정"
-      description="무료 캐시 지급 조건 및 만료 기간 설정을 관리합니다">
+      description="무료 캐시 지급 조건 및 만료 기간 설정을 관리합니다"
+      showPageMenu={false}>
 
       {/* 알림 메시지 - 토스트 형태로 개선 */}
       {notification.show && (
@@ -1021,7 +1022,7 @@ const ManageSettingPage = () => {
           </div>
         </div>
       </div>
-    </BasicTemplate>
+    </CommonTemplate>
   );
 };
 

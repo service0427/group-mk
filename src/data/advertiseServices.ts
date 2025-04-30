@@ -182,8 +182,8 @@ export const serviceData: Record<string, any> = {
 
 // 서비스 데이터 조회 함수
 export const getServiceData = (
-  platform: string, 
-  type: string, 
+  platform: string,
+  type: string,
   subservice?: string
 ): ServiceData | null => {
   try {
@@ -192,7 +192,7 @@ export const getServiceData = (
     }
     return serviceData[platform][type];
   } catch (error) {
-    console.log( error );
+    console.log(error);
     console.error(`Service data not found for ${platform}/${subservice}/${type}`);
     return null;
   }
@@ -204,8 +204,7 @@ export const getServiceTypeFromPath = (
   type: string,
   subservice?: string
 ): string => {
-  console.log('getServiceTypeFromPath:', {platform, type, subservice});
-  
+
   if (platform === 'naver' && subservice === 'shopping' && type === 'traffic') {
     return 'NaverShopTraffic';
   } else if (platform === 'naver' && subservice === 'place' && type === 'traffic') {
@@ -223,16 +222,16 @@ export const getServiceTypeFromPath = (
   } else if (platform === 'ohouse' && type === 'traffic') {
     return 'OhouseTraffic';
   }
-  
+
   // 일치하는 서비스 타입이 없는 경우
-  console.error('No matching service type for:', {platform, type, subservice});
+  console.error('No matching service type for:', { platform, type, subservice });
   return '';
 };
 
 // 기존 하드코딩 캠페인 데이터 조회 함수 (호환성 유지)
 export const getCampaignData = (
-  platform: string, 
-  type: string, 
+  platform: string,
+  type: string,
   subservice?: string
 ): CampaignData | null => {
   try {
@@ -241,7 +240,7 @@ export const getCampaignData = (
     if (!serviceInfo) {
       return null;
     }
-    
+
     // 빈 캠페인 배열 반환 (백업 데이터 사용 안함)
     return {
       serviceData: serviceInfo,
@@ -270,7 +269,7 @@ export const fetchRealCampaignData = async (
 
     // supabase 서비스 타입 코드 매핑
     const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
-    
+
     if (!serviceTypeCode) {
       console.error('Service type code not found for the given path');
       return null;

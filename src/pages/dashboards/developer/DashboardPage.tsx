@@ -1,12 +1,17 @@
 import React from 'react';
-import { Container } from '@/components/container';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { DashboardContent } from './DashboardContent';
 
 const DashboardPage: React.FC = () => {
   return (
-    <Container>
+    <CommonTemplate
+      title="개발자 대시보드"
+      description="개발자 대시보드 페이지입니다."
+      hideDescription={true}
+      showPageMenu={false}
+    >
       <DashboardContent />
-    </Container>
+    </CommonTemplate>
   );
 };
 

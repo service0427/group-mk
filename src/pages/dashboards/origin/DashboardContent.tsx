@@ -1,5 +1,4 @@
 import { Fragment } from 'react';
-import { BlockList } from '@/pages/account/security/privacy-settings';
 import { MiscCreateTeam } from '@/partials/misc';
 import { toAbsoluteUrl } from '@/utils';
 
@@ -114,10 +113,7 @@ const DashboardContent = () => {
                     </div>
                 </div>
                 <div className="lg:col-span-1">
-                    <BlockList
-                        className="h-full"
-                        text="Users on the block list are unable to send chat requests or messages to you anymore, ever, or again"
-                    />
+                    
                 </div>
             </div>
         </div>

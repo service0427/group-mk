@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Container } from '@/components';
-import { Toolbar, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
-import { useMenus } from '@/providers';
-import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner'; // sonner 라이브러리의 toast 함수 사용
@@ -338,13 +334,125 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   );
 };
 
-const NoticePageComponent = () => {
-  const { pathname } = useLocation();
-  const { getMenuConfig } = useMenus();
-  const menuConfig = getMenuConfig('primary');
-  const menuItem = useMenuCurrentItem(pathname, menuConfig);
-  const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
+// 페이지네이션 컴포넌트
+interface NoticePaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+}
 
+const NoticePagination: React.FC<NoticePaginationProps> = ({
+  currentPage,
+  totalPages,
+  totalCount,
+  itemsPerPage,
+  onPageChange,
+  onItemsPerPageChange
+}) => {
+  // 입력 필드에 표시할 페이지 번호 상태
+  const [inputPage, setInputPage] = useState<string>(currentPage.toString());
+
+  // 페이지가 변경될 때 입력 필드 업데이트
+  useEffect(() => {
+    setInputPage(currentPage.toString());
+  }, [currentPage]);
+
+  // 입력 필드에서 엔터 키 처리
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const pageNum = parseInt(inputPage);
+      if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+        onPageChange(pageNum);
+      } else {
+        // 입력이 유효하지 않으면 현재 페이지로 다시 설정
+        setInputPage(currentPage.toString());
+      }
+    }
+  };
+
+  // 입력 필드 값 변경 처리
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 숫자만 입력 허용
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setInputPage(value);
+  };
+
+  // 입력 필드가 포커스를 잃었을 때 처리
+  const handleInputBlur = () => {
+    const pageNum = parseInt(inputPage);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+    } else {
+      // 입력이 유효하지 않으면 현재 페이지로 다시 설정
+      setInputPage(currentPage.toString());
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-border bg-card gap-4">
+      <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+        <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+        <select
+          className="select select-sm select-bordered flex-grow min-w-[100px]"
+          name="perpage"
+          value={itemsPerPage}
+          onChange={onItemsPerPageChange}
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+
+      <div className="flex items-center gap-3 order-1 md:order-2">
+        <div className="flex items-center gap-2">
+          <button
+            className="btn btn-icon btn-sm btn-light"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"></path>
+            </svg>
+          </button>
+
+          {/* 페이지 입력 필드 및 총 페이지 수 */}
+          <div className="flex items-center h-9">
+            <div className="h-full flex items-center border border-border rounded shadow-sm bg-background dark:border-gray-600 dark:bg-gray-800 px-2">
+              <input
+                type="text"
+                className="w-7 h-6 px-0 text-center bg-transparent border-0 focus:outline-none dark:text-gray-200"
+                value={inputPage}
+                onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
+                onBlur={handleInputBlur}
+                aria-label="페이지 번호"
+              />
+            </div>
+            <span className="text-muted-foreground px-2 dark:text-gray-400">/ {totalPages}</span>
+          </div>
+
+          <button
+            className="btn btn-icon btn-sm btn-light"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NoticePageComponent = () => {
+  // 상태 관리
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,16 +463,36 @@ const NoticePageComponent = () => {
   const [noticeToDelete, setNoticeToDelete] = useState<Notice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   // 공지사항 목록 가져오기
   const fetchNotices = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // 전체 개수 먼저 조회
+      const countResponse = await supabase
+        .from('notice')
+        .select('id', { count: 'exact', head: true });
+
+      if (countResponse.error) throw countResponse.error;
+
+      // 전체 개수 설정 및 페이지 계산
+      const count = countResponse.count || 0;
+      setTotalCount(count);
+      setTotalPages(Math.max(1, Math.ceil(count / itemsPerPage)));
+
+      // 페이지네이션 적용하여 데이터 조회
       const { data, error } = await supabase
         .from('notice')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       if (error) throw error;
       setNotices(data || []);
@@ -380,7 +508,20 @@ const NoticePageComponent = () => {
   // 컴포넌트 마운트 시 공지사항 가져오기
   useEffect(() => {
     fetchNotices();
-  }, []);
+  }, [currentPage, itemsPerPage]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // 페이지당 항목 수 변경 핸들러
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // 페이지당 항목 수 변경 시 첫 페이지로 이동
+  };
 
   // 공지사항 상세 열기
   const openDetail = (notice: Notice) => {
@@ -511,106 +652,201 @@ const NoticePageComponent = () => {
     }).replace(/\. /g, '-').replace(/\.$/, '');
   };
 
+  // 툴바 액션 버튼
+  const toolbarActions = (
+    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <DialogTrigger asChild>
+        <Button>새 공지사항</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+        <div className="bg-background py-4 px-8 border-b">
+          <DialogTitle className="text-lg font-medium text-foreground">새 공지사항 작성</DialogTitle>
+        </div>
+        <div className="p-8 bg-background">
+          <CreateNotice
+            onClose={() => setIsCreateOpen(false)}
+            onSave={saveNewNotice}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
-    <>
-      <Container fullWidth>
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle="공지사항 관리" />
-            <ToolbarDescription>관리자 메뉴 &gt; 사이트 관리 &gt; 공지사항 관리</ToolbarDescription>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
+    <CommonTemplate
+      title="공지사항 관리"
+      description="관리자 메뉴 > 사이트 관리 > 공지사항 관리"
+      toolbarActions={toolbarActions}
+      showPageMenu={false}
+    >
+      <div className="grid gap-5 lg:gap-7.5">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
+          <div className="p-5 flex justify-between items-center border-b">
+            <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
+          </div>
 
-      <Container fullWidth>
-        <div className="grid gap-5 lg:gap-7.5">
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
-            <div className="p-5 flex justify-between items-center border-b">
-              <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
-              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogTrigger asChild>
-                  <Button>새 공지사항</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-                  <div className="bg-background py-4 px-8 border-b">
-                    <DialogTitle className="text-lg font-medium text-foreground">새 공지사항 작성</DialogTitle>
-                  </div>
-                  <div className="p-8 bg-background">
-                    <CreateNotice
-                      onClose={() => setIsCreateOpen(false)}
-                      onSave={saveNewNotice}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+          {/* 상단 페이지네이션 */}
+          <NoticePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
 
-            <div className="overflow-x-auto">
-              {isLoading ? (
-                <div className="p-8 flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="overflow-x-auto">
+            {isLoading ? (
+              <div className="p-8 flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : error ? (
+              <div className="p-8 text-center text-red-500">
+                <p>{error}</p>
+                <Button
+                  variant="outline"
+                  onClick={fetchNotices}
+                  className="mt-4"
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-card">
+                {/* 데스크톱용 테이블 (md 이상 화면에서만 표시) */}
+                <div className="hidden md:block overflow-x-auto">
+                  {notices.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      공지사항이 없습니다
+                    </div>
+                  ) : (
+                    <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+                      <thead>
+                        <tr className="bg-muted dark:bg-gray-800/60">
+                          <th className="py-3 px-3 text-center font-medium w-[60px]">No</th>
+                          <th className="py-3 px-3 text-start font-medium">제목</th>
+                          <th className="py-3 px-3 text-center font-medium w-[100px] hidden md:table-cell">표시 상태</th>
+                          <th className="py-3 px-3 text-center font-medium w-[100px] hidden md:table-cell">표시 설정</th>
+                          <th className="py-3 px-3 text-center font-medium w-[90px] hidden lg:table-cell">등록일</th>
+                          <th className="py-3 px-3 text-center font-medium w-[90px] hidden lg:table-cell">수정일</th>
+                          <th className="py-3 px-3 text-center font-medium w-[100px]">관리</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {notices.map((notice, index) => (
+                          <tr key={notice.id} className="border-b border-border hover:bg-muted/40">
+                            <td className="py-3 px-3 text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                            <td className="py-3 px-3">
+                              <button
+                                className="hover:text-blue-600 text-left font-medium truncate max-w-[250px] md:max-w-[350px] lg:max-w-full block"
+                                onClick={() => openDetail(notice)}
+                                title={notice.title}
+                              >
+                                {notice.is_important && (
+                                  <span className="mr-1 inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
+                                )}
+                                {notice.title}
+                              </button>
+                            </td>
+                            <td className="py-3 px-3 text-center hidden md:table-cell">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${notice.is_active
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                }`}>
+                                {notice.is_active ? '표시' : '감춤'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center hidden md:table-cell">
+                              <div className="flex justify-center">
+                                <Switch
+                                  checked={notice.is_active}
+                                  onCheckedChange={(checked) => handleToggleActive(notice, checked)}
+                                />
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center text-sm whitespace-nowrap hidden lg:table-cell">{formatDate(notice.created_at)}</td>
+                            <td className="py-3 px-3 text-center text-sm whitespace-nowrap hidden lg:table-cell">{formatDate(notice.updated_at)}</td>
+                            <td className="py-3 px-3 text-center">
+                              <div className="flex justify-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => openDetail(notice)}
+                                  className="h-8 w-8"
+                                  title="수정"
+                                >
+                                  <KeenIcon icon="pencil" style="outline" className="fs-6" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => openDeleteConfirm(notice)}
+                                  className="h-8 w-8 hidden sm:inline-flex"
+                                  title="삭제"
+                                >
+                                  <KeenIcon icon="trash" style="outline" className="fs-6" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
-              ) : error ? (
-                <div className="p-8 text-center text-red-500">
-                  <p>{error}</p>
-                  <Button
-                    variant="outline"
-                    onClick={fetchNotices}
-                    className="mt-4"
-                  >
-                    다시 시도
-                  </Button>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[60px] text-center">No</TableHead>
-                      <TableHead>제목</TableHead>
-                      <TableHead className="w-[100px] text-center hidden md:table-cell">표시 상태</TableHead>
-                      <TableHead className="w-[100px] text-center hidden md:table-cell">표시 설정</TableHead>
-                      <TableHead className="w-[90px] text-center hidden lg:table-cell">등록일</TableHead>
-                      <TableHead className="w-[90px] text-center hidden lg:table-cell">수정일</TableHead>
-                      <TableHead className="w-[100px] text-center">관리</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {notices.length > 0 ? (
-                      notices.map((notice, index) => (
-                        <TableRow key={notice.id}>
-                          <TableCell className="text-center">{index + 1}</TableCell>
-                          <TableCell>
-                            <button
-                              className="hover:text-blue-600 text-left font-medium truncate max-w-[250px] md:max-w-[350px] lg:max-w-full block"
-                              onClick={() => openDetail(notice)}
-                              title={notice.title}
-                            >
+
+                {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
+                <div className="block md:hidden">
+                  {notices.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      공지사항이 없습니다
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {notices.map((notice, index) => (
+                        <div key={notice.id} className="p-4 hover:bg-muted/40">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <span className="text-sm text-muted-foreground mr-2">#{(currentPage - 1) * itemsPerPage + index + 1}</span>
                               {notice.is_important && (
-                                <span className="mr-1 inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1">중요</span>
+                                <span className="mr-1 inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
                               )}
-                              {notice.title}
-                            </button>
-                          </TableCell>
-                          <TableCell className="text-center hidden md:table-cell">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${notice.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                              }`}>
+                            </div>
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                              notice.is_active
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                            }`}>
                               {notice.is_active ? '표시' : '감춤'}
                             </span>
-                          </TableCell>
-                          <TableCell className="text-center hidden md:table-cell">
-                            <div className="flex justify-center">
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-2 text-sm mb-3">
+                            <div>
+                              <p className="text-muted-foreground">제목</p>
+                              <p className="font-medium text-gray-900 dark:text-white">{notice.title}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <p className="text-muted-foreground">등록일</p>
+                                <p className="font-medium">{formatDate(notice.created_at)}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">수정일</p>
+                                <p className="font-medium">{formatDate(notice.updated_at)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">표시 설정:</span>
                               <Switch
                                 checked={notice.is_active}
                                 onCheckedChange={(checked) => handleToggleActive(notice, checked)}
                               />
                             </div>
-                          </TableCell>
-                          <TableCell className="text-center text-sm whitespace-nowrap hidden lg:table-cell">{formatDate(notice.created_at)}</TableCell>
-                          <TableCell className="text-center text-sm whitespace-nowrap hidden lg:table-cell">{formatDate(notice.updated_at)}</TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex justify-center space-x-2">
+                            <div className="flex gap-2">
                               <Button
                                 variant="outline"
                                 size="icon"
@@ -624,51 +860,43 @@ const NoticePageComponent = () => {
                                 variant="destructive"
                                 size="icon"
                                 onClick={() => openDeleteConfirm(notice)}
-                                className="h-8 w-8 hidden sm:inline-flex"
+                                className="h-8 w-8"
                                 title="삭제"
                               >
                                 <KeenIcon icon="trash" style="outline" className="fs-6" />
                               </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                          공지사항이 없습니다.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-
-            {notices.length > 0 && (
-              <div className="p-4 flex justify-center">
-                <div className="flex space-x-1">
-                  {/* 페이지네이션은 필요시 구현 */}
-                  <button
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary text-white"
-                  >
-                    1
-                  </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-card rounded-lg shadow-sm p-5">
-            <h3 className="text-lg font-medium text-card-foreground mb-4">공지사항 관리 안내</h3>
-            <div className="space-y-2 text-muted-foreground">
-              <p>• 공지사항은 사용자들에게 중요한 정보나 업데이트 내용을 알리는 데 사용됩니다.</p>
-              <p>• '표시' 상태로 설정된 공지사항만 사용자에게 노출됩니다.</p>
-              <p>• '중요 공지'로 설정된 공지사항은 상단에 고정되어 노출됩니다.</p>
-            </div>
+          {/* 하단 페이지네이션 */}
+          <NoticePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">공지사항 관리 안내</h3>
+          <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">공지사항 등록</span>: 사용자들에게 중요한 정보나 업데이트 내용을 알리는 데 사용됩니다.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">표시 설정</span>: '표시' 상태로 설정된 공지사항만 사용자에게 노출됩니다.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">중요 공지</span>: '중요 공지'로 설정된 공지사항은 상단에 고정되어 노출됩니다.</p>
+            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">관리 기능</span>: 등록된 공지사항을 수정하거나 삭제할 수 있습니다.</p>
           </div>
         </div>
-      </Container>
+      </div>
 
       {/* 공지사항 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
@@ -695,7 +923,7 @@ const NoticePageComponent = () => {
         title={noticeToDelete?.title || ''}
         isLoading={isDeleting}
       />
-    </>
+    </CommonTemplate>
   );
 };
 

@@ -334,6 +334,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/admin/withdraw_setting'
       },
       { 
+        title: '운영자 출금 승인',
+        icon: 'dollar',
+        path: '/admin/withdraw_approve'
+      },
+      { 
         title: '총판 작업 입력',
         icon: 'dollar',
         path: '/admin/work'

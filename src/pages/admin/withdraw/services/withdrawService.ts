@@ -103,3 +103,22 @@ export async function deleteUserWithdrawSetting(id) {
     }
     return data;
 }
+
+// 출금 승인 리스트 가져오는 함수
+export async function getWithdrawApproveList() {
+    const { data, error } = await supabase
+        .from("withdraw_requests")
+        .select(`*,
+            users:mat_id (
+                id,
+                email,
+                full_name
+            )
+        `);
+        
+    if (error) {
+        console.error("Error fetching withdraw approve list:", error);
+        throw new Error("Failed to fetch withdraw approve list");
+    }
+    return data;
+}

@@ -5,55 +5,31 @@ import useBodyClasses from '@/hooks/useBodyClasses';
 import { AuthBrandedLayoutProvider } from './AuthBrandedLayoutProvider';
 
 const Layout = () => {
-  // Applying body classes to manage the background color in dark mode
+  // 다크 모드에서 배경색을 관리하기 위한 body 클래스 적용
   useBodyClasses('dark:bg-coal-500');
 
   return (
     <Fragment>
       <style>
         {`
-          .branded-bg {
-            background-image: url('${toAbsoluteUrl('/media/images/2600x1600/1.png')}');
+          .page-bg {
+            background-image: url('${toAbsoluteUrl('/media/images/2600x1200/bg-10.png')}');
           }
-          .dark .branded-bg {
-            background-image: url('${toAbsoluteUrl('/media/images/2600x1600/1-dark.png')}');
+          .dark .page-bg {
+            background-image: url('${toAbsoluteUrl('/media/images/2600x1200/bg-10-dark.png')}');
           }
         `}
       </style>
 
-      <div className="grid lg:grid-cols-2 grow">
-        <div className="flex justify-center items-center p-8 lg:p-10 order-2 lg:order-1">
-          <Outlet />
-        </div>
-
-        <div className="lg:rounded-xl lg:border lg:border-gray-200 lg:m-5 order-1 lg:order-2 bg-top xxl:bg-center xl:bg-cover bg-no-repeat branded-bg">
-          <div className="flex flex-col p-8 lg:p-16 gap-4">
-            <Link to="/">
-              <img
-                src={toAbsoluteUrl('/media/app/mini-logo.svg')}
-                className="h-[28px] max-w-none"
-                alt=""
-              />
-            </Link>
-
-            <div className="flex flex-col gap-3">
-              <h3 className="text-2xl font-semibold text-gray-900">Secure Access Portal</h3>
-              <div className="text-base font-medium text-gray-600">
-                A robust authentication gateway ensuring
-                <br /> secure&nbsp;
-                <span className="text-gray-900 font-semibold">efficient user access</span>
-                &nbsp;to the Metronic
-                <br /> Dashboard interface.
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* 메트로닉 스타일로 배경과 로그인 폼 배치 */}
+      <div className="flex items-center justify-center grow bg-center bg-no-repeat page-bg">
+        <Outlet />
       </div>
     </Fragment>
   );
 };
 
-// AuthBrandedLayout component that wraps the Layout component with AuthBrandedLayoutProvider
+// AuthBrandedLayout 컴포넌트가 AuthBrandedLayoutProvider로 Layout 컴포넌트를 감싸고 있습니다.
 const AuthBrandedLayout = () => (
   <AuthBrandedLayoutProvider>
     <Layout />

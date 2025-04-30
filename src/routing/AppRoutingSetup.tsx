@@ -84,7 +84,7 @@ import {
   NetworkVisitorsPage
 } from '@/pages/network';
 import {
-  ServiceIntroPage,
+  ServiceDescPage,
   ServiceCampaignPage,
   BlogReviewPage
 } from '@/pages/advertise';
@@ -242,19 +242,19 @@ const AppRoutingSetup = (): ReactElement => {
           />
           <Route path="/authentication/get-started" element={<AuthenticationGetStartedPage />} />
 
-          {/* 네이버 쇼핑 트래픽 인트로 페이지 리디렉션 */}
-          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/intro" />} />
+          {/* 네이버 쇼핑 트래픽 desc 페이지 리디렉션 */}
+          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/desc" />} />
 
           {/* 블로그 리뷰 페이지 */}
           <Route path="/advertise/blog/" element={<BlogReviewPage />} />
 
           {/* 동적 광고 페이지 라우트 */}
           {/* 2단계 경로 */}
-          <Route path="/advertise/:platform/:type/intro" element={<ServiceIntroPage />} />
+          <Route path="/advertise/:platform/:type/desc" element={<ServiceDescPage />} />
           <Route path="/advertise/:platform/:type/campaign" element={<ServiceCampaignPage />} />
           
           {/* 3단계 경로 */}
-          <Route path="/advertise/:platform/:subservice/:type/intro" element={<ServiceIntroPage />} />
+          <Route path="/advertise/:platform/:subservice/:type/desc" element={<ServiceDescPage />} />
           <Route path="/advertise/:platform/:subservice/:type/campaign" element={<ServiceCampaignPage />} />
 
           {/* 내 정보 관리 라우트 */}

@@ -246,6 +246,7 @@ const NotificationManagePage: React.FC = () => {
 
       <Container fullWidth>
         <div className="grid gap-5 lg:gap-7.5">
+          {/* 상단 영역: 통계와 버튼 */}
           <div className="bg-card rounded-lg shadow-sm p-5">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center">
@@ -346,81 +347,86 @@ const NotificationManagePage: React.FC = () => {
               lastUpdated={statsLastUpdated}
               useFallback={statsUseFallback}
             />
+          </div>
 
+          {/* 알림 관리 카드 영역 */}
+          <div className="card shadow-sm overflow-hidden border border-border rounded-lg">
             {/* 필터 및 삭제 액션 */}
-            <div className="flex flex-wrap justify-between items-center my-5 gap-4 border-t py-4 border-gray-200 dark:border-gray-700">
-              <NotificationFilter
-                filterType={filterType}
-                filterUserRole={filterUserRole}
-                onFilterTypeChange={handleFilterTypeChange}
-                onFilterUserRoleChange={handleFilterUserRoleChange}
-                onApplyFilter={handleApplyFilter}
-              />
+            <div className="card-header p-6 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card border-b border-border">
+              <div className="w-full sm:w-auto">
+                <NotificationFilter
+                  filterType={filterType}
+                  filterUserRole={filterUserRole}
+                  onFilterTypeChange={handleFilterTypeChange}
+                  onFilterUserRoleChange={handleFilterUserRoleChange}
+                  onApplyFilter={handleApplyFilter}
+                />
+              </div>
 
-              <NotificationActions
-                selectedItemsCount={selectedItems.length}
-                onDeleteSelected={() => handleOpenDeleteConfirmModal({
-                  type: 'selected',
-                  ids: selectedItems
-                })}
-                onDeleteOlderThan30Days={() => {
-                  const date = new Date();
-                  date.setDate(date.getDate() - 30); // 30일 이전
-                  handleOpenDeleteConfirmModal({
-                    type: 'older',
-                    olderThan: date
-                  });
-                }}
-                onDeleteAll={() => handleOpenDeleteConfirmModal({ type: 'all' })}
-              />
+              <div className="w-full sm:w-auto flex justify-end">
+                <NotificationActions
+                  selectedItemsCount={selectedItems.length}
+                  onDeleteSelected={() => handleOpenDeleteConfirmModal({
+                    type: 'selected',
+                    ids: selectedItems
+                  })}
+                  onDeleteOlderThan30Days={() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() - 30); // 30일 이전
+                    handleOpenDeleteConfirmModal({
+                      type: 'older',
+                      olderThan: date
+                    });
+                  }}
+                  onDeleteAll={() => handleOpenDeleteConfirmModal({ type: 'all' })}
+                />
+              </div>
             </div>
 
             {/* 상단 페이지네이션 */}
-            <div className="mb-5">
-              <NotificationPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
-            </div>
-
-            {/* 알림 목록 테이블 */}
-            <NotificationTable
-              notifications={notifications}
-              loading={loading}
-              selectedItems={selectedItems}
-              onSelectionChange={handleSelectionChange}
-              onSelectAll={handleSelectAll}
-              onDeleteSingle={(id) => handleOpenDeleteConfirmModal({
-                type: 'selected',
-                ids: [id]
-              })}
+            <NotificationPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
             />
 
-            {/* 하단 페이지네이션 */}
-            <div className="mt-5 border-t border-gray-200 dark:border-gray-700 pt-5">
-              <NotificationPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
+            {/* 알림 목록 테이블 */}
+            <div className="overflow-hidden">
+              <NotificationTable
+                notifications={notifications}
+                loading={loading}
+                selectedItems={selectedItems}
+                onSelectionChange={handleSelectionChange}
+                onSelectAll={handleSelectAll}
+                onDeleteSingle={(id) => handleOpenDeleteConfirmModal({
+                  type: 'selected',
+                  ids: [id]
+                })}
               />
             </div>
 
-            {/* 알림 관리 안내 */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5 mt-5">
-              <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">알림 관리 안내</h3>
-              <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-                <p>• <span className="font-medium text-gray-800 dark:text-gray-100">권한별 알림 전송</span>: 개발자, 운영자, 총판, 대행사, 광고주 등 특정 권한을 가진 모든 회원에게 알림을 전송합니다.</p>
-                <p>• <span className="font-medium text-gray-800 dark:text-gray-100">회원별 알림 전송</span>: 특정 회원을 선택하여 알림을 전송합니다.</p>
-                <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 삭제 기능</span>: 테이블 용량 관리를 위해 특정 기간이 지난 알림을 일괄 삭제할 수 있습니다.</p>
-                <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 타입</span>: 시스템, 결제/캐시, 서비스, 슬롯, 마케팅 등 다양한 유형의 알림을 전송할 수 있습니다.</p>
-              </div>
+            {/* 하단 페이지네이션 */}
+            <NotificationPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+
+          {/* 설명 영역 */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">알림 관리 안내</h3>
+            <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
+              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">권한별 알림 전송</span>: 개발자, 운영자, 총판, 대행사, 광고주 등 특정 권한을 가진 모든 회원에게 알림을 전송합니다.</p>
+              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">회원별 알림 전송</span>: 특정 회원을 선택하여 알림을 전송합니다.</p>
+              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 삭제 기능</span>: 테이블 용량 관리를 위해 특정 기간이 지난 알림을 일괄 삭제할 수 있습니다.</p>
+              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 타입</span>: 시스템, 결제/캐시, 서비스, 슬롯, 마케팅 등 다양한 유형의 알림을 전송할 수 있습니다.</p>
             </div>
           </div>
         </div>

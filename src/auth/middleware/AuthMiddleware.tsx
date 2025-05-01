@@ -6,12 +6,8 @@ import * as authHelper from '../_helpers';
 
 // 인증 없이 접근 가능한 경로 정의
 const PUBLIC_PATHS = [
-  '/auth/login',
-  '/auth/register',
-  '/auth/forgot-password',
-  '/auth/reset-password',
-  '/error/404',
-  '/error/500'
+  '/auth',     // /auth로 시작하는 모든 경로 (로그인, 회원가입, 비밀번호 찾기 등)
+  '/error'     // /error로 시작하는 모든 경로 (404, 500 등)
 ];
 
 const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
@@ -45,12 +41,49 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
         return;
       }
       
-      // 로컬 스토리지나 세션 스토리지에서 간단히 확인
+      // 로컬 스토리지에서 인증 토큰 확인
       const hasAuth = authHelper.getAuth();
-      const hasCachedUser = sessionStorage.getItem('currentUser');
+      // 세션 스토리지에서 사용자 정보 확인
+      const cachedUserStr = sessionStorage.getItem('currentUser');
+      let hasCachedUser = false;
       
+      // 캐시된 사용자 데이터가 유효한지 확인
+      if (cachedUserStr) {
+        try {
+          const cachedUser = JSON.parse(cachedUserStr);
+          // 최소한의 유효성 검사
+          hasCachedUser = !!(cachedUser && cachedUser.id && cachedUser.email);
+        } catch (e) {
+          console.warn('세션 스토리지 사용자 데이터 파싱 오류:', e);
+          // 손상된 데이터 제거
+          sessionStorage.removeItem('currentUser');
+        }
+      }
+      
+      // 인증 정보가 일치하지 않는 경우 (토큰은 있지만 사용자 정보 없음 등) 세션 정리
+      if ((hasAuth && !hasCachedUser) || (!hasAuth && hasCachedUser)) {
+        console.warn('인증 상태 불일치 감지, 세션 정리');
+        // 모든 인증 관련 데이터 정리
+        authHelper.removeAuth();
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('lastAuthCheck');
+        
+        // 인증 관련 항목 제거
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      }
+      
+      // 인증 정보가 전혀 없는 경우 로그인 페이지로 이동
       if (!hasAuth && !hasCachedUser) {
-        // 인증 정보가 전혀 없는 경우만 즉시 리다이렉션
         console.log('인증 정보 전혀 없음, 로그인 페이지로 이동');
         navigate('/auth/login', { 
           state: { from: location.pathname },
@@ -89,8 +122,11 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     // 초기 확인 및 세부 검증이 끝난 후에만 리다이렉션 결정
     if (!initialCheck && !deepChecking && !loading && !isPublicPath) {
+      // 이미 로그인 페이지로 가고 있는 상태인지 확인
+      const isAlreadyNavigatingToLogin = location.pathname === '/auth/login';
+      
       // 인증 상태가 완전히 확인된 후 auth는 있지만 currentUser가 없는 경우 (검증 실패)
-      if (auth && !currentUser) {
+      if (auth && !currentUser && !isAlreadyNavigatingToLogin) {
         console.log('인증 검증 실패, 로그인 페이지로 이동');
         navigate('/auth/login', { 
           state: { from: location.pathname },

@@ -40,6 +40,7 @@ const HeaderTopbar = () => {
 
   // 로그아웃 모달 표시 상태
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   
   // 로그아웃 처리 함수
   const handleLogout = () => {
@@ -52,14 +53,62 @@ const HeaderTopbar = () => {
     }
   };
   
-  // 실제 로그아웃 실행 함수
-  const performLogout = async () => {
+  // 강화된 로그아웃 함수 - 모든 저장소 데이터 삭제
+  const performLogout = () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLogoutLoading) return;
+    
+    setIsLogoutLoading(true);
+    setShowLogoutModal(false); // 모달 즉시 닫기
+    
     try {
-      await logout();
-      navigate('/auth/login');
+      // 1. 모든 auth 관련 로컬 스토리지 항목 제거
+      localStorage.removeItem('auth');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('email');
+      
+      // 2. 모든 auth 관련 세션 스토리지 항목 제거
+      sessionStorage.removeItem('currentUser');
+      sessionStorage.removeItem('lastAuthCheck');
+      sessionStorage.removeItem('supabase.auth.token');
+      
+      // 3. 추가적으로 'auth'로 시작하는 모든 스토리지 항목 제거 (Supabase 관련)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // 4. 쿠키 제거 시도 (Supabase가 쿠키 사용하는 경우)
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      // 5. 서버 로그아웃 동기적으로 처리 (페이지 이동 전)
+      // 짧은 타임아웃으로 서버 로그아웃 시도하고 실패해도 진행
+      if (logout) {
+        try {
+          logout();
+        } catch (err) {
+          console.warn('서버 로그아웃 실패, 무시하고 진행:', err);
+        }
+      }
+      
+      // 6. 로그인 페이지로 강제 이동 (캐시 우회 파라미터 추가)
+      const timestamp = new Date().getTime();
+      window.location.href = `/auth/login?t=${timestamp}`;
     } catch (error) {
-      console.error('로그아웃 중 오류 발생:', error);
-      alert('로그아웃 중 오류가 발생했습니다');
+      console.error('로그아웃 처리 중 오류:', error);
+      // 오류 발생해도 로그인 페이지로 강제 이동
+      window.location.href = '/auth/login';
     }
   };
 
@@ -84,17 +133,16 @@ const HeaderTopbar = () => {
             <button 
               type="button" 
               className="btn bg-red-600 hover:bg-red-700 text-white px-5" 
-              onClick={() => {
-                setShowLogoutModal(false);
-                performLogout();
-              }}
+              onClick={performLogout}
+              disabled={isLogoutLoading}
             >
-              로그아웃
+              {isLogoutLoading ? '처리 중...' : '로그아웃'}
             </button>
             <button 
               type="button" 
               className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-5" 
               onClick={() => setShowLogoutModal(false)}
+              disabled={isLogoutLoading}
             >
               취소
             </button>
@@ -138,8 +186,13 @@ const HeaderTopbar = () => {
         className="btn btn-icon btn-outline-danger transition-all hover:bg-danger hover:text-white ms-1 size-9 rounded-full"
         onClick={handleLogout}
         title="로그아웃"
+        disabled={isLogoutLoading}
       >
-        <KeenIcon icon="exit-right" className="text-base" />
+        {isLogoutLoading ? (
+          <span className="animate-spin">⊝</span>
+        ) : (
+          <KeenIcon icon="exit-right" className="text-base" />
+        )}
       </button>
     </div>
   );

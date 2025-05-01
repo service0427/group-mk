@@ -26,13 +26,13 @@ interface CampaignTemplateProps {
 const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuthContext();
-  
+
   // URL 기반으로 서비스 카테고리 결정
   const serviceCategory = useServiceCategory(pathname);
-  
+
   // 서비스 카테고리로부터 서비스 타입 코드 가져오기
   const serviceType = SERVICE_TYPE_MAP[serviceCategory as keyof typeof SERVICE_TYPE_MAP] || '';
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   const [currentMemoSlotId, setCurrentMemoSlotId] = useState<string>('');
@@ -50,7 +50,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
     campaignList,
     statusFilter,
     setStatusFilter,
-    searchInput, 
+    searchInput,
     setSearchInput,
     searchDateFrom,
     setSearchDateFrom,
@@ -86,24 +86,22 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
     if (!currentMemoSlotId) return;
 
     try {
-      console.log('메모 저장 시작:', currentMemoSlotId, memoText);
-      
+
       // Supabase 업데이트
       const { data, error } = await supabase
         .from('slots')
-        .update({ 
+        .update({
           user_reason: memoText,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentMemoSlotId)
         .select();
-      
+
       if (error) {
         throw error;
       }
-      
-      console.log('메모 저장 성공:', data);
-      
+
+
       // 로컬 상태 업데이트
       setSlots(prevSlots => prevSlots.map(item => {
         if (item.id === currentMemoSlotId) {
@@ -115,7 +113,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
         }
         return item;
       }));
-      
+
       setFilteredSlots(prevFiltered => prevFiltered.map(item => {
         if (item.id === currentMemoSlotId) {
           return {
@@ -126,7 +124,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
         }
         return item;
       }));
-      
+
       // 성공 메시지
       alert('메모가 저장되었습니다.');
     } catch (err) {
@@ -142,8 +140,8 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
   const toolbarActions = (
     <>
       <button className="btn btn-sm btn-light"
-          onClick={() => setModalOpen(true)}
-        >
+        onClick={() => setModalOpen(true)}
+      >
         <span className="hidden md:inline">추가</span>
         <span className="md:hidden"><KeenIcon icon="plus" /></span>
       </button>
@@ -195,7 +193,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
           <div className="card-header border-b-0 px-5">
             <div className="flex flex-wrap justify-between items-center gap-2">
               <h3 className="card-title font-medium text-sm">전체 {filteredSlots.length} 건</h3>
-              
+
               {/* 모바일에서는 검색 콜랩스 버튼 추가 */}
               <button className="btn btn-sm btn-light md:hidden" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse">
                 <KeenIcon icon="magnifier" className="me-1" /> 검색

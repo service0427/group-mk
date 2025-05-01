@@ -49,11 +49,9 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      console.log(`캠페인 데이터 로드 - 경로: ${pathname}, 서비스 타입: ${serviceType}, 서비스 코드: ${serviceCode}`);
       
       // 서비스 코드를 DB 형식으로 변환
       const dbServiceType = getServiceTypeCode(serviceType);
-      console.log(`변환된 DB 서비스 타입: ${dbServiceType}`);
       
       let data: ICampaign[] = [];
       let useBackupData = false;
@@ -62,7 +60,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       if (dbServiceType) {
         try {
           data = await fetchCampaigns(dbServiceType);
-          console.log(`DB에서 가져온 데이터 수: ${data.length}`);
         } catch (dbError) {
           console.error('DB 데이터 조회 오류:', dbError);
           useBackupData = true;
@@ -76,7 +73,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         console.warn('DB에서 데이터를 가져오지 못했습니다. 백업 데이터를 사용합니다.');
         // 서비스 코드를 사용하거나, 없으면 URL에서 추출한 서비스 타입을 사용
         const backupData = getCampaignsByService(serviceCode || dbServiceType);
-        console.log(`백업 데이터에서 가져온 데이터 수: ${backupData.length}`);
         setCampaigns(backupData);
       } else {
         // DB에서 데이터를 성공적으로 가져온 경우

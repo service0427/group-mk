@@ -1,4 +1,4 @@
-import { createContext, Dispatch, PropsWithChildren, SetStateAction, useCallback, useEffect, useState } from "react";
+import { createContext, Dispatch, PropsWithChildren, SetStateAction, useCallback, useEffect, useState, useMemo } from "react";
 import { AuthModel, CustomUser } from "../_models";
 import * as authHelper from '../_helpers';
 import { supabase } from "@/supabase";
@@ -15,6 +15,11 @@ interface AuthContextProps {
     getUser: () => Promise<CustomUser | null>;
     logout: () => Promise<void>;
     verify: () => Promise<void>;
+    // 추가된 속성들
+    isAuthenticated: boolean;
+    userRole: string;
+    authVerified: boolean;  // 인증 검증 완료 여부
+    refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -24,8 +29,94 @@ const AuthProvider = ({children} : PropsWithChildren) => {
     const [auth, setAuth] = useState<AuthModel | undefined>();
     const [currentUser, setCurrentUser] = useState<CustomUser | null>(null);
     const [authInitialized, setAuthInitialized] = useState<boolean>(false);
+    const [lastTokenCheck, setLastTokenCheck] = useState<number>(0);
+    const [authVerified, setAuthVerified] = useState<boolean>(false);
 
-    // 사용자 정보를 가져오는 함수 (개선됨)
+    // 토큰 디코딩 함수
+    const decodeToken = useCallback((token: string) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            console.error('토큰 디코딩 오류:', error);
+            return null;
+        }
+    }, []);
+
+    // saveAuth 함수 정의
+    const saveAuth = useCallback((auth:AuthModel | undefined) => {
+        setAuth(auth);
+        if (auth) {
+            authHelper.setAuth(auth);
+        } else {
+            authHelper.removeAuth();
+        }
+    }, []);
+
+    // 토큰 새로고침 함수
+    const refreshToken = useCallback(async (): Promise<boolean> => {
+        try {
+            const storeAuth = authHelper.getAuth();
+            if (!storeAuth) return false;
+
+            console.log('토큰 갱신 시도...');
+            // 현재 세션 가져오기
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error || !data.session) {
+                console.error('세션을 가져오는 중 오류 발생:', error?.message);
+                return false;
+            }
+            
+            // 세션이 유효하면 auth 정보 업데이트
+            const authData: AuthModel = {
+                access_token: data.session.access_token,
+                refreshToken: data.session.refresh_token,
+                api_token: data.session.access_token
+            };
+            
+            saveAuth(authData);
+            setLastTokenCheck(Date.now());
+            console.log('토큰 갱신 성공');
+            return true;
+        } catch (error: any) {
+            console.error('토큰 새로고침 중 오류:', error.message);
+            return false;
+        }
+    }, [saveAuth]);
+
+    // 토큰 유효성 확인 함수 - refreshToken 선언 후 정의
+    const checkTokenValidity = useCallback(async (): Promise<boolean> => {
+        if (!auth?.access_token) return false;
+        
+        try {
+            const decoded = decodeToken(auth.access_token);
+            if (!decoded || !decoded.exp) return false;
+            
+            const expiryTime = decoded.exp * 1000; // 밀리초로 변환
+            const currentTime = Date.now();
+            
+            // 이미 만료되었거나 10분 이내에 만료 예정이면 갱신
+            if (currentTime >= expiryTime || expiryTime - currentTime < 10 * 60 * 1000) {
+                console.log('토큰 만료 또는 곧 만료 예정, 갱신 시도');
+                return await refreshToken();
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('토큰 검증 중 오류:', error);
+            return false;
+        }
+    }, [auth, decodeToken, refreshToken]);
+
+    // 사용자 정보를 가져오는 함수
     const getUser = useCallback(async (): Promise<CustomUser | null> => {
         try {
             // 먼저 세션이 유효한지 확인
@@ -122,36 +213,7 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         }
     }, []);
 
-    // 토큰 새로고침 함수 (새로 추가)
-    const refreshToken = useCallback(async (): Promise<boolean> => {
-        try {
-            const storeAuth = authHelper.getAuth();
-            if (!storeAuth) return false;
-
-            // 현재 세션 가져오기
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error || !data.session) {
-                console.error('세션을 가져오는 중 오류 발생:', error?.message);
-                return false;
-            }
-            
-            // 세션이 유효하면 auth 정보 업데이트
-            const authData: AuthModel = {
-                access_token: data.session.access_token,
-                refreshToken: data.session.refresh_token,
-                api_token: data.session.access_token
-            };
-            
-            saveAuth(authData);
-            return true;
-        } catch (error: any) {
-            console.error('토큰 새로고침 중 오류:', error.message);
-            return false;
-        }
-    }, []);
-
-    // 초기 로드 시 인증 상태 확인 (개선)
+    // 초기 로드 시 인증 상태 확인
     useEffect(() => {
         const initAuth = async () => {
             try {
@@ -161,28 +223,65 @@ const AuthProvider = ({children} : PropsWithChildren) => {
                 if (storeAuth) {
                     setAuth(storeAuth);
                     
-                    // 토큰 새로고침 시도
-                    const isRefreshed = await refreshToken();
-                    
-                    if (isRefreshed) {
-                        // 사용자 정보 가져오기
-                        const user = await getUser();
-                        
-                        if (user) {
-                            setCurrentUser(user);
-                            console.log('사용자 정보 로드 성공:', user);
-                        } else {
-                            // 사용자 정보가 없으면 인증 정보 제거
-                            console.warn('사용자 정보를 가져올 수 없음, 로그아웃');
-                            authHelper.removeAuth();
-                            setAuth(undefined);
+                    // 세션 스토리지에서 임시 사용자 정보 복원
+                    try {
+                        const cachedUser = sessionStorage.getItem('currentUser');
+                        if (cachedUser) {
+                            const parsedUser = JSON.parse(cachedUser);
+                            setCurrentUser(parsedUser);
+                            console.log('세션 스토리지에서 사용자 정보 임시 복원됨');
                         }
-                    } else {
-                        // 토큰 갱신 실패 시 인증 정보 제거
-                        console.warn('토큰 갱신 실패, 로그아웃');
-                        authHelper.removeAuth();
-                        setAuth(undefined);
+                    } catch (cacheError) {
+                        console.error('캐시된 사용자 정보 복원 오류:', cacheError);
                     }
+                    
+                    // 백그라운드에서 토큰 갱신 및 사용자 정보 업데이트
+                    setTimeout(async () => {
+                        try {
+                            // 토큰 새로고침 시도
+                            const isRefreshed = await refreshToken();
+                            
+                            if (isRefreshed) {
+                                // 사용자 정보 가져오기
+                                const user = await getUser();
+                                
+                                if (user) {
+                                    setCurrentUser(user);
+                                    setAuthVerified(true);
+                                    console.log('사용자 정보 로드 성공:', user);
+                                    
+                                    // 검증된 사용자 정보 캐싱
+                                    try {
+                                        sessionStorage.setItem('currentUser', JSON.stringify(user));
+                                        sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+                                    } catch (e) {
+                                        console.error('캐시 저장 오류:', e);
+                                    }
+                                } else {
+                                    // 사용자 정보가 없으면 인증 정보 제거
+                                    console.warn('사용자 정보를 가져올 수 없음, 로그아웃');
+                                    authHelper.removeAuth();
+                                    setAuth(undefined);
+                                    setCurrentUser(null);
+                                    setAuthVerified(false);
+                                    sessionStorage.removeItem('currentUser');
+                                    sessionStorage.removeItem('lastAuthCheck');
+                                }
+                            } else {
+                                // 토큰 갱신 실패 시 인증 정보 제거
+                                console.warn('토큰 갱신 실패, 로그아웃');
+                                authHelper.removeAuth();
+                                setAuth(undefined);
+                                setCurrentUser(null);
+                                setAuthVerified(false);
+                                sessionStorage.removeItem('currentUser');
+                                sessionStorage.removeItem('lastAuthCheck');
+                            }
+                        } catch (backgroundError) {
+                            console.error('백그라운드 인증 초기화 오류:', backgroundError);
+                            // 오류 발생 시 인증 정보는 그대로 유지 (UI 깜빡임 방지)
+                        }
+                    }, 0);
                 }
             } catch (error) {
                 console.error('인증 초기화 오류:', error);
@@ -190,6 +289,9 @@ const AuthProvider = ({children} : PropsWithChildren) => {
                 authHelper.removeAuth();
                 setAuth(undefined);
                 setCurrentUser(null);
+                setAuthVerified(false);
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('lastAuthCheck');
             } finally {
                 setLoading(false);
                 setAuthInitialized(true);
@@ -197,9 +299,21 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         };
 
         initAuth();
-    }, [getUser, refreshToken]);
+    }, []);
 
-    // Supabase 인증 상태 변경 구독 (개선)
+    // 주기적인 토큰 유효성 검사 및 갱신
+    useEffect(() => {
+        if (!auth) return;
+        
+        // 5분마다 토큰 유효성 확인
+        const intervalId = setInterval(() => {
+            checkTokenValidity();
+        }, 5 * 60 * 1000);
+        
+        return () => clearInterval(intervalId);
+    }, [auth, checkTokenValidity]);
+
+    // Supabase 인증 상태 변경 구독
     useEffect(() => {
         if (!authInitialized) return;
         
@@ -254,15 +368,6 @@ const AuthProvider = ({children} : PropsWithChildren) => {
             subscription.unsubscribe();
         };
     }, [authInitialized, getUser]);
-
-    const saveAuth = (auth:AuthModel | undefined) => {
-        setAuth(auth);
-        if (auth) {
-            authHelper.setAuth(auth);
-        } else {
-            authHelper.removeAuth();
-        }
-    }
 
     const login = async (email: string, password: string) => {
         console.log('로그인 시도:', email);
@@ -369,6 +474,13 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         
         setLoading(true);
         try {
+            // 이미 검증된 상태라면 추가 작업 불필요
+            if (authVerified && currentUser) {
+                console.log('이미 검증된 인증 정보, 검증 생략');
+                setLoading(false);
+                return;
+            }
+            
             // 토큰 갱신 시도
             const isRefreshed = await refreshToken();
             
@@ -377,20 +489,38 @@ const AuthProvider = ({children} : PropsWithChildren) => {
                 const user = await getUser();
                 if (user) {
                     setCurrentUser(user);
+                    setAuthVerified(true);
+                    
+                    // 검증된 사용자 정보 캐싱
+                    try {
+                        sessionStorage.setItem('currentUser', JSON.stringify(user));
+                        sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+                    } catch (e) {
+                        console.error('캐시 저장 오류:', e);
+                    }
                 } else {
                     // 사용자 정보가 없으면 로그아웃
                     saveAuth(undefined);
                     setCurrentUser(null);
+                    setAuthVerified(false);
+                    sessionStorage.removeItem('currentUser');
+                    sessionStorage.removeItem('lastAuthCheck');
                 }
             } else {
                 // 토큰 갱신 실패 시 로그아웃
                 saveAuth(undefined);
                 setCurrentUser(null);
+                setAuthVerified(false);
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('lastAuthCheck');
             }
         } catch (error) {
             console.error('검증 오류:', error);
             saveAuth(undefined);
             setCurrentUser(null);
+            setAuthVerified(false);
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('lastAuthCheck');
         } finally {
             setLoading(false);
         }
@@ -411,6 +541,11 @@ const AuthProvider = ({children} : PropsWithChildren) => {
             authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
+            setAuthVerified(false);
+            
+            // 세션 스토리지 정리
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('lastAuthCheck');
         } catch (error: any) {
             console.error('로그아웃 실패:', error);
             throw new Error(error?.message || '오류가 발생했습니다');
@@ -419,21 +554,35 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         }
     }
 
+    // 계산된 값들
+    const isAuthenticated = !!auth && !!currentUser;
+    const userRole = currentUser?.role || 'guest';
+
+    // 메모이제이션된 컨텍스트 값
+    const contextValue = useMemo(() => ({
+        loading,
+        setLoading,
+        auth,
+        saveAuth,
+        currentUser,
+        setCurrentUser,
+        login,
+        register,
+        getUser,
+        verify,
+        logout,
+        isAuthenticated,
+        userRole,
+        authVerified,
+        refreshToken
+    }), [
+        loading, auth, currentUser, saveAuth, 
+        logout, verify, isAuthenticated, userRole, 
+        authVerified, refreshToken, getUser
+    ]);
+
     return (
-        <AuthContext.Provider
-        value ={{
-            loading,
-            setLoading,
-            auth,
-            saveAuth,
-            currentUser,
-            setCurrentUser,
-            login,
-            register,
-            getUser,
-            verify,
-            logout,
-        }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     )

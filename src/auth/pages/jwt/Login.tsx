@@ -8,6 +8,7 @@ import { toAbsoluteUrl } from '@/utils';
 import { useAuthContext } from '@/auth';
 import { useLayout } from '@/providers';
 import { Alert } from '@/components';
+import { toast } from 'sonner';
 
 // 유효성 검증 스키마 - 한글 메시지로 변경
 const loginSchema = Yup.object().shape({
@@ -30,6 +31,13 @@ const initialValues = {
   remember: false
 };
 
+// 개발 환경에서만 사용할 테스트 계정 정보
+const testCredentials = {
+  email: 'test-0315001652@test.com',
+  password: 'Tech123!',
+  remember: true
+};
+
 const Login = () => {
   // 페이지 진입 시 필요한 localStorage 항목만 초기화
   useEffect(() => {
@@ -38,15 +46,25 @@ const Login = () => {
   }, []);
 
   const [loading, setLoading] = useState(false);
-  const { login } = useAuthContext();
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordEmail, setResetPasswordEmail] = useState('');
+  const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
+  const { login, resetPassword } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
   const [showPassword, setShowPassword] = useState(false);
   const { currentLayout } = useLayout();
 
+  // 개발 환경에서는 테스트 계정 정보 사용, 그렇지 않으면 빈 값 사용
+  const getInitialValues = () => {
+    // 개발 환경 체크 (Vite)
+    const isDevelopment = import.meta.env.MODE === 'development';
+    return isDevelopment ? testCredentials : initialValues;
+  };
+
   const formik = useFormik({
-    initialValues,
+    initialValues: getInitialValues(),
     validationSchema: loginSchema,
     onSubmit: async (values, { setStatus, setSubmitting }) => {
       setLoading(true);
@@ -81,103 +99,179 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
+  // 비밀번호 재설정 처리 함수
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!resetPasswordEmail) {
+      toast.error('이메일을 입력해주세요.');
+      return;
+    }
+
+    if (!resetPassword) {
+      toast.error('인증 제공자가 초기화되지 않았습니다.');
+      return;
+    }
+
+    setResetPasswordLoading(true);
+
+    try {
+      await resetPassword(resetPasswordEmail);
+      toast.success('비밀번호 재설정 이메일이 전송되었습니다. 이메일을 확인해주세요.');
+      setShowResetPasswordForm(false);
+    } catch (error: any) {
+      console.error('비밀번호 재설정 오류:', error);
+      toast.error(`비밀번호 재설정 요청에 실패했습니다: ${error.message}`);
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="card max-w-[450px] w-full">
-      <form
-        className="card-body flex flex-col gap-6 p-12"
-        onSubmit={formik.handleSubmit}
-        noValidate
-      >
-        <div className="text-center mb-3">
-          <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">로그인</h3>
-          <div className="flex items-center justify-center font-medium">
-            <span className="text-sm text-gray-700 me-1.5">계정이 필요하신가요?</span>
-            <Link
-              to={currentLayout?.name === 'auth-branded' ? '/auth/signup' : '/auth/classic/signup'}
-              className="text-sm link"
-            >
-              회원가입
-            </Link>
+      {!showResetPasswordForm ? (
+        // 로그인 폼
+        <form
+          className="card-body flex flex-col gap-6 p-12"
+          onSubmit={formik.handleSubmit}
+          noValidate
+        >
+          <div className="text-center mb-3">
+            <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">로그인</h3>
+            <div className="flex items-center justify-center font-medium">
+              <span className="text-sm text-gray-700 me-1.5">계정이 필요하신가요?</span>
+              <Link
+                to={currentLayout?.name === 'auth-branded' ? '/auth/signup' : '/auth/classic/signup'}
+                className="text-sm link"
+              >
+                회원가입
+              </Link>
+            </div>
+            
+            {/* 개발 환경에서만 테스트 계정 정보 안내 표시 */}
+            {import.meta.env.MODE === 'development' && (
+              <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-xs">
+                <p className="font-semibold">개발 테스트 모드입니다</p>
+                <p>테스트 계정 정보가 자동으로 입력되었습니다</p>
+                <p className="mt-1">이메일: {testCredentials.email}</p>
+                <p>비밀번호: {testCredentials.password}</p>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* 소셜 로그인 버튼 및 구분선 제거 */}
+          {formik.status && <Alert variant="danger">{formik.status}</Alert>}
 
-        {formik.status && <Alert variant="danger">{formik.status}</Alert>}
-
-        <div className="flex flex-col gap-2">
-          <label className="form-label font-normal text-gray-900">이메일</label>
-          <input
-            className={clsx('input py-3', {
-              'is-invalid': formik.touched.email && formik.errors.email
-            })}
-            placeholder="example@email.com"
-            autoComplete="off"
-            {...formik.getFieldProps('email')}
-          />
-          {formik.touched.email && formik.errors.email && (
-            <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.email}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-1">
-            <label className="form-label font-normal text-gray-900">비밀번호</label>
-            <Link
-              to={
-                currentLayout?.name === 'auth-branded'
-                  ? '/auth/reset-password'
-                  : '/auth/classic/reset-password'
-              }
-              className="text-sm link shrink-0"
-            >
-              비밀번호 찾기
-            </Link>
-          </div>
-          <div className="input" data-toggle-password="true">
+          <div className="flex flex-col gap-2">
+            <label className="form-label font-normal text-gray-900">이메일</label>
             <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="비밀번호 입력"
-              autoComplete="off"
-              {...formik.getFieldProps('password')}
-              className={clsx('py-3', {
-                'is-invalid': formik.touched.password && formik.errors.password
+              className={clsx('input py-3', {
+                'is-invalid': formik.touched.email && formik.errors.email
               })}
+              placeholder="example@email.com"
+              autoComplete="off"
+              {...formik.getFieldProps('email')}
             />
-            <button className="btn btn-icon" onClick={togglePassword} type="button">
-              <KeenIcon icon="eye" className={clsx('text-gray-500', { hidden: showPassword })} />
-              <KeenIcon
-                icon="eye-slash"
-                className={clsx('text-gray-500', { hidden: !showPassword })}
+            {formik.touched.email && formik.errors.email && (
+              <span role="alert" className="text-danger text-xs mt-1">
+                {formik.errors.email}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-1">
+              <label className="form-label font-normal text-gray-900">비밀번호</label>
+              <button
+                type="button"
+                className="text-sm link shrink-0"
+                onClick={() => setShowResetPasswordForm(true)}
+              >
+                비밀번호 찾기
+              </button>
+            </div>
+            <div className="input" data-toggle-password="true">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="비밀번호 입력"
+                autoComplete="off"
+                {...formik.getFieldProps('password')}
+                className={clsx('py-3', {
+                  'is-invalid': formik.touched.password && formik.errors.password
+                })}
               />
+              <button className="btn btn-icon" onClick={togglePassword} type="button">
+                <KeenIcon icon="eye" className={clsx('text-gray-500', { hidden: showPassword })} />
+                <KeenIcon
+                  icon="eye-slash"
+                  className={clsx('text-gray-500', { hidden: !showPassword })}
+                />
+              </button>
+            </div>
+            {formik.touched.password && formik.errors.password && (
+              <span role="alert" className="text-danger text-xs mt-1">
+                {formik.errors.password}
+              </span>
+            )}
+          </div>
+
+          <label className="checkbox-group">
+            <input
+              className="checkbox checkbox-sm"
+              type="checkbox"
+              {...formik.getFieldProps('remember')}
+            />
+            <span className="checkbox-label">로그인 상태 유지</span>
+          </label>
+
+          <button
+            type="submit"
+            className="btn btn-primary flex justify-center grow py-3 text-base"
+            disabled={loading || formik.isSubmitting}
+          >
+            {loading ? '로그인 중...' : '로그인'}
+          </button>
+        </form>
+      ) : (
+        // 비밀번호 재설정 폼
+        <form className="card-body flex flex-col gap-6 p-12" onSubmit={handleResetPassword}>
+          <div className="text-center mb-3">
+            <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">비밀번호 재설정</h3>
+            <p className="text-sm text-gray-600">
+              가입하신 이메일로 비밀번호 재설정 링크를 보내드립니다.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="form-label font-normal text-gray-900">이메일</label>
+            <input
+              className="input py-3"
+              placeholder="example@email.com"
+              autoComplete="off"
+              value={resetPasswordEmail}
+              onChange={(e) => setResetPasswordEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 mt-4">
+            <button
+              type="button"
+              className="btn btn-secondary flex-1 py-3"
+              onClick={() => setShowResetPasswordForm(false)}
+              disabled={resetPasswordLoading}
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary flex-1 py-3"
+              disabled={resetPasswordLoading}
+            >
+              {resetPasswordLoading ? '처리 중...' : '전송'}
             </button>
           </div>
-          {formik.touched.password && formik.errors.password && (
-            <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.password}
-            </span>
-          )}
-        </div>
-
-        <label className="checkbox-group">
-          <input
-            className="checkbox checkbox-sm"
-            type="checkbox"
-            {...formik.getFieldProps('remember')}
-          />
-          <span className="checkbox-label">로그인 상태 유지</span>
-        </label>
-
-        <button
-          type="submit"
-          className="btn btn-primary flex justify-center grow py-3 text-base"
-          disabled={loading || formik.isSubmitting}
-        >
-          {loading ? '로그인 중...' : '로그인'}
-        </button>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

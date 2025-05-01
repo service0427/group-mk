@@ -572,49 +572,29 @@ const AuthProvider = ({children} : PropsWithChildren) => {
 
     const logout = async () => {
         console.log('로그아웃 시도...');
-        
+        setLoading(true);
+
         try {
-            // 1. 클라이언트 측 인증 정보 초기화
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                throw new Error(error.message);
+            }
+
+            console.log('로그아웃 성공');
             authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
             setAuthVerified(false);
             
-            // 2. 세션 스토리지 정리
+            // 세션 스토리지 정리
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
-            
-            // 3. 모든 인증 관련 스토리지 항목 제거
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
-                    localStorage.removeItem(key);
-                }
-            });
-            
-            Object.keys(sessionStorage).forEach(key => {
-                if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
-                    sessionStorage.removeItem(key);
-                }
-            });
-            
-            // 4. 서버 측 로그아웃 처리
-            try {
-                const { error } = await supabase.auth.signOut();
-                
-                if (error) {
-                    console.error('서버 로그아웃 에러:', error.message);
-                } else {
-                    console.log('서버 로그아웃 성공');
-                }
-            } catch (serverError) {
-                console.error('서버 로그아웃 처리 중 예외 발생:', serverError);
-            }
-            
-            console.log('모든 로그아웃 절차 완료');
-            return true;
         } catch (error: any) {
             console.error('로그아웃 실패:', error);
-            return false;
+            throw new Error(error?.message || '오류가 발생했습니다');
+        } finally {
+            setLoading(false);
         }
     }
 

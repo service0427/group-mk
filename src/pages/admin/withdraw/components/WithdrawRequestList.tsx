@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { WithdrawRequest } from '../WithdrawApprovePage'
 import { approveWithdrawRequest, rejectWithdrawRequest } from '../services/withdrawService'
@@ -9,6 +10,7 @@ interface WithdrawRequestListProps {
   currentPage: number
   itemsPerPage: number
   onPageChange: (page: number) => void
+
   onRequestUpdated: () => void // 요청 처리 후 목록 갱신을 위한 콜백
 }
 
@@ -19,6 +21,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   currentPage,
   itemsPerPage,
   onPageChange,
+
   onRequestUpdated,
 }) => {
   // 처리 중 상태 관리

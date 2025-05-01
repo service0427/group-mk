@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import BasicTemplate from '../components/BasicTemplate'
 import WithdrawRequestSearchBar from './components/WithdrawRequestSearchBar'
 import { WithdrawRequestList } from './components/WithdrawRequestList'
 import { getWithdrawApproveList } from './services/withdrawService'
+import { CommonTemplate } from '@/components/pageTemplate'
 
 // 출금 요청 인터페이스
 export interface WithdrawRequest {
@@ -31,7 +31,7 @@ export const WithdrawApprovePage: React.FC = () => {
     username: '',
     startDate: '',
     endDate: '',
-    status: '',
+    status: 'pending', // 기본값을 대기중(pending)으로 설정
   })
   const [totalItems, setTotalItems] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -69,6 +69,12 @@ export const WithdrawApprovePage: React.FC = () => {
           return itemDate >= start && itemDate <= end
         })
       }
+      
+      // 상태 기준으로 정렬 (대기중 -> 승인 -> 반려 순서)
+      filteredData.sort((a, b) => {
+        const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+        return statusOrder[a.status] - statusOrder[b.status];
+      });
       
       setTotalItems(filteredData.length)
       
@@ -108,7 +114,7 @@ export const WithdrawApprovePage: React.FC = () => {
       username: params.searchKeyword,
       startDate: params.startDate || '',
       endDate: params.endDate || '',
-      status: params.status || '',
+      status: params.status || 'pending', // 상태가 없으면 기본값 'pending' 사용
     }
     
     setSearchParams(convertedParams)
@@ -126,9 +132,10 @@ export const WithdrawApprovePage: React.FC = () => {
   }, [searchParams, currentPage])
 
   return (
-    <BasicTemplate 
-      title="출금 승인 관리" 
-      description="관리자 메뉴 > 출금 관리 > 출금 승인 관리"
+    <CommonTemplate
+      title="슬롯 승인 관리"
+      description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
+      showPageMenu={false}
     >
       <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8">
         <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -157,7 +164,7 @@ export const WithdrawApprovePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </BasicTemplate>
+    </CommonTemplate>
   )
 }
 

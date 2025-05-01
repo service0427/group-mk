@@ -104,12 +104,13 @@ export async function deleteUserWithdrawSetting(id) {
     return data;
 }
 
-// 출금 승인 리스트 가져오는 함수
+// 출금 승인 리스트 가져오는 함수 수정
 export async function getWithdrawApproveList() {
+    // 오류 메시지에서 제안한 관계 이름 중 하나를 사용
     const { data, error } = await supabase
         .from("withdraw_requests")
         .select(`*,
-            users:user_id (
+            users!withdraw_requests_user_id_fkey (
                 id,
                 email,
                 full_name
@@ -140,6 +141,34 @@ export async function approveWithdrawRequest(id) {
     return data;
 }
 
+
+// 출금 요청 반려 함수
+export async function rejectWithdrawRequest(id, rejected_reason) {
+  try {
+    // reject_withdraw_request 저장 프로시저 호출
+    const { data, error } = await supabase.rpc(
+      'reject_withdraw_request',
+      {
+        request_id: id,
+        rejected_reason: rejected_reason
+      }
+    );
+      
+    if (error) {
+      console.error("Error rejecting withdraw request:", error);
+      throw new Error(error.message || "출금 요청 반려 중 오류가 발생했습니다.");
+    }
+    
+    return {
+      success: true,
+      message: "출금 요청이 성공적으로 반려되었습니다."
+    };
+  } catch (error) {
+    console.error("Error in reject withdraw process:", error);
+    throw error;
+  }
+}
+/*
 // 출금 요청 반려 함수
 export async function rejectWithdrawRequest(id, rejected_reason) {
     try {
@@ -227,7 +256,7 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
                     transaction_type: 'withdrawal', 
                     cash_amount: amount, // 양수로 저장 (반려로 인한 금액 복구)
                     description: '출금 반려',
-                    user_cash_history: new Date()
+                    transaction_at: new Date()
                 });
         } catch (historyError) {
             // 거래 내역 추가는 실패해도 진행
@@ -243,3 +272,4 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
         throw error;
     }
 }
+*/

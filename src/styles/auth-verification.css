@@ -1,0 +1,37 @@
+/* 인증 검증 및 로딩 컴포넌트 스타일 */
+.auth-verification-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+  animation: authFadeIn 0.3s ease-in-out;
+}
+
+@keyframes authFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 다크 모드 지원 */
+:root[class*="dark"] .auth-verification-container {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+
+/* 로고 스타일링 (선택 사항) */
+.auth-verification-logo {
+  max-width: 120px;
+  margin-bottom: 20px;
+  animation: pulseLogo 2s infinite ease-in-out;
+}
+
+@keyframes pulseLogo {
+  0% { opacity: 0.7; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.7; transform: scale(0.98); }
+}

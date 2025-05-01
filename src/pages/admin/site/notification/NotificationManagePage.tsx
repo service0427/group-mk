@@ -80,16 +80,13 @@ const NotificationManagePage: React.FC = () => {
 
           // 개발자에게 결과 알림
           if (result.exists) {
-            console.log('✅ notification_aggregates 테이블이 존재합니다!');
 
             // 테이블이 있지만 폴백 모드라면 통계 갱신 시도
             if (statsUseFallback) {
-              console.log('테이블 발견됨, 통계 갱신 시도');
               setTimeout(() => refreshStats(), 1000);
             }
           } else {
             console.warn('⚠️ notification_aggregates 테이블이 존재하지 않습니다!');
-            console.log('SQL 스크립트를 실행하여 테이블을 생성해야 합니다.');
           }
         }
       } catch (error) {

@@ -35,7 +35,6 @@ const Login = () => {
   useEffect(() => {
     localStorage.removeItem('auth');
     localStorage.removeItem('user');
-    console.log('로그인 페이지 진입: 인증 정보가 초기화되었습니다.');
   }, []);
 
   const [loading, setLoading] = useState(false);

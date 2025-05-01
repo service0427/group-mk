@@ -45,7 +45,6 @@ export const initializeAggregateTable = async (): Promise<boolean> => {
     if (checkError) {
       if (checkError.message.includes('does not exist')) {
         console.error('집계 테이블이 존재하지 않습니다:', checkError.message);
-        console.log('테이블 생성 전까지 임시 방식으로 통계 제공');
         return false;
       }
 
@@ -69,7 +68,6 @@ export const initializeAggregateTable = async (): Promise<boolean> => {
         return false;
       }
 
-      console.log('알림 집계 테이블이 성공적으로 초기화되었습니다.');
       return true;
     }
 
@@ -114,7 +112,6 @@ export const fetchNotificationAggregate = async (): Promise<INotificationAggrega
 export const refreshNotificationAggregate = async (): Promise<boolean> => {
   try {
     toast.loading('알림 통계 집계 중...');
-    console.log('알림 통계 전체 집계 시작');
 
     // 초기 집계 객체 생성
     const aggregate = createDefaultAggregate();
@@ -274,7 +271,6 @@ export const refreshNotificationAggregate = async (): Promise<boolean> => {
       }
     }
 
-    console.log('알림 통계 집계 완료', new Date().toISOString());
     toast.dismiss();
     toast.success('알림 통계가 성공적으로 업데이트되었습니다.');
     return true;
@@ -296,7 +292,6 @@ export const incrementNotificationAggregate = async (
   userRole: string
 ): Promise<boolean> => {
   try {
-    console.log(`알림 증분 업데이트: ${type}, ${userRole}`);
 
     // 현재 집계 데이터 가져오기
     const { data: aggregate, error: fetchError } = await supabaseAdmin
@@ -354,7 +349,6 @@ export const incrementNotificationAggregate = async (
       return await refreshNotificationAggregate();
     }
 
-    console.log('알림 통계 증분 업데이트 완료');
     return true;
 
   } catch (error: any) {
@@ -375,7 +369,6 @@ export const updateNotificationStatusAggregate = async (
   try {
     if (oldStatus === newStatus) return true; // 변경 없음
 
-    console.log(`알림 상태 변경: ${oldStatus} -> ${newStatus}, 개수: ${count}`);
 
     // 현재 집계 데이터 가져오기
     const { data: aggregate, error: fetchError } = await supabaseAdmin
@@ -415,7 +408,6 @@ export const updateNotificationStatusAggregate = async (
       return await refreshNotificationAggregate();
     }
 
-    console.log('알림 상태 통계 업데이트 완료');
     return true;
 
   } catch (error: any) {
@@ -434,7 +426,6 @@ export const decrementNotificationAggregate = async (
   userRole: string
 ): Promise<boolean> => {
   try {
-    console.log(`알림 삭제: ${type}, ${status}, ${userRole}`);
 
     // 현재 집계 데이터 가져오기
     const { data: aggregate, error: fetchError } = await supabaseAdmin
@@ -485,7 +476,6 @@ export const decrementNotificationAggregate = async (
       return await refreshNotificationAggregate();
     }
 
-    console.log('알림 삭제 통계 업데이트 완료');
     return true;
 
   } catch (error: any) {

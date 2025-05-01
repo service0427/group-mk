@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell
-} from '@/components/ui/table';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components/keenicons';
@@ -260,11 +251,6 @@ const NoticePageComponent = () => {
       const important = allImportant.slice(0, MAX_IMPORTANT_NOTICES);
       const normal = allNotices?.filter(notice => !notice.is_important) || [];
 
-      console.log('전체 공지사항 수:', allNotices?.length);
-      console.log('중요 공지사항 전체 수:', allImportant.length);
-      console.log('표시되는 중요 공지사항 수:', important.length);
-      console.log('일반 공지사항 수:', normal.length);
-
       setImportantNotices(important);
 
       // 3. 페이지네이션 계산
@@ -274,11 +260,6 @@ const NoticePageComponent = () => {
       // 4. 현재 페이지에 표시할 일반 공지사항 계산
       const startIndex = (currentPage - 1) * itemsPerPage;
       const paginatedNormal = normal.slice(startIndex, startIndex + itemsPerPage);
-
-      console.log('현재 페이지:', currentPage);
-      console.log('시작 인덱스:', startIndex);
-      console.log('페이지당 항목 수:', itemsPerPage);
-      console.log('페이지네이션된 일반 공지사항 수:', paginatedNormal.length);
 
       setNormalNotices(paginatedNormal);
       setNotices([...important, ...paginatedNormal]);

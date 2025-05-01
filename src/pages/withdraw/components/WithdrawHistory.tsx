@@ -34,7 +34,7 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
       case 'approved':
         return '승인';
       case 'rejected':
-        return '거절';
+        return '반려';
       case 'pending':
         return '대기중';
       default:
@@ -93,24 +93,34 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
             </thead>
             <tbody className="divide-y divide-gray-200">
               {recentRequests.map((request) => (
-                <tr key={request.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-700">
-                    {formatDate(request.requested_at)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-900 font-medium">
-                    {formatNumberWithCommas(request.amount)}원
-                    {request.fee_amount > 0 && (
-                      <div className="text-xs text-red-600">
-                        수수료 {formatNumberWithCommas(request.fee_amount)}원
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
-                      {getStatusText(request.status)}
-                    </span>
-                  </td>
-                </tr>
+                <React.Fragment key={request.id}>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-700">
+                      {formatDate(request.requested_at)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-900 font-medium">
+                      {formatNumberWithCommas(request.amount)}원
+                      {request.fee_amount > 0 && (
+                        <div className="text-xs text-red-600">
+                          수수료 {formatNumberWithCommas(request.fee_amount)}원
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
+                        {getStatusText(request.status)}
+                      </span>
+                    </td>
+                  </tr>
+                  {/* 반려 상태일 경우 반려 사유 표시 */}
+                  {request.status === 'rejected' && request.rejected_reason && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={3} className="px-4 py-2 text-xs text-red-600 italic">
+                        <span className="font-semibold">반려 사유:</span> {request.rejected_reason}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

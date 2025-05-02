@@ -86,7 +86,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       
       // 오류 발생 시 기본 하드코딩 데이터 사용 (빈 배열 방지)
       const backupData = getCampaignsByService(serviceCode);
-      setCampaigns(backupData.length > 0 ? backupData : campaignData);
+      setCampaigns(backupData.length > 0 ? backupData : []);
     } finally {
       setLoading(false);
     }

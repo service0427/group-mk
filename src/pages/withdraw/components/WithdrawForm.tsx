@@ -220,7 +220,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           let feePercentage = withdrawSetting.min_request_percentage;
           // 호환성을 위해 fee_percentage도 확인
           if (feePercentage === undefined) {
-            feePercentage = withdrawSetting.fee_percentage;
+            feePercentage = withdrawSetting.fee_percentage || 0;
             console.log('min_request_percentage가 없어 fee_percentage 사용:', feePercentage);
           } else {
             console.log('min_request_percentage 사용:', feePercentage);

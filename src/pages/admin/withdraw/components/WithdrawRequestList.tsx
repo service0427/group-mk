@@ -73,7 +73,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
     
     try {
       setProcessing(true)
-      await approveWithdrawRequest(id)
+      await approveWithdrawRequest(String(id)) // id를 문자열로 변환
       alert('출금 요청이 승인되었습니다.')
       onRequestUpdated() // 목록 갱신
     } catch (error) {
@@ -99,7 +99,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
     
     try {
       setProcessing(true)
-      await rejectWithdrawRequest(id, reason)
+      await rejectWithdrawRequest(String(id), reason) // id를 문자열로 변환
       alert('출금 요청이 반려되었습니다.')
       onRequestUpdated() // 목록 갱신
     } catch (error) {

@@ -5,7 +5,12 @@ import { SlotItem, CampaignListItem, Campaign } from './types';
 /**
  * 슬롯 편집 관련 커스텀 훅
  */
-export const useSlotEditing = (slots: SlotItem[], setSlots: (slots: SlotItem[]) => void, filteredSlots: SlotItem[], setFilteredSlots: (slots: SlotItem[]) => void) => {
+export const useSlotEditing = (
+  slots: SlotItem[], 
+  setSlots: (slots: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => void, 
+  filteredSlots: SlotItem[], 
+  setFilteredSlots: (slots: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => void
+) => {
   const [editingCell, setEditingCell] = useState<{ id: string, field: string }>({ id: '', field: '' });
   const [editingValue, setEditingValue] = useState<string>('');
 
@@ -117,27 +122,31 @@ export const useSlotEditing = (slots: SlotItem[], setSlots: (slots: SlotItem[]) 
         .eq('id', editingCell.id);
       
       // 로컬 상태 업데이트
-      setSlots(prevSlots => prevSlots.map(item => {
-        if (item.id === editingCell.id) {
-          return {
-            ...item,
-            inputData: { ...updatedInputData },
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return item;
-      }));
+      setSlots((prevSlots: SlotItem[]) => {
+        return prevSlots.map((item: SlotItem) => {
+          if (item.id === editingCell.id) {
+            return {
+              ...item,
+              inputData: { ...updatedInputData },
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return item;
+        });
+      });
       
-      setFilteredSlots(prevFiltered => prevFiltered.map(item => {
-        if (item.id === editingCell.id) {
-          return {
-            ...item,
-            inputData: { ...updatedInputData },
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return item;
-      }));
+      setFilteredSlots((prevFiltered: SlotItem[]) => {
+        return prevFiltered.map((item: SlotItem) => {
+          if (item.id === editingCell.id) {
+            return {
+              ...item,
+              inputData: { ...updatedInputData },
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return item;
+        });
+      });
     } catch (err) {
       console.error('슬롯 수정 실패:', err);
     } finally {
@@ -200,6 +209,23 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
   const [filteredSlots, setFilteredSlots] = useState<SlotItem[]>([]);
   const [campaignList, setCampaignList] = useState<CampaignListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  
+  // 타입 오류 방지를 위한 래퍼 함수
+  const updateSlots = (newSlotsOrUpdater: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => {
+    if (typeof newSlotsOrUpdater === 'function') {
+      setSlots(prev => newSlotsOrUpdater(prev));
+    } else {
+      setSlots(newSlotsOrUpdater);
+    }
+  };
+  
+  const updateFilteredSlots = (newSlotsOrUpdater: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => {
+    if (typeof newSlotsOrUpdater === 'function') {
+      setFilteredSlots(prev => newSlotsOrUpdater(prev));
+    } else {
+      setFilteredSlots(newSlotsOrUpdater);
+    }
+  };
   
   // 검색 파라미터 상태
   const [statusFilter, setStatusFilter] = useState('all');
@@ -423,9 +449,9 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     isLoading,
     error,
     slots,
-    setSlots,
+    setSlots: updateSlots,
     filteredSlots,
-    setFilteredSlots,
+    setFilteredSlots: updateFilteredSlots,
     totalCount,
     campaignList,
     statusFilter,

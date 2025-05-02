@@ -13,6 +13,7 @@ export interface INotificationAggregate {
     [NotificationType.SERVICE]: number;
     [NotificationType.SLOT]: number;
     [NotificationType.MARKETING]: number;
+    [key: string]: number; // 기타 타입도 허용
   };
 
   // 상태별 개수
@@ -20,6 +21,7 @@ export interface INotificationAggregate {
     [NotificationStatus.UNREAD]: number;
     [NotificationStatus.READ]: number;
     [NotificationStatus.ARCHIVED]: number;
+    [key: string]: number; // 기타 상태도 허용
   };
 
   // 회원 유형별 개수

@@ -12,7 +12,16 @@ import { Button } from '@/components/ui/button';
 interface SendNotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (notification: Omit<INotification, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  onSend: (notificationData: {
+    title: string;
+    message: string;
+    type: NotificationType;
+    priority: NotificationPriority;
+    link?: string;
+    icon?: string;
+    expiresAt?: Date | string;
+    status: NotificationStatus;
+  }) => Promise<void>;
   notificationType: 'role' | 'user';
   selectedUsers?: { id: string, name: string }[];
 }
@@ -56,7 +65,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
 
     try {
       // 알림 데이터 준비
-      const notificationData: Omit<INotification, 'id' | 'userId' | 'createdAt'> = {
+      const notificationData = {
         type,
         title,
         message,

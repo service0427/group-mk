@@ -84,7 +84,6 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 정보가 전혀 없는 경우 로그인 페이지로 이동
       if (!hasAuth && !hasCachedUser) {
-        console.log('인증 정보 전혀 없음, 로그인 페이지로 이동');
         navigate('/auth/login', { 
           state: { from: location.pathname },
           replace: true 
@@ -103,7 +102,6 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
     // 초기 확인이 끝난 후에만 실행하고, 공개 경로가 아니고, 인증 검증되지 않은 경우에만 실행
     if (!initialCheck && !isPublicPath && !authVerified && auth) {
       const verifyFullAuth = async () => {
-        console.log('세부 인증 검증 시작...');
         setDeepChecking(true);
         
         // 사용자 정보가 없는 경우에만 검증 실행
@@ -127,7 +125,6 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 상태가 완전히 확인된 후 auth는 있지만 currentUser가 없는 경우 (검증 실패)
       if (auth && !currentUser && !isAlreadyNavigatingToLogin) {
-        console.log('인증 검증 실패, 로그인 페이지로 이동');
         navigate('/auth/login', { 
           state: { from: location.pathname },
           replace: true 
@@ -139,7 +136,6 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   // 인증된 상태에서 인증 페이지 접근 시 리다이렉션
   useEffect(() => {
     if (!initialCheck && !loading && isAuthenticated && location.pathname.startsWith('/auth')) {
-      console.log('이미 인증됨, 대시보드로 이동');
       navigate('/', { replace: true });
     }
   }, [initialCheck, loading, isAuthenticated, location.pathname, navigate]);

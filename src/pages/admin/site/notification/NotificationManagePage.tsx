@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
-import { NotificationPriority, NotificationType } from '@/types/notification';
+import { NotificationPriority, NotificationType, NotificationStatus } from '@/types/notification';
 import { toast } from 'sonner';
-// 테이블 확인 유틸리티 추가
+// 테이블 확인 유틸리티 추가 - 이제 TypeScript 파일
 import { checkNotificationAggregatesTable } from './utils/check-table';
 import SendNotificationModal from './components/SendNotificationModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -135,7 +135,8 @@ const NotificationManagePage: React.FC = () => {
     priority: NotificationPriority;
     link?: string;
     icon?: string;
-    expiresAt?: Date;
+    expiresAt?: Date | string;
+    status: NotificationStatus;
   }) => {
     let success = false;
 
@@ -145,7 +146,7 @@ const NotificationManagePage: React.FC = () => {
       if (!selectedRole?.value) return;
 
       success = await createNotificationsHandler({
-        notificationData,
+        notificationData: notificationData,
         target: { type: 'role', value: selectedRole.value === 'all' ? 'all' : selectedRole.value }
       });
     } else if (selectedNotificationType === 'user') {
@@ -153,7 +154,7 @@ const NotificationManagePage: React.FC = () => {
       if (selectedUsers.length === 0) return;
 
       success = await createNotificationsHandler({
-        notificationData,
+        notificationData: notificationData,
         target: { type: 'user', value: selectedUsers.map(user => user.id) }
       });
     }

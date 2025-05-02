@@ -54,7 +54,7 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
         <div className="mb-3">
           <strong>키워드:</strong>
           <div className="flex flex-wrap gap-1 mt-1">
-            {keywords.map((keyword, index) => (
+            {keywords.map((keyword: string, index: number) => (
               <span key={index} className="badge badge-light">
                 {keyword}
               </span>

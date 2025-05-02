@@ -33,5 +33,6 @@ export interface CustomUser {
   status?: string;
   create_at?: string;
   update_dt?: string;
+  raw_user_meta_data?: any; // Supabase 사용자 메타데이터 저장
   //auth?: AuthModel;
 }

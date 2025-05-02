@@ -282,26 +282,32 @@ const ApprovePage: React.FC = () => {
           // 조인된 데이터 형식 변환 (users 객체를 user 필드로 변경)
           const enrichedSlots = data.map(slot => {
             // users 필드에서 사용자 정보 추출
-            const user = slot.users;
+            const usersArray = slot.users as any[];
+            // 배열에서 첫 번째 사용자 정보를 user로 변환
+            const user = usersArray && usersArray.length > 0 ? {
+              id: usersArray[0].id,
+              full_name: usersArray[0].full_name,
+              email: usersArray[0].email
+            } : undefined;
 
             // 기존 users 필드 제거하고 user 필드 추가
             const { users, ...slotWithoutUsers } = slot;
             return { ...slotWithoutUsers, user };
           });
 
-          setSlots(enrichedSlots);
+          setSlots(enrichedSlots as Slot[]);
 
           // 검색어로 필터링 (input_data 기반)
           if (searchTerm.trim()) {
             const filteredBySearchTerm = filterSlotsBySearchTermWithoutStateUpdate(enrichedSlots);
-            setFilteredSlots(filteredBySearchTerm);
+            setFilteredSlots(filteredBySearchTerm as Slot[]);
           } else {
-            setFilteredSlots(enrichedSlots);
+            setFilteredSlots(enrichedSlots as Slot[]);
           }
         } else {
           console.log('슬롯 데이터가 없습니다.');
-          setSlots(data || []);
-          setFilteredSlots(data || []);
+          setSlots(data || [] as Slot[]);
+          setFilteredSlots(data || [] as Slot[]);
           // 데이터가 없는 경우에도 error는 null 상태로 유지
           setError(null);
         }
@@ -318,6 +324,7 @@ const ApprovePage: React.FC = () => {
 
   // 상태 변경없이 검색어로 슬롯 필터링 함수 (상태 업데이트 없음)
   const filterSlotsBySearchTermWithoutStateUpdate = (slotsToFilter: Slot[]): Slot[] => {
+    if (!searchTerm) return slotsToFilter;
     if (!searchTerm.trim()) {
       return slotsToFilter;
     }
@@ -358,7 +365,7 @@ const ApprovePage: React.FC = () => {
 
         // 키워드 검색
         if (inputData.keywords && Array.isArray(inputData.keywords)) {
-          if (inputData.keywords.some(keyword =>
+          if (inputData.keywords.some((keyword: string) =>
             keyword.toLowerCase().includes(normalizedSearchTerm)
           )) {
             return true;

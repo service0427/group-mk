@@ -1,0 +1,51 @@
+/* Chat component styles */
+/* !important 태그를 사용하여 모든 CSS 우선순위 높임 */
+
+/* Chat icon button */
+.chat-icon-button {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 9999 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  animation: pulse 2s infinite;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+  }
+  
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(66, 133, 244, 0);
+  }
+  
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0);
+  }
+}
+
+/* Chat window */
+.chat-window {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  z-index: 9000;
+  width: 350px;
+  max-width: 90vw;
+  height: 500px;
+  max-height: 80vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  background-color: white;
+}
+
+/* Dark mode support */
+.dark .chat-window {
+  background-color: var(--tw-coal-700);
+}

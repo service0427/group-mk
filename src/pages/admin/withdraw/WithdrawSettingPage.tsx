@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CommonTemplate } from '@/components/pageTemplate';
 import WithdrawGlobalForm from './components/WithdrawGlobalForm';
-import { useWithdrawSetting } from './hooks/useWithdrawSetting';
+import { useWithdrawSetting, UserItem } from './hooks/useWithdrawSetting';
 import { getDistributor, getWithdrawGlobalSettings, saveUserWithdrawSettings, updateWithdrawGlobalSettings } from './services/withdrawService';
 import WithdrawUserForm from './components/WithdrawUserForm';
 import WithdrawUserList from './components/WithdrawUserList';
@@ -18,7 +18,7 @@ const WithdrawSettingPage: React.FC = () => {
     });
 
     // 선택된 사용자 설정 (수정 모드)
-    const [selectedSetting, setSelectedSetting] = useState<any>(null);
+    const [selectedSetting, setSelectedSetting] = useState<UserItem | null>(null);
 
     // 출금 설정 페이지에 필요한 상태 변수 (로딩 등등)
     const {

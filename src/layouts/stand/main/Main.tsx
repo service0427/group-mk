@@ -5,6 +5,8 @@ import { useMenuCurrentItem } from '@/components/menu';
 import { Footer, Header, Sidebar, useStandLayout } from '../';
 import { useMenus, useLoaders } from '@/providers';
 import { ContentLoader } from '@/components/loaders';
+import { Chat, ChatSticky } from '@/components/chat';
+import { useAuthContext } from '@/auth';
 
 const Main = () => {
   const { layout } = useStandLayout();
@@ -95,9 +97,38 @@ const Main = () => {
           {/* 푸터 컴포넌트 - 고정 영역 */}
           <Footer />
         </div>
+        
+        {/* 스티키 채팅 아이콘만 사용 */}
+        <ChatSticky />
       </div>
     </Fragment>
   );
+};
+
+// 사용자 역할 기반 채팅 액세스 제어 컴포넌트
+const ChatWithRoleCheck = () => {
+  const { currentUser, isAuthenticated } = useAuthContext();
+  
+  // 인증되지 않은 사용자는 채팅 접근 불가
+  if (!isAuthenticated || !currentUser) {
+    return null;
+  }
+  
+  // 관리자 또는 일반 사용자만 채팅 접근 가능
+  const allowedRoles = ['admin', 'advertiser', 'user', 'distributor', 'operator'];
+  
+  // 디버깅 메시지 추가
+  console.log('Chat role check:', { 
+    userRole: currentUser.role,
+    allowed: allowedRoles.includes(currentUser.role || 'unknown') 
+  });
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    console.log('Chat not shown: User role not allowed');
+    return null;
+  }
+  
+  return <Chat />;
 };
 
 export { Main };

@@ -6,6 +6,7 @@ export interface IToolbarProps {
 
 export interface IToolbarActionsProps {
   children: ReactNode;
+  className?: string;
 }
 
 export interface IToolbarHeadingProps {

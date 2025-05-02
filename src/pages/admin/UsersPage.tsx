@@ -16,15 +16,15 @@ const MakeUserRow = (user:any) => {
         console.log(user.user.user);
     },[])
 
-    const renderRoleBadge = (role: string): object => {
-        const roleMap: Record<string, object> = {
+    const renderRoleBadge = (role: string): {name: string, class: string} => {
+        const roleMap: Record<string, {name: string, class: string}> = {
             'operator': {name:'관리자', class:'text-primary'},
             'developer': {name:'개발자', class:'text-warning'},
             'distributor': {name:'총판', class:'text-success'},
             'agency': {name:'대행사', class:'text-info'},
             'advertiser': {name:'광고주', class:'text-secodary'}
         };
-        return roleMap[role] || role;
+        return roleMap[role] || {name: role, class: ''};
     }
 
     const renderStatusBadge = (status: string) => {

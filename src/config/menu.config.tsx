@@ -227,6 +227,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '알림 관리',
         icon: 'notification',
         path: '/admin/site/notification'
+      },
+      { 
+        title: '채팅 관리',
+        icon: 'message-text-1',
+        path: '/admin/site/chat'
       }
     ]
   },
@@ -591,6 +596,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: '알림 관리',
             icon: 'notification',
             path: '/admin/site/notification'
+          },
+          { 
+            title: '채팅 관리',
+            icon: 'message-text-1',
+            path: '/admin/chat'
           }
         ]
       },

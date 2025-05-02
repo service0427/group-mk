@@ -123,7 +123,7 @@ const ChatWithRoleCheck = () => {
     allowed: allowedRoles.includes(currentUser.role || 'unknown') 
   });
 
-  if (!allowedRoles.includes(currentUser.role)) {
+  if (!currentUser.role || !allowedRoles.includes(currentUser.role)) {
     console.log('Chat not shown: User role not allowed');
     return null;
   }

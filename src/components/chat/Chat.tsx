@@ -195,7 +195,7 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
           // 1. 현재 선택된 방이 있고 활성 상태인지 확인
           const currentRoom = currentRoomId ? rooms.find(room => room.id === currentRoomId) : null;
           
-          if (currentRoom && currentRoom.status === 'active') {
+          if (currentRoom && currentRoom.status === 'active' && currentRoomId) {
             // 현재 선택된 방이 있고 활성 상태이면 그대로 사용
             await handleSelectRoom(currentRoomId);
             return;

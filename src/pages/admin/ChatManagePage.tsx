@@ -228,10 +228,10 @@ const ChatManagePage: React.FC = () => {
         roomId: currentRoomId,
         senderId: currentUser.id,
         senderName: currentUser.full_name || '운영자',
-        senderRole: 'operator',
+        senderRole: ChatRole.OPERATOR,
         content: messageContent,
         timestamp: now,
-        status: 'sent'
+        status: MessageStatus.SENT
       };
       
       // 로컬 메시지 목록에 추가 (즉시 표시, 중복 방지)
@@ -359,7 +359,7 @@ const ChatManagePage: React.FC = () => {
       }
       
       // 마지막 메시지 정보를 효율적으로 가져오기 (단일 쿼리로)
-      let lastMessageInfo = {};
+      let lastMessageInfo: Record<string, { content: string, timestamp: string }> = {};
       
       // 마지막 메시지 ID가 있는 방만 필터링
       const roomsWithLastMessages = roomsData.filter(room => room.last_message_id);
@@ -376,7 +376,7 @@ const ChatManagePage: React.FC = () => {
           
         if (messagesData) {
           // 메시지 ID로 인덱싱하여 빠르게 접근할 수 있도록 함
-          lastMessageInfo = messagesData.reduce((acc, msg) => {
+          lastMessageInfo = messagesData.reduce<Record<string, { content: string, timestamp: string }>>((acc, msg) => {
             acc[msg.id] = {
               content: msg.content,
               timestamp: msg.created_at

@@ -37,7 +37,8 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
         min_request_amount: 10000,
         fee_percentage: 3,
         min_fee_amount: 1000,
-        max_fee_amount: 5000
+        max_fee_amount: 5000,
+        min_request_percentage: 3
       };
       console.log('기본값으로 설정:', defaultSettings);
       setWithdrawSetting(defaultSettings);

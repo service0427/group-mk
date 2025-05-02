@@ -2,6 +2,7 @@ import React, { Fragment, useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Navbar } from '@/partials/navbar';
+import { PageMenu } from '@/partials/pagemenu';
 import { ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
 import { IntroLogo } from '@/partials/intro-logo';
 import { toAbsoluteUrl } from '@/utils';

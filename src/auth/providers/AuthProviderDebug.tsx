@@ -10,10 +10,10 @@ interface AuthContextProps {
     saveAuth: (auth:AuthModel | undefined) => void;
     currentUser: CustomUser | null;
     setCurrentUser: Dispatch<SetStateAction<CustomUser | null>>;
-    login: (email: string, password: string) => Promise<void>;
-    register: (email: string, full_name: string, password: string, password_confirmation: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<boolean>;
+    register: (email: string, full_name: string, password: string, password_confirmation: string) => Promise<any>;
     getUser: () => Promise<CustomUser | null>;
-    logout: () => Promise<void>;
+    logout: () => Promise<any>;
     verify: () => Promise<void>;
     // 추가된 속성들
     isAuthenticated: boolean;
@@ -21,6 +21,8 @@ interface AuthContextProps {
     authVerified: boolean;  // 인증 검증 완료 여부
     refreshToken: () => Promise<boolean>;
     resetPassword: (email: string) => Promise<void>; // 비밀번호 재설정 함수 추가
+    requestPasswordResetLink: (email: string) => Promise<void>; // 비밀번호 재설정 링크 요청
+    changePassword: (email: string, token: string, newPassword: string, confirmPassword: string) => Promise<void>; // 비밀번호 변경
 }
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -442,23 +444,57 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         }
     }
 
-    // 비밀번호 재설정 함수 추가
-    const resetPassword = async (email: string) => {
+    // 비밀번호 재설정 링크 요청 함수
+    const requestPasswordResetLink = async (email: string) => {
         setLoading(true);
         try {
-            console.log('비밀번호 재설정 시도:', email);
+            console.log('비밀번호 재설정 링크 요청:', email);
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/auth/reset-password`,
             });
             
             if (error) {
-                console.error('비밀번호 재설정 오류:', error.message);
+                console.error('비밀번호 재설정 링크 요청 오류:', error.message);
                 throw new Error(error.message);
             }
             
             console.log('비밀번호 재설정 이메일 전송 성공');
         } catch (error: any) {
-            console.error('비밀번호 재설정 실패:', error);
+            console.error('비밀번호 재설정 링크 요청 실패:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    }
+    
+    // 비밀번호 재설정 함수 (이전 버전과의 호환성 유지)
+    const resetPassword = async (email: string) => {
+        return requestPasswordResetLink(email);
+    }
+    
+    // 비밀번호 변경 함수
+    const changePassword = async (email: string, token: string, newPassword: string, confirmPassword: string) => {
+        setLoading(true);
+        try {
+            if (newPassword !== confirmPassword) {
+                throw new Error("비밀번호가 일치하지 않습니다.");
+            }
+            
+            console.log('비밀번호 변경 시도');
+            
+            // Supabase API로 비밀번호 변경
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+            
+            if (error) {
+                console.error('비밀번호 변경 오류:', error.message);
+                throw new Error(error.message);
+            }
+            
+            console.log('비밀번호 변경 성공');
+        } catch (error: any) {
+            console.error('비밀번호 변경 실패:', error);
             throw error;
         } finally {
             setLoading(false);
@@ -619,7 +655,9 @@ const AuthProvider = ({children} : PropsWithChildren) => {
         userRole,
         authVerified,
         refreshToken,
-        resetPassword // 비밀번호 재설정 함수 추가
+        resetPassword,
+        requestPasswordResetLink,
+        changePassword
     }), [
         loading, auth, currentUser, saveAuth, 
         logout, verify, isAuthenticated, userRole, 

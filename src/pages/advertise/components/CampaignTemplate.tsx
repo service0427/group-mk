@@ -16,6 +16,14 @@ import {
   SlotList,
   MemoModal
 } from './campaign-components';
+
+// 캠페인 모달에 필요한 데이터 타입 정의
+interface CampaignModalData {
+  id: string | number;
+  campaign_name: string;
+  status: string;
+  service_type: string;
+}
 import { supabase } from '@/supabase';
 
 interface CampaignTemplateProps {
@@ -103,27 +111,31 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
 
 
       // 로컬 상태 업데이트
-      setSlots(prevSlots => prevSlots.map(item => {
-        if (item.id === currentMemoSlotId) {
-          return {
-            ...item,
-            userReason: memoText,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return item;
-      }));
+      setSlots((prevSlots) => {
+        return prevSlots.map(item => {
+          if (item.id === currentMemoSlotId) {
+            return {
+              ...item,
+              userReason: memoText,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return item;
+        });
+      });
 
-      setFilteredSlots(prevFiltered => prevFiltered.map(item => {
-        if (item.id === currentMemoSlotId) {
-          return {
-            ...item,
-            userReason: memoText,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return item;
-      }));
+      setFilteredSlots((prevFiltered) => {
+        return prevFiltered.map(item => {
+          if (item.id === currentMemoSlotId) {
+            return {
+              ...item,
+              userReason: memoText,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return item;
+        });
+      });
 
       // 성공 메시지
       alert('메모가 저장되었습니다.');
@@ -279,7 +291,12 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         category={serviceCategory}
-        campaign={campaignData}
+        campaign={{
+          id: campaignData?.campaigns[0]?.id || '',
+          campaign_name: campaignData?.campaigns[0]?.name || '',
+          status: campaignData?.campaigns[0]?.status || '',
+          service_type: serviceType
+        } as CampaignModalData}
         onSave={() => fetchSlots()} // 저장 후 데이터 다시 가져오기
       />
 

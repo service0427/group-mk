@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from "react"
 import { DefaultTooltip } from '@/components/tooltip';
+import { UserItem } from '../hooks/useWithdrawSetting';
 
 interface WithdrawUserFormProps {
-    users: User[];
+    users: UserItem[];
     globalSettings: any;
     onSave: (userSetting: UserSetting) => Promise<boolean>;
     selectedSetting?: any; // 수정 시 선택된 설정
     onCancelEdit?: () => void; // 수정 취소 함수
 }
 
-interface User {
-    id: string;
-    email: string;
-    full_name: string;
-}
-
 interface UserSetting {
     user_id: string;
     min_request_amount: number;
     min_request_percentage: number;
-    id?: string; // 기존 설정 수정 시 사용
+    id?: string | number; // 기존 설정 수정 시 사용
 }
 
 // 천 단위 콤마 포맷팅 함수
@@ -128,8 +123,8 @@ const WithdrawUserForm: React.FC<WithdrawUserFormProps> = ({ users, globalSettin
     };
 
     // 사용자 선택 핸들러
-    const handleUserSelect = (userId: string) => {
-        setFormData(prev => ({ ...prev, user_id: userId }));
+    const handleUserSelect = (userId: string | number) => {
+        setFormData(prev => ({ ...prev, user_id: String(userId) }));
         setIsDropdownOpen(false);
     };
 

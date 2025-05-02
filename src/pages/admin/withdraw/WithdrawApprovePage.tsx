@@ -72,8 +72,10 @@ export const WithdrawApprovePage: React.FC = () => {
       
       // 상태 기준으로 정렬 (대기중 -> 승인 -> 반려 순서)
       filteredData.sort((a, b) => {
-        const statusOrder = { pending: 0, approved: 1, rejected: 2 };
-        return statusOrder[a.status] - statusOrder[b.status];
+        const statusOrder: Record<string, number> = { pending: 0, approved: 1, rejected: 2 };
+        const statusA = statusOrder[a.status] || 0;
+        const statusB = statusOrder[b.status] || 0;
+        return statusA - statusB;
       });
       
       setTotalItems(filteredData.length)

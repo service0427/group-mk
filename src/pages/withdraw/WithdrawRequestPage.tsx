@@ -63,7 +63,7 @@ const WithdrawRequestPage: React.FC = () => {
             {/* 출금 폼 */}
             {currentUser && (
               <WithdrawForm 
-                userId={currentUser.id} 
+                userId={currentUser?.id || ''} 
                 onSuccess={handleWithdrawSuccess}
                 userCashBalance={userCashBalance}
               />
@@ -72,7 +72,7 @@ const WithdrawRequestPage: React.FC = () => {
             {/* 출금 내역 */}
             {currentUser && (
               <WithdrawHistory 
-                userId={currentUser.id}
+                userId={currentUser?.id || ''}
                 refreshTrigger={refreshTrigger}
               />
             )}

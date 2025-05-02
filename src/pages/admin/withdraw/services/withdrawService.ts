@@ -18,7 +18,13 @@ export async function getWithdrawGlobalSettings() {
 }
 
 // 출금 전역 설정 정보 업데이트하는 함수
-export async function updateWithdrawGlobalSettings(settings) {
+export async function updateWithdrawGlobalSettings(settings: {
+  id: string;
+  min_request_amount?: number;
+  min_request_percentage?: number;
+  fee_percentage?: number;
+  [key: string]: any;
+}) {
     const { data, error } = await supabase
         .from("withdraw_global_settings")
         .update(settings)
@@ -46,7 +52,11 @@ export async function getDistributor() {
 }
 
 // 사용자별 출금 설정 정보 저장하는 함수
-export async function saveUserWithdrawSettings(settings) {
+export async function saveUserWithdrawSettings(settings: {
+  user_id: string;
+  min_request_amount?: number;
+  min_request_percentage?: number;
+}) {
     const { data, error } = await supabase
         .from("withdraw_user_settings")
         .upsert({
@@ -91,7 +101,7 @@ export async function getUserWithdrawSettings() {
 }
 
 // 개별 설정 삭제 함수
-export async function deleteUserWithdrawSetting(id) {
+export async function deleteUserWithdrawSetting(id: string) {
     const { data, error } = await supabase
         .from("withdraw_user_settings")
         .delete()
@@ -125,7 +135,7 @@ export async function getWithdrawApproveList() {
 }
 
 // 출금 요청 승인 함수
-export async function approveWithdrawRequest(id) {
+export async function approveWithdrawRequest(id: string) {
     const { data, error } = await supabase
         .from("withdraw_requests")
         .update({
@@ -143,7 +153,7 @@ export async function approveWithdrawRequest(id) {
 
 
 // 출금 요청 반려 함수
-export async function rejectWithdrawRequest(id, rejected_reason) {
+export async function rejectWithdrawRequest(id: string, rejected_reason: string) {
   try {
     // reject_withdraw_request 저장 프로시저 호출
     const { data, error } = await supabase.rpc(

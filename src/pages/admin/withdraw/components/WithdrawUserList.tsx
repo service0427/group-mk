@@ -40,8 +40,25 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
         setLoading(true);
         try {
             const data = await getUserWithdrawSettings();
-            setUserSettings(data);
-            setFilteredSettings(data); // 초기 필터링된 결과는 전체 데이터
+            // 데이터 변환: users 필드에 배열이 올 경우 첫 번째 항목을 사용하여 객체로 변환
+            const transformedData = data.map((item: any) => {
+                // users가 배열인 경우 처리
+                if (Array.isArray(item.users) && item.users.length > 0) {
+                    const firstUser = item.users[0];
+                    return {
+                        ...item,
+                        users: {
+                            id: firstUser.id || '',
+                            email: firstUser.email || '',
+                            full_name: firstUser.full_name || ''
+                        }
+                    };
+                }
+                return item;
+            });
+            
+            setUserSettings(transformedData as UserWithdrawSetting[]);
+            setFilteredSettings(transformedData as UserWithdrawSetting[]); // 초기 필터링된 결과는 전체 데이터
         } catch (error) {
             console.error("Error fetching user withdraw settings:", error);
             showNotification("사용자별 출금 설정 목록을 불러오는데 실패했습니다.", "error");

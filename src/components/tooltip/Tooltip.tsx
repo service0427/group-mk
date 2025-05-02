@@ -7,6 +7,12 @@ interface TooltipState {
   isFixed: boolean; // 클릭으로 고정되었는지 여부
 }
 
+interface ExtendedReactElementProps {
+  onClick?: (e: React.MouseEvent) => void;
+  style?: React.CSSProperties;
+  [key: string]: any;
+}
+
 // 호버 및 클릭 기능을 모두 지원하는 강화된 툴팁
 const DefaultTooltip: React.FC<TooltipProps> = ({ children, className = '', ...props }) => {
   // 툴팁의 표시 상태와 고정 상태를 관리
@@ -40,8 +46,11 @@ const DefaultTooltip: React.FC<TooltipProps> = ({ children, className = '', ...p
     }
 
     // 기존 onClick이 있으면 호출
-    if (React.isValidElement(children) && typeof children.props.onClick === 'function') {
-      children.props.onClick(e);
+    if (React.isValidElement(children)) {
+      const childProps = children.props as ExtendedReactElementProps;
+      if (childProps && typeof childProps.onClick === 'function') {
+        childProps.onClick(e);
+      }
     }
   };
 
@@ -59,10 +68,10 @@ const DefaultTooltip: React.FC<TooltipProps> = ({ children, className = '', ...p
         onMouseEnter: handleMouseEnter,
         onMouseLeave: handleMouseLeave,
         style: {
-          ...(children.props.style || {}),
+          ...((React.isValidElement(children) && (children.props as ExtendedReactElementProps).style) || {}),
           cursor: 'pointer',
         },
-      })
+      } as React.HTMLAttributes<HTMLElement>)
     : children;
 
   // 클릭 영역 밖을 클릭했을 때 툴팁을 닫는 클릭어웨이 리스너 적용
@@ -87,7 +96,7 @@ const DefaultTooltip: React.FC<TooltipProps> = ({ children, className = '', ...p
           disableTouchListener
           PopperProps={{
             disablePortal: true,
-          }}
+          } as any}
         >
           {childElement}
         </Tooltip>

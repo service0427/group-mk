@@ -700,9 +700,9 @@ const NotificationsPage = () => {
         <NotificationDetailModal
           notification={selectedNotification}
           onClose={() => setSelectedNotification(null)}
-          onMarkAsRead={markAsRead}
+          onMarkAsRead={async (id: string) => await markAsRead(id)}
           onArchive={archiveNotification}
-          onDelete={(id) => {
+          onDelete={async (id) => {
             setNotificationToDelete(id);
             setDeleteMultiple(false);
             setShowDeleteConfirm(true);

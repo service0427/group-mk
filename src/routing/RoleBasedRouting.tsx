@@ -5,7 +5,7 @@ import { StandLayout } from '@/layouts/stand';
 // 예시 컴포넌트들 (실제 프로젝트에서는 import 필요)
 import { DefaultPage } from '@/pages/dashboards';
 import { UsersPage, ManageCashPage } from '@/pages/admin';
-import { WithdrawRequestPage } from '@/pages/withdraw/WithdrawRequestPage';
+import WithdrawRequestPage from '@/pages/withdraw/WithdrawRequestPage';
 import { ChargePage, HistoryPage } from '@/pages/cash';
 import { ErrorsRouting } from '@/errors';
 import { AuthPage } from '@/auth';

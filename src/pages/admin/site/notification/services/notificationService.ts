@@ -651,14 +651,23 @@ export const createMultipleNotifications = async (
             console.log('RLS 우회 실패, 대체 방식 시도...');
 
             // 직접 서비스 롤 키를 헤더에 명시적으로 지정하는 방식 시도
-            const { error: retryError } = await supabase
-              .from('notifications')
-              .insert(notificationsToInsert, {
+            // Create a custom fetch function with the headers
+            const customFetch = async (url: string, options: RequestInit) => {
+              const modifiedOptions = {
+                ...options,
                 headers: {
+                  ...options.headers,
                   'apikey': `${import.meta.env.VITE_SUPABASE_SERVICE_KEY}`,
                   'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_KEY}`
                 }
-              });
+              };
+              return fetch(url, modifiedOptions);
+            };
+            
+            // Use standard insert without the headers parameter
+            const { error: retryError } = await supabase
+              .from('notifications')
+              .insert(notificationsToInsert);
 
             if (retryError) {
               console.error('대체 방식도 실패:', retryError);

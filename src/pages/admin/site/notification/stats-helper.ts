@@ -1,11 +1,12 @@
 import { supabaseAdmin } from '@/supabase';
 import { NotificationType, NotificationStatus } from '@/types/notification';
+import { NotificationStats } from './services/notificationService';
 
 // 전체 알림 기준 통계 조회 함수
-export async function fetchAllNotificationStats() {
+export async function fetchAllNotificationStats(): Promise<NotificationStats> {
   try {
     // 타입별 통계
-    const typeCount = {
+    const typeCount: Record<NotificationType, number> = {
       [NotificationType.SYSTEM]: 0,
       [NotificationType.TRANSACTION]: 0,
       [NotificationType.SERVICE]: 0,
@@ -14,7 +15,7 @@ export async function fetchAllNotificationStats() {
     };
 
     // 역할별 통계
-    const roleCount = {
+    const roleCount: Record<string, number> = {
       'developer': 0,
       'operator': 0,
       'distributor': 0,
@@ -23,7 +24,7 @@ export async function fetchAllNotificationStats() {
     };
 
     // 상태별 통계
-    const statusCounts = {
+    const statusCounts: Record<NotificationStatus, number> = {
       [NotificationStatus.UNREAD]: 0,
       [NotificationStatus.READ]: 0,
       [NotificationStatus.ARCHIVED]: 0
@@ -83,7 +84,7 @@ export async function fetchAllNotificationStats() {
 
       if (userRoles && userRoles.length > 0) {
         // 사용자 ID -> 역할 매핑
-        const userRoleMap = {};
+        const userRoleMap: Record<string, string> = {};
         userRoles.forEach(user => {
           userRoleMap[user.id] = user.role;
         });

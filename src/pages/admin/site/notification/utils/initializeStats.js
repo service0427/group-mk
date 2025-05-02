@@ -58,7 +58,6 @@ export const validateAggregateTable = async () => {
       return false;
     }
 
-    console.log('테이블 검증 성공:', data);
     toast.success('통계 테이블이 정상적으로 존재합니다');
     return true;
   } catch (error) {
@@ -74,7 +73,6 @@ export const validateAggregateTable = async () => {
 export const refreshStats = async () => {
   try {
     toast.loading('알림 통계 집계 중...');
-    console.log('알림 통계 전체 집계 시작');
 
     // 초기 집계 객체 생성
     const aggregate = createDefaultAggregate();
@@ -232,7 +230,6 @@ export const refreshStats = async () => {
       }
     }
 
-    console.log('알림 통계 집계 완료', new Date().toISOString());
     toast.dismiss();
     toast.success('알림 통계가 성공적으로 업데이트되었습니다.');
     return true;
@@ -250,7 +247,3 @@ window.validateNotificationTable = validateAggregateTable;
 window.refreshNotificationStats = refreshStats;
 
 // 메시지 표시
-console.log('알림 통계 초기화 유틸리티가 로드되었습니다.');
-console.log('다음 함수를 사용할 수 있습니다:');
-console.log('- window.validateNotificationTable(): 테이블 존재 확인');
-console.log('- window.refreshNotificationStats(): 통계 갱신');

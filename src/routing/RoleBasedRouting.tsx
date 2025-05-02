@@ -4,11 +4,12 @@ import { StandLayout } from '@/layouts/stand';
 
 // 예시 컴포넌트들 (실제 프로젝트에서는 import 필요)
 import { DefaultPage } from '@/pages/dashboards';
-import { UsersPage, ManageCashPage } from '@/pages/admin';
+import { UsersPage, ManageCashPage, ChatManagePage } from '@/pages/admin';
 import WithdrawRequestPage from '@/pages/withdraw/WithdrawRequestPage';
 import { ChargePage, HistoryPage } from '@/pages/cash';
 import { ErrorsRouting } from '@/errors';
 import { AuthPage } from '@/auth';
+import ChatDebug from '@/pages/ChatDebug';
 
 /**
  * 역할 기반 라우팅 예시
@@ -28,17 +29,30 @@ const RoleBasedRoutingExample = () => {
           {/* 일반 사용자 페이지 */}
           <Route path="/cash/charge" element={<ChargePage />} />
           <Route path="/cash/history" element={<HistoryPage />} />
+          
+          {/* 채팅 디버그 페이지 */}
+          <Route path="/chat-debug" element={<ChatDebug />} />
         </Route>
       </Route>
       
-      {/* 관리자 전용 라우트 */}
+      {/* 관리자 전용 라우트 - 개발 단계에서는 일반 라우트로 변경 */}
+      <Route element={<StandLayout />}>
+        {/* 관리자 페이지 */}
+        <Route path="/admin/users" element={<UsersPage />} />
+        <Route path="/admin/cash" element={<ManageCashPage />} />
+        <Route path="/admin/chat" element={<ChatManagePage />} />
+        <Route path="/admin/site/chat" element={<ChatManagePage />} />
+      </Route>
+      
+      {/* 주석 처리된 원래 버전 (나중에 권한 적용시 사용)
       <Route element={<RequireAuth allowedRoles={['operator', 'developer']} />}>
         <Route element={<StandLayout />}>
-          {/* 관리자 페이지 */}
           <Route path="/admin/users" element={<UsersPage />} />
           <Route path="/admin/cash" element={<ManageCashPage />} />
+          <Route path="/admin/chat" element={<ChatManagePage />} />
         </Route>
       </Route>
+      */}
       
       {/* 총판 전용 라우트 */}
       <Route element={<RequireAuth allowedRoles={['distributor']} />}>

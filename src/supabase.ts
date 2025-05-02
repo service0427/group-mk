@@ -8,8 +8,14 @@ const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY // 서비�
 console.log('SUPABASE URL:', supabaseUrl);
 console.log('SERVICE KEY EXISTS:', !!supabaseServiceKey);
 
+// 환경 변수 없으면 개발 모드에서는 에러 메시지만 표시
 if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables')
+    console.error('Missing Supabase environment variables. Chat features will not work.');
+    
+    if (import.meta.env.PROD) {
+        // 프로덕션에서만 에러 발생
+        throw new Error('Missing Supabase environment variables');
+    }
 }
 
 // 일반 클라이언트 (RLS 정책 적용)

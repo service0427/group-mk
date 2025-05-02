@@ -32,6 +32,12 @@ const RequireAuth = ({ allowedRoles = [] }: RequireAuthProps = {}) => {
   // 역할 기반 접근 제어: 허용된 역할 목록이 있고, 현재 사용자의 역할이 그 목록에 없는 경우
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     console.log(`접근 거부: 사용자 역할(${userRole})은 이 페이지에 접근할 수 없음`);
+    console.log('접근 제어 상세 정보:', { 
+      allowedRoles, 
+      userRole, 
+      location: location.pathname,
+      isAuthenticated
+    });
     
     // 403(권한 없음) 에러 페이지로 리다이렉션
     return <Navigate to="/error/403" state={{ from: location }} replace />;

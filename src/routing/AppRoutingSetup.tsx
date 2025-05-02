@@ -36,7 +36,8 @@ import {
   Campaigns,
   Slots,
   Site,
-  ManageCashPage
+  ManageCashPage,
+  ChatManagePage
 } from '@/pages/admin';
 
 // 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
@@ -121,6 +122,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
           <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
+          <Route path="/admin/site/chat" element={<ChatManagePage />} />
 
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<ManageCashPage />} />

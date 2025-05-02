@@ -18,11 +18,9 @@ const initalProps: IMenuContextProps = {
   dropdownTimeout: 0,
   // Default function for opening an accordion (to be overridden)
   setOpenAccordion: (parentId: string, id: string) => {
-    console.log(`Accordion at level ${parentId}, with ID ${id} is now open`);
   },
   // Default function for checking if an accordion is open (to be overridden)
   isOpenAccordion: (parentId: string, id: string) => {
-    console.log(`Checking if accordion at level ${parentId}, with ID ${id} is open`);
     return false; // By default, no accordion is open
   }
 };

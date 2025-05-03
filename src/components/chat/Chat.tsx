@@ -71,8 +71,8 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
             // 다른 활성화된 방이 있으면 그 방 선택
             handleSelectRoom(activeRoom.id);
           } else {
-            // 활성화된 방이 없으면 항상 새 채팅방 생성
-            handleCreateChatRoom();
+            // 활성화된 방이 없어도 채팅방은 생성하지 않고 빈 채팅창만 표시
+            setShowRoomList(false);
           }
         }
       }
@@ -125,12 +125,14 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
   // 메시지 전송
   const handleSendMessage = async (content: string) => {
     if (!currentRoomId) {
-      console.error('선택된 채팅방이 없습니다.');
+      console.log('선택된 채팅방이 없습니다. 첫 메시지 전송 시 새 채팅방 생성을 시도합니다.');
       
       // 채팅방이 없는 경우 새 채팅방 생성 (일반 사용자만)
       if (currentUser?.role !== 'admin') {
+        // 메시지 전송 시점에 채팅방 생성
         const newRoomId = await createChatRoom([], '운영자와의 대화');
         if (newRoomId) {
+          console.log('새로운 채팅방 생성됨:', newRoomId);
           // 새 채팅방 생성 후 메시지 전송
           await handleSelectRoom(newRoomId);
           // 약간의 지연 후 메시지 전송 (채팅방 선택이 완료되도록)
@@ -147,12 +149,13 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
     
     const currentRoom = rooms.find(room => room.id === currentRoomId);
     if (!currentRoom || currentRoom.status !== 'active') {
-      console.error('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다.');
+      console.log('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다. 새 채팅방을 생성합니다.');
       
       // 비활성 방인 경우 새 채팅방 생성 (일반 사용자만)
       if (currentUser?.role !== 'admin') {
         const newRoomId = await createChatRoom([], '운영자와의 대화');
         if (newRoomId) {
+          console.log('새로운 채팅방 생성됨:', newRoomId);
           // 새 채팅방 생성 후 메시지 전송
           await handleSelectRoom(newRoomId);
           // 약간의 지연 후 메시지 전송 (채팅방 선택이 완료되도록)
@@ -208,10 +211,8 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
           if (activeRoom) {
             // 활성화된 방이 있으면 그 방을 선택
             await handleSelectRoom(activeRoom.id);
-          } else {
-            // 활성화된 방이 없으면 새 채팅방 생성
-            await handleCreateChatRoom();
           }
+          // 활성화된 방이 없어도 자동으로 채팅방을 생성하지 않음
         }
       } catch (error) {
         console.error('채팅 초기화 중 오류 발생:', error);
@@ -219,7 +220,7 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
     };
     
     initializeChat();
-  }, [currentUser?.id, isOpen, fetchChatRooms, handleCreateChatRoom, handleSelectRoom, currentRoomId, rooms]);
+  }, [currentUser?.id, isOpen, fetchChatRooms, handleSelectRoom, currentRoomId, rooms]);
   
   // 현재 채팅방에 따라 메시지 가져오기
   useEffect(() => {

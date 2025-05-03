@@ -372,11 +372,7 @@ const ChatSticky: React.FC = () => {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#ffffff" />
           <path d="M8 10h8M8 14h4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center" style={{ fontSize: '14px', fontWeight: 'bold' }}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
+{/* 안 읽은 메시지 카운트 표시 제거 */}
       </button>
       
       {isOpen && isAuthenticated && (

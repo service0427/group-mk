@@ -18,7 +18,11 @@ import {
 import { KeenIcon } from '@/components/keenicons';
 import { useLanguage } from '@/i18n';
 
-const NotificationDropdown: React.FC = () => {
+interface NotificationDropdownProps {
+  containerClassName?: string;
+}
+
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ containerClassName }) => {
   const { notifications, markAsRead, markAllAsRead, loading, unreadCount, fetchNotifications } = useNotifications();
   const navigate = useNavigate();
   const [selectedNotification, setSelectedNotification] = useState<INotification | null>(null);
@@ -137,7 +141,7 @@ const NotificationDropdown: React.FC = () => {
 
   return (
     <>
-      <Menu className="items-stretch">
+      <Menu className={`items-stretch ${containerClassName || ''}`}>
         <MenuItem
           ref={itemRef}
           toggle="dropdown"
@@ -154,7 +158,7 @@ const NotificationDropdown: React.FC = () => {
             ]
           }}
         >
-          <MenuToggle className="btn btn-icon btn-outline-primary transition-all hover:bg-blue-500 hover:text-white ms-1 size-9 rounded-full relative">
+          <MenuToggle className="btn btn-icon flex items-center justify-center transition-all hover:bg-blue-500 hover:text-white size-9 rounded-full relative">
             <KeenIcon icon="notification-status" className="text-base" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">

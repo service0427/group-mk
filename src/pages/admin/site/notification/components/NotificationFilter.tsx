@@ -20,7 +20,7 @@ const NotificationFilter: React.FC<NotificationFilterProps> = ({
   return (
     <div className="flex flex-wrap gap-3">
       <select
-        className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 rounded text-md px-3 py-2 min-w-[160px] w-auto"
+        className="select select-sm select-bordered flex-grow min-w-[160px] w-auto"
         value={filterType}
         onChange={(e) => onFilterTypeChange(e.target.value as NotificationType | 'all')}
       >
@@ -33,7 +33,7 @@ const NotificationFilter: React.FC<NotificationFilterProps> = ({
       </select>
 
       <select
-        className="form-select form-select-rounded border border-gray-300 focus:border-primary focus:shadow-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 rounded text-md px-3 py-2 min-w-[160px] w-auto"
+        className="select select-sm select-bordered flex-grow min-w-[160px] w-auto"
         value={filterUserRole}
         onChange={(e) => onFilterUserRoleChange(e.target.value)}
       >

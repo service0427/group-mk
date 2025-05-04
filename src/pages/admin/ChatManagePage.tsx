@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from '
 import { useAuthContext } from '@/auth';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
+import { CommonTemplate } from '@/components/pageTemplate';
 
 // 메시지 아이템 컴포넌트를 메모이제이션하여 불필요한 렌더링 방지
 const MessageItem = memo(({ 
@@ -18,17 +19,17 @@ const MessageItem = memo(({
       <div 
         className={`max-w-[80%] rounded-lg p-3 ${
           message.senderRole === 'system'
-            ? 'bg-gray-200 text-gray-800'
+            ? 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white'
             : isCurrentUser
-              ? 'bg-blue-500 text-white'
-              : 'bg-white text-gray-800 border'
+              ? 'bg-blue-500 dark:bg-blue-600 text-white'
+              : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-white border dark:border-slate-600'
         }`}
       >
         {/* 발신자 이름 및 역할 */}
         {!isCurrentUser && message.senderRole !== 'system' && (
-          <div className="text-xs font-medium text-gray-500 mb-1">
+          <div className="text-xs font-medium text-gray-500 dark:text-white mb-1">
             {message.senderName} 
-            <span className="ml-2 text-[10px] px-1 py-0.5 bg-gray-100 rounded">
+            <span className="ml-2 text-[10px] px-1 py-0.5 bg-gray-100 dark:bg-slate-600 rounded">
               {message.senderRole === 'user' ? '사용자' : 
                message.senderRole === 'operator' ? '운영자' : 
                message.senderRole === 'admin' ? '관리자' : message.senderRole}
@@ -37,11 +38,11 @@ const MessageItem = memo(({
         )}
         
         {/* 메시지 내용 */}
-        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        <div className="text-sm whitespace-pre-wrap text-current">{message.content}</div>
         
         {/* 타임스탬프 */}
         <div className="text-right mt-1">
-          <span className="text-xs opacity-70">
+          <span className="text-xs opacity-70 text-current">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
@@ -791,18 +792,21 @@ const ChatManagePage: React.FC = () => {
   {/* 개발 단계에서는 접근 제한 제거 */}
   
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">채팅 관리 페이지</h1>
-      
-      <div className="flex border rounded-lg overflow-hidden" style={{ height: 'calc(80vh - 140px)' }}>
+    <CommonTemplate 
+      title="채팅 관리 페이지"
+      description="실시간 채팅 상담 내역을 관리하고 응답합니다"
+      showPageMenu={false}
+      childrenClassName=""
+    >
+      <div className="flex border dark:border-slate-700 rounded-lg overflow-hidden mt-2" style={{ height: 'calc(80vh - 220px)' }}>
         {/* 채팅방 목록 */}
-        <div className="w-1/3 border-r overflow-y-auto bg-gray-50">
-          <div className="p-4 bg-blue-600 text-white font-medium flex flex-col">
+        <div className="w-1/3 border-r dark:border-slate-700 overflow-y-auto bg-gray-50 dark:bg-slate-900">
+          <div className="p-4 bg-blue-600 dark:bg-blue-900 text-white font-medium flex flex-col">
             <div className="flex justify-between items-center w-full">
               <div>채팅방 목록 ({allRooms.length})</div>
               <button 
                 onClick={() => {setAllRooms([]); setRoomPage(0); fetchAllChatRooms(0);}}
-                className="text-xs bg-blue-700 py-1 px-2 rounded hover:bg-blue-800"
+                className="text-xs bg-blue-700 dark:bg-blue-800 py-1 px-2 rounded hover:bg-blue-800 dark:hover:bg-blue-900"
                 title="새로고침"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -816,8 +820,8 @@ const ChatManagePage: React.FC = () => {
               <button 
                 className={`py-1 px-2 rounded transition-colors ${
                   statusFilter === 'all' 
-                    ? 'bg-white text-blue-700 font-medium' 
-                    : 'bg-blue-700 text-white hover:bg-blue-800'
+                    ? 'bg-white text-blue-700 dark:bg-coal-900 dark:text-blue-300 font-medium' 
+                    : 'bg-blue-700 dark:bg-blue-800 text-white hover:bg-blue-800 dark:hover:bg-blue-900'
                 }`}
                 onClick={() => setStatusFilter('all')}
               >
@@ -826,8 +830,8 @@ const ChatManagePage: React.FC = () => {
               <button 
                 className={`py-1 px-2 rounded transition-colors ${
                   statusFilter === 'active' 
-                    ? 'bg-white text-blue-700 font-medium' 
-                    : 'bg-blue-700 text-white hover:bg-blue-800'
+                    ? 'bg-white text-blue-700 dark:bg-coal-900 dark:text-blue-300 font-medium' 
+                    : 'bg-blue-700 dark:bg-blue-800 text-white hover:bg-blue-800 dark:hover:bg-blue-900'
                 }`}
                 onClick={() => setStatusFilter('active')}
               >
@@ -836,8 +840,8 @@ const ChatManagePage: React.FC = () => {
               <button 
                 className={`py-1 px-2 rounded transition-colors ${
                   statusFilter === 'archived' 
-                    ? 'bg-white text-blue-700 font-medium' 
-                    : 'bg-blue-700 text-white hover:bg-blue-800'
+                    ? 'bg-white text-blue-700 dark:bg-coal-900 dark:text-blue-300 font-medium' 
+                    : 'bg-blue-700 dark:bg-blue-800 text-white hover:bg-blue-800 dark:hover:bg-blue-900'
                 }`}
                 onClick={() => setStatusFilter('archived')}
               >
@@ -846,8 +850,8 @@ const ChatManagePage: React.FC = () => {
               <button 
                 className={`py-1 px-2 rounded transition-colors ${
                   statusFilter === 'closed' 
-                    ? 'bg-white text-blue-700 font-medium' 
-                    : 'bg-blue-700 text-white hover:bg-blue-800'
+                    ? 'bg-white text-blue-700 dark:bg-coal-900 dark:text-blue-300 font-medium' 
+                    : 'bg-blue-700 dark:bg-blue-800 text-white hover:bg-blue-800 dark:hover:bg-blue-900'
                 }`}
                 onClick={() => setStatusFilter('closed')}
               >
@@ -857,7 +861,7 @@ const ChatManagePage: React.FC = () => {
           </div>
           
           {allRooms.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-4 text-center text-gray-500 dark:text-white">
               {isLoading ? '채팅방 로딩 중...' : '채팅방이 없습니다.'}
             </div>
           ) : (
@@ -866,30 +870,30 @@ const ChatManagePage: React.FC = () => {
                 <div 
                   key={room.id}
                   onClick={() => handleSelectRoom(room.id)}
-                  className={`p-4 border-b cursor-pointer hover:bg-gray-100 transition-colors ${currentRoomId === room.id ? 'bg-blue-50' : ''}`}
+                  className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${currentRoomId === room.id ? 'bg-blue-50 dark:bg-blue-800/60' : ''}`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-medium">{room.name || '익명 대화'}</div>
-                      <div className="text-xs text-blue-600 mb-1">
+                      <div className="font-medium dark:text-white">{room.name || '익명 대화'}</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-300 mb-1">
                         {room.userName}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1 truncate" style={{ maxWidth: '200px' }}>
+                      <div className="text-sm text-gray-500 dark:text-white mt-1 truncate" style={{ maxWidth: '200px' }}>
                         {room.lastMessage || '새 대화'}
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-white">
                         {room.lastMessageTime ? new Date(room.lastMessageTime).toLocaleDateString() : ''}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500 dark:text-white mt-1">
                         {room.status === 'active' ? 
-                          <span className="px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">활성</span> : 
+                          <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-700 text-green-800 dark:text-white rounded-full text-xs">활성</span> : 
                           room.status === 'closed' ?
-                          <span className="px-1.5 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">종료</span> :
+                          <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-700 text-red-800 dark:text-white rounded-full text-xs">종료</span> :
                           room.status === 'archived' ?
-                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">보관</span> :
-                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-800 rounded-full text-xs">비활성</span>
+                          <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-white rounded-full text-xs">보관</span> :
+                          <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white rounded-full text-xs">비활성</span>
                         }
                       </div>
                     </div>
@@ -903,22 +907,22 @@ const ChatManagePage: React.FC = () => {
                   <button 
                     onClick={loadMoreRooms}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs flex items-center gap-2 mx-auto disabled:opacity-50"
+                    className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-white rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-xs flex items-center gap-2 mx-auto disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        로딩 중...
+                        <span className="dark:text-white">로딩 중...</span>
                       </>
                     ) : (
                       <>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M6 9l6 6 6-6"/>
                         </svg>
-                        더 많은 채팅방 보기
+                        <span className="dark:text-white">더 많은 채팅방 보기</span>
                       </>
                     )}
                   </button>
@@ -928,12 +932,12 @@ const ChatManagePage: React.FC = () => {
               {/* 로딩 인디케이터 (첫 페이지 로딩 시) */}
               {isLoading && roomPage === 0 && (
                 <div className="p-4 text-center">
-                  <div className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-xs flex items-center mx-auto inline-flex">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <div className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-white rounded text-xs flex items-center mx-auto inline-flex">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    채팅방 로딩 중...
+                    <span className="dark:text-white">채팅방 로딩 중...</span>
                   </div>
                 </div>
               )}
@@ -942,28 +946,23 @@ const ChatManagePage: React.FC = () => {
         </div>
         
         {/* 채팅창 */}
-        <div className="w-2/3 flex flex-col">
+        <div className="w-2/3 flex flex-col dark:bg-black">
           {/* 채팅창 헤더 */}
-          <div className="p-4 bg-gray-100 border-b flex justify-between items-center">
+          <div className="p-4 bg-gray-100 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center">
             <div>
-              <div className="font-medium">
+              <div className="font-medium dark:text-white">
                 {currentRoomInfo 
                   ? currentRoomInfo.name || '익명 대화' 
                   : '채팅방을 선택해주세요'
                 }
               </div>
               {currentRoomInfo && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 dark:text-white mt-1">
                   <span className="mr-2">사용자: {currentRoomInfo.userName || '사용자'}</span>
-                  <span className="px-1.5 py-0.5 text-[10px] rounded-full inline-block" 
-                    style={{ 
-                      backgroundColor: currentRoomInfo.status === 'active' 
-                        ? 'rgb(220, 252, 231)' 
-                        : 'rgb(243, 244, 246)',
-                      color: currentRoomInfo.status === 'active' 
-                        ? 'rgb(22, 101, 52)' 
-                        : 'rgb(55, 65, 81)'
-                    }}
+                  <span className={`px-1.5 py-0.5 text-[10px] rounded-full inline-block
+                    ${currentRoomInfo.status === 'active' 
+                      ? 'bg-green-100 dark:bg-green-700 text-green-800 dark:text-white' 
+                      : 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white'}`}
                   >
                     {currentRoomInfo.status === 'active' ? '활성' : '비활성'}
                   </span>
@@ -977,7 +976,7 @@ const ChatManagePage: React.FC = () => {
               <div className="flex gap-2">
                 <button 
                   onClick={() => fetchRoomMessages(currentRoomId, 0, false)}
-                  className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  className="text-xs px-2 py-1 bg-gray-200 dark:bg-coal-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-coal-600"
                   title="메시지 새로고침"
                   disabled={loadingMessages}
                 >
@@ -994,7 +993,7 @@ const ChatManagePage: React.FC = () => {
                         closeChatRoom(currentRoomId);
                       }
                     }}
-                    className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
                     title="상담 종료"
                   >
                     상담 종료
@@ -1011,7 +1010,7 @@ const ChatManagePage: React.FC = () => {
                         archiveChatRoom(currentRoomId);
                       }
                     }}
-                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
                     title="채팅 보관"
                   >
                     보관
@@ -1024,15 +1023,15 @@ const ChatManagePage: React.FC = () => {
           {/* 메시지 영역 */}
           <div 
             ref={messagesContainerRef}
-            className="flex-1 p-4 overflow-y-auto bg-gray-50" 
+            className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-slate-900" 
             id="chat-messages-container"
           >
             {!currentRoomId ? (
-              <div className="h-full flex items-center justify-center text-gray-500">
+              <div className="h-full flex items-center justify-center text-gray-500 dark:text-white">
                 좌측에서 채팅방을 선택해주세요
               </div>
             ) : currentMessages.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-gray-500">
+              <div className="h-full flex items-center justify-center text-gray-500 dark:text-white">
                 {loadingMessages ? '메시지를 불러오는 중...' : '메시지가 없습니다'}
               </div>
             ) : (
@@ -1043,22 +1042,22 @@ const ChatManagePage: React.FC = () => {
                     <button
                       onClick={loadMoreMessages}
                       disabled={loadingMessages}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs flex items-center gap-2 disabled:opacity-50"
+                      className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-white rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-xs flex items-center gap-2 disabled:opacity-50"
                     >
                       {loadingMessages ? (
                         <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          이전 메시지 로드 중...
+                          <span className="dark:text-white">이전 메시지 로드 중...</span>
                         </>
                       ) : (
                         <>
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M18 15l-6-6-6 6"/>
                           </svg>
-                          이전 메시지 더 보기
+                          <span className="dark:text-white">이전 메시지 더 보기</span>
                         </>
                       )}
                     </button>
@@ -1076,12 +1075,12 @@ const ChatManagePage: React.FC = () => {
                 {/* 로딩 인디케이터 (첫 페이지 로딩 시) */}
                 {loadingMessages && currentPage === 0 && (
                   <div className="flex justify-center my-4">
-                    <div className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-xs flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <div className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-white rounded text-xs flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      메시지 로딩 중...
+                      <span className="dark:text-white">메시지 로딩 중...</span>
                     </div>
                   </div>
                 )}
@@ -1091,7 +1090,7 @@ const ChatManagePage: React.FC = () => {
           
           {/* 메시지 입력 */}
           {currentRoomId && currentRoomInfo && currentRoomInfo.status === 'active' ? (
-            <div className="p-3 bg-white border-t flex">
+            <div className="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex">
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -1101,20 +1100,20 @@ const ChatManagePage: React.FC = () => {
                     handleSendMessage();
                   }
                 }}
-                className="flex-1 border rounded-l-lg p-2 outline-none text-sm resize-none"
+                className="flex-1 border rounded-l-lg p-2 outline-none text-sm resize-none dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-white dark:placeholder-opacity-70"
                 placeholder="메시지 입력... (Shift+Enter로 줄바꿈)"
                 rows={2}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || loadingMessages}
-                className="bg-blue-500 text-white px-4 rounded-r-lg disabled:opacity-50"
+                className="bg-blue-500 dark:bg-blue-800 text-white px-4 rounded-r-lg disabled:opacity-50 hover:bg-blue-600 dark:hover:bg-blue-900"
               >
                 전송
               </button>
             </div>
           ) : currentRoomId && currentRoomInfo && currentRoomInfo.status !== 'active' ? (
-            <div className="p-4 bg-gray-100 border-t text-center text-gray-500 font-medium">
+            <div className="p-4 bg-gray-100 dark:bg-slate-800 border-t dark:border-slate-700 text-center text-gray-500 dark:text-white font-medium">
               {currentRoomInfo.status === 'closed' ? 
                 '이 상담은 종료되었습니다. 더 이상 메시지를 보낼 수 없습니다.' : 
                 currentRoomInfo.status === 'archived' ? 
@@ -1124,7 +1123,7 @@ const ChatManagePage: React.FC = () => {
           ) : null}
         </div>
       </div>
-    </div>
+    </CommonTemplate>
   );
 };
 

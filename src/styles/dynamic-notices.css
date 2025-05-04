@@ -1,0 +1,46 @@
+/* 다양한 중요 공지 및 안내 카드 관련 변수 및 스타일 */
+
+:root {
+  /* 공지사항 관련 CSS 변수 */
+  --notice-visible: 0;   /* 0: 숨김, 1: 표시 */
+  --notice-height: 0px;  /* 공지사항 높이 (기본 0) */
+  --notice-margin: 0px;  /* 공지사항으로 인한 여백 (기본 0) */
+  
+  /* 채팅 아이콘 위치 관련 변수 */
+  --chat-button-bottom: 60px;  /* 채팅 아이콘 기본 위치 */
+}
+
+/* 하단 고정된 컴포넌트들 간의 간격 조정 */
+.footer-component-stack {
+  /* 푸터 관련 스타일 */
+  position: relative;
+  margin-bottom: calc(var(--notice-height));
+}
+
+/* 공지사항이 있을 때 푸터 위에 여백 추가 */
+body.has-notice .footer {
+  margin-bottom: var(--notice-height);
+}
+
+/* 채팅 아이콘 위치 조정 스타일 */
+.chat-sticky-button {
+  position: fixed;
+  bottom: var(--chat-button-bottom, 60px);
+  transition: bottom 0.3s ease;
+}
+
+/* 공지사항 애니메이션 효과 */
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.notice-enter {
+  animation: slideInUp 0.3s ease forwards;
+}

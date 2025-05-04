@@ -110,7 +110,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 </label>
                 <select
                   id="targetRole"
-                  className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                  className="select select-sm select-bordered w-full"
                   defaultValue=""
                   required
                 >
@@ -153,7 +153,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <select
                 id="notificationType"
-                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                className="select select-sm select-bordered w-full"
                 value={type}
                 onChange={(e) => setType(e.target.value as NotificationType)}
                 required
@@ -172,7 +172,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <select
                 id="priority"
-                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                className="select select-sm select-bordered w-full"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as NotificationPriority)}
                 required
@@ -190,7 +190,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               <input
                 id="title"
                 type="text"
-                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                className="input input-bordered w-full h-10"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="알림 제목을 입력하세요"
@@ -204,7 +204,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               </label>
               <textarea
                 id="message"
-                className="w-full min-h-[200px] p-3 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary resize-none"
+                className="textarea textarea-bordered w-full min-h-[200px] resize-none"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="알림 내용을 입력하세요"
@@ -219,7 +219,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
               <input
                 id="link"
                 type="text"
-                className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                className="input input-bordered w-full h-10"
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
                 placeholder="예: /notice/123"

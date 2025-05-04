@@ -193,14 +193,14 @@ const UserInfoDisplay = () => {
                 {/* 사용자 정보 - 2줄 레이아웃 */}
                 <div className="flex flex-col justify-center">
                   {/* 1줄: 사용자 이름 */}
-                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
                     {currentUser.full_name || '사용자'}
                   </div>
                   
                   {/* 2줄: 캐시 잔액 */}
                   <div className="flex items-center">
-                    <KeenIcon icon="dollar" className="text-success mr-1 text-sm" />
-                    <div className="text-xs font-medium text-success whitespace-nowrap">
+                    <KeenIcon icon="dollar" className="text-success dark:text-green-300 mr-1 text-sm" />
+                    <div className="text-xs font-medium text-success dark:text-green-300 whitespace-nowrap">
                       {isLoading ? (
                         <span className="animate-pulse">로딩중...</span>
                       ) : (
@@ -213,22 +213,22 @@ const UserInfoDisplay = () => {
             </MenuToggle>
             
             {/* 사용자 드롭다운 메뉴 */}
-            <MenuSub className="menu-default light:border-gray-300 w-[220px] md:w-[250px]">
+            <MenuSub className="menu-default dark:bg-coal-700 dark:border-coal-600 light:border-gray-300 w-[220px] md:w-[250px]">
               <div className="menu-item">
-                <Link to="/myinfo/profile" className="menu-link">
+                <Link to="/myinfo/profile" className="menu-link dark:hover:bg-coal-600">
                   <span className="menu-icon">
-                    <KeenIcon icon="profile-circle" />
+                    <KeenIcon icon="profile-circle" className="dark:text-blue-300" />
                   </span>
-                  <span className="menu-title">내 정보 관리</span>
+                  <span className="menu-title dark:text-white">내 정보 관리</span>
                 </Link>
               </div>
               
               <div className="menu-item mb-0.5">
-                <div className="menu-link">
+                <div className="menu-link dark:hover:bg-coal-600">
                   <span className="menu-icon">
-                    <KeenIcon icon="moon" />
+                    <KeenIcon icon="moon" className="dark:text-blue-300" />
                   </span>
-                  <span className="menu-title">
+                  <span className="menu-title dark:text-white">
                     <FormattedMessage id="USER.MENU.DARK_MODE" />
                   </span>
                   <label className="switch switch-sm">
@@ -252,7 +252,7 @@ const UserInfoDisplay = () => {
         {/* 로그아웃 버튼 */}
         <div className="px-2">
           <button 
-            className="btn btn-icon btn-outline-danger transition-all hover:bg-danger hover:text-white size-9 rounded-full"
+            className="btn btn-icon btn-outline-danger dark:border-red-600 dark:text-red-400 transition-all hover:bg-danger dark:hover:bg-red-600 hover:text-white dark:hover:text-white size-9 rounded-full"
             onClick={handleLogoutClick}
             title="로그아웃"
             disabled={isLogoutLoading}

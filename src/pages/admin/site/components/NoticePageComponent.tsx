@@ -679,7 +679,7 @@ const NoticePageComponent = () => {
       toolbarActions={toolbarActions}
       showPageMenu={false}
     >
-      <div className="grid gap-5 lg:gap-7.5">
+      <div className="flex flex-col space-y-4">
         <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
           <div className="p-5 flex justify-between items-center border-b">
             <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
@@ -750,8 +750,8 @@ const NoticePageComponent = () => {
                             </td>
                             <td className="py-3 px-3 text-center hidden md:table-cell">
                               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${notice.is_active
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
                                 }`}>
                                 {notice.is_active ? '표시' : '감춤'}
                               </span>
@@ -812,15 +812,14 @@ const NoticePageComponent = () => {
                                 <span className="mr-1 inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
                               )}
                             </div>
-                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                              notice.is_active
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
-                            }`}>
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${notice.is_active
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                              }`}>
                               {notice.is_active ? '표시' : '감춤'}
                             </span>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 gap-2 text-sm mb-3">
                             <div>
                               <p className="text-muted-foreground">제목</p>
@@ -837,7 +836,7 @@ const NoticePageComponent = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">표시 설정:</span>
@@ -887,13 +886,14 @@ const NoticePageComponent = () => {
           />
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">공지사항 관리 안내</h3>
-          <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">공지사항 등록</span>: 사용자들에게 중요한 정보나 업데이트 내용을 알리는 데 사용됩니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">표시 설정</span>: '표시' 상태로 설정된 공지사항만 사용자에게 노출됩니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">중요 공지</span>: '중요 공지'로 설정된 공지사항은 상단에 고정되어 노출됩니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">관리 기능</span>: 등록된 공지사항을 수정하거나 삭제할 수 있습니다.</p>
+        {/* 안내 */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
+          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">공지사항 관리 안내</h3>
+          <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">공지사항 등록</span>: 사용자들에게 중요한 정보나 업데이트 내용을 알리는 데 사용됩니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">표시 설정</span>: '표시' 상태로 설정된 공지사항만 사용자에게 노출됩니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">중요 공지</span>: '중요 공지'로 설정된 공지사항은 상단에 고정되어 노출됩니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">관리 기능</span>: 등록된 공지사항을 수정하거나 삭제할 수 있습니다.</p>
           </div>
         </div>
       </div>

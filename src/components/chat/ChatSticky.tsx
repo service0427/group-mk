@@ -222,13 +222,19 @@ const ChatSticky: React.FC = () => {
         return null;
       }
       
-      // 일반 사용자의 경우 항상 새 채팅방 생성
-      const newRoomId = await createChatRoom([], '운영자와의 대화');
-      if (newRoomId) {
-        await openChatRoom(newRoomId);
-        return newRoomId;
+      // 일반 사용자의 경우 기존 채팅방이 있으면 사용하고 없으면 새로 생성하지 않음
+      // 실제 메시지 전송 시점에 채팅방 생성
+      if (rooms.length > 0) {
+        // 활성 상태인 채팅방이 있는지 확인
+        const activeRoom = rooms.find(room => room.status === 'active');
+        if (activeRoom) {
+          await openChatRoom(activeRoom.id);
+          return activeRoom.id;
+        }
       }
       
+      // 채팅방이 없거나 모두 비활성 상태인 경우에도 새로 생성하지 않음
+      // 메시지를 보낼 때 생성할 예정
       return null;
     } catch (err: any) {
       console.error('채팅방 초기화 오류:', err);

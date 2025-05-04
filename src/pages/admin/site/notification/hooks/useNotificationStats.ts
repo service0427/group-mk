@@ -177,6 +177,9 @@ export const useNotificationStats = (options: {
     }
   }, []);
 
+  // 토스트 알림 상태 추가
+  const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null);
+
   // 통계 데이터 강제 갱신
   const refreshStats = useCallback(async () => {
     try {
@@ -186,13 +189,13 @@ export const useNotificationStats = (options: {
       if (useFallback) {
         // 폴백 모드 사용 중인 경우 기존 방식으로 갱신
         await loadStatsFallback();
-        toast.success('알림 통계가 갱신되었습니다');
+        setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다', type: 'success' });
         return true;
       }
 
       try {
-        // 전체 통계 재계산 요청
-        const refreshSuccess = await refreshNotificationAggregate();
+        // 전체 통계 재계산 요청 - 상태 설정 함수 전달
+        const refreshSuccess = await refreshNotificationAggregate(setNotification);
 
         if (!refreshSuccess) {
           throw new Error('통계 갱신 실패');
@@ -215,7 +218,7 @@ export const useNotificationStats = (options: {
         if (fallbackToOldMethod) {
           setUseFallback(true);
           await loadStatsFallback();
-          toast.success('알림 통계가 갱신되었습니다 (기본 방식)');
+          setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다 (기본 방식)', type: 'success' });
           return true;
         } else {
           throw error;
@@ -228,7 +231,7 @@ export const useNotificationStats = (options: {
       // 오류 발생해도 최소한의 표시를 위해 기본값 적용
       setStats(createDefaultStats());
       setLastUpdated(new Date());
-      toast.error('알림 통계 갱신 중 오류가 발생했습니다');
+      setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다', type: 'error' });
       return false;
     } finally {
       setLoading(false);
@@ -340,6 +343,8 @@ export const useNotificationStats = (options: {
     error,
     lastUpdated,
     refreshStats,
-    useFallback // 폴백 모드 사용 중인지 여부도 반환
+    useFallback, // 폴백 모드 사용 중인지 여부도 반환
+    notification, // 토스트 알림 상태 반환
+    setNotification // 토스트 알림 설정 함수 반환
   };
 };

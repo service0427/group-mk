@@ -2,8 +2,8 @@
 
 /* 전체 레이아웃 스타일 */
 html, body {
-  overflow: hidden;
-  height: 100%;
+  overflow: auto;
+  min-height: 100%;
 }
 
 /* 사이드바 스타일 변경 */
@@ -64,8 +64,8 @@ html, body {
 /* 메인 컨텐츠 영역 조정 */
 .wrapper {
   transition: padding-left 0.3s ease;
-  overflow: hidden;
-  height: 100vh;
+  overflow: visible;
+  min-height: 100vh;
   padding-left: 0 !important; /* 왼쪽 패딩 제거 */
   margin-left: 0 !important; /* 왼쪽 마진 제거 */
   contain: layout; /* 레이아웃 컨테인먼트 추가 */
@@ -97,7 +97,7 @@ main.content {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%; /* 콘텐츠 영역 너비 100%로 설정 */
-  height: calc(100vh - var(--tw-header-height)); /* 헤더 높이를 뺀 나머지 영역 */
+  height: auto; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
   position: relative; /* 로더 포지셔닝 위해 추가 */
   contain: content; /* 컨텐츠 컨테인먼트 추가 */
 }
@@ -238,5 +238,5 @@ body:not(.has-notice) .page-template-wrapper {
 .template-content {
   position: relative;
   margin-bottom: calc(var(--footer-height) + 0.25rem);
-  min-height: calc(100vh - var(--content-top-margin) - var(--footer-height) - 2rem);
+  min-height: fit-content; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
 }

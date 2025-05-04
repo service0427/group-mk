@@ -313,7 +313,7 @@ const NoticePageComponent = () => {
       description="마케팅의 정석 공지사항"
       showPageMenu={false}
     >
-      <div className="grid gap-5 lg:gap-7.5">
+      <div className="flex flex-col space-y-4">
         <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
           <div className="p-5 border-b">
             <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
@@ -465,13 +465,13 @@ const NoticePageComponent = () => {
           )}
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">공지사항 안내</h3>
-          <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">중요 공지</span>: 상단 표시된 중요 공지사항을 확인해 주세요.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">업데이트 사항</span>: 시스템 업데이트, 이용약관 변경 등의 내용이 공지됩니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">이벤트 안내</span>: 마케팅의 정석에서 진행하는 다양한 이벤트를 확인할 수 있습니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">서비스 변경</span>: 서비스 정책이나 기능 변경 사항을 안내해 드립니다.</p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
+          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">공지사항 안내</h3>
+          <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">중요 공지</span>: 상단 표시된 중요 공지사항을 확인해 주세요.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">업데이트 사항</span>: 시스템 업데이트, 이용약관 변경 등의 내용이 공지됩니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">이벤트 안내</span>: 마케팅의 정석에서 진행하는 다양한 이벤트를 확인할 수 있습니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">서비스 변경</span>: 서비스 정책이나 기능 변경 사항을 안내해 드립니다.</p>
           </div>
         </div>
       </div>

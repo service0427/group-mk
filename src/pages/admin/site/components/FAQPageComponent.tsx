@@ -712,7 +712,7 @@ const FAQPageComponent = () => {
       toolbarActions={toolbarActions}
       showPageMenu={false}
     >
-      <div className="grid gap-5 lg:gap-7.5">
+      <div className="flex flex-col space-y-4">
         {/* 카테고리 필터 */}
         <div className="bg-card rounded-lg shadow-sm p-5 border border-border">
           <div className="flex flex-wrap gap-2">
@@ -942,13 +942,13 @@ const FAQPageComponent = () => {
           />
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">FAQ 관리 안내</h3>
-          <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">카테고리 분류</span>: 사용자들이 쉽게 원하는 정보를 찾을 수 있도록 카테고리별로 구분합니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">표시 설정</span>: '표시' 상태로 설정된 FAQ만 사용자에게 노출됩니다.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">간결한 작성</span>: 질문은 명확하고 간결하게, 답변은 이해하기 쉽게 작성하세요.</p>
-            <p>• <span className="font-medium text-gray-800 dark:text-gray-100">주기적 업데이트</span>: 사용자의 문의가 많은 내용을 FAQ에 추가해 고객서비스 효율을 높이세요.</p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
+          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">FAQ 관리 안내</h3>
+          <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">카테고리 분류</span>: 사용자들이 쉽게 원하는 정보를 찾을 수 있도록 카테고리별로 구분합니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">표시 설정</span>: '표시' 상태로 설정된 FAQ만 사용자에게 노출됩니다.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">간결한 작성</span>: 질문은 명확하고 간결하게, 답변은 이해하기 쉽게 작성하세요.</p>
+            <p>• <span className="font-medium text-blue-900 dark:text-blue-100">주기적 업데이트</span>: 사용자의 문의가 많은 내용을 FAQ에 추가해 고객서비스 효율을 높이세요.</p>
           </div>
         </div>
       </div>

@@ -27,6 +27,17 @@ import { ko } from 'date-fns/locale';
 const NotificationManagePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
 
+  // 커스텀 토스트 상태
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error';
+  }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
   // 관리자 권한 체크
   const isAdmin = currentUser?.role === 'developer' || currentUser?.role === 'operator';
 
@@ -59,7 +70,9 @@ const NotificationManagePage: React.FC = () => {
     loading: statsLoading,
     lastUpdated: statsLastUpdated,
     refreshStats,
-    useFallback: statsUseFallback
+    useFallback: statsUseFallback,
+    notification: statsNotification, // 통계 관련 알림 상태
+    setNotification: setStatsNotification // 통계 알림 설정 함수
   } = useNotificationStats({
     refreshInterval: 60000, // 1분마다 갱신
     autoRefresh: true,
@@ -68,6 +81,28 @@ const NotificationManagePage: React.FC = () => {
 
   // 테이블 존재 확인
   const [tableStatus, setTableStatus] = useState({ exists: false, checked: false });
+
+  // 알림 자동 사라짐 처리
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 5000); // 5초 후 자동으로 닫힘
+
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show, notification.message]);
+
+  // 통계 알림 자동 사라짐 처리
+  useEffect(() => {
+    if (statsNotification?.show) {
+      const timer = setTimeout(() => {
+        setStatsNotification({ ...statsNotification, show: false });
+      }, 5000); // 5초 후 자동으로 닫힘
+
+      return () => clearTimeout(timer);
+    }
+  }, [statsNotification?.show, statsNotification?.message]);
 
   // 페이지 로드 시 테이블 존재 여부 확인
   useEffect(() => {
@@ -160,7 +195,11 @@ const NotificationManagePage: React.FC = () => {
     }
 
     if (success) {
-      toast.success('알림이 성공적으로 전송되었습니다.');
+      setNotification({ 
+        show: true, 
+        message: '알림이 성공적으로 전송되었습니다.', 
+        type: 'success'
+      });
       setIsOpenSendModal(false);
       setSelectedUsers([]);
 
@@ -169,7 +208,11 @@ const NotificationManagePage: React.FC = () => {
         refreshStats();
       }, 1000);
     } else {
-      toast.error('알림 전송에 실패했습니다. 다시 시도해주세요.');
+      setNotification({ 
+        show: true, 
+        message: '알림 전송에 실패했습니다. 다시 시도해주세요.', 
+        type: 'error'
+      });
     }
   };
 
@@ -189,14 +232,22 @@ const NotificationManagePage: React.FC = () => {
 
     const success = await deleteNotificationsHandler(deleteOption);
     if (success) {
-      toast.success('알림이 성공적으로 삭제되었습니다.');
+      setNotification({ 
+        show: true, 
+        message: '알림이 성공적으로 삭제되었습니다.', 
+        type: 'success'
+      });
 
       // 알림 삭제 후 통계 갱신
       setTimeout(() => {
         refreshStats();
       }, 1000);
     } else {
-      toast.error('알림 삭제에 실패했습니다. 다시 시도해주세요.');
+      setNotification({ 
+        show: true, 
+        message: '알림 삭제에 실패했습니다. 다시 시도해주세요.', 
+        type: 'error'
+      });
     }
 
     setIsOpenDeleteConfirmModal(false);
@@ -251,7 +302,81 @@ const NotificationManagePage: React.FC = () => {
         toolbarActions={toolbarActions}
         showPageMenu={false}
       >
-        <div className="grid gap-5 lg:gap-7.5">
+        {/* 알림 메시지 - 커스텀 토스트 */}
+        {notification.show && (
+          <div
+            className={`fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform ${
+              notification.type === 'success' 
+                ? 'bg-green-50 text-green-700 border-l-4 border-green-500 dark:bg-green-950/50 dark:text-green-300 dark:border-green-600'
+                : 'bg-red-50 text-red-700 border-l-4 border-red-500 dark:bg-red-950/50 dark:text-red-300 dark:border-red-600'
+            }`}
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium">{notification.message}</p>
+              </div>
+              <button
+                type="button"
+                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60"
+                onClick={() => setNotification({ ...notification, show: false })}
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 통계 알림 메시지 - 커스텀 토스트 */}
+        {statsNotification?.show && (
+          <div
+            className={`fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform ${
+              statsNotification.type === 'success' 
+                ? 'bg-green-50 text-green-700 border-l-4 border-green-500 dark:bg-green-950/50 dark:text-green-300 dark:border-green-600'
+                : 'bg-red-50 text-red-700 border-l-4 border-red-500 dark:bg-red-950/50 dark:text-red-300 dark:border-red-600'
+            }`}
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                {statsNotification.type === 'success' ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium">{statsNotification.message}</p>
+              </div>
+              <button
+                type="button"
+                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60"
+                onClick={() => setStatsNotification({ ...statsNotification, show: false })}
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex flex-col space-y-4">
           {/* 상단 영역: 통계와 버튼 */}
           <div className="bg-card rounded-lg shadow-sm p-5">
             <div className="flex justify-between items-center mb-6">
@@ -288,7 +413,11 @@ const NotificationManagePage: React.FC = () => {
                               const { supabaseAdmin } = await import('@/supabase');
 
                               // 부모 컴포넌트에서 직접 초기화 작업 수행
-                              toast.loading('통계 초기화 중...');
+                              setStatsNotification({ 
+                                show: true, 
+                                message: '통계 초기화 중...', 
+                                type: 'success'
+                              });
 
                               try {
                                 // 현재 통계 테이블 확인
@@ -298,26 +427,39 @@ const NotificationManagePage: React.FC = () => {
                                   .limit(1);
 
                                 if (error && error.message.includes('does not exist')) {
-                                  toast.dismiss();
-                                  toast.error('통계 테이블이 존재하지 않습니다. SQL을 먼저 실행해주세요.');
+                                  setStatsNotification({ 
+                                    show: true, 
+                                    message: '통계 테이블이 존재하지 않습니다. SQL을 먼저 실행해주세요.', 
+                                    type: 'error'
+                                  });
                                   return;
                                 }
 
                                 // 테이블이 있으면 통계 갱신
                                 await refreshStats();
-                                toast.dismiss();
-                                toast.success('통계가 성공적으로 초기화되었습니다.');
+                                setStatsNotification({ 
+                                  show: true, 
+                                  message: '통계가 성공적으로 초기화되었습니다.', 
+                                  type: 'success'
+                                });
 
                                 // 테이블 상태 업데이트
                                 setTableStatus({ exists: true, checked: true });
                               } catch (error) {
                                 console.error('테이블 초기화 중 오류:', error);
-                                toast.dismiss();
-                                toast.error('통계 초기화 중 오류가 발생했습니다.');
+                                setStatsNotification({ 
+                                  show: true, 
+                                  message: '통계 초기화 중 오류가 발생했습니다.', 
+                                  type: 'error'
+                                });
                               }
                             } catch (error) {
                               console.error('모듈 로드 오류:', error);
-                              toast.error('초기화 작업을 수행할 수 없습니다.');
+                              setStatsNotification({ 
+                                show: true, 
+                                message: '초기화 작업을 수행할 수 없습니다.', 
+                                type: 'error'
+                              });
                             }
                           }}
                           title="통계 테이블 초기화 (개발자 전용)"
@@ -410,13 +552,13 @@ const NotificationManagePage: React.FC = () => {
           </div>
 
           {/* 설명 영역 */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">알림 관리 안내</h3>
-            <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">권한별 알림 전송</span>: 개발자, 운영자, 총판, 대행사, 광고주 등 특정 권한을 가진 모든 회원에게 알림을 전송합니다.</p>
-              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">회원별 알림 전송</span>: 특정 회원을 선택하여 알림을 전송합니다.</p>
-              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 삭제 기능</span>: 테이블 용량 관리를 위해 특정 기간이 지난 알림을 일괄 삭제할 수 있습니다.</p>
-              <p>• <span className="font-medium text-gray-800 dark:text-gray-100">알림 타입</span>: 시스템, 결제/캐시, 서비스, 슬롯, 마케팅 등 다양한 유형의 알림을 전송할 수 있습니다.</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
+            <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">알림 관리 안내</h3>
+            <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">권한별 알림 전송</span>: 개발자, 운영자, 총판, 대행사, 광고주 등 특정 권한을 가진 모든 회원에게 알림을 전송합니다.</p>
+              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">회원별 알림 전송</span>: 특정 회원을 선택하여 알림을 전송합니다.</p>
+              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 삭제 기능</span>: 테이블 용량 관리를 위해 특정 기간이 지난 알림을 일괄 삭제할 수 있습니다.</p>
+              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 타입</span>: 시스템, 결제/캐시, 서비스, 슬롯, 마케팅 등 다양한 유형의 알림을 전송할 수 있습니다.</p>
             </div>
           </div>
         </div>

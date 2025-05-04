@@ -4,7 +4,6 @@ import {
   NotificationStatus
 } from '@/types/notification';
 import { INotificationAggregate } from '@/types/notification/statistics';
-import { toast } from 'sonner';
 
 // 기본 집계 객체 생성 함수
 const createDefaultAggregate = (): Omit<INotificationAggregate, 'id' | 'updated_at'> => ({
@@ -108,10 +107,19 @@ export const fetchNotificationAggregate = async (): Promise<INotificationAggrega
 /**
  * 알림 통계 전체 갱신
  * 모든 알림 데이터를 스캔하여 집계 테이블 업데이트
+ * 
+ * @param setNotification 토스트 알림을 표시하기 위한 상태 설정 함수 (옵션)
  */
-export const refreshNotificationAggregate = async (): Promise<boolean> => {
+export const refreshNotificationAggregate = async (
+  setNotification?: (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void
+): Promise<boolean> => {
   try {
-    toast.loading('알림 통계 집계 중...');
+    // 상태 설정 함수가 제공된 경우 커스텀 토스트 표시, 아니면 콘솔 로깅
+    if (setNotification) {
+      setNotification({ show: true, message: '알림 통계 집계 중...', type: 'success' });
+    } else {
+      console.log('알림 통계 집계 중...');
+    }
 
     // 초기 집계 객체 생성
     const aggregate = createDefaultAggregate();
@@ -123,8 +131,9 @@ export const refreshNotificationAggregate = async (): Promise<boolean> => {
 
     if (countError) {
       console.error('전체 알림 개수 조회 중 오류 발생:', countError.message);
-      toast.dismiss();
-      toast.error('알림 통계 집계 중 오류가 발생했습니다.');
+      if (setNotification) {
+        setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+      }
       return false;
     }
 
@@ -232,8 +241,9 @@ export const refreshNotificationAggregate = async (): Promise<boolean> => {
 
     if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116'는 결과가 없을 때의 에러 코드
       console.error('기존 집계 데이터 확인 중 오류 발생:', fetchError.message);
-      toast.dismiss();
-      toast.error('알림 통계 집계 중 오류가 발생했습니다.');
+      if (setNotification) {
+        setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+      }
       return false;
     }
 
@@ -250,8 +260,9 @@ export const refreshNotificationAggregate = async (): Promise<boolean> => {
 
       if (updateError) {
         console.error('집계 데이터 업데이트 중 오류 발생:', updateError.message);
-        toast.dismiss();
-        toast.error('알림 통계 업데이트 중 오류가 발생했습니다.');
+        if (setNotification) {
+          setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+        }
         return false;
       }
     } else {
@@ -265,20 +276,23 @@ export const refreshNotificationAggregate = async (): Promise<boolean> => {
 
       if (insertError) {
         console.error('집계 데이터 생성 중 오류 발생:', insertError.message);
-        toast.dismiss();
-        toast.error('알림 통계 생성 중 오류가 발생했습니다.');
+        if (setNotification) {
+          setNotification({ show: true, message: '알림 통계 생성 중 오류가 발생했습니다.', type: 'error' });
+        }
         return false;
       }
     }
 
-    toast.dismiss();
-    toast.success('알림 통계가 성공적으로 업데이트되었습니다.');
+    if (setNotification) {
+      setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다.', type: 'success' });
+    }
     return true;
 
   } catch (error: any) {
     console.error('알림 통계 집계 중 예외 발생:', error.message);
-    toast.dismiss();
-    toast.error(`알림 통계 집계 중 오류: ${error.message}`);
+    if (setNotification) {
+      setNotification({ show: true, message: `알림 통계 업데이트 중 오류: ${error.message}`, type: 'error' });
+    }
     return false;
   }
 };

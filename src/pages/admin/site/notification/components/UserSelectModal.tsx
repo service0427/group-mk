@@ -198,7 +198,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
                 <Input
                   type="text"
                   placeholder="이름 또는 이메일로 검색"
-                  className="pl-10"
+                  className="pl-10 input input-bordered w-full h-10"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -206,7 +206,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
             </div>
 
             <select
-              className="p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary min-w-[160px] w-auto"
+              className="select select-sm select-bordered min-w-[160px] w-auto"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >

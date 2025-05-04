@@ -288,13 +288,13 @@ const WithdrawSettingPage: React.FC = () => {
             </div>
 
             {/* 설명 영역 */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-5 mt-6">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">출금 설정 관리 안내</h3>
-                <div className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-                    <p>• <span className="font-medium text-gray-800 dark:text-gray-100">전역 출금 설정</span>: 모든 사용자에게 적용되는 기본 출금 설정입니다. 개별 설정이 없는 경우 이 설정이 적용됩니다.</p>
-                    <p>• <span className="font-medium text-gray-800 dark:text-gray-100">사용자별 출금 설정</span>: 특정 사용자에게 적용되는 출금 설정입니다. 전역 설정보다 우선적으로 적용됩니다.</p>
-                    <p>• <span className="font-medium text-gray-800 dark:text-gray-100">최소 출금 금액</span>: 사용자가 출금 신청할 수 있는 최소 금액을 설정합니다.</p>
-                    <p>• <span className="font-medium text-gray-800 dark:text-gray-100">출금 수수료 비율</span>: 출금 시 적용되는 수수료 비율(%)을 설정합니다.</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5 mt-6">
+                <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">출금 설정 관리 안내</h3>
+                <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+                    <p>• <span className="font-medium text-blue-900 dark:text-blue-100">전역 출금 설정</span>: 모든 사용자에게 적용되는 기본 출금 설정입니다. 개별 설정이 없는 경우 이 설정이 적용됩니다.</p>
+                    <p>• <span className="font-medium text-blue-900 dark:text-blue-100">사용자별 출금 설정</span>: 특정 사용자에게 적용되는 출금 설정입니다. 전역 설정보다 우선적으로 적용됩니다.</p>
+                    <p>• <span className="font-medium text-blue-900 dark:text-blue-100">최소 출금 금액</span>: 사용자가 출금 신청할 수 있는 최소 금액을 설정합니다.</p>
+                    <p>• <span className="font-medium text-blue-900 dark:text-blue-100">출금 수수료 비율</span>: 출금 시 적용되는 수수료 비율(%)을 설정합니다.</p>
                 </div>
             </div>
 

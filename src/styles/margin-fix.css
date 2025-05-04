@@ -31,8 +31,10 @@
   gap: 16px !important;
 }
 
-/* 공지사항 페이지 특정 조정 */
-.CommonTemplate .grid.gap-5.lg\\:gap-7\\.5 {
+/* 모든 캠페인 설명 페이지 간격 조정 */
+.CommonTemplate .grid.gap-5.lg\\:gap-7\\.5,
+.flex.flex-col.items-stretch.gap-5.lg\\:gap-7\\.5,
+div[class*="flex-col items-stretch gap-5 lg:gap-7.5"] {
   gap: 12px !important;
 }
 

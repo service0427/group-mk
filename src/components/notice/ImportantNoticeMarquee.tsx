@@ -69,7 +69,7 @@ const ImportantNoticeMarquee: React.FC = () => {
       document.documentElement.style.setProperty('--notice-visible', '0');
       document.documentElement.style.setProperty('--notice-height', '0px');
     }
-    
+
     return () => {
       // 컴포넌트 언마운트 시 클래스 초기화
       document.body.classList.remove('has-notice');
@@ -108,17 +108,17 @@ const ImportantNoticeMarquee: React.FC = () => {
               </div>
             )}
           </div>
-          
-          <div 
+
+          <div
             className="flex-1 overflow-hidden whitespace-nowrap text-amber-900 dark:text-amber-200 text-sm font-medium cursor-pointer hover:underline"
             onClick={handleNoticeClick}
           >
             {currentNotice.title}
           </div>
-          
+
           {notices.length > 1 && (
             <div className="flex ml-2">
-              <button 
+              <button
                 className="p-0.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/40 rounded-full mx-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -128,7 +128,7 @@ const ImportantNoticeMarquee: React.FC = () => {
               >
                 <span className="text-xs font-medium">&lt;</span>
               </button>
-              <button 
+              <button
                 className="p-0.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/40 rounded-full mx-0.5"
                 onClick={(e) => {
                   e.stopPropagation();

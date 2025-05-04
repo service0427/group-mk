@@ -234,9 +234,9 @@ const FAQPageComponent = () => {
           </div>
         </div>
 
-        <div className="bg-blue-50 rounded-lg shadow-sm p-5">
-          <h3 className="text-lg font-medium text-blue-900 mb-4">원하는 답변을 찾지 못하셨나요?</h3>
-          <p className="text-blue-700 mb-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
+          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">원하는 답변을 찾지 못하셨나요?</h3>
+          <p className="text-blue-700 dark:text-blue-200 mb-3">
             더 자세한 문의사항은 1:1 문의하기를 이용해주세요. 친절하게 답변해 드리겠습니다.
           </p>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white">

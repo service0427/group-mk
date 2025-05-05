@@ -231,7 +231,7 @@ export const createWithdrawRequest = async (
     // 1. user_balances 테이블에서 현재 잔액 확인
     const { data: balance, error: balanceError } = await supabase
       .from('user_balances')
-      .select('paid_balance')
+      .select('paid_balance, total_balance')
       .eq('user_id', userId)
       .single();
 
@@ -276,11 +276,12 @@ export const createWithdrawRequest = async (
       throw historyError;
     }
     
-    // 4. user_balances 테이블에서 잔액 차감
+    // 4. user_balances 테이블에서 paid_balance와 total_balance 모두 차감
     const { error: updateBalanceError } = await supabase
       .from('user_balances')
       .update({
         paid_balance: balance.paid_balance - amount,
+        total_balance: balance.total_balance - amount,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId);

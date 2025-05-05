@@ -110,7 +110,7 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
           </ToolbarHeading>
 
           {toolbarActions && (
-            <ToolbarActions className="flex flex-wrap gap-2">
+            <ToolbarActions className="flex flex-wrap gap-2 w-full sm:w-auto self-end sm:self-auto justify-end">
               {toolbarActions}
             </ToolbarActions>
           )}

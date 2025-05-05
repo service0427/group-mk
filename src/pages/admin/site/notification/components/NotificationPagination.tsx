@@ -58,7 +58,7 @@ const NotificationPagination: React.FC<NotificationPaginationProps> = ({
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-border bg-card gap-4">
-      <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+      <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
         <select
           className="select select-sm select-bordered flex-grow min-w-[100px]"

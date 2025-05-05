@@ -5,10 +5,12 @@ import { HeaderLogo, HeaderTopbar } from './';
 import { Breadcrumbs, useStandLayout } from '../';
 import { useLocation } from 'react-router';
 import ImportantNoticeMarquee from '@/components/notice/ImportantNoticeMarquee';
+import { useMediaQuery } from '@/hooks';
 
 const Header = () => {
   const { headerSticky, layout } = useStandLayout();
   const { pathname } = useLocation();
+  const isMobile = useMediaQuery('(max-width: 1023px)');
 
   useEffect(() => {
     if (headerSticky) {
@@ -65,9 +67,9 @@ const Header = () => {
         className="fixed z-20 w-full" 
         style={{
           top: 'var(--header-height)',
-          left: layout.options.sidebar.collapse ? '80px' : '280px',
+          left: isMobile ? '0' : (layout.options.sidebar.collapse ? '80px' : '280px'),
           transition: 'left 0.3s ease',
-          width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
+          width: isMobile ? '100%' : `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
         }}
       >
         <ImportantNoticeMarquee />

@@ -393,7 +393,7 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-border bg-card gap-4">
-      <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+      <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
         <select
           className="select select-sm select-bordered flex-grow min-w-[100px]"
@@ -656,7 +656,10 @@ const NoticePageComponent = () => {
   const toolbarActions = (
     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
       <DialogTrigger asChild>
-        <Button>새 공지사항</Button>
+        <Button>
+          <KeenIcon icon="plus" className="md:me-2 flex-none" />
+          <span className="hidden md:inline">새 공지사항</span>
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
         <div className="bg-background py-4 px-8 border-b">
@@ -685,15 +688,17 @@ const NoticePageComponent = () => {
             <h3 className="text-lg font-medium text-card-foreground">공지사항 목록</h3>
           </div>
 
-          {/* 상단 페이지네이션 */}
-          <NoticePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
+          {/* 상단 페이지네이션 - 모바일에서는 숨김 */}
+          <div className="hidden md:block">
+            <NoticePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
 
           <div className="overflow-x-auto">
             {isLoading ? (
@@ -775,16 +780,16 @@ const NoticePageComponent = () => {
                                   className="h-8 w-8"
                                   title="수정"
                                 >
-                                  <KeenIcon icon="pencil" style="outline" className="fs-6" />
+                                  <KeenIcon icon="pencil" style="outline" className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="destructive"
                                   size="icon"
                                   onClick={() => openDeleteConfirm(notice)}
-                                  className="h-8 w-8 hidden sm:inline-flex"
+                                  className="h-8 w-8"
                                   title="삭제"
                                 >
-                                  <KeenIcon icon="trash" style="outline" className="fs-6" />
+                                  <KeenIcon icon="trash" style="outline" className="h-4 w-4" />
                                 </Button>
                               </div>
                             </td>
@@ -805,65 +810,83 @@ const NoticePageComponent = () => {
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {notices.map((notice, index) => (
                         <div key={notice.id} className="p-4 hover:bg-muted/40">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center">
-                              <span className="text-sm text-muted-foreground mr-2">#{(currentPage - 1) * itemsPerPage + index + 1}</span>
-                              {notice.is_important && (
-                                <span className="mr-1 inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
-                              )}
+                          <div className="flex gap-3">
+                            {/* 왼쪽 번호 표시 */}
+                            <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
                             </div>
-                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${notice.is_active
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
-                              }`}>
-                              {notice.is_active ? '표시' : '감춤'}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-2 text-sm mb-3">
-                            <div>
-                              <p className="text-muted-foreground">제목</p>
-                              <p className="font-medium text-gray-900 dark:text-white">{notice.title}</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <p className="text-muted-foreground">등록일</p>
-                                <p className="font-medium">{formatDate(notice.created_at)}</p>
+                            
+                            {/* 오른쪽 내용 영역 */}
+                            <div className="flex-1 min-w-0">
+                              {/* 헤더 영역: 제목과 중요 표시 */}
+                              <div className="mb-2">
+                                <h3 className="font-medium text-foreground flex items-center gap-1 truncate" onClick={() => openDetail(notice)}>
+                                  {notice.is_important && (
+                                    <span className="inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
+                                  )}
+                                  <span>{notice.title}</span>
+                                </h3>
                               </div>
-                              <div>
-                                <p className="text-muted-foreground">수정일</p>
-                                <p className="font-medium">{formatDate(notice.updated_at)}</p>
+                              
+                              {/* 등록일/수정일 정보 */}
+                              <div className="flex flex-col gap-1 text-xs text-muted-foreground mb-3">
+                                <div className="flex items-center">
+                                  <KeenIcon icon="calendar" style="solid" className="mr-1 w-3 h-3" />
+                                  <span>등록: {formatDate(notice.created_at)}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <KeenIcon icon="calendar" style="solid" className="mr-1 w-3 h-3" />
+                                  <span>수정: {formatDate(notice.updated_at)}</span>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">표시 설정:</span>
-                              <Switch
-                                checked={notice.is_active}
-                                onCheckedChange={(checked) => handleToggleActive(notice, checked)}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => openDetail(notice)}
-                                className="h-8 w-8"
-                                title="수정"
-                              >
-                                <KeenIcon icon="pencil" style="outline" className="fs-6" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="icon"
-                                onClick={() => openDeleteConfirm(notice)}
-                                className="h-8 w-8"
-                                title="삭제"
-                              >
-                                <KeenIcon icon="trash" style="outline" className="fs-6" />
-                              </Button>
+                              
+                              {/* 액션 버튼 영역 */}
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col xs:flex-row items-start xs:items-center gap-1 xs:gap-2">
+                                    <span className="text-xs text-muted-foreground">표시:</span>
+                                    <div className="flex items-center gap-2">
+                                      <Switch
+                                        checked={notice.is_active}
+                                        onCheckedChange={(checked) => handleToggleActive(notice, checked)}
+                                      />
+                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                                        notice.is_active
+                                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                      }`}>
+                                        {notice.is_active ? '표시' : '감춤'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openDetail(notice);
+                                    }}
+                                    className="h-9 w-9"
+                                    title="수정"
+                                  >
+                                    <KeenIcon icon="pencil" style="outline" className="w-5 h-5" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openDeleteConfirm(notice);
+                                    }}
+                                    className="h-9 w-9"
+                                    title="삭제"
+                                  >
+                                    <KeenIcon icon="trash" style="outline" className="w-5 h-5" />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>

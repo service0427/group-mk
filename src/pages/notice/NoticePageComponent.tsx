@@ -153,8 +153,40 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-border bg-card gap-4">
-      <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+    <div className="flex flex-col md:flex-row justify-between items-center p-4 border-t border-border bg-card gap-3">
+      {/* 모바일 페이지네이션 - 더 간단하게 */}
+      <div className="flex w-full justify-between items-center md:hidden">
+        <button
+          className="btn btn-sm btn-outline flex items-center gap-1 h-8"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"></path>
+          </svg>
+          <span>이전</span>
+        </button>
+        
+        <div className="text-sm">
+          <span className="font-medium">{currentPage}</span>
+          <span className="text-gray-500 mx-1">/</span>
+          <span className="text-gray-500">{totalPages}</span>
+        </div>
+        
+        <button
+          className="btn btn-sm btn-outline flex items-center gap-1 h-8"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+        >
+          <span>다음</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
+      </div>
+      
+      {/* 데스크탑 페이지네이션 - 기존 형태 유지 */}
+      <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
         <select
           className="select select-sm select-bordered flex-grow min-w-[100px]"
@@ -169,7 +201,7 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
         </select>
       </div>
 
-      <div className="flex items-center gap-3 order-1 md:order-2">
+      <div className="hidden md:flex items-center gap-3 order-1 md:order-2">
         <div className="flex items-center gap-2">
           <button
             className="btn btn-icon btn-sm btn-light"
@@ -208,6 +240,8 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
           </button>
         </div>
       </div>
+      
+      {/* 모바일에서는 페이지당 표시 제거 */}
     </div>
   );
 };
@@ -345,18 +379,34 @@ const NoticePageComponent = () => {
                       className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg mb-4 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-200"
                       onClick={() => openDetail(notice)}
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                        {/* 모바일 레이아웃 */}
+                        <div className="flex flex-col mb-1 md:hidden">
+                          <div className="flex items-center mb-1">
+                            <span className="mr-2 inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/50 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:text-red-300">
+                              중요
+                            </span>
+                            <h3 className="text-sm font-medium text-red-900 dark:text-red-300 truncate">{notice.title}</h3>
+                          </div>
+                          <div className="flex justify-end">
+                            <span className="text-xs text-red-700 dark:text-red-400 whitespace-nowrap">
+                              {formatDate(notice.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* 데스크탑 레이아웃 */}
+                        <div className="hidden md:flex items-center md:mb-0">
                           <span className="mr-2 inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/50 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:text-red-300">
                             중요
                           </span>
-                          <h3 className="text-sm font-medium text-red-900 dark:text-red-300">{notice.title}</h3>
+                          <h3 className="text-sm font-medium text-red-900 dark:text-red-300 truncate">{notice.title}</h3>
                         </div>
-                        <div className="flex items-center">
-                          <span className="text-sm text-red-700 dark:text-red-400 mr-2">
+                        <div className="hidden md:flex items-center justify-end w-auto">
+                          <span className="text-sm text-red-700 dark:text-red-400 mr-2 whitespace-nowrap">
                             {formatDate(notice.created_at)}
                           </span>
-                          <KeenIcon icon="arrow-right" className="h-4 w-4 text-red-700 dark:text-red-400" />
+                          <KeenIcon icon="arrow-right" className="h-4 w-4 text-red-700 dark:text-red-400 flex-shrink-0" />
                         </div>
                       </div>
                     </div>
@@ -364,15 +414,17 @@ const NoticePageComponent = () => {
                 </div>
               )}
 
-              {/* 상단 페이지네이션 */}
-              <NoticePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
+              {/* 상단 페이지네이션 - 모바일에서는 숨김 */}
+              <div className="hidden md:block">
+                <NoticePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalCount={totalCount}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
 
               {/* 일반 공지사항 테이블 */}
               <div className="bg-card">
@@ -425,25 +477,24 @@ const NoticePageComponent = () => {
                   ) : (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {normalNotices.map((notice, index) => (
-                        <div key={notice.id} className="p-4 hover:bg-muted/40 cursor-pointer" onClick={() => openDetail(notice)}>
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm text-muted-foreground">
-                              #{(currentPage - 1) * itemsPerPage + index + 1}
+                        <div key={notice.id} className="p-4 hover:bg-muted/40 cursor-pointer border-b" onClick={() => openDetail(notice)}>
+                          <div className="flex items-start">
+                            <span className="text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                                {notice.title}
+                              </h3>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  조회 {notice.view_count || 0}
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                  {formatDate(notice.created_at)}
+                                </span>
+                              </div>
                             </div>
-                            <span className="text-sm">조회수: {notice.view_count || 0}</span>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-2 text-sm mb-3">
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white text-base">{notice.title}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">{formatDate(notice.created_at)}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end">
-                            <KeenIcon icon="arrow-right" className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
                       ))}

@@ -8,6 +8,7 @@ interface StatItem {
 
 interface NotificationStatsCardProps {
   title: string;
+  mobileTitle?: string;
   value?: number;
   data?: StatItem[];
   icon?: string;
@@ -15,6 +16,7 @@ interface NotificationStatsCardProps {
 
 const NotificationStatsCard: React.FC<NotificationStatsCardProps> = ({
   title,
+  mobileTitle,
   value,
   data,
   icon = 'notification'
@@ -25,7 +27,10 @@ const NotificationStatsCard: React.FC<NotificationStatsCardProps> = ({
         <div className="w-10 h-10 rounded-lg bg-primary-lighter dark:bg-primary-dark flex items-center justify-center mr-3">
           <KeenIcon icon={icon} className="text-primary dark:text-white text-xl" />
         </div>
-        <h3 className="text-base font-medium text-card-foreground">{title}</h3>
+        <h3 className="text-base font-medium text-card-foreground">
+          <span className="hidden sm:inline">{title}</span>
+          <span className="inline sm:hidden">{mobileTitle || title}</span>
+        </h3>
       </div>
       
       {value !== undefined ? (
@@ -36,7 +41,7 @@ const NotificationStatsCard: React.FC<NotificationStatsCardProps> = ({
             <div key={index} className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">{item.label}</span>
               <div className="flex items-center gap-2">
-                <div className="w-16 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-12 sm:w-16 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
                   <div 
                     className={`h-full ${
                       item.label === '전체' ? 'bg-primary dark:bg-primary' :
@@ -60,7 +65,7 @@ const NotificationStatsCard: React.FC<NotificationStatsCardProps> = ({
                     }}
                   ></div>
                 </div>
-                <span className="text-sm font-medium text-card-foreground">{item.value.toLocaleString()}</span>
+                <span className="text-sm font-medium text-card-foreground whitespace-nowrap">{item.value.toLocaleString()}</span>
               </div>
             </div>
           ))}

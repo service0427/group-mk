@@ -20,9 +20,15 @@ import { useLanguage } from '@/i18n';
 
 interface NotificationDropdownProps {
   containerClassName?: string;
+  hideTextOnMobile?: boolean; // 모바일에서 텍스트 숨김 여부
+  inlineCounterOnly?: boolean; // 인라인 카운터만 표시 여부 (내부 컴포넌트에서 사용)
 }
 
-const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ containerClassName }) => {
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ 
+  containerClassName, 
+  hideTextOnMobile = false,
+  inlineCounterOnly = false
+}) => {
   const { notifications, markAsRead, markAllAsRead, loading, unreadCount, fetchNotifications } = useNotifications();
   const navigate = useNavigate();
   const [selectedNotification, setSelectedNotification] = useState<INotification | null>(null);
@@ -139,6 +145,22 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ containerCl
     }
   };
 
+  // 인라인 카운터만 표시하는 경우 (모바일 메뉴의 알림 카운터에서 사용)
+  if (inlineCounterOnly) {
+    return (
+      <>
+        {unreadCount > 0 && (
+          <span className="bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+        {unreadCount === 0 && (
+          <span className="text-sm text-gray-500 dark:text-gray-400">0</span>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <Menu className={`items-stretch ${containerClassName || ''}`}>
@@ -158,14 +180,28 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ containerCl
             ]
           }}
         >
-          <MenuToggle className="btn btn-icon flex items-center justify-center transition-all hover:bg-blue-500 hover:text-white size-9 rounded-full relative">
-            <KeenIcon icon="notification-status" className="text-base" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </MenuToggle>
+          {hideTextOnMobile ? (
+            <MenuToggle className="btn btn-icon flex items-center justify-center transition-all hover:bg-blue-500 hover:text-white size-8 rounded-full relative h-9">
+              <KeenIcon icon="notification-status" className="text-base" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </MenuToggle>
+          ) : (
+            <MenuToggle className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors relative">
+              <div className="relative flex items-center justify-center">
+                <KeenIcon icon="notification-status" className="text-base" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-sm font-medium whitespace-nowrap">알림</span>
+            </MenuToggle>
+          )}
           <MenuSub className="menu-default" rootClassName="w-full max-w-[400px] z-40">
             {/* 헤더 영역 */}
             <div className="py-2 px-3 border-b border-gray-200 dark:border-gray-700">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -118,12 +118,12 @@ const ChatSticky: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  // 항상 처음에는 보이도록 true로 설정
-  const [isVisible, setIsVisible] = useState(true);
-  // prevScrollPos 상태를 제거하고 로컬 변수로 사용
+  // 모바일 미디어 쿼리 사용
   const isMobile = useMediaQuery('(max-width: 768px)');
-  // scrollPosition 훅 사용 중단
-  const lastScrollYRef = useRef(0); // 마지막 스크롤 위치를 저장하는 ref
+  
+  // 직접 가시성 상태 관리
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
   
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
@@ -134,20 +134,21 @@ const ChatSticky: React.FC = () => {
     if (!isMobile) {
       return;
     }
-
+    
     // SPA에서 실제 스크롤되는 요소 찾기
-    // 우선 메인 콘텐츠 영역(main[role="content"])에 스크롤 이벤트 등록
     const mainContentElement = document.querySelector('main[role="content"]');
     const scrollElement = mainContentElement || window;
     
     // 초기 스크롤 위치 저장
-    lastScrollYRef.current = scrollElement === window ? window.scrollY : (mainContentElement?.scrollTop || 0);
+    lastScrollYRef.current = scrollElement === window
+      ? window.scrollY
+      : (mainContentElement?.scrollTop || 0);
     
     // 스크롤 핸들러 함수
-    function handleScroll(e: Event) {
+    function handleScroll() {
       // 현재 스크롤 위치 (메인 콘텐츠 또는 윈도우)
-      const currentScrollY = scrollElement === window 
-        ? window.scrollY 
+      const currentScrollY = scrollElement === window
+        ? window.scrollY
         : (mainContentElement?.scrollTop || 0);
       
       // 이전 스크롤 위치
@@ -183,7 +184,7 @@ const ChatSticky: React.FC = () => {
       lastScrollYRef.current = currentScrollY;
     }
     
-    // 스크롤 이벤트 리스너 등록 (SPA 구조에 맞게 적절한 요소에 등록)
+    // 스크롤 이벤트 리스너 등록
     scrollElement.addEventListener('scroll', handleScroll);
     
     // 컴포넌트 언마운트 시 이벤트 리스너 제거
@@ -192,8 +193,11 @@ const ChatSticky: React.FC = () => {
     };
   }, [isMobile]);
   
-  // 운영자나 관리자인 경우 컴포넌트를 렌더링하지 않음
-  if (currentUser?.role === 'admin' || currentUser?.role === 'operator') {
+  // 로그인하지 않은 사용자는 계속 표시, 운영자나 관리자만 숨기기
+  // 운영자나 관리자인 경우에만 컴포넌트를 렌더링하지 않음
+  // 로그인하지 않았거나 역할이 없는 경우에는 일반 표시
+  if (isAuthenticated && currentUser?.role && 
+      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
     return null;
   }
   
@@ -215,10 +219,14 @@ const ChatSticky: React.FC = () => {
   
   // 스타일 값을 직접 지정
   // 모바일 여부에 따라 동적으로 스타일을 적용
+  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
+  const rightPosition = isVisible ? '24px' : '-100px';
+  const opacityValue = isVisible ? 1 : 0;
+  
   const buttonStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
-    right: '24px',
+    right: rightPosition,
     zIndex: 999, // 모달보다 낮은 z-index
     width: '64px',
     height: '64px',
@@ -231,13 +239,13 @@ const ChatSticky: React.FC = () => {
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
     border: 'none',
-    // 모바일이면서 숨겨져야 할 때만 전환 효과 적용
-    transition: isMobile ? 'opacity 0.3s ease, transform 0.3s ease' : 'none',
-    animation: '2s ease-in-out 0s infinite alternate none running customPulse',
-    // 모바일이면서 숨겨져야 할 때만 투명도와 이동 효과 적용
-    opacity: isMobile && !isVisible ? 0 : 1,
-    transform: isMobile && !isVisible ? 'translateY(100px)' : 'translateY(0)',
-    pointerEvents: isMobile && !isVisible ? 'none' : 'auto',
+    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
+    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
+    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
+    // 투명도 직접 제어
+    opacity: opacityValue,
+    // 숨김 상태에서 마우스 이벤트 차단
+    pointerEvents: !isVisible ? 'none' : 'auto',
   };
   
   // CSS 키프레임을 JS에서 생성하여 삽입

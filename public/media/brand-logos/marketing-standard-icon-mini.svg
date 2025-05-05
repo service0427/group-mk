@@ -1,0 +1,18 @@
+<svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient11" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#364fc7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5c7cfa;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 앱 아이콘 배경 - 비율 축소 -->
+  <rect x="4" y="3" width="16" height="16" rx="3.2" ry="3.2" fill="url(#bgGradient11)" />
+  
+  <!-- 디자인 장식 요소 -->
+  <circle cx="6" cy="6" r="4" fill="#ffffff" fill-opacity="0.05" />
+  <circle cx="18" cy="18" r="4" fill="#ffffff" fill-opacity="0.05" />
+  
+  <!-- SM 로고 - 단순화됨 -->
+  <text x="7" y="13.5" font-family="Arial" font-weight="bold" font-size="7" fill="#ffffff">SM</text>
+</svg>

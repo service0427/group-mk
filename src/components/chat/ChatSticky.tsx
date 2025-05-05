@@ -3,6 +3,8 @@ import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useChat } from '@/hooks/useChat';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useScrollPosition } from '@/hooks/useScrollPosition';
 
 // 데이터베이스 진단 결과 인터페이스
 interface DiagnosticResult {
@@ -117,6 +119,103 @@ const ChatSticky: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 항상 처음에는 보이도록 true로 설정
+  const [isVisible, setIsVisible] = useState(true);
+  const [prevScrollPos, setPrevScrollPos] = useState(0);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const scrollPosition = useScrollPosition();
+  
+  // 스크롤 위치에 따라 버튼 표시 여부 결정
+  useEffect(() => {
+    // 초기 렌더링 시 항상 보이도록 강제 설정
+    setIsVisible(true);
+    
+    // PC 버전에서는 스크롤 이벤트를 등록하지 않음 (항상 보임)
+    if (!isMobile) {
+      return;
+    }
+
+    // 스크롤 방향과 이전 스크롤 위치를 추적하기 위한 변수들
+    let lastScrollY = window.scrollY;
+    let scrollingDirection: 'up' | 'down' | null = null;
+    let scrollTimer: number | null = null;
+
+    const checkScrollDirection = () => {
+      // 현재 스크롤 위치
+      const currentScrollY = window.scrollY;
+      
+      // 뷰포트 높이
+      const windowHeight = window.innerHeight;
+      
+      // 문서의 총 높이
+      const documentHeight = Math.max(
+        document.body.scrollHeight, 
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight, 
+        document.documentElement.offsetHeight
+      );
+      
+      // 스크롤 방향 결정
+      if (currentScrollY > lastScrollY) {
+        scrollingDirection = 'down';
+      } else if (currentScrollY < lastScrollY) {
+        scrollingDirection = 'up';
+      }
+      
+      // 문서 상단에 있는지 확인 (100px 이내)
+      const isAtTop = currentScrollY < 100;
+      
+      // 스크롤이 문서 끝에 도달했는지 확인 (하단에서 100px 이내)
+      const isAtBottom = currentScrollY + windowHeight >= documentHeight - 100;
+
+      // 콘솔 디버깅
+      console.log(`스크롤: 방향=${scrollingDirection}, 위치=${currentScrollY}, 상단=${isAtTop}, 하단=${isAtBottom}`);
+      
+      // 버튼 표시 여부 결정 로직
+      // 1. 아래로 스크롤 중이고 상단/하단 영역이 아니면 숨김
+      // 2. 위로 스크롤 중이면 항상 표시
+      // 3. 페이지 상단이나 하단에 있으면 항상 표시
+      if (scrollingDirection === 'down' && !isAtTop && !isAtBottom) {
+        console.log('채팅 아이콘 숨김');
+        setIsVisible(false);
+      } else {
+        console.log('채팅 아이콘 표시');
+        setIsVisible(true);
+      }
+      
+      // 현재 스크롤 위치 저장
+      lastScrollY = currentScrollY;
+    };
+
+    // 스크롤 이벤트 핸들러
+    const handleScroll = () => {
+      if (scrollTimer !== null) {
+        // 이미 타이머가 설정되어 있으면 취소
+        window.cancelAnimationFrame(scrollTimer);
+      }
+      
+      // requestAnimationFrame을 사용하여 더 부드러운 애니메이션 구현
+      scrollTimer = window.requestAnimationFrame(() => {
+        checkScrollDirection();
+        scrollTimer = null;
+      });
+    };
+    
+    // 스크롤 이벤트 리스너 등록
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // 초기 실행
+    checkScrollDirection();
+    
+    // 컴포넌트 언마운트 시 이벤트 리스너 및 타이머 제거
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimer !== null) {
+        window.cancelAnimationFrame(scrollTimer);
+      }
+    };
+  }, [isMobile]);
   
   // 운영자나 관리자인 경우 컴포넌트를 렌더링하지 않음
   if (currentUser?.role === 'admin' || currentUser?.role === 'operator') {
@@ -144,13 +243,13 @@ const ChatSticky: React.FC = () => {
     position: 'fixed',
     bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
     right: '24px',
-    zIndex: 9999,
+    zIndex: 999, // 모달보다 낮은 z-index
     width: '64px',
     height: '64px',
     borderRadius: '50%',
     backgroundColor: '#4285F4',
     color: 'white',
-    display: 'flex',
+    display: 'flex', // 항상 flex로 설정
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
@@ -158,7 +257,10 @@ const ChatSticky: React.FC = () => {
     border: 'none',
     transition: 'all 0.3s ease',
     // 인라인 애니메이션으로 대체
-    animation: '2s ease-in-out 0s infinite alternate none running customPulse'
+    animation: '2s ease-in-out 0s infinite alternate none running customPulse',
+    opacity: isVisible ? 1 : 0, // 투명도로 제어
+    transform: isVisible ? 'translateY(0)' : 'translateY(80px)', // 아래로 움직이는 효과 추가
+    pointerEvents: isVisible ? 'auto' : 'none', // 숨겨졌을 때 클릭 불가능하게
   };
   
   // CSS 키프레임을 JS에서 생성하여 삽입
@@ -386,7 +488,7 @@ const ChatSticky: React.FC = () => {
           position: 'fixed', 
           bottom: '120px', 
           right: '24px', 
-          zIndex: 9000,
+          zIndex: 1001, // 버튼보다는 높지만 모달보다는 낮게 설정
           width: '350px', 
           height: '500px',
           maxHeight: '80vh',

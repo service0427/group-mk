@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 
 interface WithdrawFormProps {
   userId: string;
-  onSuccess: () => void;
+  onSuccess: (amount: string) => void;
   userCashBalance: number;
 }
 
@@ -339,6 +339,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       );
       
       // 성공 후 폼 초기화
+      const amount = customAmount;
       setCustomAmount('');
       setSelectedAmount('');
       
@@ -351,8 +352,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       
       // 출금 요청 성공 후 추가 작업이 필요하면 여기에 추가
       
-      // 부모 컴포넌트에 성공 알림
-      onSuccess();
+      // 부모 컴포넌트에 성공 알림 (출금 금액 전달)
+      onSuccess(amount);
       
     } catch (err: any) {
       console.error('출금 요청 오류:', err);
@@ -425,26 +426,24 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
         </div>
         <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
         
-        {/* 수수료 정보 표시 */}
-        {customAmount && withdrawSetting && (
-          <div className="mt-3 p-3 bg-muted/40 rounded-md">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-foreground">출금 금액:</span>
-              <span className="font-medium">{formatNumberWithCommas(parseInt(customAmount) || 0)}원</span>
-            </div>
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-sm text-foreground">수수료 ({withdrawSetting.min_request_percentage !== undefined ? withdrawSetting.min_request_percentage : (withdrawSetting.fee_percentage !== undefined ? withdrawSetting.fee_percentage : '3')}%):</span>
-              <span className="font-medium text-red-600">-{formatNumberWithCommas(feeAmount)}원</span>
-            </div>
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-sm text-foreground">실수령액:</span>
-              <span className="font-medium text-lg">{formatNumberWithCommas((parseInt(customAmount) || 0) - feeAmount)}원</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              * 출금 수수료는 {withdrawSetting.min_request_percentage || 0}% 입니다.
-            </div>
+        {/* 수수료 정보 표시 - 항상 노출 */}
+        <div className="mt-3 p-3 bg-muted/40 rounded-md">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-foreground">출금 금액:</span>
+            <span className="font-medium">{formatNumberWithCommas(parseInt(customAmount) || 0)}원</span>
           </div>
-        )}
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-sm text-foreground">수수료 ({withdrawSetting?.min_request_percentage !== undefined ? withdrawSetting.min_request_percentage : (withdrawSetting?.fee_percentage !== undefined ? withdrawSetting.fee_percentage : '3')}%):</span>
+            <span className="font-medium text-red-600">-{formatNumberWithCommas(feeAmount)}원</span>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-sm text-foreground">실수령액:</span>
+            <span className="font-medium text-lg">{formatNumberWithCommas((parseInt(customAmount) || 0) - feeAmount)}원</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            * 출금 수수료는 {withdrawSetting?.min_request_percentage || 3}% 입니다.
+          </div>
+        </div>
       </div>
       
       {/* 금액 빠른 선택 */}

@@ -4,7 +4,6 @@ import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useChat } from '@/hooks/useChat';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useScrollPosition } from '@/hooks/useScrollPosition';
 
 // 데이터베이스 진단 결과 인터페이스
 interface DiagnosticResult {
@@ -121,99 +120,75 @@ const ChatSticky: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // 항상 처음에는 보이도록 true로 설정
   const [isVisible, setIsVisible] = useState(true);
-  const [prevScrollPos, setPrevScrollPos] = useState(0);
+  // prevScrollPos 상태를 제거하고 로컬 변수로 사용
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const scrollPosition = useScrollPosition();
+  // scrollPosition 훅 사용 중단
+  const lastScrollYRef = useRef(0); // 마지막 스크롤 위치를 저장하는 ref
   
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
     // 초기 렌더링 시 항상 보이도록 강제 설정
     setIsVisible(true);
     
-    // PC 버전에서는 스크롤 이벤트를 등록하지 않음 (항상 보임)
+    // 모바일이 아닌 경우 스크롤 이벤트 감시하지 않음
     if (!isMobile) {
       return;
     }
 
-    // 스크롤 방향과 이전 스크롤 위치를 추적하기 위한 변수들
-    let lastScrollY = window.scrollY;
-    let scrollingDirection: 'up' | 'down' | null = null;
-    let scrollTimer: number | null = null;
-
-    const checkScrollDirection = () => {
-      // 현재 스크롤 위치
-      const currentScrollY = window.scrollY;
+    // SPA에서 실제 스크롤되는 요소 찾기
+    // 우선 메인 콘텐츠 영역(main[role="content"])에 스크롤 이벤트 등록
+    const mainContentElement = document.querySelector('main[role="content"]');
+    const scrollElement = mainContentElement || window;
+    
+    // 초기 스크롤 위치 저장
+    lastScrollYRef.current = scrollElement === window ? window.scrollY : (mainContentElement?.scrollTop || 0);
+    
+    // 스크롤 핸들러 함수
+    function handleScroll(e: Event) {
+      // 현재 스크롤 위치 (메인 콘텐츠 또는 윈도우)
+      const currentScrollY = scrollElement === window 
+        ? window.scrollY 
+        : (mainContentElement?.scrollTop || 0);
       
-      // 뷰포트 높이
-      const windowHeight = window.innerHeight;
+      // 이전 스크롤 위치
+      const prevScrollY = lastScrollYRef.current;
       
-      // 문서의 총 높이
-      const documentHeight = Math.max(
-        document.body.scrollHeight, 
-        document.body.offsetHeight,
-        document.documentElement.clientHeight,
-        document.documentElement.scrollHeight, 
-        document.documentElement.offsetHeight
-      );
+      // 스크롤 방향 (true: 위로, false: 아래로)
+      const isScrollingUp = currentScrollY < prevScrollY;
       
-      // 스크롤 방향 결정
-      if (currentScrollY > lastScrollY) {
-        scrollingDirection = 'down';
-      } else if (currentScrollY < lastScrollY) {
-        scrollingDirection = 'up';
-      }
-      
-      // 문서 상단에 있는지 확인 (100px 이내)
+      // 화면 상단에 있는지 여부
       const isAtTop = currentScrollY < 100;
       
-      // 스크롤이 문서 끝에 도달했는지 확인 (하단에서 100px 이내)
-      const isAtBottom = currentScrollY + windowHeight >= documentHeight - 100;
-
-      // 콘솔 디버깅
-      console.log(`스크롤: 방향=${scrollingDirection}, 위치=${currentScrollY}, 상단=${isAtTop}, 하단=${isAtBottom}`);
+      // 화면 하단에 있는지 여부
+      let isAtBottom = false;
+      
+      if (scrollElement === window) {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        isAtBottom = windowHeight + currentScrollY >= documentHeight - 100;
+      } else if (mainContentElement) {
+        const containerHeight = mainContentElement.clientHeight;
+        const scrollHeight = mainContentElement.scrollHeight;
+        isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
+      }
       
       // 버튼 표시 여부 결정 로직
-      // 1. 아래로 스크롤 중이고 상단/하단 영역이 아니면 숨김
-      // 2. 위로 스크롤 중이면 항상 표시
-      // 3. 페이지 상단이나 하단에 있으면 항상 표시
-      if (scrollingDirection === 'down' && !isAtTop && !isAtBottom) {
-        console.log('채팅 아이콘 숨김');
-        setIsVisible(false);
-      } else {
-        console.log('채팅 아이콘 표시');
+      if (isScrollingUp || isAtTop || isAtBottom) {
         setIsVisible(true);
+      } else {
+        setIsVisible(false);
       }
       
-      // 현재 스크롤 위치 저장
-      lastScrollY = currentScrollY;
-    };
-
-    // 스크롤 이벤트 핸들러
-    const handleScroll = () => {
-      if (scrollTimer !== null) {
-        // 이미 타이머가 설정되어 있으면 취소
-        window.cancelAnimationFrame(scrollTimer);
-      }
-      
-      // requestAnimationFrame을 사용하여 더 부드러운 애니메이션 구현
-      scrollTimer = window.requestAnimationFrame(() => {
-        checkScrollDirection();
-        scrollTimer = null;
-      });
-    };
+      // 현재 스크롤 위치를 이전 위치로 저장
+      lastScrollYRef.current = currentScrollY;
+    }
     
-    // 스크롤 이벤트 리스너 등록
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // 스크롤 이벤트 리스너 등록 (SPA 구조에 맞게 적절한 요소에 등록)
+    scrollElement.addEventListener('scroll', handleScroll);
     
-    // 초기 실행
-    checkScrollDirection();
-    
-    // 컴포넌트 언마운트 시 이벤트 리스너 및 타이머 제거
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimer !== null) {
-        window.cancelAnimationFrame(scrollTimer);
-      }
+      scrollElement.removeEventListener('scroll', handleScroll);
     };
   }, [isMobile]);
   
@@ -239,6 +214,7 @@ const ChatSticky: React.FC = () => {
   } = useChat();
   
   // 스타일 값을 직접 지정
+  // 모바일 여부에 따라 동적으로 스타일을 적용
   const buttonStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
@@ -249,18 +225,19 @@ const ChatSticky: React.FC = () => {
     borderRadius: '50%',
     backgroundColor: '#4285F4',
     color: 'white',
-    display: 'flex', // 항상 flex로 설정
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
     border: 'none',
-    transition: 'all 0.3s ease',
-    // 인라인 애니메이션으로 대체
+    // 모바일이면서 숨겨져야 할 때만 전환 효과 적용
+    transition: isMobile ? 'opacity 0.3s ease, transform 0.3s ease' : 'none',
     animation: '2s ease-in-out 0s infinite alternate none running customPulse',
-    opacity: isVisible ? 1 : 0, // 투명도로 제어
-    transform: isVisible ? 'translateY(0)' : 'translateY(80px)', // 아래로 움직이는 효과 추가
-    pointerEvents: isVisible ? 'auto' : 'none', // 숨겨졌을 때 클릭 불가능하게
+    // 모바일이면서 숨겨져야 할 때만 투명도와 이동 효과 적용
+    opacity: isMobile && !isVisible ? 0 : 1,
+    transform: isMobile && !isVisible ? 'translateY(100px)' : 'translateY(0)',
+    pointerEvents: isMobile && !isVisible ? 'none' : 'auto',
   };
   
   // CSS 키프레임을 JS에서 생성하여 삽입

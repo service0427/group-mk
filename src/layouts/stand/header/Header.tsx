@@ -46,7 +46,7 @@ const Header = () => {
         {/* 메인 헤더 영역 */}
         <div className="flex items-stretch w-full px-5 h-16 flex-shrink-0">
           {/* 모바일 영역: 로고 (모바일에서만 표시) */}
-          <div className="lg:hidden flex justify-start">
+          <div className="justify-start lg:hidden flex">
             <HeaderLogo />
           </div>
 

@@ -88,7 +88,11 @@ const WithdrawRequestsPage: React.FC = () => {
           deadline: slot.deadline,
           createdAt: slot.created_at,
           updatedAt: slot.updated_at,
-          campaignName: slot.campaigns?.campaign_name
+          campaignName: slot.campaigns && Array.isArray(slot.campaigns) && slot.campaigns.length > 0
+            ? slot.campaigns[0].campaign_name 
+            : (slot.campaigns && typeof slot.campaigns === 'object' && 'campaign_name' in slot.campaigns 
+                ? slot.campaigns.campaign_name 
+                : undefined)
         }));
         
         setPendingSlots(formattedSlots);

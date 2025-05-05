@@ -891,11 +891,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
           <div className="mb-4 text-center">
             {isSuccess ? (
               <div className="size-12 mx-auto rounded-full bg-success/20 mb-4 flex items-center justify-center">
-                <KeenIcon iconName="Check" className="size-6 text-success" />
+                <KeenIcon icon="Check" className="size-6 text-success" />
               </div>
             ) : (
               <div className="size-12 mx-auto rounded-full bg-danger/20 mb-4 flex items-center justify-center">
-                <KeenIcon iconName="Information" className="size-6 text-danger" />
+                <KeenIcon icon="Information" className="size-6 text-danger" />
               </div>
             )}
             <h3 className="text-lg font-medium">{alertTitle}</h3>

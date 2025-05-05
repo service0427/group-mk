@@ -868,7 +868,7 @@ export const getSlotList = async (
       success: true,
       message: '슬롯 목록을 성공적으로 가져왔습니다.',
       data: formattedSlots,
-      count
+      count: count || undefined
     };
   } catch (err: any) {
     console.error('슬롯 목록 조회 오류:', err);

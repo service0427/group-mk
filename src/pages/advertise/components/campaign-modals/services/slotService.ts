@@ -400,7 +400,7 @@ export const approveSlot = async (
       }
       
       updatedPaidBalance = unitPrice;
-    } else {
+    } else if (adminBalance) {
       // 기존 계정 잔액 업데이트
       oldPaidBalance = parseFloat(String(adminBalance.paid_balance || 0));
       oldFreeBalance = parseFloat(String(adminBalance.free_balance || 0));

@@ -7,6 +7,7 @@ import {
 import { useAuthContext } from '@/auth';
 import { WithdrawForm, WithdrawHistory } from './components';
 import { useUserCashBalance } from './hooks';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const WithdrawRequestPage: React.FC = () => {
   // AuthContext에서 currentUser 가져오기
@@ -15,15 +16,36 @@ const WithdrawRequestPage: React.FC = () => {
   // 새로고침 트리거용 상태
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   
+  // 알림 모달 상태
+  const [notification, setNotification] = useState<{
+    visible: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
+  
   // 사용자 캐시 잔액 조회 커스텀 훅 사용
   const { balance: userCashBalance, isLoading: isLoadingBalance, refetch: refetchBalance } = 
     useUserCashBalance(currentUser?.id);
   
   // 출금 신청 성공 처리 핸들러
-  const handleWithdrawSuccess = () => {
+  const handleWithdrawSuccess = (amount: string) => {
     // 내역과 잔액 새로고침
     setRefreshTrigger(prev => prev + 1);
     refetchBalance();
+    
+    // 가운데 알림 모달 표시
+    setNotification({
+      visible: true,
+      type: 'success',
+      title: '출금 신청이 완료되었습니다',
+      message: `${formatNumberWithCommas(parseInt(amount) || 0)}원 출금이 요청되었습니다. 관리자 승인 후 입금됩니다.`
+    });
   };
   
   // 금액을 천 단위 쉼표가 있는 형식으로 변환
@@ -79,6 +101,53 @@ const WithdrawRequestPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* 가운데 알림 모달 */}
+      <Dialog open={notification.visible} onOpenChange={(open) => setNotification(prev => ({ ...prev, visible: open }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-semibold pb-2">
+              {notification.type === 'success' ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  {notification.title}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-2">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  {notification.title}
+                </div>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 text-center">
+            <p className="text-gray-700 text-lg">{notification.message}</p>
+          </div>
+          
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setNotification(prev => ({ ...prev, visible: false }))}
+              className={`w-full py-3 rounded-md font-medium ${
+                notification.type === 'success' 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              확인
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CommonTemplate>
   );
 };

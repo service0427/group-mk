@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { WithdrawRequest } from '../WithdrawApprovePage'
 import { approveWithdrawRequest, rejectWithdrawRequest } from '../services/withdrawService'
 import { useAuthContext } from '@/auth'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
 interface WithdrawRequestListProps {
   requests: WithdrawRequest[]
@@ -27,6 +28,30 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   
   // 처리 중 상태 관리
   const [processing, setProcessing] = useState<boolean>(false)
+  
+  // 알림 모달 상태 관리
+  const [notification, setNotification] = useState<{
+    visible: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: ''
+  })
+  
+  // 반려 확인 모달 상태
+  const [rejectConfirm, setRejectConfirm] = useState<{
+    visible: boolean;
+    id: number | null;
+    reason: string;
+  }>({
+    visible: false,
+    id: null,
+    reason: ''
+  })
 
   // 상태에 따른 배지 색상 및 텍스트 반환
   const getStatusBadge = (status: string) => {
@@ -72,7 +97,12 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
     
     // 관리자 ID 확인
     if (!currentUser || !currentUser.id) {
-      alert('로그인이 필요하거나 권한이 없습니다.');
+      setNotification({
+        visible: true,
+        type: 'error',
+        title: '권한 오류',
+        message: '로그인이 필요하거나 권한이 없습니다.'
+      })
       return;
     }
     
@@ -86,7 +116,12 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
       const result = await approveWithdrawRequest(String(id), currentUser.id) // 관리자 ID 전달
       
       if (result.success) {
-        alert('출금 요청이 승인되었습니다.')
+        setNotification({
+          visible: true,
+          type: 'success',
+          title: '승인 완료',
+          message: '출금 요청이 승인되었습니다.'
+        })
       } else {
         throw new Error(result.message || '승인 처리 중 오류가 발생했습니다.')
       }
@@ -94,37 +129,84 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
       onRequestUpdated() // 목록 갱신
     } catch (error: any) {
       console.error('출금 요청 승인 실패:', error)
-      alert(error.message || '승인 처리 중 오류가 발생했습니다.')
+      setNotification({
+        visible: true,
+        type: 'error',
+        title: '승인 실패',
+        message: error.message || '승인 처리 중 오류가 발생했습니다.'
+      })
     } finally {
       setProcessing(false)
     }
   }
 
-  // 출금 요청 반려 처리
-  const handleReject = async (id: number) => {
+  // 출금 요청 반려 시 모달 표시
+  const showRejectModal = (id: number) => {
     if (processing) return // 이미 처리 중인 경우 중복 요청 방지
     
     // 관리자 ID 확인
     if (!currentUser || !currentUser.id) {
-      alert('로그인이 필요하거나 권한이 없습니다.');
+      setNotification({
+        visible: true,
+        type: 'error',
+        title: '권한 오류',
+        message: '로그인이 필요하거나 권한이 없습니다.'
+      })
       return;
     }
     
-    // 반려 사유 입력 받기
-    const reason = window.prompt('반려 사유를 입력해주세요.')
+    // 반려 확인 모달 열기
+    setRejectConfirm({
+      visible: true,
+      id: id,
+      reason: ''
+    })
+  }
+  
+  // 반려 사유 변경 처리
+  const handleReasonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setRejectConfirm(prev => ({
+      ...prev,
+      reason: e.target.value
+    }))
+  }
+  
+  // 출금 요청 반려 처리
+  const handleReject = async () => {
+    if (processing) return // 이미 처리 중인 경우 중복 요청 방지
     
-    // 취소하거나 사유를 입력하지 않은 경우
-    if (!reason) {
-      alert('반려 사유를 입력해야 합니다.')
+    // ID와 반려 사유가 없는 경우
+    if (!rejectConfirm.id || !rejectConfirm.reason.trim()) {
+      setNotification({
+        visible: true,
+        type: 'error',
+        title: '입력 오류',
+        message: '반려 사유를 입력해야 합니다.'
+      })
       return
     }
     
     try {
       setProcessing(true)
-      const result = await rejectWithdrawRequest(String(id), reason) // id를 문자열로 변환
+      const result = await rejectWithdrawRequest(
+        String(rejectConfirm.id), 
+        rejectConfirm.reason
+      ) // id를 문자열로 변환
+      
+      // 모달 닫기
+      setRejectConfirm({
+        visible: false,
+        id: null,
+        reason: ''
+      })
       
       if (result.success) {
-        alert('출금 요청이 반려되었습니다.')
+        setNotification({
+          visible: true,
+          type: 'success',
+          title: '반려 완료',
+          message: '출금 요청이 반려되었습니다.'
+        })
       } else {
         throw new Error(result.message || '반려 처리 중 오류가 발생했습니다.')
       }
@@ -132,7 +214,12 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
       onRequestUpdated() // 목록 갱신
     } catch (error: any) {
       console.error('출금 요청 반려 실패:', error)
-      alert(error.message || '반려 처리 중 오류가 발생했습니다.')
+      setNotification({
+        visible: true,
+        type: 'error',
+        title: '반려 실패',
+        message: error.message || '반려 처리 중 오류가 발생했습니다.'
+      })
     } finally {
       setProcessing(false)
     }
@@ -192,7 +279,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
                       </button>
                       <button 
                         className="flex-1 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 disabled:opacity-50"
-                        onClick={() => handleReject(request.id)}
+                        onClick={() => showRejectModal(request.id)}
                         disabled={processing}
                       >
                         반려
@@ -268,7 +355,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
                             </button>
                             <button 
                               className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200 disabled:opacity-50"
-                              onClick={() => handleReject(request.id)}
+                              onClick={() => showRejectModal(request.id)}
                               disabled={processing}
                               title="반려"
                             >
@@ -362,6 +449,100 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
           )}
         </>
       )}
+      
+      {/* 알림 모달 */}
+      <Dialog open={notification.visible} onOpenChange={(open) => setNotification(prev => ({ ...prev, visible: open }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-semibold pb-2">
+              {notification.type === 'success' ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  {notification.title}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-2">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  {notification.title}
+                </div>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 text-center">
+            <p className="text-gray-700 text-lg">{notification.message}</p>
+          </div>
+          
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setNotification(prev => ({ ...prev, visible: false }))}
+              className={`w-full py-3 rounded-md font-medium ${
+                notification.type === 'success' 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              확인
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 반려 확인 모달 */}
+      <Dialog open={rejectConfirm.visible} onOpenChange={(open) => setRejectConfirm(prev => ({ ...prev, visible: open }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">출금 요청 반려</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-gray-700 mb-4">반려 사유를 입력해주세요.</p>
+            <textarea
+              value={rejectConfirm.reason}
+              onChange={handleReasonChange}
+              placeholder="반려 사유를 상세히 입력해주세요"
+              className="w-full border border-gray-300 rounded-md p-3 h-32 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          
+          <DialogFooter className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => setRejectConfirm(prev => ({ ...prev, visible: false }))}
+              className="flex-1 py-2.5 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleReject}
+              disabled={!rejectConfirm.reason.trim() || processing}
+              className={`flex-1 py-2.5 rounded-md font-medium bg-red-600 text-white hover:bg-red-700 ${
+                !rejectConfirm.reason.trim() || processing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {processing ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  처리 중...
+                </div>
+              ) : '반려하기'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

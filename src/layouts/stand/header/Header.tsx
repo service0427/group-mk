@@ -46,15 +46,15 @@ const Header = () => {
         {/* 메인 헤더 영역 */}
         <div className="flex items-stretch w-full px-5 h-16 flex-shrink-0">
           {/* 모바일 영역: 로고 (모바일에서만 표시) */}
-          <div className="lg:hidden flex items-center">
+          <div className="justify-start lg:hidden flex">
             <HeaderLogo />
           </div>
-          
+
           {/* 메뉴 영역: PC에서는 왼쪽 정렬 */}
           <div className="flex items-center justify-start lg:pl-0 flex-grow">
             {pathname.includes('/account') ? <Breadcrumbs /> : <MegaMenu />}
           </div>
-          
+
           {/* 툴바 영역: 항상 오른쪽 정렬 */}
           <div className="flex items-center justify-end">
             <HeaderTopbar />
@@ -63,8 +63,8 @@ const Header = () => {
       </header>
 
       {/* 중요 공지사항 롤링 배너 - 헤더 아래 별도로 고정 */}
-      <div 
-        className="fixed z-20 w-full" 
+      <div
+        className="fixed z-20 w-full"
         style={{
           top: 'var(--header-height)',
           left: isMobile ? '0' : (layout.options.sidebar.collapse ? '80px' : '280px'),

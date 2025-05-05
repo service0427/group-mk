@@ -19,7 +19,7 @@ const HeaderLogo = () => {
     <div className="flex gap-1 lg:hidden items-center -ms-1">
       <Link to="/" className="shrink-0">
         <img
-          src={toAbsoluteUrl('/media/brand-logos/marketing-standard-icon.svg')}
+          src={toAbsoluteUrl('/media/brand-logos/marketing-standard-icon-mini.svg')}
           className="max-h-[32px] w-full"
           alt="마케팅의 정석"
         />

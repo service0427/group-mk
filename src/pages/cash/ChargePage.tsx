@@ -145,7 +145,7 @@ const ChargePage: React.FC = () => {
     setIsLoadingSetting(true);
 
     try {
-      const result = await CashService.getCashSetting(currentUser.id);
+      const result = await CashService.getCashSetting(currentUser.id || '');
       
       if (result.success && result.data) {
         const settingData = result.data;
@@ -199,7 +199,7 @@ const ChargePage: React.FC = () => {
     setIsLoadingHistory(true);
 
     try {
-      const result = await CashService.getChargeRequestHistory(currentUser.id, 5);
+      const result = await CashService.getChargeRequestHistory(currentUser.id || '', 5);
       
       if (result.success) {
         setRecentRequests(result.data || []);
@@ -322,7 +322,7 @@ const ChargePage: React.FC = () => {
 
     try {
       const result = await CashService.createChargeRequest(
-        currentUser.id, 
+        currentUser.id || '', 
         Number(customAmount)
       );
 

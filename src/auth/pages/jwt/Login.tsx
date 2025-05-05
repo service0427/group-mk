@@ -31,6 +31,9 @@ const initialValues = {
   remember: false
 };
 
+// 테스트 환경 설정
+const isTestMode = true;
+
 // 개발 환경에서만 사용할 테스트 계정 정보
 const testCredentials = {
   advertiser: {
@@ -184,7 +187,7 @@ const Login = () => {
             </div>
             
             {/* 개발 환경에서만 테스트 계정 정보 안내 표시 */}
-            {import.meta.env.MODE === 'development' && (
+            {isTestMode === true && (
               <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-xs">
                 <p className="font-semibold">개발 테스트 모드입니다</p>
                 <p>테스트 계정 정보가 자동으로 입력되었습니다</p>

@@ -7,6 +7,9 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { Campaign, Slot } from './components/types';
 import { SERVICE_TYPE_TO_CATEGORY } from './components/constants';
 
+// 슬롯 서비스 import
+import { approveSlot, rejectSlot, updateSlotMemo } from './services/slotService';
+
 // 컴포넌트 가져오기
 import SearchForm from './components/SearchForm';
 import SlotList from './components/SlotList';
@@ -386,81 +389,92 @@ const ApprovePage: React.FC = () => {
     });
   };
 
-  // 슬롯 상태 업데이트 공통 함수
-  const handleUpdateSlotStatus = async (
-    slotId: string,
-    status: 'approved' | 'rejected',
-    rejectionReason?: string
-  ) => {
-    try {
-      const updateData: {
-        status: string;
-        processed_at: string;
-        rejection_reason?: string;
-      } = {
-        status,
-        processed_at: new Date().toISOString()
-      };
-
-      if (status === 'rejected' && rejectionReason) {
-        updateData.rejection_reason = rejectionReason;
-      }
-
-      const { error } = await supabase
-        .from('slots')
-        .update(updateData)
-        .eq('id', slotId);
-
-      if (error) {
-        console.error(`슬롯 ${status} 실패:`, error.message);
-        setError(`슬롯 ${status === 'approved' ? '승인' : '반려'}에 실패했습니다.`);
-        return false;
-      }
-
-      // 슬롯 목록 업데이트 (로컬 상태)
-      const updateSlotStatus = (slots: Slot[]) =>
-        slots.map(slot =>
-          slot.id === slotId
-            ? {
-              ...slot,
-              status,
-              processed_at: updateData.processed_at,
-              ...(status === 'rejected' && rejectionReason
-                ? { rejection_reason: rejectionReason }
-                : {})
-            }
-            : slot
-        );
-
-      setSlots(updateSlotStatus);
-      setFilteredSlots(updateSlotStatus);
-
-      return true;
-    } catch (err: any) {
-      console.error(`슬롯 ${status} 중 오류 발생:`, err.message);
-      setError(`슬롯 ${status === 'approved' ? '승인' : '반려'} 처리 중 오류가 발생했습니다.`);
-      return false;
-    }
-  };
 
   // 승인 처리 함수
   const handleApproveSlot = async (slotId: string) => {
-    const result = await handleUpdateSlotStatus(slotId, 'approved');
-    if (result) {
-      // 추가적인 승인 후 처리가 필요하다면 여기에 구현
+    if (!currentUser?.id) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      const result = await approveSlot(slotId, currentUser.id);
+      
+      if (result.success) {
+        // 성공 시 UI 상태 업데이트
+        const updateSlotStatus = (slots: Slot[]) =>
+          slots.map(slot =>
+            slot.id === slotId
+              ? {
+                ...slot,
+                status: 'approved',
+                processed_at: new Date().toISOString()
+              }
+              : slot
+          );
+
+        setSlots(updateSlotStatus);
+        setFilteredSlots(updateSlotStatus);
+        // 성공 메시지 표시
+        alert('슬롯이 성공적으로 승인되었습니다.');
+      } else {
+        // 실패 시 에러 메시지 표시
+        setError(result.message);
+        alert(result.message);
+      }
+    } catch (err: any) {
+      console.error('슬롯 승인 중 오류 발생:', err.message);
+      setError(err.message || '슬롯 승인 처리 중 오류가 발생했습니다.');
     }
   };
 
   // 반려 처리 함수
   const handleRejectSlot = async (slotId: string) => {
+    if (!currentUser?.id) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
     const reason = prompt('반려 사유를 입력하세요:');
-    if (reason !== null && reason.trim() !== '') {
-      const result = await handleUpdateSlotStatus(slotId, 'rejected', reason);
-      if (result) {
-        // 추가적인 반려 후 처리가 필요하다면 여기에 구현
-      }
-    } else if (reason !== null) {
+    if (reason === null) {
+      // 취소 버튼 클릭
+      return;
+    }
+    
+    if (reason.trim() === '') {
       alert('반려 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const result = await rejectSlot(slotId, currentUser.id, reason);
+      
+      if (result.success) {
+        // 성공 시 UI 상태 업데이트
+        const updateSlotStatus = (slots: Slot[]) =>
+          slots.map(slot =>
+            slot.id === slotId
+              ? {
+                ...slot,
+                status: 'rejected',
+                processed_at: new Date().toISOString(),
+                rejection_reason: reason
+              }
+              : slot
+          );
+
+        setSlots(updateSlotStatus);
+        setFilteredSlots(updateSlotStatus);
+        // 성공 메시지 표시
+        alert('슬롯이 성공적으로 반려되었습니다.');
+      } else {
+        // 실패 시 에러 메시지 표시
+        setError(result.message);
+        alert(result.message);
+      }
+    } catch (err: any) {
+      console.error('슬롯 반려 중 오류 발생:', err.message);
+      setError(err.message || '슬롯 반려 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -503,40 +517,39 @@ const ApprovePage: React.FC = () => {
 
   // 메모 저장 함수
   const handleSaveMemo = async (slotId: string, memo: string) => {
+    if (!currentUser?.id) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return false;
+    }
+
     try {
       console.log('메모 저장 시작 - 슬롯 ID:', slotId);
       console.log('저장할 메모 내용:', memo);
 
-      const { data, error } = await supabase
-        .from('slots')
-        .update({ mat_reason: memo })
-        .eq('id', slotId)
-        .select();
+      const result = await updateSlotMemo(slotId, memo, currentUser.id);
 
-      if (error) {
-        console.error('메모 저장 실패:', error.message);
-        setError('메모 저장에 실패했습니다.');
+      if (!result.success) {
+        console.error('메모 저장 실패:', result.message);
+        setError(result.message);
         return false;
       }
 
-      console.log('메모 저장 API 응답:', data);
-
       // 슬롯 목록 업데이트 (로컬 상태)
-      const updateSlotMemo = (slots: Slot[]) =>
+      const updateSlotMemoState = (slots: Slot[]) =>
         slots.map(slot =>
           slot.id === slotId
             ? { ...slot, mat_reason: memo }
             : slot
         );
 
-      setSlots(updateSlotMemo);
-      setFilteredSlots(updateSlotMemo);
+      setSlots(updateSlotMemoState);
+      setFilteredSlots(updateSlotMemoState);
 
       console.log('메모가 성공적으로 저장되었습니다.');
       return true;
     } catch (err: any) {
       console.error('메모 저장 중 오류 발생:', err.message);
-      setError('메모 저장 중 오류가 발생했습니다.');
+      setError(err.message || '메모 저장 중 오류가 발생했습니다.');
       return false;
     }
   };

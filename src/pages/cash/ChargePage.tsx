@@ -5,8 +5,49 @@ import {
   CardContent
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
+import { CashService } from './CashService';
+import {
+  Dialog,
+  DialogContent as OriginalDialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogPortal,
+  DialogOverlay,
+} from "@/components/ui/dialog";
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// X 버튼이 없는 DialogContent 커스텀 컴포넌트
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+        className
+      )}
+      style={{ 
+        position: 'fixed', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000
+      }}
+      {...props}
+    >
+      {children}
+      {/* X 버튼 제거 */}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
 
 // 충전 요청 타입 정의
 interface ChargeRequest {
@@ -99,39 +140,33 @@ const ChargePage: React.FC = () => {
 
   // 캐시 설정 불러오기
   const fetchCashSetting = async () => {
-    if (!currentUser) return;
+    if (!currentUser) return Promise.resolve();
 
     setIsLoadingSetting(true);
 
     try {
-      // 1. 사용자별 설정 확인
-      const { data: userSetting, error: userSettingError } = await supabase
-        .from('cash_user_settings')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      // 2. 전역 설정 확인
-      const { data: globalSetting, error: globalSettingError } = await supabase
-        .from('cash_global_settings')
-        .select('*')
-        .single();
-
-      if (globalSettingError) {
-        console.error("전역 설정 로딩 오류:", globalSettingError);
-        return;
+      const result = await CashService.getCashSetting(currentUser.id);
+      
+      if (result.success && result.data) {
+        const settingData = result.data;
+        setCashSetting(settingData);
+        
+        // 포인트 표시 여부 설정 (설정의 free_cash_percentage 값에 따라)
+        const showPoints = settingData.free_cash_percentage > 0;
+        console.log('설정 로드: 포인트 표시 여부 =', showPoints, 'free_cash_percentage =', settingData.free_cash_percentage);
+        setShowPointInfo(showPoints);
+      } else {
+        console.error("캐시 설정 로딩 오류:", result.message);
+        setShowPointInfo(false); // 설정을 불러오지 못하면 포인트 정보 숨김
       }
-
-      // 3. 사용자별 설정이 있으면 사용자 설정, 없으면 전역 설정 사용
-      const setting = userSetting || globalSetting;
-      setCashSetting(setting);
-
     } catch (err) {
       console.error("캐시 설정 로딩 오류:", err);
+      setShowPointInfo(false); // 오류 발생 시 포인트 정보 숨김
     } finally {
       setIsLoadingSetting(false);
     }
+    
+    return Promise.resolve(); // 항상 Promise 반환
   };
 
   // 보너스(무료캐시) 금액 계산
@@ -158,37 +193,20 @@ const ChargePage: React.FC = () => {
   // 최근 충전 요청 내역 가져오기
   const fetchRecentRequests = async () => {
     if (!currentUser) {
-      return;
+      return Promise.resolve(); // 명시적으로 Promise 반환
     }
 
     setIsLoadingHistory(true);
 
     try {
-      // 타임아웃 설정 (10초)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('요청 시간 초과')), 10000)
-      );
-
-      const fetchPromise = supabase
-        .from('cash_charge_requests')
-        .select('id, amount, status, requested_at, free_cash_percentage')
-        .eq('user_id', currentUser.id)
-        .order('requested_at', { ascending: false })
-        .limit(5);
-
-      // Promise.race를 사용하여 타임아웃 처리
-      const result = await Promise.race([
-        fetchPromise,
-        timeoutPromise.then(() => {
-          throw new Error('요청 시간 초과');
-        })
-      ]);
-
-      const { data, error } = result;
-
-      if (error) throw error;
-
-      setRecentRequests(data || []);
+      const result = await CashService.getChargeRequestHistory(currentUser.id, 5);
+      
+      if (result.success) {
+        setRecentRequests(result.data || []);
+      } else {
+        console.error('최근 충전 내역 조회 오류:', result.message);
+        setRecentRequests([]);
+      }
     } catch (err) {
       console.error('최근 충전 내역 조회 오류:', err);
       // 에러 발생 시 빈 배열로 처리하여 로딩 상태 종료
@@ -196,6 +214,8 @@ const ChargePage: React.FC = () => {
     } finally {
       setIsLoadingHistory(false);
     }
+    
+    return Promise.resolve(); // 항상 Promise 반환
   };
 
   // 금액이 변경될 때마다 한글 단위 표시 업데이트 및 보너스 금액 계산
@@ -215,12 +235,32 @@ const ChargePage: React.FC = () => {
     }
   }, [customAmount, cashSetting]);
 
-  // 컴포넌트 마운트 시 최근 충전 내역 가져오기
+  // 설정에서 포인트 표시 여부 확인 (기본값 false)
+  const [showPointInfo, setShowPointInfo] = useState<boolean>(false);
+  
+  // 알림 다이얼로그 상태 관리
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [dialogTitle, setDialogTitle] = useState<string>("");
+  const [dialogDescription, setDialogDescription] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  
+  // 디버깅을 위한 로깅
+  useEffect(() => {
+    console.log('showPointInfo 상태 변경:', showPointInfo);
+  }, [showPointInfo]);
+
+  // 컴포넌트 마운트 시 캐시 설정 먼저 가져오기
   useEffect(() => {
     // currentUser가 있고, id 속성이 있는지 확인
     if (currentUser && currentUser.id) {
-      fetchRecentRequests();
-      fetchCashSetting();
+      // 설정 먼저 가져온 후 충전 내역 가져오기 (순서 보장)
+      const loadData = async () => {
+        setShowPointInfo(false); // 명시적으로 초기값 설정
+        await fetchCashSetting(); // 설정 먼저 로드
+        await fetchRecentRequests(); // 설정 로드 후 충전 내역 가져오기
+      };
+      
+      loadData();
     }
   }, [currentUser]); // currentUser에 의존
 
@@ -256,8 +296,16 @@ const ChargePage: React.FC = () => {
     }
   };
 
-  // Supabase에 충전 요청 데이터 삽입
-  const insertChargeRequest = async () => {
+  // 알림 다이얼로그 표시 함수
+  const showDialog = (title: string, description: string, success: boolean = true) => {
+    setDialogTitle(title);
+    setDialogDescription(description);
+    setIsSuccess(success);
+    setDialogOpen(true);
+  };
+
+  // 충전 버튼 핸들러
+  const handleCharge = async () => {
     setError(null);
 
     if (!currentUser) {
@@ -273,39 +321,36 @@ const ChargePage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // cash_charge_requests 테이블에 데이터 삽입
-      const { data, error } = await supabase
-        .from('cash_charge_requests')
-        .insert({
-          user_id: currentUser.id,
-          amount: Number(customAmount),
-          status: 'pending',
-          free_cash_percentage: cashSetting?.free_cash_percentage || 0
-        })
-        .select();
+      const result = await CashService.createChargeRequest(
+        currentUser.id, 
+        Number(customAmount)
+      );
 
-      if (error) {
-        throw error;
+      if (result.success) {
+        // Dialog로 표시
+        showDialog(
+          "충전 요청 완료", 
+          `${result.message}\n관리자 승인 후 충전이 완료됩니다.`, 
+          true
+        );
+        
+        // 성공 후 폼 초기화 및 내역 갱신
+        setCustomAmount('');
+        setSelectedAmount('');
+        fetchRecentRequests();
+      } else {
+        // 실패 시 에러 메시지 표시
+        showDialog("충전 요청 실패", result.message, false);
+        setError(result.message);
       }
-
-      alert(`${formatNumberWithCommas(Number(customAmount))}원 충전이 요청되었습니다.`);
-
-      // 성공 후 폼 초기화 및 내역 갱신
-      setCustomAmount('');
-      setSelectedAmount('');
-      fetchRecentRequests();
-
     } catch (err: any) {
       console.error('충전 요청 오류:', err);
-      setError(err.message || '충전 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
+      const errorMessage = err.message || '충전 요청 중 오류가 발생했습니다. 다시 시도해주세요.';
+      showDialog("충전 요청 오류", errorMessage, false);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // 충전 버튼 핸들러
-  const handleCharge = () => {
-    insertChargeRequest();
   };
 
   return (
@@ -314,6 +359,29 @@ const ChargePage: React.FC = () => {
       description="캐쉬/포인트 관리 > 캐쉬 충전"
       showPageMenu={false}
     >
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent 
+          className="max-w-md mx-auto text-center" 
+          onPointerDownOutside={() => setDialogOpen(false)} // 모달 외부 클릭 시 닫기
+        >
+          <DialogHeader className="text-center">
+            <DialogTitle className={`text-center mb-2 ${isSuccess ? "text-green-600" : "text-red-600"}`}>
+              {dialogTitle}
+            </DialogTitle>
+            <DialogDescription className="whitespace-pre-line text-center">
+              {dialogDescription}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-center mt-6 sm:justify-center">
+            <Button 
+              onClick={() => setDialogOpen(false)}
+              className={`min-w-[100px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}`}
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="w-full max-w-lg mx-auto">
         <Card className="border-0 shadow-none">
           <CardContent className="p-10">
@@ -367,7 +435,7 @@ const ChargePage: React.FC = () => {
               <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
 
               {/* 보너스 캐시 정보 표시 */}
-              {customAmount && cashSetting && (
+              {customAmount && cashSetting && showPointInfo && (
                 <div className="mt-3 p-3 bg-muted/40 rounded-md">
                   {isEligibleForBonus ? (
                     <div>
@@ -436,7 +504,7 @@ const ChargePage: React.FC = () => {
                 <p className="text-sm font-medium">최근 충전 요청 내역</p>
               </div>
 
-              {isLoadingHistory ? (
+              {isLoadingHistory || isLoadingSetting ? (
                 <div className="text-center py-4 text-muted-foreground">
                   내역을 불러오는 중...
                 </div>
@@ -458,7 +526,7 @@ const ChargePage: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-right text-foreground font-medium">
                             {formatNumberWithCommas(request.amount)}원
-                            {request.free_cash_percentage > 0 && request.status === 'approved' && (
+                            {showPointInfo && request.free_cash_percentage > 0 && (
                               <div className="text-xs text-green-600">
                                 +{formatNumberWithCommas(Math.floor((request.amount * request.free_cash_percentage) / 100))}원 보너스
                               </div>
@@ -495,7 +563,7 @@ const ChargePage: React.FC = () => {
               >
                 {isLoading ? '처리 중...' : '충전하기'}
               </button>
-              {isEligibleForBonus && (
+              {showPointInfo && isEligibleForBonus && (
                 <div className="text-center text-sm mt-2 text-green-600">
                   {formatNumberWithCommas(bonusAmount)}원 무료 캐시가 추가로 지급됩니다!
                 </div>

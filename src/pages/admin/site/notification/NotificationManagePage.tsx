@@ -280,16 +280,18 @@ const NotificationManagePage: React.FC = () => {
       <button
         className="btn btn-primary"
         onClick={() => handleOpenSendModal('role')}
+        title="권한별 알림 전송"
       >
-        <KeenIcon icon="briefcase" className="me-2" />
-        권한별 알림 전송
+        <KeenIcon icon="briefcase" className="md:me-2 flex-none" />
+        <span className="hidden md:inline">권한별 알림 전송</span>
       </button>
       <button
         className="btn btn-info"
         onClick={() => handleOpenSendModal('user')}
+        title="회원별 알림 전송"
       >
-        <KeenIcon icon="user" className="me-2" />
-        회원별 알림 전송
+        <KeenIcon icon="user" className="md:me-2 flex-none" />
+        <span className="hidden md:inline">회원별 알림 전송</span>
       </button>
     </div>
   );
@@ -305,7 +307,7 @@ const NotificationManagePage: React.FC = () => {
         {/* 알림 메시지 - 커스텀 토스트 */}
         {notification.show && (
           <div
-            className={`fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform ${
+            className={`fixed top-5 left-5 sm:left-auto sm:right-5 z-50 p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${
               notification.type === 'success' 
                 ? 'bg-green-50 text-green-700 border-l-4 border-green-500 dark:bg-green-950/50 dark:text-green-300 dark:border-green-600'
                 : 'bg-red-50 text-red-700 border-l-4 border-red-500 dark:bg-red-950/50 dark:text-red-300 dark:border-red-600'
@@ -323,12 +325,12 @@ const NotificationManagePage: React.FC = () => {
                   </svg>
                 )}
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">{notification.message}</p>
+              <div className="ml-3 flex-grow">
+                <p className="text-sm font-medium truncate">{notification.message}</p>
               </div>
               <button
                 type="button"
-                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60"
+                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60 flex-shrink-0"
                 onClick={() => setNotification({ ...notification, show: false })}
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -342,7 +344,7 @@ const NotificationManagePage: React.FC = () => {
         {/* 통계 알림 메시지 - 커스텀 토스트 */}
         {statsNotification?.show && (
           <div
-            className={`fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform ${
+            className={`fixed top-20 left-5 sm:left-auto sm:right-5 z-50 p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${
               statsNotification.type === 'success' 
                 ? 'bg-green-50 text-green-700 border-l-4 border-green-500 dark:bg-green-950/50 dark:text-green-300 dark:border-green-600'
                 : 'bg-red-50 text-red-700 border-l-4 border-red-500 dark:bg-red-950/50 dark:text-red-300 dark:border-red-600'
@@ -360,12 +362,12 @@ const NotificationManagePage: React.FC = () => {
                   </svg>
                 )}
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">{statsNotification.message}</p>
+              <div className="ml-3 flex-grow">
+                <p className="text-sm font-medium truncate">{statsNotification.message}</p>
               </div>
               <button
                 type="button"
-                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60"
+                className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60 flex-shrink-0"
                 onClick={() => setStatsNotification({ ...statsNotification, show: false })}
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -379,96 +381,114 @@ const NotificationManagePage: React.FC = () => {
         <div className="flex flex-col space-y-4">
           {/* 상단 영역: 통계와 버튼 */}
           <div className="bg-card rounded-lg shadow-sm p-5">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                {statsLastUpdated && (
-                  <div className="flex items-center">
-                    <span className="text-sm text-muted-foreground flex items-center">
-                      통계 갱신: {statsLastUpdated.toLocaleString()}
+            <div className="flex flex-row justify-between items-center mb-6">
+              {statsLastUpdated && (
+                <div className="flex items-center">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center whitespace-nowrap">
+                      <span className="hidden md:inline">통계 갱신:</span>
+                      <span className="md:hidden inline-flex items-center">
+                        <KeenIcon icon="time" className="w-4 h-4 mr-1" />
+                      </span>
+                      <span className="font-medium text-foreground text-xs sm:text-sm">{statsLastUpdated.toLocaleString()}</span>
+                    </div>
+
+                    {/* 테이블 상태 표시 */}
+                    <div className="flex items-center gap-1 ml-1">
                       {statsUseFallback && (
-                        <span className="ml-1 text-amber-500">(기본 모드)</span>
-                      )}
-                      {tableStatus.checked && (
-                        <span className={`ml-1 ${tableStatus.exists ? 'text-green-500' : 'text-red-500'}`}>
-                          {tableStatus.exists ? '(테이블 확인됨)' : '(테이블 없음)'}
+                        <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                          기본모드
                         </span>
                       )}
-                      <button
-                        className="ml-2 text-primary hover:bg-primary-light dark:hover:bg-primary-dark/50 p-1 rounded transition-colors"
-                        onClick={async () => {
-                          await refreshStats();
-                        }}
-                        title="통계 갱신"
-                      >
-                        <KeenIcon icon="arrows-circle" className="w-5 h-5" />
-                      </button>
-
-                      {/* 관리자 전용 메뉴 - 통계 테이블 리셋 */}
-                      {(currentUser?.role === 'developer') && (
-                        <button
-                          className="ml-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
-                          onClick={async () => {
-                            try {
-                              // 통계 테이블 초기화 작업
-                              const { supabaseAdmin } = await import('@/supabase');
-
-                              // 부모 컴포넌트에서 직접 초기화 작업 수행
-                              setStatsNotification({ 
-                                show: true, 
-                                message: '통계 초기화 중...', 
-                                type: 'success'
-                              });
-
-                              try {
-                                // 현재 통계 테이블 확인
-                                const { data, error } = await supabaseAdmin
-                                  .from('notification_aggregates')
-                                  .select('id')
-                                  .limit(1);
-
-                                if (error && error.message.includes('does not exist')) {
-                                  setStatsNotification({ 
-                                    show: true, 
-                                    message: '통계 테이블이 존재하지 않습니다. SQL을 먼저 실행해주세요.', 
-                                    type: 'error'
-                                  });
-                                  return;
-                                }
-
-                                // 테이블이 있으면 통계 갱신
-                                await refreshStats();
-                                setStatsNotification({ 
-                                  show: true, 
-                                  message: '통계가 성공적으로 초기화되었습니다.', 
-                                  type: 'success'
-                                });
-
-                                // 테이블 상태 업데이트
-                                setTableStatus({ exists: true, checked: true });
-                              } catch (error) {
-                                console.error('테이블 초기화 중 오류:', error);
-                                setStatsNotification({ 
-                                  show: true, 
-                                  message: '통계 초기화 중 오류가 발생했습니다.', 
-                                  type: 'error'
-                                });
-                              }
-                            } catch (error) {
-                              console.error('모듈 로드 오류:', error);
-                              setStatsNotification({ 
-                                show: true, 
-                                message: '초기화 작업을 수행할 수 없습니다.', 
-                                type: 'error'
-                              });
-                            }
-                          }}
-                          title="통계 테이블 초기화 (개발자 전용)"
-                        >
-                          <KeenIcon icon="setting-2" className="w-5 h-5" />
-                        </button>
+                      {tableStatus.checked && (
+                        <span className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded ${
+                          tableStatus.exists 
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                        }`}>
+                          {tableStatus.exists ? 'OK' : '없음'}
+                        </span>
                       )}
-                    </span>
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {/* 버튼 그룹 - 우측 정렬 */}
+              <div className="flex items-center gap-1 ml-auto">
+                <button
+                  className="inline-flex items-center justify-center text-primary hover:bg-primary-light dark:hover:bg-primary-dark/50 p-2 rounded transition-colors"
+                  onClick={async () => {
+                    await refreshStats();
+                  }}
+                  title="통계 갱신"
+                >
+                  <KeenIcon icon="arrows-circle" className="w-5 h-5" />
+                </button>
+
+                {/* 관리자 전용 메뉴 - 통계 테이블 리셋 */}
+                {(currentUser?.role === 'developer') && (
+                  <button
+                    className="inline-flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded transition-colors"
+                    onClick={async () => {
+                      try {
+                        // 통계 테이블 초기화 작업
+                        const { supabaseAdmin } = await import('@/supabase');
+
+                        // 부모 컴포넌트에서 직접 초기화 작업 수행
+                        setStatsNotification({ 
+                          show: true, 
+                          message: '통계 초기화 중...', 
+                          type: 'success'
+                        });
+
+                        try {
+                          // 현재 통계 테이블 확인
+                          const { data, error } = await supabaseAdmin
+                            .from('notification_aggregates')
+                            .select('id')
+                            .limit(1);
+
+                          if (error && error.message.includes('does not exist')) {
+                            setStatsNotification({ 
+                              show: true, 
+                              message: '통계 테이블이 존재하지 않습니다.', 
+                              type: 'error'
+                            });
+                            return;
+                          }
+
+                          // 테이블이 있으면 통계 갱신
+                          await refreshStats();
+                          setStatsNotification({ 
+                            show: true, 
+                            message: '통계가 성공적으로 초기화되었습니다.', 
+                            type: 'success'
+                          });
+
+                          // 테이블 상태 업데이트
+                          setTableStatus({ exists: true, checked: true });
+                        } catch (error) {
+                          console.error('테이블 초기화 중 오류:', error);
+                          setStatsNotification({ 
+                            show: true, 
+                            message: '통계 초기화 중 오류가 발생했습니다.', 
+                            type: 'error'
+                          });
+                        }
+                      } catch (error) {
+                        console.error('모듈 로드 오류:', error);
+                        setStatsNotification({ 
+                          show: true, 
+                          message: '초기화 작업을 수행할 수 없습니다.', 
+                          type: 'error'
+                        });
+                      }
+                    }}
+                    title="통계 테이블 초기화 (개발자 전용)"
+                  >
+                    <KeenIcon icon="setting-2" className="w-5 h-5" />
+                  </button>
                 )}
               </div>
             </div>
@@ -485,7 +505,7 @@ const NotificationManagePage: React.FC = () => {
           <div className="card shadow-sm overflow-hidden border border-border rounded-lg">
             {/* 필터 및 삭제 액션 */}
             <div className="card-header p-6 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card border-b border-border">
-              <div className="w-full sm:w-auto">
+              <div className="w-full sm:w-auto order-1 sm:order-1">
                 <NotificationFilter
                   filterType={filterType}
                   filterUserRole={filterUserRole}
@@ -495,7 +515,7 @@ const NotificationManagePage: React.FC = () => {
                 />
               </div>
 
-              <div className="w-full sm:w-auto flex justify-end">
+              <div className="w-full sm:w-auto flex justify-end order-2 sm:order-2 self-end">
                 <NotificationActions
                   selectedItemsCount={selectedItems.length}
                   onDeleteSelected={() => handleOpenDeleteConfirmModal({
@@ -515,15 +535,17 @@ const NotificationManagePage: React.FC = () => {
               </div>
             </div>
 
-            {/* 상단 페이지네이션 */}
-            <NotificationPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalCount={totalCount}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            {/* 상단 페이지네이션 - 모바일에서는 숨김 */}
+            <div className="hidden md:block">
+              <NotificationPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
 
             {/* 알림 목록 테이블 */}
             <div className="overflow-hidden">
@@ -541,24 +563,28 @@ const NotificationManagePage: React.FC = () => {
             </div>
 
             {/* 하단 페이지네이션 */}
-            <NotificationPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalCount={totalCount}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            <div className="block">
+              <NotificationPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
           </div>
 
           {/* 설명 영역 */}
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
             <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">알림 관리 안내</h3>
             <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
-              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">권한별 알림 전송</span>: 개발자, 운영자, 총판, 대행사, 광고주 등 특정 권한을 가진 모든 회원에게 알림을 전송합니다.</p>
-              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">회원별 알림 전송</span>: 특정 회원을 선택하여 알림을 전송합니다.</p>
-              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 삭제 기능</span>: 테이블 용량 관리를 위해 특정 기간이 지난 알림을 일괄 삭제할 수 있습니다.</p>
-              <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 타입</span>: 시스템, 결제/캐시, 서비스, 슬롯, 마케팅 등 다양한 유형의 알림을 전송할 수 있습니다.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <p>• <span className="font-medium text-blue-900 dark:text-blue-100">권한별 알림</span>: 특정 권한의 모든 회원에게 전송</p>
+                <p>• <span className="font-medium text-blue-900 dark:text-blue-100">회원별 알림</span>: 특정 회원을 선택하여 전송</p>
+                <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 삭제</span>: 테이블 용량 관리를 위한 삭제 기능</p>
+                <p>• <span className="font-medium text-blue-900 dark:text-blue-100">알림 타입</span>: 시스템, 결제, 서비스, 마케팅 등</p>
+              </div>
             </div>
           </div>
         </div>

@@ -58,9 +58,10 @@ const NotificationStatsWrapper: React.FC<NotificationStatsWrapperProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
       <NotificationStatsCard
-        title={`알림 개수 정보 (전체 알림)${useFallback ? ' - 기본 모드' : ''}`}
+        title={`알림 개수 정보 ${useFallback ? '- 기본' : ''}`}
+        mobileTitle="개수 정보"
         data={[
           { label: '전체', value: stats.total || 0 },
           { label: '읽지 않음', value: safeGetStatusCount(NotificationStatus.UNREAD) },
@@ -70,7 +71,8 @@ const NotificationStatsWrapper: React.FC<NotificationStatsWrapperProps> = ({
         icon="notification"
       />
       <NotificationStatsCard
-        title={`알림 타입별 분포 (전체 알림)${useFallback ? ' - 기본 모드' : ''}`}
+        title={`알림 타입별 분포 ${useFallback ? '- 기본' : ''}`}
+        mobileTitle="타입별 분포"
         data={Object.values(NotificationType).map(type => ({
           label: getNotificationTypeText(type),
           value: safeGetTypeCount(type)
@@ -78,7 +80,8 @@ const NotificationStatsWrapper: React.FC<NotificationStatsWrapperProps> = ({
         icon="abstract-28"
       />
       <NotificationStatsCard
-        title={`회원 유형별 분포 (전체 알림)${useFallback ? ' - 기본 모드' : ''}`}
+        title={`회원 유형별 분포 ${useFallback ? '- 기본' : ''}`}
+        mobileTitle="유형별 분포"
         data={[
           { label: '개발자', value: safeGetRoleCount('developer') },
           { label: '운영자', value: safeGetRoleCount('operator') },

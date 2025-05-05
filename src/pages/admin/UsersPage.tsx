@@ -261,18 +261,19 @@ const UsersPage = () => {
     const toolbarActions = (
       <div className="flex gap-2">
         <button className="btn btn-light btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          내보내기
+          <span className="hidden md:inline">내보내기</span>
         </button>
         <button className="btn btn-primary btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">                            <line x1="12" y1="5" x2="12" y2="19"></line>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          회원 추가
+          <span className="hidden md:inline">회원 추가</span>
         </button>
       </div>
     );
@@ -340,7 +341,8 @@ const UsersPage = () => {
                     </div>
                     
                     <button className="btn btn-primary h-10 px-6 md:mt-0 w-full md:w-auto" onClick={() => getUserList(1)}>
-                        검색
+                        <KeenIcon icon="search" className="md:me-2 flex-none" />
+                        <span className="hidden md:inline">검색</span>
                     </button>
                 </div>
             </div>
@@ -429,93 +431,129 @@ const UsersPage = () => {
                             {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
                             <div className="block md:hidden">
                                 {users.length > 0 ? (
-                                    <div className="divide-y divide-gray-200">
+                                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                         {users.map((user, index) => (
                                             <div key={index} className="p-4 hover:bg-muted/40">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className="flex items-center">
-                                                        <input type="checkbox" className="checkbox checkbox-sm checkbox-primary mr-3" />
-                                                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                                                            {user.full_name ? user.full_name.charAt(0) : '?'}
+                                                <div className="flex gap-3">
+                                                    {/* 왼쪽 번호와 체크박스 */}
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="checkbox checkbox-sm checkbox-primary" 
+                                                        />
+                                                        <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                                                            {index + 1}
                                                         </div>
-                                                        <span className="text-gray-800 font-medium">{user.full_name}</span>
                                                     </div>
-                                                    {(() => {
-                                                        let badgeClass = '';
-                                                        let statusText = '';
+                                                    {/* 오른쪽 내용 영역 */}
+                                                    <div className="flex-1 min-w-0">
+                                                        {/* 헤더: 이름, 아바타와 상태 */}
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center mr-2">
+                                                                <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
+                                                                    {user.full_name ? user.full_name.charAt(0) : '?'}
+                                                                </div>
+                                                                <h3 className="font-medium text-foreground truncate">
+                                                                    {user.full_name}
+                                                                </h3>
+                                                            </div>
+                                                            {(() => {
+                                                                let badgeClass = '';
+                                                                let statusText = '';
 
-                                                        switch(user.status) {
-                                                            case 'active':
-                                                                badgeClass = 'bg-success/10 text-success';
-                                                                statusText = '활성';
-                                                                break;
-                                                            case 'inactive':
-                                                                badgeClass = 'bg-danger/10 text-danger';
-                                                                statusText = '비활성';
-                                                                break;
-                                                            case 'pending':
-                                                                badgeClass = 'bg-warning/10 text-warning';
-                                                                statusText = '대기중';
-                                                                break;
-                                                            default:
-                                                                badgeClass = 'bg-gray-100 text-gray-700';
-                                                                statusText = user.status;
-                                                        }
-                                                        return (
-                                                            <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${badgeClass}`}>{statusText}</span>
-                                                        );
-                                                    })()}
-                                                </div>
-                                                
-                                                <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                                                    <div className="col-span-2">
-                                                        <p className="text-muted-foreground">이메일</p>
-                                                        <p className="font-medium">{user.email}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-muted-foreground">권한</p>
-                                                        {(() => {
-                                                            const roleMap: Record<string, {name: string, class: string}> = {
-                                                                'operator': {name:'관리자', class:'text-primary'},
-                                                                'developer': {name:'개발자', class:'text-warning'},
-                                                                'distributor': {name:'총판', class:'text-success'},
-                                                                'agency': {name:'대행사', class:'text-info'},
-                                                                'advertiser': {name:'광고주', class:'text-secondary'}
-                                                            };
-                                                            const role = roleMap[user.role] || {name: user.role, class: ''};
-                                                            return (
-                                                                <p className={`font-medium ${role.class}`}>{role.name}</p>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-muted-foreground">보유캐시</p>
-                                                        <p className="font-medium">
-                                                            ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
-                                                            {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex justify-end gap-2 mt-3">
-                                                    <button 
-                                                        className="btn btn-icon btn-sm btn-light"
-                                                        onClick={() => {
-                                                            // 모달 열기 위한 함수 호출
-                                                            const userData = users.find(u => u.id === user.id);
-                                                            if (userData) {
-                                                                const modalOpener = document.querySelector(`button[data-user-id="${user.id}"]`);
-                                                                if (modalOpener) {
-                                                                    (modalOpener as HTMLElement).click();
+                                                                switch(user.status) {
+                                                                    case 'active':
+                                                                        badgeClass = 'bg-success/10 text-success';
+                                                                        statusText = '활성';
+                                                                        break;
+                                                                    case 'inactive':
+                                                                        badgeClass = 'bg-danger/10 text-danger';
+                                                                        statusText = '비활성';
+                                                                        break;
+                                                                    case 'pending':
+                                                                        badgeClass = 'bg-warning/10 text-warning';
+                                                                        statusText = '대기중';
+                                                                        break;
+                                                                    default:
+                                                                        badgeClass = 'bg-gray-100 text-gray-700';
+                                                                        statusText = user.status;
                                                                 }
-                                                            }
-                                                        }}
-                                                    >
-                                                        <KeenIcon icon="setting-2" className='text-gray-900'/>
-                                                    </button>
-                                                    <button className="btn btn-icon btn-sm btn-light">
-                                                        <KeenIcon icon="trash"/>
-                                                    </button>
+                                                                return (
+                                                                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${badgeClass}`}>{statusText}</span>
+                                                                );
+                                                            })()}
+                                                        </div>
+
+                                                        {/* 이메일 */}
+                                                        <div className="text-sm mb-3">
+                                                            <div className="flex items-center text-xs text-muted-foreground mb-1">
+                                                                <KeenIcon icon="sms" className="h-3 w-3 mr-1" />
+                                                                <span>이메일:</span>
+                                                            </div>
+                                                            <p className="font-medium text-foreground truncate">{user.email}</p>
+                                                        </div>
+                                                        
+                                                        {/* 권한과 캐시 정보 */}
+                                                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-3">
+                                                            <div>
+                                                                <div className="flex items-center text-muted-foreground mb-1">
+                                                                    <KeenIcon icon="shield" className="h-3 w-3 mr-1" />
+                                                                    <span>권한:</span>
+                                                                </div>
+                                                                {(() => {
+                                                                    const roleMap: Record<string, {name: string, class: string}> = {
+                                                                        'operator': {name:'관리자', class:'text-primary'},
+                                                                        'developer': {name:'개발자', class:'text-warning'},
+                                                                        'distributor': {name:'총판', class:'text-success'},
+                                                                        'agency': {name:'대행사', class:'text-info'},
+                                                                        'advertiser': {name:'광고주', class:'text-secondary'}
+                                                                    };
+                                                                    const role = roleMap[user.role] || {name: user.role, class: ''};
+                                                                    return (
+                                                                        <p className={`font-medium ${role.class}`}>{role.name}</p>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center text-muted-foreground mb-1">
+                                                                    <KeenIcon icon="dollar" className="h-3 w-3 mr-1" />
+                                                                    <span>보유캐시:</span>
+                                                                </div>
+                                                                <p className="font-medium">
+                                                                    ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
+                                                                    {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* 액션 버튼 */}
+                                                        <div className="flex justify-end gap-2 mt-3">
+                                                            <button 
+                                                                className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // 모달 열기 위한 함수 호출
+                                                                    const userData = users.find(u => u.id === user.id);
+                                                                    if (userData) {
+                                                                        const modalOpener = document.querySelector(`button[data-user-id="${user.id}"]`);
+                                                                        if (modalOpener) {
+                                                                            (modalOpener as HTMLElement).click();
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <KeenIcon icon="setting-2" className="h-5 w-5" />
+                                                                <span>설정</span>
+                                                            </button>
+                                                            <button 
+                                                                className="btn btn-sm btn-soft-danger flex items-center gap-1 px-3 py-1 h-9"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <KeenIcon icon="trash" className="h-5 w-5" />
+                                                                <span>삭제</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -531,7 +569,7 @@ const UsersPage = () => {
                 </div>
                 
                 <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                    <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
                         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
                         <select 
                             className="select select-sm select-bordered flex-grow min-w-[100px]" 

@@ -114,7 +114,7 @@ const FAQPageComponent = () => {
       showPageMenu={false}
     >
       <div className="grid gap-5 lg:gap-7.5">
-        {/* 카테고리 필터 */}
+        {/* 카테고리별 필터 */}
         <div className="bg-card rounded-lg shadow-sm p-5">
           <div className="flex flex-wrap gap-2">
             {faqCategories.map((category) => (
@@ -165,8 +165,98 @@ const FAQPageComponent = () => {
                             {categoryFaqs.length}개
                           </span>
                         </div>
+                        
+                        {/* 데스크톱 아코디언 (md 이상에서 표시) */}
+                        <div className="hidden md:block">
+                          <Accordion type="single" collapsible className="w-full">
+                            {categoryFaqs.map((faq, index) => (
+                              <AccordionItem 
+                                key={faq.id} 
+                                value={faq.id}
+                                className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
+                              >
+                                <AccordionTrigger 
+                                  onClick={(e) => {
+                                    incrementViewCount(faq);
+                                  }}
+                                  className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
+                                >
+                                  <div className="flex items-start">
+                                    <span className="text-primary font-bold mr-3 text-lg">Q.</span>
+                                    <span className="pt-0.5">{faq.question}</span>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
+                                  <div className="flex items-start">
+                                    <span className="text-primary font-bold mr-3 text-lg">A.</span>
+                                    <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        </div>
+                        
+                        {/* 모바일 리스트 (md 미만에서 표시) */}
+                        <div className="block md:hidden">
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {categoryFaqs.map((faq, index) => (
+                              <div 
+                                key={faq.id} 
+                                className="p-4 hover:bg-muted/40 cursor-pointer border-b"
+                                onClick={() => incrementViewCount(faq)}
+                              >
+                                <div className="flex items-start">
+                                  <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
+                                    {index + 1}
+                                  </span>
+                                  <div className="flex-1">
+                                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                                      {faq.question}
+                                    </h3>
+                                    <div className="flex justify-between items-center">
+                                      <span className={`text-xs ${getCategoryColor(faq.category)}`}>
+                                        {faq.category}
+                                      </span>
+                                      <button className="text-xs text-primary hover:text-primary-dark" onClick={(e) => {
+                                        e.stopPropagation();
+                                        const item = document.getElementById(`faq-${faq.id}`);
+                                        if (item) {
+                                          if (item.classList.contains('hidden')) {
+                                            item.classList.remove('hidden');
+                                          } else {
+                                            item.classList.add('hidden');
+                                          }
+                                        }
+                                      }}>
+                                        답변 보기
+                                      </button>
+                                    </div>
+                                    <div id={`faq-${faq.id}`} className="hidden mt-3 bg-gray-50 p-3 rounded-md">
+                                      <div className="flex items-start">
+                                        <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
+                                          A
+                                        </span>
+                                        <div className="whitespace-pre-line text-sm text-gray-700">
+                                          {faq.answer}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // 특정 카테고리를 선택했을 때는 해당 카테고리의 FAQ만 표시
+                    <>
+                      {/* 데스크톱 아코디언 (md 이상에서 표시) */}
+                      <div className="hidden md:block">
                         <Accordion type="single" collapsible className="w-full">
-                          {categoryFaqs.map((faq, index) => (
+                          {filteredFAQs.map((faq) => (
                             <AccordionItem 
                               key={faq.id} 
                               value={faq.id}
@@ -193,36 +283,59 @@ const FAQPageComponent = () => {
                           ))}
                         </Accordion>
                       </div>
-                    ))
-                  ) : (
-                    // 특정 카테고리를 선택했을 때는 해당 카테고리의 FAQ만 표시
-                    <Accordion type="single" collapsible className="w-full">
-                      {filteredFAQs.map((faq) => (
-                        <AccordionItem 
-                          key={faq.id} 
-                          value={faq.id}
-                          className="border-b border-border py-2 hover:bg-gray-50/50 transition-colors duration-200"
-                        >
-                          <AccordionTrigger 
-                            onClick={(e) => {
-                              incrementViewCount(faq);
-                            }}
-                            className="text-left font-medium hover:text-primary py-3 px-4 rounded-md"
-                          >
-                            <div className="flex items-start">
-                              <span className="text-primary font-bold mr-3 text-lg">Q.</span>
-                              <span className="pt-0.5">{faq.question}</span>
+                      
+                      {/* 모바일 리스트 (md 미만에서 표시) */}
+                      <div className="block md:hidden">
+                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                          {filteredFAQs.map((faq, index) => (
+                            <div 
+                              key={faq.id} 
+                              className="p-4 hover:bg-muted/40 cursor-pointer border-b"
+                              onClick={() => incrementViewCount(faq)}
+                            >
+                              <div className="flex items-start">
+                                <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
+                                  {index + 1}
+                                </span>
+                                <div className="flex-1">
+                                  <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                                    {faq.question}
+                                  </h3>
+                                  <div className="flex justify-between items-center">
+                                    <span className={`text-xs ${getCategoryColor(faq.category)}`}>
+                                      {faq.category}
+                                    </span>
+                                    <button className="text-xs text-primary hover:text-primary-dark" onClick={(e) => {
+                                      e.stopPropagation();
+                                      const item = document.getElementById(`faq-${faq.id}`);
+                                      if (item) {
+                                        if (item.classList.contains('hidden')) {
+                                          item.classList.remove('hidden');
+                                        } else {
+                                          item.classList.add('hidden');
+                                        }
+                                      }
+                                    }}>
+                                      답변 보기
+                                    </button>
+                                  </div>
+                                  <div id={`faq-${faq.id}`} className="hidden mt-3 bg-gray-50 p-3 rounded-md">
+                                    <div className="flex items-start">
+                                      <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
+                                        A
+                                      </span>
+                                      <div className="whitespace-pre-line text-sm text-gray-700">
+                                        {faq.answer}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
-                            <div className="flex items-start">
-                              <span className="text-primary font-bold mr-3 text-lg">A.</span>
-                              <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                          ))}
+                        </div>
+                      </div>
+                    </>
                   )
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">

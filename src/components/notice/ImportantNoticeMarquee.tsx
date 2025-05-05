@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { KeenIcon } from '@/components/keenicons';
 import { supabase } from '@/supabase';
+import { useMediaQuery } from '@/hooks';
 
 interface ImportantNotice {
   id: string;
@@ -14,6 +15,8 @@ const ImportantNoticeMarquee: React.FC = () => {
   const [notices, setNotices] = useState<ImportantNotice[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  // 모바일 화면 여부 확인 (컴포넌트 최상위 레벨에서 훅 호출)
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // 중요 공지사항 가져오기
   useEffect(() => {
@@ -98,9 +101,11 @@ const ImportantNoticeMarquee: React.FC = () => {
     <div className="w-full bg-amber-50/90 dark:bg-amber-900/30 border-b border-gray-200 dark:border-coal-100 h-9 flex items-center">
       <div className="w-full px-5">
         <div className="flex items-center">
+          {/* 모바일에서는 아이콘만 표시하고 PC에서는 "중요 공지" 텍스트도 표시 */}
           <div className="flex items-center mr-3">
-            <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-medium px-2 py-0.5 rounded-full mr-2">
-              중요 공지
+            <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-medium px-2 py-0.5 rounded-full mr-2 flex items-center">
+              <KeenIcon icon="notification-bing" className="text-amber-800 dark:text-amber-200 text-xs mr-0.5" />
+              {!isMobile && <span>중요 공지</span>}
             </span>
             {notices.length > 1 && (
               <div className="text-amber-700 dark:text-amber-300 text-xs">
@@ -109,15 +114,18 @@ const ImportantNoticeMarquee: React.FC = () => {
             )}
           </div>
 
+          {/* 모바일에서 텍스트가 튀어나가지 않도록 조정 */}
           <div
-            className="flex-1 overflow-hidden whitespace-nowrap text-amber-900 dark:text-amber-200 text-sm font-medium cursor-pointer hover:underline"
+            className="flex-1 overflow-hidden text-amber-900 dark:text-amber-200 text-sm font-medium cursor-pointer hover:underline"
             onClick={handleNoticeClick}
           >
-            {currentNotice.title}
+            <div className="truncate">
+              {currentNotice.title}
+            </div>
           </div>
 
           {notices.length > 1 && (
-            <div className="flex ml-2">
+            <div className="flex-shrink-0 flex ml-2">
               <button
                 className="p-0.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/40 rounded-full mx-0.5"
                 onClick={(e) => {

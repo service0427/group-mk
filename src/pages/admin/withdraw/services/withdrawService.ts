@@ -135,63 +135,93 @@ export async function getWithdrawApproveList() {
 }
 
 // 출금 요청 승인 함수
-export async function approveWithdrawRequest(id: string) {
-    const { data, error } = await supabase
-        .from("withdraw_requests")
-        .update({
-            status: 'approved',
-            updated_at: new Date()
-        })
-        .eq("id", id);
-        
-    if (error) {
-        console.error("Error approving withdraw request:", error);
-        throw new Error("Failed to approve withdraw request");
-    }
-    return data;
-}
-
-
-// 출금 요청 반려 함수
-export async function rejectWithdrawRequest(id: string, rejected_reason: string) {
-  try {
-    // reject_withdraw_request 저장 프로시저 호출
-    const { data, error } = await supabase.rpc(
-      'reject_withdraw_request',
-      {
-        request_id: id,
-        rejected_reason: rejected_reason
-      }
-    );
-      
-    if (error) {
-      console.error("Error rejecting withdraw request:", error);
-      throw new Error(error.message || "출금 요청 반려 중 오류가 발생했습니다.");
-    }
-    
-    return {
-      success: true,
-      message: "출금 요청이 성공적으로 반려되었습니다."
-    };
-  } catch (error) {
-    console.error("Error in reject withdraw process:", error);
-    throw error;
-  }
-}
-/*
-// 출금 요청 반려 함수
-export async function rejectWithdrawRequest(id, rejected_reason) {
+export async function approveWithdrawRequest(id: string, adminUserId: string) {
     try {
-        // 1. 먼저 출금 요청 정보 가져오기 (상태 확인 포함)
+        // 1. 출금 요청 정보 확인
         const { data: requestData, error: requestError } = await supabase
             .from("withdraw_requests")
-            .select("id, user_id, amount, status")
+            .select("id, user_id, amount, status, fee_amount")
             .eq("id", id)
             .single();
             
         if (requestError) {
             console.error("Error fetching withdraw request:", requestError);
-            throw new Error("Failed to fetch withdraw request details");
+            throw new Error("출금 요청 정보를 가져오는데 실패했습니다.");
+        }
+        
+        // 이미 처리된 요청인지 확인
+        if (requestData.status !== 'pending') {
+            console.warn(`Withdraw request ${id} is already ${requestData.status}`);
+            throw new Error(`이미 ${requestData.status === 'approved' ? '승인' : '반려'}된 요청입니다.`);
+        }
+        
+        const now = new Date();
+        
+        // 2. 출금 요청 상태 업데이트
+        const { error: updateError } = await supabase
+            .from("withdraw_requests")
+            .update({
+                status: 'approved',
+                processed_at: now,
+                processed_by: adminUserId,
+                updated_at: now
+            })
+            .eq("id", id)
+            .eq("status", "pending"); // 상태가 pending인 경우에만 업데이트
+            
+        if (updateError) {
+            console.error("Error approving withdraw request:", updateError);
+            throw new Error("출금 요청 승인 중 오류가 발생했습니다.");
+        }
+        
+        // 3. 관리자 로그 기록 (추가 정보 기록)
+        try {
+            await supabase
+                .from("admin_action_logs")
+                .insert({
+                    admin_id: adminUserId,
+                    action_type: 'withdraw_approval',
+                    target_id: id,
+                    details: {
+                        withdraw_amount: requestData.amount,
+                        fee_amount: requestData.fee_amount,
+                        net_amount: requestData.amount - (requestData.fee_amount || 0),
+                        user_id: requestData.user_id
+                    },
+                    created_at: now
+                });
+        } catch (logError) {
+            console.warn("관리자 로그 기록 실패 (처리는 계속 진행됨):", logError);
+        }
+        
+        return {
+            success: true,
+            message: "출금 요청이 성공적으로 승인되었습니다.",
+            data: requestData
+        };
+    } catch (error: any) {
+        console.error("Error in approve withdraw process:", error);
+        return {
+            success: false,
+            message: error.message || "출금 요청 승인 중 오류가 발생했습니다."
+        };
+    }
+}
+
+
+// 출금 요청 반려 함수
+export async function rejectWithdrawRequest(id: string, rejected_reason: string) {
+    try {
+        // 1. 먼저 출금 요청 정보 가져오기 (상태 확인 포함)
+        const { data: requestData, error: requestError } = await supabase
+            .from("withdraw_requests")
+            .select("id, user_id, amount, status, fee_amount")
+            .eq("id", id)
+            .single();
+            
+        if (requestError) {
+            console.error("Error fetching withdraw request:", requestError);
+            throw new Error("출금 요청 정보를 가져오는데 실패했습니다.");
         }
         
         // 이미 처리된 요청인지 확인
@@ -209,13 +239,16 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
             throw new Error("금액 정보가 올바르지 않습니다.");
         }
         
+        const now = new Date();
+        
         // 3.1 출금 요청 상태 업데이트
         const { error: updateError } = await supabase
             .from("withdraw_requests")
             .update({
                 status: 'rejected',
                 rejected_reason: rejected_reason,
-                updated_at: new Date()
+                rejected_at: now,
+                updated_at: now
             })
             .eq("id", id)
             .eq("status", "pending"); // 추가 안전장치: 상태가 pending인 경우에만 업데이트
@@ -229,7 +262,7 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
         // 현재 잔액 조회
         const { data: balanceData, error: balanceError } = await supabase
             .from("user_balances")
-            .select("paid_balance")
+            .select("paid_balance, free_balance, total_balance")
             .eq("user_id", userId)
             .single();
             
@@ -239,15 +272,17 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
         }
         
         // 안전하게 금액 계산 (null이나 undefined 처리)
-        const currentBalance = typeof balanceData.paid_balance === 'number' ? balanceData.paid_balance : 0;
-        const updatedBalance = currentBalance + amount;
+        const currentPaidBalance = typeof balanceData.paid_balance === 'number' ? balanceData.paid_balance : 0;
+        const currentFreeBalance = typeof balanceData.free_balance === 'number' ? balanceData.free_balance : 0;
+        const updatedPaidBalance = currentPaidBalance + amount;
         
-        // 잔액 업데이트
+        // 잔액 업데이트 (paid_balance로 환원, 출금은 항상 paid_balance에서만 처리되므로)
         const { error: updateBalanceError } = await supabase
             .from("user_balances")
             .update({
-                paid_balance: updatedBalance,
-                updated_at: new Date()
+                paid_balance: updatedPaidBalance,
+                total_balance: updatedPaidBalance + currentFreeBalance,
+                updated_at: now
             })
             .eq("user_id", userId);
             
@@ -256,30 +291,59 @@ export async function rejectWithdrawRequest(id, rejected_reason) {
             throw new Error("사용자 잔액 업데이트 중 오류가 발생했습니다.");
         }
         
-        
-        // 3.3 거래 내역 추가 (실패해도 전체 프로세스에 영향 없음)
+        // 3.3 거래 내역 추가 - withdrawal 타입 사용 (테이블 변경 후)
         try {
-            await supabase
+            const { error: historyError } = await supabase
                 .from("user_cash_history")
                 .insert({
                     user_id: userId,
-                    transaction_type: 'withdrawal', 
-                    cash_amount: amount, // 양수로 저장 (반려로 인한 금액 복구)
-                    description: '출금 반려',
-                    transaction_at: new Date()
+                    transaction_type: 'withdrawal', // 출금 관련 처리이므로 withdrawal 사용
+                    amount: amount, // 양수로 저장 (반려로 인한 금액 복구)
+                    description: `출금 반려 (사유: ${rejected_reason})`,
+                    transaction_at: now,
+                    reference_id: id,
+                    balance_type: null // balance_type을 null로 설정 (제약 조건에 맞게)
                 });
-        } catch (historyError) {
-            // 거래 내역 추가는 실패해도 진행
-            console.warn("Failed to create transaction history, but withdraw rejected successfully:", historyError);
+                
+            if (historyError) {
+                console.error("거래 내역 추가 중 오류 발생:", historyError);
+            }
+        } catch (e) {
+            console.warn("거래 내역 추가 실패 (처리는 계속 진행됨):", e);
+        }
+        
+        // 3.4 감사 로그 추가 (balance_audit_log)
+        try {
+            await supabase
+                .from("balance_audit_log")
+                .insert({
+                    user_id: userId,
+                    change_type: 'increase',
+                    old_paid_balance: currentPaidBalance,
+                    new_paid_balance: updatedPaidBalance,
+                    old_free_balance: currentFreeBalance,
+                    new_free_balance: currentFreeBalance,
+                    change_amount: amount,
+                    details: {
+                        operation: 'withdraw_reject',
+                        withdraw_request_id: id,
+                        rejected_reason: rejected_reason
+                    },
+                    created_at: now
+                });
+        } catch (auditLogError) {
+            console.warn("감사 로그 추가 실패 (처리는 계속 진행됨):", auditLogError);
         }
         
         return {
             success: true,
             message: "출금 요청이 성공적으로 반려되었습니다."
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error in reject withdraw process:", error);
-        throw error;
+        return {
+            success: false,
+            message: error.message || "출금 요청 반려 중 오류가 발생했습니다."
+        };
     }
 }
-*/

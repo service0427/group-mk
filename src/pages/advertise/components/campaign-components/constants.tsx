@@ -30,7 +30,7 @@ export const STATUS_OPTIONS = [
   {value: 'submitted', label: '승인요청'},
   {value: 'approved', label: '승인완료'},
   {value: 'rejected', label: '반려'},
-  {value: 'draft', label: '임시저장'},
+  {value: 'pending', label: '대기중'},
   {value: 'active', label: '진행중'},
   {value: 'paused', label: '일시중단'},
   {value: 'completed', label: '완료'}
@@ -67,6 +67,6 @@ export const getStatusBadge = (status: string): JSX.Element => {
     case 'completed':
       return <span className="badge badge-dark">완료</span>;
     default:
-      return <span className="badge badge-light">기타</span>;
+      return <span className="badge badge-light">대기중</span>;
   }
 };

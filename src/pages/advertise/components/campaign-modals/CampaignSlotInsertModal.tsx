@@ -5,14 +5,50 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
-  DialogTitle
+  DialogTitle,
+  DialogDescription,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
 } from '@/components/ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
 import { getStatusColorClass, CampaignDetailData as ICampaignDetailData, CampaignData } from '@/utils/CampaignFormat';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
+import { cn } from '@/lib/utils';
+import { registerSlot } from './services/slotService';
+
+// X 버튼이 없는 DialogContent 커스텀 컴포넌트
+const CustomDialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+        className
+      )}
+      style={{ 
+        position: 'fixed', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000
+      }}
+      {...props}
+    >
+      {children}
+      {/* X 버튼 제거 */}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
 
 
 interface CampaignSlotInsertModalProps {
@@ -113,6 +149,20 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
     url?: string;
     keyword1?: string;
   }>({});
+  
+  // 알림 다이얼로그 상태
+  const [alertDialogOpen, setAlertDialogOpen] = useState<boolean>(false);
+  const [alertTitle, setAlertTitle] = useState<string>("");
+  const [alertDescription, setAlertDescription] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  
+  // 알림 다이얼로그 표시 함수
+  const showAlert = (title: string, description: string, success: boolean = true) => {
+    setAlertTitle(title);
+    setAlertDescription(description);
+    setIsSuccess(success);
+    setAlertDialogOpen(true);
+  };
 
   // useAuthContext 훅을 사용해 현재 로그인한 사용자 정보 가져오기
   const { currentUser } = useAuthContext();
@@ -239,6 +289,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         .order('created_at', { ascending: false })
         .range(from, to);
       
+      // 쿼리 실행
       const { data, error, count } = await query;
       
       if (error) {
@@ -251,6 +302,8 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       }
     } catch (error) {
       console.error('슬롯 데이터 가져오기 오류:', error);
+      // 오류 메시지 표시
+      showAlert('오류 발생', '슬롯 데이터를 불러오는 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
     } finally {
       setSlotsLoading(false);
     }
@@ -271,13 +324,16 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       setLoading(true);
       console.log('Supabase 쿼리 시작...');
       
-      // Supabase 쿼리 수행
-      const { data, error } = await supabase
+      // Supabase 쿼리 준비
+      const campaignsPromise = supabase
         .from('campaigns')
         .select('*, mat_id') // mat_id를 명시적으로 선택
         .eq('service_type', 'NaverShopTraffic')
         .neq('status', 'pause')
         .order('id', { ascending: true });
+      
+      // 쿼리 실행
+      const { data, error } = await campaignsPromise;
 
       if (error) {
         console.error('Supabase 쿼리 오류:', error);
@@ -301,9 +357,13 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         }));
       } else {
         console.log('가져온 캠페인이 없습니다.');
+        // 사용자에게 캠페인이 없다는 메시지 표시
+        showAlert('알림', '현재 사용 가능한 캠페인이 없습니다. 나중에 다시 시도해주세요.', false);
       }
     } catch (error) {
       console.error('캠페인 가져오기 오류:', error);
+      // 오류 메시지 표시
+      showAlert('오류 발생', '캠페인 목록을 불러오는 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
     } finally {
       setLoading(false);
     }
@@ -383,7 +443,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       
       // 선택된 캠페인이 없으면 저장 불가
       if (!selectedCampaignId) {
-        alert('캠페인을 선택해주세요.');
+        showAlert('알림', '캠페인을 선택해주세요.', false);
         return;
       }
       
@@ -424,25 +484,27 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         ].filter(keyword => keyword.trim() !== '') // 빈 키워드 제거
       };
 
-      // slots 테이블에 데이터 삽입
-      const { data: insertedData, error: insertError } = await supabase
-        .from('slots')
-        .insert({
-          mat_id: matId,
-          product_id: selectedCampaignId,
-          user_id: userId,
-          status: 'draft', // 초기 상태: 작성 중
-          input_data: inputData, // jsonb 타입 필드에 저장
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select();
-
-      if (insertError) {
-        throw insertError;
+      // 슬롯 서비스를 통한 등록 (클라이언트 측 처리)
+      console.log('슬롯 등록 시도 중...');
+      const result = await registerSlot(
+        userId,
+        selectedCampaignId,
+        matId,
+        inputData
+      );
+      
+      if (!result.success) {
+        throw new Error(result.message);
       }
+      
+      // 슬롯 등록 성공
+      console.log('슬롯 등록 성공:', result.data);
 
-      console.log('슬롯이 성공적으로 저장되었습니다:', insertedData);
+      // 캠페인 단가 확인 (성공 메시지용)
+      const unitPrice = selectedCampaign.unit_price || 1000; // 기본값 1000원
+
+      // 성공 메시지 표시
+      showAlert('성공', `슬롯이 성공적으로 등록되었습니다. ${unitPrice}원이 차감되었습니다.`, true);
 
       // 부모 컴포넌트의 onSave 함수 호출 (있다면)
       if (onSave) {
@@ -450,9 +512,14 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       }
 
       // 저장 후 슬롯 목록을 새로고침
-      fetchUserSlots();
+      setTimeout(() => {
+        fetchUserSlots().catch(error => {
+          console.warn('슬롯 목록 새로고침 중 오류:', error.message);
+          // UI 영향 최소화
+        });
+      }, 500);
       
-      // 입력 폼 초기화
+      // 입력 폼 즉시 초기화 (UX 개선)
       setSlotData({
         productName: '',
         mid: '',
@@ -465,7 +532,22 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
 
     } catch (error) {
       console.error('슬롯 저장 중 오류 발생:', error);
-      alert(`슬롯 저장 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      
+      // 오류 메시지 처리 개선
+      let errorMsg = '슬롯 저장 중 오류가 발생했습니다';
+      
+      if (error instanceof Error) {
+        // 잔액 부족 오류 특별 처리
+        if (error.message.includes('잔액이 부족합니다')) {
+          errorMsg = `잔액이 부족합니다. 캐시를 충전해주세요.`;
+        } else if (error.message.includes('타임아웃') || error.message.includes('서버 응답 지연')) {
+          errorMsg = '서버 응답 지연으로 요청을 완료할 수 없습니다. 잠시 후 다시 시도해주세요.';
+        } else {
+          errorMsg = `${errorMsg}: ${error.message}`;
+        }
+      }
+      
+      showAlert('오류 발생', errorMsg, false);
     } finally {
       // 저장 중 상태 해제
       setSaving(false);
@@ -523,10 +605,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   if (!open || !category) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-5xl p-0 overflow-hidden">
-        <DialogHeader className="bg-background py-4 px-6 border-b">
-          <DialogTitle className="text-lg font-medium text-foreground">캠페인 슬롯 관리</DialogTitle>
+    <>
+      <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-5xl p-0 overflow-hidden">
+          <DialogHeader className="bg-background py-4 px-6 border-b">
+            <DialogTitle className="text-lg font-medium text-foreground">캠페인 슬롯 관리</DialogTitle>
           <div className="flex mt-4 border-b">
             <button
               onClick={() => handleTabChange('form')}
@@ -800,6 +883,36 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* 알림 다이얼로그 */}
+    <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+      <CustomDialogContent className="max-w-md">
+        <div className="p-6">
+          <div className="mb-4 text-center">
+            {isSuccess ? (
+              <div className="size-12 mx-auto rounded-full bg-success/20 mb-4 flex items-center justify-center">
+                <KeenIcon iconName="Check" className="size-6 text-success" />
+              </div>
+            ) : (
+              <div className="size-12 mx-auto rounded-full bg-danger/20 mb-4 flex items-center justify-center">
+                <KeenIcon iconName="Information" className="size-6 text-danger" />
+              </div>
+            )}
+            <h3 className="text-lg font-medium">{alertTitle}</h3>
+            <p className="text-muted-foreground mt-2">{alertDescription}</p>
+          </div>
+          <div className="flex justify-center mt-4">
+            <Button 
+              onClick={() => setAlertDialogOpen(false)}
+              className={isSuccess ? "btn-success" : "btn-danger"}
+            >
+              확인
+            </Button>
+          </div>
+        </div>
+      </CustomDialogContent>
+    </Dialog>
+    </>
   );
 };
 

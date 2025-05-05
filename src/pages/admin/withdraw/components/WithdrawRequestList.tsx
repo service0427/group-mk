@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { WithdrawRequest } from '../WithdrawApprovePage'
 import { approveWithdrawRequest, rejectWithdrawRequest } from '../services/withdrawService'
+import { useAuthContext } from '@/auth'
 
 interface WithdrawRequestListProps {
   requests: WithdrawRequest[]
@@ -21,6 +22,9 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   onPageChange,
   onRequestUpdated,
 }) => {
+  // 인증 컨텍스트에서 현재 사용자 정보 가져오기
+  const { currentUser } = useAuthContext();
+  
   // 처리 중 상태 관리
   const [processing, setProcessing] = useState<boolean>(false)
 
@@ -66,6 +70,12 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   const handleApprove = async (id: number) => {
     if (processing) return // 이미 처리 중인 경우 중복 요청 방지
     
+    // 관리자 ID 확인
+    if (!currentUser || !currentUser.id) {
+      alert('로그인이 필요하거나 권한이 없습니다.');
+      return;
+    }
+    
     // 승인 확인
     if (!window.confirm('이 출금 요청을 승인하시겠습니까?')) {
       return
@@ -73,12 +83,18 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
     
     try {
       setProcessing(true)
-      await approveWithdrawRequest(String(id)) // id를 문자열로 변환
-      alert('출금 요청이 승인되었습니다.')
+      const result = await approveWithdrawRequest(String(id), currentUser.id) // 관리자 ID 전달
+      
+      if (result.success) {
+        alert('출금 요청이 승인되었습니다.')
+      } else {
+        throw new Error(result.message || '승인 처리 중 오류가 발생했습니다.')
+      }
+      
       onRequestUpdated() // 목록 갱신
-    } catch (error) {
+    } catch (error: any) {
       console.error('출금 요청 승인 실패:', error)
-      alert('승인 처리 중 오류가 발생했습니다.')
+      alert(error.message || '승인 처리 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -87,6 +103,12 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   // 출금 요청 반려 처리
   const handleReject = async (id: number) => {
     if (processing) return // 이미 처리 중인 경우 중복 요청 방지
+    
+    // 관리자 ID 확인
+    if (!currentUser || !currentUser.id) {
+      alert('로그인이 필요하거나 권한이 없습니다.');
+      return;
+    }
     
     // 반려 사유 입력 받기
     const reason = window.prompt('반려 사유를 입력해주세요.')
@@ -99,12 +121,18 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
     
     try {
       setProcessing(true)
-      await rejectWithdrawRequest(String(id), reason) // id를 문자열로 변환
-      alert('출금 요청이 반려되었습니다.')
+      const result = await rejectWithdrawRequest(String(id), reason) // id를 문자열로 변환
+      
+      if (result.success) {
+        alert('출금 요청이 반려되었습니다.')
+      } else {
+        throw new Error(result.message || '반려 처리 중 오류가 발생했습니다.')
+      }
+      
       onRequestUpdated() // 목록 갱신
-    } catch (error) {
+    } catch (error: any) {
       console.error('출금 요청 반려 실패:', error)
-      alert('반려 처리 중 오류가 발생했습니다.')
+      alert(error.message || '반려 처리 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }

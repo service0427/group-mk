@@ -33,9 +33,36 @@ const initialValues = {
 
 // 개발 환경에서만 사용할 테스트 계정 정보
 const testCredentials = {
-  email: 'test-0315001652@test.com',
-  password: 'Tech123!',
-  remember: true
+  advertiser: {
+    email: 'test-0315001652@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '광고주 (Advertiser)'
+  },
+  operator: {
+    email: 'test-0314225613@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '운영자 (Operator)'
+  },
+  developer: {
+    email: 'test-0416184612@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '개발자 (Developer)'
+  },
+  distributor: {
+    email: 'test-0416153210@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '총판 (Distributor)'
+  },
+  agency: {
+    email: 'test-0416195043@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '대행사 (Agency)'
+  }
 };
 
 const Login = () => {
@@ -43,12 +70,15 @@ const Login = () => {
   useEffect(() => {
     localStorage.removeItem('auth');
     localStorage.removeItem('user');
+    localStorage.removeItem('metronic-tailwind-react-auth-v1=9.1.1');
+    localStorage.removeItem('sb-iiyzaaboinfezycblwnb-auth-token');
   }, []);
 
   const [loading, setLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordEmail, setResetPasswordEmail] = useState('');
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('advertiser');
   const { login, resetPassword } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,12 +90,17 @@ const Login = () => {
   const getInitialValues = () => {
     // 개발 환경 체크 (Vite)
     const isDevelopment = import.meta.env.MODE === 'development';
-    return isDevelopment ? testCredentials : initialValues;
+    return isDevelopment ? {
+      email: testCredentials[selectedRole].email,
+      password: testCredentials[selectedRole].password,
+      remember: testCredentials[selectedRole].remember
+    } : initialValues;
   };
 
   const formik = useFormik({
     initialValues: getInitialValues(),
     validationSchema: loginSchema,
+    enableReinitialize: true,
     onSubmit: async (values, { setStatus, setSubmitting }) => {
       setLoading(true);
 
@@ -153,8 +188,29 @@ const Login = () => {
               <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-xs">
                 <p className="font-semibold">개발 테스트 모드입니다</p>
                 <p>테스트 계정 정보가 자동으로 입력되었습니다</p>
-                <p className="mt-1">이메일: {testCredentials.email}</p>
-                <p>비밀번호: {testCredentials.password}</p>
+                <p className="mt-1">이메일: {testCredentials[selectedRole].email}</p>
+                <p>비밀번호: {testCredentials[selectedRole].password}</p>
+                
+                {/* 역할 선택 버튼 그룹 */}
+                <div className="mt-3">
+                  <p className="font-semibold mb-1">역할 선택:</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Object.entries(testCredentials).map(([role, data]) => (
+                      <button
+                        key={role}
+                        type="button"
+                        className={`px-2 py-1 rounded text-xs ${
+                          selectedRole === role
+                            ? 'bg-blue-600 text-white font-semibold'
+                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                        }`}
+                        onClick={() => setSelectedRole(role as keyof typeof testCredentials)}
+                      >
+                        {data.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>

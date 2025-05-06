@@ -3,5 +3,15 @@
   "compatibility_date": "2025-05-06",
   "assets": {
     "directory": "./dist"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "mkt-guide.com/*",
+      "custom_domain": true
+    }
+  ],
+  "site": {
+    "bucket": "./dist"
+  },
+  "always_use_https": true
 }

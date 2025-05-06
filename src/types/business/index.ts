@@ -32,4 +32,6 @@ export interface BusinessFormData {
   business_number: string;
   business_name: string;
   representative_name: string;
+  business_email?: string;
+  business_image_url?: string;
 }

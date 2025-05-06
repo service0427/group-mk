@@ -11,6 +11,10 @@ export interface BusinessInfo {
 export interface UserBusiness extends BusinessInfo {
   verified: boolean; // 인증 여부
   verification_date?: string; // 인증 날짜
+  business_email?: string; // 사업자 이메일
+  business_image_url?: string; // 사업자 등록증 이미지 URL
+  business_image_storage_type?: 'base64' | 'supabase_storage'; // 이미지 저장 타입
+  business_image_bucket?: string; // 이미지 버킷 이름 (Supabase Storage 사용 시)
 }
 
 // 등업 신청 상태

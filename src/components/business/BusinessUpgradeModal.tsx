@@ -224,10 +224,10 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
             } catch (urlError) {
               console.error('URL 생성 오류:', urlError);
               
-              // 마지막 대안: 직접 URL 형식 구성 시도
+              // 마지막 대안: 직접 URL 형식 구성 시도 (하드코딩 방식)
               try {
-                const supabaseUrl = supabase.supabaseUrl; // Supabase 프로젝트 URL
-                const directPublicUrl = `${supabaseUrl}/storage/v1/object/public/business-images/${filePath}`;
+                // 환경변수를 사용하지 않고 이미지 경로만으로 URL 구성
+                const directPublicUrl = `/storage/v1/object/public/business-images/${filePath}`;
                 
                 business_image_url = directPublicUrl;
                 console.log('직접 URL 구성 시도:', directPublicUrl);

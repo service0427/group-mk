@@ -2,25 +2,8 @@
   "account_id": "d487a4f4ab6dd57899955ec5775f10ce",
   "name": "mk",
   "compatibility_date": "2025-05-06",
-<<<<<<< HEAD
-  "main": "worker-site.js",
-<<<<<<< HEAD
-  "site": {
-    "bucket": "./dist"
-  },
-  "dev": {
-    "port": 8787
-=======
-  "workers_dev": false,
-  "site": {
-    "bucket": "./dist",
-    "include": ["**/*"],
-    "exclude": []
->>>>>>> 658984e91acd170fc93edf331adcf225716a92dc
-=======
   "assets": {
     "directory": "./dist"
->>>>>>> dac694716bf8122054d4f1a622d87e23706628be
   },
   "dev": {
     "port": 8787
@@ -49,33 +32,5 @@
         }
       ]
     }
-<<<<<<< HEAD
-  ],
-  "env": {
-    "production": {
-      "vars": {
-        "ENVIRONMENT": "production"
-      },
-      "routes": [
-        {
-          "pattern": "mkt-guide.com",
-          "custom_domain": true
-        }
-      ]
-    },
-    "test": {
-      "name": "mk-test",
-      "vars": {
-        "ENVIRONMENT": "test"
-      },
-      "routes": [
-        {
-          "pattern": "wtest.mkt-guide.com",
-          "custom_domain": true
-        }
-      ]
-    }
-=======
->>>>>>> 658984e91acd170fc93edf331adcf225716a92dc
   }
 }

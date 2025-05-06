@@ -5,20 +5,38 @@
   "site": {
     "bucket": "./dist"
   },
+  "dev": {
+    "port": 8787
+  },
   "routes": [
     {
       "pattern": "mkt-guide.com",
       "custom_domain": true
     }
   ],
-  "dev": {
-    "port": 8787
-  },
   "env": {
     "production": {
       "vars": {
         "ENVIRONMENT": "production"
-      }
+      },
+      "routes": [
+        {
+          "pattern": "mkt-guide.com",
+          "custom_domain": true
+        }
+      ]
+    },
+    "test": {
+      "name": "mk-test",
+      "vars": {
+        "ENVIRONMENT": "test"
+      },
+      "routes": [
+        {
+          "pattern": "wtest.mkt-guide.com",
+          "custom_domain": true
+        }
+      ]
     }
   }
 }

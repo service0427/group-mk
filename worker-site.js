@@ -7,10 +7,16 @@ addEventListener('fetch', event => {
   }
 });
 
+// 현재 환경 정보 (wrangler.jsonc의 env에서 설정됨)
+const ENVIRONMENT = typeof ENVIRONMENT !== 'undefined' ? ENVIRONMENT : 'production';
+
+// 환경에 따른 로깅 설정
+console.log(`Worker running in ${ENVIRONMENT} environment`);
+
 // 단순화된 worker 스크립트 - 500 오류 방지
 async function handleRequest(request) {
   const url = new URL(request.url);
-  
+
   // favicon.ico 요청에 대한 빈 응답 반환
   if (url.pathname === '/favicon.ico') {
     return new Response(null, {
@@ -22,8 +28,8 @@ async function handleRequest(request) {
   // 정적 파일 패턴 (이것들은 직접 처리)
   const staticFilePattern = /\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|json|txt|ico)$/;
   const isStaticFile = url.pathname.match(staticFilePattern) ||
-                       url.pathname.startsWith('/assets/') ||
-                       url.pathname.startsWith('/media/');
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.startsWith('/media/');
 
   if (isStaticFile) {
     try {
@@ -56,9 +62,9 @@ async function handleRequest(request) {
       method: 'GET',
       headers: request.headers
     });
-    
+
     const response = await fetch(indexReq);
-    
+
     if (response.status === 200) {
       const indexContent = await response.text();
       return new Response(indexContent, {

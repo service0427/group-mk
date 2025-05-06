@@ -112,7 +112,12 @@ const ProfilePage = () => {
   };
   
   // 이미지 확대 모달 열기
-  const openImageModal = (imageUrl: string) => {
+  // 이미지 모달 열기 함수 - null/undefined 체크 추가
+  const openImageModal = (imageUrl: string | undefined) => {
+    if (!imageUrl) {
+      console.warn('열려는 이미지 URL이 없습니다');
+      return;
+    }
     setSelectedImage(imageUrl);
     setImageModalOpen(true);
   };
@@ -126,18 +131,29 @@ const ProfilePage = () => {
     
     // 사용자 정보 새로고침
     try {
+      // 사용자 ID가 없으면 실행하지 않음
+      if (!currentUser?.id) {
+        console.warn('사용자 정보가 없어 데이터 새로고침을 건너뜁니다');
+        return;
+      }
+      
       console.log('등업 신청 성공 후 데이터 새로고침');
       const { data: refreshedUser, error: refreshError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', currentUser?.id)
+        .eq('id', currentUser.id) // currentUser?.id가 있다고 확인되었으므로 안전하게 사용
         .single();
         
       if (refreshError) {
         console.error('사용자 정보 새로고침 오류:', refreshError);
-      } else if (refreshedUser && setCurrentUser) {
-        console.log('성공 후 사용자 정보 업데이트');
-        setCurrentUser(refreshedUser);
+      } else if (refreshedUser) {
+        // setCurrentUser 함수가 있는지 확인
+        if (typeof setCurrentUser === 'function') {
+          console.log('성공 후 사용자 정보 업데이트');
+          setCurrentUser(refreshedUser);
+        } else {
+          console.warn('setCurrentUser 함수가 없어 사용자 정보를 업데이트할 수 없습니다');
+        }
       }
     } catch (err) {
       console.error('사용자 정보 갱신 실패:', err);
@@ -146,18 +162,21 @@ const ProfilePage = () => {
   
   // 이전 사업자 정보 가져오기 (이미지와 이메일 정보 포함)
   const getPreviousBusinessInfo = () => {
-    if (currentUser?.business) {
-      // any 타입으로 단언하여 타입 오류 해결
-      const business = currentUser.business as any;
-      return {
-        business_number: business.business_number,
-        business_name: business.business_name,
-        representative_name: business.representative_name,
-        business_email: business.business_email || '',
-        business_image_url: business.business_image_url || ''
-      };
+    // currentUser가 null이거나 business가 없는 경우 undefined 반환
+    if (!currentUser || !currentUser.business) {
+      return undefined;
     }
-    return undefined;
+    
+    // business 객체를 안전하게 처리 (타입 단언 사용)
+    const business = currentUser.business as any;
+    
+    return {
+      business_number: business.business_number || '',
+      business_name: business.business_name || '',
+      representative_name: business.representative_name || '',
+      business_email: business.business_email || '',
+      business_image_url: business.business_image_url || ''
+    };
   };
 
   // 이 함수는 더 이상 사용되지 않지만 참조용으로 남겨둡니다
@@ -315,7 +334,7 @@ const ProfilePage = () => {
       }
       
       // 3. 사업자 정보 업데이트 (승인 대기 중에도 가능하게 수정)
-      if (currentUser?.business) {
+      if (currentUser && currentUser.business) {
         console.log('사업자 정보 업데이트 시도');
         
         try {
@@ -329,7 +348,7 @@ const ProfilePage = () => {
             console.log('승인 대기 중에도 사업자 정보 업데이트 진행');
             
             // 이미지는 Base64인 경우 처리
-            if (businessData.business_image_url && businessData.business_image_url.startsWith('data:image')) {
+            if (businessData && businessData.business_image_url && businessData.business_image_url.startsWith('data:image')) {
               console.log('Base64 이미지 처리: 이미지 데이터 저장 중');
               // 이미지가 이미 Base64면 그대로 사용
             }
@@ -359,7 +378,7 @@ const ProfilePage = () => {
           }
           
           // 변경 감지
-          if (originalBusiness !== JSON.stringify(currentUser.business)) {
+          if (currentUser && currentUser.business && originalBusiness !== JSON.stringify(currentUser.business)) {
             businessInfoUpdated = true;
             console.log('사업자 정보 변경됨');
           }
@@ -546,7 +565,9 @@ const ProfilePage = () => {
                       <td className="py-2 text-gray-600 font-normal">사업자 등록번호</td>
                       <td className="py-2 text-gray-800 font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser?.business?.business_number || '-'}
+                          {currentUser && currentUser.business ? 
+                            currentUser.business.business_number || '-' : 
+                            '-'}
                         </div>
                       </td>
                     </tr>
@@ -554,7 +575,9 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">상호명</td>
                       <td className="py-3 text-gray-800 font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser?.business?.business_name || '-'}
+                          {currentUser && currentUser.business ? 
+                            currentUser.business.business_name || '-' : 
+                            '-'}
                         </div>
                       </td>
                     </tr>
@@ -562,7 +585,9 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">대표자명</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser?.business?.representative_name || '-'}
+                          {currentUser && currentUser.business ? 
+                            currentUser.business.representative_name || '-' : 
+                            '-'}
                         </div>
                       </td>
                     </tr>
@@ -571,7 +596,9 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">사업자용 이메일</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {(currentUser?.business as any)?.business_email || '-'}
+                          {currentUser && currentUser.business ? 
+                            ((currentUser.business as any).business_email || '-') : 
+                            '-'}
                         </div>
                       </td>
                     </tr>
@@ -579,58 +606,81 @@ const ProfilePage = () => {
                     <tr>
                       <td className="py-3 text-gray-600 font-normal">사업자등록증</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
-                        {(currentUser?.business as any)?.business_image_url ? (
-                          <div className="border rounded p-3 bg-white">
-                            <div className="flex flex-col items-center">
-                              <div className="relative cursor-pointer" onClick={() => openImageModal((currentUser.business as any).business_image_url)}>
-                                <img
-                                  src={(currentUser.business as any).business_image_url}
-                                  alt="사업자등록증"
-                                  className="max-h-48 object-contain mb-2 hover:opacity-90 transition-opacity"
-                                  onError={(e) => {
-                                    console.error('이미지 로드 실패:', (currentUser.business as any).business_image_url);
-                                    
-                                    // URL 상세 정보 로깅
-                                    try {
-                                      if ((currentUser.business as any).business_image_url && !(currentUser.business as any).business_image_url.startsWith('data:')) {
-                                        const url = new URL((currentUser.business as any).business_image_url);
-                                        console.log('이미지 URL 분석:');
-                                        console.log('- 프로토콜:', url.protocol);
-                                        console.log('- 호스트:', url.hostname);
-                                        console.log('- 경로:', url.pathname);
-                                        console.log('- 쿼리 파라미터:', url.search);
+                        {(() => {
+                          // currentUser와 business 객체가 존재하는지 확인
+                          if (!currentUser || !currentUser.business) {
+                            return (
+                              <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
+                                <span className="text-gray-500">등록된 이미지가 없습니다</span>
+                              </div>
+                            );
+                          }
+                          
+                          // business 객체를 안전하게 처리
+                          const business = currentUser.business as any;
+                          const imageUrl = business.business_image_url;
+                          
+                          if (!imageUrl) {
+                            return (
+                              <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
+                                <span className="text-gray-500">등록된 이미지가 없습니다</span>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="border rounded p-3 bg-white">
+                              <div className="flex flex-col items-center">
+                                <div className="relative cursor-pointer" onClick={() => openImageModal(imageUrl)}>
+                                  <img
+                                    src={imageUrl}
+                                    alt="사업자등록증"
+                                    className="max-h-48 object-contain mb-2 hover:opacity-90 transition-opacity"
+                                    onError={(e) => {
+                                      console.error('이미지 로드 실패:', imageUrl);
+                                      
+                                      // URL 상세 정보 로깅
+                                      try {
+                                        if (imageUrl && !imageUrl.startsWith('data:')) {
+                                          const url = new URL(imageUrl);
+                                          console.log('이미지 URL 분석:');
+                                          console.log('- 프로토콜:', url.protocol);
+                                          console.log('- 호스트:', url.hostname);
+                                          console.log('- 경로:', url.pathname);
+                                          console.log('- 쿼리 파라미터:', url.search);
+                                        }
+                                      } catch (urlError) {
+                                        console.error('URL 분석 오류:', urlError);
                                       }
-                                    } catch (urlError) {
-                                      console.error('URL 분석 오류:', urlError);
-                                    }
-                                    
-                                    // 대체 이미지 표시
-                                    (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
-                                    
-                                    // URL이 Supabase Storage URL이고 만료되었을 가능성이 있는 경우
-                                    if ((currentUser.business as any).business_image_storage_type === 'supabase_storage') {
-                                      console.warn('Supabase Storage URL 로드 실패. URL이 만료되었거나 접근 권한이 없을 수 있습니다.');
-                                    }
-                                  }}
-                                  onLoad={() => {
-                                    console.log('이미지 로드 성공');
-                                  }}
-                                />
-                                <div className="absolute top-0 right-0 bg-primary/80 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                  </svg>
+                                      
+                                      // 대체 이미지 표시
+                                      (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
+                                      
+                                      // URL이 Supabase Storage URL이고 만료되었을 가능성이 있는 경우
+                                      if (business.business_image_storage_type === 'supabase_storage') {
+                                        console.warn('Supabase Storage URL 로드 실패. URL이 만료되었거나 접근 권한이 없을 수 있습니다.');
+                                      }
+                                    }}
+                                    onLoad={() => {
+                                      console.log('이미지 로드 성공');
+                                    }}
+                                  />
+                                  <div className="absolute top-0 right-0 bg-primary/80 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1 text-center">클릭하면 크게 볼 수 있습니다</p>
+                                <div className="mt-1 text-xs text-gray-500">
+                                  {business.business_image_storage_type === 'base64' ? 
+                                    '(Base64 저장)' : 
+                                    '(Storage 저장)'}
                                 </div>
                               </div>
-                              <p className="text-xs text-gray-500 mt-1 text-center">클릭하면 크게 볼 수 있습니다</p>
-                              <div className="mt-1 text-xs text-gray-500">
-                                {(currentUser.business as any).business_image_storage_type === 'base64' ? 
-                                  '(Base64 저장)' : 
-                                  '(Storage 저장)'}
-                              </div>
                             </div>
-                          </div>
-                        ) : (
+                          );
+                        })() || (
                           <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
                             <span className="text-gray-500">등록된 이미지가 없습니다</span>
                           </div>
@@ -642,7 +692,7 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         {hasPendingRequest ? (
                           <span className="badge badge-sm badge-warning">승인 대기중</span>
-                        ) : currentUser?.business?.verified ? (
+                        ) : (currentUser && currentUser.business && currentUser.business.verified) ? (
                           <span className="badge badge-sm badge-success">인증됨</span>
                         ) : (
                           <span className="badge badge-sm badge-error">미인증</span>

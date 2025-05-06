@@ -110,5 +110,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "packageManager": "yarn@4.5.0"
 }

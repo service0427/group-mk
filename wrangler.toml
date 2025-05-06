@@ -1,9 +1,2 @@
-name = "mk"
+name = "group-mk"
 compatibility_date = "2025-05-06"
-
-# 정적 사이트 설정
-[site]
-bucket = "./build"  # React 빌드 출력 디렉토리
-
-# 진입점 명시적 설정
-main = "./index.js"  # 또는 다른 진입점 파일 경로

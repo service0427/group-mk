@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useFormik } from 'formik';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 
@@ -11,10 +11,8 @@ import { useLayout } from '@/providers';
 
 const initialValues = {
   email: '',
-  full_name: '',
   password: '',
   changepassword: '',
-  acceptTerms: false
 };
 
 // 유효성 검증 스키마 - 한글 메시지로 변경
@@ -24,20 +22,15 @@ const signupSchema = Yup.object().shape({
     .min(3, '최소 3자 이상 입력해주세요')
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('이메일을 입력해주세요'),
-  full_name: Yup.string()
-    .min(2, '최소 2자 이상 입력해주세요')
-    .max(50, '최대 50자까지 입력 가능합니다')
-    .required('이름을 입력해주세요'),
   password: Yup.string()
-    .min(3, '최소 3자 이상 입력해주세요')
+    .min(4, '최소 4자 이상 입력해주세요')
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('비밀번호를 입력해주세요'),
   changepassword: Yup.string()
-    .min(3, '최소 3자 이상 입력해주세요')
+    .min(4, '최소 4자 이상 입력해주세요')
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('비밀번호 확인이 필요합니다')
     .oneOf([Yup.ref('password')], "비밀번호가 일치하지 않습니다"),
-  acceptTerms: Yup.bool().required('이용약관에 동의해주세요')
 });
 
 const Signup = () => {
@@ -59,7 +52,12 @@ const Signup = () => {
         if (!register) {
           throw new Error('인증 제공자가 초기화되지 않았습니다.');
         }
-        await register(values.email, values.full_name, values.password, values.changepassword);
+
+        // 이메일 주소에서 앞부분(사용자 이름)을 추출
+        const emailUsername = values.email.split('@')[0];
+        
+        // 추출한 이메일 앞부분을 full_name으로 사용
+        await register(values.email, emailUsername, values.password, values.changepassword);
         navigate(from, { replace: true });
       } catch (error) {
         console.error(error);
@@ -123,24 +121,6 @@ const Signup = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="form-label font-normal text-gray-900">이름</label>
-          <input
-            className={clsx('input py-3', {
-              'is-invalid': formik.touched.full_name && formik.errors.full_name
-            })}
-            placeholder="이름을 입력하세요"
-            type="text"
-            autoComplete="off"
-            {...formik.getFieldProps('full_name')}
-          />
-          {formik.touched.full_name && formik.errors.full_name && (
-            <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.full_name}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
           <label className="form-label font-normal text-gray-900">비밀번호</label>
           <div className="input" data-toggle-password="true">
             <input
@@ -196,25 +176,6 @@ const Signup = () => {
             </span>
           )}
         </div>
-
-        <label className="checkbox-group">
-          <input
-            className="checkbox checkbox-sm"
-            type="checkbox"
-            {...formik.getFieldProps('acceptTerms')}
-          />
-          <span className="checkbox-label">
-            <Link to="#" className="text-sm link">
-              이용약관
-            </Link>에 동의합니다
-          </span>
-        </label>
-
-        {formik.touched.acceptTerms && formik.errors.acceptTerms && (
-          <span role="alert" className="text-danger text-xs mt-1">
-            {formik.errors.acceptTerms}
-          </span>
-        )}
 
         <button
           type="submit"

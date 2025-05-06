@@ -6,11 +6,10 @@
   "scripts": {
     "clean": "rimraf dist node_modules/.vite",
     "dev": "npm run clean && vite",
-    "build": "tsc -b && vite build && node scripts/create-routes-json.js && node scripts/copy-worker.js && node scripts/create-favicon.js",
+    "build": "tsc -b && vite build && node scripts/create-routes-json.js && node scripts/create-favicon.js",
     "lint": "eslint .",
     "preview": "vite preview",
-    "delete-chat-data": "node scripts/delete-chat-data.js",
-    "deploy": "wrangler deploy"
+    "delete-chat-data": "node scripts/delete-chat-data.js"
   },
   "dependencies": {
     "@auth0/auth0-spa-js": "^2.1.3",
@@ -105,8 +104,7 @@
     "rimraf": "^6.0.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "^6.2.0",
-    "wrangler": "^4.14.1"
+    "vite": "^6.2.0"
   },
   "main": "eslint.config.js",
   "keywords": [],

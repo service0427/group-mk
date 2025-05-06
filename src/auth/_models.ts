@@ -40,6 +40,10 @@ export interface CustomUser {
     representative_name: string;
     verified: boolean;
     verification_date?: string;
+    business_email?: string;
+    business_image_url?: string;
+    business_image_storage_type?: string;
+    business_image_bucket?: string;
   };
   //auth?: AuthModel;
 }

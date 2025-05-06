@@ -11,14 +11,16 @@ export async function onRequest({ request, next }) {
     return next();
   }
 
-  // 나머지 모든 요청은 /index.html로 처리 (SPA 라우팅)
-  try {
-    const response = await next();
-    if (response.status === 404) {
-      return next({ mapRequestToAsset: (req) => new Request(`${url.origin}/index.html`, req) });
-    }
-    return response;
-  } catch (err) {
-    return new Response(`Error: ${err.message}`, { status: 500 });
-  }
+  // index.html 파일 가져오기
+  const indexHtmlResponse = await fetch(new URL('/index.html', url.origin));
+  const indexHtml = await indexHtmlResponse.text();
+  
+  // 200 상태 코드로 index.html 콘텐츠 반환 (URL 변경 없음)
+  return new Response(indexHtml, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    },
+    status: 200
+  });
 }

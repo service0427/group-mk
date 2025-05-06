@@ -6,6 +6,11 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   
+  // favicon.ico 요청을 media/app/favicon.ico로 리디렉션
+  if (url.pathname === '/favicon.ico') {
+    return fetch(new URL('/media/app/favicon.ico', url.origin));
+  }
+  
   // 정적 자산인 경우 그대로 반환
   if (
     url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|txt)$/) ||
@@ -31,6 +36,7 @@ async function handleRequest(request) {
       }
     });
   } catch (error) {
+    console.error('Error loading index.html:', error);
     return new Response('Error loading the application', {
       status: 500
     });

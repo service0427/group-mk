@@ -49,28 +49,13 @@ export const useChat = () => {
       // 채팅방 정보 가져오기
       const { data: roomsData, error: roomsError } = await supabase
         .from('chat_rooms')
-        .select('*')
+        .select('*, last_message(*)')
         .in('id', roomIds)
         .order('updated_at', { ascending: false });
       
       if (roomsError) {
         throw new Error(roomsError.message);
       }
-      
-      // 마지막 메시지 정보 별도 조회
-      const roomsWithLastMessage = await Promise.all(roomsData.map(async (room) => {
-        if (room.last_message_id) {
-          const { data: lastMessage } = await supabase
-            .from('chat_messages')
-            .select('*')
-            .eq('id', room.last_message_id)
-            .single();
-          
-          return { ...room, last_message: lastMessage };
-        }
-        
-        return { ...room, last_message: null };
-      }));
       
       // 각 채팅방의 안 읽은 메시지 수 가져오기
       const unreadPromises = roomIds.map(async (roomId) => {
@@ -117,7 +102,7 @@ export const useChat = () => {
       setUnreadCount(totalUnread);
       
       // 데이터 변환 및 상태 업데이트
-      const formattedRooms: IChatRoom[] = roomsWithLastMessage.map((room) => ({
+      const formattedRooms: IChatRoom[] = roomsData.map((room) => ({
         id: room.id,
         name: room.name,
         participants: [],
@@ -228,31 +213,6 @@ export const useChat = () => {
     if (!currentUser?.id || !roomId || !content.trim()) return null;
     
     try {
-      // 메시지 전송 직전에 채팅방 상태 한 번 더 확인
-      const { data: roomData, error: roomError } = await supabase
-        .from('chat_rooms')
-        .select('status')
-        .eq('id', roomId)
-        .single();
-      
-      if (roomError) {
-        console.error('채팅방 상태 확인 중 오류 발생:', roomError.message);
-        return null;
-      }
-      
-      // 채팅방이 활성 상태인지 확인
-      if (!roomData || roomData.status !== 'active') {
-        console.error('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다. (상태:', roomData?.status || '없음', ')');
-        return null;
-      }
-      
-      // 로컬 상태 업데이트
-      setRooms(prev => 
-        prev.map(room => 
-          room.id === roomId ? { ...room, status: roomData.status } : room
-        )
-      );
-      
       // 메시지 생성
       const newMessage = {
         id: uuidv4(),
@@ -511,9 +471,12 @@ export const useChat = () => {
     if (currentUser?.id) {
       try {
         fetchChatRooms();
+        console.log('Chat: Fetching chat rooms for user', currentUser.id);
       } catch (err) {
         console.error('Chat: Error fetching initial chat data', err);
       }
+    } else {
+      console.log('Chat: No current user, skipping data fetch');
     }
   }, [currentUser?.id, fetchChatRooms]);
 
@@ -662,11 +625,15 @@ export const useChat = () => {
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
+            console.log('채팅 메시지 구독 성공');
             retryCount = 0;
           } else if (status === 'CHANNEL_ERROR') {
+            console.log('채팅 메시지 구독 오류');
+            
             if (retryCount < maxRetries) {
               retryCount++;
               setTimeout(() => {
+                console.log(`재연결 시도 ${retryCount}/${maxRetries}...`);
                 setupSubscription();
               }, retryTimeout * retryCount);
             }
@@ -702,7 +669,13 @@ export const useChat = () => {
             fetchChatRooms();
           }
         )
-        .subscribe();
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') {
+            console.log('채팅방 구독 성공');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.log('채팅방 구독 오류');
+          }
+        });
       
       // 구독 해제 함수 반환
       return () => {

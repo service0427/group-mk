@@ -103,27 +103,44 @@ const diagnoseDatabaseConnection = async (): Promise<DiagnosticResult> => {
 };
 
 /**
- * 스티키 채팅 아이콘 컴포넌트
+ * 스티키 채팅 아이콘 컴포넌트의 구현부
  * 
- * 이 컴포넌트는 일반 사용자에게만 표시되는 채팅 아이콘입니다.
- * 관리자나 운영자에게는 표시되지 않습니다.
- * 사용자와 운영자 간의 실시간 채팅을 제공합니다.
+ * 이 컴포넌트는 내부 구현을 담당하며 실제 채팅 로직을 포함합니다.
+ * 상위 컴포넌트에서 이미 권한 체크를 마친 상태입니다.
  */
-const ChatSticky: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const ChatStickyImpl: React.FC = () => {
+  // 모든 상태 및 hook 정의
   const { isAuthenticated, currentUser } = useAuthContext();
+  const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
   // 모바일 미디어 쿼리 사용
   const isMobile = useMediaQuery('(max-width: 768px)');
   
   // 직접 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  
+  // useChat 훅 사용
+  const {
+    rooms,
+    messages,
+    currentRoomId,
+    loading,
+    loadingMessages,
+    unreadCount,
+    fetchChatRooms,
+    fetchMessages,
+    sendMessage: sendChatMessage,
+    createChatRoom,
+    openChatRoom,
+    setCurrentRoomId
+  } = useChat();
   
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
@@ -192,61 +209,6 @@ const ChatSticky: React.FC = () => {
       scrollElement.removeEventListener('scroll', handleScroll);
     };
   }, [isMobile]);
-  
-  // 로그인하지 않은 사용자는 계속 표시, 운영자나 관리자만 숨기기
-  // 운영자나 관리자인 경우에만 컴포넌트를 렌더링하지 않음
-  // 로그인하지 않았거나 역할이 없는 경우에는 일반 표시
-  if (isAuthenticated && currentUser?.role && 
-      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
-    return null;
-  }
-  
-  // useChat 훅 사용
-  const {
-    rooms,
-    messages,
-    currentRoomId,
-    loading,
-    loadingMessages,
-    unreadCount,
-    fetchChatRooms,
-    fetchMessages,
-    sendMessage: sendChatMessage,
-    createChatRoom,
-    openChatRoom,
-    setCurrentRoomId
-  } = useChat();
-  
-  // 스타일 값을 직접 지정
-  // 모바일 여부에 따라 동적으로 스타일을 적용
-  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
-  const rightPosition = isVisible ? '24px' : '-100px';
-  const opacityValue = isVisible ? 1 : 0;
-  
-  const buttonStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
-    right: rightPosition,
-    zIndex: 999, // 모달보다 낮은 z-index
-    width: '64px',
-    height: '64px',
-    borderRadius: '50%',
-    backgroundColor: '#4285F4',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    border: 'none',
-    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
-    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
-    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
-    // 투명도 직접 제어
-    opacity: opacityValue,
-    // 숨김 상태에서 마우스 이벤트 차단
-    pointerEvents: !isVisible ? 'none' : 'auto',
-  };
   
   // CSS 키프레임을 JS에서 생성하여 삽입
   useEffect(() => {
@@ -453,6 +415,37 @@ const ChatSticky: React.FC = () => {
   // 현재 채팅방 정보 가져오기
   const currentRoom = currentRoomId ? rooms.find(room => room.id === currentRoomId) : null;
   
+  // 스타일 값을 직접 지정
+  // 모바일 여부에 따라 동적으로 스타일을 적용
+  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
+  const rightPosition = isVisible ? '24px' : '-100px';
+  const opacityValue = isVisible ? 1 : 0;
+  
+  const buttonStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
+    right: rightPosition,
+    zIndex: 999, // 모달보다 낮은 z-index
+    width: '64px',
+    height: '64px',
+    borderRadius: '50%',
+    backgroundColor: '#4285F4',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    border: 'none',
+    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
+    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
+    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
+    // 투명도 직접 제어
+    opacity: opacityValue,
+    // 숨김 상태에서 마우스 이벤트 차단
+    pointerEvents: !isVisible ? 'none' : 'auto',
+  };
+
   return (
     <>
       <button 
@@ -805,6 +798,30 @@ const ChatSticky: React.FC = () => {
       )}
     </>
   );
+};
+
+/**
+ * 스티키 채팅 아이콘 컴포넌트
+ * 
+ * 이 컴포넌트는 일반 사용자에게만 표시되는 채팅 아이콘입니다.
+ * 관리자나 운영자에게는 표시되지 않습니다.
+ * 사용자와 운영자 간의 실시간 채팅을 제공합니다.
+ */
+const ChatSticky: React.FC = () => {
+  // 인증 관련 상태 확인
+  const { isAuthenticated, currentUser } = useAuthContext();
+  
+  // 사용자 역할 확인 - 관리자나 운영자인 경우 렌더링하지 않음
+  const isAdminOrOperator = isAuthenticated && currentUser?.role && 
+    (currentUser.role === 'admin' || currentUser.role === 'operator');
+  
+  // 관리자나 운영자인 경우 컴포넌트를 렌더링하지 않음
+  if (isAdminOrOperator) {
+    return null;
+  }
+  
+  // 일반 사용자인 경우 ChatStickyImpl 컴포넌트 렌더링
+  return <ChatStickyImpl />;
 };
 
 export default ChatSticky;

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/build/*",
+    "/static/*",
+    "/media/*",
+    "/*.ico",
+    "/*.svg",
+    "/*.png",
+    "/*.json",
+    "/*.txt"
+  ]
+}

@@ -37,7 +37,8 @@ import {
   Slots,
   Site,
   ManageCashPage,
-  ChatManagePage
+  ChatManagePage,
+  LevelUpRequestsPage
 } from '@/pages/admin';
 
 // 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
@@ -103,7 +104,8 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 관리자 메뉴 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />
-
+          <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
+          
           {/* 캠페인 관리 라우트 */}
           <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
           <Route path="/admin/campaigns/naver-place-traffic" element={<Campaigns.NaverPlaceTrafficPage />} />

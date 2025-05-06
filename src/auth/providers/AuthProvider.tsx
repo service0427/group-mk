@@ -623,16 +623,19 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
         try {
             // 1. 클라이언트 측 인증 정보 초기화
+            console.log('클라이언트 인증 정보 초기화');
             authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
             setAuthVerified(false);
 
             // 2. 세션 스토리지 정리
+            console.log('세션 스토리지 정리');
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
 
             // 3. 모든 인증 관련 스토리지 항목 제거
+            console.log('로컬 및 세션 스토리지 정리');
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                     localStorage.removeItem(key);
@@ -647,6 +650,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
             // 4. 서버 측 로그아웃 처리
             try {
+                console.log('서버 로그아웃 처리');
                 const { error } = await supabase.auth.signOut();
 
                 if (error) {

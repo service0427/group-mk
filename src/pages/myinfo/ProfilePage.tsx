@@ -147,12 +147,14 @@ const ProfilePage = () => {
   // 이전 사업자 정보 가져오기 (이미지와 이메일 정보 포함)
   const getPreviousBusinessInfo = () => {
     if (currentUser?.business) {
+      // any 타입으로 단언하여 타입 오류 해결
+      const business = currentUser.business as any;
       return {
-        business_number: currentUser.business.business_number,
-        business_name: currentUser.business.business_name,
-        representative_name: currentUser.business.representative_name,
-        business_email: currentUser.business.business_email || '',
-        business_image_url: currentUser.business.business_image_url || ''
+        business_number: business.business_number,
+        business_name: business.business_name,
+        representative_name: business.representative_name,
+        business_email: business.business_email || '',
+        business_image_url: business.business_image_url || ''
       };
     }
     return undefined;
@@ -569,7 +571,7 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">사업자용 이메일</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser?.business?.business_email || '-'}
+                          {(currentUser?.business as any)?.business_email || '-'}
                         </div>
                       </td>
                     </tr>
@@ -577,21 +579,21 @@ const ProfilePage = () => {
                     <tr>
                       <td className="py-3 text-gray-600 font-normal">사업자등록증</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
-                        {currentUser?.business?.business_image_url ? (
+                        {(currentUser?.business as any)?.business_image_url ? (
                           <div className="border rounded p-3 bg-white">
                             <div className="flex flex-col items-center">
-                              <div className="relative cursor-pointer" onClick={() => openImageModal(currentUser.business.business_image_url)}>
+                              <div className="relative cursor-pointer" onClick={() => openImageModal((currentUser.business as any).business_image_url)}>
                                 <img
-                                  src={currentUser.business.business_image_url}
+                                  src={(currentUser.business as any).business_image_url}
                                   alt="사업자등록증"
                                   className="max-h-48 object-contain mb-2 hover:opacity-90 transition-opacity"
                                   onError={(e) => {
-                                    console.error('이미지 로드 실패:', currentUser.business.business_image_url);
+                                    console.error('이미지 로드 실패:', (currentUser.business as any).business_image_url);
                                     
                                     // URL 상세 정보 로깅
                                     try {
-                                      if (currentUser.business.business_image_url && !currentUser.business.business_image_url.startsWith('data:')) {
-                                        const url = new URL(currentUser.business.business_image_url);
+                                      if ((currentUser.business as any).business_image_url && !(currentUser.business as any).business_image_url.startsWith('data:')) {
+                                        const url = new URL((currentUser.business as any).business_image_url);
                                         console.log('이미지 URL 분석:');
                                         console.log('- 프로토콜:', url.protocol);
                                         console.log('- 호스트:', url.hostname);
@@ -606,7 +608,7 @@ const ProfilePage = () => {
                                     (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
                                     
                                     // URL이 Supabase Storage URL이고 만료되었을 가능성이 있는 경우
-                                    if (currentUser.business.business_image_storage_type === 'supabase_storage') {
+                                    if ((currentUser.business as any).business_image_storage_type === 'supabase_storage') {
                                       console.warn('Supabase Storage URL 로드 실패. URL이 만료되었거나 접근 권한이 없을 수 있습니다.');
                                     }
                                   }}
@@ -622,7 +624,7 @@ const ProfilePage = () => {
                               </div>
                               <p className="text-xs text-gray-500 mt-1 text-center">클릭하면 크게 볼 수 있습니다</p>
                               <div className="mt-1 text-xs text-gray-500">
-                                {currentUser.business.business_image_storage_type === 'base64' ? 
+                                {(currentUser.business as any).business_image_storage_type === 'base64' ? 
                                   '(Base64 저장)' : 
                                   '(Storage 저장)'}
                               </div>

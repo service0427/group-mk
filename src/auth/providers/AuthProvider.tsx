@@ -150,45 +150,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     .single();
 
                 if (userError) {
-                    console.error('사용자 데이터 조회 실패:', userError.message);
-
-                    // 사용자가 없으면 새로 생성
-                    if (userError.code === 'PGRST116') { // not found 에러 코드
-                        try {
-                            // 메타데이터에서 역할 확인 (Supabase 인증 테이블에 저장된 역할)
-                            const metadataRole = user.user_metadata?.role;
-                            console.log('메타데이터 역할:', metadataRole);
-
-                            const newUser = {
-                                id: user.id,
-                                email: user.email,
-                                full_name: user.user_metadata?.full_name || '',
-                                status: 'active',
-                                // 메타데이터에 역할이 있으면 해당 역할 사용, 없으면 기본값
-                                role: metadataRole || 'advertiser',
-                                // 원본 메타데이터도 저장
-                                raw_user_meta_data: user.user_metadata
-                            };
-
-                            console.log('새 사용자 생성 시도:', newUser);
-
-                            const { data: insertData, error: insertError } = await supabase
-                                .from('users')
-                                .insert([newUser])
-                                .select();
-
-                            if (insertError) {
-                                console.error('사용자 생성 오류:', insertError.message);
-                                return null;
-                            }
-
-                            console.log('새 사용자 생성 성공:', insertData[0]);
-                            return insertData[0] as CustomUser;
-                        } catch (insertCatchError: any) {
-                            console.error('사용자 생성 중 예외 발생:', insertCatchError.message);
-                            return null;
-                        }
-                    }
 
                     // 기본 사용자 정보 반환 - 메타데이터 역할 유지
                     const metadataRole = user.user_metadata?.role;
@@ -513,53 +474,88 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }
 
-    const register = async (email: string, full_name: string, password: string, password_confirmation: string) => {
-        setLoading(true);
-
-        try {
-            // 비밀번호 유효성 검사
-            if (password !== password_confirmation) {
-                throw new Error('비밀번호가 일치하지 않습니다.');
-            }
-
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: full_name
-                    }
+    const register = async (email: string, full_name: string,
+        password: string, password_confirmation: string) => {
+            setLoading(true);
+      
+            try {
+                // 비밀번호 유효성 검사
+                if (password !== password_confirmation) {
+                    throw new Error('비밀번호가 일치하지 않습니다.');
                 }
-            });
-
-            if (error) {
+      
+                // Supabase Auth에 사용자 등록
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: full_name,
+                            role: 'advertiser' // 기본 역할 설정
+                        }
+                    }
+                });
+      
+                if (error) {
+                    console.error('회원가입 오류:', error);
+                    throw new Error(error.message);
+                }
+      
+                if (!data.user) {
+                    console.error('사용자 데이터가 없습니다');
+                    throw new Error('사용자 데이터가 없습니다');
+                }
+      
+                console.log('Auth에 사용자 등록 성공:', data.user.id);
+      
+                // public.users 테이블에 사용자 정보 직접 삽입
+                const newUser = {
+                    id: data.user.id,
+                    email: email,
+                    full_name: full_name,
+                    status: 'active',
+                    role: 'advertiser', // 기본 역할
+                    raw_user_meta_data: data.user.user_metadata
+                };
+      
+                console.log('public.users 테이블에 사용자 추가 시도:',
+        newUser);
+      
+                // 비밀번호 해시 생성
+                const hashPassword = await
+        supabase.rpc('hash_password', {
+                    password: password
+                });
+      
+                if (hashPassword.error) {
+                    console.error('비밀번호 해싱 오류:',
+        hashPassword.error);
+                    throw new Error(hashPassword.error.message);
+                }
+      
+                // public.users 테이블에 사용자 정보 삽입
+                const { error: insertError } = await supabase
+                    .from('users')
+                    .insert([{
+                        ...newUser,
+                        password_hash: hashPassword.data
+                    }]);
+      
+                if (insertError) {
+                    console.error('사용자 정보 저장 오류:',
+        insertError);
+                    throw new Error(insertError.message);
+                }
+      
+                console.log('사용자 등록 및 정보 저장 완료');
+                return data;
+            } catch (error: any) {
+                console.error('회원가입 처리 중 오류:', error);
                 throw new Error(error.message);
+            } finally {
+                setLoading(false);
             }
-
-            // public.users 테이블에 비밀번호 sync
-            const hashPassword = await supabase.rpc('hash_password', {
-                password: password
-            });
-            if (hashPassword.error) {
-                throw new Error(hashPassword.error.message);
-            }
-
-            const { error: UpdateError } = await supabase
-                .from('users')
-                .update({ password_hash: hashPassword.data })
-                .eq('id', data.user?.id);
-
-            if (UpdateError) {
-                throw new Error(UpdateError.message);
-            }
-
-            return data;
-        } catch (error: any) {
-            throw new Error(error.message);
-        } finally {
-            setLoading(false);
         }
-    }
 
     const verify = async () => {
         if (!auth) return;

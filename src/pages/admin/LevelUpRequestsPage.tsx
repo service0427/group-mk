@@ -26,6 +26,8 @@ const LevelUpRequestsPage = () => {
     status: 'success' as 'success' | 'error' | 'info' | 'warning'
   });
   const [selectedRequest, setSelectedRequest] = useState<RequestWithUser | null>(null);
+  const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<string>('');
   
   // 등업 신청 목록 조회
   const fetchRequests = async () => {
@@ -134,6 +136,12 @@ const LevelUpRequestsPage = () => {
     setIsRejectModalOpen(true);
   };
   
+  // 이미지 확대 모달 열기
+  const openImageModal = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setImageModalOpen(true);
+  };
+  
   // 거부 처리 완료
   const handleRejectComplete = async (reason: string) => {
     if (!selectedRequest) return;
@@ -239,6 +247,8 @@ const LevelUpRequestsPage = () => {
                     <th className="py-4 px-5 text-start font-medium text-gray-700">사업자 등록번호</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">상호명</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">대표자명</th>
+                    <th className="py-4 px-5 text-start font-medium text-gray-700">사업자 이메일</th>
+                    <th className="py-4 px-5 text-start font-medium text-gray-700">사업자등록증</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">신청일시</th>
                     <th className="py-4 px-5 text-end font-medium text-gray-700">처리</th>
                   </tr>
@@ -265,6 +275,36 @@ const LevelUpRequestsPage = () => {
                       </td>
                       <td className="py-4 px-5">
                         <span className="text-gray-800">{request.users.business?.representative_name || '-'}</span>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className="text-gray-800">{request.users.business?.business_email || '-'}</span>
+                      </td>
+                      <td className="py-4 px-5">
+                        {request.users.business?.business_image_url ? (
+                          <div className="relative">
+                            <div 
+                              className="cursor-pointer"
+                              onClick={() => openImageModal(request.users.business?.business_image_url)}
+                            >
+                              <img 
+                                src={request.users.business.business_image_url} 
+                                alt="사업자등록증" 
+                                className="object-cover w-16 h-16 border rounded hover:opacity-80 transition-opacity"
+                                onError={(e) => {
+                                  console.error('이미지 로드 실패');
+                                  (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
+                                }}
+                              />
+                              <div className="absolute top-0 right-0 bg-primary/80 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs italic">이미지 없음</span>
+                        )}
                       </td>
                       <td className="py-4 px-5">
                         <span className="text-gray-800">
@@ -319,6 +359,77 @@ const LevelUpRequestsPage = () => {
         message={statusModalProps.message}
         status={statusModalProps.status}
       />
+      
+      {/* 이미지 확대 모달 */}
+      {imageModalOpen && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50 bg-black/70"
+          onClick={() => setImageModalOpen(false)} // 배경 클릭 시 모달 닫기
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg p-1"
+            onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 이벤트 전파 방지
+          >
+            {/* 우측 상단 닫기 버튼 */}
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute top-3 right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-all"
+              aria-label="닫기"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* 상단 닫기 텍스트 배너 */}
+            <div className="bg-gray-800/80 text-white py-2 px-4 text-center mb-2">
+              <button 
+                onClick={() => setImageModalOpen(false)}
+                className="flex items-center justify-center w-full"
+              >
+                <span>이미지 닫기</span>
+                <div className="ml-2 inline-flex">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              </button>
+            </div>
+            <img 
+              src={selectedImage} 
+              alt="사업자등록증" 
+              className="max-h-[85vh] object-contain"
+              onError={(e) => {
+                console.error('이미지 모달 로드 실패');
+                (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
+              }}
+            />
+            <div className="flex justify-center items-center gap-4 mt-3 pb-2">
+              <button 
+                onClick={() => setImageModalOpen(false)}
+                className="btn btn-danger flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>닫기</span>
+              </button>
+              
+              <a 
+                href={selectedImage} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn btn-outline-primary flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span>새 탭에서 열기</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </CommonTemplate>
   );
 };

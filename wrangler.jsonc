@@ -1,13 +1,31 @@
 {
   "name": "mk",
   "compatibility_date": "2025-05-06",
-  "assets": {
-    "directory": "./dist"
+  "main": "worker-site.js",
+  "workers_dev": false,
+  "site": {
+    "bucket": "./dist",
+    "include": ["**/*"],
+    "exclude": []
   },
-  "routes": [
-    {
-      "pattern": "mkt-guide.com",
-      "custom_domain": true
+  "dev": {
+    "port": 8787
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production"
+      },
+      "routes": [
+        "mkt-guide.com/*"
+      ]
+    },
+    "test": {
+      "name": "mk-test",
+      "vars": {
+        "ENVIRONMENT": "test"
+      },
+      "workers_dev": true
     }
-  ]
+  }
 }

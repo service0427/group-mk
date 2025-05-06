@@ -66,6 +66,18 @@ const testCredentials = {
 };
 
 const Login = () => {
+  const [loading, setLoading] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordEmail, setResetPasswordEmail] = useState('');
+  const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('advertiser');
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, resetPassword } = useAuthContext();
+  const { currentLayout } = useLayout();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/';
+
   // 페이지 진입 시 필요한 localStorage 항목만 초기화
   useEffect(() => {
     localStorage.removeItem('auth');
@@ -73,21 +85,31 @@ const Login = () => {
     localStorage.removeItem('metronic-tailwind-react-auth-v1=9.1.1');
     localStorage.removeItem('sb-iiyzaaboinfezycblwnb-auth-token');
   }, []);
+  
+  // 회원가입 완료 메시지 표시
+  useEffect(() => {
+    // 회원가입으로부터 전달된 이메일 확인
+    const registeredEmail = location.state?.registeredEmail;
+    
+    if (registeredEmail) {
+      // 회원가입 완료 메시지 표시
+      toast.success('회원가입이 완료되었습니다. 로그인해주세요.');
+    }
+  }, [location.state]);
 
-  const [loading, setLoading] = useState(false);
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-  const [resetPasswordEmail, setResetPasswordEmail] = useState('');
-  const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('advertiser');
-  const { login, resetPassword } = useAuthContext();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
-  const [showPassword, setShowPassword] = useState(false);
-  const { currentLayout } = useLayout();
-
-  // 개발 환경에서는 테스트 계정 정보 사용, 그렇지 않으면 빈 값 사용
+  // 회원가입 후 전달된 이메일이 있거나 개발 환경에서는 테스트 계정 정보 사용, 그렇지 않으면 빈 값 사용
   const getInitialValues = () => {
+    // 회원가입으로부터 전달된 이메일 확인
+    const registeredEmail = location.state?.registeredEmail;
+    
+    // 전달된 이메일이 있으면 이메일만 설정
+    if (registeredEmail) {
+      return {
+        ...initialValues,
+        email: registeredEmail
+      };
+    }
+    
     // 개발 환경 체크 (Vite)
     const isDevelopment = import.meta.env.MODE === 'development';
     return isDevelopment ? {

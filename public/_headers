@@ -1,0 +1,12 @@
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/favicon.ico
+  Cache-Control: public, max-age=86400
+  Content-Type: image/x-icon
+  
+/*.svg
+  Cache-Control: public, max-age=86400
+  
+/*.png
+  Cache-Control: public, max-age=86400

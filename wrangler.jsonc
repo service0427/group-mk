@@ -7,7 +7,7 @@
   },
   "routes": [
     {
-      "pattern": "mkt-guide.com/*",
+      "pattern": "mkt-guide.com",
       "custom_domain": true
     }
   ]

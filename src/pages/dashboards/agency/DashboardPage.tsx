@@ -1,18 +1,12 @@
 import React from 'react';
-import { CommonTemplate } from '@/components/pageTemplate';
 import { DashboardContent } from './DashboardContent';
 
-const DashboardPage: React.FC = () => {
-  return (
-    <CommonTemplate
-      title="대행사 대시보드"
-      description="대행사 대시보드 페이지입니다."
-      hideDescription={true}
-      showPageMenu={false}
-    >
-      <DashboardContent />
-    </CommonTemplate>
-  );
+/**
+ * 에이전시 대시보드 페이지 컴포넌트
+ * DashboardContent를 렌더링
+ */
+export const DashboardPage: React.FC = () => {
+  return <DashboardContent />;
 };
 
-export { DashboardPage };
+export default DashboardPage;

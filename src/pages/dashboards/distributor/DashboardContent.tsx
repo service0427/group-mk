@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { StatCard } from '@/pages/dashboards/components';
+import React, { useState } from 'react';
+import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
+import { DashboardColorCard } from '@/pages/dashboards/components/DashboardColorCard';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -9,416 +10,338 @@ import {
   TableRow,
   TableCell
 } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 import { useResponsive } from '@/hooks';
 import { formatCurrency, formatCurrencyInTenThousand } from '@/utils/Format';
 
 // 총판 대시보드 통계 데이터 인터페이스
 interface DistributorStats {
-  totalProducts: { count: number; trend: number };
+  totalSales: { count: number; trend: number };
   activeProducts: { count: number; trend: number };
   monthlyRevenue: { count: number; trend: number };
-  pendingWithdrawal: { count: number; trend: number };
+  conversionRate: { count: number; trend: number };
 }
 
 export const DashboardContent: React.FC = () => {
   // 모바일 화면 감지 (md 이하인지 여부)
   const isMobile = useResponsive('down', 'md');
 
-  // 오늘 날짜 (YYYY-MM-DD 형식)
-  const today = new Date().toISOString().split('T')[0];
-
   // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<DistributorStats>({
-    totalProducts: { count: 0, trend: 0 },
-    activeProducts: { count: 0, trend: 0 },
-    monthlyRevenue: { count: 0, trend: 0 },
-    pendingWithdrawal: { count: 0, trend: 0 },
+    totalSales: { count: 1248, trend: 18.7 },
+    activeProducts: { count: 87, trend: 4.2 },
+    monthlyRevenue: { count: 32500000, trend: 14.8 },
+    conversionRate: { count: 4.8, trend: 0.6 },
   });
 
-  // 컴포넌트 마운트 시 데이터 로딩
-  useEffect(() => {
-    // 실제 구현에서는 API 호출로 데이터를 가져오지만, 현재는 이미지에 맞는 임시 데이터 사용
-    setStats({
-      totalProducts: { count: 8, trend: 2 },
-      activeProducts: { count: 5, trend: 1 },
-      monthlyRevenue: { count: isMobile ? 2450 : 24500000, trend: 15.2 },
-      pendingWithdrawal: { count: isMobile ? 250 : 2500000, trend: 0.5 },
-    });
-  }, [isMobile]);
-
-  // 상품 목록 데이터
-  const products = [
-    { id: 'PRD-001', name: '인스타그램 팔로워 증가', description: '실제 활성 계정으로 팔로워 증가', price: 15000, quantity: 100, status: '활성' },
-    { id: 'PRD-002', name: '유튜브 구독자 확보', description: '유튜브 구독자 확보 - 한국 타겟팅', price: 25000, quantity: 50, status: '활성' },
-    { id: 'PRD-003', name: '블로그 방문자 증가', description: '네이버 블로그 방문자 증가 패키지', price: 10000, quantity: 200, status: '비활성' },
-    { id: 'PRD-004', name: '페이스북 좋아요 확보', description: '소셜 미디어 포스팅 좋아요 확보', price: 5000, quantity: 300, status: '활성' },
-    { id: 'PRD-005', name: '동영상 조회수 증가', description: '유튜브, 인스타그램 동영상 조회수 증가', price: 8000, quantity: 500, status: '활성' },
+  // 최근 판매 데이터
+  const recentSales = [
+    { id: 'ORD-4921', product: '프리미엄 광고 패키지', customer: '(주)메가브랜드', amount: 1250000, date: '2023-05-20', status: '완료' },
+    { id: 'ORD-4920', product: '비즈니스 마케팅 프로', customer: '디지털솔루션즈', amount: 850000, date: '2023-05-19', status: '완료' },
+    { id: 'ORD-4919', product: '소셜 미디어 패키지', customer: '퍼포먼스마케팅', amount: 650000, date: '2023-05-19', status: '완료' },
+    { id: 'ORD-4918', product: '검색 광고 기본형', customer: '테크노베이션', amount: 450000, date: '2023-05-18', status: '완료' },
+    { id: 'ORD-4917', product: '모바일 광고 패키지', customer: '스마트모바일', amount: 720000, date: '2023-05-18', status: '완료' },
   ];
 
-  // 오류 상품 데이터
-  const errorItems = [
-    { id: 'ERR-001', name: '인스타그램 팔로워 증가', quantity: '12개', buyer: '디자인 허브', date: '2023-05-18' },
-    { id: 'ERR-002', name: '유튜브 구독자 확보', quantity: '5개', buyer: '트렌드 마케팅', date: '2023-05-17' },
+  // 상품 판매 순위 데이터
+  const productRankings = [
+    { id: 'PRD-001', name: '프리미엄 광고 패키지', sales: 48, revenue: 14200000, trend: 12.4 },
+    { id: 'PRD-002', name: '비즈니스 마케팅 프로', sales: 36, revenue: 10800000, trend: 8.2 },
+    { id: 'PRD-003', name: '소셜 미디어 패키지', sales: 32, revenue: 7680000, trend: 15.7 },
+    { id: 'PRD-004', name: '검색 광고 기본형', sales: 28, revenue: 5600000, trend: -3.2 },
+    { id: 'PRD-005', name: '모바일 광고 패키지', sales: 26, revenue: 5200000, trend: 7.8 },
   ];
+
+  // 마케팅 채널별 성과 데이터
+  const channelPerformance = [
+    { name: '검색 엔진', traffic: 42, conversions: 5.2, revenue: 8450000 },
+    { name: '소셜 미디어', traffic: 35, conversions: 3.8, revenue: 6300000 },
+    { name: '이메일 마케팅', traffic: 12, conversions: 6.5, revenue: 3750000 },
+    { name: '제휴 마케팅', traffic: 8, conversions: 4.1, revenue: 2100000 },
+    { name: '다이렉트 트래픽', traffic: 3, conversions: 2.8, revenue: 950000 },
+  ];
+
+  // 상태에 따른 색상 지정
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case '완료': return 'bg-green-100 text-green-800';
+      case '진행중': return 'bg-blue-100 text-blue-800';
+      case '대기중': return 'bg-yellow-100 text-yellow-800';
+      case '취소': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // 트렌드에 따른 아이콘
+  const getTrendIcon = (trend: number) => {
+    return trend >= 0 ? 
+      <span className="text-green-600">↑</span> : 
+      <span className="text-red-600">↓</span>;
+  };
 
   return (
-    <>
+    <DashboardTemplate
+      title="총판 대시보드"
+      description="판매 현황, 상품 분석 및 마케팅 성과를 한눈에 파악할 수 있는 총판용 대시보드입니다."
+      headerBgClass="bg-amber-600"
+      headerTextClass="text-white"
+      toolbarActions={
+        <>
+          <Button variant="outline" size="sm" className="h-9 bg-white/20 text-white hover:bg-white/30 border-white/40">
+            상품 관리
+          </Button>
+          <Button variant="outline" size="sm" className="h-9 bg-white/20 text-white hover:bg-white/30 border-white/40">
+            보고서 다운로드
+          </Button>
+        </>
+      }
+    >
       {/* 첫 번째 줄: 4개의 통계 카드 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <div>
-            <StatCard
-              title="총 상품 수"
-              value={8}
-              unit="개"
-              trend={2}
-              keenIcon="users"
-              iconColor="primary"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="활성 상품"
-              value={5}
-              unit="개"
-              trend={1}
-              keenIcon="code"
-              iconColor="success"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="총 판매 금액"
-              value={isMobile ? 2450 : 24500000}
-              unit={isMobile ? "만원" : "원"}
-              trend={15.2}
-              keenIcon="database"
-              iconColor="warning"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="현재 캐시 잔액"
-              value={isMobile ? 250 : 2500000}
-              unit={isMobile ? "만원" : "원"}
-              trend={0.5}
-              keenIcon="timer"
-              iconColor="info"
-            />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+        <DashboardColorCard
+          title="총 판매수"
+          value={stats.totalSales.count}
+          unit="건"
+          trend={stats.totalSales.trend}
+          icon="tag"
+          iconColor="bg-amber-600"
+        />
+        <DashboardColorCard
+          title="활성 상품"
+          value={stats.activeProducts.count}
+          unit="개"
+          trend={stats.activeProducts.trend}
+          icon="element-4"
+          iconColor="bg-amber-600"
+        />
+        <DashboardColorCard
+          title="월 매출액"
+          value={isMobile ? stats.monthlyRevenue.count / 10000 : stats.monthlyRevenue.count}
+          unit={isMobile ? "만원" : "원"}
+          trend={stats.monthlyRevenue.trend}
+          icon="dollar"
+          iconColor="bg-green-600"
+        />
+        <DashboardColorCard
+          title="전환율"
+          value={stats.conversionRate.count}
+          unit="%"
+          trend={stats.conversionRate.trend}
+          icon="arrow-turn-up"
+          iconColor="bg-blue-600"
+        />
       </div>
 
-      {/* 두 번째 줄: 상품 등록 & 출금 신청 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="h-full">
-            <div className="card h-full">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold text-gray-800">상품 등록</span>
-                </h3>
+      {/* 두 번째 줄: 최근 판매 & 상품 판매 순위 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        {/* 최근 판매 */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-amber-100 text-amber-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                </svg>
               </div>
-              <div className="card-body py-3">
-                <div className="overflow-hidden border border-border rounded-lg mb-6">
-                  <table className="min-w-full divide-y divide-border">
-                    <tbody className="divide-y divide-border">
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground w-1/3">
-                          상품명
-                        </th>
-                        <td className="px-4 py-3">
-                          <input type="text" className="input w-full bg-background text-foreground border border-input rounded" placeholder="상품명을 입력하세요" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          상품 설명
-                        </th>
-                        <td className="px-4 py-3">
-                          <textarea className="input w-full bg-background text-foreground border border-input rounded p-3" style={{ resize: 'none', height: '180px' }} placeholder="상품 설명을 입력하세요"></textarea>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          가격
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center">
-                            <input type="number" className="input w-full md:w-2/3 bg-background text-foreground border border-input rounded" placeholder="가격을 입력하세요" />
-                            <span className="ml-2 text-sm font-medium text-foreground">원</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          수량
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center">
-                            <input type="number" className="input w-full md:w-2/3 bg-background text-foreground border border-input rounded" placeholder="수량을 입력하세요" />
-                            <span className="ml-2 text-sm font-medium text-foreground">개</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          마감 기한 (선택)
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col gap-3">
-                            <input
-                              type="date"
-                              className="input w-full md:w-2/3 bg-background text-foreground border border-input rounded"
-                              defaultValue={today}
-                            />
-                            <label className="checkbox-group">
-                              <input type="checkbox" className="checkbox checkbox-sm" id="checkbox1" />
-                              <span className="checkbox-label">마감 시 자동 판매</span>
-                            </label>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+              <h3 className="text-lg font-semibold text-gray-800">최근 판매</h3>
+            </div>
+            <Button variant="outline" size="sm" className="h-8 px-4">
+              전체 거래
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="py-3 px-4 text-left">주문 정보</TableHead>
+                  <TableHead className="py-3 px-4 text-left">구매자</TableHead>
+                  <TableHead className="py-3 px-4 text-right">금액(원)</TableHead>
+                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentSales.map((sale, index) => (
+                  <TableRow key={index} className="border-b border-gray-200">
+                    <TableCell className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-amber-600">{sale.product}</span>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <span>{sale.id}</span>
+                          <span className="mx-1">•</span>
+                          <span>{sale.date}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <span>{sale.customer}</span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-medium">
+                        {isMobile 
+                          ? formatCurrencyInTenThousand(sale.amount)
+                          : formatCurrency(sale.amount)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-center">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(sale.status)}`}>
+                        {sale.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        {/* 상품 판매 순위 */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-100 text-blue-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">상품 판매 순위</h3>
+            </div>
+            <Button variant="outline" size="sm" className="h-8 px-4">
+              상품 분석
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="py-3 px-4 text-left">상품명</TableHead>
+                  <TableHead className="py-3 px-4 text-center">판매량</TableHead>
+                  <TableHead className="py-3 px-4 text-right">매출(원)</TableHead>
+                  <TableHead className="py-3 px-4 text-right">추세</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productRankings.map((product, index) => (
+                  <TableRow key={index} className="border-b border-gray-200">
+                    <TableCell className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-blue-600">{product.name}</span>
+                        <span className="text-xs text-gray-500">{product.id}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-center">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                        {product.sales}건
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-medium">
+                        {isMobile 
+                          ? formatCurrencyInTenThousand(product.revenue)
+                          : formatCurrency(product.revenue)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end">
+                        {getTrendIcon(product.trend)}
+                        <span className="ml-1 font-medium">
+                          {Math.abs(product.trend).toFixed(1)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      </div>
+
+      {/* 세 번째 줄: 마케팅 채널 성과 */}
+      <div className="grid grid-cols-1 gap-5 mb-5">
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-green-100 text-green-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">마케팅 채널 성과</h3>
+            </div>
+            <Button variant="outline" size="sm" className="h-8 px-4">
+              마케팅 보고서
+            </Button>
+          </div>
+          <div className="p-5">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead className="py-3 px-4 text-left">채널</TableHead>
+                    <TableHead className="py-3 px-4 text-center">트래픽 비중</TableHead>
+                    <TableHead className="py-3 px-4 text-center">전환율</TableHead>
+                    <TableHead className="py-3 px-4 text-right">매출 기여(원)</TableHead>
+                    <TableHead className="py-3 px-4 text-left">성과</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {channelPerformance.map((channel, index) => (
+                    <TableRow key={index} className="border-b border-gray-200">
+                      <TableCell className="py-3 px-4">
+                        <span className="font-medium">{channel.name}</span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center">
+                        <span>{channel.traffic}%</span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center">
+                        <span>{channel.conversions}%</span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
+                        <span className="font-medium">
+                          {isMobile 
+                            ? formatCurrencyInTenThousand(channel.revenue)
+                            : formatCurrency(channel.revenue)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="h-2.5 rounded-full bg-green-500" 
+                            style={{ width: `${(channel.revenue / 10000000) * 100}%` }}
+                          ></div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">이번 달 총 매출</div>
+                <div className="text-xl font-bold text-gray-800">
+                  {isMobile ? '3,250만원' : '32,500,000원'}
                 </div>
-                <div className="flex justify-end">
-                  <button type="button" className="btn btn-primary">상품 등록하기</button>
-                </div>
+                <div className="text-xs text-green-600 mt-1">↑ 14.8% 증가</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">트래픽 대비 ROI</div>
+                <div className="text-xl font-bold text-gray-800">235%</div>
+                <div className="text-xs text-green-600 mt-1">↑ 5.2% 증가</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">광고 지출 효율</div>
+                <div className="text-xl font-bold text-gray-800">3.8배</div>
+                <div className="text-xs text-green-600 mt-1">↑ 0.3배 증가</div>
               </div>
             </div>
           </div>
-          <div className="h-full">
-            <div className="card h-full">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold text-gray-800">출금 신청하기</span>
-                </h3>
-              </div>
-              <div className="card-body py-3">
-                <div className="bg-light-primary p-4 mb-5 rounded">
-                  <div className="d-flex flex-col mb-2">
-                    <div className="d-flex justify-between items-center mb-2">
-                      <span className="text-foreground fw-bolder font-bold text-xl">현재 보유 캐시</span>
-                      <span className="text-primary fw-bolder font-bold text-xl pl-6">{formatCurrency(2500000)}</span>
-                    </div>
-                    <div className="text-left">
-                      <span className="badge badge-light-primary text-xs">최소 출금: ₩10,000</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-hidden border border-border rounded-lg mb-6">
-                  <table className="min-w-full divide-y divide-border">
-                    <tbody className="divide-y divide-border">
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground w-1/3">
-                          출금 금액
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center">
-                            <input type="number" className="input w-full md:w-2/3 bg-background text-foreground border border-input rounded" placeholder="출금 금액을 입력하세요" />
-                            <span className="ml-2 text-sm font-medium text-foreground">원</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          은행명
-                        </th>
-                        <td className="px-4 py-3">
-                          <input type="text" className="input w-full bg-background text-foreground border border-input rounded" placeholder="은행명" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          계좌번호
-                        </th>
-                        <td className="px-4 py-3">
-                          <input type="text" className="input w-full bg-background text-foreground border border-input rounded" placeholder="계좌번호 (-없이 입력)" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          예금주
-                        </th>
-                        <td className="px-4 py-3">
-                          <input type="text" className="input w-full bg-background text-foreground border border-input rounded" placeholder="예금주명" />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mb-5 flex flex-col gap-5">
-                  <div className="text-sm bg-gray-100 p-4 rounded w-full">
-                    <span className="block font-medium mb-2">입금 시 혜택:</span>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>100만원 이상: 2% 보너스 캐시</li>
-                      <li>300만원 이상: 3% 보너스 캐시</li>
-                      <li>500만원 이상: 5% 보너스 캐시</li>
-                    </ul>
-                  </div>
-                  <div className="flex justify-end w-full">
-                    <button type="button" className="btn btn-primary">출금 신청하기</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Card>
       </div>
-
-      {/* 세 번째 줄: 등록된 상품 관리 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 gap-5">
-          <div>
-            <div className="card">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold">등록된 상품 관리</span>
-                </h3>
-                <div className="card-toolbar">
-                  <div className="input-group">
-                    <input type="text" className="input input-sm" placeholder="상품 검색..." />
-                    <Button variant="outline" size="sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.3-4.3"></path>
-                      </svg>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="card-body px-0 overflow-y-auto">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '100px' }}>ID</TableHead>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '150px' }}>상품명</TableHead>
-                        <TableHead className="py-2 px-4 hidden md:table-cell" style={{ minWidth: '200px' }}>설명</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '100px' }}>가격</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '80px' }}>수량</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '80px' }}>상태</TableHead>
-                        <TableHead className="py-2 px-4 text-right" style={{ minWidth: '120px' }}>액션</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {products.map((product, index) => (
-                        <TableRow key={index} className="border-b border-gray-200 hover:bg-muted/50">
-                          <TableCell className="py-2 px-4">
-                            <span className="font-medium">{product.id}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4">
-                            <span className="font-medium">{product.name}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 hidden md:table-cell">
-                            <span className="text-muted-foreground">{product.description}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <span className="font-medium">
-                              {isMobile
-                                ? formatCurrencyInTenThousand(product.price)
-                                : formatCurrency(product.price)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <span>{product.quantity}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${product.status === '활성'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                              }`}>
-                              {product.status}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <div className="flex justify-center space-x-2">
-                              <Button size="sm" variant="outline" className="bg-blue-50 hover:bg-blue-100 text-blue-600">수정</Button>
-                              <Button size="sm" variant="outline" className="bg-red-50 hover:bg-red-100 text-red-600">비활성화</Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 네 번째 줄: 오류 상품 관리 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 gap-5">
-          <div>
-            <div className="card">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold">오류 상품 관리</span>
-                </h3>
-                <div className="card-toolbar">
-                  <div className="input-group">
-                    <input type="text" className="input input-sm" placeholder="오류 상품 검색..." />
-                    <Button variant="outline" size="sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.3-4.3"></path>
-                      </svg>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="card-body px-0 overflow-y-auto">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '100px' }}>오류 ID</TableHead>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '150px' }}>상품명</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '100px' }}>오류 수량</TableHead>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '120px' }}>구매자</TableHead>
-                        <TableHead className="py-2 px-4 text-center hidden md:table-cell" style={{ minWidth: '120px' }}>발생일</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '200px' }}>액션</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {errorItems.map((item, index) => (
-                        <TableRow key={index} className="border-b border-gray-200 hover:bg-muted/50">
-                          <TableCell className="py-2 px-4">
-                            <span className="font-medium">{item.id}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4">
-                            <span>{item.name}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <span className="text-red-500 font-medium">{item.quantity}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4">
-                            <span>{item.buyer}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center hidden md:table-cell">
-                            <span className="text-muted-foreground">{item.date}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center">
-                            <div className="flex justify-center space-x-2">
-                              <Button size="sm" variant="outline" className="bg-blue-50 hover:bg-blue-100 text-blue-600">수정 요청</Button>
-                              <Button size="sm" variant="outline" className="bg-green-50 hover:bg-green-100 text-green-600">반품 처리</Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </DashboardTemplate>
   );
 };
+
+export default DashboardContent;

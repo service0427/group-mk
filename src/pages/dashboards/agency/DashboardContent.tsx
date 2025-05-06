@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { StatCard } from '@/pages/dashboards/components';
+import React, { useState } from 'react';
+import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
+import { DashboardColorCard } from '@/pages/dashboards/components/DashboardColorCard';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -9,460 +10,326 @@ import {
   TableRow,
   TableCell
 } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 import { useResponsive } from '@/hooks';
 import { formatCurrency, formatCurrencyInTenThousand } from '@/utils/Format';
 
+// 에이전시 대시보드 통계 데이터 인터페이스
 interface AgencyStats {
-  totalSales: { count: number; trend: number };
-  activeCampaigns: { count: number; trend: number };
-  totalBudget: { count: number; trend: number };
-  bonusCredit: { count: number; trend: number };
+  totalClients: { count: number; trend: number };
+  totalCampaigns: { count: number; trend: number };
+  monthlyRevenue: { count: number; trend: number };
+  pendingApprovals: { count: number; trend: number };
 }
 
 export const DashboardContent: React.FC = () => {
   // 모바일 화면 감지 (md 이하인지 여부)
   const isMobile = useResponsive('down', 'md');
 
+  // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<AgencyStats>({
-    totalSales: { count: 0, trend: 0 },
-    activeCampaigns: { count: 0, trend: 0 },
-    totalBudget: { count: 0, trend: 0 },
-    bonusCredit: { count: 0, trend: 0 },
+    totalClients: { count: 24, trend: 8 },
+    totalCampaigns: { count: 156, trend: 22 },
+    monthlyRevenue: { count: 42800000, trend: 15.3 },
+    pendingApprovals: { count: 8, trend: -12 },
   });
 
-  // 입력 필드 상태 관리 추가
-  const [chargeAmount, setChargeAmount] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('card');
-
-  useEffect(() => {
-    // 실제 구현에서는 API 호출
-    setStats({
-      totalSales: { count: isMobile ? 385 : 3850000, trend: 0.85 },
-      activeCampaigns: { count: 2, trend: 1 },
-      totalBudget: { count: isMobile ? 1250 : 12500000, trend: 8.4 },
-      bonusCredit: { count: isMobile ? 19.25 : 192500, trend: 0.0325 },
-    });
-  }, [isMobile]);
-
+  // 활성 캠페인 데이터
   const activeCampaigns = [
-    ['camp-001', '여름 신상품 프로모션', '페이스북 광고 패키지', '40%', '2023-06-15', '진행중'],
-    ['camp-002', '가을 시즌 특별 할인', '구글 검색 광고', '40%', '2023-09-01', '진행중'],
-    ['camp-003', '여름 할인 프로모션', '유튜브 동영상 광고', '100%', '2023-07-10', '완료'],
+    { id: 'CA-215', name: '여름 프로모션', client: '메가 브랜드', budget: 5800000, status: '진행중', progress: 65 },
+    { id: 'CA-214', name: '신제품 출시', client: '퍼포먼스 브랜드', budget: 3200000, status: '진행중', progress: 42 },
+    { id: 'CA-213', name: '가을 컬렉션', client: '디자인 슈퍼', budget: 4100000, status: '검토중', progress: 10 },
+    { id: 'CA-212', name: '연말 세일', client: '리테일 마스터', budget: 2500000, status: '대기중', progress: 0 },
+    { id: 'CA-211', name: '회원 모집', client: '서비스 원', budget: 1800000, status: '진행중', progress: 78 },
   ];
 
-  const transactions = [
-    ['tx-001', '2023-06-10', '페이스북 광고 패키지 구매', 500000, '결제'],
-    ['tx-002', '2023-06-05', '광고 예산 충전', 1000000, '입금'],
+  // 클라이언트 리스트 데이터
+  const clientList = [
+    { id: 'CL-001', name: '메가 브랜드', campaigns: 5, totalSpend: 12500000, status: '활성' },
+    { id: 'CL-002', name: '퍼포먼스 브랜드', campaigns: 3, totalSpend: 8200000, status: '활성' },
+    { id: 'CL-003', name: '디자인 슈퍼', campaigns: 4, totalSpend: 9400000, status: '활성' },
+    { id: 'CL-004', name: '리테일 마스터', campaigns: 2, totalSpend: 4800000, status: '활성' },
+    { id: 'CL-005', name: '서비스 원', campaigns: 3, totalSpend: 6300000, status: '휴면' },
   ];
 
-  // 입금 처리 함수
-  const handleDeposit = () => {
-    if (!chargeAmount) {
-      alert('충전할 금액을 입력해주세요.');
-      return;
+  // 진행 상태에 따른 색상 지정
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case '진행중': return 'bg-green-100 text-green-800';
+      case '검토중': return 'bg-amber-100 text-amber-800';
+      case '대기중': return 'bg-gray-100 text-gray-800';
+      case '활성': return 'bg-emerald-100 text-emerald-800';
+      case '휴면': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-
-    const amount = parseInt(chargeAmount.replace(/,/g, ''), 10);
-    if (isNaN(amount) || amount < 100000) {
-      alert('최소 100,000원 이상 입력해주세요.');
-      return;
-    }
-
-    console.log(`${amount}원을 ${paymentMethod === 'card' ? '신용카드' : '계좌이체'}로 충전 요청`);
-    // API 호출 로직 추가
-
-    // 입력 필드 초기화
-    setChargeAmount('');
   };
 
-  // 금액 입력 시 포맷팅 처리
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // 숫자와 콤마만 허용
-    const onlyNums = value.replace(/[^\d]/g, '');
-    if (onlyNums === '') {
-      setChargeAmount('');
-      return;
-    }
-
-    // 천 단위 콤마 포맷팅
-    const formattedValue = parseInt(onlyNums, 10).toLocaleString();
-    setChargeAmount(formattedValue);
+  // 진행률 색상 계산
+  const getProgressColor = (progress: number) => {
+    if (progress >= 75) return 'bg-green-500';
+    if (progress >= 50) return 'bg-blue-500';
+    if (progress >= 25) return 'bg-amber-500';
+    return 'bg-red-500';
   };
 
   return (
-    <>
+    <DashboardTemplate
+      title="대행사 대시보드"
+      description="클라이언트 및 캠페인을 관리하고 마케팅 성과를 추적할 수 있는 관리 시스템입니다."
+      headerBgClass="bg-blue-600"
+      headerTextClass="text-white"
+    >
       {/* 첫 번째 줄: 4개의 통계 카드 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <div>
-            <StatCard
-              title="현재 캐시 잔액"
-              value={isMobile ? 385 : 3850000}
-              unit={isMobile ? "만원" : "원"}
-              trend={stats.totalSales.trend}
-              keenIcon="users"
-              iconColor="primary"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="진행중인 캠페인"
-              value={stats.activeCampaigns.count}
-              unit="개"
-              trend={stats.activeCampaigns.trend}
-              keenIcon="code"
-              iconColor="success"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="총 구매액"
-              value={isMobile ? 1250 : 12500000}
-              unit={isMobile ? "만원" : "원"}
-              trend={stats.totalBudget.trend}
-              keenIcon="database"
-              iconColor="warning"
-            />
-          </div>
-          <div>
-            <StatCard
-              title="보너스 캐시"
-              value={isMobile ? 19.25 : 192500}
-              unit={isMobile ? "만원" : "원"}
-              trend={stats.bonusCredit.trend}
-              keenIcon="timer"
-              iconColor="info"
-            />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+        <DashboardColorCard
+          title="총 클라이언트 수"
+          value={stats.totalClients.count}
+          unit="개"
+          trend={stats.totalClients.trend}
+          icon="profile-user"
+          iconColor="bg-blue-600"
+        />
+        <DashboardColorCard
+          title="활성 캠페인 수"
+          value={stats.totalCampaigns.count}
+          unit="개"
+          trend={stats.totalCampaigns.trend}
+          icon="chart-line"
+          iconColor="bg-blue-600"
+        />
+        <DashboardColorCard
+          title="월 마케팅 비용"
+          value={isMobile ? stats.monthlyRevenue.count / 10000 : stats.monthlyRevenue.count}
+          unit={isMobile ? "만원" : "원"}
+          trend={stats.monthlyRevenue.trend}
+          icon="dollar"
+          iconColor="bg-green-600"
+        />
+        <DashboardColorCard
+          title="승인 대기 캠페인"
+          value={stats.pendingApprovals.count}
+          unit="개"
+          trend={stats.pendingApprovals.trend}
+          icon="calendar-8"
+          iconColor="bg-amber-600"
+        />
       </div>
 
-      {/* 두 번째 줄: 예치금 입금 & 진행 중인 캠페인 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <div className="card h-100">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold text-gray-800">예치금 입금</span>
-                </h3>
+      {/* 두 번째 줄: 활성 캠페인 & 클라이언트 리스트 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        {/* 활성 캠페인 */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-100 text-blue-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z" clipRule="evenodd" />
+                </svg>
               </div>
-              <div className="card-body py-3">
-                <div className="bg-light-success p-4 mb-5 rounded">
-                  <div className="d-flex justify-between items-center mb-2">
-                    <span className="text-foreground fw-bolder font-bold text-xl">현재 보유 캐시</span>
-                    <span className="text-success fw-bolder font-bold text-xl pl-6">{formatCurrency(3850000)}</span>
-                  </div>
-                  <div className="text-left">
-                    <span className="badge badge-success text-xs">+₩192,500 (5%)</span>
-                  </div>
-                </div>
-
-                <div className="overflow-hidden border border-border rounded-lg mb-6">
-                  <table className="min-w-full divide-y divide-border">
-                    <tbody className="divide-y divide-border">
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground w-1/3">
-                          충전 금액
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col">
-                            <input
-                              type="text"
-                              className="input w-full bg-background text-foreground border border-input rounded"
-                              placeholder="충전할 금액을 입력하세요"
-                              value={chargeAmount}
-                              onChange={handleAmountChange}
-                            />
-                            <div className="text-gray-600 text-xs mt-2">
-                              *최소 금액: ₩100,000원
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-sm font-medium text-muted-foreground">
-                          결제 방법
-                        </th>
-                        <td className="px-4 py-3">
-                          <div className="d-flex space-x-5">
-                            <div className="form-check form-check-custom form-check-solid form-check-sm">
-                              <input
-                                className="input-radio"
-                                type="radio"
-                                name="payment_method"
-                                id="payment_card"
-                                checked={paymentMethod === 'card'}
-                                onChange={() => setPaymentMethod('card')}
-                              />
-                              <label className="form-check-label ml-2" htmlFor="payment_card">
-                                신용카드
-                              </label>
-                            </div>
-                            <div className="form-check form-check-custom form-check-solid form-check-sm">
-                              <input
-                                className="input-radio"
-                                type="radio"
-                                name="payment_method"
-                                id="payment_bank"
-                                checked={paymentMethod === 'bank'}
-                                onChange={() => setPaymentMethod('bank')}
-                              />
-                              <label className="form-check-label ml-2" htmlFor="payment_bank">
-                                계좌이체
-                              </label>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="text-sm bg-gray-100 p-4 rounded mb-4">
-                  <span className="block font-medium mb-2">입금 시 혜택:</span>
-                  <ul className="pl-5 space-y-1">
-                    <li className="d-flex items-center">
-                      <i className="fas fa-arrow-up text-success me-2"></i>
-                      <span className="text-gray-800 fs-7">100만원 이상: 2% 보너스 캐시</span>
-                    </li>
-                    <li className="d-flex items-center">
-                      <i className="fas fa-arrow-up text-success me-2"></i>
-                      <span className="text-gray-800 fs-7">300만원 이상: 3% 보너스 캐시</span>
-                    </li>
-                    <li className="d-flex items-center">
-                      <i className="fas fa-arrow-up text-success me-2"></i>
-                      <span className="text-gray-800 fs-7">500만원 이상: 5% 보너스 캐시</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <button
-                  className="btn btn-primary w-100"
-                  onClick={handleDeposit}
-                >
-                  입금하기
-                </button>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-800">활성 캠페인</h3>
             </div>
+            <Button variant="outline" size="sm" className="h-8 px-4">
+              전체 보기
+            </Button>
           </div>
-          <div>
-            <div className="card h-100">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold text-gray-800">진행 중인 캠페인</span>
-                </h3>
-                <div className="card-toolbar">
-                  <input
-                    type="text"
-                    className="input input-sm px-2 py-1 border rounded"
-                    placeholder="캠페인 검색..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="card-body px-0 overflow-y-auto">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '80px' }}>ID</TableHead>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '200px' }}>캠페인 명</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '150px' }}>진행률</TableHead>
-                        <TableHead className="py-2 px-4 text-center" style={{ minWidth: '100px' }}>상태</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {activeCampaigns
-                        .filter(campaign =>
-                          searchQuery ?
-                            campaign[1].toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            campaign[2].toLowerCase().includes(searchQuery.toLowerCase()) :
-                            true
-                        )
-                        .map((campaign, index) => (
-                          <TableRow key={index} className="border-b border-gray-200 hover:bg-muted/50">
-                            <TableCell className="py-2 px-4">
-                              <span className="font-medium">{campaign[0]}</span>
-                            </TableCell>
-                            <TableCell className="py-2 px-4">
-                              <div className="flex flex-col py-1">
-                                <span className="font-medium">{campaign[1]}</span>
-                                <span className="text-muted-foreground text-sm">{campaign[2]}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2 px-4 text-center">
-                              <div className="flex items-center justify-center">
-                                <div className="h-2 w-full rounded bg-gray-200 overflow-hidden mr-2">
-                                  <div
-                                    className={campaign[5] === '완료' ? 'bg-green-500 h-2 rounded' : 'bg-blue-500 h-2 rounded'}
-                                    style={{ width: campaign[3] }}
-                                  ></div>
-                                </div>
-                                <span className="text-muted-foreground whitespace-nowrap">{campaign[3]}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2 px-4 text-center">
-                              <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${campaign[5] === '완료'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
-                                }`}>
-                                {campaign[5]}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 세 번째 줄: 결제 내역 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 gap-5">
-          <div>
-            <div className="card">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold">결제 내역</span>
-                </h3>
-                <div className="card-toolbar">
-                  <Button variant="outline" size="sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <polyline points="1 4 1 10 7 10"></polyline>
-                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                    </svg>
-                    최근 결제 내역 보기
-                  </Button>
-                </div>
-              </div>
-              <div className="card-body px-0 overflow-y-auto">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-gray-100 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="py-2 px-4 text-center whitespace-nowrap hidden md:table-cell" style={{ minWidth: '100px' }}>거래 ID</TableHead>
-                        <TableHead className="py-2 px-4 text-center whitespace-nowrap" style={{ minWidth: '100px' }}>날짜</TableHead>
-                        <TableHead className="py-2 px-4" style={{ minWidth: '200px' }}>내용</TableHead>
-                        <TableHead className="py-2 px-4 text-center whitespace-nowrap" style={{ minWidth: '120px' }}>금액</TableHead>
-                        <TableHead className="py-2 px-4 text-center whitespace-nowrap" style={{ minWidth: '100px' }}>타입</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((transaction, index) => (
-                        <TableRow key={index} className="border-b border-gray-200 hover:bg-muted/50">
-                          <TableCell className="py-2 px-4 text-center whitespace-nowrap hidden md:table-cell">
-                            <span className="font-medium">{transaction[0]}</span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center whitespace-nowrap">
-                            {transaction[1]}
-                          </TableCell>
-                          <TableCell className="py-2 px-4">
-                            {transaction[2]}
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center whitespace-nowrap font-medium">
-                            <span className={transaction[4] === '입금' ? 'text-green-600' : 'text-red-600'}>
-                              {transaction[4] === '입금' ? '+' : '-'}
-                              {isMobile
-                                ? formatCurrencyInTenThousand(transaction[3])
-                                : formatCurrency(transaction[3])}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-2 px-4 text-center whitespace-nowrap">
-                            <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${transaction[4] === '입금'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                : 'bg-primary/10 text-primary'
-                              }`}>
-                              {transaction[4]}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 네 번째 줄: 캠페인 예산 */}
-      <div className="container mb-10">
-        <div className="grid grid-cols-1 gap-5">
-          <div>
-            <div className="card">
-              <div className="card-header border-0 pt-5">
-                <h3 className="card-title align-items-start flex-column">
-                  <span className="card-label fw-bold">캠페인 예산 현황</span>
-                </h3>
-              </div>
-              <div className="card-body py-3">
-                <div className="flex flex-wrap gap-5 mb-5">
-                  <div className="flex flex-col">
-                    <div className="text-dark fw-bold fs-2 mb-1">₩3,850,000</div>
-                    <div className="text-gray-700 fw-semibold fs-6">현재 보유 캐시</div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="text-dark fw-bold fs-2 mb-1">₩1,200,000</div>
-                    <div className="text-gray-700 fw-semibold fs-6">할당된 예산</div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="text-success fw-bold fs-2 mb-1">₩2,650,000</div>
-                    <div className="text-gray-700 fw-semibold fs-6">남은 예산</div>
-                  </div>
-                </div>
-                <div className="separator my-7"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <div className="card bg-light-warning p-5">
-                      <div className="d-flex align-items-center">
-                        <div className="symbol symbol-50px me-3">
-                          <span className="symbol-label bg-white">
-                            <i className="fas fa-signal text-warning fs-1"></i>
-                          </span>
-                        </div>
-                        <div className="d-flex flex-column flex-grow-1">
-                          <a href="#" className="text-dark fw-bold fs-5 mb-1">여름 신제품 홍보</a>
-                          <div className="d-flex">
-                            <div className="text-gray-700 fw-semibold d-flex align-items-center">예산: 500,000원</div>
-                            <div className="text-gray-700 fw-semibold d-flex align-items-center ms-5">소진률: 40%</div>
-                          </div>
-                        </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="py-3 px-4 text-left">캠페인명</TableHead>
+                  <TableHead className="py-3 px-4 text-left">클라이언트</TableHead>
+                  <TableHead className="py-3 px-4 text-right">예산(원)</TableHead>
+                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
+                  <TableHead className="py-3 px-4 text-left">진행률</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeCampaigns.map((campaign, index) => (
+                  <TableRow key={index} className="border-b border-gray-200">
+                    <TableCell className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-blue-600">{campaign.name}</span>
+                        <span className="text-xs text-gray-500">{campaign.id}</span>
                       </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="card bg-light-primary p-5">
-                      <div className="d-flex align-items-center">
-                        <div className="symbol symbol-50px me-3">
-                          <span className="symbol-label bg-white">
-                            <i className="fas fa-bullhorn text-primary fs-1"></i>
-                          </span>
-                        </div>
-                        <div className="d-flex flex-column flex-grow-1">
-                          <a href="#" className="text-dark fw-bold fs-5 mb-1">가을 신규 서비스 런칭</a>
-                          <div className="d-flex">
-                            <div className="text-gray-700 fw-semibold d-flex align-items-center">예산: 700,000원</div>
-                            <div className="text-gray-700 fw-semibold d-flex align-items-center ms-5">소진률: 40%</div>
-                          </div>
-                        </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <span>{campaign.client}</span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-medium">
+                        {isMobile 
+                          ? formatCurrencyInTenThousand(campaign.budget)
+                          : formatCurrency(campaign.budget)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-center">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                        {campaign.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${getProgressColor(campaign.progress)}`} 
+                          style={{ width: `${campaign.progress}%` }}
+                        ></div>
                       </div>
-                    </div>
-                  </div>
+                      <div className="text-xs text-right mt-1">{campaign.progress}%</div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        {/* 클라이언트 리스트 */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-green-100 text-green-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">클라이언트</h3>
+            </div>
+            <Button variant="default" size="sm" className="h-8 px-4 bg-green-600 hover:bg-green-700">
+              신규 등록
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="py-3 px-4 text-left">클라이언트명</TableHead>
+                  <TableHead className="py-3 px-4 text-center">캠페인 수</TableHead>
+                  <TableHead className="py-3 px-4 text-right">총 지출(원)</TableHead>
+                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clientList.map((client, index) => (
+                  <TableRow key={index} className="border-b border-gray-200">
+                    <TableCell className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-green-600">{client.name}</span>
+                        <span className="text-xs text-gray-500">{client.id}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-center">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                        {client.campaigns}개
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-medium">
+                        {isMobile 
+                          ? formatCurrencyInTenThousand(client.totalSpend)
+                          : formatCurrency(client.totalSpend)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-center">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
+                        {client.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      </div>
+
+      {/* 세 번째 줄: 마케팅 성과 요약 */}
+      <div className="grid grid-cols-1 gap-5 mb-5">
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-purple-100 text-purple-600 mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">마케팅 성과 요약</h3>
+            </div>
+            <Button variant="outline" size="sm" className="h-8 px-4">
+              성과 보고서
+            </Button>
+          </div>
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">노출 수</div>
+                <div className="text-xl font-bold text-gray-800">5,843,291</div>
+                <div className="text-xs text-green-600 mt-1">↑ 12.4% 증가</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">클릭 수</div>
+                <div className="text-xl font-bold text-gray-800">132,458</div>
+                <div className="text-xs text-green-600 mt-1">↑ 8.7% 증가</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">CTR</div>
+                <div className="text-xl font-bold text-gray-800">2.27%</div>
+                <div className="text-xs text-red-600 mt-1">↓ 0.4% 감소</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">전환율</div>
+                <div className="text-xl font-bold text-gray-800">3.8%</div>
+                <div className="text-xs text-green-600 mt-1">↑ 1.2% 증가</div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between mb-5">
+              <h4 className="font-medium text-base">주간 성과 하이라이트</h4>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" className="h-8 px-3">
+                  이번 주
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 px-3">
+                  지난 주
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 px-3">
+                  이번 달
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 p-5 rounded-lg">
+              <div className="text-sm text-gray-500 mb-3">가장 성과가 좋은 캠페인</div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <div className="text-base font-medium text-blue-600">여름 프로모션</div>
+                  <div className="text-sm text-gray-500">메가 브랜드</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-base font-bold text-gray-800">ROI 320%</div>
+                  <div className="text-xs text-green-600">목표 초과 달성</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">전환 수</div>
+                  <div className="text-base font-medium text-gray-800">1,245</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">CPA</div>
+                  <div className="text-base font-medium text-gray-800">₩4,650</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">CPC</div>
+                  <div className="text-base font-medium text-gray-800">₩420</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
-    </>
+    </DashboardTemplate>
   );
 };
+
+export default DashboardContent;

@@ -1,6 +1,20 @@
 {
   "version": 1,
-  "include": ["/*"],
+  "include": [
+    "/admin/*",
+    "/advertise/*",
+    "/auth/*",
+    "/cash/*",
+    "/dashboard/*",
+    "/error/*",
+    "/faq/*",
+    "/myinfo/*",
+    "/notice/*",
+    "/point/*",
+    "/sitemap/*",
+    "/withdraw/*",
+    "/"
+  ],
   "exclude": [
     "/build/*",
     "/static/*",
@@ -9,6 +23,10 @@
     "/*.svg",
     "/*.png",
     "/*.json",
-    "/*.txt"
+    "/*.txt",
+    "/*.js",
+    "/*.css",
+    "/assets/*",
+    "/index.html"
   ]
 }

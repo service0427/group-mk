@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
+import { BusinessUpgradeModal } from '@/components/business';
 
 const ProfilePage = () => {
   const { currentUser } = useAuthContext();
@@ -10,6 +11,59 @@ const ProfilePage = () => {
   const [password, setPassword] = useState<string>('');
   const [change_password, setChangePassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
+  const [hasBusinessInfo, setHasBusinessInfo] = useState<boolean>(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState<boolean>(false);
+  const [hasRejectedRequest, setHasRejectedRequest] = useState<boolean>(false);
+  const [rejectionReason, setRejectionReason] = useState<string>('');
+  
+  // 사업자 정보와 등업 신청 현황 체크
+  useEffect(() => {
+    const checkBusinessStatus = async () => {
+      try {
+        // 사용자의 business 정보 체크
+        if (currentUser?.business) {
+          setHasBusinessInfo(true);
+        }
+        
+        // 대기 중인 등업 신청이 있는지 체크
+        const { data: pendingData, error: pendingError } = await supabase
+          .from('levelup_apply')
+          .select('*')
+          .eq('user_id', currentUser?.id)
+          .eq('status', 'pending')
+          .limit(1);
+          
+        if (pendingError) throw pendingError;
+        setHasPendingRequest(pendingData && pendingData.length > 0);
+        
+        // 거부된 등업 신청이 있는지 체크
+        const { data: rejectedData, error: rejectedError } = await supabase
+          .from('levelup_apply')
+          .select('*')
+          .eq('user_id', currentUser?.id)
+          .eq('status', 'rejected')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+          
+        if (rejectedError) throw rejectedError;
+        
+        if (rejectedData && rejectedData.length > 0) {
+          setHasRejectedRequest(true);
+          setRejectionReason(rejectedData[0].rejection_reason || '');
+        } else {
+          setHasRejectedRequest(false);
+          setRejectionReason('');
+        }
+      } catch (err) {
+        console.error('사업자 정보 조회 에러:', err);
+      }
+    };
+    
+    if (currentUser?.id) {
+      checkBusinessStatus();
+    }
+  }, [currentUser]);
 
   const roleClass = currentUser?.role === 'operator' ? 'badge-primary' :
     currentUser?.role === 'developer' ? 'badge-warning' :
@@ -33,6 +87,35 @@ const ProfilePage = () => {
     currentUser?.status === 'inactive' ? '비활성화' :
       currentUser?.status === 'pending' ? '대기중' :
         currentUser?.status === 'suspended' ? '정지됨' : '';
+
+  // 등업 신청 모달 관리
+  const handleOpenUpgradeModal = () => {
+    setIsUpgradeModalOpen(true);
+  };
+
+  const handleCloseUpgradeModal = () => {
+    setIsUpgradeModalOpen(false);
+  };
+
+  const handleUpgradeSuccess = () => {
+    // 등업 신청 성공 후 상태 업데이트
+    setHasBusinessInfo(true);
+    setHasPendingRequest(true);
+    setHasRejectedRequest(false);
+    setRejectionReason('');
+  };
+  
+  // 이전 사업자 정보 가져오기
+  const getPreviousBusinessInfo = () => {
+    if (currentUser?.business) {
+      return {
+        business_number: currentUser.business.business_number,
+        business_name: currentUser.business.business_name,
+        representative_name: currentUser.business.representative_name
+      };
+    }
+    return undefined;
+  };
 
   const handlePasswordChange = async () => {
     // 비밀번호 변경 로직을 여기에 추가합니다.
@@ -196,17 +279,106 @@ const ProfilePage = () => {
 
           </div>
 
+          {/* 사업자 정보 섹션 */}
+          <div className="mt-8 border-t pt-6">
+            <h4 className="text-lg font-semibold mb-4">사업자 정보</h4>
+            
+            {hasBusinessInfo && (
+              <div className="card-table scrollable-x-auto pb-3">
+                <table className="table align-middle text-sm text-gray-500">
+                  <tbody>
+                    <tr>
+                      <td className="py-2 text-gray-600 font-normal">사업자 등록번호</td>
+                      <td className="py-2 text-gray-800 font-normal">
+                        {currentUser?.business?.business_number || '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 text-gray-600 font-normal">상호명</td>
+                      <td className="py-3 text-gray-800 font-normal">
+                        {currentUser?.business?.business_name || '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 text-gray-600 font-normal">대표자명</td>
+                      <td className="py-3 text-gray-700 text-sm font-normal">
+                        {currentUser?.business?.representative_name || '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 text-gray-600 font-normal">인증 상태</td>
+                      <td className="py-3 text-gray-700 text-sm font-normal">
+                        {hasPendingRequest ? (
+                          <span className="badge badge-sm badge-warning">승인 대기중</span>
+                        ) : currentUser?.business?.verified ? (
+                          <span className="badge badge-sm badge-success">인증됨</span>
+                        ) : (
+                          <span className="badge badge-sm badge-error">미인증</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            {!hasPendingRequest && (
+              <>
+                {!hasBusinessInfo && (
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <p className="text-gray-600 mb-2">
+                      사업자 등록 정보가 없습니다. 등업 신청을 위해 사업자 정보를 등록해주세요.
+                    </p>
+                  </div>
+                )}
+                
+                {hasRejectedRequest && (
+                  <div className="bg-danger/10 p-4 rounded-lg mb-4 border border-danger/20">
+                    <h5 className="text-danger font-semibold mb-2">이전 등업 신청이 거부되었습니다</h5>
+                    <div className="mb-3">
+                      <p className="text-gray-700 font-medium">거부 사유:</p>
+                      <p className="text-gray-600 mt-1 p-2 bg-white rounded border border-gray-200">
+                        {rejectionReason || '관리자가 등업 신청을 거부했습니다.'}
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      아래 정보를 수정하여 다시 신청해 주세요.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {/* 하단 버튼 */}
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end gap-3 mt-6">
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="btn btn-primary"
               onClick={handlePasswordChange}
             >
               비밀번호 수정
             </button>
+            
+            {!hasPendingRequest && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleOpenUpgradeModal}
+                disabled={hasPendingRequest}
+              >
+                {hasBusinessInfo ? '등업 신청' : '사업자 등록 및 등업 신청'}
+              </button>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* 등업 신청 모달 */}
+      <BusinessUpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={handleCloseUpgradeModal}
+        onSuccess={handleUpgradeSuccess}
+        initialData={getPreviousBusinessInfo()}
+      />
     </CommonTemplate>
   );
 };

@@ -1,12 +1,9 @@
 {
+  "account_id": "d487a4f4ab6dd57899955ec5775f10ce",
   "name": "mk",
   "compatibility_date": "2025-05-06",
-  "main": "worker-site.js",
-  "workers_dev": false,
-  "site": {
-    "bucket": "./dist",
-    "include": ["**/*"],
-    "exclude": []
+  "assets": {
+    "directory": "./dist"
   },
   "dev": {
     "port": 8787
@@ -17,7 +14,10 @@
         "ENVIRONMENT": "production"
       },
       "routes": [
-        "mkt-guide.com/*"
+        {
+          "pattern": "mkt-guide.com",
+          "custom_domain": true
+        }
       ]
     },
     "test": {
@@ -25,7 +25,12 @@
       "vars": {
         "ENVIRONMENT": "test"
       },
-      "workers_dev": true
+      "routes": [
+        {
+          "pattern": "wtest.mkt-guide.com",
+          "custom_domain": true
+        }
+      ]
     }
   }
 }

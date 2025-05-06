@@ -6,10 +6,11 @@
   "scripts": {
     "clean": "rimraf dist node_modules/.vite",
     "dev": "npm run clean && vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/create-routes-json.js",
     "lint": "eslint .",
     "preview": "vite preview",
-    "delete-chat-data": "node scripts/delete-chat-data.js"
+    "delete-chat-data": "node scripts/delete-chat-data.js",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@auth0/auth0-spa-js": "^2.1.3",

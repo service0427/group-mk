@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../useAuthContext';
 import { ScreenLoader } from '@/components/loaders';
 import * as authHelper from '../_helpers';
+import { useUI } from '@/providers/UIProvider';
 
 // 인증 없이 접근 가능한 경로 정의
 const PUBLIC_PATHS = [
@@ -19,6 +20,7 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
     authVerified
   } = useAuthContext();
   
+  const { setScreenLoader } = useUI();
   const [initialCheck, setInitialCheck] = useState(true);
   const [deepChecking, setDeepChecking] = useState(false);
   const location = useLocation();
@@ -140,19 +142,21 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
     }
   }, [initialCheck, loading, isAuthenticated, location.pathname, navigate]);
   
-  // 로딩 상태 계산
+  // 로딩 상태 계산 및 스크린 로더 제어
   const isLoading = initialCheck || deepChecking || (loading && !isPublicPath);
   
-  // 인증 검증 중이거나 로딩 중이면 로딩 화면 표시 (더 부드러운 UX를 위한 컨테이너 추가)
-  if (isLoading) {
-    return (
-      <div className="auth-verification-container">
-        <ScreenLoader />
-      </div>
-    );
-  }
+  // 로딩 상태가 변경될 때마다 스크린 로더 상태 업데이트
+  useEffect(() => {
+    setScreenLoader(isLoading);
+    
+    // 컴포넌트 언마운트 시 스크린 로더 비활성화
+    return () => {
+      setScreenLoader(false);
+    };
+  }, [isLoading, setScreenLoader]);
   
-  return <>{children}</>;
+  // 로딩 중이 아닐 때만 자식 컴포넌트 렌더링
+  return <>{!isLoading && children}</>;
 };
 
 export default AuthMiddleware;

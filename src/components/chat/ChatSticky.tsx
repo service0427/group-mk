@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { useChat } from '@/hooks/useChat';
+import { useChat } from '@/hooks/useChat-fix';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // 데이터베이스 진단 결과 인터페이스
@@ -811,8 +811,13 @@ const ChatSticky: React.FC = () => {
   // 인증 관련 상태 확인
   const { isAuthenticated, currentUser } = useAuthContext();
   
+  // 로그아웃 상태이거나 인증 정보가 없는 경우 아무것도 렌더링하지 않음
+  if (!isAuthenticated || !currentUser) {
+    return null;
+  }
+  
   // 사용자 역할 확인 - 관리자나 운영자인 경우 렌더링하지 않음
-  const isAdminOrOperator = isAuthenticated && currentUser?.role && 
+  const isAdminOrOperator = currentUser.role && 
     (currentUser.role === 'admin' || currentUser.role === 'operator');
   
   // 관리자나 운영자인 경우 컴포넌트를 렌더링하지 않음

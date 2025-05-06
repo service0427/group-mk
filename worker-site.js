@@ -44,6 +44,7 @@ async function handleRequest(request) {
       if (url.pathname.endsWith('.ico')) {
         return new Response(null, { status: 204 });
       }
+      // 정적 파일은 404 응답을 그대로 반환
       return new Response('File not found', { status: 404 });
     }
   }
@@ -58,6 +59,7 @@ async function handleRequest(request) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>마케팅의 정석 :: The standard of Marketing</title>
+        <meta http-equiv="refresh" content="3;url=${url.origin}">
         <style>
           body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
                  display: flex; height: 100vh; margin: 0; align-items: center; justify-content: center; text-align: center; }
@@ -69,7 +71,6 @@ async function handleRequest(request) {
         <div>
           <h1>마케팅의 정석</h1>
           <p>페이지를 로드하는 중입니다...</p>
-          <script>window.location.reload();</script>
         </div>
       </body>
       </html>
@@ -118,14 +119,14 @@ async function handleRequest(request) {
       });
     }
   } catch (error) {
-    // 예외 발생 시 대체 HTML 반환
+    // 예외 발생 시 대체 HTML 반환 (항상 200 응답)
     return new Response(`
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
         <title>일시적인 오류</title>
-        <meta http-equiv="refresh" content="3;url=${url.pathname}">
+        <meta http-equiv="refresh" content="3;url=${url.origin}">
         <style>
           body { font-family: sans-serif; text-align: center; padding: 20px; }
           h1 { color: #e74c3c; }

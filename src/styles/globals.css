@@ -15,5 +15,6 @@
 @import "margin-fix.css"; /* 마진 긴급 수정 */
 @import "chat.css"; /* 채팅 스타일 */
 @import "keyframes.css"; /* 애니메이션 키프레임 */
+@import "dark-mode.css"; /* 다크모드 스타일 */
 
 @import "index";

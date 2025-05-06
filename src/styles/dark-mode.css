@@ -1,0 +1,141 @@
+/* 다크 모드 스타일 */
+
+/* 배경 및 글자색 */
+.dark {
+  background-color: #111217; /* coal-300 색상 */
+  color: #FFFFFF;
+}
+
+/* 스크롤바 다크모드 스타일 */
+.dark main.content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark main.content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark main.content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 공통 컨테이너 스타일 */
+.dark .container-fixed,
+.dark .container-fluid,
+.dark .container-full-width {
+  background-color: #111217; /* coal-300 색상 */
+}
+
+/* 카드 스타일 */
+.dark .card {
+  background-color: #111217 !important; /* coal-300 색상 */
+  border-color: #15171C !important; /* coal-100 색상 */
+}
+
+/* 테이블 배경 스타일 */
+.dark table,
+.dark thead,
+.dark tbody,
+.dark tr {
+  background-color: transparent; /* 배경색 제거 */
+}
+
+.dark td,
+.dark th {
+  background-color: #111217; /* coal-300 색상 */
+  border-color: #15171C !important; /* coal-100 색상 */
+  color: #f0f0f0;
+}
+
+.dark .bg-gray-50 {
+  background-color: #13141A !important; /* coal-200 색상 */
+}
+
+/* 입력 필드 배경 */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #13141A !important; /* coal-200 색상 */
+  border-color: #15171C !important; /* coal-100 색상 */
+  color: #FFFFFF !important;
+}
+
+/* 버튼 배경색 조정 */
+.dark button.bg-white {
+  background-color: #111217 !important; /* coal-300 색상 */
+  color: #f0f0f0 !important;
+}
+
+/* 다양한 배경색 스타일 (흰색 계열을 모두 어두운 색상으로 대체) */
+.dark .bg-white {
+  background-color: #111217 !important; /* coal-300 색상 */
+}
+
+.dark .bg-gray-100 {
+  background-color: #13141A !important; /* coal-200 색상 */
+}
+
+.dark .bg-gray-200 {
+  background-color: #15171C !important; /* coal-100 색상 */
+}
+
+/* 중요 알림 및 알림 배경색 */
+.dark .bg-amber-50\/90 {
+  background-color: rgba(19, 20, 26, 0.9) !important; /* coal-200 색상 90% 투명도 */
+  border-bottom: 1px solid #15171C !important; /* coal-100 색상 */
+}
+
+/* 글자 색상 스타일 */
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: #f0f0f0 !important;
+}
+
+/* 아이콘 컨테이너 배경색 */
+.dark .rounded-md.bg-indigo-100,
+.dark .rounded-md.bg-green-100,
+.dark .rounded-md.bg-blue-100,
+.dark .rounded-md.bg-amber-100,
+.dark .rounded-md.bg-red-100,
+.dark .rounded-md.bg-purple-100 {
+  background-color: #13141A !important; /* coal-200 색상 */
+}
+
+/* 배지 스타일 */
+.dark .px-2.py-1.bg-green-50 {
+  background-color: rgba(5, 102, 33, 0.3) !important;
+  color: #7bed9f !important;
+  border: 1px solid #056621 !important;
+}
+
+/* 툴바와 상태 표시줄 배경색 */
+.dark .border-b.border-gray-200 {
+  border-color: #15171C !important; /* coal-100 색상 */
+}
+
+/* HTML 요소 배경색 */
+.dark html {
+  background-color: #111217 !important; /* coal-300 색상 */
+}
+
+/* #root 배경색 */
+.dark #root,
+.dark #root > div {
+  background-color: #111217 !important; /* coal-300 색상 */
+}
+
+/* 대시보드 템플릿 배경색 */
+.dark .dashboard-template-wrapper {
+  background-color: #111217 !important; /* coal-300 색상 */
+}
+
+/* 컨텐츠 영역 배경색 */
+.dark main,
+.dark .content,
+.dark div[class*="content"] {
+  background-color: #111217 !important; /* coal-300 색상 */
+}

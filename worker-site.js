@@ -51,95 +51,29 @@ async function handleRequest(request) {
 
   // SPA 라우트 처리 - 항상 index.html 제공
   try {
-    // 예비 HTML - 실제 index.html을 가져오지 못할 경우 대체 콘텐츠
-    const fallbackHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>마케팅의 정석 :: The standard of Marketing</title>
-        <meta http-equiv="refresh" content="3;url=${url.origin}">
-        <style>
-          body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-                 display: flex; height: 100vh; margin: 0; align-items: center; justify-content: center; text-align: center; }
-          div { max-width: 800px; padding: 20px; }
-          h1 { color: #3498db; }
-        </style>
-      </head>
-      <body>
-        <div>
-          <h1>마케팅의 정석</h1>
-          <p>페이지를 로드하는 중입니다...</p>
-        </div>
-      </body>
-      </html>
-    `;
-
     // index.html 요청
-    try {
-      const indexReq = new Request(`${url.origin}/index.html`, {
-        method: 'GET',
-        headers: request.headers
-      });
-      
-      const response = await fetch(indexReq);
-      
-      if (response.status === 200) {
-        const indexContent = await response.text();
-        
-        // URL에 따라 동적 메타 태그 추가 (SEO 개선)
-        // let processedContent = indexContent;
-        // 여기서 필요하다면 동적 메타 태그 처리 코드 추가 가능
-        
-        return new Response(indexContent, {
-          headers: {
-            'Content-Type': 'text/html; charset=UTF-8',
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            'X-Content-Type-Options': 'nosniff'
-          }
-        });
-      } else {
-        console.error(`Failed to fetch index.html: ${response.status}`);
-        // 인덱스를 가져올 수 없는 경우 대체 HTML 반환
-        return new Response(fallbackHtml, {
-          headers: {
-            'Content-Type': 'text/html; charset=UTF-8',
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
-          }
-        });
-      }
-    } catch (fetchError) {
-      console.error(`Error fetching index.html:`, fetchError);
-      return new Response(fallbackHtml, {
+    const indexReq = new Request(`${url.origin}/index.html`, {
+      method: 'GET',
+      headers: request.headers
+    });
+    
+    const response = await fetch(indexReq);
+    
+    if (response.status === 200) {
+      const indexContent = await response.text();
+      return new Response(indexContent, {
         headers: {
           'Content-Type': 'text/html; charset=UTF-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'X-Content-Type-Options': 'nosniff'
         }
       });
+    } else {
+      // index.html이 없는 경우 404 반환
+      return new Response('Not found', { status: 404 });
     }
   } catch (error) {
-    // 예외 발생 시 대체 HTML 반환 (항상 200 응답)
-    return new Response(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>일시적인 오류</title>
-        <meta http-equiv="refresh" content="3;url=${url.origin}">
-        <style>
-          body { font-family: sans-serif; text-align: center; padding: 20px; }
-          h1 { color: #e74c3c; }
-        </style>
-      </head>
-      <body>
-        <h1>일시적인 오류가 발생했습니다</h1>
-        <p>잠시 후 자동으로 새로고침됩니다...</p>
-      </body>
-      </html>
-    `, {
-      headers: { 'Content-Type': 'text/html; charset=UTF-8' },
-      status: 200 // 오류 발생해도 200 반환하여 사용자 경험 개선
-    });
+    // 예외 발생 시 500 에러 반환
+    return new Response('Server error', { status: 500 });
   }
 }

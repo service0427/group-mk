@@ -1,17 +1,14 @@
 {
   "name": "mk",
   "compatibility_date": "2025-05-06",
+  "main": "dist/worker.js",
   "assets": {
     "directory": "./dist"
   },
   "routes": [
     {
-      "pattern": "mkt-guide.com/*",
+      "pattern": "mkt-guide.com",
       "custom_domain": true
     }
-  ],
-  "site": {
-    "bucket": "./dist"
-  },
-  "always_use_https": true
+  ]
 }

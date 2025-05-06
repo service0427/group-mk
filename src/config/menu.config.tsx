@@ -243,6 +243,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '사용자 관리',
         icon: 'users',
         path: '/admin/users'
+      },
+      { 
+        title: '등업 신청 관리',
+        icon: 'verify',
+        path: '/admin/levelup-requests'
       }
     ]
   },
@@ -611,6 +616,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: '사용자 관리',
             icon: 'users',
             path: '/admin/users'
+          },
+          { 
+            title: '등업 신청 관리',
+            icon: 'verify',
+            path: '/admin/levelup-requests'
           }
         ]
       },

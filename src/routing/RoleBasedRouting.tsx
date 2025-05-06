@@ -4,7 +4,12 @@ import { StandLayout } from '@/layouts/stand';
 
 // 예시 컴포넌트들 (실제 프로젝트에서는 import 필요)
 import { DefaultPage } from '@/pages/dashboards';
-import { UsersPage, ManageCashPage, ChatManagePage } from '@/pages/admin';
+import { 
+  UsersPage, 
+  ManageCashPage, 
+  ChatManagePage, 
+  LevelUpRequestsPage 
+} from '@/pages/admin';
 import WithdrawRequestPage from '@/pages/withdraw/WithdrawRequestPage';
 import { ChargePage, HistoryPage } from '@/pages/cash';
 import { ErrorsRouting } from '@/errors';
@@ -42,6 +47,7 @@ const RoleBasedRoutingExample = () => {
         <Route path="/admin/cash" element={<ManageCashPage />} />
         <Route path="/admin/chat" element={<ChatManagePage />} />
         <Route path="/admin/site/chat" element={<ChatManagePage />} />
+        <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
       </Route>
       
       {/* 주석 처리된 원래 버전 (나중에 권한 적용시 사용)

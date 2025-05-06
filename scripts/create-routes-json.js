@@ -12,15 +12,7 @@ const routesContent = {
     "/*.svg",
     "/*.jpg",
     "/*.jpeg",
-    "/*.gif",
-    "/*.js",
-    "/*.css",
-    "/*.woff",
-    "/*.woff2",
-    "/*.ttf",
-    "/*.eot",
-    "/*.json",
-    "/*.txt"
+    "/*.gif"
   ]
 };
 

@@ -6,11 +6,14 @@
   "scripts": {
     "clean": "rimraf dist node_modules/.vite",
     "dev": "npm run clean && vite",
-    "build": "tsc -b && vite build && node scripts/create-routes-json.js && node scripts/copy-worker.js && node scripts/create-favicon.js",
+    "build": "tsc -b && vite build && node scripts/create-routes-json.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "delete-chat-data": "node scripts/delete-chat-data.js",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:test": "wrangler deploy --env test",
+    "deploy:production": "wrangler deploy --env production",
+    "create-favicon": "node scripts/create-favicon.js"
   },
   "dependencies": {
     "@auth0/auth0-spa-js": "^2.1.3",
@@ -55,6 +58,7 @@
     "mini-svg-data-uri": "^1.4.4",
     "next-themes": "^0.4.3",
     "notistack": "^3.0.1",
+    "png-to-ico": "^2.1.8",
     "postcss-preset-env": "^10.1.0",
     "qs": "^6.13.0",
     "react": "^18.2.0",
@@ -69,6 +73,7 @@
     "react-query": "^3.39.3",
     "react-router": "^6.28.0",
     "react-router-dom": "^6.28.0",
+    "sharp": "^0.34.1",
     "sonner": "^1.7.0",
     "styled-components": "^6.1.13",
     "stylis": "^4.3.4",

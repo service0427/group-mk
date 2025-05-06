@@ -58,7 +58,13 @@ const Signup = () => {
         
         // 추출한 이메일 앞부분을 full_name으로 사용
         await register(values.email, emailUsername, values.password, values.changepassword);
-        navigate(from, { replace: true });
+        
+        // 회원가입 완료 후 로그인 페이지로 이동하면서 이메일 정보 전달
+        const loginPath = currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login';
+        navigate(loginPath, { 
+          replace: true,
+          state: { registeredEmail: values.email }
+        });
       } catch (error) {
         console.error(error);
         setStatus('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');

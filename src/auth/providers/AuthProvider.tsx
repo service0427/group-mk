@@ -566,6 +566,29 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 }
 
                 console.log('사용자 등록 및 모든 정보 저장 완료');
+                
+                // 회원가입 후 자동 로그인 방지 (로그인 페이지로 이동을 위해)
+                console.log('회원가입 후 자동 로그인 방지를 위해 인증 상태 초기화');
+                
+                // 클라이언트측 인증 상태 초기화
+                setAuth(undefined);
+                setCurrentUser(null);
+                authHelper.removeAuth();
+                
+                // Supabase 세션 로그아웃 처리
+                try {
+                    await supabase.auth.signOut();
+                    console.log('회원가입 후 Supabase 세션 로그아웃 완료');
+                } catch (logoutError) {
+                    console.error('회원가입 후 Supabase 세션 로그아웃 실패:', logoutError);
+                }
+                
+                // 로컬 스토리지에서 Supabase 관련 항목 제거
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('supabase')) {
+                        localStorage.removeItem(key);
+                    }
+                });
             } catch (dbError: any) {
                 console.error('사용자 정보 저장 중 오류:', dbError);
                 throw new Error(dbError.message);

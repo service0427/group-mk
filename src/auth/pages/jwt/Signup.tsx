@@ -121,7 +121,7 @@ const Signup = () => {
           />
           {formik.touched.email && formik.errors.email && (
             <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.email}
+              {String(formik.errors.email)}
             </span>
           )}
         </div>
@@ -148,7 +148,7 @@ const Signup = () => {
           </div>
           {formik.touched.password && formik.errors.password && (
             <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.password}
+              {String(formik.errors.password)}
             </span>
           )}
         </div>
@@ -178,7 +178,7 @@ const Signup = () => {
           </div>
           {formik.touched.changepassword && formik.errors.changepassword && (
             <span role="alert" className="text-danger text-xs mt-1">
-              {formik.errors.changepassword}
+              {String(formik.errors.changepassword)}
             </span>
           )}
         </div>

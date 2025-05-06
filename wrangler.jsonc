@@ -1,7 +1,6 @@
 {
   "name": "mk",
   "compatibility_date": "2025-05-06",
-  "main": "src/worker/index.js",
   "assets": {
     "directory": "./dist"
   },

@@ -474,88 +474,111 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }
 
-    const register = async (email: string, full_name: string,
-        password: string, password_confirmation: string) => {
-            setLoading(true);
-      
-            try {
-                // 비밀번호 유효성 검사
-                if (password !== password_confirmation) {
-                    throw new Error('비밀번호가 일치하지 않습니다.');
-                }
-      
-                // Supabase Auth에 사용자 등록
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            full_name: full_name,
-                            role: 'advertiser' // 기본 역할 설정
-                        }
+    const register = async (email: string, full_name: string, password: string, password_confirmation: string) => {
+        setLoading(true);
+  
+        try {
+            // 비밀번호 유효성 검사
+            if (password !== password_confirmation) {
+                throw new Error('비밀번호가 일치하지 않습니다.');
+            }
+  
+            console.log('회원가입 시작:', email, full_name);
+            
+            // Supabase Auth에 사용자 등록
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: full_name,
+                        role: 'advertiser' // 기본 역할 설정
                     }
-                });
-      
-                if (error) {
-                    console.error('회원가입 오류:', error);
-                    throw new Error(error.message);
                 }
-      
-                if (!data.user) {
-                    console.error('사용자 데이터가 없습니다');
-                    throw new Error('사용자 데이터가 없습니다');
-                }
-      
-                console.log('Auth에 사용자 등록 성공:', data.user.id);
-      
+            });
+  
+            if (error) {
+                console.error('회원가입 오류:', error);
+                throw new Error(error.message);
+            }
+  
+            if (!data.user) {
+                console.error('사용자 데이터가 없습니다');
+                throw new Error('사용자 데이터가 없습니다');
+            }
+  
+            console.log('Auth에 사용자 등록 성공:', data.user.id);
+  
+            try {
                 // public.users 테이블에 사용자 정보 직접 삽입
                 const newUser = {
                     id: data.user.id,
                     email: email,
                     full_name: full_name,
                     status: 'active',
-                    role: 'advertiser', // 기본 역할
-                    raw_user_meta_data: data.user.user_metadata
+                    role: 'advertiser' // 기본 역할
                 };
-      
-                console.log('public.users 테이블에 사용자 추가 시도:',
-        newUser);
-      
+    
+                console.log('public.users 테이블에 사용자 추가 준비:', newUser);
+    
                 // 비밀번호 해시 생성
-                const hashPassword = await
-        supabase.rpc('hash_password', {
+                console.log('비밀번호 해시 생성 시도');
+                const hashPassword = await supabase.rpc('hash_password', {
                     password: password
                 });
-      
+    
                 if (hashPassword.error) {
-                    console.error('비밀번호 해싱 오류:',
-        hashPassword.error);
+                    console.error('비밀번호 해싱 오류:', hashPassword.error);
                     throw new Error(hashPassword.error.message);
                 }
-      
+    
+                console.log('비밀번호 해시 생성 성공:', !!hashPassword.data);
+    
                 // public.users 테이블에 사용자 정보 삽입
-                const { error: insertError } = await supabase
-                    .from('users')
-                    .insert([{
-                        ...newUser,
-                        password_hash: hashPassword.data
-                    }]);
-      
+                console.log('사용자 정보 삽입 시도');
+                const { error: insertError } = await supabase.from('users').insert([{
+                    ...newUser,
+                    password_hash: hashPassword.data
+                }]);
+    
                 if (insertError) {
-                    console.error('사용자 정보 저장 오류:',
-        insertError);
+                    console.error('사용자 정보 저장 오류:', insertError);
                     throw new Error(insertError.message);
                 }
-      
-                console.log('사용자 등록 및 정보 저장 완료');
-                return data;
-            } catch (error: any) {
-                console.error('회원가입 처리 중 오류:', error);
-                throw new Error(error.message);
-            } finally {
-                setLoading(false);
+    
+                console.log('users 테이블에 사용자 정보 저장 완료');
+                
+                // user_balances 테이블에 초기 잔액 정보 추가
+                console.log('user_balances 테이블에 잔액 정보 추가 시도');
+                const { error: balanceError } = await supabase.from('user_balances').insert([{
+                    user_id: data.user.id,
+                    paid_balance: 0,
+                    free_balance: 0,
+                    total_balance: 0
+                }]);
+
+                if (balanceError) {
+                    console.error('잔액 정보 저장 오류:', balanceError);
+                    // 잔액 정보 추가 실패는 회원가입 과정을 중단시키지 않음
+                    console.warn('잔액 정보 추가 실패했지만 회원가입은 계속 진행됨');
+                } else {
+                    console.log('user_balances 테이블에 잔액 정보 추가 완료');
+                }
+
+                console.log('사용자 등록 및 모든 정보 저장 완료');
+            } catch (dbError: any) {
+                console.error('사용자 정보 저장 중 오류:', dbError);
+                throw new Error(dbError.message);
             }
+  
+            return data;
+        } catch (error: any) {
+            console.error('회원가입 처리 중 오류:', error);
+            throw new Error(error.message);
+        } finally {
+            setLoading(false);
         }
+    }
 
     const verify = async () => {
         if (!auth) return;

@@ -1,8 +1,9 @@
 {
   "name": "mk",
   "compatibility_date": "2025-05-06",
-  "assets": {
-    "directory": "./dist"
+  "main": "worker-site.js",
+  "site": {
+    "bucket": "./dist"
   },
   "routes": [
     {

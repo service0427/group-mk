@@ -791,7 +791,7 @@ export const DashboardContent: React.FC = () => {
                 <label htmlFor="campaign-select" className="block text-sm font-medium text-gray-700 mb-1">캠페인 선택</label>
                 <select 
                   id="campaign-select"
-                  className="w-full h-10 py-2 px-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="select w-full h-10 py-2 px-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring text-foreground dark:bg-gray-800 dark:border-gray-700"
                   value={selectedCampaign}
                   onChange={handleCampaignChange}
                 >
@@ -815,7 +815,7 @@ export const DashboardContent: React.FC = () => {
                 </div>
                 <div className="flex items-center">
                   <button 
-                    className="w-10 h-10 bg-gray-100 rounded-l-md border border-gray-300 flex items-center justify-center hover:bg-gray-200"
+                    className="w-10 h-10 bg-muted rounded-l-md border border-input flex items-center justify-center hover:bg-muted/60 text-foreground dark:bg-gray-800 dark:border-gray-700"
                     onClick={(e) => {
                       e.preventDefault(); // 기본 동작 방지
                       if (selectedCampaign) {
@@ -824,13 +824,13 @@ export const DashboardContent: React.FC = () => {
                     }}
                     disabled={!selectedCampaign}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-foreground/70" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
                     </svg>
                   </button>
                   <input 
                     type="number" 
-                    className="h-10 w-16 border-t border-b border-gray-300 text-center"
+                    className="h-10 w-16 border-y border-input bg-background text-center text-foreground dark:bg-gray-800 dark:border-gray-700"
                     min="1"
                     value={quantity}
                     onChange={(e) => {
@@ -842,7 +842,7 @@ export const DashboardContent: React.FC = () => {
                     disabled={!selectedCampaign}
                   />
                   <button 
-                    className="w-10 h-10 bg-gray-100 rounded-r-md border border-gray-300 flex items-center justify-center hover:bg-gray-200"
+                    className="w-10 h-10 bg-muted rounded-r-md border border-input flex items-center justify-center hover:bg-muted/60 text-foreground dark:bg-gray-800 dark:border-gray-700"
                     onClick={(e) => {
                       e.preventDefault(); // 기본 동작 방지
                       if (selectedCampaign) {
@@ -851,7 +851,7 @@ export const DashboardContent: React.FC = () => {
                     }}
                     disabled={!selectedCampaign}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-foreground/70" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
                   </button>
@@ -928,7 +928,7 @@ export const DashboardContent: React.FC = () => {
                       setChargeAmount(value);
                     }}
                     placeholder="0"
-                    className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-gray-300 text-lg focus:border-b-gray-500 pl-0 pr-8"
+                    className="w-full border-t-0 border-l-0 border-r-0 rounded-none border-b border-input text-lg focus:border-b-foreground dark:border-gray-700 dark:focus:border-b-gray-500 pl-0 pr-8 bg-transparent text-foreground placeholder:text-muted-foreground"
                   />
                   {chargeAmount && (
                     <button
@@ -1032,156 +1032,265 @@ export const DashboardContent: React.FC = () => {
 
       {/* 세 번째 줄: 진행 중인 캠페인 리스트 */}
       <div className="grid grid-cols-1 gap-5 mb-5">
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+        <div className="card shadow-sm overflow-hidden border border-border rounded-lg">
+          <div className="card-header p-5 pb-4 flex justify-between items-center bg-card border-b border-border">
             <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-purple-100 text-purple-600 mr-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-primary-lighter dark:bg-primary-dark mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary dark:text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">진행 중인 캠페인 (개발필요)</h3>
+              <h3 className="text-base font-medium text-card-foreground">진행 중인 캠페인 (개발필요)</h3>
             </div>
-            <Button variant="outline" size="sm" className="h-8 px-4">
+            <button className="btn btn-sm btn-outline">
               전체 보기
-            </Button>
+            </button>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="py-3 px-4 text-left">캠페인명</TableHead>
-                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
-                  <TableHead className="py-3 px-4 text-left">입력정보</TableHead>
-                  <TableHead className="py-3 px-4 text-center">시작일</TableHead>
-                  <TableHead className="py-3 px-4 text-center">종료일</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {campaignStatus.length > 0 ? (
-                  campaignStatus.map((campaign, index) => (
-                    <TableRow key={index} className="border-b border-gray-200">
-                      <TableCell className="py-3 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-green-600">{campaign.name}</span>
-                          <span className="text-xs text-gray-500">{campaign.id}</span>
+          <div className="bg-card">
+            <div className="hidden md:block overflow-x-auto">
+              {campaignStatus.length > 0 ? (
+                <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+                  <thead>
+                    <tr className="bg-muted dark:bg-gray-800/60">
+                      <th className="py-3 px-4 text-start font-medium">캠페인명</th>
+                      <th className="py-3 px-4 text-center font-medium">상태</th>
+                      <th className="py-3 px-4 text-start font-medium">입력정보</th>
+                      <th className="py-3 px-4 text-center font-medium">시작일</th>
+                      <th className="py-3 px-4 text-center font-medium">종료일</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaignStatus.map((campaign, index) => (
+                      <tr key={index} className="border-b border-border hover:bg-muted/40">
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-primary">{campaign.name}</span>
+                            <span className="text-xs text-muted-foreground">{campaign.id}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(campaign.status)}`}>
+                            {campaign.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{campaign.input_data}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="text-sm text-muted-foreground">{campaign.start_date}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="text-sm text-muted-foreground">{campaign.end_date}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-base font-medium">진행 중인 캠페인이 없습니다</p>
+                    <p className="text-sm mt-1">새로운 캠페인을 구매하여 마케팅을 시작해보세요.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
+            <div className="block md:hidden">
+              {campaignStatus.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {campaignStatus.map((campaign, index) => (
+                    <div key={index} className="p-4 hover:bg-muted/40">
+                      <div className="flex gap-3">
+                        {/* 왼쪽: 번호 */}
+                        <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                          {index + 1}
                         </div>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                          {campaign.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4">
-                        <span className="text-sm">{campaign.input_data}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className="text-sm text-gray-700">{campaign.start_date}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className="text-sm text-gray-700">{campaign.end_date}</span>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-8 text-center text-gray-500">
-                      <div className="flex flex-col items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-base font-medium">진행 중인 캠페인이 없습니다</p>
-                        <p className="text-sm mt-1">새로운 캠페인을 구매하여 마케팅을 시작해보세요.</p>
+                        {/* 오른쪽: 캠페인 내용 */}
+                        <div className="flex-1 min-w-0">
+                          {/* 헤더: 캠페인명과 상태 */}
+                          <div className="flex justify-between items-center mb-1">
+                            <h3 className="font-medium text-foreground text-sm line-clamp-1">{campaign.name}</h3>
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(campaign.status)}`}>
+                              {campaign.status}
+                            </span>
+                          </div>
+                          
+                          {/* ID */}
+                          <p className="text-xs text-muted-foreground mb-3">{campaign.id}</p>
+                          
+                          {/* 입력정보 */}
+                          <div className="flex flex-col gap-1 text-xs mb-3">
+                            <div className="flex items-start gap-1">
+                              <span className="text-muted-foreground mr-1 flex-none mt-0.5">입력정보:</span>
+                              <span className="font-medium text-sm">{campaign.input_data}</span>
+                            </div>
+                            <div className="flex justify-between mt-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground">시작일:</span>
+                                <span className="font-medium">{campaign.start_date}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground">종료일:</span>
+                                <span className="font-medium">{campaign.end_date}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  진행 중인 캠페인이 없습니다
+                </div>
+              )}
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* 네 번째 줄: 거래 내역 */}
       <div className="grid grid-cols-1 gap-5 mb-5">
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-200">
+        <div className="card shadow-sm overflow-hidden border border-border rounded-lg">
+          <div className="card-header p-5 pb-4 flex justify-between items-center bg-card border-b border-border">
             <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-amber-100 text-amber-600 mr-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-primary-lighter dark:bg-primary-dark mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary dark:text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">거래 내역</h3>
+              <h3 className="text-base font-medium text-card-foreground">거래 내역</h3>
             </div>
-            <Button variant="outline" size="sm" className="h-8 px-4">
+            <button className="btn btn-sm btn-outline">
               전체 내역
-            </Button>
+            </button>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="py-3 px-4 text-left">거래 ID</TableHead>
-                  <TableHead className="py-3 px-4 text-left">내용</TableHead>
-                  <TableHead className="py-3 px-4 text-center">날짜</TableHead>
-                  <TableHead className="py-3 px-4 text-right">금액(원)</TableHead>
-                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactionHistory.length > 0 ? (
-                  transactionHistory.map((transaction, index) => (
-                    <TableRow key={index} className="border-b border-gray-200">
-                      <TableCell className="py-3 px-4">
-                        <span className="text-xs text-gray-500">{transaction.id}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{transaction.content}</span>
-                          {transaction.subContent && (
-                            <span className="text-xs text-gray-500">{transaction.subContent}</span>
-                          )}
+          <div className="bg-card">
+            <div className="hidden md:block overflow-x-auto">
+              {transactionHistory.length > 0 ? (
+                <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+                  <thead>
+                    <tr className="bg-muted dark:bg-gray-800/60">
+                      <th className="py-3 px-4 text-start font-medium">거래 ID</th>
+                      <th className="py-3 px-4 text-start font-medium">내용</th>
+                      <th className="py-3 px-4 text-center font-medium">날짜</th>
+                      <th className="py-3 px-4 text-right font-medium">금액(원)</th>
+                      <th className="py-3 px-4 text-center font-medium">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactionHistory.map((transaction, index) => (
+                      <tr key={index} className="border-b border-border hover:bg-muted/40">
+                        <td className="py-3 px-4">
+                          <span className="text-xs text-muted-foreground">{transaction.id}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-foreground">{transaction.content}</span>
+                            {transaction.subContent && (
+                              <span className="text-xs text-muted-foreground">{transaction.subContent}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="text-sm text-muted-foreground">{transaction.date}</span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className={`font-medium ${transaction.amount < 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}>
+                            {transaction.amount < 0 ? '-' : '+'}{isMobile 
+                              ? formatCurrencyInTenThousand(Math.abs(transaction.amount))
+                              : formatCurrency(Math.abs(transaction.amount))}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                            transaction.status === '완료' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 
+                            transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                            'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-base font-medium">거래 내역이 없습니다</p>
+                    <p className="text-sm mt-1">캐시를 충전하거나 캠페인을 구매하여 첫 거래를 시작하세요.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
+            <div className="block md:hidden">
+              {transactionHistory.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {transactionHistory.map((transaction, index) => (
+                    <div key={index} className="p-4 hover:bg-muted/40">
+                      <div className="flex gap-3">
+                        {/* 왼쪽: 번호 */}
+                        <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                          {index + 1}
                         </div>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className="text-sm text-gray-500">{transaction.date}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
-                        <span className={`font-medium ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {transaction.amount < 0 ? '-' : '+'}{isMobile 
-                            ? formatCurrencyInTenThousand(Math.abs(transaction.amount))
-                            : formatCurrency(Math.abs(transaction.amount))}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === '완료' ? 'bg-green-100 text-green-800' : 
-                          transaction.status === '진행중' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {transaction.status}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-gray-500">
-                      <div className="flex flex-col items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-base font-medium">거래 내역이 없습니다</p>
-                        <p className="text-sm mt-1">캐시를 충전하거나 캠페인을 구매하여 첫 거래를 시작하세요.</p>
+                        {/* 오른쪽: 거래 내용 */}
+                        <div className="flex-1 min-w-0">
+                          {/* 헤더: 내용과 상태 */}
+                          <div className="flex justify-between items-center mb-1">
+                            <h3 className="font-medium text-foreground text-sm">{transaction.content}</h3>
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                              transaction.status === '완료' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 
+                              transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                              'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
+                            }`}>
+                              {transaction.status}
+                            </span>
+                          </div>
+                          
+                          {/* 부가 내용 */}
+                          {transaction.subContent && (
+                            <p className="text-xs text-muted-foreground mb-1">{transaction.subContent}</p>
+                          )}
+                          
+                          {/* ID와 날짜 */}
+                          <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                            <span>{transaction.id}</span>
+                            <span>{transaction.date}</span>
+                          </div>
+                          
+                          {/* 금액 - 우측 정렬 */}
+                          <div className="flex justify-end mt-2">
+                            <span className={`font-medium text-sm ${transaction.amount < 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}>
+                              {transaction.amount < 0 ? '-' : '+'}{isMobile 
+                                ? formatCurrencyInTenThousand(Math.abs(transaction.amount))
+                                : formatCurrency(Math.abs(transaction.amount))}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  거래 내역이 없습니다
+                </div>
+              )}
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
     </DashboardTemplate>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { 
@@ -19,6 +19,19 @@ export const useChat = () => {
   const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  
+  // ref를 사용하여 최신 상태 값에 접근 (useEffect 의존성 배열 문제 해결)
+  const roomsRef = useRef<IChatRoom[]>(rooms);
+  const currentRoomIdRef = useRef<string | null>(currentRoomId);
+  
+  // 상태가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
+  
+  useEffect(() => {
+    currentRoomIdRef.current = currentRoomId;
+  }, [currentRoomId]);
 
   // 채팅방 목록 가져오기
   const fetchChatRooms = useCallback(async () => {
@@ -518,10 +531,17 @@ export const useChat = () => {
 
   // 실시간 구독 설정 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
+    // 사용자 정보가 없거나 운영자/관리자인 경우 구독하지 않음
     if (!currentUser?.id) return;
     
     // 운영자나 관리자인 경우 채팅 구독을 설정하지 않음
     if (currentUser.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+      return;
+    }
+    
+    // 안전을 위한 rooms 비어있는지 확인
+    if (!Array.isArray(rooms)) {
+      console.log('Chat: rooms is not an array, skipping subscription');
       return;
     }
     
@@ -544,8 +564,8 @@ export const useChat = () => {
           async (payload) => {
             const newMessage = payload.new as any;
             
-            // 현재 참여 중인 채팅방의 메시지만 수신
-            if (rooms.some(room => room.id === newMessage.room_id)) {
+            // 현재 참여 중인 채팅방의 메시지만 수신 (ref 사용)
+            if (roomsRef.current.some((room: IChatRoom) => room.id === newMessage.room_id)) {
               // 데이터 변환
               const formattedMessage: IMessage = {
                 id: newMessage.id,
@@ -559,8 +579,8 @@ export const useChat = () => {
                 attachments: newMessage.attachments || []
               };
               
-              // 메시지가 현재 보고 있는 채팅방이 아니면 안 읽은 메시지로 카운트
-              if (currentRoomId !== newMessage.room_id && newMessage.sender_id !== currentUser.id) {
+              // 메시지가 현재 보고 있는 채팅방이 아니면 안 읽은 메시지로 카운트 (ref 사용)
+              if (currentRoomIdRef.current !== newMessage.room_id && newMessage.sender_id !== currentUser.id) {
                 setRooms(prev => 
                   prev.map(room => 
                     room.id === newMessage.room_id
@@ -580,7 +600,7 @@ export const useChat = () => {
                 
                 // 총 안 읽은 메시지 수 증가
                 setUnreadCount(prev => prev + 1);
-              } else if (currentRoomId === newMessage.room_id) {
+              } else if (currentRoomIdRef.current === newMessage.room_id) {
                 // 현재 보고 있는 채팅방이면 읽음 처리
                 updateLastReadMessage(newMessage.room_id, newMessage.id);
                 
@@ -648,8 +668,8 @@ export const useChat = () => {
               };
             });
             
-            // 마지막 메시지 업데이트
-            if (rooms.some(room => room.lastMessageId === updatedMessage.id)) {
+            // 마지막 메시지 업데이트 (ref 사용)
+            if (roomsRef.current.some((room: IChatRoom) => room.lastMessageId === updatedMessage.id)) {
               setRooms(prev => 
                 prev.map(room => 
                   room.lastMessageId === updatedMessage.id
@@ -720,7 +740,8 @@ export const useChat = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [currentUser?.id, rooms, currentRoomId, fetchChatRooms]);
+  // 안전한 의존성 배열 - 로그아웃 시 rooms가 정의되지 않는 문제 방지
+  }, [currentUser?.id, fetchChatRooms]);
 
   return {
     rooms,

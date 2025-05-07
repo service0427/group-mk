@@ -9,9 +9,11 @@ import {
   ChatRole
 } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
+import { useLogoutContext } from '@/contexts/LogoutContext';
 
 export const useChat = () => {
   const { currentUser } = useAuthContext();
+  const { isLoggingOut } = useLogoutContext();
   const [rooms, setRooms] = useState<IChatRoom[]>([]);
   const [messages, setMessages] = useState<{[roomId: string]: IMessage[]}>({});
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
@@ -515,6 +517,9 @@ export const useChat = () => {
 
   // 컴포넌트 마운트 시 초기 데이터 로드 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
+    // 로그아웃 중이면 실행하지 않음
+    if (isLoggingOut) return;
+    
     // 운영자나 관리자인 경우 채팅 데이터를 로드하지 않음
     if (currentUser?.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
       return;
@@ -527,12 +532,12 @@ export const useChat = () => {
         console.error('Chat: Error fetching initial chat data', err);
       }
     }
-  }, [currentUser?.id, currentUser?.role, fetchChatRooms]);
+  }, [currentUser?.id, currentUser?.role, fetchChatRooms, isLoggingOut]);
 
   // 실시간 구독 설정 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
-    // 사용자 정보가 없거나 운영자/관리자인 경우 구독하지 않음
-    if (!currentUser?.id) return;
+    // 로그아웃 중이거나 사용자 정보가 없는 경우 중단
+    if (isLoggingOut || !currentUser?.id) return;
     
     // 운영자나 관리자인 경우 채팅 구독을 설정하지 않음
     if (currentUser.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
@@ -740,7 +745,7 @@ export const useChat = () => {
       if (unsubscribe) unsubscribe();
     };
   // 안전한 의존성 배열 - 로그아웃 시 rooms가 정의되지 않는 문제 방지
-  }, [currentUser?.id, fetchChatRooms]);
+  }, [currentUser?.id, fetchChatRooms, isLoggingOut]);
 
   return {
     rooms,

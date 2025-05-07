@@ -471,12 +471,9 @@ export const useChat = () => {
     if (currentUser?.id) {
       try {
         fetchChatRooms();
-        console.log('Chat: Fetching chat rooms for user', currentUser.id);
       } catch (err) {
         console.error('Chat: Error fetching initial chat data', err);
       }
-    } else {
-      console.log('Chat: No current user, skipping data fetch');
     }
   }, [currentUser?.id, fetchChatRooms]);
 
@@ -625,15 +622,12 @@ export const useChat = () => {
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
-            console.log('채팅 메시지 구독 성공');
             retryCount = 0;
           } else if (status === 'CHANNEL_ERROR') {
-            console.log('채팅 메시지 구독 오류');
             
             if (retryCount < maxRetries) {
               retryCount++;
               setTimeout(() => {
-                console.log(`재연결 시도 ${retryCount}/${maxRetries}...`);
                 setupSubscription();
               }, retryTimeout * retryCount);
             }
@@ -669,13 +663,7 @@ export const useChat = () => {
             fetchChatRooms();
           }
         )
-        .subscribe(status => {
-          if (status === 'SUBSCRIBED') {
-            console.log('채팅방 구독 성공');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.log('채팅방 구독 오류');
-          }
-        });
+        .subscribe();
       
       // 구독 해제 함수 반환
       return () => {

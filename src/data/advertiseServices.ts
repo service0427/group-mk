@@ -216,7 +216,9 @@ export const getServiceTypeFromPath = (
   } else if (platform === 'naver' && type === 'auto') {
     return 'NaverAuto';
   } else if (platform === 'naver' && type === 'traffic') {
-    return 'NaverTraffic';
+    return 'ntraffic';
+  } else if (platform === 'naver' && type === 'ntraffic') {
+    return 'ntraffic';
   } else if (platform === 'coupang' && type === 'traffic') {
     return 'CoupangTraffic';
   } else if (platform === 'ohouse' && type === 'traffic') {

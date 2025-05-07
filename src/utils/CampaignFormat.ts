@@ -14,6 +14,11 @@ export interface CampaignData {
   unit_price?: string | number;
   additional_logic?: string | number;
   status: string;
+  add_info?: {
+    logo_url?: string;
+    banner_url?: string;
+    [key: string]: any;
+  };
 }
 
 /**
@@ -115,10 +120,21 @@ export const addUnit = (value: string | number | undefined, unit: string): strin
 /**
  * 이미지 URL 포맷팅
  */
-export const formatImageUrl = (logo: string | undefined): string => {
+export const formatImageUrl = (logo: string | undefined, addInfo?: any): string => {
+  // add_info.logo_url이 있으면 그것을 사용
+  if (addInfo?.logo_url) return addInfo.logo_url;
+  
+  // 로고가 없는 경우 기본 이미지 사용
   if (!logo) return toAbsoluteUrl('/media/animal/svg/lion.svg');
+  
+  // 로고가 이미 URL인 경우 그대로 반환
+  if (logo.includes('http')) return logo;
+  
+  // 로고가 media 경로부터 시작하는 경우
   if (logo.startsWith('/media')) return toAbsoluteUrl(logo);
-  return toAbsoluteUrl(`/media/${logo}`);
+  
+  // 그 외의 경우, /media/animal/svg/ 폴더에서 찾음
+  return toAbsoluteUrl(`/media/animal/svg/${logo}`);
 };
 
 // 사용 가능한 프로그레스 바 색상 정의
@@ -185,10 +201,10 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
   }
 
   return {
-    logo: campaign.logo || '/media/animal/svg/lion.svg',
+    logo: campaign.add_info?.logo_url || campaign.logo || '/media/animal/svg/lion.svg',
     logoSize: '50px',
     title: campaign.campaign_name,
-    description: campaign.description || '',
+    description: campaign.description?.replace(/\\n/g, '\n') || '',
     status: {
       variant: getStatusBadgeClass(campaign.status),
       label: getStatusLabel(campaign.status)

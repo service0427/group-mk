@@ -1,23 +1,32 @@
 // 서비스 타입 관련 상수 및 인터페이스
 export const SERVICE_TYPE_MAP = {
-  'NS 트래픽': 'NaverShopTraffic',
-  'NP 저장': 'NaverPlaceSave',
-  'NP 공유': 'NaverPlaceShare',
-  'NP 트래픽': 'NaverPlaceTraffic',
-  'N 자동완성': 'NaverAuto',
-  'N 트래픽': 'NaverTraffic',
+  '트래픽': 'ntraffic',
+  '가구매': 'nfakesale',
+  '블로그': 'nblog',
+  '웹페이지': 'nweb',
+  '플레이스': 'nplace',
+  '카페 바이럴': 'ncafe',
   'C 트래픽': 'CoupangTraffic',
   'OH 트래픽': 'OhouseTraffic'
 };
-
+/**
+ * case 'naver-traffic': return 'ntraffic'; // 변경: NaverTraffic -> ntraffic
+   case 'naver-fakesale': return 'nfakesale';
+   case 'naver-blog': return 'nblog';
+   case 'naver-web': return 'nweb';
+   case 'naver-place': return 'nplace';
+   case 'naver-cafe': return 'ncafe';
+   case 'coupang': return 'CoupangTraffic';
+   case 'ohouse': return 'OhouseTraffic';
+ */
 // 서비스 타입 코드와 카테고리 매핑 (역방향)
 export const SERVICE_TYPE_TO_CATEGORY = {
-  'NaverShopTraffic': 'NS 트래픽',
-  'NaverPlaceSave': 'NP 저장',
-  'NaverPlaceShare': 'NP 공유',
-  'NaverPlaceTraffic': 'NP 트래픽',
-  'NaverAuto': 'N 자동완성',
-  'NaverTraffic': 'N 트래픽',
+  'ntraffic': '트래픽',
+  'nfakesale': '가구매',
+  'nblog': '블로그',
+  'nweb': '웹페이지',
+  'nplace': '플레이스',
+  'ncafe': '카페 바이럴',
   'CoupangTraffic': 'C 트래픽',
   'OhouseTraffic': 'OH 트래픽'
 };

@@ -82,24 +82,22 @@ const CardAdCampaign = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-center h-[50px] mb-2">
-            <img
-              src={logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/${logo}`)}
-              className={`size-[${logoSize}] shrink-0`}
-              alt=""
-              onError={(e) => {
-                console.error(`이미지 로드 실패:`, e);
-                (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-              }}
-            />
-          </div>
-
-          <div className="text-center mb-7">
-            <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
-              {title}
-            </a>
-
-            <div className="text-sm text-gray-700">{description}</div>
+          <div className="flex flex-col items-center mb-7">
+            <div className="flex items-center gap-2 mb-3">
+              <img
+                src={logo && logo.includes('http') ? logo : (logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/animal/svg/${logo}`))}
+                className={`size-[30px] shrink-0`} 
+                alt=""
+                onError={(e) => {
+                  console.error(`이미지 로드 실패:`, e);
+                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                }}
+              />
+              <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
+                {title}
+              </a>
+            </div>
+            <div className="text-sm text-gray-700 w-full text-center" style={{ whiteSpace: 'pre-wrap' }}>{description}</div>
           </div>
 
           <div className="flex items-center justify-center flex-wrap gap-2 lg:gap-5">

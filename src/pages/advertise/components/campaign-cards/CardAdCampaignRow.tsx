@@ -48,7 +48,7 @@ const CardAdCampaignRow = ({
           <div className="flex items-center gap-3.5">
             <div className="flex items-center justify-center w-[50px]">
               <img
-                src={logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/${logo}`)}
+                src={logo && logo.includes('http') ? logo : (logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/animal/svg/${logo}`))}
                 className={`size-[${logoSize}] shrink-0`}
                 alt=""
                 onError={(e) => {
@@ -69,7 +69,7 @@ const CardAdCampaignRow = ({
                 </span>
               </div>
 
-              <div className="flex items-center text-sm text-gray-700">{description}</div>
+              <div className="flex items-center text-sm text-gray-700" style={{ whiteSpace: 'pre-wrap' }}>{description}</div>
             </div>
           </div>
 

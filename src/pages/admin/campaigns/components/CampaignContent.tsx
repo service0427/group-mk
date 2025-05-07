@@ -35,12 +35,14 @@ interface CampaignContentProps {
   campaigns: ICampaign[];
   serviceType: string; // 서비스 유형(naver-shopping, naver-place 등)
   onCampaignUpdated?: () => void; // 캠페인 업데이트 시 호출할 콜백 함수
+  onAddCampaign?: () => void; // 캠페인 추가 버튼 클릭 시 호출할 콜백 함수
 }
 
 const CampaignContent: React.FC<CampaignContentProps> = ({ 
   campaigns: initialCampaigns, 
   serviceType, 
-  onCampaignUpdated 
+  onCampaignUpdated,
+  onAddCampaign
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -245,6 +247,21 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                 <SelectItem value="pause">표시안함</SelectItem>
               </SelectContent>
             </Select>
+            
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => {
+                if (onAddCampaign) {
+                  onAddCampaign();
+                } else {
+                  console.log('캠페인 추가 버튼 클릭');
+                  // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
+                }
+              }}
+            >
+              <KeenIcon icon="plus" className="me-1" />
+              캠페인 추가
+            </button>
           </div>
         </div>
       </div>
@@ -291,7 +308,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-4">
                       <img
-                        src={toAbsoluteUrl(`/media/${campaign.logo}`)}
+                        src={campaign.originalData?.add_info?.logo_url || toAbsoluteUrl(`/media/${campaign.logo}`)}
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName}
                         onError={(e) => {
@@ -369,7 +386,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     <div className="flex flex-col items-center">
                       <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
-                      <p>표시할 캠페인 데이터가 없습니다.</p>
+                      <p>생성된 캠페인이 없습니다.</p>
                     </div>
                   </td>
                 </tr>

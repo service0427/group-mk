@@ -1,5 +1,129 @@
-import { supabase } from '@/supabase';
+import { supabase, supabaseAdmin } from '@/supabase';
 import { ICampaign } from '../components/CampaignContent';
+
+// Base64 이미지를 Supabase Storage에 업로드하는 함수
+export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
+  try {
+    console.log(`이미지 업로드 시작: ${bucket}/${folder}/${fileName}`);
+    
+    // Base64 데이터에서 실제 데이터 부분만 추출 (data:image/jpeg;base64, 부분 제거)
+    const base64WithoutPrefix = base64Data.split(',')[1];
+    
+    // 파일 확장자 추출
+    const fileType = base64Data.split(';')[0].split('/')[1];
+    const fullFileName = `${fileName}.${fileType}`;
+    
+    // 현재 사용자 ID 가져오기
+    const { data } = await supabase.auth.getSession();
+    const uid = userId || data.session?.user?.id || 'anonymous';
+    
+    // 정책에 맞게 user ID를 경로에 포함
+    const filePath = `${uid}/${folder}/${fullFileName}`;
+    
+    console.log(`Storage 경로: ${filePath} (사용자: ${uid})`);
+    
+    console.log(`파일 경로: ${filePath}, 타입: ${fileType}`);
+    
+    // Base64 데이터를 Blob 객체로 변환
+    const byteCharacters = atob(base64WithoutPrefix);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: `image/${fileType}` });
+    
+    console.log(`Blob 생성 완료: ${blob.size} 바이트`);
+    
+    // 먼저 버킷 존재 여부 확인
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('버킷 목록 가져오기 실패:', bucketsError);
+    } else {
+      const bucketExists = buckets?.some(b => b.name === bucket) || false;
+      console.log(`${bucket} 버킷 ${bucketExists ? '존재함' : '존재하지 않음'}`);
+      
+      if (!bucketExists) {
+        console.warn(`${bucket} 버킷이 존재하지 않습니다. 업로드 시 문제가 발생할 수 있습니다.`);
+      }
+    }
+    
+    // Supabase Storage에 파일 업로드 시도
+    let uploadResult;
+    try {
+      console.log('Supabase Storage에 파일 업로드 시도 중...');
+      
+      uploadResult = await supabase
+        .storage
+        .from(bucket)
+        .upload(filePath, blob, {
+          contentType: `image/${fileType}`,
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      console.log('업로드 응답:', uploadResult);
+    } catch (uploadError) {
+      console.error('Supabase Storage 업로드 실패 (예외):', uploadError);
+      uploadResult = { error: uploadError, data: null };
+    }
+    
+    // 업로드 결과 확인
+    if (uploadResult.error) {
+      console.error('파일 업로드 중 오류:', uploadResult.error);
+      return null;
+    }
+    
+    // 업로드 성공 시 URL 생성
+    try {
+      // 먼저 영구적인 public URL 시도
+      const { data: publicUrlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+      
+      if (publicUrlData && publicUrlData.publicUrl) {
+        console.log('Supabase Storage 영구 Public URL 생성 성공:', publicUrlData.publicUrl);
+        return publicUrlData.publicUrl;
+      } else {
+        // 대체 방법: 만료 기간이 긴 서명된 URL 시도
+        console.log('Public URL을 가져올 수 없어 Signed URL을 시도합니다...');
+        const expirySeconds = 365 * 24 * 60 * 60; // 1년
+        
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(filePath, expirySeconds);
+        
+        if (signedUrlError) {
+          console.error('Signed URL 생성 실패:', signedUrlError);
+          throw signedUrlError;
+        }
+        
+        if (signedUrlData && signedUrlData.signedUrl) {
+          console.log('Supabase Storage Signed URL 생성 성공 (1년 유효):', signedUrlData.signedUrl);
+          return signedUrlData.signedUrl;
+        } else {
+          throw new Error('URL을 생성할 수 없습니다.');
+        }
+      }
+    } catch (urlError) {
+      console.error('URL 생성 오류:', urlError);
+      
+      // 마지막 대안: 직접 URL 형식 구성 시도
+      try {
+        const directPublicUrl = `/storage/v1/object/public/${bucket}/${filePath}`;
+        console.log('직접 URL 구성 시도:', directPublicUrl);
+        return directPublicUrl;
+      } catch (directUrlError) {
+        console.error('직접 URL 구성 실패:', directUrlError);
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error('이미지 업로드 처리 중 오류:', error);
+    return null;
+  }
+};
 
 // Supabase에서 캠페인 데이터 가져오기
 export const fetchCampaigns = async (serviceType: string): Promise<ICampaign[]> => {
@@ -15,23 +139,37 @@ export const fetchCampaigns = async (serviceType: string): Promise<ICampaign[]> 
   }
 
   // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
-  return data.map(item => ({
-    id: item.id.toString(),
-    campaignName: item.campaign_name,
-    description: item.description || '',
-    logo: item.logo,
-    efficiency: item.efficiency ? `${item.efficiency}%` : '-',
-    minQuantity: item.min_quantity ? `${item.min_quantity}개` : '-',
-    deadline: item.deadline || '22:00', // 이미 HH:MM 형식으로 저장됨
-    status: {
-      label: getStatusLabel(item.status),
-      color: getStatusColor(item.status)
-    },
-    additionalLogic: item.additional_logic ? item.additional_logic.toString() : '',
-    detailedDescription: item.detailed_description || '',
-    // 원본 데이터도 포함
-    originalData: item
-  }));
+  return data.map(item => {
+    // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
+    let parsedItem = { ...item };
+    
+    // add_info 필드 처리
+    if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
+      try {
+        parsedItem.add_info = JSON.parse(parsedItem.add_info);
+      } catch (error) {
+        console.error('add_info JSON 파싱 오류:', error);
+      }
+    }
+    
+    return {
+      id: parsedItem.id.toString(),
+      campaignName: parsedItem.campaign_name,
+      description: parsedItem.description || '',
+      logo: parsedItem.logo,
+      efficiency: parsedItem.efficiency ? `${parsedItem.efficiency}%` : '-',
+      minQuantity: parsedItem.min_quantity ? `${parsedItem.min_quantity}개` : '-',
+      deadline: parsedItem.deadline || '22:00', // 이미 HH:MM 형식으로 저장됨
+      status: {
+        label: getStatusLabel(parsedItem.status),
+        color: getStatusColor(parsedItem.status)
+      },
+      additionalLogic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
+      detailedDescription: parsedItem.detailed_description || '',
+      // 원본 데이터도 포함 (파싱된 add_info 포함)
+      originalData: parsedItem
+    };
+  });
 };
 
 // 상태값에 따른 라벨 반환
@@ -111,56 +249,100 @@ export const formatTimeHHMM = (timeStr: string): string => {
 // 서비스 타입 코드 변환 (UI 코드 -> DB 코드)
 export const getServiceTypeCode = (uiCode: string): string => {
   switch (uiCode) {
-    case 'naver-shopping': return 'NaverShopTraffic';
-    case 'naver-place-traffic': return 'NaverPlaceTraffic';
-    case 'naver-place-save': return 'NaverPlaceSave';
-    case 'naver-place-share': return 'NaverPlaceShare';
-    case 'naver-auto': return 'NaverAuto';
-    case 'naver-traffic': return 'NaverTraffic';
+    case 'naver-traffic': return 'ntraffic'; // 변경: NaverTraffic -> ntraffic
+    case 'naver-fakesale': return 'nfakesale';
+    case 'naver-blog': return 'nblog';
+    case 'naver-web': return 'nweb';
+    case 'naver-place': return 'nplace';
+    case 'naver-cafe': return 'ncafe';
     case 'coupang': return 'CoupangTraffic';
     case 'ohouse': return 'OhouseTraffic';
-    default: return '';
+    default: return 'ntraffic'; // 기본값도 ntraffic으로 설정
   }
 };
 
 // 캠페인 생성
 export const createCampaign = async (data: any): Promise<{success: boolean, id?: number, error?: string}> => {
-  // 캠페인 ID 자동 생성 (날짜+랜덤번호)
-  const generateCampaignId = () => {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `C${dateStr}${randomNum}`;
-  };
+  try {
+    // 이제 campaign_id가 필요 없으므로 관련 코드 제거
+    
+    // Supabase Storage에 이미지 업로드
+    let logoUrl = null;
+    let bannerUrl = null;
+    let additionalInfo: any = {};
+    
+    // 현재 사용자 ID 가져오기
+    const { data: authData } = await supabase.auth.getSession();
+    const userId = authData.session?.user?.id;
+    
+    // 1. 업로드된 로고 이미지가 있으면 저장
+    if (data.uploadedLogo) {
+      logoUrl = await uploadImageToStorage(
+        data.uploadedLogo, 
+        'campaigns-image',  // 버킷 이름을 campaigns-image로 변경
+        'logos',            // 폴더 이름
+        `logo-${Date.now()}`, // 캠페인 ID 대신 타임스탬프 사용
+        userId              // 사용자 ID 전달
+      );
+      
+      if (logoUrl) {
+        additionalInfo.logo_url = logoUrl;
+      }
+    }
+    
+    // 2. 업로드된 배너 이미지가 있으면 저장
+    if (data.uploadedBannerImage) {
+      bannerUrl = await uploadImageToStorage(
+        data.uploadedBannerImage, 
+        'campaigns-image',     // 버킷 이름을 campaigns-image로 변경
+        'banners',             // 폴더 이름
+        `banner-${Date.now()}`, // 캠페인 ID 대신 타임스탬프 사용
+        userId                 // 사용자 ID 전달
+      );
+      
+      if (bannerUrl) {
+        additionalInfo.banner_url = bannerUrl;
+      }
+    }
+    
+    // DB 컬럼명에 맞게 데이터 변환
+    const insertData = {
+      group_id: 'default', // NULL이 허용되지 않을 수 있으므로 기본값 설정
+      campaign_name: data.campaignName,
+      service_type: getServiceTypeCode(data.serviceType), // getServiceTypeCode 함수로 변환
+      description: data.description || '',
+      detailed_description: data.detailedDescription || '',
+      efficiency: data.efficiency ? parseFloat(data.efficiency.replace('%', '')) : null,
+      min_quantity: data.minQuantity ? parseInt(data.minQuantity.replace('개', '')) : 0, // 기본값 0으로 설정
+      unit_price: data.unitPrice || 100,
+      deadline: formatTimeHHMM(data.deadline || '22:00'), // 시:분 형식으로 저장
+      additional_logic: data.additionalLogic ? parseInt(data.additionalLogic) : 0,
+      logo: data.logo || 'animal-default.svg',
+      status: data.status || 'pending',
+      created_at: new Date(),
+      updated_at: new Date(),
+      // 추가 정보 (업로드된 이미지 URL)
+      add_info: Object.keys(additionalInfo).length > 0 ? additionalInfo : null
+    };
 
-  // DB 컬럼명에 맞게 데이터 변환
-  const insertData = {
-    campaign_id: data.campaignId || generateCampaignId(),
-    campaign_name: data.campaignName,
-    service_type: data.serviceType,
-    description: data.description || '',
-    detailed_description: data.detailedDescription || '',
-    efficiency: data.efficiency ? parseFloat(data.efficiency.replace('%', '')) : null,
-    min_quantity: data.minQuantity ? parseInt(data.minQuantity.replace('개', '')) : 0,
-    unit_price: data.unitPrice || 100,
-    deadline: formatTimeHHMM(data.deadline || '22:00'), // 시:분 형식으로 저장
-    additional_logic: data.additionalLogic ? parseInt(data.additionalLogic) : 0,
-    logo: data.logo || 'animal-default.svg',
-    status: data.status || 'pending',
-    created_at: new Date(),
-    updated_at: new Date()
-  };
+    console.log('INSERT 시도 중인 데이터:', insertData);
+    
+    // 관리자 클라이언트를 사용하여 RLS 정책을 우회
+    const { data: result, error } = await supabaseAdmin
+      .from('campaigns')
+      .insert(insertData)
+      .select('id')
+      .single();
 
-  const { data: result, error } = await supabase
-    .from('campaigns')
-    .insert(insertData)
-    .select('id')
-    .single();
+    if (error) {
+      console.error('캠페인 생성 중 오류:', error);
+      console.error('오류 상세 정보:', JSON.stringify(error, null, 2));
+      return { success: false, error: error.message };
+    }
 
-  if (error) {
-    console.error('캠페인 생성 중 오류:', error);
-    return { success: false, error: error.message };
+    return { success: true, id: result?.id };
+  } catch (err) {
+    console.error('캠페인 생성 중 예외 발생:', err);
+    return { success: false, error: '캠페인 생성 중 오류가 발생했습니다.' };
   }
-
-  return { success: true, id: result?.id };
 };

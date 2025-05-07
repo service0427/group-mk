@@ -107,7 +107,7 @@ export const DashboardColorCard: React.FC<DashboardColorCardProps> = ({
 
   return (
     <div className={cn('rounded-lg overflow-hidden shadow-md border border-gray-100 dark:border-coal-100', cardColor, darkCardColor, className)}>
-      <div className="relative">
+      <div className="relative min-h-[140px]">
         {/* 아이콘 영역 (상단 색상 바 포함) */}
         <div className={`absolute top-0 left-0 w-full h-1 ${iconColor}`}></div>
         
@@ -227,9 +227,9 @@ export const DashboardColorCard: React.FC<DashboardColorCardProps> = ({
           </div>
         </div>
 
-        <div className="p-6 relative z-10">
+        <div className="p-6 relative z-10 h-full">
           {/* 텍스트 영역 */}
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col">
             {/* 제목 */}
             <div className="text-gray-500 dark:text-gray-300 text-sm mb-1">{title}</div>
             
@@ -243,12 +243,14 @@ export const DashboardColorCard: React.FC<DashboardColorCardProps> = ({
               )}
             </div>
             
-            {/* 증감률 표시 - 전체 너비 활용 */}
-            {trend !== 0 && (
-              <div className={`mt-2 py-1.5 px-2 rounded-md text-xs font-medium ${trendColor}`}>
-                {trendIcon} {Math.abs(trend)}%
-              </div>
-            )}
+            {/* 트렌드 영역 - 높이를 일정하게 유지 */}
+            <div className="mt-2 min-h-[22px]">
+              {trend !== 0 && (
+                <div className={`py-0.5 px-2 rounded-md text-xs font-medium ${trendColor} inline-flex items-center`}>
+                  {trendIcon} {Math.abs(trend)}%
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

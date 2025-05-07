@@ -2,7 +2,8 @@ import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { 
   DefaultPage, 
-  StandDarkSidebarPage
+  StandDarkSidebarPage,
+  RoleBasedDashboard
 } from '@/pages/dashboards';
 
 // 역할별 대시보드 별도 임포트
@@ -60,8 +61,9 @@ const AppRoutingSetup = (): ReactElement => {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<StandLayout />}>
-          {/* 기본 대시보드 라우트 */}
-          <Route path="/" element={<DefaultPage />} />
+          {/* 기본 대시보드 라우트 - 역할 기반 라우팅 적용 */}
+          <Route path="/" element={<RoleBasedDashboard />} />
+          <Route path="/dashboard/default" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
           
           {/* 역할별 대시보드 라우트 */}

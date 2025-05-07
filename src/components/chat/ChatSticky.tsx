@@ -125,6 +125,31 @@ const ChatSticky: React.FC = () => {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   
+  // useChat 훅 사용 - 항상 호출해야 함 (조건부로 사용하면 안됨)
+  // React 훅 규칙: 항상 동일한 순서로 호출되어야 하므로, 조건부 리턴 전에 호출
+  const {
+    rooms,
+    messages,
+    currentRoomId,
+    loading,
+    loadingMessages,
+    unreadCount,
+    fetchChatRooms,
+    fetchMessages,
+    sendMessage: sendChatMessage,
+    createChatRoom,
+    openChatRoom,
+    setCurrentRoomId
+  } = useChat();
+  
+  // 로그인하지 않은 사용자는 계속 표시, 운영자나 관리자만 숨기기
+  // 운영자나 관리자인 경우에만 컴포넌트를 렌더링하지 않음
+  // 로그인하지 않았거나 역할이 없는 경우에는 일반 표시
+  if (isAuthenticated && currentUser?.role && 
+      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+    return null;
+  }
+  
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
     // 초기 렌더링 시 항상 보이도록 강제 설정
@@ -192,30 +217,6 @@ const ChatSticky: React.FC = () => {
       scrollElement.removeEventListener('scroll', handleScroll);
     };
   }, [isMobile]);
-  
-  // 로그인하지 않은 사용자는 계속 표시, 운영자나 관리자만 숨기기
-  // 운영자나 관리자인 경우에만 컴포넌트를 렌더링하지 않음
-  // 로그인하지 않았거나 역할이 없는 경우에는 일반 표시
-  if (isAuthenticated && currentUser?.role && 
-      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
-    return null;
-  }
-  
-  // useChat 훅 사용
-  const {
-    rooms,
-    messages,
-    currentRoomId,
-    loading,
-    loadingMessages,
-    unreadCount,
-    fetchChatRooms,
-    fetchMessages,
-    sendMessage: sendChatMessage,
-    createChatRoom,
-    openChatRoom,
-    setCurrentRoomId
-  } = useChat();
   
   // 스타일 값을 직접 지정
   // 모바일 여부에 따라 동적으로 스타일을 적용

@@ -340,14 +340,16 @@ export const DashboardContent: React.FC = () => {
       // 총판 역할을 가진 사용자의 출금 요청만 필터링
       const distributorRequests = data
         ?.filter(request => {
-          const users = request.users as { role: string; full_name?: string } | null;
-          return users?.role === 'distributor';
+          // users는 배열로 반환되므로 첫 번째 항목 사용 (조인 관계)
+          const userInfo = Array.isArray(request.users) ? request.users[0] : null;
+          return userInfo?.role === 'distributor';
         })
         ?.map(request => {
-          const users = request.users as { role: string; full_name?: string } | null;
+          // users는 배열로 반환되므로 첫 번째 항목 사용 (조인 관계)
+          const userInfo = Array.isArray(request.users) ? request.users[0] : null;
           return {
             id: request.id,
-            name: users?.full_name || '이름 없음',
+            name: userInfo?.full_name || '이름 없음',
             amount: request.amount,
             date: new Date(request.requested_at).toISOString().split('T')[0],
             user_id: request.user_id

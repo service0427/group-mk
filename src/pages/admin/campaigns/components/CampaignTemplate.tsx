@@ -8,6 +8,7 @@ import { CampaignContent } from './CampaignContent';
 import { fetchCampaigns, getServiceTypeCode } from '../services/campaignService';
 import { ICampaign } from './CampaignContent';
 import { getCampaignsByService } from '../data'; // 백업 데이터용
+import { CampaignAddModal } from './campaign-modals';
 
 interface CampaignTemplateProps {
   title: string;
@@ -31,6 +32,9 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 캠페인 추가 모달 상태
+  const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
 
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
@@ -68,12 +72,10 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         useBackupData = true;
       }
       
-      // DB에 데이터가 없거나 오류 발생 시 백업 데이터 사용
-      if (data.length === 0 || useBackupData) {
-        console.warn('DB에서 데이터를 가져오지 못했습니다. 백업 데이터를 사용합니다.');
-        // 서비스 코드를 사용하거나, 없으면 URL에서 추출한 서비스 타입을 사용
-        const backupData = getCampaignsByService(serviceCode || dbServiceType);
-        setCampaigns(backupData);
+      // DB에 데이터가 없을 경우 빈 배열 유지, 백업 데이터 사용하지 않음
+      if (useBackupData) {
+        console.warn('DB에서 데이터를 가져오지 못했습니다.');
+        setCampaigns([]);
       } else {
         // DB에서 데이터를 성공적으로 가져온 경우
         setCampaigns(data);
@@ -84,12 +86,16 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       console.error('캠페인 데이터 로드 중 오류:', err);
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       
-      // 오류 발생 시 기본 하드코딩 데이터 사용 (빈 배열 방지)
-      const backupData = getCampaignsByService(serviceCode);
-      setCampaigns(backupData.length > 0 ? backupData : []);
+      // 오류 발생 시에도 빈 배열 사용 (백업 데이터 사용 안함)
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 캠페인 추가 모달 열기 핸들러
+  const handleAddCampaign = () => {
+    setAddCampaignModalOpen(true);
   };
 
   // 데이터 가져오기
@@ -98,32 +104,49 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   }, [serviceType, serviceCode]);
 
   return (
-    <CommonTemplate
-      title={pageTitle}
-      description={pageDescription}
-      showPageMenu={true}
-    >
-      <div className="grid gap-5 lg:gap-7.5">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : error ? (
-          <div className="alert alert-danger">
-            <p>{error}</p>
-          </div>
-        ) : customContent ? (
-          customContent
-        ) : (
-          <CampaignContent 
-            campaigns={campaigns} 
-            serviceType={serviceType}
-            onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
-          />
-        )}
-        <AdMiscFaq />
-      </div>
-    </CommonTemplate>
+    <>
+      <CommonTemplate
+        title={pageTitle}
+        description={pageDescription}
+        showPageMenu={true}
+      >
+        <div className="grid gap-5 lg:gap-7.5">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="alert alert-danger">
+              <p>{error}</p>
+            </div>
+          ) : customContent ? (
+            customContent
+          ) : (
+            <CampaignContent 
+              campaigns={campaigns} 
+              serviceType={serviceType}
+              onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
+              onAddCampaign={handleAddCampaign} // 캠페인 추가 버튼 클릭 시 호출할 함수 전달
+            />
+          )}
+          <AdMiscFaq />
+        </div>
+      </CommonTemplate>
+
+      {/* 캠페인 추가 모달 */}
+      {addCampaignModalOpen && (
+        <CampaignAddModal
+          open={addCampaignModalOpen}
+          onClose={() => setAddCampaignModalOpen(false)}
+          serviceType={serviceType}
+          onSave={(newCampaign) => {
+            // 새 캠페인이 저장되면 캠페인 목록을 다시 로드
+            loadCampaigns();
+            setAddCampaignModalOpen(false);
+          }}
+        />
+      )}
+    </>
   );
 };
 

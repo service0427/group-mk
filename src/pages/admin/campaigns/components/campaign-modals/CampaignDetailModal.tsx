@@ -176,7 +176,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       캠페인 ID
                     </th>
                     <td className="px-4 py-3 text-md text-foreground">
-                      {campaign.originalData?.campaign_id || editedCampaign.id}
+                      {editedCampaign?.id || '-'}
                     </td>
                   </tr>
                   <tr>

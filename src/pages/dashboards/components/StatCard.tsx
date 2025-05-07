@@ -19,9 +19,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   unit = '',
   trend = 0,
   icon = '',
-  keenIcon,
+  keenIcon = 'abstract-24',
   iconColor = 'primary',
-  bgColor = 'bg-body',
+  bgColor = '',
   duration = 1000, // 기본 1초
 }) => {
   const trendColor = trend > 0 ? 'success' : trend < 0 ? 'danger' : 'gray-600';
@@ -80,40 +80,39 @@ export const StatCard: React.FC<StatCardProps> = ({
   }, [targetValue, duration, valueIsNumber]);
 
   return (
-    <div className={`card ${bgColor}`}>
-      <div className="card-body p-4 overflow-hidden">
-        <div>
-          {/* 제목: 작은 글씨 */}
-          <div style={{ fontSize: '12px', marginBottom: '8px' }} className="text-truncate text-gray-600" title={title}>
-            {title}
+    <div className="bg-card rounded-lg shadow-sm border border-border dark:border-gray-700 p-5 overflow-hidden">
+      <div className="flex items-start">
+        {keenIcon && (
+          <div className="w-10 h-10 rounded-lg bg-primary-lighter dark:bg-primary-dark flex items-center justify-center mr-3">
+            <KeenIcon icon={keenIcon} className="text-primary dark:text-white text-xl" />
           </div>
+        )}
+        <div className="flex-1">
+          {/* 제목 */}
+          <h3 className="text-sm font-medium text-muted-foreground mb-2 truncate" title={title}>
+            {title}
+          </h3>
           
           {/* 값과 단위 */}
           <div className="flex flex-col">
-            <div className="d-flex justify-content-between">
-              <div className="d-flex align-items-end">
-                <span className="text-gray-800" style={{ fontSize: '30px', fontWeight: 'bold' }} title={`${value} ${unit}`}>
-                  {valueIsNumber ? formatValue(displayValue) : value}
+            <div className="flex items-baseline">
+              <span className="text-2xl font-bold text-card-foreground" title={`${value} ${unit}`}>
+                {valueIsNumber ? formatValue(displayValue) : value}
+              </span>
+              {unit && (
+                <span className="ml-1 text-xs font-medium text-muted-foreground">
+                  {unit}
                 </span>
-                {unit && (
-                  <span className="ms-1 mb-1 text-gray-600" style={{ fontSize: '12px', fontWeight: '600' }}>
-                    {unit}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
             
             {/* 증감률 */}
             {trend !== 0 && (
-              <div className="flex flex-shrink-0 mt-2 w-fit" style={{ 
-                alignItems: 'center',
-                backgroundColor: trend > 0 ? '#e8fff3' : '#fff5f8',
-                color: trend > 0 ? '#50cd89' : '#f1416c',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 'bold'
-              }}>
+              <div className="flex items-center mt-2 w-fit px-2 py-1 rounded-md text-xs font-semibold" 
+                style={{ 
+                  backgroundColor: trend > 0 ? 'rgb(232, 255, 243)' : 'rgb(255, 245, 248)',
+                  color: trend > 0 ? 'rgb(80, 205, 137)' : 'rgb(241, 65, 108)'
+                }}>
                 {trend > 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
               </div>
             )}

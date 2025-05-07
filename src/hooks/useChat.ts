@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { 
@@ -9,9 +9,11 @@ import {
   ChatRole
 } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
+import { useLogoutContext } from '@/contexts/LogoutContext';
 
 export const useChat = () => {
   const { currentUser } = useAuthContext();
+  const { isLoggingOut } = useLogoutContext();
   const [rooms, setRooms] = useState<IChatRoom[]>([]);
   const [messages, setMessages] = useState<{[roomId: string]: IMessage[]}>({});
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
@@ -19,6 +21,19 @@ export const useChat = () => {
   const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  
+  // ref를 사용하여 최신 상태 값에 접근 (useEffect 의존성 배열 문제 해결)
+  const roomsRef = useRef<IChatRoom[]>(rooms);
+  const currentRoomIdRef = useRef<string | null>(currentRoomId);
+  
+  // 상태가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
+  
+  useEffect(() => {
+    currentRoomIdRef.current = currentRoomId;
+  }, [currentRoomId]);
 
   // 채팅방 목록 가져오기
   const fetchChatRooms = useCallback(async () => {
@@ -46,10 +61,10 @@ export const useChat = () => {
       
       const roomIds = participantsData.map((p) => p.room_id);
       
-      // 채팅방 정보 가져오기
+      // 채팅방 정보 가져오기 - last_message 관계 오류로 인해 기본 필드만 조회
       const { data: roomsData, error: roomsError } = await supabase
         .from('chat_rooms')
-        .select('*, last_message(*)')
+        .select('*')
         .in('id', roomIds)
         .order('updated_at', { ascending: false });
       
@@ -101,19 +116,53 @@ export const useChat = () => {
       const totalUnread = unreadResults.reduce((sum, { unreadCount }) => sum + unreadCount, 0);
       setUnreadCount(totalUnread);
       
-      // 데이터 변환 및 상태 업데이트
-      const formattedRooms: IChatRoom[] = roomsData.map((room) => ({
-        id: room.id,
-        name: room.name,
-        participants: [],
-        lastMessageId: room.last_message_id,
-        lastMessage: room.last_message?.content,
-        lastMessageTime: room.last_message?.created_at,
-        unreadCount: unreadMap[room.id] || 0,
-        status: room.status,
-        createdAt: room.created_at,
-        updatedAt: room.updated_at
-      }));
+      // 각 채팅방의 마지막 메시지 정보 가져오기
+      const lastMessagesPromises = roomsData
+        .filter(room => room.last_message_id) // last_message_id가 있는 경우만
+        .map(async (room) => {
+          try {
+            const { data, error } = await supabase
+              .from('chat_messages')
+              .select('*')
+              .eq('id', room.last_message_id)
+              .single();
+            
+            if (error) {
+              console.error(`채팅방 ${room.id}의 마지막 메시지 조회 오류:`, error.message);
+              return { roomId: room.id, message: null };
+            }
+            
+            return { roomId: room.id, message: data };
+          } catch (err) {
+            console.error(`채팅방 ${room.id}의 마지막 메시지 조회 중 오류 발생`, err);
+            return { roomId: room.id, message: null };
+          }
+        });
+      
+      const lastMessagesResults = await Promise.all(lastMessagesPromises);
+      const lastMessagesMap = lastMessagesResults.reduce((acc, { roomId, message }) => {
+        if (message) {
+          acc[roomId] = message;
+        }
+        return acc;
+      }, {} as {[roomId: string]: any});
+      
+      // 데이터 변환 및 상태 업데이트 - 별도로 가져온 마지막 메시지 정보 활용
+      const formattedRooms: IChatRoom[] = roomsData.map((room) => {
+        const lastMessage = lastMessagesMap[room.id];
+        return {
+          id: room.id,
+          name: room.name,
+          participants: [],
+          lastMessageId: room.last_message_id || null,
+          lastMessage: lastMessage?.content || null,
+          lastMessageTime: lastMessage?.created_at || null,
+          unreadCount: unreadMap[room.id] || 0,
+          status: room.status,
+          createdAt: room.created_at,
+          updatedAt: room.updated_at
+        };
+      });
       
       setRooms(formattedRooms);
     } catch (err: any) {
@@ -466,23 +515,39 @@ export const useChat = () => {
     }
   };
 
-  // 컴포넌트 마운트 시 초기 데이터 로드
+  // 컴포넌트 마운트 시 초기 데이터 로드 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
+    // 로그아웃 중이면 실행하지 않음
+    if (isLoggingOut) return;
+    
+    // 운영자나 관리자인 경우 채팅 데이터를 로드하지 않음
+    if (currentUser?.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+      return;
+    }
+    
     if (currentUser?.id) {
       try {
         fetchChatRooms();
-        console.log('Chat: Fetching chat rooms for user', currentUser.id);
       } catch (err) {
         console.error('Chat: Error fetching initial chat data', err);
       }
-    } else {
-      console.log('Chat: No current user, skipping data fetch');
     }
-  }, [currentUser?.id, fetchChatRooms]);
+  }, [currentUser?.id, currentUser?.role, fetchChatRooms, isLoggingOut]);
 
-  // 실시간 구독 설정
+  // 실시간 구독 설정 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
-    if (!currentUser?.id) return;
+    // 로그아웃 중이거나 사용자 정보가 없는 경우 중단
+    if (isLoggingOut || !currentUser?.id) return;
+    
+    // 운영자나 관리자인 경우 채팅 구독을 설정하지 않음
+    if (currentUser.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+      return;
+    }
+    
+    // 안전을 위한 rooms 비어있는지 확인
+    if (!Array.isArray(rooms)) {
+      return;
+    }
     
     // 클라이언트 측 재연결 로직
     let retryCount = 0;
@@ -503,8 +568,8 @@ export const useChat = () => {
           async (payload) => {
             const newMessage = payload.new as any;
             
-            // 현재 참여 중인 채팅방의 메시지만 수신
-            if (rooms.some(room => room.id === newMessage.room_id)) {
+            // 현재 참여 중인 채팅방의 메시지만 수신 (ref 사용)
+            if (roomsRef.current.some((room: IChatRoom) => room.id === newMessage.room_id)) {
               // 데이터 변환
               const formattedMessage: IMessage = {
                 id: newMessage.id,
@@ -518,8 +583,8 @@ export const useChat = () => {
                 attachments: newMessage.attachments || []
               };
               
-              // 메시지가 현재 보고 있는 채팅방이 아니면 안 읽은 메시지로 카운트
-              if (currentRoomId !== newMessage.room_id && newMessage.sender_id !== currentUser.id) {
+              // 메시지가 현재 보고 있는 채팅방이 아니면 안 읽은 메시지로 카운트 (ref 사용)
+              if (currentRoomIdRef.current !== newMessage.room_id && newMessage.sender_id !== currentUser.id) {
                 setRooms(prev => 
                   prev.map(room => 
                     room.id === newMessage.room_id
@@ -539,7 +604,7 @@ export const useChat = () => {
                 
                 // 총 안 읽은 메시지 수 증가
                 setUnreadCount(prev => prev + 1);
-              } else if (currentRoomId === newMessage.room_id) {
+              } else if (currentRoomIdRef.current === newMessage.room_id) {
                 // 현재 보고 있는 채팅방이면 읽음 처리
                 updateLastReadMessage(newMessage.room_id, newMessage.id);
                 
@@ -607,8 +672,8 @@ export const useChat = () => {
               };
             });
             
-            // 마지막 메시지 업데이트
-            if (rooms.some(room => room.lastMessageId === updatedMessage.id)) {
+            // 마지막 메시지 업데이트 (ref 사용)
+            if (roomsRef.current.some((room: IChatRoom) => room.lastMessageId === updatedMessage.id)) {
               setRooms(prev => 
                 prev.map(room => 
                   room.lastMessageId === updatedMessage.id
@@ -625,15 +690,11 @@ export const useChat = () => {
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
-            console.log('채팅 메시지 구독 성공');
             retryCount = 0;
-          } else if (status === 'CHANNEL_ERROR') {
-            console.log('채팅 메시지 구독 오류');
-            
+          } else if (status === 'CHANNEL_ERROR') {            
             if (retryCount < maxRetries) {
               retryCount++;
               setTimeout(() => {
-                console.log(`재연결 시도 ${retryCount}/${maxRetries}...`);
                 setupSubscription();
               }, retryTimeout * retryCount);
             }
@@ -669,13 +730,7 @@ export const useChat = () => {
             fetchChatRooms();
           }
         )
-        .subscribe(status => {
-          if (status === 'SUBSCRIBED') {
-            console.log('채팅방 구독 성공');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.log('채팅방 구독 오류');
-          }
-        });
+        .subscribe();
       
       // 구독 해제 함수 반환
       return () => {
@@ -689,7 +744,8 @@ export const useChat = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [currentUser?.id, rooms, currentRoomId, fetchChatRooms]);
+  // 안전한 의존성 배열 - 로그아웃 시 rooms가 정의되지 않는 문제 방지
+  }, [currentUser?.id, fetchChatRooms, isLoggingOut]);
 
   return {
     rooms,

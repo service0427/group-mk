@@ -110,8 +110,17 @@ const diagnoseDatabaseConnection = async (): Promise<DiagnosticResult> => {
  * 사용자와 운영자 간의 실시간 채팅을 제공합니다.
  */
 const ChatSticky: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  // 먼저 인증 정보를 확인하여 렌더링 여부를 결정
   const { isAuthenticated, currentUser } = useAuthContext();
+  
+  // 운영자나 관리자는 이 컴포넌트를 렌더링하지 않음
+  // 이렇게 하면 불필요한 훅 호출과 상태 업데이트 방지
+  if (isAuthenticated && currentUser?.role && 
+      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+    return null;
+  }
+  
+  const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +133,24 @@ const ChatSticky: React.FC = () => {
   // 직접 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  
+  // useChat 훅 사용 - 항상 호출해야 함 (조건부로 사용하면 안됨)
+  // React 훅 규칙: 항상 동일한 순서로 호출되어야 함
+  const {
+    rooms,
+    messages,
+    currentRoomId,
+    loading,
+    loadingMessages,
+    unreadCount,
+    fetchChatRooms,
+    fetchMessages,
+    sendMessage: sendChatMessage,
+    createChatRoom,
+    openChatRoom,
+    setCurrentRoomId
+  } = useChat();
+  // 대상 사용자 체크는 이미 상단에서 완료했으므로 여기서는 제거
   
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
@@ -192,30 +219,6 @@ const ChatSticky: React.FC = () => {
       scrollElement.removeEventListener('scroll', handleScroll);
     };
   }, [isMobile]);
-  
-  // 로그인하지 않은 사용자는 계속 표시, 운영자나 관리자만 숨기기
-  // 운영자나 관리자인 경우에만 컴포넌트를 렌더링하지 않음
-  // 로그인하지 않았거나 역할이 없는 경우에는 일반 표시
-  if (isAuthenticated && currentUser?.role && 
-      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
-    return null;
-  }
-  
-  // useChat 훅 사용
-  const {
-    rooms,
-    messages,
-    currentRoomId,
-    loading,
-    loadingMessages,
-    unreadCount,
-    fetchChatRooms,
-    fetchMessages,
-    sendMessage: sendChatMessage,
-    createChatRoom,
-    openChatRoom,
-    setCurrentRoomId
-  } = useChat();
   
   // 스타일 값을 직접 지정
   // 모바일 여부에 따라 동적으로 스타일을 적용

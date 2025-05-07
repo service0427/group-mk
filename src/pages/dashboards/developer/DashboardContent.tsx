@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
 import { DashboardColorCard } from '@/pages/dashboards/components/DashboardColorCard';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,14 @@ import {
 import { Card } from '@/components/ui/card';
 import { useResponsive } from '@/hooks';
 import { formatCurrency, formatCurrencyInTenThousand } from '@/utils/Format';
+import { supabase, supabaseAdmin } from '@/supabase';
 
 // 개발자 대시보드 통계 데이터 인터페이스
 interface DeveloperStats {
-  activeProjects: { count: number; trend: number };
-  issuesResolved: { count: number; trend: number };
-  codeQuality: { count: number; trend: number };
-  deployments: { count: number; trend: number };
+  systemUsers: { count: number; trend: number };
+  apiCalls: { count: number; trend: number };
+  dbStorage: { count: number; trend: number };
+  responseTime: { count: number; trend: number };
 }
 
 export const DashboardContent: React.FC = () => {
@@ -28,11 +29,54 @@ export const DashboardContent: React.FC = () => {
 
   // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<DeveloperStats>({
-    activeProjects: { count: 8, trend: 12.5 },
-    issuesResolved: { count: 342, trend: 24.8 },
-    codeQuality: { count: 92, trend: 3.7 },
-    deployments: { count: 18, trend: -5.2 },
+    systemUsers: { count: 0, trend: 0 },
+    apiCalls: { count: 8524, trend: 24.8 },
+    dbStorage: { count: 2500, trend: 3.7 },
+    responseTime: { count: 127, trend: -5.2 },
   });
+
+  // 사용자 정보 로드
+  const loadUserStats = async () => {
+    try {
+      // 전체 사용자 수 가져오기
+      const { count: totalUsers, error: countError } = await supabase
+        .from('users')
+        .select('id', { count: 'exact' });
+      
+      if (countError) {
+        console.error('사용자 정보 로드 중 오류:', countError.message);
+        return;
+      }
+
+      // 지난 달 활성 사용자 수 (1개월 이내 생성된 계정)
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      
+      const { count: newUsers, error: newUsersError } = await supabase
+        .from('users')
+        .select('id', { count: 'exact' })
+        .gte('created_at', oneMonthAgo.toISOString());
+      
+      if (newUsersError) {
+        console.error('신규 사용자 정보 로드 중 오류:', newUsersError.message);
+        return;
+      }
+
+      // 증가율 계산: (신규 사용자 / 전체 사용자) * 100
+      const trend = totalUsers ? ((newUsers || 0) / totalUsers) * 100 : 0;
+      
+      // 상태 업데이트
+      setStats(prevStats => ({
+        ...prevStats,
+        systemUsers: { 
+          count: totalUsers || 0, 
+          trend: parseFloat(trend.toFixed(1))
+        }
+      }));
+    } catch (error: any) {
+      console.error('사용자 통계 로드 중 오류:', error.message);
+    }
+  };
 
   // 활성 프로젝트 데이터
   const activeProjects = [
@@ -44,13 +88,55 @@ export const DashboardContent: React.FC = () => {
   ];
 
   // 시스템 로그 데이터
-  const systemLogs = [
-    { id: 'LOG-1234', timestamp: '2023-05-20 14:32:46', level: 'INFO', message: '로그인 시스템 업데이트 완료' },
-    { id: 'LOG-1233', timestamp: '2023-05-20 12:15:30', level: 'WARNING', message: 'API 응답 지연 감지' },
-    { id: 'LOG-1232', timestamp: '2023-05-20 10:42:12', level: 'ERROR', message: '결제 처리 중 시스템 오류 발생' },
-    { id: 'LOG-1231', timestamp: '2023-05-20 09:18:55', level: 'INFO', message: '데이터베이스 백업 완료' },
-    { id: 'LOG-1230', timestamp: '2023-05-19 23:42:10', level: 'WARNING', message: '메모리 사용량 높음 (85%)' },
-  ];
+  interface SystemLog {
+    id: string;
+    timestamp: string;
+    level: string;
+    message: string;
+  }
+  
+  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
+  
+  // 시스템 로그 데이터 로드 - system_logs 테이블에서 로드 (관리자 권한 사용)
+  const loadSystemLogs = async () => {
+    try {
+      // 관리자 클라이언트로 system_logs 테이블에서 최근 로그 가져오기
+      const { data: systemLogs, error } = await supabaseAdmin
+        .from('system_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        console.error('시스템 로그 로드 중 오류:', error.message);
+        setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
+        return;
+      }
+      
+      // 로그 데이터가 있는 경우 형식 변환 후 상태 업데이트
+      if (systemLogs && systemLogs.length > 0) {
+        const formattedLogs = systemLogs.map(log => {
+          // 날짜 형식 변환 - 더 간결하게 (MM-DD HH:MM 형식)
+          const date = new Date(log.created_at);
+          const formattedDate = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          
+          return {
+            id: `LOG-${log.id}`,
+            timestamp: formattedDate,
+            level: log.level || 'INFO', // 레벨이 없으면 INFO로 기본값 설정
+            message: log.message || '시스템 로그'
+          };
+        });
+        
+        setSystemLogs(formattedLogs);
+      } else {
+        setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
+      }
+    } catch (error: any) {
+      console.error('시스템 로그 로드 중 예상치 못한 오류:', error.message);
+      setSystemLogs([]); // 오류 발생 시 빈 배열로 설정
+    }
+  };
 
   // API 상태 데이터
   const apiStatus = [
@@ -84,6 +170,21 @@ export const DashboardContent: React.FC = () => {
     if (progress >= 25) return 'bg-yellow-500';
     return 'bg-red-500';
   };
+  
+  // 데이터 로드
+  useEffect(() => {
+    loadUserStats();
+    loadSystemLogs();
+    
+    // 5분마다 데이터 자동 갱신
+    const refreshInterval = setInterval(() => {
+      loadUserStats();
+      loadSystemLogs();
+    }, 5 * 60 * 1000);
+    
+    // 컴포넌트 언마운트 시 인터벌 클리어
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   return (
     <DashboardTemplate
@@ -93,48 +194,42 @@ export const DashboardContent: React.FC = () => {
       headerTextClass="text-white"
       toolbarActions={
         <>
-          <Button variant="outline" size="sm" className="h-9 bg-white/20 text-white hover:bg-white/30 border-white/40">
-            시스템 설정
-          </Button>
-          <Button variant="outline" size="sm" className="h-9 bg-white/20 text-white hover:bg-white/30 border-white/40">
-            API 문서
-          </Button>
         </>
       }
     >
       {/* 첫 번째 줄: 4개의 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
         <DashboardColorCard
-          title="활성 프로젝트"
-          value={stats.activeProjects.count}
-          unit="개"
-          trend={stats.activeProjects.trend}
-          icon="code"
+          title="시스템 사용자"
+          value={stats.systemUsers.count}
+          unit="명"
+          trend={stats.systemUsers.trend}
+          icon="profile-user"
+          iconColor="bg-blue-600"
+        />
+        <DashboardColorCard
+          title="API 호출 횟수 (개발필요)"
+          value={stats.apiCalls.count}
+          unit="회"
+          trend={stats.apiCalls.trend}
+          icon="chart-line"
           iconColor="bg-purple-600"
         />
         <DashboardColorCard
-          title="해결된 이슈"
-          value={stats.issuesResolved.count}
-          unit="개"
-          trend={stats.issuesResolved.trend}
-          icon="check-circle"
-          iconColor="bg-purple-600"
-        />
-        <DashboardColorCard
-          title="코드 품질"
-          value={stats.codeQuality.count}
-          unit="%"
-          trend={stats.codeQuality.trend}
-          icon="shield-check"
+          title="데이터베이스 용량 (개발필요)"
+          value={stats.dbStorage.count}
+          unit="MB"
+          trend={stats.dbStorage.trend}
+          icon="database"
           iconColor="bg-green-600"
         />
         <DashboardColorCard
-          title="금주 배포"
-          value={stats.deployments.count}
-          unit="회"
-          trend={stats.deployments.trend}
-          icon="rocket"
-          iconColor="bg-blue-600"
+          title="평균 응답시간 (개발필요)"
+          value={stats.responseTime.count}
+          unit="ms"
+          trend={stats.responseTime.trend}
+          icon="clock"
+          iconColor="bg-orange-600"
         />
       </div>
 
@@ -149,7 +244,7 @@ export const DashboardContent: React.FC = () => {
                   <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">프로젝트 현황</h3>
+              <h3 className="text-lg font-semibold text-gray-800">프로젝트 현황 (개발필요)</h3>
             </div>
             <Button variant="outline" size="sm" className="h-8 px-4">
               새 프로젝트
@@ -217,30 +312,35 @@ export const DashboardContent: React.FC = () => {
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
-                  <TableHead className="py-3 px-4 text-left">시간</TableHead>
                   <TableHead className="py-3 px-4 text-center">레벨</TableHead>
                   <TableHead className="py-3 px-4 text-left">메시지</TableHead>
+                  <TableHead className="py-3 px-4 text-center">시간</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {systemLogs.map((log, index) => (
-                  <TableRow key={index} className="border-b border-gray-200">
-                    <TableCell className="py-3 px-4">
-                      <div className="flex flex-col">
+                {systemLogs.length > 0 ? (
+                  systemLogs.map((log, index) => (
+                    <TableRow key={index} className="border-b border-gray-200">
+                      <TableCell className="py-2 px-4 text-center">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-tight font-medium ${getStatusColor(log.level)}`}>
+                          {log.level}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-2 px-4">
+                        <span className="text-sm">{log.message}</span>
+                      </TableCell>
+                      <TableCell className="py-2 px-4 text-center">
                         <span className="text-xs text-gray-500">{log.timestamp}</span>
-                        <span className="text-xs text-gray-400">{log.id}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3 px-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(log.level)}`}>
-                        {log.level}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <span className="text-sm">{log.message}</span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-4 px-4 text-center text-gray-500">
+                      최근 내역이 없습니다.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
@@ -257,7 +357,7 @@ export const DashboardContent: React.FC = () => {
                   <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">API 상태</h3>
+              <h3 className="text-lg font-semibold text-gray-800">API 상태 (개발필요)</h3>
             </div>
             <Button variant="outline" size="sm" className="h-8 px-4">
               상세 분석

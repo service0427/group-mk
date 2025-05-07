@@ -2,6 +2,7 @@ import { createContext, Dispatch, PropsWithChildren, SetStateAction, useCallback
 import { AuthModel, CustomUser } from "../_models";
 import * as authHelper from '../_helpers';
 import { supabase } from "@/supabase";
+import { useLogoutContext } from "@/contexts/LogoutContext";
 
 interface AuthContextProps {
     loading: boolean;
@@ -34,6 +35,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const [authInitialized, setAuthInitialized] = useState<boolean>(false);
     const [lastTokenCheck, setLastTokenCheck] = useState<number>(0);
     const [authVerified, setAuthVerified] = useState<boolean>(false);
+    const { setIsLoggingOut } = useLogoutContext();
 
     // 토큰 디코딩 함수
     const decodeToken = useCallback((token: string) => {
@@ -660,24 +662,78 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }
 
-    const logout = async () => {
-        console.log('로그아웃 시도...');
-
+    // 운영자와 일반 사용자를 위한 별도의 로그아웃 로직
+    const logoutForOperator = async () => {
         try {
-            // 1. 클라이언트 측 인증 정보 초기화
-            console.log('클라이언트 인증 정보 초기화');
+            // 1. 로그아웃 플래그 설정
+            setIsLoggingOut(true);
+            
+            // 2. 모든 구독 및 훅 정리 시간 확보 (비동기 태스크 이전에 UI 업데이트가 완료되도록)
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // 3. 페이지 이동을 위한 준비
+            window.location.href = '/auth/login'; // 페이지 리다이렉트 준비
+            
+            // 4. 로컬 및 세션 스토리지 정리 전에 리다이렉트 실행
+            setTimeout(() => {
+                // 로컬 스토리지 데이터 정리
+                authHelper.removeAuth();
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('lastAuthCheck');
+                
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+    
+                Object.keys(sessionStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
+                        sessionStorage.removeItem(key);
+                    }
+                });
+                
+                // 서버 로그아웃을 제일 마지막에 수행
+                supabase.auth.signOut().catch(e => console.error('서버 로그아웃 오류:', e));
+            }, 0);
+            
+            return true;
+        } catch (error: any) {
+            console.error('로그아웃 실패:', error);
+            return false;
+        }
+    };
+    
+    // 일반 로그아웃 함수
+    const logout = async () => {
+        try {
+            // 현재 사용자가 운영자/관리자인 경우 특별 로그아웃 처리
+            if (currentUser?.role === 'operator' || currentUser?.role === 'admin') {
+                return await logoutForOperator();
+            }
+            
+            // 일반 사용자 로그아웃 시작
+            setIsLoggingOut(true);
+            
+            // 1. 먼저 서버 측 로그아웃 처리 (모든 상태 변경 전에 수행)
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    console.error('서버 로그아웃 에러:', error.message);
+                }
+            } catch (serverError) {
+                console.error('서버 로그아웃 예외:', serverError);
+                // 서버 로그아웃에 실패해도 계속 진행
+            }
+            
+            // 2. 클라이언트 측 인증 정보 초기화
             authHelper.removeAuth();
-            setAuth(undefined);
-            setCurrentUser(null);
-            setAuthVerified(false);
-
-            // 2. 세션 스토리지 정리
-            console.log('세션 스토리지 정리');
+            
+            // 3. 로컬 및 세션 스토리지 정리 (상태 업데이트 전에)
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
-
-            // 3. 모든 인증 관련 스토리지 항목 제거
-            console.log('로컬 및 세션 스토리지 정리');
+            
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                     localStorage.removeItem(key);
@@ -689,22 +745,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     sessionStorage.removeItem(key);
                 }
             });
+            
+            // 4. 상태 업데이트 (스토리지 정리 이후)
+            // 예측 가능한 순서로 상태 업데이트
+            setAuth(undefined);
+            setCurrentUser(null);
+            setAuthVerified(false);
 
-            // 4. 서버 측 로그아웃 처리
-            try {
-                console.log('서버 로그아웃 처리');
-                const { error } = await supabase.auth.signOut();
-
-                if (error) {
-                    console.error('서버 로그아웃 에러:', error.message);
-                } else {
-                    console.log('서버 로그아웃 성공');
-                }
-            } catch (serverError) {
-                console.error('서버 로그아웃 처리 중 예외 발생:', serverError);
-            }
-
-            console.log('모든 로그아웃 절차 완료');
             return true;
         } catch (error: any) {
             console.error('로그아웃 실패:', error);

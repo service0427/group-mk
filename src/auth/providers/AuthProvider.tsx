@@ -661,23 +661,26 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     }
 
     const logout = async () => {
-        console.log('로그아웃 시도...');
-
         try {
-            // 1. 클라이언트 측 인증 정보 초기화
-            console.log('클라이언트 인증 정보 초기화');
+            // 1. 먼저 서버 측 로그아웃 처리 (모든 상태 변경 전에 수행)
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    console.error('서버 로그아웃 에러:', error.message);
+                }
+            } catch (serverError) {
+                console.error('서버 로그아웃 예외:', serverError);
+                // 서버 로그아웃에 실패해도 계속 진행
+            }
+            
+            // 2. 클라이언트 측 인증 정보 초기화
             authHelper.removeAuth();
-            setAuth(undefined);
-            setCurrentUser(null);
-            setAuthVerified(false);
-
-            // 2. 세션 스토리지 정리
-            console.log('세션 스토리지 정리');
+            
+            // 3. 로컬 및 세션 스토리지 정리 (상태 업데이트 전에)
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
-
-            // 3. 모든 인증 관련 스토리지 항목 제거
-            console.log('로컬 및 세션 스토리지 정리');
+            
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                     localStorage.removeItem(key);
@@ -689,22 +692,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     sessionStorage.removeItem(key);
                 }
             });
+            
+            // 4. 상태 업데이트 (스토리지 정리 이후)
+            // 예측 가능한 순서로 상태 업데이트
+            setAuth(undefined);
+            setCurrentUser(null);
+            setAuthVerified(false);
 
-            // 4. 서버 측 로그아웃 처리
-            try {
-                console.log('서버 로그아웃 처리');
-                const { error } = await supabase.auth.signOut();
-
-                if (error) {
-                    console.error('서버 로그아웃 에러:', error.message);
-                } else {
-                    console.log('서버 로그아웃 성공');
-                }
-            } catch (serverError) {
-                console.error('서버 로그아웃 처리 중 예외 발생:', serverError);
-            }
-
-            console.log('모든 로그아웃 절차 완료');
             return true;
         } catch (error: any) {
             console.error('로그아웃 실패:', error);

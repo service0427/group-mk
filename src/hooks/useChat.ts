@@ -541,7 +541,6 @@ export const useChat = () => {
     
     // 안전을 위한 rooms 비어있는지 확인
     if (!Array.isArray(rooms)) {
-      console.log('Chat: rooms is not an array, skipping subscription');
       return;
     }
     

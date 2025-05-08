@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { useResponsive } from '@/hooks';
 import { formatCurrency, formatCurrencyInTenThousand } from '@/utils/Format';
 import { supabase, supabaseAdmin } from '@/supabase';
+import { RankingChangeChart } from '@/components/charts/RankingChangeChart';
 
 // 개발자 대시보드 통계 데이터 인터페이스
 interface DeveloperStats {
@@ -26,6 +27,9 @@ interface DeveloperStats {
 export const DashboardContent: React.FC = () => {
   // 모바일 화면 감지 (md 이하인지 여부)
   const isMobile = useResponsive('down', 'md');
+
+  // 순위 변화 차트 모달 상태
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
 
   // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<DeveloperStats>({
@@ -194,6 +198,26 @@ export const DashboardContent: React.FC = () => {
       headerTextClass="text-white"
       toolbarActions={
         <>
+          {/* 순위 변화 차트 테스트 버튼 */}
+          <Button 
+            variant="outline" 
+            className="ml-2 bg-purple-600 text-white hover:bg-purple-700"
+            onClick={() => setIsChartModalOpen(true)}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5 mr-1.5" 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path 
+                fillRule="evenodd" 
+                d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3zm10-4a1 1 0 100 2h3a1 1 0 100-2h-3z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            캠페인 순위 분석
+          </Button>
         </>
       }
     >
@@ -416,6 +440,12 @@ export const DashboardContent: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* 순위 변화 분석 차트 모달 */}
+      <RankingChangeChart 
+        open={isChartModalOpen}
+        onClose={() => setIsChartModalOpen(false)}
+      />
     </DashboardTemplate>
   );
 };

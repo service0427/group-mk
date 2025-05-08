@@ -10,7 +10,11 @@ interface IPathnameContextProps {
 const PathnameContext = createContext<IPathnameContextProps | undefined>(undefined);
 
 const PathnameProvider = ({ children }: { children: ReactNode }) => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  // HashRouter에서는 location.pathname이 해시 뒤의 경로를 나타냅니다.
+  // 따라서 기존 코드를 그대로 사용할 수 있으며, 
+  // HashRouter가 자동으로 '#/' 이후의 경로를 location.pathname으로 제공합니다.
+  const { pathname } = location;
   const [prevPathname, setPrevPathname] = useState<string | undefined>(undefined);
 
   useEffect(() => {

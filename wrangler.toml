@@ -1,0 +1,28 @@
+name = "mk-test"
+main = "worker-site.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = [
+  "unsafe_loose_workers_headers", 
+  "direct_socket_cors_check", 
+  "no_global_navigator"
+]
+
+[vars]
+ENVIRONMENT = "test"
+
+[site]
+bucket = "./dist"
+entry-point = "./"
+
+[site.not_found_handling]
+type = "single_page_application"
+
+[env.test]
+name = "mk-test"
+workers_dev = true
+route = { pattern = "wtest.mkt-guide.com", custom_domain = true }
+
+[env.production]
+name = "mk"
+workers_dev = true
+route = { pattern = "www.mkt-guide.com", custom_domain = true }

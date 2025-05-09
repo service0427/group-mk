@@ -1,0 +1,22 @@
+/* 모바일 디바이스의 스크롤바를 숨기는 스타일 */
+@media (max-width: 768px) {
+  /* 스크롤바 숨기기 */
+  .sidebar,
+  .sidebar-content,
+  .mobile-sidebar-content,
+  .sidebar div {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;     /* Firefox */
+  }
+
+  /* Chrome, Safari, Opera에서 스크롤바 숨기기 */
+  .sidebar::-webkit-scrollbar,
+  .sidebar-content::-webkit-scrollbar,
+  .mobile-sidebar-content::-webkit-scrollbar,
+  .sidebar div::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+}

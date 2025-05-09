@@ -10,3 +10,4 @@ export * from './drawer';
 export * from './tooltip';
 export * from './alert';
 export * from './chat';
+export { default as ScrollToTop } from './ScrollToTop';

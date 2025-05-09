@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { useMediaQuery } from '@/hooks';
 
 const UserInfoDisplay = () => {
@@ -247,7 +248,7 @@ const UserInfoDisplay = () => {
                 >
                   <div className="text-sm text-gray-800 dark:text-white">알림</div>
                   <div className="flex items-center">
-                    <KeenIcon icon="notification" className="text-blue-500 dark:text-blue-300 mr-2" />
+                    <KeenIcon icon="notification" className="text-pink-500 dark:text-pink-400 mr-2" />
                     <NotificationDropdown containerClassName="h-auto" inlineCounterOnly />
                   </div>
                 </Link>
@@ -260,7 +261,7 @@ const UserInfoDisplay = () => {
                   className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <KeenIcon icon="profile-circle" className="text-blue-500 dark:text-blue-300 mr-3" />
+                  <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 mr-3" />
                   내 정보 관리
                 </Link>
                 <Link
@@ -268,7 +269,7 @@ const UserInfoDisplay = () => {
                   className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <KeenIcon icon="dollar" className="text-blue-500 dark:text-blue-300 mr-3" />
+                  <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 mr-3" />
                   캐시 내역
                 </Link>
                 <Link
@@ -276,23 +277,22 @@ const UserInfoDisplay = () => {
                   className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <KeenIcon icon="plus-circle" className="text-blue-500 dark:text-blue-300 mr-3" />
+                  <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 mr-3" />
                   캐시 충전
                 </Link>
                 <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600">
                   <div className="flex items-center">
-                    <KeenIcon icon="moon" className="text-blue-500 dark:text-blue-300 mr-3" />
+                    <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 mr-3" />
                     다크 모드
                   </div>
-                  <label className="switch switch-sm">
-                    <input
-                      name="theme"
-                      type="checkbox"
-                      checked={settings.themeMode === 'dark'}
-                      onChange={handleThemeMode}
-                      value="1"
-                    />
-                  </label>
+                  <Switch
+                    checked={settings.themeMode === 'dark'}
+                    onCheckedChange={(checked) => {
+                      const newThemeMode = checked ? 'dark' : 'light';
+                      storeSettings({ themeMode: newThemeMode });
+                    }}
+                    className="bg-blue-500 data-[state=unchecked]:bg-gray-300"
+                  />
                 </div>
                 <button
                   className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
@@ -301,7 +301,7 @@ const UserInfoDisplay = () => {
                     handleLogoutClick();
                   }}
                 >
-                  <KeenIcon icon="exit-right" className="mr-3" />
+                  <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 mr-3" />
                   로그아웃
                 </button>
               </div>
@@ -411,7 +411,7 @@ const UserInfoDisplay = () => {
                 <div className="menu-item">
                   <Link to="/myinfo/profile" className="menu-link dark:hover:bg-coal-600">
                     <span className="menu-icon">
-                      <KeenIcon icon="profile-circle" className="dark:text-blue-300" />
+                      <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 !text-purple-500 dark:!text-purple-400" />
                     </span>
                     <span className="menu-title dark:text-white font-medium">내 정보 관리</span>
                   </Link>
@@ -420,7 +420,7 @@ const UserInfoDisplay = () => {
                 <div className="menu-item">
                   <Link to="/cash/charge" className="menu-link dark:hover:bg-coal-600">
                     <span className="menu-icon">
-                      <KeenIcon icon="plus-circle" className="dark:text-blue-300" />
+                      <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 !text-green-500 dark:!text-green-400" />
                     </span>
                     <span className="menu-title dark:text-white font-medium">캐시 충전</span>
                   </Link>
@@ -429,39 +429,38 @@ const UserInfoDisplay = () => {
                 <div className="menu-item">
                   <Link to="/cash/history" className="menu-link dark:hover:bg-coal-600">
                     <span className="menu-icon">
-                      <KeenIcon icon="dollar" className="dark:text-blue-300" />
+                      <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 !text-amber-500 dark:!text-amber-400" />
                     </span>
                     <span className="menu-title dark:text-white font-medium">캐시 내역</span>
                   </Link>
                 </div>
-                
+
                 <div className="menu-item mb-0.5">
                   <div className="menu-link dark:hover:bg-coal-600">
                     <span className="menu-icon">
-                      <KeenIcon icon="moon" className="dark:text-blue-300" />
+                      <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 !text-indigo-500 dark:!text-indigo-400" />
                     </span>
                     <span className="menu-title dark:text-white font-medium">
                       다크 모드
                     </span>
-                    <label className="switch switch-sm">
-                      <input
-                        name="theme"
-                        type="checkbox"
-                        checked={settings.themeMode === 'dark'}
-                        onChange={handleThemeMode}
-                        value="1"
-                      />
-                    </label>
+                    <Switch
+                      checked={settings.themeMode === 'dark'}
+                      onCheckedChange={(checked) => {
+                        const newThemeMode = checked ? 'dark' : 'light';
+                        storeSettings({ themeMode: newThemeMode });
+                      }}
+                      className="bg-blue-500 data-[state=unchecked]:bg-gray-300"
+                    />
                   </div>
                 </div>
 
                 <div className="menu-item border-t border-gray-200 dark:border-coal-600 mt-1 pt-1">
-                  <button 
+                  <button
                     className="menu-link dark:hover:bg-coal-600 text-red-600 dark:text-red-400 w-full text-left"
                     onClick={handleLogoutClick}
                   >
                     <span className="menu-icon">
-                      <KeenIcon icon="exit-right" />
+                      <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 !text-red-500 dark:!text-red-400" />
                     </span>
                     <span className="menu-title">로그아웃</span>
                   </button>

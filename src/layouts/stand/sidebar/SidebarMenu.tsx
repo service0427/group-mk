@@ -84,7 +84,11 @@ const SidebarMenu = () => {
             )}
           >
             <MenuIcon className={clsx('items-start text-gray-500 dark:text-gray-400', iconWidth)}>
-              {item.icon && <KeenIcon icon={item.icon} className={iconSize} />}
+              {item.iconImage ? (
+                <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+              ) : item.icon && (
+                <KeenIcon icon={item.icon} className={iconSize} />
+              )}
             </MenuIcon>
             <MenuTitle className="text-sm font-medium text-gray-800 menu-item-active:text-primary menu-link-hover:!text-primary">
               {item.title}
@@ -93,9 +97,8 @@ const SidebarMenu = () => {
           </MenuLink>
           <MenuSub
             className={clsx(
-              'relative before:absolute before:top-0 before:bottom-0 before:border-s before:border-gray-200',
+              'relative',
               itemsGap,
-              accordionBorderLeft[0],
               accordionPl[0]
             )}
           >
@@ -109,7 +112,7 @@ const SidebarMenu = () => {
           <MenuLink
             path={item.path}
             className={clsx(
-              'border border-transparent menu-item-active:bg-secondary-active dark:menu-item-active:bg-coal-300 dark:menu-item-active:border-gray-100 menu-item-active:rounded-lg hover:bg-secondary-active dark:hover:bg-coal-300 dark:hover:border-gray-100 hover:rounded-lg',
+              'border border-transparent menu-item-active:bg-secondary-active dark:menu-item-active:bg-blue-950 dark:menu-item-active:border-blue-700 menu-item-active:rounded-lg hover:bg-secondary-active dark:hover:bg-blue-950/50 dark:hover:border-blue-800 hover:rounded-lg',
               accordionLinkGap[0],
               linkPy,
               linkPl,
@@ -118,11 +121,15 @@ const SidebarMenu = () => {
           >
             <MenuIcon
               className={clsx(
-                'items-start text-gray-600 dark:text-gray-500 menu-item-active:text-primary menu-link-hover:!text-primary',
+                'items-start text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400',
                 iconWidth
               )}
             >
-              {item.icon && <KeenIcon icon={item.icon} className={iconSize} />}
+              {item.iconImage ? (
+                <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+              ) : item.icon && (
+                <KeenIcon icon={item.icon} className={iconSize} />
+              )}
             </MenuIcon>
             <MenuTitle className="text-sm font-medium text-gray-800 menu-item-active:text-primary menu-link-hover:!text-primary">
               {item.title}
@@ -140,7 +147,11 @@ const SidebarMenu = () => {
           className={clsx('border border-transparent', accordionLinkGap[0], linkPy, linkPl, linkPr)}
         >
           <MenuIcon className={clsx('items-start text-gray-500 dark:text-gray-400', iconWidth)}>
-            {item.icon && <KeenIcon icon={item.icon} className={iconSize} />}
+            {item.iconImage ? (
+              <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+            ) : item.icon && (
+              <KeenIcon icon={item.icon} className={iconSize} />
+            )}
           </MenuIcon>
           <MenuTitle className="text-sm font-medium text-gray-800">{item.title}</MenuTitle>
 
@@ -172,6 +183,7 @@ const SidebarMenu = () => {
           <MenuLink
             className={clsx(
               'border border-transparent grow cursor-pointer',
+              'menu-has-active-child:text-primary dark:menu-has-active-child:text-blue-400 menu-has-active-child:font-semibold',
               accordionLinkGap[level],
               accordionLinkPl,
               linkPr,
@@ -179,7 +191,15 @@ const SidebarMenu = () => {
               isMobile && 'mobile-submenu-link' // 모바일용 클래스 추가
             )}
           >
-            {buildMenuBullet()}
+            {item.iconImage ? (
+              <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
+                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+              </MenuIcon>
+            ) : item.icon ? (
+              <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
+                <KeenIcon icon={item.icon} className="text-base" />
+              </MenuIcon>
+            ) : buildMenuBullet()}
 
             {item.collapse ? (
               <MenuTitle className="text-2sm font-normal text-gray-600 dark:text-gray-500">
@@ -196,12 +216,9 @@ const SidebarMenu = () => {
           </MenuLink>
           <MenuSub
             className={clsx(
-              !item.collapse &&
-                'relative before:absolute before:top-0 before:bottom-0 before:border-s before:border-gray-200',
+              !item.collapse && 'relative',
               itemsGap,
-              !item.collapse && accordionBorderLeft[level],
               !item.collapse && accordionPl[level],
-              !item.collapse && 'relative before:absolute',
               isMobile && 'mobile-submenu' // 모바일용 클래스 추가
             )}
           >
@@ -215,7 +232,7 @@ const SidebarMenu = () => {
           <MenuLink
             path={item.path}
             className={clsx(
-              'border border-transparent items-center grow menu-item-active:bg-secondary-active dark:menu-item-active:bg-coal-300 dark:menu-item-active:border-gray-100 menu-item-active:rounded-lg hover:bg-secondary-active dark:hover:bg-coal-300 dark:hover:border-gray-100 hover:rounded-lg',
+              'border border-transparent items-center grow menu-item-active:bg-secondary-active dark:menu-item-active:bg-blue-950 dark:menu-item-active:border-blue-700 menu-item-active:rounded-lg hover:bg-secondary-active dark:hover:bg-blue-950/50 dark:hover:border-blue-800 hover:rounded-lg',
               accordionLinkGap[level],
               accordionLinkPl,
               linkPr,
@@ -223,7 +240,15 @@ const SidebarMenu = () => {
               isMobile && 'mobile-menu-link' // 모바일용 클래스 추가
             )}
           >
-            {buildMenuBullet()}
+            {item.iconImage ? (
+              <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
+                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+              </MenuIcon>
+            ) : item.icon ? (
+              <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
+                <KeenIcon icon={item.icon} className="text-base" />
+              </MenuIcon>
+            ) : buildMenuBullet()}
             <MenuTitle className="text-2sm font-normal text-gray-800 menu-item-active:text-primary menu-item-active:font-semibold menu-link-hover:!text-primary">
               {item.title}
             </MenuTitle>
@@ -296,7 +321,7 @@ const SidebarMenu = () => {
   const menuConfig = getMenuConfig('primary');
 
   return (
-    <Menu highlight={true} multipleExpand={false} className={clsx('flex flex-col grow sidebar-menu', itemsGap)}>
+    <Menu highlight={true} multipleExpand={true} className={clsx('flex flex-col grow sidebar-menu', itemsGap, 'h-full w-full')}>
       {menuConfig && buildMenu(menuConfig)}
     </Menu>
   );

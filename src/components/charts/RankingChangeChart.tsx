@@ -317,13 +317,29 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
   useEffect(() => {
     const updateChartTheme = () => {
       const isDark = isDarkMode();
-      
+
+      // 차트 시리즈 데이터 참조
+      const currentSeries = chartSeries as ApexCharts.ApexOptions['series'];
+
       setChartOptions(prevOptions => ({
         ...prevOptions,
         chart: {
           ...prevOptions.chart,
           background: isDark ? '#1e293b' : 'transparent',
-          foreColor: isDark ? '#d1d5db' : '#666'
+          foreColor: isDark ? '#d1d5db' : '#666',
+          animations: {
+            enabled: true, // 애니메이션 활성화
+            easing: 'easeinout',
+            speed: 800,
+            animateGradually: {
+              enabled: true,
+              delay: 150
+            },
+            dynamicAnimation: {
+              enabled: true,
+              speed: 350
+            }
+          }
         },
         grid: {
           ...prevOptions.grid,
@@ -341,6 +357,7 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
         },
         xaxis: {
           ...prevOptions.xaxis,
+          categories: chartData.dates, // 데이터 명시적 설정
           labels: {
             ...prevOptions.xaxis?.labels,
             show: true,
@@ -398,6 +415,20 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
           }
         }
       }));
+
+      // 다크모드 변경 후 시리즈 데이터 재설정 (명시적으로 데이터 갱신)
+      setTimeout(() => {
+        setChartSeries([
+          {
+            name: '30등 이내',
+            data: [...chartData.upperRank]
+          },
+          {
+            name: '30등 이하',
+            data: [...chartData.lowerRank]
+          }
+        ]);
+      }, 50);
     };
 
     // MutationObserver로 다크 모드 변경 감지
@@ -405,7 +436,7 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (
-            mutation.type === 'attributes' && 
+            mutation.type === 'attributes' &&
             mutation.attributeName === 'class'
           ) {
             updateChartTheme();
@@ -418,20 +449,23 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
         attributeFilter: ['class']
       });
 
+      // 초기 설정 적용
+      updateChartTheme();
+
       return () => observer.disconnect();
     }
-  }, []);
+  }, [chartData]);
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[1280px] p-0 overflow-hidden">
-        <DialogHeader className="bg-background py-5 px-8 border-b">
-          <DialogTitle className="text-lg font-medium text-foreground">캠페인 순위 분석</DialogTitle>
+        <DialogHeader className="bg-background py-5 px-8 border-b sticky top-0 z-10">
+          <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
         </DialogHeader>
-        
-        <DialogBody className="p-8 max-h-[70vh] overflow-y-auto">
-          {/* 헤더 정보 */}
-          <div className="flex items-center gap-4 mb-6">
+
+        {/* 헤더 정보 - 고정 위치로 변경 */}
+        <div className="sticky top-[61px] z-10 bg-background border-b px-8 py-4">
+          <div className="flex items-center gap-4">
             <img
               src={campaign.logo.startsWith('/media') ? toAbsoluteUrl(campaign.logo) : toAbsoluteUrl(`/media/${campaign.logo}`)}
               className="rounded-full size-16 shrink-0"
@@ -451,10 +485,14 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
               </div>
             </div>
           </div>
+        </div>
+
+        <DialogBody className="p-8 pt-4 max-h-[70vh] overflow-y-auto">
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 좌측: 캠페인 상세 정보 */}
             <div className="space-y-6 pr-2">
+              <h3 className="text-lg font-medium text-foreground">캠페인 정보</h3>
               {/* 캠페인 정보 테이블 */}
               <div className="overflow-hidden border border-border rounded-xl">
                 <table className="min-w-full divide-y divide-border">
@@ -517,8 +555,8 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
               <div>
                 <h3 className="text-lg font-medium text-foreground mb-2">캠페인 상세설명</h3>
                 <div className="bg-background border border-border p-5 rounded-xl text-md text-foreground whitespace-pre-line">
-                  {campaign.detailedDescription ? 
-                    campaign.detailedDescription : 
+                  {campaign.detailedDescription ?
+                    campaign.detailedDescription :
                     (campaign.description || '상세 설명이 없습니다.')}
                 </div>
               </div>

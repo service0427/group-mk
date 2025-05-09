@@ -42,8 +42,8 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
     }
   });
 
-  // 활성 기간 상태 (7일, 14일, 30일)
-  const [activePeriod, setActivePeriod] = useState<number>(30);
+  // 활성 기간 상태 (7일, 14일, 30일) - 기본값 7일로 변경
+  const [activePeriod, setActivePeriod] = useState<number>(7);
   
   // 차트 데이터
   const [chartData, setChartData] = useState({
@@ -240,9 +240,6 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
       }
     ]);
     
-    // X축 카테고리 확인
-    console.log('X축 날짜 데이터:', data.dates);
-    
     // 기간에 따라 X축 표시 간격 조정
     const tickAmount = period <= 7 ? 6 : period <= 14 ? 7 : 10;
     
@@ -409,6 +406,9 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
         },
         legend: {
           ...prevOptions.legend,
+          position: 'top',
+          horizontalAlign: 'center',
+          offsetY: 0,
           labels: {
             ...prevOptions.legend?.labels,
             colors: isDark ? '#d1d5db' : '#666'
@@ -463,22 +463,28 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
         </DialogHeader>
 
-        {/* 헤더 정보 - 고정 위치로 변경 */}
-        <div className="sticky top-[61px] z-10 bg-background border-b px-8 py-4">
-          <div className="flex items-center gap-4">
+        {/* 헤더 정보 - 고정 위치로 변경 (모바일 대응) */}
+        <div className="sticky top-[61px] z-10 bg-background border-b px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <img
               src={campaign.logo.startsWith('/media') ? toAbsoluteUrl(campaign.logo) : toAbsoluteUrl(`/media/${campaign.logo}`)}
-              className="rounded-full size-16 shrink-0"
+              className="rounded-full size-12 sm:size-16 shrink-0"
               alt={campaign.campaignName}
               onError={(e) => {
                 // 이미지 로드 실패 시 기본 이미지 사용
                 (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
               }}
             />
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">{campaign.campaignName}</h2>
-              <div className="mt-1">
-                <span className={`badge ${campaign.status.color} badge-outline rounded-[30px] h-auto py-1`}>
+            <div className="sm:block">
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground inline-flex items-center">
+                {campaign.campaignName}
+                <span className={`badge ${campaign.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm ml-2 sm:hidden inline-flex`}>
+                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign.status.color)} me-1.5`}></span>
+                  {campaign.status.label}
+                </span>
+              </h2>
+              <div className="mt-1 hidden sm:block">
+                <span className={`badge ${campaign.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm`}>
                   <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign.status.color)} me-1.5`}></span>
                   {campaign.status.label}
                 </span>
@@ -498,52 +504,52 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
                 <table className="min-w-full divide-y divide-border">
                   <tbody className="divide-y divide-border">
                     <tr>
-                      <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                         건당 단가
                       </th>
-                      <td className="px-4 py-3 text-md text-foreground">
+                      <td className="px-4 py-2 text-md text-foreground">
                         {campaign.unitPrice}
                       </td>
                     </tr>
                     <tr>
-                      <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                         최소수량
                       </th>
-                      <td className="px-4 py-3 text-md text-foreground">
+                      <td className="px-4 py-2 text-md text-foreground">
                         {campaign.minQuantity}
                       </td>
                     </tr>
                     {campaign.additionalLogic && campaign.additionalLogic !== '없음' && (
                       <tr>
-                        <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                           추가로직
                         </th>
-                        <td className="px-4 py-3 text-md text-foreground">
+                        <td className="px-4 py-2 text-md text-foreground">
                           {campaign.additionalLogic}
                         </td>
                       </tr>
                     )}
                     <tr>
-                      <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                         상승효율
                       </th>
-                      <td className="px-4 py-3 text-md text-foreground">
+                      <td className="px-4 py-2 text-md text-foreground">
                         {campaign.efficiency}
                       </td>
                     </tr>
                     <tr>
-                      <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                         접수마감시간
                       </th>
-                      <td className="px-4 py-3 text-md text-foreground">
+                      <td className="px-4 py-2 text-md text-foreground">
                         {campaign.deadline}
                       </td>
                     </tr>
                     <tr>
-                      <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="px-4 py-2 bg-muted text-left text-sm font-medium text-muted-foreground whitespace-nowrap">
                         캠페인 설명
                       </th>
-                      <td className="px-4 py-3 text-md text-foreground whitespace-pre-line">
+                      <td className="px-4 py-2 text-md text-foreground whitespace-pre-line">
                         {campaign.description}
                       </td>
                     </tr>
@@ -554,7 +560,7 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
               {/* 캠페인 상세설명 */}
               <div>
                 <h3 className="text-lg font-medium text-foreground mb-2">캠페인 상세설명</h3>
-                <div className="bg-background border border-border p-5 rounded-xl text-md text-foreground whitespace-pre-line">
+                <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground whitespace-pre-line">
                   {campaign.detailedDescription ?
                     campaign.detailedDescription :
                     (campaign.description || '상세 설명이 없습니다.')}
@@ -610,41 +616,44 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
                   </div>
                 </div>
                 
-                <div className="mb-4 flex justify-end gap-2">
-                  <Button 
-                    variant={activePeriod === 7 ? "default" : "outline"} 
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-foreground">기간별 순위</h3>
+                  <div className="flex gap-2">
+                  <Button
+                    variant={activePeriod === 7 ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePeriodChange(7)}
-                    className={`h-8 px-3 text-sm ${activePeriod === 7 
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white' 
+                    className={`h-8 px-3 text-sm ${activePeriod === 7
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
                       : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
                   >
                     7일
                   </Button>
-                  <Button 
-                    variant={activePeriod === 14 ? "default" : "outline"} 
+                  <Button
+                    variant={activePeriod === 14 ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePeriodChange(14)}
-                    className={`h-8 px-3 text-sm ${activePeriod === 14 
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white' 
+                    className={`h-8 px-3 text-sm ${activePeriod === 14
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
                       : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
                   >
                     14일
                   </Button>
-                  <Button 
-                    variant={activePeriod === 30 ? "default" : "outline"} 
+                  <Button
+                    variant={activePeriod === 30 ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePeriodChange(30)}
-                    className={`h-8 px-3 text-sm ${activePeriod === 30 
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white' 
+                    className={`h-8 px-3 text-sm ${activePeriod === 30
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
                       : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
                   >
                     30일
                   </Button>
+                  </div>
                 </div>
-                
+
                 <div className="h-[420px] w-full rounded-xl overflow-hidden bg-white p-3 pb-5 border border-border">
-                  <ReactApexChart 
+                  <ReactApexChart
                     options={chartOptions}
                     series={chartSeries}
                     type="line"
@@ -652,8 +661,8 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
                   />
                 </div>
                 
+                <h3 className="text-lg font-medium text-foreground mb-2">추가 분석</h3>
                 <div className="bg-white p-5 rounded-xl border border-border">
-                  <h4 className="font-medium mb-3">추가 분석</h4>
                   <p className="text-sm text-muted-foreground mb-2">
                     최근 {activePeriod}일간의 랭킹 변화 추이를 분석한 결과, 전체적으로 상승세를 보이고 있습니다.
                   </p>

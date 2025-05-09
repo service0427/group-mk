@@ -43,6 +43,10 @@ export default plugin(({ addVariant, addComponents, theme, e }) => {
             'filter': 'none',
           },
         },
+        '.dark &:checked, .dark &[aria-checked="true"]': {
+          'background-color': '#1B84FF', // Using primary blue color directly to ensure visibility
+          'transition': 'all .15s ease-in-out',
+        },
         '&:disabled': {
           'background-color': 'var(--tw-gray-100)',
           'border': '1px solid var(--tw-gray-300)',
@@ -53,6 +57,22 @@ export default plugin(({ addVariant, addComponents, theme, e }) => {
           },
           '&:checked, &[aria-checked="true"]': {
             'background-color': 'var(--tw-primary-clarity)',
+            'border': '0',
+            '&:before': {
+              'background-color': 'var(--tw-light)',
+            },
+          },
+        },
+        '.dark &:disabled': {
+          'background-color': 'rgba(54, 56, 67, 0.5)',
+          'border': '1px solid var(--tw-gray-300)',
+          'cursor': 'not-allowed',
+          'opacity': '0.5',
+          '&:before': {
+            'background-color': 'var(--tw-gray-500)',
+          },
+          '&:checked, &[aria-checked="true"]': {
+            'background-color': 'rgba(27, 132, 255, 0.3)',
             'border': '0',
             '&:before': {
               'background-color': 'var(--tw-light)',
@@ -84,6 +104,15 @@ export default plugin(({ addVariant, addComponents, theme, e }) => {
           'height': '0.75rem',
           'width': '0.75rem',
         },
+        '.dark &:checked, .dark &[aria-checked="true"]': {
+          'background-color': '#1B84FF', // Using primary blue color directly for better visibility
+        },
+        '.dark &:disabled': {
+          'background-color': 'rgba(54, 56, 67, 0.5)',
+          '&:checked, &[aria-checked="true"]': {
+            'background-color': 'rgba(27, 132, 255, 0.3)',
+          },
+        },
       },
       '.switch-label': {
         'font-size': theme('fontSize.2sm'),
@@ -97,6 +126,15 @@ export default plugin(({ addVariant, addComponents, theme, e }) => {
         '&:before': {
           'height': '1.25rem',
           'width': '1.25rem',
+        },
+        '.dark &:checked, .dark &[aria-checked="true"]': {
+          'background-color': '#1B84FF', // Using primary blue color directly for better visibility
+        },
+        '.dark &:disabled': {
+          'background-color': 'rgba(54, 56, 67, 0.5)',
+          '&:checked, &[aria-checked="true"]': {
+            'background-color': 'rgba(27, 132, 255, 0.3)',
+          },
         },
       },
       '.switch-label': {

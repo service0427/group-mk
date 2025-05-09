@@ -4,6 +4,7 @@ import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { ScrollToTop } from '@/components';
 
 const App = () => {
   const { settings } = useSettings();
@@ -25,6 +26,7 @@ const App = () => {
       }}
     >
       <PathnameProvider>
+        <ScrollToTop />
         <AppRouting />
       </PathnameProvider>
       <Toaster />

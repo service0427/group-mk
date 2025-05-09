@@ -134,7 +134,7 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                   // 펼쳐진 메뉴의 마지막 항목 찾기 (모든 자식 요소가 로드된 후)
                   const subMenu = element.querySelector('.menu-sub');
                   if (subMenu) {
-                    // 가장 마지막 메뉴 항목 찾기 - 깊은 탐색을 통해
+                    // 가장 마지막 메뉴 항목 찾기
                     // 중첩된 구조에서도 마지막 메뉴 항목을 찾기 위해 모든 하위 메뉴 항목 탐색
                     const allMenuItems = subMenu.querySelectorAll('.menu-item');
                     let lastMenuItem = null;
@@ -152,8 +152,6 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                       // 부모 스크롤 컨테이너 찾기
                       const scrollContainer = document.querySelector('.sidebar-content') || document.querySelector('.sidebar');
                       if (scrollContainer) {
-                        // 컨테이너의 현재 뷰포트 크기
-                        const containerHeight = scrollContainer.clientHeight;
                         // 마지막 항목의 위치와 크기
                         const lastItemRect = lastMenuItem.getBoundingClientRect();
                         // 스크롤 컨테이너의 위치
@@ -170,13 +168,6 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                           scrollContainer.scrollTop = scrollContainer.scrollTop +
                                                     (lastItemRect.bottom - containerRect.bottom) +
                                                     100; // 여유 공간 추가
-
-                          console.log('메뉴 끝까지 스크롤 조정:', {
-                            containerHeight,
-                            lastItemBottom: lastItemRect.bottom,
-                            containerBottom: containerRect.bottom,
-                            newScrollTop: scrollContainer.scrollTop
-                          });
                         }
                       } else {
                         // 스크롤 컨테이너를 찾지 못했을 때 폴백 처리
@@ -184,7 +175,6 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                           behavior: 'smooth',
                           block: 'end'
                         });
-                        console.log('마지막 메뉴 아이템으로 스크롤 (기본 방식):', lastMenuItem);
                       }
                     } else {
                       // 마지막 항목이 없으면 현재 요소로 스크롤
@@ -192,7 +182,6 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                         behavior: 'smooth',
                         block: 'nearest'
                       });
-                      console.log('메뉴 스크롤 실행됨 (마지막 항목 없음):', element);
                     }
                   } else {
                     // 서브메뉴가 없으면 현재 요소로 스크롤
@@ -200,17 +189,16 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
                       behavior: 'smooth',
                       block: 'nearest'
                     });
-                    console.log('메뉴 스크롤 실행됨 (서브메뉴 없음):', element);
                   }
                 } catch (innerError) {
                   console.error('내부 스크롤 처리 오류:', innerError);
                 }
-              }, 100); // 더 긴 지연 시간 (DOM 업데이트와 애니메이션 완료 기다림)
+              }, 100);
             }
           } catch (error) {
             console.error('스크롤 오류:', error);
           }
-        }, 300); // 지연 시간 증가 - 메뉴 애니메이션 완료를 위해 시간 충분히 확보
+        }, 300);
       }
 
       if (hasSub && propToggle === 'accordion' && multipleExpand === false) {

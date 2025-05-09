@@ -4,6 +4,7 @@ import { KeenIcon } from '@/components/keenicons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor } from '@/config/roles.config';
 
 interface User {
   id: string;
@@ -138,38 +139,8 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
 
   // 역할에 따른 아이콘 및 배경색 클래스
   const getRoleClasses = (role: string) => {
-    switch (role) {
-      case 'developer':
-        return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300';
-      case 'operator':
-        return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300';
-      case 'distributor':
-        return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300';
-      case 'agency':
-        return 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300';
-      case 'advertiser':
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
-      default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
-    }
-  };
-
-  // 역할 한글명
-  const getRoleName = (role: string) => {
-    switch (role) {
-      case 'developer':
-        return '개발자';
-      case 'operator':
-        return '운영자';
-      case 'distributor':
-        return '총판';
-      case 'agency':
-        return '대행사';
-      case 'advertiser':
-        return '광고주';
-      default:
-        return role;
-    }
+    const color = getRoleBadgeColor(role);
+    return `bg-${color}-100 dark:bg-${color}-900/40 text-${color}-800 dark:text-${color}-300`;
   };
 
   // 선택 완료
@@ -211,11 +182,11 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="all">전체 회원 유형</option>
-              <option value="developer">개발자</option>
-              <option value="operator">운영자</option>
-              <option value="distributor">총판</option>
-              <option value="agency">대행사</option>
-              <option value="advertiser">광고주</option>
+              <option value={USER_ROLES.DEVELOPER}>{getRoleDisplayName(USER_ROLES.DEVELOPER)}</option>
+              <option value={USER_ROLES.OPERATOR}>{getRoleDisplayName(USER_ROLES.OPERATOR)}</option>
+              <option value={USER_ROLES.DISTRIBUTOR}>{getRoleDisplayName(USER_ROLES.DISTRIBUTOR)}</option>
+              <option value={USER_ROLES.AGENCY}>{getRoleDisplayName(USER_ROLES.AGENCY)}</option>
+              <option value={USER_ROLES.ADVERTISER}>{getRoleDisplayName(USER_ROLES.ADVERTISER)}</option>
             </select>
 
             <Button
@@ -343,7 +314,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${getRoleClasses(user.role)}`}>
-                              {getRoleName(user.role)}
+                              {getRoleDisplayName(user.role)}
                             </span>
                           </td>
                         </tr>

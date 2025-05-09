@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
 import { NotificationPriority, NotificationType, NotificationStatus } from '@/types/notification';
+import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
 import { toast } from 'sonner';
 // 테이블 확인 유틸리티 추가 - 이제 TypeScript 파일
 import { checkNotificationAggregatesTable } from './utils/check-table';
@@ -39,7 +40,7 @@ const NotificationManagePage: React.FC = () => {
   });
 
   // 관리자 권한 체크
-  const isAdmin = currentUser?.role === 'developer' || currentUser?.role === 'operator';
+  const isAdmin = currentUser?.role ? hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN) : false;
 
   // 알림 목록 커스텀 훅 사용
   const {
@@ -108,8 +109,8 @@ const NotificationManagePage: React.FC = () => {
   useEffect(() => {
     async function checkTable() {
       try {
-        // 개발자 권한을 가진 경우에만 실행
-        if (currentUser?.role === 'developer' || currentUser?.role === 'operator') {
+        // 관리자 권한을 가진 경우에만 실행
+        if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const result = await checkNotificationAggregatesTable();
           setTableStatus({ exists: result.exists, checked: true });
 
@@ -426,8 +427,8 @@ const NotificationManagePage: React.FC = () => {
                   <KeenIcon icon="arrows-circle" className="w-5 h-5" />
                 </button>
 
-                {/* 관리자 전용 메뉴 - 통계 테이블 리셋 */}
-                {(currentUser?.role === 'developer') && (
+                {/* 개발자 전용 메뉴 - 통계 테이블 리셋 */}
+                {(currentUser?.role === USER_ROLES.DEVELOPER) && (
                   <button
                     className="inline-flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded transition-colors"
                     onClick={async () => {

@@ -18,6 +18,7 @@ import {
 } from '@/components/menu';
 import { useMenus } from '@/providers';
 import { useResponsive } from '@/hooks';
+import { useAuthContext } from '@/auth/useAuthContext';
 
 const SidebarMenu = () => {
   const isMobile = !useResponsive('up', 'md');
@@ -319,10 +320,21 @@ const SidebarMenu = () => {
 
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
+  const { userRole } = useAuthContext();
+
+  // 사용자 역할에 따라 메뉴 필터링
+  const filteredMenuConfig = menuConfig?.filter(item => {
+    // authCheck 함수가 있다면 해당 함수로 역할 검사
+    if (item.authCheck) {
+      return item.authCheck(userRole);
+    }
+    // authCheck가 없으면 모든 사용자에게 표시
+    return true;
+  });
 
   return (
     <Menu highlight={true} multipleExpand={true} className={clsx('flex flex-col grow sidebar-menu', itemsGap, 'h-full w-full')}>
-      {menuConfig && buildMenu(menuConfig)}
+      {filteredMenuConfig && buildMenu(filteredMenuConfig)}
     </Menu>
   );
 };

@@ -1,7 +1,6 @@
 import { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { 
-  DefaultPage, 
+import {
   StandDarkSidebarPage,
   RoleBasedDashboard
 } from '@/pages/dashboards';
@@ -63,7 +62,6 @@ const AppRoutingSetup = (): ReactElement => {
         <Route element={<StandLayout />}>
           {/* 기본 대시보드 라우트 - 역할 기반 라우팅 적용 */}
           <Route path="/" element={<RoleBasedDashboard />} />
-          <Route path="/dashboard/default" element={<DefaultPage />} />
           <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
           
           {/* 역할별 대시보드 라우트 */}

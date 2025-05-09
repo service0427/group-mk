@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; 
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
 import { KeenIcon } from "@/components";
+import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
 
 interface ChargeHistoryModalProps {
     open: boolean;
@@ -28,11 +29,11 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
 
     // 사용 가능한 역할과 상태 옵션
     const roles_array = [
-        {"code":"operator", "name": "관리자"},
-        {"code":"developer", "name": "개발자"},
-        {"code":"distributor", "name": "총판"},
-        {"code":"agency", "name": "대행사"},
-        {"code":"advertiser", "name": "광고주"},
+        {"code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR)},
+        {"code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER)},
+        {"code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR)},
+        {"code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY)},
+        {"code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER)},
     ];
 
     const status_array = [
@@ -70,17 +71,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
         }
     }
 
-    // 권한 표시 텍스트 변환 함수
-    const getRoleDisplayName = (role: string): string => {
-        const roleMap: Record<string, string> = {
-            'operator': '관리자',
-            'developer': '개발자',
-            'distributor': '총판',
-            'agency': '대행사',
-            'advertiser': '광고주'
-        };
-        return roleMap[role] || role;
-    }
+    // 기존 getRoleDisplayName 함수는 roles.config.ts에서 불러오는 버전으로 대체
 
     // 상태 배지 렌더링 함수
     const renderStatusBadge = (status: string) => {

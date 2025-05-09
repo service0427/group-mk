@@ -1,42 +1,16 @@
 import { type TMenuConfig } from '@/components/menu';
+import {
+  USER_ROLES,
+  PERMISSION_GROUPS,
+  canShowMenu,
+  hasPermission
+} from './roles.config';
 
 export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: 'Dashboard',
-    icon: 'element-11',
+    icon: 'element-11 text-primary',
     path: '/',
-    children: [
-      {
-        title: '역할별 대시보드',
-        children: [
-          {
-            title: '개발자 대시보드',
-            path: '/dashboard/developer',
-            iconImage: '/media/brand-logos/react.svg'
-          },
-          {
-            title: '운영자 대시보드',
-            path: '/dashboard/operator',
-            icon: 'shield-tick'
-          },
-          {
-            title: '총판 대시보드',
-            path: '/dashboard/distributor',
-            icon: 'shop'
-          },
-          {
-            title: '대행사 대시보드',
-            path: '/dashboard/agency',
-            icon: 'briefcase'
-          },
-          {
-            title: '광고주 대시보드',
-            path: '/dashboard/advertiser',
-            icon: 'presentation-chart'
-          }
-        ]
-      }
-    ]
   },
   {
     title: '공지사항',
@@ -155,7 +129,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '순위 분석',
-    icon: 'ranking',
+    icon: 'ranking text-info',
     disabled: true
   },
   {
@@ -167,11 +141,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
     children: [
       {
         title: '기본 관리',
-        icon: 'security-user',
+        icon: 'security-user text-primary',
         children: [
           {
             title: '내 정보 관리',
-            icon: 'user',
+            icon: 'user text-primary',
             path: '/myinfo/profile'
           },
           {
@@ -183,42 +157,42 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
       {
         title: '내 서비스 관리',
-        icon: 'setting-4',
+        icon: 'setting-4 text-info',
         children: [
           {
             title: '이용 중 서비스 관리',
-            icon: 'setting-2',
+            icon: 'setting-2 text-success',
             path: '/myinfo/services'
           }
         ]
       },
       {
         title: '캐쉬/포인트 관리',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         children: [
           {
             title: '캐쉬/포인트 이용안내',
-            icon: 'information',
+            icon: 'information text-info',
             path: '/cash/guide'
           },
           {
             title: '캐쉬 충전',
-            icon: 'dollar',
+            icon: 'dollar text-warning',
             path: '/cash/charge'
           },
           {
             title: '캐쉬 충전 요청 확인',
-            icon: 'dollar',
+            icon: 'dollar text-success',
             path: '/myinfo/cash-requests'
           },
           {
             title: '캐쉬 충전/사용내역',
-            icon: 'document',
+            icon: 'document text-primary',
             path: '/cash/history'
           },
           {
             title: '포인트 사용내역',
-            icon: 'document',
+            icon: 'document text-primary',
             path: '/point/history'
           }
         ]
@@ -226,30 +200,32 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
-    heading: '관리자 메뉴'
+    heading: '관리자 메뉴',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN)
   },
   {
     title: '사이트 관리',
     icon: 'home-2 text-success',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
-      { 
+      {
         title: '공지사항 관리',
-        icon: 'notification-1',
+        icon: 'notification-1 text-primary',
         path: '/admin/site/notice'
       },
-      { 
+      {
         title: 'FAQ 관리',
-        icon: 'message-question',
+        icon: 'message-question text-info',
         path: '/admin/site/faq'
       },
-      { 
+      {
         title: '알림 관리',
-        icon: 'notification',
+        icon: 'notification text-warning',
         path: '/admin/site/notification'
       },
-      { 
+      {
         title: '채팅 관리',
-        icon: 'message-text-1',
+        icon: 'message-text text-success',
         path: '/admin/site/chat'
       }
     ]
@@ -257,15 +233,16 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '사용자 관리',
     icon: 'users text-info',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
     children: [
-      { 
+      {
         title: '사용자 관리',
-        icon: 'users',
+        icon: 'users text-primary',
         path: '/admin/users'
       },
-      { 
+      {
         title: '등업 신청 관리',
-        icon: 'verify',
+        icon: 'verify text-success',
         path: '/admin/levelup-requests'
       }
     ]
@@ -273,61 +250,63 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
-      { 
+      {
         title: 'N 트래픽',
-        icon: 'chart-line',
-        path: '/admin/campaigns/naver-traffic'
+        path: '/admin/campaigns/naver-traffic',
+        iconImage: '/media/ad-brand/naver.png'
       },
-      { 
+      {
         title: 'N 자동완성',
-        icon: 'filter-search',
-        path: '/admin/campaigns/naver-auto'
+        path: '/admin/campaigns/naver-auto',
+        iconImage: '/media/ad-brand/naver.png'
       },
-      { 
+      {
         title: 'NS 트래픽',
-        icon: 'shop',
-        path: '/admin/campaigns/naver-shopping'
+        path: '/admin/campaigns/naver-shopping',
+        iconImage: '/media/ad-brand/naver-shopping.png'
       },
-      { 
+      {
         title: 'NP 트래픽',
-        icon: 'geolocation',
-        path: '/admin/campaigns/naver-place-traffic'
+        path: '/admin/campaigns/naver-place-traffic',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
-      { 
+      {
         title: 'NP 저장하기',
-        icon: 'geolocation',
-        path: '/admin/campaigns/naver-place-save'
+        path: '/admin/campaigns/naver-place-save',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
-      { 
+      {
         title: 'NP 블로그공유',
-        icon: 'geolocation',
-        path: '/admin/campaigns/naver-place-share'
+        path: '/admin/campaigns/naver-place-share',
+        iconImage: '/media/ad-brand/naver-blog.png'
       },
-      { 
+      {
         title: 'CP 트래픽',
-        icon: 'handcart',
-        path: '/admin/campaigns/coupang'
+        path: '/admin/campaigns/coupang',
+        iconImage: '/media/ad-brand/coupang-app.png'
       },
-      { 
+      {
         title: 'OH 트래픽',
-        icon: 'home-3',
-        path: '/admin/campaigns/ohouse'
+        path: '/admin/campaigns/ohouse',
+        iconImage: '/media/ad-brand/ohouse.png'
       }
     ]
   },
   {
     title: '슬롯 관리',
-    icon: 'cube-2 text-primary',
+    icon: 'cube-2 text-info',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
-      { 
+      {
         title: '슬롯 정보 관리',
-        icon: 'cube-2',
+        icon: 'cube-2 text-primary',
         path: '/admin/slots/info'
       },
-      { 
+      {
         title: '슬롯 승인 관리',
-        icon: 'verify',
+        icon: 'verify text-success',
         path: '/admin/slots/approve'
       }
     ]
@@ -335,44 +314,84 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캐시 관리',
     icon: 'dollar text-warning',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
-      { 
+      {
         title: '신청 관리',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/admin/cash'
       },
-      { 
+      {
         title: '설정 관리',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/admin/cash_setting'
       }
     ]
   },
   {
     title: '필요 페이지',
-    icon: 'other',
+    icon: 'other text-gray-600',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
-      { 
+      {
         title: '총판 출금 신청',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/withdraw'
       },
-      { 
+      {
         title: '관리자 출금 설정',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/admin/withdraw_setting'
       },
-      { 
+      {
         title: '운영자 출금 승인',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/admin/withdraw_approve'
       },
-      { 
+      {
         title: '총판 작업 입력',
-        icon: 'dollar',
+        icon: 'dollar text-warning',
         path: '/admin/work'
       }
     ]
+  },
+  {
+    title: '개발자 메뉴',
+    icon: 'code text-info',
+    children: [
+      {
+        title: '역할별 대시보드',
+        icon: 'element-11 text-primary',
+        children: [
+          {
+            title: '개발자 대시보드',
+            icon: 'code text-info',
+            path: '/dashboard/developer'
+          },
+          {
+            title: '운영자 대시보드',
+            icon: 'shield-tick text-success',
+            path: '/dashboard/operator'
+          },
+          {
+            title: '총판 대시보드',
+            icon: 'shop text-primary',
+            path: '/dashboard/distributor'
+          },
+          {
+            title: '대행사 대시보드',
+            icon: 'briefcase text-primary',
+            path: '/dashboard/agency'
+          },
+          {
+            title: '광고주 대시보드',
+            icon: 'presentation-chart text-warning',
+            path: '/dashboard/advertiser'
+          },
+        ]
+      }
+    ],
+    authCheck: (role) => role === USER_ROLES.DEVELOPER  // 개발자 역할만 볼 수 있도록 제한
   }
 ];
 
@@ -384,17 +403,17 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '주요 메뉴',
         children: [
-          { 
+          {
             title: '공지사항',
             icon: 'notification',
             path: '/notice'
           },
-          { 
+          {
             title: 'FAQ',
             icon: 'message-question text-info',
             path: '/faq'
           },
-          { 
+          {
             title: '사이트맵',
             icon: 'tree text-primary',
             path: '/sitemap'
@@ -402,32 +421,12 @@ export const MENU_MEGA: TMenuConfig = [
         ]
       },
       {
-        heading: '역할별 대시보드',
+        heading: '대시보드',
         children: [
-          { 
-            title: '개발자 대시보드',
-            icon: 'code-1',
-            path: '/dashboard/developer'
-          },
-          { 
-            title: '운영자 대시보드',
-            icon: 'shield-tick',
-            path: '/dashboard/operator'
-          },
-          { 
-            title: '총판 대시보드',
-            icon: 'shop',
-            path: '/dashboard/distributor'
-          },
-          { 
-            title: '대행사 대시보드',
-            icon: 'briefcase',
-            path: '/dashboard/agency'
-          },
-          { 
-            title: '광고주 대시보드',
-            icon: 'presentation-chart',
-            path: '/dashboard/advertiser'
+          {
+            title: '대시보드',
+            icon: 'element-11 text-primary',
+            path: '/'
           }
         ]
       }
@@ -438,46 +437,46 @@ export const MENU_MEGA: TMenuConfig = [
     children: [
       {
         heading: '캠페인 소개',
-        icon: 'document',
+        icon: 'document text-primary',
         children: [
-          { 
+          {
             title: 'N 트래픽',
-            icon: 'chart-line',
+            icon: 'chart-line text-success',
             path: '/advertise/naver/traffic/desc'
           },
-          { 
+          {
             title: 'N 자동완성',
-            icon: 'filter-search',
+            icon: 'filter-search text-info',
             path: '/advertise/naver/auto/desc'
           },
-          { 
+          {
             title: 'NS 트래픽',
-            icon: 'shop',
+            icon: 'shop text-primary',
             path: '/advertise/naver/shopping/traffic/desc'
           },
-          { 
+          {
             title: 'NP 트래픽',
-            icon: 'geolocation',
-            path: '/advertise/naver/place/traffic/desc' 
+            icon: 'geolocation text-danger',
+            path: '/advertise/naver/place/traffic/desc'
           },
-          { 
+          {
             title: 'NP 저장하기',
-            icon: 'geolocation',
+            icon: 'geolocation text-danger',
             path: '/advertise/naver/place/save/desc'
           },
-          { 
+          {
             title: 'NP 블로그공유',
-            icon: 'geolocation',
+            icon: 'geolocation text-danger',
             path: '/advertise/naver/place/share/desc'
           },
-          { 
+          {
             title: 'CP 트래픽',
-            icon: 'handcart',
+            icon: 'handcart text-warning',
             path: '/advertise/coupang/traffic/desc'
           },
-          { 
+          {
             title: 'OH 트래픽',
-            icon: 'home-3',
+            icon: 'home-3 text-success',
             path: '/advertise/ohouse/traffic/desc'
           }
         ]
@@ -485,44 +484,44 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '캠페인 관리',
         children: [
-          { 
+          {
             title: 'N 트래픽',
-            icon: 'chart-line',
+            icon: 'chart-line text-success',
             path: '/advertise/naver/traffic/campaign'
           },
-          { 
+          {
             title: 'N 자동완성',
-            icon: 'filter-search',
+            icon: 'filter-search text-info',
             path: '/advertise/naver/auto/campaign'
           },
-          { 
+          {
             title: 'NS 트래픽',
-            icon: 'shop',
+            icon: 'shop text-primary',
             path: '/advertise/naver/shopping/traffic/campaign'
           },
-          { 
+          {
             title: 'NP 트래픽',
-            icon: 'geolocation',
-            path: '/advertise/naver/place/traffic/campaign' 
+            icon: 'geolocation text-danger',
+            path: '/advertise/naver/place/traffic/campaign'
           },
-          { 
+          {
             title: 'NP 저장하기',
-            icon: 'geolocation',
+            icon: 'geolocation text-danger',
             path: '/advertise/naver/place/save/campaign'
           },
-          { 
+          {
             title: 'NP 블로그공유',
-            icon: 'geolocation',
+            icon: 'geolocation text-danger',
             path: '/advertise/naver/place/share/campaign'
           },
-          { 
+          {
             title: 'CP 트래픽',
-            icon: 'handcart',
+            icon: 'handcart text-warning',
             path: '/advertise/coupang/traffic/campaign'
           },
-          { 
+          {
             title: 'OH 트래픽',
-            icon: 'home-3',
+            icon: 'home-3 text-success',
             path: '/advertise/ohouse/traffic/campaign'
           }
         ]
@@ -530,9 +529,9 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '정보',
         children: [
-          { 
+          {
             title: '순위분석',
-            icon: 'ranking',
+            icon: 'ranking text-info',
             path: '#',
             disabled: true
           }
@@ -546,14 +545,14 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '기본 관리',
         children: [
-          { 
+          {
             title: '내 정보 관리',
-            icon: 'user',
+            icon: 'user text-primary',
             path: '/myinfo/profile'
           },
-          { 
+          {
             title: '알림 센터',
-            icon: 'notification',
+            icon: 'notification text-warning',
             path: '/myinfo/notifications'
           }
         ]
@@ -561,7 +560,7 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '내 서비스 관리',
         children: [
-          { 
+          {
             title: '이용 중 서비스 관리',
             icon: 'setting-2',
             path: '/myinfo/services'
@@ -571,27 +570,27 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '캐쉬/포인트 관리',
         children: [
-          { 
+          {
             title: '캐쉬/포인트 이용안내',
             icon: 'information',
             path: '/cash/guide'
           },
-          { 
+          {
             title: '캐쉬 충전',
             icon: 'dollar',
             path: '/cash/charge'
           },
-          { 
+          {
             title: '캐쉬 충전 요청 확인',
             icon: 'dollar',
             path: '/myinfo/cash-requests'
           },
-          { 
+          {
             title: '캐쉬 충전/사용내역',
             icon: 'document',
             path: '/cash/history'
           },
-          { 
+          {
             title: '포인트 사용내역',
             icon: 'document',
             path: '/point/history'
@@ -606,24 +605,24 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '사이트 관리',
         children: [
-          { 
+          {
             title: '공지사항 관리',
-            icon: 'notification-1',
+            icon: 'notification-1 text-warning',
             path: '/admin/site/notice'
           },
-          { 
+          {
             title: 'FAQ 관리',
-            icon: 'question-square',
+            icon: 'question-square text-info',
             path: '/admin/site/faq'
           },
-          { 
+          {
             title: '알림 관리',
-            icon: 'notification',
+            icon: 'notification text-warning',
             path: '/admin/site/notification'
           },
-          { 
+          {
             title: '채팅 관리',
-            icon: 'message-text-1',
+            icon: 'message-text-1 text-success',
             path: '/admin/chat'
           }
         ]
@@ -631,14 +630,14 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '사용자 관리',
         children: [
-          { 
+          {
             title: '사용자 관리',
-            icon: 'users',
+            icon: 'users text-primary',
             path: '/admin/users'
           },
-          { 
+          {
             title: '등업 신청 관리',
-            icon: 'verify',
+            icon: 'verify text-success',
             path: '/admin/levelup-requests'
           }
         ]
@@ -646,34 +645,34 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '캠페인 관리',
         children: [
-          { 
+          {
             title: 'NAVER 쇼핑',
-            icon: 'shop',
+            icon: 'shop text-primary',
             path: '/admin/campaigns/naver-shopping'
           },
-          { 
+          {
             title: 'NAVER 플레이스',
-            icon: 'geolocation',
+            icon: 'geolocation text-danger',
             path: '/admin/campaigns/naver-place'
           },
-          { 
+          {
             title: 'NAVER 자동완성',
-            icon: 'filter-search',
+            icon: 'filter-search text-info',
             path: '/admin/campaigns/naver-auto'
           },
-          { 
+          {
             title: 'NAVER 트래픽',
-            icon: 'chart-line',
+            icon: 'chart-line text-success',
             path: '/admin/campaigns/naver-traffic'
           },
-          { 
+          {
             title: 'COUPANG 쇼핑',
-            icon: 'handcart',
+            icon: 'handcart text-warning',
             path: '/admin/campaigns/coupang'
           },
-          { 
+          {
             title: '오늘의집',
-            icon: 'home-3',
+            icon: 'home-3 text-success',
             path: '/admin/campaigns/ohouse'
           }
         ]
@@ -681,14 +680,14 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '슬롯 관리',
         children: [
-          { 
+          {
             title: '슬롯 정보 관리',
-            icon: 'cube-2',
+            icon: 'cube-2 text-primary',
             path: '/admin/slots/info'
           },
-          { 
+          {
             title: '슬롯 승인 관리',
-            icon: 'verify',
+            icon: 'verify text-success',
             path: '/admin/slots/approve'
           }
         ]
@@ -707,21 +706,21 @@ export const MENU_ROOT: TMenuConfig = [
   },
   {
     title: 'Account',
-    icon: 'setting-2',
+    icon: 'setting-2 text-info',
     rootPath: '/account/',
     path: '/',
     childrenIndex: 3
   },
   {
     title: 'Network',
-    icon: 'users',
+    icon: 'users text-primary',
     rootPath: '/network/',
     path: 'network/get-started',
     childrenIndex: 4
   },
   {
     title: 'Authentication',
-    icon: 'security-user',
+    icon: 'security-user text-primary',
     rootPath: '/authentication/',
     path: 'authentication/get-started',
     childrenIndex: 5

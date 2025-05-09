@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from '@/supabase';
 import { INotification, NotificationType, NotificationPriority, NotificationStatus } from '@/types/notification';
+import { USER_ROLES } from '@/config/roles.config';
 import { toast } from 'sonner';
 
 // 알림 페이지네이션 조회 결과 인터페이스
@@ -232,11 +233,11 @@ export const calculateStats = async (
   };
 
   const roleCount = {
-    'developer': 0,
-    'operator': 0,
-    'distributor': 0,
-    'agency': 0,
-    'advertiser': 0,
+    [USER_ROLES.DEVELOPER]: 0,
+    [USER_ROLES.OPERATOR]: 0,
+    [USER_ROLES.DISTRIBUTOR]: 0,
+    [USER_ROLES.AGENCY]: 0,
+    [USER_ROLES.ADVERTISER]: 0,
   };
 
   try {

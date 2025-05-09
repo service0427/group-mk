@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
 import { DashboardColorCard } from '@/pages/dashboards/components/DashboardColorCard';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ export const DashboardContent: React.FC = () => {
   // 모바일 화면 감지 (md 이하인지 여부)
   const isMobile = useResponsive('down', 'md');
   const { currentUser } = useAuthContext();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -855,10 +857,10 @@ export const DashboardContent: React.FC = () => {
               </Button>
             </div>
             
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
-              onClick={() => window.location.href = '/advertise/naver/traffic/desc'}
+              onClick={() => navigate('/advertise/naver/traffic/desc')}
             >
               캠페인 소개 페이지로 이동
             </Button>
@@ -876,11 +878,11 @@ export const DashboardContent: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-gray-800">캐시 충전 신청</h3>
             </div>
-            <Button 
-              variant="default" 
-              size="sm" 
+            <Button
+              variant="default"
+              size="sm"
               className="h-8 px-4 bg-blue-600 hover:bg-blue-700"
-              onClick={() => window.location.href = '/cash/charge'}
+              onClick={() => navigate('/cash/charge')}
             >
               충전 페이지
             </Button>

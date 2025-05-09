@@ -121,6 +121,96 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
     const handleShow = () => {
       if (hasSub) {
         setShow(true);
+
+        // 메뉴가 펼쳐질 때 마지막 메뉴 아이템으로 스크롤
+        setTimeout(() => { // 메뉴 아코디언 애니메이션이 끝난 후에 스크롤 처리
+          try {
+            // 현재 요소가 실제 DOM에 존재하는지 확인
+            const element = menuItemRef.current;
+            if (element) {
+              // 긴 지연 시간을 추가하여 DOM이 완전히 업데이트되고 애니메이션이 끝날 때까지 기다림
+              setTimeout(() => {
+                try {
+                  // 펼쳐진 메뉴의 마지막 항목 찾기 (모든 자식 요소가 로드된 후)
+                  const subMenu = element.querySelector('.menu-sub');
+                  if (subMenu) {
+                    // 가장 마지막 메뉴 항목 찾기 - 깊은 탐색을 통해
+                    // 중첩된 구조에서도 마지막 메뉴 항목을 찾기 위해 모든 하위 메뉴 항목 탐색
+                    const allMenuItems = subMenu.querySelectorAll('.menu-item');
+                    let lastMenuItem = null;
+
+                    if (allMenuItems.length > 0) {
+                      // 가장 마지막 항목을 선택
+                      lastMenuItem = allMenuItems[allMenuItems.length - 1];
+                    } else {
+                      // 서브메뉴에서 직접 마지막 자식 요소 선택
+                      lastMenuItem = subMenu.lastElementChild;
+                    }
+
+                    // 가장 마지막 요소의 바운딩 박스를 가져와서 영역이 충분히 보이게 스크롤
+                    if (lastMenuItem) {
+                      // 부모 스크롤 컨테이너 찾기
+                      const scrollContainer = document.querySelector('.sidebar-content') || document.querySelector('.sidebar');
+                      if (scrollContainer) {
+                        // 컨테이너의 현재 뷰포트 크기
+                        const containerHeight = scrollContainer.clientHeight;
+                        // 마지막 항목의 위치와 크기
+                        const lastItemRect = lastMenuItem.getBoundingClientRect();
+                        // 스크롤 컨테이너의 위치
+                        const containerRect = scrollContainer.getBoundingClientRect();
+
+                        // 마지막 항목이 컨테이너 뷰포트 안에 있는지 확인
+                        const isInView =
+                          lastItemRect.top >= containerRect.top &&
+                          lastItemRect.bottom <= containerRect.bottom;
+
+                        if (!isInView) {
+                          // 항목이 뷰포트 밖에 있으면 스크롤 조정
+                          // 항목이 컨테이너 하단에 위치하도록 스크롤
+                          scrollContainer.scrollTop = scrollContainer.scrollTop +
+                                                    (lastItemRect.bottom - containerRect.bottom) +
+                                                    100; // 여유 공간 추가
+
+                          console.log('메뉴 끝까지 스크롤 조정:', {
+                            containerHeight,
+                            lastItemBottom: lastItemRect.bottom,
+                            containerBottom: containerRect.bottom,
+                            newScrollTop: scrollContainer.scrollTop
+                          });
+                        }
+                      } else {
+                        // 스크롤 컨테이너를 찾지 못했을 때 폴백 처리
+                        lastMenuItem.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'end'
+                        });
+                        console.log('마지막 메뉴 아이템으로 스크롤 (기본 방식):', lastMenuItem);
+                      }
+                    } else {
+                      // 마지막 항목이 없으면 현재 요소로 스크롤
+                      element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                      });
+                      console.log('메뉴 스크롤 실행됨 (마지막 항목 없음):', element);
+                    }
+                  } else {
+                    // 서브메뉴가 없으면 현재 요소로 스크롤
+                    element.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'nearest'
+                    });
+                    console.log('메뉴 스크롤 실행됨 (서브메뉴 없음):', element);
+                  }
+                } catch (innerError) {
+                  console.error('내부 스크롤 처리 오류:', innerError);
+                }
+              }, 100); // 더 긴 지연 시간 (DOM 업데이트와 애니메이션 완료 기다림)
+            }
+          } catch (error) {
+            console.error('스크롤 오류:', error);
+          }
+        }, 300); // 지연 시간 증가 - 메뉴 애니메이션 완료를 위해 시간 충분히 확보
       }
 
       if (hasSub && propToggle === 'accordion' && multipleExpand === false) {

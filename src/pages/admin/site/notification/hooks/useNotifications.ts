@@ -10,6 +10,7 @@ import {
   CreateNotificationsParams
 } from '../services/notificationService';
 import { NotificationType, NotificationStatus, INotification } from '@/types/notification';
+import { USER_ROLES } from '@/config/roles.config';
 import { toast } from 'sonner';
 
 interface UseNotificationsProps {
@@ -52,11 +53,11 @@ export const useNotifications = ({ isAdmin }: UseNotificationsProps): UseNotific
       [NotificationType.MARKETING]: 0,
     },
     byUserRole: {
-      'developer': 0,
-      'operator': 0,
-      'distributor': 0,
-      'agency': 0,
-      'advertiser': 0,
+      [USER_ROLES.DEVELOPER]: 0,
+      [USER_ROLES.OPERATOR]: 0,
+      [USER_ROLES.DISTRIBUTOR]: 0,
+      [USER_ROLES.AGENCY]: 0,
+      [USER_ROLES.ADVERTISER]: 0,
     },
     byStatus: {
       [NotificationStatus.UNREAD]: 0,

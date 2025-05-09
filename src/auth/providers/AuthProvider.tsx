@@ -3,6 +3,7 @@ import { AuthModel, CustomUser } from "../_models";
 import * as authHelper from '../_helpers';
 import { supabase } from "@/supabase";
 import { useLogoutContext } from "@/contexts/LogoutContext";
+import { USER_ROLES, getRoleLevel, hasPermission } from "@/config/roles.config";
 
 interface AuthContextProps {
     loading: boolean;
@@ -162,7 +163,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         email: user.email || '',
                         full_name: user.user_metadata?.full_name || '',
                         phone_number: '',
-                        role: metadataRole || 'user',
+                        role: metadataRole || USER_ROLES.ADVERTISER, // 기본 역할로 광고주 사용
                         status: 'active',
                         raw_user_meta_data: user.user_metadata
                     };
@@ -179,7 +180,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: user.email || '',
                     full_name: '',
                     phone_number: '',
-                    role: 'user',
+                    role: USER_ROLES.ADVERTISER, // 기본 역할로 광고주 사용
                     status: 'active'
                 };
                 return basicUserData;
@@ -494,7 +495,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 options: {
                     data: {
                         full_name: full_name,
-                        role: 'advertiser' // 기본 역할 설정
+                        role: USER_ROLES.ADVERTISER // 기본 역할 설정
                     }
                 }
             });
@@ -518,7 +519,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: email,
                     full_name: full_name,
                     status: 'active',
-                    role: 'advertiser' // 기본 역할
+                    role: USER_ROLES.ADVERTISER // 기본 역할
                 };
     
                 console.log('public.users 테이블에 사용자 추가 준비:', newUser);
@@ -708,7 +709,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const logout = async () => {
         try {
             // 현재 사용자가 운영자/관리자인 경우 특별 로그아웃 처리
-            if (currentUser?.role === 'operator' || currentUser?.role === 'admin') {
+            if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
                 return await logoutForOperator();
             }
             

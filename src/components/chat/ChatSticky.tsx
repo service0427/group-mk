@@ -4,6 +4,7 @@ import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useChat } from '@/hooks/useChat';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
 
 // 데이터베이스 진단 결과 인터페이스
 interface DiagnosticResult {
@@ -115,8 +116,8 @@ const ChatSticky: React.FC = () => {
   
   // 운영자나 관리자는 이 컴포넌트를 렌더링하지 않음
   // 이렇게 하면 불필요한 훅 호출과 상태 업데이트 방지
-  if (isAuthenticated && currentUser?.role && 
-      (currentUser.role === 'admin' || currentUser.role === 'operator')) {
+  if (isAuthenticated && currentUser?.role &&
+      hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
     return null;
   }
   
@@ -303,7 +304,7 @@ const ChatSticky: React.FC = () => {
       await fetchChatRooms();
       
       // 현재 사용자가 관리자인지 확인
-      if (currentUser.role === 'admin') {
+      if (hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
         // 관리자는 채팅방 목록이 있으면 첫 번째 채팅방 선택
         if (rooms.length > 0) {
           await openChatRoom(rooms[0].id);
@@ -394,7 +395,7 @@ const ChatSticky: React.FC = () => {
       
       if (!currentRoom || currentRoom.status !== 'active') {
         // 일반 사용자만 새 채팅방 생성
-        if (currentUser.role !== 'admin') {
+        if (!hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
           if (newRoomId) {
             await openChatRoom(newRoomId);
@@ -413,7 +414,7 @@ const ChatSticky: React.FC = () => {
         setInputValue('');
       } else {
         // 메시지 전송 실패 시 새 채팅방 생성 시도
-        if (currentUser.role !== 'admin') {
+        if (!hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
           if (newRoomId) {
             await openChatRoom(newRoomId);

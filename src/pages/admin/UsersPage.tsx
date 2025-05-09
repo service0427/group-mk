@@ -3,6 +3,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
+import { USER_ROLES, USER_ROLE_BADGE_COLORS, getRoleBadgeColor, getRoleDisplayName } from '@/config/roles.config';
 
 const MakeUserRow = (user:any) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
@@ -17,14 +18,10 @@ const MakeUserRow = (user:any) => {
     },[])
 
     const renderRoleBadge = (role: string): {name: string, class: string} => {
-        const roleMap: Record<string, {name: string, class: string}> = {
-            'operator': {name:'관리자', class:'text-primary'},
-            'developer': {name:'개발자', class:'text-warning'},
-            'distributor': {name:'총판', class:'text-success'},
-            'agency': {name:'대행사', class:'text-info'},
-            'advertiser': {name:'광고주', class:'text-secodary'}
+        return {
+            name: getRoleDisplayName(role),
+            class: `text-${getRoleBadgeColor(role)}`
         };
-        return roleMap[role] || {name: role, class: ''};
     }
 
     const renderStatusBadge = (status: string) => {
@@ -243,11 +240,11 @@ const UsersPage = () => {
 
     const roles_array = [
         {"code":"", "name": "All"},
-        {"code":"operator", "name": "관리자"},
-        {"code":"developer", "name": "개발자"},
-        {"code":"distributor", "name": "총판"},
-        {"code":"agency", "name": "대행사"},
-        {"code":"advertiser", "name": "광고주"},
+        {"code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR)},
+        {"code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER)},
+        {"code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR)},
+        {"code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY)},
+        {"code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER)},
     ];
 
     const status_array = [
@@ -501,16 +498,8 @@ const UsersPage = () => {
                                                                     <span>권한:</span>
                                                                 </div>
                                                                 {(() => {
-                                                                    const roleMap: Record<string, {name: string, class: string}> = {
-                                                                        'operator': {name:'관리자', class:'text-primary'},
-                                                                        'developer': {name:'개발자', class:'text-warning'},
-                                                                        'distributor': {name:'총판', class:'text-success'},
-                                                                        'agency': {name:'대행사', class:'text-info'},
-                                                                        'advertiser': {name:'광고주', class:'text-secondary'}
-                                                                    };
-                                                                    const role = roleMap[user.role] || {name: user.role, class: ''};
                                                                     return (
-                                                                        <p className={`font-medium ${role.class}`}>{role.name}</p>
+                                                                        <p className={`font-medium text-${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role)}</p>
                                                                     );
                                                                 })()}
                                                             </div>

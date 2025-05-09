@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { KeenIcon } from '@/components/keenicons';
 import NotificationIcon from '@/components/notifications/NotificationIcon';
+import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor } from '@/config/roles.config';
 
 interface NotificationTableProps {
   notifications: INotificationWithUser[];
@@ -132,30 +133,8 @@ const NotificationTable: React.FC<NotificationTableProps> = ({
                     {notification.userName || '알 수 없음'}
                   </td>
                   <td className="py-3 px-3 text-center">
-                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                      notification.userRole === 'developer'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
-                        : notification.userRole === 'operator'
-                          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                          : notification.userRole === 'distributor'
-                            ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
-                            : notification.userRole === 'agency'
-                              ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300'
-                              : notification.userRole === 'advertiser'
-                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
-                    }`}>
-                      {notification.userRole === 'developer'
-                        ? '개발자'
-                        : notification.userRole === 'operator'
-                          ? '운영자'
-                          : notification.userRole === 'distributor'
-                            ? '총판'
-                            : notification.userRole === 'agency'
-                              ? '대행사'
-                              : notification.userRole === 'advertiser'
-                                ? '광고주'
-                                : notification.userRole || '기타'}
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-${getRoleBadgeColor(notification.userRole)}-100 dark:bg-${getRoleBadgeColor(notification.userRole)}-900/40 text-${getRoleBadgeColor(notification.userRole)}-800 dark:text-${getRoleBadgeColor(notification.userRole)}-300`}>
+                      {getRoleDisplayName(notification.userRole) || '기타'}
                     </span>
                   </td>
                   <td className="py-3 px-3 text-center">
@@ -274,30 +253,8 @@ const NotificationTable: React.FC<NotificationTableProps> = ({
                         <KeenIcon icon="user" className="h-3 w-3 text-gray-500" />
                         <span className="text-muted-foreground mr-1">회원:</span>
                         <span className="font-medium">{notification.userName || '알 수 없음'}</span>
-                        <span className={`ml-1 inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full ${
-                          notification.userRole === 'developer'
-                            ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
-                            : notification.userRole === 'operator'
-                              ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                              : notification.userRole === 'distributor'
-                                ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
-                                : notification.userRole === 'agency'
-                                  ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300'
-                                  : notification.userRole === 'advertiser'
-                                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
-                        }`}>
-                          {notification.userRole === 'developer'
-                            ? '개발자'
-                            : notification.userRole === 'operator'
-                              ? '운영자'
-                              : notification.userRole === 'distributor'
-                                ? '총판'
-                                : notification.userRole === 'agency'
-                                  ? '대행사'
-                                  : notification.userRole === 'advertiser'
-                                    ? '광고주'
-                                    : notification.userRole || '기타'}
+                        <span className={`ml-1 inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-${getRoleBadgeColor(notification.userRole)}-100 dark:bg-${getRoleBadgeColor(notification.userRole)}-900/40 text-${getRoleBadgeColor(notification.userRole)}-800 dark:text-${getRoleBadgeColor(notification.userRole)}-300`}>
+                          {getRoleDisplayName(notification.userRole) || '기타'}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">

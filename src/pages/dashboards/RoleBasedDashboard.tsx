@@ -1,52 +1,60 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import { useAuthContext } from '@/auth/useAuthContext';
+import { USER_ROLES } from '@/config/roles.config';
+
+// 각 역할별 대시보드 컴포넌트 임포트
+import { DeveloperDashboardContent } from './developer';
+import { OperatorDashboardContent } from './operator';
+import { DistributorDashboardContent } from './distributor';
+import { AgencyDashboardContent } from './agency';
+import { AdvertiserDashboardContent } from './advertiser';
 
 /**
- * 사용자 역할 기반 대시보드 리다이렉션 컴포넌트
- * 사용자의 역할에 따라 적절한 대시보드 페이지로 리다이렉션합니다.
+ * 사용자 역할 기반 대시보드 컴포넌트
+ * 사용자의 역할에 따라 적절한 대시보드 컨텐츠를 렌더링합니다.
+ * URL은 '/'로 유지됩니다.
  */
 const RoleBasedDashboard: React.FC = () => {
   const { userRole, isAuthenticated } = useAuthContext();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       return; // RequireAuth에서 처리할 것이므로 여기서는 무시
     }
 
-    // 역할에 따른 리다이렉션
-    switch (userRole) {
-      case 'developer':
-        navigate('/dashboard/developer', { replace: true });
-        break;
-      case 'operator':
-        navigate('/dashboard/operator', { replace: true });
-        break;
-      case 'distributor':
-        navigate('/dashboard/distributor', { replace: true });
-        break;
-      case 'agency':
-        navigate('/dashboard/agency', { replace: true });
-        break;
-      case 'advertiser':
-        navigate('/dashboard/advertiser', { replace: true });
-        break;
-      default:
-        // 기본 대시보드 또는 역할이 없는 경우 처리
-        console.warn(`Unknown role: ${userRole}, redirecting to default dashboard`);
-        // 기본 대시보드 페이지로 리다이렉션
-        navigate('/dashboard/default', { replace: true });
-        break;
-    }
-  }, [userRole, isAuthenticated, navigate]);
+    // 로딩 상태 종료 - 각 역할별 대시보드 컨텐츠를 렌더링할 준비
+    setIsLoading(false);
+  }, [userRole, isAuthenticated]);
 
-  // 리다이렉션 중에는 로딩 상태 표시
-  return (
-    <div className="flex items-center justify-center h-[50vh]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-    </div>
-  );
+  // 로딩 중일 때는 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400 font-medium">대시보드 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 역할에 따른 대시보드 콘텐츠 렌더링
+  switch (userRole) {
+    case USER_ROLES.DEVELOPER:
+      return <DeveloperDashboardContent />;
+    case USER_ROLES.OPERATOR:
+      return <OperatorDashboardContent />;
+    case USER_ROLES.DISTRIBUTOR:
+      return <DistributorDashboardContent />;
+    case USER_ROLES.AGENCY:
+      return <AgencyDashboardContent />;
+    case USER_ROLES.ADVERTISER:
+      return <AdvertiserDashboardContent />;
+    default:
+      console.warn(`Unknown role: ${userRole}, showing advertiser dashboard as fallback`);
+      return <AdvertiserDashboardContent />;
+  }
 };
 
 export { RoleBasedDashboard };

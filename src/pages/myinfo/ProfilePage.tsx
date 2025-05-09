@@ -4,6 +4,7 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { BusinessUpgradeModal } from '@/components/business';
+import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor } from '@/config/roles.config';
 
 const ProfilePage = () => {
   const { currentUser, setCurrentUser } = useAuthContext();
@@ -79,17 +80,8 @@ const ProfilePage = () => {
     }
   }, [currentUser]);
 
-  const roleClass = currentUser?.role === 'operator' ? 'badge-primary' :
-    currentUser?.role === 'developer' ? 'badge-warning' :
-      currentUser?.role === 'distributor' ? 'badge-success' :
-        currentUser?.role === 'agency' ? 'badge-info' :
-          currentUser?.role === 'advertiser' ? 'badge-secodary' : '';
-
-  const roleText = currentUser?.role === 'operator' ? '관리자' :
-    currentUser?.role === 'developer' ? '개발자' :
-      currentUser?.role === 'distributor' ? '총판' :
-        currentUser?.role === 'agency' ? '대행사' :
-          currentUser?.role === 'advertiser' ? '광고주' : '';
+  const roleClass = currentUser?.role ? `badge-${getRoleBadgeColor(currentUser.role)}` : '';
+  const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
   console.log(currentUser)
 
   const statusClass = currentUser?.status === 'active' ? 'badge-success' :

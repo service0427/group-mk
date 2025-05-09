@@ -172,6 +172,7 @@ export interface IMenuItemConfig {
   trigger?: TMenuItemTrigger;
   children?: IMenuItemConfig[];
   childrenIndex?: number;
+  authCheck?: (role: string) => boolean; // 권한 확인 함수 (특정 사용자 역할만 메뉴 표시)
 }
 
 export type TMenuConfig = IMenuItemConfig[];

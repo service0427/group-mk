@@ -112,15 +112,15 @@ const UserInfoDisplay = () => {
       sessionStorage.removeItem('currentUser');
       sessionStorage.removeItem('lastAuthCheck');
       
-      // 로그인 페이지로 리다이렉트
-      navigate('/auth/login');
+      // navigate, window.location.href 대신 페이지 새로고침으로 권한 재확인하도록
+      window.location.reload();
     } catch (error) {
       console.error('로그아웃 처리 중 오류:', error);
       setIsLogoutLoading(false);
       
       // 오류 발생해도 로그인 페이지로 강제 이동
       const timestamp = new Date().getTime();
-      window.location.href = `/auth/login?t=${timestamp}`;
+      window.location.href = `/#/auth/login?t=${timestamp}`;
     }
   };
 

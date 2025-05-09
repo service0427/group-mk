@@ -304,7 +304,7 @@ const ChatSticky: React.FC = () => {
       await fetchChatRooms();
       
       // 현재 사용자가 관리자인지 확인
-      if (hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
+      if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
         // 관리자는 채팅방 목록이 있으면 첫 번째 채팅방 선택
         if (rooms.length > 0) {
           await openChatRoom(rooms[0].id);
@@ -395,7 +395,7 @@ const ChatSticky: React.FC = () => {
       
       if (!currentRoom || currentRoom.status !== 'active') {
         // 일반 사용자만 새 채팅방 생성
-        if (!hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
+        if (currentUser?.role && !hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
           if (newRoomId) {
             await openChatRoom(newRoomId);
@@ -414,7 +414,7 @@ const ChatSticky: React.FC = () => {
         setInputValue('');
       } else {
         // 메시지 전송 실패 시 새 채팅방 생성 시도
-        if (!hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
+        if (currentUser?.role && !hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
           if (newRoomId) {
             await openChatRoom(newRoomId);

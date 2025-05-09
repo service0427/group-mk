@@ -40,7 +40,7 @@ const NotificationManagePage: React.FC = () => {
   });
 
   // 관리자 권한 체크
-  const isAdmin = hasPermission(currentUser?.role, PERMISSION_GROUPS.ADMIN);
+  const isAdmin = currentUser?.role ? hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN) : false;
 
   // 알림 목록 커스텀 훅 사용
   const {
@@ -110,7 +110,7 @@ const NotificationManagePage: React.FC = () => {
     async function checkTable() {
       try {
         // 관리자 권한을 가진 경우에만 실행
-        if (hasPermission(currentUser?.role, PERMISSION_GROUPS.ADMIN)) {
+        if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const result = await checkNotificationAggregatesTable();
           setTableStatus({ exists: result.exists, checked: true });
 

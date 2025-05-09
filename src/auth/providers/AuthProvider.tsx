@@ -3,7 +3,7 @@ import { AuthModel, CustomUser } from "../_models";
 import * as authHelper from '../_helpers';
 import { supabase } from "@/supabase";
 import { useLogoutContext } from "@/contexts/LogoutContext";
-import { USER_ROLES, getRoleLevel, hasPermission } from "@/config/roles.config";
+import { USER_ROLES, getRoleLevel, hasPermission, PERMISSION_GROUPS } from "@/config/roles.config";
 
 interface AuthContextProps {
     loading: boolean;

@@ -78,21 +78,21 @@ export const USER_ROLE_BADGE_COLORS = {
  * 역할 ID로 표시 이름 조회하는 함수
  */
 export const getRoleDisplayName = (roleId: string): string => {
-  return USER_ROLE_DISPLAY_NAMES[roleId as keyof typeof USER_ROLE_DISPLAY_NAMES] || roleId;
+  return (USER_ROLE_DISPLAY_NAMES as Record<string, string>)[roleId] || roleId;
 };
 
 /**
  * 역할 ID로 배지 색상 조회하는 함수
  */
 export const getRoleBadgeColor = (roleId: string): string => {
-  return USER_ROLE_BADGE_COLORS[roleId as keyof typeof USER_ROLE_BADGE_COLORS] || 'secondary';
+  return (USER_ROLE_BADGE_COLORS as Record<string, string>)[roleId] || 'secondary';
 };
 
 /**
  * 사용자의 역할 레벨을 반환하는 함수
  */
 export const getRoleLevel = (roleId: string): number => {
-  return ROLE_LEVELS[roleId as keyof typeof ROLE_LEVELS] || 0;
+  return (ROLE_LEVELS as Record<string, number>)[roleId] || 0;
 };
 
 /**
@@ -102,7 +102,8 @@ export const getRoleLevel = (roleId: string): number => {
  * @param permissionGroup 권한 그룹 레벨 (PERMISSION_GROUPS의 값)
  * @returns 접근 가능 여부
  */
-export const hasPermission = (roleId: string, permissionGroup: number): boolean => {
+export const hasPermission = (roleId: string | undefined, permissionGroup: number): boolean => {
+  if (!roleId) return false;
   const userLevel = getRoleLevel(roleId);
   return userLevel >= permissionGroup;
 };
@@ -116,10 +117,12 @@ export const hasPermission = (roleId: string, permissionGroup: number): boolean 
  * @returns 메뉴 표시 여부
  */
 export const canShowMenu = (
-  roleId: string,
+  roleId: string | undefined,
   allowedRoles?: string[],
   minLevel?: number
 ): boolean => {
+  if (!roleId) return false;
+
   // 허용된 역할 배열이 있으면 해당 역할 확인
   if (allowedRoles && allowedRoles.length > 0) {
     return allowedRoles.includes(roleId);

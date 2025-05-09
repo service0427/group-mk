@@ -1,0 +1,33 @@
+/* 하위 메뉴 선택 시 상위 메뉴도 활성화되는 스타일 */
+.menu-item-active > .menu-link,
+.menu-item-show > .menu-link {
+  color: var(--tw-primary-500) !important;
+  font-weight: 600 !important;
+}
+
+.dark .menu-item-active > .menu-link,
+.dark .menu-item-show > .menu-link {
+  color: var(--tw-blue-400) !important;
+}
+
+/* 메뉴 아이콘도 색상 변경 */
+.menu-item-active > .menu-link .menu-icon,
+.menu-item-show > .menu-link .menu-icon {
+  color: var(--tw-primary-500) !important;
+}
+
+.dark .menu-item-active > .menu-link .menu-icon,
+.dark .menu-item-show > .menu-link .menu-icon {
+  color: var(--tw-blue-400) !important;
+}
+
+/* 메뉴 항목 선택 시 테두리 색상 변경 */
+.menu-item-active > .menu-link,
+.menu-item-show > .menu-link {
+  border-color: rgba(var(--tw-primary-rgb), 0.3) !important;
+}
+
+.dark .menu-item-active > .menu-link,
+.dark .menu-item-show > .menu-link {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}

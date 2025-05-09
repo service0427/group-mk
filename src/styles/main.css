@@ -58,3 +58,59 @@ main.content::-webkit-scrollbar-thumb {
 main.content::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* 사이드바 스크롤바 스타일 */
+.sidebar-content,
+.sidebar-content .scrollable-y-hover,
+.mobile-sidebar-content,
+.scrollable-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-content::-webkit-scrollbar,
+.sidebar-content .scrollable-y-hover::-webkit-scrollbar,
+.mobile-sidebar-content::-webkit-scrollbar,
+.scrollable-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track,
+.sidebar-content .scrollable-y-hover::-webkit-scrollbar-track,
+.mobile-sidebar-content::-webkit-scrollbar-track,
+.scrollable-y-auto::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb,
+.sidebar-content .scrollable-y-hover::-webkit-scrollbar-thumb,
+.mobile-sidebar-content::-webkit-scrollbar-thumb,
+.scrollable-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover,
+.sidebar-content .scrollable-y-hover::-webkit-scrollbar-thumb:hover,
+.mobile-sidebar-content::-webkit-scrollbar-thumb:hover,
+.scrollable-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 스크롤바 숨기기 클래스 */
+.hide-scrollbar,
+.mobile-sidebar-content {
+  -ms-overflow-style: none !important;  /* 인터넷 익스플로러와 엣지 */
+  scrollbar-width: none !important;     /* 파이어폭스 */
+}
+
+/* Webkit 브라우저(크롬, 사파리 등)에서 스크롤바 숨기기 */
+.hide-scrollbar::-webkit-scrollbar,
+.mobile-sidebar-content::-webkit-scrollbar,
+.sidebar-content::-webkit-scrollbar,
+.sidebar div::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}

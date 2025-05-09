@@ -81,7 +81,7 @@ const MenuComponent = ({
         isOpenAccordion
       }}
     >
-      <div className={clsx('menu', className && className)}>{modifiedChildren}</div>
+      <div className={clsx('menu', 'w-full h-full', className && className)}>{modifiedChildren}</div>
     </MenuContext.Provider>
   );
 };

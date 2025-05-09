@@ -14,6 +14,9 @@ const Layout = () => {
         {`
           .page-bg {
             background-image: url('${toAbsoluteUrl('/media/images/2600x1200/bg-10.png')}');
+            background-size: cover;
+            background-position: center center;
+            min-height: 100vh;
           }
           .dark .page-bg {
             background-image: url('${toAbsoluteUrl('/media/images/2600x1200/bg-10-dark.png')}');
@@ -22,7 +25,7 @@ const Layout = () => {
       </style>
 
       {/* 메트로닉 스타일로 배경과 로그인 폼 배치 */}
-      <div className="flex items-center justify-center grow bg-center bg-no-repeat page-bg">
+      <div className="flex items-center justify-center grow overflow-hidden bg-center bg-cover page-bg h-screen">
         <Outlet />
       </div>
     </Fragment>

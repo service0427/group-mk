@@ -76,13 +76,12 @@ export const Sidebar = () => {
     return (
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent
-          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px] scrollable-y-auto"
+          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px]"
           forceMount={true}
           side="left"
           close={false}
-          style={{ 
-            paddingRight: '12px', 
-            overflowX: 'hidden' 
+          style={{
+            padding: '0'
           }}
         >
           <SheetHeader className="sr-only">

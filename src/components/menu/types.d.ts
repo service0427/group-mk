@@ -157,6 +157,7 @@ export interface IMenuItemConfig {
   disabled?: boolean;
   heading?: string;
   icon?: string;
+  iconImage?: string; // 이미지 경로 (SVG 또는 PNG)
   badge?: string;
   separator?: boolean;
   tooltip?: Partial<TooltipProps>;

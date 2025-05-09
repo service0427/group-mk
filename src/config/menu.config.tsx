@@ -12,7 +12,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
           {
             title: '개발자 대시보드',
             path: '/dashboard/developer',
-            icon: 'code-1'
+            iconImage: '/media/brand-logos/react.svg'
           },
           {
             title: '운영자 대시보드',
@@ -63,35 +63,43 @@ export const MENU_SIDEBAR: TMenuConfig = [
     children: [
       {
         title: 'N 트래픽',
-        path: '/advertise/naver/traffic/desc'
+        path: '/advertise/naver/traffic/desc',
+        iconImage: '/media/ad-brand/naver.png'
       },
       {
         title: 'N 자동완성',
-        path: '/advertise/naver/auto/desc'
+        path: '/advertise/naver/auto/desc',
+        iconImage: '/media/ad-brand/naver.png'
       },
       {
         title: 'NS 트래픽',
-        path: '/advertise/naver/shopping/traffic/desc'
+        path: '/advertise/naver/shopping/traffic/desc',
+        iconImage: '/media/ad-brand/naver-shopping.png'
       },
       {
         title: 'NP 트래픽',
-        path: '/advertise/naver/place/traffic/desc'
+        path: '/advertise/naver/place/traffic/desc',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
       {
         title: 'NP 저장하기',
-        path: '/advertise/naver/place/save/desc'
+        path: '/advertise/naver/place/save/desc',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
       {
         title: 'NP 블로그공유',
-        path: '/advertise/naver/place/share/desc'
+        path: '/advertise/naver/place/share/desc',
+        iconImage: '/media/ad-brand/naver-blog.png'
       },
       {
         title: 'CP 트래픽',
-        path: '/advertise/coupang/traffic/desc'
+        path: '/advertise/coupang/traffic/desc',
+        iconImage: '/media/ad-brand/coupang-app.png'
       },
       {
         title: 'OH 트래픽',
-        path: '/advertise/ohouse/traffic/desc'
+        path: '/advertise/ohouse/traffic/desc',
+        iconImage: '/media/ad-brand/ohouse.png'
       }
     ]
   },
@@ -102,35 +110,43 @@ export const MENU_SIDEBAR: TMenuConfig = [
     children: [
       {
         title: 'N 트래픽',
-        path: '/advertise/naver/traffic/campaign'
+        path: '/advertise/naver/traffic/campaign',
+        iconImage: '/media/ad-brand/naver.png'
       },
       {
         title: 'N 자동완성',
-        path: '/advertise/naver/auto/campaign'
+        path: '/advertise/naver/auto/campaign',
+        iconImage: '/media/ad-brand/naver.png'
       },
       {
         title: 'NS 트래픽',
-        path: '/advertise/naver/shopping/traffic/campaign'
+        path: '/advertise/naver/shopping/traffic/campaign',
+        iconImage: '/media/ad-brand/naver-shopping.png'
       },
       {
         title: 'NP 트래픽',
-        path: '/advertise/naver/place/traffic/campaign'
+        path: '/advertise/naver/place/traffic/campaign',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
       {
         title: 'NP 저장하기',
-        path: '/advertise/naver/place/save/campaign'
+        path: '/advertise/naver/place/save/campaign',
+        iconImage: '/media/ad-brand/naver-place.png'
       },
       {
         title: 'NP 블로그공유',
-        path: '/advertise/naver/place/share/campaign'
+        path: '/advertise/naver/place/share/campaign',
+        iconImage: '/media/ad-brand/naver-blog.png'
       },
       {
         title: 'CP 트래픽',
-        path: '/advertise/coupang/traffic/campaign'
+        path: '/advertise/coupang/traffic/campaign',
+        iconImage: '/media/ad-brand/coupang-app.png'
       },
       {
         title: 'OH 트래픽',
-        path: '/advertise/ohouse/traffic/campaign'
+        path: '/advertise/ohouse/traffic/campaign',
+        iconImage: '/media/ad-brand/ohouse.png'
       }
     ]
   },
@@ -151,13 +167,14 @@ export const MENU_SIDEBAR: TMenuConfig = [
     children: [
       {
         title: '기본 관리',
+        icon: 'security-user',
         children: [
-          { 
+          {
             title: '내 정보 관리',
             icon: 'user',
             path: '/myinfo/profile'
           },
-          { 
+          {
             title: '알림 센터',
             icon: 'notification text-warning',
             path: '/myinfo/notifications'
@@ -166,8 +183,9 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
       {
         title: '내 서비스 관리',
+        icon: 'setting-4',
         children: [
-          { 
+          {
             title: '이용 중 서비스 관리',
             icon: 'setting-2',
             path: '/myinfo/services'
@@ -176,28 +194,29 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
       {
         title: '캐쉬/포인트 관리',
+        icon: 'dollar',
         children: [
-          { 
+          {
             title: '캐쉬/포인트 이용안내',
             icon: 'information',
             path: '/cash/guide'
           },
-          { 
+          {
             title: '캐쉬 충전',
             icon: 'dollar',
             path: '/cash/charge'
           },
-          { 
+          {
             title: '캐쉬 충전 요청 확인',
             icon: 'dollar',
             path: '/myinfo/cash-requests'
           },
-          { 
+          {
             title: '캐쉬 충전/사용내역',
             icon: 'document',
             path: '/cash/history'
           },
-          { 
+          {
             title: '포인트 사용내역',
             icon: 'document',
             path: '/point/history'

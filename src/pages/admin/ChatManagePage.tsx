@@ -89,6 +89,8 @@ const ChatManagePage: React.FC = () => {
   const [hasMoreRooms, setHasMoreRooms] = useState(true);
   const roomPageSize = 20; // 한 번에 로드할 채팅방 수
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived' | 'closed'>('all'); // 채팅 상태 필터
+  const [isMobileView, setIsMobileView] = useState(false); // 모바일 화면 여부
+  const [showChatList, setShowChatList] = useState(true); // 모바일에서 채팅방 목록 표시 여부
 
   // 사용자 역할 확인 (관리자 또는 운영자)
 
@@ -439,6 +441,22 @@ const ChatManagePage: React.FC = () => {
   useEffect(() => {
     // 운영자 페이지에서는 모든 채팅방 로드
     fetchAllChatRooms();
+
+    // 화면 크기 감지 함수
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768); // 768px 미만일 때 모바일 화면으로 간주
+    };
+
+    // 초기 화면 크기 감지
+    handleResize();
+
+    // 화면 크기 변경 시 이벤트 리스너 추가
+    window.addEventListener('resize', handleResize);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   // 필터 변경 시 채팅방 목록 다시 로드
@@ -543,14 +561,24 @@ const ChatManagePage: React.FC = () => {
 
   // 채팅방 선택 및 운영자 참여 처리 (최적화 버전)
   const handleSelectRoom = useCallback(async (roomId: string) => {
-    // 이미 선택된 방이면 다시 로드하지 않음
-    if (roomId === currentRoomId) return;
+    // 이미 선택된 방이면 다시 로드하지 않음 (모바일에서는 채팅 화면으로 전환)
+    if (roomId === currentRoomId) {
+      if (isMobileView) {
+        setShowChatList(false); // 모바일에서 채팅 화면으로 전환
+      }
+      return;
+    }
 
     // 1. 먼저 UI 업데이트 및 상태 초기화 (사용자 경험 개선)
     setCurrentRoomId(roomId);
     setCurrentPage(0);
     setHasMoreMessages(true);
     setCurrentMessages([]);  // 메시지 목록 초기화로 깜박임 방지
+
+    // 모바일에서 채팅방 선택 시 채팅 화면으로 전환
+    if (isMobileView) {
+      setShowChatList(false);
+    }
 
     // 2. 메시지 로드 (첫 페이지만, 사용자가 바로 볼 수 있도록)
     fetchRoomMessages(roomId, 0, false)
@@ -603,7 +631,7 @@ const ChatManagePage: React.FC = () => {
         }
       }, 0);
     }
-  }, [currentRoomId, currentUser?.id, fetchRoomMessages]);
+  }, [currentRoomId, currentUser?.id, fetchRoomMessages, isMobileView]);
 
   // 채팅방 상태 변경 함수
   const updateChatRoomStatus = useCallback(async (roomId: string, status: 'active' | 'archived' | 'closed') => {
@@ -708,11 +736,16 @@ const ChatManagePage: React.FC = () => {
     updateChatRoomStatus(roomId, 'archived');
   }, [updateChatRoomStatus]);
 
-  // 현재 선택된 방 정보 메모이제이션 
+  // 현재 선택된 방 정보 메모이제이션
   const currentRoomInfo = useMemo(() => {
     if (!currentRoomId) return null;
     return allRooms.find(room => room.id === currentRoomId) || null;
   }, [currentRoomId, allRooms]);
+
+  // 모바일에서 채팅방 목록으로 돌아가기
+  const handleBackToList = useCallback(() => {
+    setShowChatList(true);
+  }, []);
 
   // 메시지 컨테이너 참조 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -797,9 +830,20 @@ const ChatManagePage: React.FC = () => {
       showPageMenu={false}
       childrenClassName=""
     >
-      <div className="flex border dark:border-slate-700 rounded-lg overflow-hidden mt-2" style={{ height: 'calc(90vh - 220px)' }}>
+      <div
+        className={`${isMobileView ? 'flex flex-col' : 'flex'} border dark:border-slate-700 rounded-lg overflow-hidden mt-2`}
+        style={{ height: 'calc(90vh - 220px)' }}
+      >
         {/* 채팅방 목록 */}
-        <div className="w-1/3 border-r dark:border-slate-700 overflow-y-auto bg-gray-50 dark:bg-slate-900">
+        <div
+          className={`
+            ${isMobileView
+              ? (showChatList ? 'block' : 'hidden')
+              : 'w-1/3 border-r dark:border-slate-700'
+            }
+            overflow-y-auto bg-gray-50 dark:bg-slate-900
+          `}
+        >
           <div className="p-4 bg-blue-600 dark:bg-blue-900 text-white font-medium flex flex-col">
             <div className="flex justify-between items-center w-full">
               <div>채팅방 목록 ({allRooms.length})</div>
@@ -941,76 +985,118 @@ const ChatManagePage: React.FC = () => {
         </div>
 
         {/* 채팅창 */}
-        <div className="w-2/3 flex flex-col dark:bg-black">
+        <div
+          className={`
+            ${isMobileView
+              ? (showChatList ? 'hidden' : 'block')
+              : 'w-2/3'
+            }
+            flex flex-col dark:bg-black
+          `}
+        >
           {/* 채팅창 헤더 */}
           <div className="p-4 bg-gray-100 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center">
-            <div>
-              <div className="font-medium dark:text-white">
-                {currentRoomInfo
-                  ? currentRoomInfo.name || '익명 대화'
-                  : '채팅방을 선택해주세요'
-                }
-              </div>
-              {currentRoomInfo && (
-                <div className="text-xs text-gray-500 dark:text-white mt-1">
-                  <span className="mr-2">사용자: {currentRoomInfo.userName || '사용자'}</span>
-                  <span className={`px-1.5 py-0.5 text-[10px] rounded-full inline-block
-                    ${currentRoomInfo.status === 'active'
-                      ? 'bg-green-100 dark:bg-green-700 text-green-800 dark:text-white'
-                      : 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white'}`}
-                  >
-                    {currentRoomInfo.status === 'active' ? '활성' : '비활성'}
-                  </span>
-                  <span className="ml-2 text-xs">
-                    생성일: {new Date(currentRoomInfo.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-            </div>
-            {currentRoomId && (
-              <div className="flex gap-2">
+            <div className="flex items-center">
+              {/* 모바일에서만 표시되는 뒤로가기 버튼 */}
+              {isMobileView && (
                 <button
-                  onClick={() => fetchRoomMessages(currentRoomId, 0, false)}
-                  className="text-xs px-2 py-1 bg-gray-200 dark:bg-coal-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-coal-600"
-                  title="메시지 새로고침"
-                  disabled={loadingMessages}
+                  onClick={handleBackToList}
+                  className="mr-2 bg-blue-500 dark:bg-blue-600 text-white p-1 rounded-full"
+                  aria-label="채팅방 목록으로 돌아가기"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={loadingMessages ? "animate-spin" : ""}>
-                    <path d="M21 2v6h-6M3 22v-6h6M3 10C3 4.5 7.5 2 12 2M21 14c0 5.5-4.5 8-9 8" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
-
-                {/* 상담 종료 버튼 */}
-                {currentRoomInfo && currentRoomInfo.status === 'active' && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm('상담을 종료하시겠습니까?')) {
-                        closeChatRoom(currentRoomId);
-                      }
-                    }}
-                    className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800"
-                    title="상담 종료"
-                  >
-                    상담 종료
-                  </button>
+              )}
+              <div className={isMobileView ? "flex flex-col space-y-0.5" : ""}>
+                <div className="font-medium dark:text-white flex items-center">
+                  {currentRoomInfo
+                    ? (
+                      <>
+                        <span>{currentRoomInfo.name || '운영자와의 대화'}</span>
+                        {/* 모바일과 PC 모두 제목 오른쪽에 상태 배지 표시 */}
+                        <span className={`ml-2 px-2 py-0.5 text-[10px] rounded-full inline-block
+                          ${currentRoomInfo.status === 'active'
+                            ? 'bg-green-100 dark:bg-green-700 text-green-800 dark:text-white'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white'}`}
+                        >
+                          {currentRoomInfo.status === 'active' ? '활성' : '비활성'}
+                        </span>
+                      </>
+                    )
+                    : '채팅방을 선택해주세요'
+                  }
+                </div>
+                {currentRoomInfo && (
+                  <div className="text-xs text-gray-500 dark:text-white mt-1">
+                    {isMobileView ? (
+                      // 모바일 버전: 각 정보를 별도 라인으로 표시
+                      <>
+                        <div>사용자: {currentRoomInfo.userName || '사용자'}</div>
+                        <div>생성일: {new Date(currentRoomInfo.createdAt).toLocaleDateString()}</div>
+                      </>
+                    ) : (
+                      // 데스크톱 버전: 인라인으로 표시 (단, 상태 배지는 제외)
+                      <>
+                        <span className="mr-2">사용자: {currentRoomInfo.userName || '사용자'}</span>
+                        <span className="text-xs">
+                          생성일: {new Date(currentRoomInfo.createdAt).toLocaleDateString()}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
-
-                {/* 상담 재개 버튼 제거 - 종료된 상담은 재개되지 않음 */}
-
-                {/* 보관 버튼 */}
-                {currentRoomInfo && currentRoomInfo.status !== 'archived' && (
+              </div>
+            </div>
+            {currentRoomId && (
+              <div className="flex items-center gap-3">
+                {/* 첫 번째 컬럼: 새로고침 버튼 */}
+                <div className="flex items-center self-center">
                   <button
-                    onClick={() => {
-                      if (window.confirm('채팅을 보관하시겠습니까?')) {
-                        archiveChatRoom(currentRoomId);
-                      }
-                    }}
-                    className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
-                    title="채팅 보관"
+                    onClick={() => fetchRoomMessages(currentRoomId, 0, false)}
+                    className="text-xs px-2 py-1 bg-gray-200 dark:bg-coal-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-coal-600"
+                    title="메시지 새로고침"
+                    disabled={loadingMessages}
                   >
-                    보관
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={loadingMessages ? "animate-spin" : ""}>
+                      <path d="M21 2v6h-6M3 22v-6h6M3 10C3 4.5 7.5 2 12 2M21 14c0 5.5-4.5 8-9 8" />
+                    </svg>
                   </button>
-                )}
+                </div>
+
+                {/* 두 번째 컬럼: 상담 종료 및 보관 버튼 (세로 배치) */}
+                <div className="flex flex-col gap-1">
+                  {/* 상담 종료 버튼 */}
+                  {currentRoomInfo && currentRoomInfo.status === 'active' && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('상담을 종료하시겠습니까?')) {
+                          closeChatRoom(currentRoomId);
+                        }
+                      }}
+                      className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800 w-16 text-center"
+                      title="상담 종료"
+                    >
+                      상담 종료
+                    </button>
+                  )}
+
+                  {/* 보관 버튼 */}
+                  {currentRoomInfo && currentRoomInfo.status !== 'archived' && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('채팅을 보관하시겠습니까?')) {
+                          archiveChatRoom(currentRoomId);
+                        }
+                      }}
+                      className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 w-16 text-center"
+                      title="채팅 보관"
+                    >
+                      보관
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1023,7 +1109,7 @@ const ChatManagePage: React.FC = () => {
           >
             {!currentRoomId ? (
               <div className="h-full flex items-center justify-center text-gray-500 dark:text-white">
-                좌측에서 채팅방을 선택해주세요
+                {isMobileView ? '채팅방을 선택해주세요' : '좌측에서 채팅방을 선택해주세요'}
               </div>
             ) : currentMessages.length === 0 ? (
               <div className="h-full flex items-center justify-center text-gray-500 dark:text-white">

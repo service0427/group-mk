@@ -84,7 +84,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         minQuantity: minQuantity,
         efficiency: efficiency,
         deadline: formatTimeHHMM(campaign.deadline), // 시분 형식 확보
-        bannerImage: addInfo.banner_url ? 'banner-image.png' : null
+        bannerImage: addInfo.banner_url ? 'banner-image.png' : undefined
       });
     }
   }, [campaign]);
@@ -529,7 +529,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       </th>
                       <td className="px-3 py-2">
                         <select
-                          value={editedCampaign.status?.status || 'pending'}
+                          value={typeof editedCampaign.status === 'string' ? editedCampaign.status : 'pending'}
                           onChange={(e) => {
                             const statusValue = e.target.value;
                             setEditedCampaign(prev => {

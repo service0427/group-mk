@@ -275,7 +275,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     }
     
     // DB 컬럼명에 맞게 데이터 변환
-    const updateData = {
+    let updateData = {
       campaign_name: data.campaignName,
       description: data.description,
       detailed_description: data.detailedDescription,
@@ -288,8 +288,13 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     };
     
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
-    if (!existingCampaign?.mat_id && userId) {
-      updateData.mat_id = userId;
+    if (userId) {
+      // 타입 안전하게 mat_id 추가 (존재 여부 확인 후)
+      const updatedData = {
+        ...updateData,
+        mat_id: userId
+      };
+      updateData = updatedData;
     }
 
     const { error } = await supabase

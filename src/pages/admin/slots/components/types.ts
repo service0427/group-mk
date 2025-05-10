@@ -18,6 +18,7 @@ export interface Slot {
   id: string;
   mat_id: string;
   user_id: string;
+  product_id?: number; // 캠페인 ID 추가
   status: string;
   created_at: string;
   submitted_at: string | null;

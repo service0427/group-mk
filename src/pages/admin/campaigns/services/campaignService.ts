@@ -327,7 +327,7 @@ export const formatTimeHHMM = (timeStr: string): string => {
 // 서비스 타입 코드 변환 (UI 코드 -> DB 코드)
 export const getServiceTypeCode = (uiCode: string): string => {
   switch (uiCode) {
-    case 'naver-traffic': return 'ntraffic'; // 변경: NaverTraffic -> ntraffic
+    case 'ntraffic': return 'ntraffic'; // 변경: naver-traffic -> ntraffic
     case 'naver-fakesale': return 'nfakesale';
     case 'naver-blog': return 'nblog';
     case 'naver-web': return 'nweb';

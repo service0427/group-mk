@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
+import { useLocation } from 'react-router-dom';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
@@ -32,6 +33,17 @@ enum ViewState {
 
 const ApprovePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
+  const location = useLocation();
+
+  // URL에서 쿼리 파라미터 추출
+  const queryParams = new URLSearchParams(location.search);
+  const campaignFromUrl = queryParams.get('campaign');
+  let serviceTypeFromUrl = queryParams.get('service_type');
+
+  // service_type이 naver-traffic인 경우 ntraffic으로 변환
+  if (serviceTypeFromUrl === 'naver-traffic') {
+    serviceTypeFromUrl = 'ntraffic';
+  }
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -148,6 +160,18 @@ const ApprovePage: React.FC = () => {
     fetchCampaigns();
   }, [currentUser, initialized]);
 
+  // URL에서 전달된 campaignId 및 serviceType 처리 (최초 한 번만 실행)
+  useEffect(() => {
+    if (campaigns.length === 0 || !initialized) return;
+
+    if (serviceTypeFromUrl) {
+      console.log("URL에서 서비스 타입 감지:", serviceTypeFromUrl);
+      setSelectedServiceType(serviceTypeFromUrl);
+    }
+
+    // 캠페인 선택은 filteredCampaigns가 설정된 후에 처리할 것이므로 여기서는 처리하지 않음
+  }, [serviceTypeFromUrl, campaigns, initialized]);
+
   // 선택된 서비스 타입에 따라 캠페인 필터링
   useEffect(() => {
     if (!selectedServiceType || campaigns.length === 0) return;
@@ -167,13 +191,19 @@ const ApprovePage: React.FC = () => {
       ...filtered
     ]);
 
-    // 기본값으로 "전체" 선택
-    setSelectedCampaign('all');
+    // URL에서 전달된, 또는 기본값으로 "전체" 선택
+    if (campaignFromUrl) {
+      console.log("URL에서 캠페인 ID 감지:", campaignFromUrl);
+      // 숫자 문자열을 숫자로 변환 (캠페인 ID는 숫자)
+      setSelectedCampaign(campaignFromUrl);
+    } else {
+      setSelectedCampaign('all');
+    }
 
     // 서비스 타입이 바뀌면 슬롯 목록도 다시 가져오기
     setSlots([]);
     setFilteredSlots([]);
-  }, [selectedServiceType, campaigns]);
+  }, [selectedServiceType, campaigns, campaignFromUrl]);
 
   // 슬롯 데이터 가져오기
   useEffect(() => {
@@ -204,6 +234,7 @@ const ApprovePage: React.FC = () => {
             id,
             mat_id,
             user_id,
+            product_id,
             status,
             created_at,
             submitted_at,
@@ -245,7 +276,17 @@ const ApprovePage: React.FC = () => {
         // 특정 캠페인이 선택된 경우 추가 필터링
         if (selectedCampaign && selectedCampaign !== 'all') {
           console.log(`선택된 캠페인(${selectedCampaign})에 대한 슬롯 정보 가져오기 시작`);
-          query = query.eq('mat_id', selectedCampaign);
+
+          // 캠페인 ID를 숫자로 변환
+          const campaignId = parseInt(selectedCampaign);
+
+          if (!isNaN(campaignId)) {
+            // product_id로 필터링 (슬롯이 속한 캠페인 ID)
+            query = query.eq('product_id', campaignId);
+          } else {
+            console.warn(`유효하지 않은 캠페인 ID: ${selectedCampaign}`);
+            query = query.eq('mat_id', selectedCampaign); // 기존 방식으로 fallback
+          }
         }
 
         // 상태 필터 적용
@@ -295,7 +336,23 @@ const ApprovePage: React.FC = () => {
 
             // 기존 users 필드 제거하고 user 필드 추가
             const { users, ...slotWithoutUsers } = slot;
-            return { ...slotWithoutUsers, user };
+
+            // 캠페인 이름 설정 - 현재 선택된 캠페인 리스트에서 추출
+            let campaignName;
+            if (slot.product_id) {
+              // 현재 캠페인 목록에서 캠페인 이름 찾기
+              const campaignId = parseInt(String(slot.product_id));
+              const campaign = campaigns.find(c => parseInt(String(c.id)) === campaignId);
+              if (campaign) {
+                campaignName = campaign.campaign_name;
+              }
+            }
+
+            return {
+              ...slotWithoutUsers,
+              user,
+              campaign_name: campaignName
+            };
           });
 
           setSlots(enrichedSlots as Slot[]);

@@ -308,7 +308,11 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-4">
                       <img
-                        src={campaign.originalData?.add_info?.logo_url || toAbsoluteUrl(`/media/${campaign.logo}`)}
+                        src={
+                          typeof campaign.originalData?.add_info === 'object' 
+                            ? campaign.originalData.add_info?.logo_url 
+                            : (campaign.originalData?.add_info_logo_url || toAbsoluteUrl(`/media/${campaign.logo}`))
+                        }
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName}
                         onError={(e) => {

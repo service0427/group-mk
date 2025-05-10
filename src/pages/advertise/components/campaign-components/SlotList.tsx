@@ -71,6 +71,9 @@ const SlotList: React.FC<SlotListProps> = ({
                 <th className="py-4 px-5 text-start min-w-[120px]">
                   <span className="font-medium text-gray-700">상태</span>
                 </th>
+                <th className="py-4 px-5 text-start min-w-[160px]">
+                  <span className="font-medium text-gray-700">캠페인명</span>
+                </th>
                 <th className="py-4 px-5 text-start min-w-[120px]">
                   <span className="font-medium text-gray-700">MID</span>
                 </th>
@@ -110,6 +113,24 @@ const SlotList: React.FC<SlotListProps> = ({
                         사유: {item.rejectionReason}
                       </div>
                     )}
+                  </td>
+                  <td className="py-4 px-5">
+                    <div className="group relative">
+                      <div className="font-medium text-primary flex items-center">
+                        {item.campaign ? item.campaign.campaignName : (item.productId ? `캠페인 #${item.productId}` : '-')}
+                        {item.campaign?.status === 'active' && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
+                            진행중
+                          </span>
+                        )}
+                        <KeenIcon icon="Lock" className="ml-1 size-4 text-muted-foreground" />
+                      </div>
+                      <div className="absolute hidden group-hover:block bg-black/90 text-white text-xs p-2 rounded-md w-64 z-10 left-0 -bottom-1 transform translate-y-full pointer-events-none">
+                        <p className="mb-1"><strong>캠페인:</strong> {item.campaign ? item.campaign.campaignName : '-'}</p>
+                        <p className="mb-1"><strong>서비스 타입:</strong> {item.campaign?.serviceType || '-'}</p>
+                        <p><em>※ 슬롯 등록 후 캠페인은 변경할 수 없습니다</em></p>
+                      </div>
+                    </div>
                   </td>
                   <td className="py-4 px-5">
                     <EditableCell
@@ -223,6 +244,25 @@ const SlotList: React.FC<SlotListProps> = ({
               </div>
               
               <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="col-span-2 mb-2">
+                  <p className="text-muted-foreground mb-1">캠페인명</p>
+                  <div className="group relative">
+                    <div className="font-medium text-primary flex items-center">
+                      {item.campaign ? item.campaign.campaignName : (item.productId ? `캠페인 #${item.productId}` : '-')}
+                      {item.campaign?.status === 'active' && (
+                        <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
+                          진행중
+                        </span>
+                      )}
+                      <KeenIcon icon="Lock" className="ml-1 size-4 text-muted-foreground" />
+                    </div>
+                    <div className="absolute hidden group-hover:block bg-black/90 text-white text-xs p-2 rounded-md w-64 z-10 left-0 top-full mt-1 pointer-events-none">
+                      <p className="mb-1"><strong>캠페인명:</strong> {item.campaign ? item.campaign.campaignName : '-'}</p>
+                      <p className="mb-1"><strong>서비스 타입:</strong> {item.campaign?.serviceType || '-'}</p>
+                      <p><em>※ 슬롯 등록 후 캠페인은 변경할 수 없습니다</em></p>
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <p className="text-muted-foreground mb-1">MID</p>
                   <EditableCell

@@ -397,9 +397,17 @@ const ApprovePage: React.FC = () => {
       return;
     }
 
+    // 승인 전 확인 다이얼로그
+    if (!window.confirm('이 슬롯을 승인하시겠습니까? 승인 시 총판에게 정산이 이뤄집니다.')) {
+      return; // 취소된 경우
+    }
+
+    // 로딩 상태 표시
+    setLoading(true);
+
     try {
       const result = await approveSlot(slotId, currentUser.id);
-      
+
       if (result.success) {
         // 성공 시 UI 상태 업데이트
         const updateSlotStatus = (slots: Slot[]) =>
@@ -415,16 +423,20 @@ const ApprovePage: React.FC = () => {
 
         setSlots(updateSlotStatus);
         setFilteredSlots(updateSlotStatus);
+
         // 성공 메시지 표시
         alert('슬롯이 성공적으로 승인되었습니다.');
       } else {
         // 실패 시 에러 메시지 표시
         setError(result.message);
-        alert(result.message);
+        alert('슬롯 승인 중 오류 발생: ' + result.message);
       }
     } catch (err: any) {
       console.error('슬롯 승인 중 오류 발생:', err.message);
       setError(err.message || '슬롯 승인 처리 중 오류가 발생했습니다.');
+      alert('슬롯 승인 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -435,20 +447,28 @@ const ApprovePage: React.FC = () => {
       return;
     }
 
-    const reason = prompt('반려 사유를 입력하세요:');
+    // 반려 전 확인 다이얼로그
+    if (!window.confirm('이 슬롯을 반려하시겠습니까? 반려 시 사용자에게 캐시가 환불됩니다.')) {
+      return; // 취소된 경우
+    }
+
+    const reason = prompt('반려 사유를 입력하세요 (사용자에게 표시됩니다):');
     if (reason === null) {
       // 취소 버튼 클릭
       return;
     }
-    
+
     if (reason.trim() === '') {
-      alert('반려 사유를 입력해주세요.');
+      alert('반려 사유를 입력해주세요. 반려 사유는 사용자에게 표시됩니다.');
       return;
     }
 
+    // 로딩 상태 표시
+    setLoading(true);
+
     try {
       const result = await rejectSlot(slotId, currentUser.id, reason);
-      
+
       if (result.success) {
         // 성공 시 UI 상태 업데이트
         const updateSlotStatus = (slots: Slot[]) =>
@@ -465,16 +485,20 @@ const ApprovePage: React.FC = () => {
 
         setSlots(updateSlotStatus);
         setFilteredSlots(updateSlotStatus);
+
         // 성공 메시지 표시
         alert('슬롯이 성공적으로 반려되었습니다.');
       } else {
         // 실패 시 에러 메시지 표시
         setError(result.message);
-        alert(result.message);
+        alert('슬롯 반려 중 오류 발생: ' + result.message);
       }
     } catch (err: any) {
       console.error('슬롯 반려 중 오류 발생:', err.message);
       setError(err.message || '슬롯 반려 처리 중 오류가 발생했습니다.');
+      alert('슬롯 반려 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 

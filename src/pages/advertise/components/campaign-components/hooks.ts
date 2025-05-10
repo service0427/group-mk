@@ -473,12 +473,11 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 const generateMockSlots = (serviceType: string, userId: string): SlotItem[] => {
   const statuses = ['draft', 'submitted', 'approved', 'rejected', 'active', 'paused', 'completed'];
   const serviceCategory = serviceType ? { 
-    'NaverShopTraffic': 'NS 트래픽',
+    'ntraffic': 'NS 트래픽 / N 트래픽', // 네이버 트래픽 서비스 통합
     'NaverPlaceSave': 'NP 저장',
     'NaverPlaceShare': 'NP 공유',
     'NaverPlaceTraffic': 'NP 트래픽',
     'NaverAuto': 'N 자동완성',
-    'NaverTraffic': 'N 트래픽',
     'CoupangTraffic': 'C 트래픽',
     'OhouseTraffic': 'OH 트래픽'
   }[serviceType] : '테스트 서비스';

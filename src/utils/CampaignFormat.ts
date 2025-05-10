@@ -57,6 +57,8 @@ export interface CampaignDetailData {
   unitPrice: string;
   additionalLogic: string;
   detailedDescription?: string;
+  bannerUrl?: string; // 배너 이미지 URL
+  originalData?: any; // 원본 데이터
   status: {
     label: string;
     color: string;
@@ -220,12 +222,15 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
 /**
  * 캠페인 데이터를 상세보기 모달 형식으로 변환
  */
-export const formatCampaignDetailData = (campaign: FormattedCampaignData): CampaignDetailData => {
+export const formatCampaignDetailData = (campaign: FormattedCampaignData, originalData?: any): CampaignDetailData => {
   // 추가로직 정보 가져오기
   const additionalLogic = campaign.statistics.find(stat => stat.description.includes('추가로직'));
   
+  // 배너 URL 추출
+  const bannerUrl = originalData?.add_info?.banner_url || null;
+  
   return {
-    id: "",
+    id: originalData?.id || "",
     campaignName: campaign.title,
     description: campaign.description,
     logo: campaign.logo,
@@ -237,6 +242,10 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData): Campa
     additionalLogic: additionalLogic ? additionalLogic.total : '없음',
     // 상세 설명 추가
     detailedDescription: campaign.description,
+    // 배너 URL 추가
+    bannerUrl: bannerUrl,
+    // 원본 데이터 추가
+    originalData: originalData,
     status: {
       label: campaign.status.label,
       color: campaign.status.variant

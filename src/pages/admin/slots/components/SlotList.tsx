@@ -24,13 +24,14 @@ const SlotList: React.FC<SlotListProps> = ({
         <table className="table table-row-bordered table-row-gray-100 align-middle gs-0 gy-3" style={{ width: '100%' }}>
           <thead>
             <tr className="fw-bold text-muted">
-              <th style={{ width: '15%' }}>사용자</th>
-              <th style={{ width: '15%' }}>상품명</th>
-              <th style={{ width: '10%' }}>MID</th>
-              <th style={{ width: '10%' }}>제출 시간</th>
+              <th style={{ width: '13%' }}>사용자</th>
+              <th style={{ width: '13%' }}>상품명</th>
+              <th style={{ width: '8%' }}>MID</th>
+              <th style={{ width: '10%' }}>캠페인</th>
+              <th style={{ width: '8%' }}>제출 시간</th>
               <th style={{ width: '10%' }}>상태</th>
               <th style={{ width: '10%' }}>승인</th>
-              <th style={{ width: '20%' }}>상세 정보</th>
+              <th style={{ width: '18%' }}>상세 정보</th>
               <th style={{ width: '10%' }} className="text-end">메모</th>
             </tr>
           </thead>
@@ -55,6 +56,11 @@ const SlotList: React.FC<SlotListProps> = ({
                   )}
                 </td>
                 <td>{slot.input_data?.mid || slot.mat_id.substring(0, 8) + '...'}</td>
+                <td>
+                  <span className="badge badge-light-primary">
+                    {slot.product_id ? `캠페인 #${slot.product_id}` : '-'}
+                  </span>
+                </td>
                 <td>{formatDate(slot.submitted_at)}</td>
                 <td>
                   <div className="d-flex flex-column">
@@ -83,15 +89,17 @@ const SlotList: React.FC<SlotListProps> = ({
                       className="btn btn-sm btn-primary w-100"
                       onClick={() => onApprove(slot.id)}
                       disabled={slot.status === 'approved'}
+                      title={slot.status === 'approved' ? '이미 승인된 슬롯입니다' : '이 슬롯을 승인합니다'}
                     >
-                      승인
+                      {slot.status === 'approved' ? '승인됨' : '승인'}
                     </button>
                     <button
                       className="btn btn-sm btn-danger w-100"
                       onClick={() => onReject(slot.id)}
                       disabled={slot.status === 'rejected'}
+                      title={slot.status === 'rejected' ? '이미 반려된 슬롯입니다' : '이 슬롯을 반려합니다 (사유 입력 필요)'}
                     >
-                      반려
+                      {slot.status === 'rejected' ? '반려됨' : '반려'}
                     </button>
                   </div>
                 </td>

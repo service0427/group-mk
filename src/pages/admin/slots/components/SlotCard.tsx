@@ -55,6 +55,12 @@ const SlotCard: React.FC<SlotCardProps> = ({
                 <div>{formatDate(slot.submitted_at)}</div>
               </div>
             </div>
+
+            {/* 캠페인 정보 (추가) */}
+            <div className="mb-3 px-3 py-2 bg-light rounded">
+              <div className="small text-muted mb-1">캠페인</div>
+              <div className="font-weight-medium">{slot.product_id ? `캠페인 #${slot.product_id}` : '-'}</div>
+            </div>
             
             {/* 상세 정보 */}
             <div className="mb-3">
@@ -109,15 +115,17 @@ const SlotCard: React.FC<SlotCardProps> = ({
                 className="btn btn-sm btn-primary w-100"
                 onClick={() => onApprove(slot.id)}
                 disabled={slot.status === 'approved'}
+                title={slot.status === 'approved' ? '이미 승인된 슬롯입니다' : '이 슬롯을 승인합니다'}
               >
-                승인
+                {slot.status === 'approved' ? '승인됨' : '승인'}
               </button>
               <button
                 className="btn btn-sm btn-danger w-100"
                 onClick={() => onReject(slot.id)}
                 disabled={slot.status === 'rejected'}
+                title={slot.status === 'rejected' ? '이미 반려된 슬롯입니다' : '이 슬롯을 반려합니다 (사유 입력 필요)'}
               >
-                반려
+                {slot.status === 'rejected' ? '반려됨' : '반려'}
               </button>
               <button
                 className="btn btn-sm btn-light-primary w-100"

@@ -211,29 +211,102 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
 
 // 캠페인 데이터 업데이트
 export const updateCampaign = async (campaignId: number, data: any): Promise<boolean> => {
-  // DB 컬럼명에 맞게 데이터 변환
-  const updateData = {
-    campaign_name: data.campaignName,
-    description: data.description,
-    detailed_description: data.detailedDescription,
-    efficiency: parseFloat(data.efficiency.replace ? data.efficiency.replace('%', '') : data.efficiency),
-    min_quantity: parseInt(data.minQuantity.replace ? data.minQuantity.replace('개', '') : data.minQuantity),
-    unit_price: data.unitPrice ? parseFloat(data.unitPrice) : 100,
-    deadline: formatTimeHHMM(data.deadline), // 시:분 형식만 저장
-    additional_logic: parseInt(data.additionalLogic || '0')
-  };
+  try {
+    // Supabase Storage에 이미지 업로드
+    let logoUrl = null;
+    let bannerUrl = null;
+    let additionalInfo: any = {};
+    
+    // 현재 사용자 ID 가져오기
+    const { data: authData } = await supabase.auth.getSession();
+    const userId = authData.session?.user?.id;
+    
+    // 기존 캠페인 정보 가져오기 (add_info 필드와 mat_id 확인을 위해)
+    const { data: existingCampaign, error: fetchError } = await supabase
+      .from('campaigns')
+      .select('add_info, mat_id')
+      .eq('id', campaignId)
+      .single();
+      
+    if (fetchError) {
+      console.error('기존 캠페인 정보 가져오기 실패:', fetchError);
+    } else if (existingCampaign?.add_info) {
+      // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
+      if (typeof existingCampaign.add_info === 'string') {
+        try {
+          additionalInfo = JSON.parse(existingCampaign.add_info);
+        } catch (e) {
+          console.error('add_info JSON 파싱 오류:', e);
+          additionalInfo = {};
+        }
+      } else {
+        additionalInfo = existingCampaign.add_info;
+      }
+    }
+    
+    // 1. 업로드된 로고 이미지가 있으면 저장
+    if (data.uploadedLogo) {
+      logoUrl = await uploadImageToStorage(
+        data.uploadedLogo, 
+        'campaigns-image',  // 버킷 이름
+        'logos',            // 폴더 이름
+        `logo-${campaignId}-${Date.now()}`, // 캠페인 ID와 타임스탬프로 고유한 파일명 생성
+        userId              // 사용자 ID 전달
+      );
+      
+      if (logoUrl) {
+        additionalInfo.logo_url = logoUrl;
+      }
+    }
+    
+    // 2. 업로드된 배너 이미지가 있으면 저장
+    if (data.uploadedBannerImage) {
+      bannerUrl = await uploadImageToStorage(
+        data.uploadedBannerImage, 
+        'campaigns-image',     // 버킷 이름
+        'banners',             // 폴더 이름
+        `banner-${campaignId}-${Date.now()}`, // 캠페인 ID와 타임스탬프로 고유한 파일명 생성
+        userId                 // 사용자 ID 전달
+      );
+      
+      if (bannerUrl) {
+        additionalInfo.banner_url = bannerUrl;
+      }
+    }
+    
+    // DB 컬럼명에 맞게 데이터 변환
+    const updateData = {
+      campaign_name: data.campaignName,
+      description: data.description,
+      detailed_description: data.detailedDescription,
+      unit_price: data.unitPrice ? parseFloat(data.unitPrice) : 100,
+      deadline: formatTimeHHMM(data.deadline), // 시:분 형식만 저장
+      updated_at: new Date(),
+      add_info: additionalInfo, // 추가 정보 업데이트
+      // 로고 이미지 경로 변경 (업로드된 로고가 있을 경우만)
+      ...(data.uploadedLogo ? { logo: data.logo } : {})
+    };
+    
+    // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
+    if (!existingCampaign?.mat_id && userId) {
+      updateData.mat_id = userId;
+    }
 
-  const { error } = await supabase
-    .from('campaigns')
-    .update(updateData)
-    .eq('id', campaignId);
+    const { error } = await supabase
+      .from('campaigns')
+      .update(updateData)
+      .eq('id', campaignId);
 
-  if (error) {
-    console.error('캠페인 데이터 업데이트 중 오류:', error);
+    if (error) {
+      console.error('캠페인 데이터 업데이트 중 오류:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('캠페인 업데이트 중 예외 발생:', err);
     return false;
   }
-
-  return true;
 };
 
 // 시간을 HH:MM 형식으로 변환하는 헬퍼 함수
@@ -322,7 +395,9 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       created_at: new Date(),
       updated_at: new Date(),
       // 추가 정보 (업로드된 이미지 URL)
-      add_info: Object.keys(additionalInfo).length > 0 ? additionalInfo : null
+      add_info: Object.keys(additionalInfo).length > 0 ? additionalInfo : null,
+      // 현재 사용자의 ID를 mat_id로 설정 (슬롯 등록 시 필요)
+      mat_id: userId
     };
 
     console.log('INSERT 시도 중인 데이터:', insertData);

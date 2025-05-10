@@ -15,25 +15,25 @@ async function getCampaignInfo(productId: number) {
       .select('*')
       .eq('id', productId)
       .maybeSingle();
-
+      
     if (!campaignError && campaign) {
       return campaign;
     }
-
+    
     console.warn('캠페인 정보 조회 실패:', campaignError?.message);
-
+    
     // 2. campaigns_bak_old 테이블에서 시도
     const { data: oldCampaign, error: oldCampaignError } = await supabase
       .from('campaigns_bak_old')
       .select('*')
       .eq('id', productId)
       .maybeSingle();
-
+      
     if (!oldCampaignError && oldCampaign) {
       console.log('campaigns_bak_old 테이블에서 캠페인 정보를 가져왔습니다.');
       return oldCampaign;
     }
-
+    
     // 3. 기본 정보 생성
     console.warn('캠페인 정보를 찾을 수 없어 기본값을 사용합니다. product_id:', productId);
     return {
@@ -60,10 +60,10 @@ export const approveSlot = async (
   adminUserId: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
-    // 1. 슬롯 정보 조회
+    // 1. 슬롯 정보 조회 (join 없이 기본 정보만)
     const { data: slotData, error: slotError } = await supabase
       .from('slots')
-      .select('*, campaigns(*)')
+      .select('*')
       .eq('id', slotId)
       .single();
 
@@ -80,14 +80,14 @@ export const approveSlot = async (
       throw new Error(`대기 중인 슬롯만 승인할 수 있습니다. (현재 상태: ${slotData.status})`);
     }
 
-    // 단가 확인 (캠페인 데이터에서)
-    const campaignData = slotData.campaigns;
-
-    if (!campaignData) {
-      console.error('캠페인 데이터가 없음:', slotData);
-      throw new Error('해당 슬롯의 캠페인 정보를 찾을 수 없습니다.');
+    // 2. 캠페인 정보 별도로 조회 (헬퍼 함수 사용)
+    if (!slotData.product_id) {
+      throw new Error('슬롯에 연결된 캠페인 정보가 없습니다.');
     }
-
+    
+    const campaignData = await getCampaignInfo(slotData.product_id);
+    
+    // 3. 단가 확인
     let unitPrice = 0;
     try {
       unitPrice = parseFloat(String(campaignData.unit_price || 0));
@@ -95,10 +95,13 @@ export const approveSlot = async (
       console.error('캠페인 단가 파싱 실패:', e, campaignData);
       throw new Error('캠페인 단가 정보를 처리할 수 없습니다.');
     }
-
+    
     if (unitPrice <= 0) {
       throw new Error('유효하지 않은 캠페인 단가입니다. 단가: ' + (campaignData.unit_price || '0'));
     }
+    
+    // 슬롯 데이터에 캠페인 정보 추가 (원래 형태 유지)
+    slotData.campaigns = campaignData;
 
     // 2. 중간테이블에서 관리자(승일)에게 금액 이체
     
@@ -210,14 +213,14 @@ export const approveSlot = async (
     try {
       // 결제 정보 확인 (slot_pending_balances 테이블에서)
       let paymentDetails = null;
-
+      
       try {
         const { data: pendingBalance, error: pendingBalanceError } = await supabase
           .from('slot_pending_balances')
           .select('amount, status, notes')
           .eq('slot_id', slotId)
           .maybeSingle(); // single() 대신 maybeSingle() 사용하여 데이터 없는 경우에도 오류 발생하지 않도록 함
-
+          
         // 결제 정보 처리
         if (!pendingBalanceError && pendingBalance?.notes) {
           try {
@@ -305,7 +308,7 @@ export const rejectSlot = async (
     // 1. 슬롯 정보 조회
     const { data: slotData, error: slotError } = await supabase
       .from('slots')
-      .select('*, campaigns(*)')
+      .select('*')
       .eq('id', slotId)
       .single();
 
@@ -322,14 +325,14 @@ export const rejectSlot = async (
       throw new Error(`대기 중인 슬롯만 반려할 수 있습니다. (현재 상태: ${slotData.status})`);
     }
 
-    // 단가 확인 (캠페인 데이터에서)
-    const campaignData = slotData.campaigns;
-
-    if (!campaignData) {
-      console.error('캠페인 데이터가 없음:', slotData);
-      throw new Error('해당 슬롯의 캠페인 정보를 찾을 수 없습니다.');
+    // 2. 캠페인 정보 별도로 조회 (헬퍼 함수 사용)
+    if (!slotData.product_id) {
+      throw new Error('슬롯에 연결된 캠페인 정보가 없습니다.');
     }
-
+    
+    const campaignData = await getCampaignInfo(slotData.product_id);
+    
+    // 3. 단가 확인
     let unitPrice = 0;
     try {
       unitPrice = parseFloat(String(campaignData.unit_price || 0));
@@ -337,10 +340,13 @@ export const rejectSlot = async (
       console.error('캠페인 단가 파싱 실패:', e, campaignData);
       throw new Error('캠페인 단가 정보를 처리할 수 없습니다.');
     }
-
+    
     if (unitPrice <= 0) {
       throw new Error('유효하지 않은 캠페인 단가입니다. 단가: ' + (campaignData.unit_price || '0'));
     }
+    
+    // 슬롯 데이터에 캠페인 정보 추가 (원래 형태 유지)
+    slotData.campaigns = campaignData;
 
     const now = new Date().toISOString();
 
@@ -368,7 +374,7 @@ export const rejectSlot = async (
     let paymentDetails = null;
     let freeBalanceUsed = 0;
     let paidBalanceUsed = 0;
-
+    
     try {
       if (pendingBalance && pendingBalance.notes) {
         try {
@@ -387,7 +393,7 @@ export const rejectSlot = async (
     } catch (e) {
       console.warn('결제 정보 처리 중 오류 발생, 기본 환불 방식 사용:', e);
     }
-
+    
     // 결제 정보가 유효하지 않은 경우 기본값 사용
     if (freeBalanceUsed + paidBalanceUsed <= 0) {
       console.warn('유효한 결제 금액이 없습니다. 전체 금액을 무료 캐시로 환불합니다.');
@@ -664,193 +670,6 @@ export const updateSlotMemo = async (
   }
 };
 
-// 슬롯 삽입 함수
-export const createSlot = async (
-  slotData: {
-    mat_id: string;
-    product_id: number;
-    user_id: string;
-    input_data: any;
-  }
-): Promise<{ success: boolean; message: string; data?: any }> => {
-  try {
-    // 사용자 잔액 확인
-    const { data: userBalanceData, error: balanceError } = await supabase
-      .from('user_balances')
-      .select('*')
-      .eq('user_id', slotData.user_id)
-      .single();
-
-    // 필요한 값들 가져오기
-    const { data: campaignData, error: campaignError } = await supabase
-      .from('campaigns')
-      .select('unit_price')
-      .eq('id', slotData.product_id)
-      .single();
-
-    if (campaignError) {
-      throw new Error('캠페인 정보를 찾을 수 없습니다.');
-    }
-
-    const unitPrice = parseFloat(String(campaignData.unit_price || 0));
-
-    // 잔액 확인
-    if (balanceError && balanceError.code === 'PGRST116') { // not found
-      throw new Error('잔액 정보가 없습니다. 먼저 캐시를 충전해주세요.');
-    } else if (balanceError) {
-      throw new Error('잔액 확인 중 오류가 발생했습니다.');
-    }
-
-    // 잔액 부족 확인
-    const paidBalance = parseFloat(String(userBalanceData.paid_balance || 0));
-    const freeBalance = parseFloat(String(userBalanceData.free_balance || 0));
-    const totalBalance = paidBalance + freeBalance;
-
-    if (totalBalance < unitPrice) {
-      throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${unitPrice.toLocaleString()}원`);
-    }
-
-    // 슬롯 생성
-    const now = new Date().toISOString();
-    const { data: newSlot, error: insertError } = await supabase
-      .from('slots')
-      .insert({
-        ...slotData,
-        status: 'pending',
-        created_at: now,
-        updated_at: now
-      })
-      .select();
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    // 결제 처리 (free_balance부터 차감)
-    let remainingAmount = unitPrice;
-    let updatedFreeBalance = freeBalance;
-    let updatedPaidBalance = paidBalance;
-
-    if (freeBalance >= remainingAmount) {
-      updatedFreeBalance -= remainingAmount;
-      remainingAmount = 0;
-    } else {
-      remainingAmount -= freeBalance;
-      updatedFreeBalance = 0;
-      updatedPaidBalance -= remainingAmount;
-    }
-
-    // 잔액 업데이트
-    const { error: updateBalanceError } = await supabase
-      .from('user_balances')
-      .update({
-        free_balance: updatedFreeBalance,
-        paid_balance: updatedPaidBalance,
-        updated_at: now
-      })
-      .eq('user_id', slotData.user_id);
-
-    if (updateBalanceError) {
-      console.error('잔액 업데이트 실패:', updateBalanceError);
-      // 실패 시 롤백을 위한 추가 로직 필요
-    }
-
-    // 결제 내역 기록 (user_cash_history 테이블 사용)
-    // 무료 캐시와 유료 캐시를 모두 사용한 경우 (혼합)
-    let freeUsed = 0;
-    let paidUsed = 0;
-    
-    if (freeBalance > 0 && freeBalance < unitPrice) {
-      freeUsed = freeBalance;
-      paidUsed = unitPrice - freeBalance;
-      
-      // 무료 캐시 사용 내역
-      await supabase
-        .from('user_cash_history')
-        .insert({
-          user_id: slotData.user_id,
-          amount: -freeUsed, // 음수로 표시하여 차감 표시
-          transaction_type: 'purchase',
-          reference_id: newSlot[0].id,
-          description: `슬롯 구매(무료 캐시): ${slotData.input_data.productName || '상품'}`,
-          transaction_at: now,
-          mat_id: slotData.mat_id,
-          balance_type: 'free' // 무료 캐시 부분
-        });
-        
-      // 유료 캐시 사용 내역
-      await supabase
-        .from('user_cash_history')
-        .insert({
-          user_id: slotData.user_id,
-          amount: -paidUsed, // 음수로 표시하여 차감 표시
-          transaction_type: 'purchase',
-          reference_id: newSlot[0].id,
-          description: `슬롯 구매(유료 캐시): ${slotData.input_data.productName || '상품'}`,
-          transaction_at: now,
-          mat_id: slotData.mat_id,
-          balance_type: 'paid' // 유료 캐시 부분
-        });
-    }
-    // 무료 캐시만 사용하거나 유료 캐시만 사용한 경우
-    else {
-      if (freeBalance >= unitPrice) {
-        freeUsed = unitPrice;
-      } else {
-        paidUsed = unitPrice;
-      }
-      
-      await supabase
-        .from('user_cash_history')
-        .insert({
-          user_id: slotData.user_id,
-          amount: -unitPrice, // 음수로 표시하여 차감 표시
-          transaction_type: 'purchase', // purchase 타입으로 차감
-          reference_id: newSlot[0].id,
-          description: `슬롯 구매(${freeBalance >= unitPrice ? '무료' : '유료'} 캐시): ${slotData.input_data.productName || '상품'}`,
-          transaction_at: now,
-          mat_id: slotData.mat_id, // 총판 ID 저장
-          balance_type: freeBalance >= unitPrice ? 'free' : 'paid' // 구매 거래 캐시 타입 구분
-        });
-    }
-    
-    // 슬롯 상태 변경 기록 (slot_history_logs)
-    await supabase
-      .from('slot_history_logs')
-      .insert({
-        slot_id: newSlot[0].id,
-        action: 'create',
-        old_status: null, // 최초 생성이므로 이전 상태 없음
-        new_status: 'pending',
-        user_id: slotData.user_id, // 변경한 사용자
-        details: {
-          product_id: slotData.product_id,
-          product_name: slotData.input_data?.productName || '상품',
-          unit_price: unitPrice,
-          payment_details: {
-            free_balance_used: freeUsed,
-            paid_balance_used: paidUsed,
-            total_amount: unitPrice
-          },
-          input_data: slotData.input_data
-        },
-        created_at: now
-      });
-
-    return {
-      success: true,
-      message: '슬롯이 성공적으로 생성되었습니다.',
-      data: newSlot
-    };
-  } catch (err: any) {
-    console.error('슬롯 생성 오류:', err);
-    return {
-      success: false,
-      message: err.message || '슬롯 생성 중 오류가 발생했습니다.'
-    };
-  }
-};
-
 // 슬롯 리스트 가져오기 함수
 export const getSlotList = async (
   filters: {
@@ -884,6 +703,7 @@ export const getSlotList = async (
         id,
         mat_id,
         user_id,
+        product_id,
         status,
         created_at,
         submitted_at,
@@ -946,7 +766,7 @@ export const getSlotList = async (
     }
 
     // 데이터 변환
-    const formattedSlots = data.map(slot => {
+    const formattedSlots = await Promise.all(data.map(async slot => {
       const usersArray = slot.users as any[];
       const user = usersArray && usersArray.length > 0 ? {
         id: usersArray[0].id,
@@ -954,10 +774,20 @@ export const getSlotList = async (
         email: usersArray[0].email
       } : undefined;
 
-      // users 필드 제거 후 user 필드 추가
+      // 캠페인 정보를 별도로 가져와서 추가
+      let campaign = null;
+      if (slot.product_id) {
+        campaign = await getCampaignInfo(slot.product_id);
+      }
+
+      // users 필드 제거 후 user 필드와 캠페인 정보 추가
       const { users, ...slotWithoutUsers } = slot;
-      return { ...slotWithoutUsers, user } as Slot;
-    });
+      return { 
+        ...slotWithoutUsers, 
+        user,
+        campaigns: campaign
+      } as Slot;
+    }));
 
     return {
       success: true,
@@ -978,6 +808,5 @@ export default {
   approveSlot,
   rejectSlot,
   updateSlotMemo,
-  createSlot,
   getSlotList
 };

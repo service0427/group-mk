@@ -272,16 +272,93 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                 <div className="relative">
                   {previewUrl || editedCampaign.logo ? (
                     <img
-                      src={previewUrl || (
-                        typeof editedCampaign.originalData?.add_info === 'object' && editedCampaign.originalData.add_info?.logo_url
-                          ? editedCampaign.originalData.add_info.logo_url
-                          : toAbsoluteUrl(`/media/${editedCampaign.logo}`)
-                      )}
+                      src={previewUrl || (() => {
+                        // 동물 아이콘 목록
+                        const animalIcons = [
+                          'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
+                          'giraffe', 'horse', 'kangaroo', 'koala', 'leopard', 'lion', 'llama',
+                          'owl', 'pelican', 'penguin', 'sheep', 'teddy-bear', 'turtle'
+                        ];
+
+                        // 동물 이름 매핑
+                        const animalNameMap: Record<string, string> = {
+                          '곰': 'bear', '고양이': 'cat', '소': 'cow', '악어': 'crocodile',
+                          '돌고래': 'dolphin', '코끼리': 'elephant', '플라밍고': 'flamingo',
+                          '기린': 'giraffe', '말': 'horse', '캥거루': 'kangaroo',
+                          '코알라': 'koala', '표범': 'leopard', '사자': 'lion',
+                          '라마': 'llama', '올빼미': 'owl', '펠리컨': 'pelican',
+                          '펭귄': 'penguin', '양': 'sheep', '테디베어': 'teddy-bear',
+                          '거북이': 'turtle', 'bear': 'bear', 'cat': 'cat'
+                        };
+
+                        // 기존 로고가 있는 경우
+                        if (typeof editedCampaign.originalData?.add_info === 'object' && editedCampaign.originalData.add_info?.logo_url) {
+                          return editedCampaign.originalData.add_info.logo_url;
+                        }
+
+                        // 파일 경로가 있는 경우
+                        if (editedCampaign.logo && (editedCampaign.logo.includes('.svg') || editedCampaign.logo.includes('.png'))) {
+                          return toAbsoluteUrl(`/media/${editedCampaign.logo}`);
+                        }
+
+                        // 동물 이름이 있는 경우
+                        if (editedCampaign.logo && animalIcons.includes(editedCampaign.logo)) {
+                          return toAbsoluteUrl(`/media/animal/svg/${editedCampaign.logo}.svg`);
+                        }
+
+                        // 캠페인 이름에서 동물 추출
+                        const name = editedCampaign.campaignName.toLowerCase();
+                        for (const [animalName, iconName] of Object.entries(animalNameMap)) {
+                          if (name.includes(animalName.toLowerCase())) {
+                            console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+                            return toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
+                          }
+                        }
+
+                        // 기본 이미지 선택
+                        return toAbsoluteUrl(`/media/animal/svg/${animalIcons[0]}.svg`);
+                      })()}
                       className="rounded-full size-16 shrink-0 object-cover"
                       alt="캠페인 로고"
                       onError={(e) => {
-                        // 이미지 로드 실패 시 기본 이미지 사용
-                        (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
+                        console.log('캠페인 로고 로드 실패:', e.currentTarget.src);
+
+                        // 동물 아이콘 및 이름 매핑 정의
+                        const animalIcons = [
+                          'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
+                          'giraffe', 'horse', 'kangaroo', 'koala', 'leopard', 'lion', 'llama',
+                          'owl', 'pelican', 'penguin', 'sheep', 'teddy-bear', 'turtle'
+                        ];
+
+                        const animalNameMap: Record<string, string> = {
+                          '곰': 'bear', '고양이': 'cat', '소': 'cow', '악어': 'crocodile',
+                          '돌고래': 'dolphin', '코끼리': 'elephant', '플라밍고': 'flamingo',
+                          '기린': 'giraffe', '말': 'horse', '캥거루': 'kangaroo',
+                          '코알라': 'koala', '표범': 'leopard', '사자': 'lion',
+                          '라마': 'llama', '올빼미': 'owl', '펠리컨': 'pelican',
+                          '펭귄': 'penguin', '양': 'sheep', '테디베어': 'teddy-bear',
+                          '거북이': 'turtle', 'bear': 'bear', 'cat': 'cat'
+                        };
+
+                        // 캠페인 이름에서 동물 이름 추출
+                        const name = editedCampaign.campaignName.toLowerCase();
+                        let animalFound = false;
+
+                        for (const [animalName, iconName] of Object.entries(animalNameMap)) {
+                          if (name.includes(animalName.toLowerCase())) {
+                            console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
+                            animalFound = true;
+                            break;
+                          }
+                        }
+
+                        // 이름에서 동물을 찾지 못하면 랜덤 아이콘 사용
+                        if (!animalFound) {
+                          const randomAnimal = animalIcons[Math.floor(Math.random() * animalIcons.length)];
+                          console.log(`이름에서 동물을 찾지 못함. 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                          (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                        }
                       }}
                     />
                   ) : (

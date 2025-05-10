@@ -41,6 +41,35 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
       try {
         setLoading(true);
 
+        // ntraffic 경로에 대한 특별 처리
+        if (pathname === '/advertise/ntraffic/desc') {
+          const serviceTypeCode = 'ntraffic';
+
+          // Supabase에서 ntraffic 서비스 타입의 캠페인 가져오기
+          const { data, error } = await supabase
+            .from('campaigns')
+            .select('*')
+            .eq('service_type', serviceTypeCode)
+            .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
+            .order('id', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching ntraffic campaign data:', error);
+            setLoading(false);
+            return;
+          }
+
+          // 데이터 변환
+          const formattedItems: IAdCampaignsContentItem[] = data.map((campaign, index) =>
+            formatCampaignData(campaign as CampaignData, index)
+          );
+
+          setItems(formattedItems);
+          setLoading(false);
+          return;
+        }
+
+        // 일반적인 경로 처리 (기존 로직)
         // URL 경로에서 서비스 타입 추출
         const pathSegments = pathname.split('/').filter(Boolean);
 
@@ -67,7 +96,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
 
         if (!serviceTypeCode) {
-          console.error('Service type code not found for the given path');
+          console.error('Service type code not found for the given path', { platform, type, subservice });
           setLoading(false);
           return;
         }
@@ -115,7 +144,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     serviceCategory = 'NP 트래픽';
   } else if (pathname.includes('naver/auto')) {
     serviceCategory = 'N 자동완성';
-  } else if (pathname.includes('naver/traffic')) {
+  } else if (pathname.includes('naver/traffic') || pathname.includes('/ntraffic')) {
     serviceCategory = 'N 트래픽';
   } else if (pathname.includes('coupang/traffic')) {
     serviceCategory = 'C 트래픽';
@@ -135,7 +164,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     logoPath = '/media/ad-brand/naver-place.png';
   } else if (pathname.includes('naver/auto')) {
     logoPath = '/media/ad-brand/naver.png';
-  } else if (pathname.includes('naver/traffic')) {
+  } else if (pathname.includes('naver/traffic') || pathname.includes('/ntraffic')) {
     logoPath = '/media/ad-brand/naver.png';
   } else if (pathname.includes('coupang')) {
     logoPath = '/media/ad-brand/coupang-app.png';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getCampaignData, CampaignData } from '@/data/advertiseServices';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { CampaignTemplate } from './components';
@@ -11,18 +11,30 @@ const ServiceCampaignPage: React.FC = () => {
     type: string;
   }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!platform || !type) {
-      setError('필수 파라미터가 없습니다.');
-      setLoading(false);
-      return;
-    }
-
     try {
+      // 직접 경로 '/advertise/ntraffic/campaign' 처리
+      if (pathname === '/advertise/ntraffic/campaign') {
+        const data = getCampaignData('ntraffic', 'campaign');
+        if (data) {
+          setCampaignData(data);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 일반적인 동적 라우트 처리
+      if (!platform || !type) {
+        setError('필수 파라미터가 없습니다.');
+        setLoading(false);
+        return;
+      }
+
       const data = getCampaignData(platform, type, subservice);
 
       if (!data) {
@@ -34,19 +46,25 @@ const ServiceCampaignPage: React.FC = () => {
       setCampaignData(data);
       setLoading(false);
     } catch (err) {
-      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것      
+      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것
       console.error('캠페인 정보 로드 오류:', err);
       setError('캠페인 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }
-  }, [platform, subservice, type]);
+  }, [platform, subservice, type, pathname]);
 
   // 소개 페이지 경로 생성
   const getIntroPath = (): string => {
-    if (subservice) {
-      return `/advertise/${platform}/${subservice}/${type}/intro`;
+    // 직접 경로 '/advertise/ntraffic/campaign' 처리
+    if (pathname === '/advertise/ntraffic/campaign') {
+      return '/advertise/ntraffic/desc';
     }
-    return `/advertise/${platform}/${type}/intro`;
+
+    // 일반 동적 라우트 처리
+    if (subservice) {
+      return `/advertise/${platform}/${subservice}/${type}/desc`;
+    }
+    return `/advertise/${platform}/${type}/desc`;
   };
 
   if (loading) {

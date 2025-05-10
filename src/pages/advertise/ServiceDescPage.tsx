@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DescTemplate } from './components';
 import { getServiceData, ServiceData } from '@/data/advertiseServices';
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -11,18 +11,30 @@ const ServiceDescPage: React.FC = () => {
     type: string;
   }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!platform || !type) {
-      setError('필수 파라미터가 없습니다.');
-      setLoading(false);
-      return;
-    }
-
     try {
+      // 직접 경로 '/advertise/ntraffic/desc' 처리
+      if (pathname === '/advertise/ntraffic/desc') {
+        const data = getServiceData('ntraffic', 'desc');
+        if (data) {
+          setServiceData(data);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 일반적인 동적 라우트 처리
+      if (!platform || !type) {
+        setError('필수 파라미터가 없습니다.');
+        setLoading(false);
+        return;
+      }
+
       const data = getServiceData(platform, type, subservice);
 
       if (!data) {
@@ -34,15 +46,21 @@ const ServiceDescPage: React.FC = () => {
       setServiceData(data);
       setLoading(false);
     } catch (err) {
-      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것      
+      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것
       console.error('서비스 정보 로드 오류:', err);
       setError('서비스 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }
-  }, [platform, subservice, type]);
+  }, [platform, subservice, type, pathname]);
 
   // 캠페인 페이지 경로 생성
   const getCampaignPath = (): string => {
+    // 직접 경로 '/advertise/ntraffic/desc' 처리
+    if (pathname === '/advertise/ntraffic/desc') {
+      return '/advertise/ntraffic/campaign';
+    }
+
+    // 일반 동적 라우트 처리
     if (subservice) {
       return `/advertise/${platform}/${subservice}/${type}/campaign`;
     }

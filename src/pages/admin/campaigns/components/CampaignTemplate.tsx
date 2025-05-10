@@ -9,6 +9,8 @@ import { fetchCampaigns, getServiceTypeCode } from '../services/campaignService'
 import { ICampaign } from './CampaignContent';
 import { getCampaignsByService } from '../data'; // 백업 데이터용
 import { CampaignAddModal } from './campaign-modals';
+import { useAuthContext } from '@/auth/useAuthContext';
+import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 
 interface CampaignTemplateProps {
   title: string;
@@ -28,11 +30,19 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   const menuConfig = getMenuConfig('primary');
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
   
+  // 인증 컨텍스트 가져오기
+  const { currentUser, userRole } = useAuthContext();
+
   // 캠페인 데이터 상태
   const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
+  // 권한 확인 - 관리자/운영자/개발자 여부
+  const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
+  // 광고주나 대행사인지 확인
+  const isAdvertiserOrAgency = userRole === USER_ROLES.ADVERTISER || userRole === USER_ROLES.AGENCY;
+
   // 캠페인 추가 모달 상태
   const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
 
@@ -53,17 +63,25 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      
       // 서비스 코드를 DB 형식으로 변환
       const dbServiceType = getServiceTypeCode(serviceType);
-      
+
       let data: ICampaign[] = [];
       let useBackupData = false;
-      
+
       // DB에서 캠페인 데이터 가져오기 (단, 빈 서비스 타입은 시도하지 않음)
       if (dbServiceType) {
         try {
-          data = await fetchCampaigns(dbServiceType);
+          // 관리자가 아니면서 현재 사용자가 있는 경우 본인 캠페인만 필터링
+          const userId = !isAdmin && currentUser?.id ? currentUser.id : undefined;
+          data = await fetchCampaigns(dbServiceType, userId);
+
+          // 사용자 필터링 로그
+          if (userId) {
+            console.log(`사용자 ${userId}의 캠페인만 표시합니다. 총 ${data.length}개`);
+          } else {
+            console.log(`모든 캠페인을 표시합니다. 총 ${data.length}개`);
+          }
         } catch (dbError) {
           console.error('DB 데이터 조회 오류:', dbError);
           useBackupData = true;
@@ -71,7 +89,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       } else {
         useBackupData = true;
       }
-      
+
       // DB에 데이터가 없을 경우 빈 배열 유지, 백업 데이터 사용하지 않음
       if (useBackupData) {
         console.warn('DB에서 데이터를 가져오지 못했습니다.');
@@ -80,12 +98,12 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         // DB에서 데이터를 성공적으로 가져온 경우
         setCampaigns(data);
       }
-      
+
       setError(null);
     } catch (err) {
       console.error('캠페인 데이터 로드 중 오류:', err);
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
-      
+
       // 오류 발생 시에도 빈 배열 사용 (백업 데이터 사용 안함)
       setCampaigns([]);
     } finally {
@@ -122,19 +140,19 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
           ) : customContent ? (
             customContent
           ) : (
-            <CampaignContent 
-              campaigns={campaigns} 
+            <CampaignContent
+              campaigns={campaigns}
               serviceType={serviceType}
               onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
-              onAddCampaign={handleAddCampaign} // 캠페인 추가 버튼 클릭 시 호출할 함수 전달
+              onAddCampaign={!isAdvertiserOrAgency ? handleAddCampaign : undefined} // 광고주나 대행사는 캠페인 추가 버튼 비활성화
             />
           )}
           <AdMiscFaq />
         </div>
       </CommonTemplate>
 
-      {/* 캠페인 추가 모달 */}
-      {addCampaignModalOpen && (
+      {/* 캠페인 추가 모달 - 광고주나 대행사는 접근 불가 */}
+      {addCampaignModalOpen && !isAdvertiserOrAgency && (
         <CampaignAddModal
           open={addCampaignModalOpen}
           onClose={() => setAddCampaignModalOpen(false)}

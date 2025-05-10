@@ -27,7 +27,7 @@ const getServiceTypeFromUrl = (pathname: string): string | null => {
   if (segments.length >= 3 && segments[0] === 'admin' && segments[1] === 'campaigns') {
     const campaignType = segments[2];
     
-    if (campaignType === 'naver-traffic') return 'N 트래픽';
+    if (campaignType === 'ntraffic') return 'N 트래픽';
     if (campaignType === 'naver-auto') return 'N 자동완성';
     if (campaignType === 'naver-shopping') return 'NS 트래픽';
     if (campaignType === 'naver-place-traffic') return 'NP 트래픽';
@@ -47,7 +47,7 @@ const getServiceTypeFromUrl = (pathname: string): string | null => {
   // 2단계 경로 - /advertise/platform/type/...
   if (segments.length >= 4 && !['place', 'shopping'].includes(segments[2])) {
     if (platform === 'naver') {
-      if (segments[2] === 'traffic') return 'N 트래픽';
+      if (segments[2] === 'ntraffic') return 'N 트래픽';
       if (segments[2] === 'auto') return 'N 자동완성';
     } else if (platform === 'coupang') {
       if (segments[2] === 'traffic') return 'CP 트래픽';
@@ -91,7 +91,7 @@ const getPageTypeFromUrl = (pathname: string): 'desc' | 'campaign' | null => {
 // 현재 페이지 유형(desc/campaign)에 따라 모든 메뉴가 같은 유형을 가리키도록 설정
 const createServiceMenuItems = (currentPageType: 'desc' | 'campaign' = 'desc'): TMenuConfig => {
   return [
-    { title: 'N 트래픽', path: `/advertise/naver/traffic/${currentPageType}` },
+    { title: 'N 트래픽', path: `/advertise/ntraffic/${currentPageType}` },
     { title: 'N 자동완성', path: `/advertise/naver/auto/${currentPageType}` },
     { title: 'NS 트래픽', path: `/advertise/naver/shopping/traffic/${currentPageType}` },
     { title: 'NP 트래픽', path: `/advertise/naver/place/traffic/${currentPageType}` },
@@ -105,7 +105,7 @@ const createServiceMenuItems = (currentPageType: 'desc' | 'campaign' = 'desc'): 
 // 관리자 캠페인 메뉴 아이템 생성
 const createAdminCampaignMenuItems = (): TMenuConfig => {
   return [
-    { title: 'N 트래픽', path: '/admin/campaigns/naver-traffic' },
+    { title: 'N 트래픽', path: '/admin/campaigns/ntraffic' },
     { title: 'N 자동완성', path: '/admin/campaigns/naver-auto' },
     { title: 'NS 트래픽', path: '/admin/campaigns/naver-shopping' },
     { title: 'NP 트래픽', path: '/admin/campaigns/naver-place-traffic' },

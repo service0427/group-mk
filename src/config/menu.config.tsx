@@ -33,11 +33,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 소개',
     icon: 'document text-primary',
-    path: '/advertise/naver/traffic/desc',
+    path: '/advertise/ntraffic/desc',
     children: [
       {
         title: 'N 트래픽',
-        path: '/advertise/naver/traffic/desc',
+        path: '/advertise/ntraffic/desc',
         iconImage: '/media/ad-brand/naver.png'
       },
       {
@@ -80,11 +80,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
-    path: '/advertise/naver/traffic/campaign',
+    path: '/advertise/ntraffic/campaign',
     children: [
       {
         title: 'N 트래픽',
-        path: '/advertise/naver/traffic/campaign',
+        path: '/advertise/ntraffic/campaign',
         iconImage: '/media/ad-brand/naver.png'
       },
       {

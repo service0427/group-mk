@@ -100,7 +100,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 disabled={loading || filteredCampaigns.length <= 1}
               >
                 {filteredCampaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.mat_id}>
+                  <option key={campaign.id} value={campaign.id}>
                     {campaign.campaign_name}
                   </option>
                 ))}
@@ -228,7 +228,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               disabled={loading || filteredCampaigns.length <= 1}
             >
               {filteredCampaigns.map((campaign) => (
-                <option key={campaign.id} value={campaign.mat_id}>
+                <option key={campaign.id} value={campaign.id}>
                   {campaign.campaign_name}
                 </option>
               ))}

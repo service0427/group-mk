@@ -59,7 +59,13 @@ const SlotCard: React.FC<SlotCardProps> = ({
             {/* 캠페인 정보 (추가) */}
             <div className="mb-3 px-3 py-2 bg-light rounded">
               <div className="small text-muted mb-1">캠페인</div>
-              <div className="font-weight-medium">{slot.product_id ? `캠페인 #${slot.product_id}` : '-'}</div>
+              <div className="font-weight-medium">
+                {slot.product_id ? (
+                  slot.campaign_name ?
+                  `${slot.campaign_name} (#${slot.product_id})` :
+                  `캠페인 #${slot.product_id}`
+                ) : '-'}
+              </div>
             </div>
             
             {/* 상세 정보 */}

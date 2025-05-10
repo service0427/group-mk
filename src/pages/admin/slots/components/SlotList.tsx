@@ -58,7 +58,11 @@ const SlotList: React.FC<SlotListProps> = ({
                 <td>{slot.input_data?.mid || slot.mat_id.substring(0, 8) + '...'}</td>
                 <td>
                   <span className="badge badge-light-primary">
-                    {slot.product_id ? `캠페인 #${slot.product_id}` : '-'}
+                    {slot.product_id ? (
+                      slot.campaign_name ?
+                      `${slot.campaign_name} (#${slot.product_id})` :
+                      `캠페인 #${slot.product_id}`
+                    ) : '-'}
                   </span>
                 </td>
                 <td>{formatDate(slot.submitted_at)}</td>

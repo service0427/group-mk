@@ -68,7 +68,7 @@ export const registerSlot = async (
     const { data: slotData, error: slotError } = await supabase
       .from('slots')
       .insert({
-        mat_id: matId,
+        mat_id: matId, // 총판 ID
         product_id: campaignId,
         user_id: userId,
         status: 'pending', // 보류 상태로 생성

@@ -2,24 +2,23 @@ import React from 'react';
 
 // 서비스 카테고리와 서비스 타입 코드 매핑
 export const SERVICE_TYPE_MAP = {
-  'NS 트래픽': 'NaverShopTraffic',
+  'NS 트래픽': 'ntraffic',
   'NP 저장': 'NaverPlaceSave',
   'NP 공유': 'NaverPlaceShare',
   'NP 트래픽': 'NaverPlaceTraffic',
   'N 자동완성': 'NaverAuto',
-  'N 트래픽': 'NaverTraffic',
+  'N 트래픽': 'ntraffic',
   'C 트래픽': 'CoupangTraffic',
   'OH 트래픽': 'OhouseTraffic'
 };
 
 // 서비스 타입 코드와 카테고리 매핑 (역방향)
 export const SERVICE_TYPE_TO_CATEGORY = {
-  'NaverShopTraffic': 'NS 트래픽',
+  'ntraffic': 'NS/N 트래픽', // 네이버 트래픽 서비스 통합
   'NaverPlaceSave': 'NP 저장',
   'NaverPlaceShare': 'NP 공유',
   'NaverPlaceTraffic': 'NP 트래픽',
   'NaverAuto': 'N 자동완성',
-  'NaverTraffic': 'N 트래픽',
   'CoupangTraffic': 'C 트래픽',
   'OhouseTraffic': 'OH 트래픽'
 };

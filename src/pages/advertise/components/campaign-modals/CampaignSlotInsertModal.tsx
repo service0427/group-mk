@@ -57,6 +57,7 @@ interface CampaignSlotInsertModalProps {
   category: string | null;
   campaign?: CampaignData | null;
   onSave?: (data: CampaignSlotData) => void;
+  serviceCode?: string; // 서비스 코드 (NaverShopTraffic, BlogPosting 등)
 }
 
 // 추가할 슬롯 데이터 인터페이스
@@ -124,6 +125,8 @@ interface SupabaseCampaign {
   unit_price?: string | number;
   additional_logic?: string | number;
   mat_id?: string; // 총판의 UUID
+  user_id?: string; // 관리자/총판 ID
+  add_info?: any; // 배너 URL 등의 추가 정보
 }
 
 const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
@@ -131,7 +134,8 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   onClose,
   category,
   campaign,
-  onSave
+  onSave,
+  serviceCode = 'NaverShopTraffic' // 기본값 설정
 }) => {
   const [slotData, setSlotData] = useState<CampaignSlotData>({
     productName: '',
@@ -171,6 +175,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   
   // 사용자 슬롯 목록 상태
   const [userSlots, setUserSlots] = useState<UserSlotData[]>([]);
@@ -249,10 +254,14 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         return;
       }
       
+      console.log('슬롯 데이터 가져오기 시작 - 사용자 ID:', currentUser.id);
+      console.log('현재 필터:', JSON.stringify(filters));
+      console.log('현재 페이지:', currentPage, '항목 수:', itemsPerPage);
+      
       // 쿼리 빌더 시작
       let query = supabase
         .from('slots')
-        .select('*, campaign:campaigns(id, campaign_name, logo, status, service_type)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('user_id', currentUser.id);
       
       // 필터 적용
@@ -281,6 +290,22 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         query = query.eq('status', filters.status);
       }
       
+      // 필터에 serviceType 적용 시도
+      // 현재 캠페인 목록에서 현재 서비스 타입의 캠페인만 필터링
+      // 서비스 타입 맵핑
+      // 여기서는 이미 DB 타입으로 저장된 캠페인을 가져옵니다
+      // campaigns 배열에 이미 DB 타입(ntraffic 등)으로 필터링된 캠페인만 있습니다
+      
+      // 모든 캠페인을 대상으로 함
+      const serviceTypeCampaigns = [...campaigns];
+      console.log('슬롯 필터링용 캠페인 목록:', campaigns.map(c => ({ id: c.id, type: c.service_type })));
+      if (serviceTypeCampaigns.length > 0) {
+        const campaignIds = serviceTypeCampaigns.map(c => c.id);
+        console.log('이미 서비스 타입으로 필터링된 캠페인 사용');
+        console.log('해당 캠페인 ID들:', campaignIds);
+        query = query.in('product_id', campaignIds);
+      }
+      
       // 페이지네이션 적용
       const from = (currentPage - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
@@ -290,14 +315,35 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         .range(from, to);
       
       // 쿼리 실행
+      console.log('슬롯 쿼리 실행 중...');
       const { data, error, count } = await query;
       
       if (error) {
+        console.error('슬롯 쿼리 오류:', error);
         throw error;
       }
       
+      console.log(`슬롯 데이터 로드 완료: ${data?.length || 0}개 항목, 총 ${count || 0}개`);
+      
       if (data) {
-        setUserSlots(data as UserSlotData[]);
+        // 캠페인 정보가 없는 슬롯 데이터 변환
+        const processedData = data.map(slot => {
+          // 관련 캠페인 정보를 캠페인 목록에서 찾기
+          const relatedCampaign = campaigns.find(camp => camp.id === slot.product_id);
+          
+          return {
+            ...slot,
+            campaign: relatedCampaign ? {
+              id: relatedCampaign.id,
+              campaign_name: relatedCampaign.campaign_name,
+              logo: relatedCampaign.logo,
+              status: relatedCampaign.status,
+              service_type: relatedCampaign.service_type
+            } : undefined
+          };
+        });
+        
+        setUserSlots(processedData as UserSlotData[]);
         setTotalCount(count || 0);
       }
     } catch (error) {
@@ -310,30 +356,87 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   };
   
   // 캠페인 목록 가져오기
+  // 모달이 열릴 때 캠페인 목록 가져오기
   useEffect(() => {
     if (open) {
       fetchCampaigns();
-      if (activeTab === 'list') {
-        fetchUserSlots();
-      }
     }
-  }, [open, currentPage, itemsPerPage]);
+  }, [open, serviceCode, category]); // serviceCode와 category 변경 시 캠페인 목록 갱신
+  
+  // 슬롯 목록 탭이 활성화되거나 페이지 변경 시 슬롯 데이터 가져오기
+  useEffect(() => {
+    if (open && activeTab === 'list' && campaigns.length > 0) {
+      console.log('슬롯 목록 데이터 가져오기 시작... 캠페인 수:', campaigns.length);
+      fetchUserSlots();
+    }
+  }, [open, activeTab, currentPage, itemsPerPage, filters.status, serviceCode, campaigns]);
+
+  // 캠페인 배너 가져오기 함수
+  const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
+    if (!campaign) return;
+    
+    try {
+      console.log('캠페인 배너 가져오기 시도:', campaign.campaign_name);
+      
+      // add_info에서 배너 URL 가져오기
+      let bannerUrl = null;
+      if (campaign.add_info) {
+        console.log('add_info 데이터:', campaign.add_info);
+        
+        if (typeof campaign.add_info === 'string') {
+          try {
+            const addInfo = JSON.parse(campaign.add_info);
+            console.log('파싱된 add_info:', addInfo);
+            bannerUrl = addInfo.banner_url || null;
+          } catch (e) {
+            console.error('add_info JSON 파싱 오류:', e);
+          }
+        } else {
+          bannerUrl = campaign.add_info.banner_url || null;
+        }
+        
+        console.log('찾은 배너 URL:', bannerUrl);
+      }
+      
+      setBannerUrl(bannerUrl);
+    } catch (err) {
+      console.error('배너 이미지 가져오기 오류:', err);
+    }
+  };
 
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      console.log('Supabase 쿼리 시작...');
+      console.log('Supabase 쿼리 시작...', `서비스 코드: ${serviceCode}`);
+      
+      // 서비스 코드 맵핑
+      const serviceTypeMap: Record<string, string> = {
+        'NaverShopTraffic': 'ntraffic',
+        'NaverBlogPosting': 'nblog',
+        'NaverCafePosting': 'ncafe',
+        'KakaoStory': 'kstory',
+        'Instagram': 'instagram',
+        // 추가 서비스 코드 매핑 필요 시 여기에 추가
+      };
+      
+      // 서비스 코드를 DB service_type으로 변환 (없으면 기본값 ntraffic 사용)
+      const serviceType = serviceTypeMap[serviceCode] || 'ntraffic';
+      console.log('변환된 서비스 타입:', serviceType);
       
       // Supabase 쿼리 준비
-      const campaignsPromise = supabase
+      let query = supabase
         .from('campaigns')
-        .select('*, mat_id') // mat_id를 명시적으로 선택
-        .eq('service_type', 'NaverShopTraffic')
+        .select('*, mat_id, add_info') // mat_id와 add_info 필드도 가져오기
         .neq('status', 'pause')
         .order('id', { ascending: true });
       
+      // 카테고리나 서비스 타입이 있을 경우 필터 추가
+      if (serviceType) {
+        query = query.eq('service_type', serviceType);
+      }
+      
       // 쿼리 실행
-      const { data, error } = await campaignsPromise;
+      const { data, error } = await query;
 
       if (error) {
         console.error('Supabase 쿼리 오류:', error);
@@ -346,9 +449,12 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         console.log(`${data.length}개의 캠페인을 가져왔습니다.`);
         setCampaigns(data);
         
-        // 첫 번째 캠페인을 기본값으로 설정
+        // 첫 번째 캠페인을 기본값으로 설정하고 배너 정보 가져오기
         setSelectedCampaignId(data[0].id);
         console.log('선택된 캠페인 ID 설정:', data[0].id);
+        
+        // 배너 정보 가져오기
+        fetchCampaignBanner(data[0]);
         
         // 슬롯 데이터에도 캠페인 ID 추가
         setSlotData(prev => ({
@@ -393,6 +499,12 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
     const value = parseInt(e.target.value, 10);
     console.log("선택된 캠페인 ID:", value);
     setSelectedCampaignId(value);
+    
+    // 선택된 캠페인의 배너 정보 가져오기
+    const selectedCampaign = campaigns.find(c => c.id === value);
+    if (selectedCampaign) {
+      fetchCampaignBanner(selectedCampaign);
+    }
     
     // 슬롯 데이터에도 캠페인 ID 업데이트
     setSlotData(prev => ({
@@ -465,11 +577,16 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       if (!selectedCampaign) {
         throw new Error('선택된 캠페인 정보를 찾을 수 없습니다.');
       }
+      
+      // 디버깅: 선택된 캠페인 정보 출력
+      console.log('선택된 캠페인 정보:', JSON.stringify(selectedCampaign, null, 2));
 
       // 캠페인의 mat_id 가져오기 (이미 campaigns 배열에 있는 정보 사용)
-      const matId = selectedCampaign.mat_id;
+      let matId = selectedCampaign.mat_id;
+      
       if (!matId) {
-        throw new Error('캠페인의 mat_id를 찾을 수 없습니다.');
+        console.error('캠페인 정보:', selectedCampaign);
+        throw new Error('캠페인의 mat_id를 찾을 수 없습니다. 이 캠페인은 슬롯을 등록할 수 없습니다.');
       }
 
       // input_data JSON 데이터 생성
@@ -559,11 +676,40 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
 
   // Supabase 캠페인을 CampaignDetailData 형식으로 변환
   const formatCampaignToDetailData = (campaign: SupabaseCampaign): ICampaignDetailData => {
+    // 로고 URL 처리
+    let logoUrl = '';
+    
+    // add_info에서 로고 URL을 우선적으로 사용
+    if (campaign.add_info) {
+      if (typeof campaign.add_info === 'string') {
+        try {
+          const addInfo = JSON.parse(campaign.add_info);
+          if (addInfo.logo_url) {
+            logoUrl = addInfo.logo_url;
+          }
+        } catch (e) {
+          console.error('add_info JSON 파싱 오류:', e);
+        }
+      } else if (campaign.add_info.logo_url) {
+        logoUrl = campaign.add_info.logo_url;
+      }
+    }
+    
+    // add_info에 로고가 없으면 campaign.logo 사용
+    if (!logoUrl && campaign.logo) {
+      logoUrl = campaign.logo;
+    }
+    
+    // 절대 경로 처리
+    if (logoUrl && !logoUrl.startsWith('/media') && !logoUrl.startsWith('http')) {
+      logoUrl = `/media/${logoUrl}`;
+    }
+    
     return {
       id: String(campaign.id || ''),
       campaignName: campaign.campaign_name || '',
       description: campaign.description || '',
-      logo: campaign.logo || '',
+      logo: logoUrl,
       efficiency: String(campaign.efficiency || '0%'),
       minQuantity: String(campaign.min_quantity || '0개'),
       deadline: String(campaign.deadline || ''),
@@ -609,7 +755,19 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-5xl p-0 overflow-hidden">
           <DialogHeader className="bg-background py-4 px-6 border-b">
-            <DialogTitle className="text-lg font-medium text-foreground">캠페인 슬롯 관리</DialogTitle>
+            <DialogTitle className="text-lg font-medium text-foreground">
+              {serviceCode === 'NaverShopTraffic' 
+                ? '네이버 쇼핑 트래픽 슬롯 관리' 
+                : serviceCode === 'NaverBlogPosting' 
+                  ? '네이버 블로그 포스팅 슬롯 관리'
+                  : serviceCode === 'NaverCafePosting'
+                    ? '네이버 카페 포스팅 슬롯 관리'
+                    : serviceCode === 'KakaoStory'
+                      ? '카카오스토리 슬롯 관리'
+                      : serviceCode === 'Instagram'
+                        ? '인스타그램 슬롯 관리'
+                        : '캠페인 슬롯 관리'}
+            </DialogTitle>
           <div className="flex mt-4 border-b">
             <button
               onClick={() => handleTabChange('form')}
@@ -634,238 +792,446 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
           </div>
         </DialogHeader>
         <DialogBody className="p-6 max-h-[70vh] overflow-y-auto">
-          {/* 캠페인 선택 드롭박스 */}
-          <div className="mb-6">
-            <label htmlFor="campaign-select" className="block text-sm font-medium text-foreground mb-2">
-              캠페인 선택
-            </label>
-            {loading ? (
-              <div className="text-sm text-muted-foreground">캠페인 목록을 불러오는 중...</div>
-            ) : campaigns.length > 0 ? (
-              <select
-                id="campaign-select"
-                value={selectedCampaignId || ''}
-                onChange={handleCampaignChange}
-                className="flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 px-3 py-2"
-              >
-                {campaigns.map((camp) => (
-                  <option key={camp.id} value={camp.id}>
-                    {camp.campaign_name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="text-sm text-muted-foreground">사용 가능한 캠페인이 없습니다.</div>
-            )}
-          </div>
-
-          <div className="flex flex-row gap-6">
-            {/* 왼쪽: 캠페인 상세 정보 */}
-            <div className="w-1/2 space-y-6 border-r border-border pr-6">
-              {campaignData ? (
-                <>
-                  {/* 헤더 정보 */}
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={campaignData.logo?.startsWith('/media') ? toAbsoluteUrl(campaignData.logo) : toAbsoluteUrl(`/media/${campaignData.logo}`)}
-                      className="rounded-full size-16 shrink-0"
-                      alt={campaignData.campaignName}
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 기본 이미지 사용
-                        (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-                      }}
-                    />
-                    <div>
-                      <h2 className="text-xl font-semibold text-foreground">{campaignData.campaignName}</h2>
-                      {campaignData.status && (
-                        <div className="mt-1">
-                          <span className={`badge ${campaignData.status.color} badge-outline rounded-[30px] h-auto py-1`}>
-                            <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaignData.status.color)} me-1.5`}></span>
-                            {campaignData.status.label}
-                          </span>
+          {activeTab === 'form' ? (
+            <>
+              {/* 캠페인 선택 드롭박스 */}
+              <div className="mb-6">
+                <label htmlFor="campaign-select" className="block text-sm font-medium text-foreground mb-2">
+                  캠페인 선택
+                </label>
+                {loading ? (
+                  <div className="text-sm text-muted-foreground">캠페인 목록을 불러오는 중...</div>
+                ) : campaigns.length > 0 ? (
+                  <select
+                    id="campaign-select"
+                    value={selectedCampaignId || ''}
+                    onChange={handleCampaignChange}
+                    className="flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 px-3 py-2"
+                  >
+                    {campaigns.map((camp) => (
+                      <option key={camp.id} value={camp.id}>
+                        {camp.campaign_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-sm text-muted-foreground">사용 가능한 캠페인이 없습니다.</div>
+                )}
+              </div>
+    
+              <div className="flex flex-row gap-6">
+                {/* 왼쪽: 캠페인 상세 정보 */}
+                <div className="w-1/2 space-y-6 border-r border-border pr-6">
+                  <div className="bg-background">
+                    {/* 배너 이미지 */}
+                    {loading ? (
+                      <div className="w-full h-[180px] bg-gray-100 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                      </div>
+                    ) : bannerUrl ? (
+                      <div className="w-full">
+                        <img 
+                          src={bannerUrl}
+                          alt="캠페인 배너" 
+                          className="w-full h-auto object-cover"
+                          style={{ maxHeight: '250px' }}
+                          onError={(e) => {
+                            console.log('배너 이미지 로드 실패:', bannerUrl);
+                            // 이미지 로드 실패 시 기본 배경으로 대체
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center";
+                            
+                            // 로고 이미지 추가
+                            const logoImg = document.createElement('img');
+                            logoImg.src = toAbsoluteUrl('/media/app/mini-logo-primary.svg');
+                            logoImg.alt = '캠페인 로고';
+                            logoImg.className = 'h-16 w-auto opacity-50';
+                            e.currentTarget.parentElement!.appendChild(logoImg);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full">
+                        <div className="w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
+                          <img 
+                            src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
+                            alt="캠페인 배너" 
+                            className="h-16 w-auto opacity-50"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="py-4">
+                      {campaignData ? (
+                        <>
+                          {/* 캠페인 헤더 정보 */}
+                          <div className="flex items-center gap-4 mb-6">
+                            <img
+                              src={campaignData.logo.startsWith('/') 
+                                ? toAbsoluteUrl(campaignData.logo) 
+                                : campaignData.logo.startsWith('http') 
+                                  ? campaignData.logo 
+                                  : toAbsoluteUrl(`/media/${campaignData.logo}`)}
+                              className="rounded-full size-16 shrink-0 object-cover"
+                              alt={campaignData.campaignName}
+                              onError={(e) => {
+                                console.log('로고 이미지 로드 실패:', campaignData.logo);
+                                // 이미지 로드 실패 시 기본 이미지 사용
+                                (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                              }}
+                            />
+                            <div>
+                              <h2 className="text-2xl font-bold text-foreground">
+                                {campaignData.campaignName}
+                              </h2>
+                              {campaignData.status && (
+                                <div className="mt-1">
+                                  <span className={`badge ${campaignData.status.color} badge-outline rounded-[30px] h-auto py-1`}>
+                                    <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaignData.status.color)} me-1.5`}></span>
+                                    {campaignData.status.label}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* 캠페인 주요 정보 */}
+                          <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-muted p-4 rounded-md">
+                              <h3 className="text-sm font-medium text-muted-foreground mb-1">건당 단가</h3>
+                              <p className="text-xl font-semibold text-primary">
+                                {campaignData.unitPrice ? (campaignData.unitPrice.endsWith('원') ? campaignData.unitPrice : `${campaignData.unitPrice}원`) : '1,000원'}
+                              </p>
+                            </div>
+                            <div className="bg-muted p-4 rounded-md">
+                              <h3 className="text-sm font-medium text-muted-foreground mb-1">마감 시간</h3>
+                              <p className="text-xl font-semibold text-primary">{campaignData.deadline}</p>
+                            </div>
+                          </div>
+                          
+                          {/* 캠페인 설명 */}
+                          <div className="mb-6">
+                            <h3 className="text-lg font-semibold mb-2">캠페인 설명</h3>
+                            <div className="bg-muted p-4 rounded-md">
+                              <p className="text-foreground whitespace-pre-line">
+                                {campaignData.description || '설명이 없습니다.'}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-10">
+                          <p className="text-muted-foreground">선택된 캠페인이 없거나 로딩 중입니다.</p>
                         </div>
                       )}
                     </div>
                   </div>
-
-                  {/* 캠페인 정보 테이블 */}
-                  <div className="overflow-hidden border border-border rounded-lg mb-6">
-                    <table className="min-w-full divide-y divide-border">
-                      <tbody className="divide-y divide-border">
-                        <tr>
-                          <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                            건당 단가
-                          </th>
-                          <td className="px-4 py-3 text-md text-foreground">
-                            {campaignData.unitPrice ? (campaignData.unitPrice.endsWith('원') ? campaignData.unitPrice : `${campaignData.unitPrice} 원`) : '1,000 원'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                            최소수량
-                          </th>
-                          <td className="px-4 py-3 text-md text-foreground">
-                            {campaignData.minQuantity ? (campaignData.minQuantity.endsWith('개') ? campaignData.minQuantity : `${campaignData.minQuantity} 개`) : '0 개'}
-                          </td>
-                        </tr>
-                        {campaignData.additionalLogic && campaignData.additionalLogic !== '없음' && (
-                          <tr>
-                            <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                              추가로직
-                            </th>
-                            <td className="px-4 py-3 text-md text-foreground">
-                              {campaignData.additionalLogic ? (campaignData.additionalLogic.endsWith('개') ? campaignData.additionalLogic : `${campaignData.additionalLogic} 개`) : '0 개'}
-                            </td>
-                          </tr>
-                        )}
-                        <tr>
-                          <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                            상승효율
-                          </th>
-                          <td className="px-4 py-3 text-md text-foreground">
-                            {campaignData.efficiency ? (campaignData.efficiency.endsWith('%') ? campaignData.efficiency : `${campaignData.efficiency} %`) : '0 %'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                            접수마감시간
-                          </th>
-                          <td className="px-4 py-3 text-md text-foreground">
-                            {campaignData.deadline}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="px-4 py-3 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider">
-                            캠페인 설명
-                          </th>
-                          <td className="px-4 py-3 text-md text-foreground whitespace-pre-line">
-                            {campaignData.description}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 캠페인 상세설명 */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium text-foreground mb-2">캠페인 상세설명</h3>
-                    <div className="bg-background border border-border p-4 rounded text-md text-foreground whitespace-pre-line">
-                      {campaignData.detailedDescription ? 
-                        campaignData.detailedDescription : 
-                        (campaignData.description || '상세 설명이 없습니다.')}
+                </div>
+    
+                {/* 오른쪽: 슬롯 입력 폼 */}
+                <div className="w-1/2 space-y-6">
+                  <h3 className="text-lg font-medium text-foreground mb-4">슬롯 정보 입력</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="form-group">
+                      <label htmlFor="productName" className="block text-sm font-medium text-foreground mb-2">
+                        상품명 <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="productName"
+                        name="productName"
+                        value={slotData.productName}
+                        onChange={handleChange}
+                        placeholder="상품명을 입력하세요"
+                        className={`w-full ${errors.productName ? 'border-red-500' : ''}`}
+                      />
+                      {errors.productName && (
+                        <p className="mt-1 text-xs text-red-500">{errors.productName}</p>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="mid" className="block text-sm font-medium text-foreground mb-2">
+                        MID <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="mid"
+                        name="mid"
+                        value={slotData.mid}
+                        onChange={handleChange}
+                        placeholder="MID를 입력하세요"
+                        className={`w-full ${errors.mid ? 'border-red-500' : ''}`}
+                      />
+                      {errors.mid && (
+                        <p className="mt-1 text-xs text-red-500">{errors.mid}</p>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="url" className="block text-sm font-medium text-foreground mb-2">
+                        URL <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="url"
+                        name="url"
+                        value={slotData.url}
+                        onChange={handleChange}
+                        placeholder="URL을 입력하세요 (예: https://example.com)"
+                        className={`w-full ${errors.url ? 'border-red-500' : ''}`}
+                      />
+                      {errors.url && (
+                        <p className="mt-1 text-xs text-red-500">{errors.url}</p>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="keyword1" className="block text-sm font-medium text-foreground mb-2">
+                        키워드 1 <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="keyword1"
+                        name="keyword1"
+                        value={slotData.keyword1}
+                        onChange={handleChange}
+                        placeholder="키워드 1을 입력하세요"
+                        className={`w-full ${errors.keyword1 ? 'border-red-500' : ''}`}
+                      />
+                      {errors.keyword1 && (
+                        <p className="mt-1 text-xs text-red-500">{errors.keyword1}</p>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="keyword2" className="block text-sm font-medium text-foreground mb-2">
+                        키워드 2
+                      </label>
+                      <Input
+                        id="keyword2"
+                        name="keyword2"
+                        value={slotData.keyword2}
+                        onChange={handleChange}
+                        placeholder="키워드 2를 입력하세요"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="keyword3" className="block text-sm font-medium text-foreground mb-2">
+                        키워드 3
+                      </label>
+                      <Input
+                        id="keyword3"
+                        name="keyword3"
+                        value={slotData.keyword3}
+                        onChange={handleChange}
+                        placeholder="키워드 3을 입력하세요"
+                        className="w-full"
+                      />
                     </div>
                   </div>
-                </>
-              ) : (
+                </div>
+              </div>
+            </>
+          ) : (
+            // 내 슬롯 목록 탭
+            <div className="w-full">
+              {/* 필터 영역 */}
+              <div className="bg-muted p-4 rounded-md mb-6">
+                <h3 className="text-lg font-medium mb-4">검색 필터</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label htmlFor="productName-filter" className="block text-sm font-medium mb-1">
+                      상품명
+                    </label>
+                    <Input
+                      id="productName-filter"
+                      name="productName"
+                      value={filters.productName}
+                      onChange={handleFilterChange}
+                      placeholder="상품명 검색"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="mid-filter" className="block text-sm font-medium mb-1">
+                      MID
+                    </label>
+                    <Input
+                      id="mid-filter"
+                      name="mid"
+                      value={filters.mid}
+                      onChange={handleFilterChange}
+                      placeholder="MID 검색"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="status-filter" className="block text-sm font-medium mb-1">
+                      상태
+                    </label>
+                    <select
+                      id="status-filter"
+                      name="status"
+                      value={filters.status || ''}
+                      onChange={handleFilterChange}
+                      className="flex w-full bg-background rounded-md border border-input text-sm"
+                    >
+                      <option value="">전체 상태</option>
+                      <option value="pending">대기중</option>
+                      <option value="approved">승인됨</option>
+                      <option value="rejected">반려됨</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label htmlFor="campaign-filter" className="block text-sm font-medium mb-1">
+                      캠페인
+                    </label>
+                    <select
+                      id="campaign-filter"
+                      name="campaignId"
+                      value={filters.campaignId || ''}
+                      onChange={handleFilterChange}
+                      className="flex w-full bg-background rounded-md border border-input text-sm"
+                    >
+                      <option value="">모든 캠페인</option>
+                      {campaigns.map(camp => (
+                        <option key={camp.id} value={camp.id}>
+                          {camp.campaign_name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">※ 슬롯은 캠페인 등록 후 변경할 수 없습니다</p>
+                  </div>
+                  <div>
+                    <label htmlFor="keyword-filter" className="block text-sm font-medium mb-1">
+                      키워드 검색
+                    </label>
+                    <Input
+                      id="keyword-filter"
+                      name="keyword"
+                      value={filters.keyword}
+                      onChange={handleFilterChange}
+                      placeholder="키워드 검색"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button onClick={handleResetFilters} variant="outline">
+                    필터 초기화
+                  </Button>
+                  <Button onClick={handleSearch} className="btn-primary">
+                    검색
+                  </Button>
+                </div>
+              </div>
+            
+              {/* 슬롯 목록 표 */}
+              {slotsLoading ? (
                 <div className="text-center py-10">
-                  <p className="text-muted-foreground">선택된 캠페인이 없거나 로딩 중입니다.</p>
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">슬롯 목록을 불러오는 중...</p>
+                </div>
+              ) : userSlots.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse table-auto">
+                    <thead>
+                      <tr className="bg-muted border-b">
+                        <th className="px-4 py-2 text-left">상품명</th>
+                        <th className="px-4 py-2 text-left">MID</th>
+                        <th className="px-4 py-2 text-left">키워드</th>
+                        <th className="px-4 py-2 text-left">등록된 캠페인</th>
+                        <th className="px-4 py-2 text-left">상태</th>
+                        <th className="px-4 py-2 text-left">등록일</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userSlots.map(slot => (
+                        <tr key={slot.id} className="border-b hover:bg-muted/50">
+                          <td className="px-4 py-3">
+                            {slot.input_data?.productName || '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            {slot.input_data?.mid || '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            {Array.isArray(slot.input_data?.keywords) ? 
+                              slot.input_data.keywords.join(', ') : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center group relative">
+                              <span className="font-medium text-primary">
+                                {campaigns.find(c => c.id === slot.product_id)?.campaign_name ||
+                                (slot.product_id ? `캠페인 #${slot.product_id}` : '-')}
+                              </span>
+                              {slot.campaign?.status === 'active' && (
+                                <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
+                                  진행중
+                                </span>
+                              )}
+                              <div className="absolute hidden group-hover:block bg-black/90 text-white text-xs p-2 rounded-md w-48 z-10 left-0 -bottom-1 transform translate-y-full pointer-events-none">
+                                <p className="mb-1"><strong>캠페인:</strong> {campaigns.find(c => c.id === slot.product_id)?.campaign_name || '-'}</p>
+                                <p className="mb-1"><strong>타입:</strong> {slot.campaign?.service_type || '-'}</p>
+                                <p className="mb-1"><strong>등록일:</strong> {new Date(slot.created_at).toLocaleDateString()}</p>
+                                <p><em>※ 슬롯 등록 후 캠페인을 변경할 수 없습니다</em></p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              slot.status === 'approved' ? 'bg-success/20 text-success' :
+                              slot.status === 'rejected' ? 'bg-danger/20 text-danger' :
+                              'bg-warning/20 text-warning'
+                            }`}>
+                              {slot.status === 'approved' ? '승인됨' :
+                               slot.status === 'rejected' ? '반려됨' :
+                               slot.status === 'pending' ? '대기중' : slot.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {new Date(slot.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 bg-muted/20 rounded-md">
+                  <p className="text-muted-foreground">등록된 슬롯이 없습니다.</p>
+                </div>
+              )}
+              
+              {/* 페이지네이션 */}
+              {totalCount > 0 && (
+                <div className="flex justify-between items-center mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    총 {totalCount}개 항목 중 {(currentPage - 1) * itemsPerPage + 1}-
+                    {Math.min(currentPage * itemsPerPage, totalCount)}개 표시
+                  </div>
+                  <div className="flex space-x-1">
+                    {Array.from({ length: Math.ceil(totalCount / itemsPerPage) }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePageChange(i + 1)}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          currentPage === i + 1
+                            ? 'bg-primary text-white'
+                            : 'bg-muted hover:bg-muted-foreground/10'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* 오른쪽: 슬롯 입력 폼 */}
-            <div className="w-1/2 space-y-6">
-              <h3 className="text-lg font-medium text-foreground mb-4">슬롯 정보 입력</h3>
-              
-              <div className="space-y-4">
-                <div className="form-group">
-                  <label htmlFor="productName" className="block text-sm font-medium text-foreground mb-2">
-                    상품명 <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    id="productName"
-                    name="productName"
-                    value={slotData.productName}
-                    onChange={handleChange}
-                    placeholder="상품명을 입력하세요"
-                    className={`w-full ${errors.productName ? 'border-red-500' : ''}`}
-                  />
-                  {errors.productName && (
-                    <p className="mt-1 text-xs text-red-500">{errors.productName}</p>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="mid" className="block text-sm font-medium text-foreground mb-2">
-                    MID <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    id="mid"
-                    name="mid"
-                    value={slotData.mid}
-                    onChange={handleChange}
-                    placeholder="MID를 입력하세요"
-                    className={`w-full ${errors.mid ? 'border-red-500' : ''}`}
-                  />
-                  {errors.mid && (
-                    <p className="mt-1 text-xs text-red-500">{errors.mid}</p>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="url" className="block text-sm font-medium text-foreground mb-2">
-                    URL <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    id="url"
-                    name="url"
-                    value={slotData.url}
-                    onChange={handleChange}
-                    placeholder="URL을 입력하세요 (예: https://example.com)"
-                    className={`w-full ${errors.url ? 'border-red-500' : ''}`}
-                  />
-                  {errors.url && (
-                    <p className="mt-1 text-xs text-red-500">{errors.url}</p>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="keyword1" className="block text-sm font-medium text-foreground mb-2">
-                    키워드 1 <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    id="keyword1"
-                    name="keyword1"
-                    value={slotData.keyword1}
-                    onChange={handleChange}
-                    placeholder="키워드 1을 입력하세요"
-                    className={`w-full ${errors.keyword1 ? 'border-red-500' : ''}`}
-                  />
-                  {errors.keyword1 && (
-                    <p className="mt-1 text-xs text-red-500">{errors.keyword1}</p>
-                  )}
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="keyword2" className="block text-sm font-medium text-foreground mb-2">
-                    키워드 2
-                  </label>
-                  <Input
-                    id="keyword2"
-                    name="keyword2"
-                    value={slotData.keyword2}
-                    onChange={handleChange}
-                    placeholder="키워드 2를 입력하세요"
-                    className="w-full"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="keyword3" className="block text-sm font-medium text-foreground mb-2">
-                    키워드 3
-                  </label>
-                  <Input
-                    id="keyword3"
-                    name="keyword3"
-                    value={slotData.keyword3}
-                    onChange={handleChange}
-                    placeholder="키워드 3을 입력하세요"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
+          
         </DialogBody>
         <DialogFooter className="px-6 py-4 border-t flex justify-end">
           <button 

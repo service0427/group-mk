@@ -201,7 +201,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     heading: '관리자 메뉴',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN)
   },
   {
     title: '사이트 관리',
@@ -250,7 +249,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
       {
         title: 'N 트래픽',
@@ -297,7 +295,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '슬롯 관리',
     icon: 'cube-2 text-info',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
       {
         title: '슬롯 정보 관리',

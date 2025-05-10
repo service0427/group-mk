@@ -126,12 +126,27 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
       {details}
       {renderKeywords()}
       {!details && (
-        <div className="mb-2">
-          <strong>상세 정보:</strong>
-          <pre className="mt-1 bg-light p-2 rounded" style={{ fontSize: '0.8rem', maxHeight: '200px', overflow: 'auto' }}>
-            {JSON.stringify(inputData, null, 2)}
-          </pre>
-        </div>
+        <>
+          <div className="mb-2">
+            <strong>URL:</strong> {inputData.url || '-'}
+          </div>
+          {/* 키워드만 표시하고 전체 JSON 오브젝트는 표시하지 않음 */}
+          <div className="mb-2">
+            <strong>키워드:</strong>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {(inputData.keywords && Array.isArray(inputData.keywords)
+                ? inputData.keywords
+                : inputData.keyword
+                  ? [inputData.keyword]
+                  : []
+              ).map((keyword: string, index: number) => (
+                <span key={index} className="badge badge-light">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </>
   );

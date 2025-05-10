@@ -1186,9 +1186,12 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                               slot.status === 'rejected' ? 'bg-danger/20 text-danger' :
                               'bg-warning/20 text-warning'
                             }`}>
-                              {slot.status === 'approved' ? '승인됨' :
-                               slot.status === 'rejected' ? '반려됨' :
-                               slot.status === 'pending' ? '대기중' : slot.status}
+                              {
+                                slot.status === 'approved' ? '승인됨' :
+                                slot.status === 'rejected' ? '반려됨' :
+                                ['pending', 'submitted', 'draft'].includes(slot.status) ? '대기중' :
+                                slot.status
+                              }
                             </span>
                           </td>
                           <td className="px-4 py-3">

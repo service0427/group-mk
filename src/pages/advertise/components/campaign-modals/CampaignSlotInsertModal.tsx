@@ -753,12 +753,12 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-5xl p-0 overflow-hidden">
-          <DialogHeader className="bg-background py-4 px-6 border-b">
-            <DialogTitle className="text-lg font-medium text-foreground">
-              {serviceCode === 'NaverShopTraffic' 
-                ? '네이버 쇼핑 트래픽 슬롯 관리' 
-                : serviceCode === 'NaverBlogPosting' 
+        <DialogContent className="sm:max-w-5xl p-0 overflow-hidden w-[95vw] md:w-auto max-w-full">
+          <DialogHeader className="bg-background py-3 md:py-4 px-4 md:px-6 border-b">
+            <DialogTitle className="text-base md:text-lg font-medium text-foreground truncate">
+              {serviceCode === 'NaverShopTraffic'
+                ? '네이버 쇼핑 트래픽 슬롯 관리'
+                : serviceCode === 'NaverBlogPosting'
                   ? '네이버 블로그 포스팅 슬롯 관리'
                   : serviceCode === 'NaverCafePosting'
                     ? '네이버 카페 포스팅 슬롯 관리'
@@ -768,10 +768,10 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         ? '인스타그램 슬롯 관리'
                         : '캠페인 슬롯 관리'}
             </DialogTitle>
-          <div className="flex mt-4 border-b">
+          <div className="flex mt-3 md:mt-4 border-b">
             <button
               onClick={() => handleTabChange('form')}
-              className={`px-4 py-2 font-medium text-sm ${
+              className={`px-3 md:px-4 py-2 font-medium text-xs md:text-sm ${
                 activeTab === 'form'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-gray-500 hover:text-gray-700'
@@ -781,7 +781,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
             </button>
             <button
               onClick={() => handleTabChange('list')}
-              className={`px-4 py-2 font-medium text-sm ${
+              className={`px-3 md:px-4 py-2 font-medium text-xs md:text-sm ${
                 activeTab === 'list'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-gray-500 hover:text-gray-700'
@@ -791,7 +791,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
             </button>
           </div>
         </DialogHeader>
-        <DialogBody className="p-6 max-h-[70vh] overflow-y-auto">
+        <DialogBody className="p-4 md:p-6 max-h-[65vh] md:max-h-[70vh] overflow-y-auto">
           {activeTab === 'form' ? (
             <>
               {/* 캠페인 선택 드롭박스 */}
@@ -819,9 +819,10 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                 )}
               </div>
     
-              <div className="flex flex-row gap-6">
-                {/* 왼쪽: 캠페인 상세 정보 */}
-                <div className="w-1/2 space-y-6 border-r border-border pr-6">
+              {/* 반응형 레이아웃: 모바일에서는 세로, 태블릿/데스크톱에서는 가로 */}
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* 캠페인 상세 정보 */}
+                <div className="w-full md:w-1/2 space-y-6 md:border-r md:border-border md:pr-6">
                   <div className="bg-background">
                     {/* 배너 이미지 */}
                     {loading ? (
@@ -830,17 +831,17 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       </div>
                     ) : bannerUrl ? (
                       <div className="w-full">
-                        <img 
+                        <img
                           src={bannerUrl}
-                          alt="캠페인 배너" 
-                          className="w-full h-auto object-cover"
+                          alt="캠페인 배너"
+                          className="w-full h-auto object-cover rounded-md"
                           style={{ maxHeight: '250px' }}
                           onError={(e) => {
                             console.log('배너 이미지 로드 실패:', bannerUrl);
                             // 이미지 로드 실패 시 기본 배경으로 대체
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center";
-                            
+                            e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center rounded-md";
+
                             // 로고 이미지 추가
                             const logoImg = document.createElement('img');
                             logoImg.src = toAbsoluteUrl('/media/app/mini-logo-primary.svg');
@@ -852,26 +853,26 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       </div>
                     ) : (
                       <div className="w-full">
-                        <div className="w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
-                          <img 
+                        <div className="w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center rounded-md">
+                          <img
                             src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
-                            alt="캠페인 배너" 
+                            alt="캠페인 배너"
                             className="h-16 w-auto opacity-50"
                           />
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="py-4">
                       {campaignData ? (
                         <>
                           {/* 캠페인 헤더 정보 */}
                           <div className="flex items-center gap-4 mb-6">
                             <img
-                              src={campaignData.logo.startsWith('/') 
-                                ? toAbsoluteUrl(campaignData.logo) 
-                                : campaignData.logo.startsWith('http') 
-                                  ? campaignData.logo 
+                              src={campaignData.logo.startsWith('/')
+                                ? toAbsoluteUrl(campaignData.logo)
+                                : campaignData.logo.startsWith('http')
+                                  ? campaignData.logo
                                   : toAbsoluteUrl(`/media/${campaignData.logo}`)}
                               className="rounded-full size-16 shrink-0 object-cover"
                               alt={campaignData.campaignName}
@@ -881,8 +882,8 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                                 (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
                               }}
                             />
-                            <div>
-                              <h2 className="text-2xl font-bold text-foreground">
+                            <div className="flex-1 min-w-0">
+                              <h2 className="text-xl md:text-2xl font-bold text-foreground truncate">
                                 {campaignData.campaignName}
                               </h2>
                               {campaignData.status && (
@@ -895,26 +896,26 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                               )}
                             </div>
                           </div>
-                          
+
                           {/* 캠페인 주요 정보 */}
                           <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="bg-muted p-4 rounded-md">
-                              <h3 className="text-sm font-medium text-muted-foreground mb-1">건당 단가</h3>
-                              <p className="text-xl font-semibold text-primary">
+                            <div className="bg-muted p-3 md:p-4 rounded-md">
+                              <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">건당 단가</h3>
+                              <p className="text-lg md:text-xl font-semibold text-primary">
                                 {campaignData.unitPrice ? (campaignData.unitPrice.endsWith('원') ? campaignData.unitPrice : `${campaignData.unitPrice}원`) : '1,000원'}
                               </p>
                             </div>
-                            <div className="bg-muted p-4 rounded-md">
-                              <h3 className="text-sm font-medium text-muted-foreground mb-1">마감 시간</h3>
-                              <p className="text-xl font-semibold text-primary">{campaignData.deadline}</p>
+                            <div className="bg-muted p-3 md:p-4 rounded-md">
+                              <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">마감 시간</h3>
+                              <p className="text-lg md:text-xl font-semibold text-primary">{campaignData.deadline}</p>
                             </div>
                           </div>
-                          
+
                           {/* 캠페인 설명 */}
                           <div className="mb-6">
-                            <h3 className="text-lg font-semibold mb-2">캠페인 설명</h3>
-                            <div className="bg-muted p-4 rounded-md">
-                              <p className="text-foreground whitespace-pre-line">
+                            <h3 className="text-base md:text-lg font-semibold mb-2">캠페인 설명</h3>
+                            <div className="bg-muted p-3 md:p-4 rounded-md">
+                              <p className="text-sm md:text-base text-foreground whitespace-pre-line">
                                 {campaignData.description || '설명이 없습니다.'}
                               </p>
                             </div>
@@ -928,11 +929,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                     </div>
                   </div>
                 </div>
-    
-                {/* 오른쪽: 슬롯 입력 폼 */}
-                <div className="w-1/2 space-y-6">
+
+                {/* 슬롯 입력 폼 */}
+                <div className="w-full md:w-1/2 space-y-6 pt-4 md:pt-0 border-t md:border-t-0 border-border mt-4 md:mt-0">
                   <h3 className="text-lg font-medium text-foreground mb-4">슬롯 정보 입력</h3>
-                  
+
                   <div className="space-y-4">
                     <div className="form-group">
                       <label htmlFor="productName" className="block text-sm font-medium text-foreground mb-2">
@@ -950,7 +951,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         <p className="mt-1 text-xs text-red-500">{errors.productName}</p>
                       )}
                     </div>
-                    
+
                     <div className="form-group">
                       <label htmlFor="mid" className="block text-sm font-medium text-foreground mb-2">
                         MID <span className="text-red-500">*</span>
@@ -967,7 +968,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         <p className="mt-1 text-xs text-red-500">{errors.mid}</p>
                       )}
                     </div>
-                    
+
                     <div className="form-group">
                       <label htmlFor="url" className="block text-sm font-medium text-foreground mb-2">
                         URL <span className="text-red-500">*</span>
@@ -984,7 +985,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         <p className="mt-1 text-xs text-red-500">{errors.url}</p>
                       )}
                     </div>
-                    
+
                     <div className="form-group">
                       <label htmlFor="keyword1" className="block text-sm font-medium text-foreground mb-2">
                         키워드 1 <span className="text-red-500">*</span>
@@ -1001,33 +1002,35 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         <p className="mt-1 text-xs text-red-500">{errors.keyword1}</p>
                       )}
                     </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="keyword2" className="block text-sm font-medium text-foreground mb-2">
-                        키워드 2
-                      </label>
-                      <Input
-                        id="keyword2"
-                        name="keyword2"
-                        value={slotData.keyword2}
-                        onChange={handleChange}
-                        placeholder="키워드 2를 입력하세요"
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="keyword3" className="block text-sm font-medium text-foreground mb-2">
-                        키워드 3
-                      </label>
-                      <Input
-                        id="keyword3"
-                        name="keyword3"
-                        value={slotData.keyword3}
-                        onChange={handleChange}
-                        placeholder="키워드 3을 입력하세요"
-                        className="w-full"
-                      />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="form-group">
+                        <label htmlFor="keyword2" className="block text-sm font-medium text-foreground mb-2">
+                          키워드 2
+                        </label>
+                        <Input
+                          id="keyword2"
+                          name="keyword2"
+                          value={slotData.keyword2}
+                          onChange={handleChange}
+                          placeholder="키워드 2를 입력하세요"
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="keyword3" className="block text-sm font-medium text-foreground mb-2">
+                          키워드 3
+                        </label>
+                        <Input
+                          id="keyword3"
+                          name="keyword3"
+                          value={slotData.keyword3}
+                          onChange={handleChange}
+                          placeholder="키워드 3를 입력하세요"
+                          className="w-full"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1036,12 +1039,13 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
           ) : (
             // 내 슬롯 목록 탭
             <div className="w-full">
-              {/* 필터 영역 */}
-              <div className="bg-muted p-4 rounded-md mb-6">
-                <h3 className="text-lg font-medium mb-4">검색 필터</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {/* 필터 영역 - 모바일 반응형 */}
+              <div className="bg-muted p-3 md:p-4 rounded-md mb-6">
+                <h3 className="text-base md:text-lg font-medium mb-3 md:mb-4">검색 필터</h3>
+                {/* 첫번째 행: 상품명, MID, 상태 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
                   <div>
-                    <label htmlFor="productName-filter" className="block text-sm font-medium mb-1">
+                    <label htmlFor="productName-filter" className="block text-xs md:text-sm font-medium mb-1">
                       상품명
                     </label>
                     <Input
@@ -1050,11 +1054,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       value={filters.productName}
                       onChange={handleFilterChange}
                       placeholder="상품명 검색"
-                      className="w-full"
+                      className="w-full text-sm h-9 md:h-10"
                     />
                   </div>
                   <div>
-                    <label htmlFor="mid-filter" className="block text-sm font-medium mb-1">
+                    <label htmlFor="mid-filter" className="block text-xs md:text-sm font-medium mb-1">
                       MID
                     </label>
                     <Input
@@ -1063,11 +1067,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       value={filters.mid}
                       onChange={handleFilterChange}
                       placeholder="MID 검색"
-                      className="w-full"
+                      className="w-full text-sm h-9 md:h-10"
                     />
                   </div>
                   <div>
-                    <label htmlFor="status-filter" className="block text-sm font-medium mb-1">
+                    <label htmlFor="status-filter" className="block text-xs md:text-sm font-medium mb-1">
                       상태
                     </label>
                     <select
@@ -1075,7 +1079,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       name="status"
                       value={filters.status || ''}
                       onChange={handleFilterChange}
-                      className="flex w-full bg-background rounded-md border border-input text-sm"
+                      className="flex w-full bg-background rounded-md border border-input text-sm h-9 md:h-10 px-3"
                     >
                       <option value="">전체 상태</option>
                       <option value="pending">대기중</option>
@@ -1084,9 +1088,10 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* 두번째 행: 캠페인, 키워드 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
                   <div>
-                    <label htmlFor="campaign-filter" className="block text-sm font-medium mb-1">
+                    <label htmlFor="campaign-filter" className="block text-xs md:text-sm font-medium mb-1">
                       캠페인
                     </label>
                     <select
@@ -1094,7 +1099,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       name="campaignId"
                       value={filters.campaignId || ''}
                       onChange={handleFilterChange}
-                      className="flex w-full bg-background rounded-md border border-input text-sm"
+                      className="flex w-full bg-background rounded-md border border-input text-sm h-9 md:h-10 px-3"
                     >
                       <option value="">모든 캠페인</option>
                       {campaigns.map(camp => (
@@ -1103,10 +1108,10 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         </option>
                       ))}
                     </select>
-                    <p className="text-xs text-muted-foreground mt-1">※ 슬롯은 캠페인 등록 후 변경할 수 없습니다</p>
+                    <p className="text-[10px] md:text-xs text-muted-foreground mt-1">※ 슬롯은 캠페인 등록 후 변경할 수 없습니다</p>
                   </div>
                   <div>
-                    <label htmlFor="keyword-filter" className="block text-sm font-medium mb-1">
+                    <label htmlFor="keyword-filter" className="block text-xs md:text-sm font-medium mb-1">
                       키워드 검색
                     </label>
                     <Input
@@ -1115,92 +1120,162 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                       value={filters.keyword}
                       onChange={handleFilterChange}
                       placeholder="키워드 검색"
-                      className="w-full"
+                      className="w-full text-sm h-9 md:h-10"
                     />
                   </div>
                 </div>
+                {/* 버튼 영역 */}
                 <div className="flex justify-end space-x-2">
-                  <Button onClick={handleResetFilters} variant="outline">
+                  <Button
+                    onClick={handleResetFilters}
+                    variant="outline"
+                    className="text-xs md:text-sm h-8 md:h-9 px-2 md:px-3"
+                  >
                     필터 초기화
                   </Button>
-                  <Button onClick={handleSearch} className="btn-primary">
+                  <Button
+                    onClick={handleSearch}
+                    className="bg-primary text-white hover:bg-primary/90 text-xs md:text-sm h-8 md:h-9 px-2 md:px-3"
+                  >
                     검색
                   </Button>
                 </div>
               </div>
             
-              {/* 슬롯 목록 표 */}
+              {/* 슬롯 목록 - 모바일에서는 카드 형식, 데스크톱에서는 테이블 */}
               {slotsLoading ? (
                 <div className="text-center py-10">
                   <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto"></div>
                   <p className="mt-4 text-muted-foreground">슬롯 목록을 불러오는 중...</p>
                 </div>
               ) : userSlots.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse table-auto">
-                    <thead>
-                      <tr className="bg-muted border-b">
-                        <th className="px-4 py-2 text-left">상품명</th>
-                        <th className="px-4 py-2 text-left">MID</th>
-                        <th className="px-4 py-2 text-left">키워드</th>
-                        <th className="px-4 py-2 text-left">등록된 캠페인</th>
-                        <th className="px-4 py-2 text-left">상태</th>
-                        <th className="px-4 py-2 text-left">등록일</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userSlots.map(slot => (
-                        <tr key={slot.id} className="border-b hover:bg-muted/50">
-                          <td className="px-4 py-3">
+                <div>
+                  {/* 모바일 뷰 - 카드 형식 */}
+                  <div className="md:hidden space-y-4">
+                    {userSlots.map(slot => (
+                      <div key={slot.id} className="bg-background border rounded-lg p-4 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="font-medium text-base truncate max-w-[70%]">
                             {slot.input_data?.productName || '-'}
-                          </td>
-                          <td className="px-4 py-3">
-                            {slot.input_data?.mid || '-'}
-                          </td>
-                          <td className="px-4 py-3">
-                            {Array.isArray(slot.input_data?.keywords) ? 
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            slot.status === 'approved' ? 'bg-success/20 text-success' :
+                            slot.status === 'rejected' ? 'bg-danger/20 text-danger' :
+                            'bg-warning/20 text-warning'
+                          }`}>
+                            {
+                              slot.status === 'approved' ? '승인됨' :
+                              slot.status === 'rejected' ? '반려됨' :
+                              ['pending', 'submitted', 'draft'].includes(slot.status) ? '대기중' :
+                              slot.status
+                            }
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                          <div>
+                            <p className="text-muted-foreground text-xs">MID</p>
+                            <p className="truncate">{slot.input_data?.mid || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">등록일</p>
+                            <p>{new Date(slot.created_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <p className="text-muted-foreground text-xs mb-1">키워드</p>
+                          <p className="text-sm truncate">
+                            {Array.isArray(slot.input_data?.keywords) ?
                               slot.input_data.keywords.join(', ') : '-'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center group relative">
-                              <span className="font-medium text-primary">
-                                {campaigns.find(c => c.id === slot.product_id)?.campaign_name ||
-                                (slot.product_id ? `캠페인 #${slot.product_id}` : '-')}
-                              </span>
-                              {slot.campaign?.status === 'active' && (
-                                <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
-                                  진행중
-                                </span>
-                              )}
-                              <div className="absolute hidden group-hover:block bg-black/90 text-white text-xs p-2 rounded-md w-48 z-10 left-0 -bottom-1 transform translate-y-full pointer-events-none">
-                                <p className="mb-1"><strong>캠페인:</strong> {campaigns.find(c => c.id === slot.product_id)?.campaign_name || '-'}</p>
-                                <p className="mb-1"><strong>타입:</strong> {slot.campaign?.service_type || '-'}</p>
-                                <p className="mb-1"><strong>등록일:</strong> {new Date(slot.created_at).toLocaleDateString()}</p>
-                                <p><em>※ 슬롯 등록 후 캠페인을 변경할 수 없습니다</em></p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              slot.status === 'approved' ? 'bg-success/20 text-success' :
-                              slot.status === 'rejected' ? 'bg-danger/20 text-danger' :
-                              'bg-warning/20 text-warning'
-                            }`}>
-                              {
-                                slot.status === 'approved' ? '승인됨' :
-                                slot.status === 'rejected' ? '반려됨' :
-                                ['pending', 'submitted', 'draft'].includes(slot.status) ? '대기중' :
-                                slot.status
-                              }
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">등록된 캠페인</p>
+                          <div className="flex items-center">
+                            <span className="font-medium text-primary text-sm">
+                              {campaigns.find(c => c.id === slot.product_id)?.campaign_name ||
+                              (slot.product_id ? `캠페인 #${slot.product_id}` : '-')}
                             </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {new Date(slot.created_at).toLocaleDateString()}
-                          </td>
+                            {slot.campaign?.status === 'active' && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
+                                진행중
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 데스크톱 뷰 - 테이블 */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full border-collapse table-auto">
+                      <thead>
+                        <tr className="bg-muted border-b">
+                          <th className="px-4 py-2 text-left">상품명</th>
+                          <th className="px-4 py-2 text-left">MID</th>
+                          <th className="px-4 py-2 text-left">키워드</th>
+                          <th className="px-4 py-2 text-left">등록된 캠페인</th>
+                          <th className="px-4 py-2 text-left">상태</th>
+                          <th className="px-4 py-2 text-left">등록일</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {userSlots.map(slot => (
+                          <tr key={slot.id} className="border-b hover:bg-muted/50">
+                            <td className="px-4 py-3">
+                              {slot.input_data?.productName || '-'}
+                            </td>
+                            <td className="px-4 py-3">
+                              {slot.input_data?.mid || '-'}
+                            </td>
+                            <td className="px-4 py-3">
+                              {Array.isArray(slot.input_data?.keywords) ?
+                                slot.input_data.keywords.join(', ') : '-'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center group relative">
+                                <span className="font-medium text-primary">
+                                  {campaigns.find(c => c.id === slot.product_id)?.campaign_name ||
+                                  (slot.product_id ? `캠페인 #${slot.product_id}` : '-')}
+                                </span>
+                                {slot.campaign?.status === 'active' && (
+                                  <span className="ml-2 px-1.5 py-0.5 bg-success/10 text-success text-xs rounded-full">
+                                    진행중
+                                  </span>
+                                )}
+                                <div className="absolute hidden group-hover:block bg-black/90 text-white text-xs p-2 rounded-md w-48 z-10 left-0 -bottom-1 transform translate-y-full pointer-events-none">
+                                  <p className="mb-1"><strong>캠페인:</strong> {campaigns.find(c => c.id === slot.product_id)?.campaign_name || '-'}</p>
+                                  <p className="mb-1"><strong>타입:</strong> {slot.campaign?.service_type || '-'}</p>
+                                  <p className="mb-1"><strong>등록일:</strong> {new Date(slot.created_at).toLocaleDateString()}</p>
+                                  <p><em>※ 슬롯 등록 후 캠페인을 변경할 수 없습니다</em></p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                slot.status === 'approved' ? 'bg-success/20 text-success' :
+                                slot.status === 'rejected' ? 'bg-danger/20 text-danger' :
+                                'bg-warning/20 text-warning'
+                              }`}>
+                                {
+                                  slot.status === 'approved' ? '승인됨' :
+                                  slot.status === 'rejected' ? '반려됨' :
+                                  ['pending', 'submitted', 'draft'].includes(slot.status) ? '대기중' :
+                                  slot.status
+                                }
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {new Date(slot.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-10 bg-muted/20 rounded-md">
@@ -1208,27 +1283,52 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                 </div>
               )}
               
-              {/* 페이지네이션 */}
+              {/* 페이지네이션 - 모바일에서는 간단한 버전, 데스크톱에서는 상세 버전 */}
               {totalCount > 0 && (
-                <div className="flex justify-between items-center mt-4">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex flex-col md:flex-row justify-between items-center mt-4 gap-2">
+                  <div className="text-xs md:text-sm text-muted-foreground order-2 md:order-1">
                     총 {totalCount}개 항목 중 {(currentPage - 1) * itemsPerPage + 1}-
                     {Math.min(currentPage * itemsPerPage, totalCount)}개 표시
                   </div>
-                  <div className="flex space-x-1">
-                    {Array.from({ length: Math.ceil(totalCount / itemsPerPage) }, (_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handlePageChange(i + 1)}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          currentPage === i + 1
-                            ? 'bg-primary text-white'
-                            : 'bg-muted hover:bg-muted-foreground/10'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+
+                  <div className="flex space-x-1 order-1 md:order-2">
+                    {/* 모바일에서는 축약된 페이지네이션 (현재 페이지 전후로 1개씩만 표시) */}
+                    {Array.from({ length: Math.ceil(totalCount / itemsPerPage) }, (_, i) => {
+                      const pageNum = i + 1;
+                      // 첫 페이지, 마지막 페이지, 현재 페이지 및 그 전후 페이지만 표시
+                      const isMobile = window.innerWidth < 768;
+                      const isFirstPage = pageNum === 1;
+                      const isLastPage = pageNum === Math.ceil(totalCount / itemsPerPage);
+                      const isCurrentPage = pageNum === currentPage;
+                      const isAdjacentPage = Math.abs(pageNum - currentPage) <= 1;
+
+                      // 모바일에서는 첫/마지막/현재/인접 페이지만 표시
+                      if (isMobile && !isFirstPage && !isLastPage && !isCurrentPage && !isAdjacentPage) {
+                        // 생략 표시 (...)는 연속된 숫자 사이에만 한 번 표시
+                        if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                          return (
+                            <span key={`ellipsis-${pageNum}`} className="px-2 py-1 text-muted-foreground">
+                              …
+                            </span>
+                          );
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-md text-xs md:text-sm ${
+                            currentPage === pageNum
+                              ? 'bg-primary text-white'
+                              : 'bg-muted hover:bg-muted-foreground/10'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1236,10 +1336,10 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
           )}
           
         </DialogBody>
-        <DialogFooter className="px-6 py-4 border-t flex justify-end">
-          <button 
+        <DialogFooter className="px-4 md:px-6 py-3 md:py-4 border-t flex justify-end">
+          <button
             onClick={handleSave}
-            className="btn btn-md btn-primary"
+            className="btn btn-sm md:btn-md btn-primary text-sm md:text-base px-4 md:px-6 h-9 md:h-10"
             disabled={loading || saving || !selectedCampaignId}
           >
             {saving ? (
@@ -1255,25 +1355,25 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
 
     {/* 알림 다이얼로그 */}
     <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-      <CustomDialogContent className="max-w-md">
-        <div className="p-6">
+      <CustomDialogContent className="max-w-md w-[90vw] md:w-auto">
+        <div className="p-4 md:p-6">
           <div className="mb-4 text-center">
             {isSuccess ? (
-              <div className="size-12 mx-auto rounded-full bg-success/20 mb-4 flex items-center justify-center">
-                <KeenIcon icon="Check" className="size-6 text-success" />
+              <div className="size-10 md:size-12 mx-auto rounded-full bg-success/20 mb-3 md:mb-4 flex items-center justify-center">
+                <KeenIcon icon="Check" className="size-5 md:size-6 text-success" />
               </div>
             ) : (
-              <div className="size-12 mx-auto rounded-full bg-danger/20 mb-4 flex items-center justify-center">
-                <KeenIcon icon="Information" className="size-6 text-danger" />
+              <div className="size-10 md:size-12 mx-auto rounded-full bg-danger/20 mb-3 md:mb-4 flex items-center justify-center">
+                <KeenIcon icon="Information" className="size-5 md:size-6 text-danger" />
               </div>
             )}
-            <h3 className="text-lg font-medium">{alertTitle}</h3>
-            <p className="text-muted-foreground mt-2">{alertDescription}</p>
+            <h3 className="text-base md:text-lg font-medium">{alertTitle}</h3>
+            <p className="text-muted-foreground mt-2 text-sm md:text-base">{alertDescription}</p>
           </div>
           <div className="flex justify-center mt-4">
-            <Button 
+            <Button
               onClick={() => setAlertDialogOpen(false)}
-              className={isSuccess ? "btn-success" : "btn-danger"}
+              className={`text-sm md:text-base h-9 md:h-10 ${isSuccess ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white"}`}
             >
               확인
             </Button>

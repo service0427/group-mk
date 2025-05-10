@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { KeenIcon } from '@/components';
 import {
   Select,
@@ -38,18 +38,35 @@ interface CampaignContentProps {
   onAddCampaign?: () => void; // 캠페인 추가 버튼 클릭 시 호출할 콜백 함수
 }
 
-const CampaignContent: React.FC<CampaignContentProps> = ({ 
-  campaigns: initialCampaigns, 
-  serviceType, 
+const CampaignContent: React.FC<CampaignContentProps> = ({
+  campaigns: initialCampaigns,
+  serviceType,
   onCampaignUpdated,
   onAddCampaign
 }) => {
+  const location = useLocation();
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(null);
   const [campaigns, setCampaigns] = useState<ICampaign[]>(initialCampaigns);
   const [loadingStatus, setLoadingStatus] = useState<{[key: string]: boolean}>({});
+
+  // 컴포넌트 마운트 시 이미지 경로 로깅 (디버깅용)
+  useEffect(() => {
+    if (initialCampaigns.length > 0) {
+      console.log('캠페인 이미지 경로 정보:', initialCampaigns.map(campaign => ({
+        id: campaign.id,
+        name: campaign.campaignName,
+        logo: campaign.logo,
+        add_info: typeof campaign.originalData?.add_info === 'object'
+          ? campaign.originalData.add_info?.logo_url
+          : 'not an object',
+        add_info_type: typeof campaign.originalData?.add_info,
+        fallback: toAbsoluteUrl(`/media/animal/svg/${campaign.logo || 'animal-default.svg'}`)
+      })));
+    }
+  }, [initialCampaigns]);
   
   // 캠페인 상태 변경 처리 함수
   const handleStatusChange = async (campaignId: string, newStatus: string) => {
@@ -192,19 +209,151 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     }
   };
 
+  // 동물 아이콘 목록 (기본 아이콘이 없을 때 랜덤 선택용)
+  const animalIcons = [
+    'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
+    'giraffe', 'horse', 'kangaroo', 'koala', 'leopard', 'lion', 'llama',
+    'owl', 'pelican', 'penguin', 'sheep', 'teddy-bear', 'turtle'
+  ];
+
+  // 동물 이름과 아이콘을 매핑하는 객체 (한글/영어 모두 처리)
+  const animalNameMap: Record<string, string> = {
+    // 한글 동물 이름
+    '곰': 'bear',
+    '고양이': 'cat',
+    '소': 'cow',
+    '악어': 'crocodile',
+    '돌고래': 'dolphin',
+    '코끼리': 'elephant',
+    '플라밍고': 'flamingo',
+    '기린': 'giraffe',
+    '말': 'horse',
+    '캥거루': 'kangaroo',
+    '코알라': 'koala',
+    '표범': 'leopard',
+    '사자': 'lion',
+    '라마': 'llama',
+    '올빼미': 'owl',
+    '펠리컨': 'pelican',
+    '펭귄': 'penguin',
+    '양': 'sheep',
+    '테디베어': 'teddy-bear',
+    '거북이': 'turtle',
+
+    // 영어 동물 이름
+    'bear': 'bear',
+    'cat': 'cat',
+    'cow': 'cow',
+    'crocodile': 'crocodile',
+    'dolphin': 'dolphin',
+    'elephant': 'elephant',
+    'flamingo': 'flamingo',
+    'giraffe': 'giraffe',
+    'horse': 'horse',
+    'kangaroo': 'kangaroo',
+    'koala': 'koala',
+    'leopard': 'leopard',
+    'lion': 'lion',
+    'llama': 'llama',
+    'owl': 'owl',
+    'pelican': 'pelican',
+    'penguin': 'penguin',
+    'sheep': 'sheep',
+    'teddy-bear': 'teddy-bear',
+    'teddy': 'teddy-bear',
+    'turtle': 'turtle',
+  };
+
+  // 캠페인 이름에서 동물 아이콘 추출 함수
+  const getAnimalIconFromName = (name: string): string | null => {
+    if (!name) return null;
+
+    // 캠페인 이름에서 동물 이름을 찾아서 매핑된 아이콘 반환
+    const lowerName = name.toLowerCase();
+
+    // 이름에 동물 이름이 포함되어 있는지 확인
+    for (const [animalName, iconName] of Object.entries(animalNameMap)) {
+      if (lowerName.includes(animalName.toLowerCase())) {
+        console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+        return iconName;
+      }
+    }
+
+    return null;
+  };
+
+  // 랜덤 동물 아이콘 선택 함수
+  const getRandomAnimalIcon = () => {
+    const randomIndex = Math.floor(Math.random() * animalIcons.length);
+    return animalIcons[randomIndex];
+  };
+
+  // 로고 경로 생성 함수
+  const getLogoPath = (campaign: ICampaign) => {
+    // 이미 있는 로고가 있는 경우 (add_info 객체 내)
+    if (typeof campaign.originalData?.add_info === 'object' && campaign.originalData.add_info?.logo_url) {
+      return campaign.originalData.add_info.logo_url;
+    }
+
+    // add_info가 문자열이고 logo_url이 있는 경우
+    if (typeof campaign.originalData?.add_info === 'string' && campaign.originalData?.add_info_logo_url) {
+      return campaign.originalData.add_info_logo_url;
+    }
+
+    // campaign.logo 값이 있고, 확장자가 있으면 그대로 사용
+    if (campaign.logo && (campaign.logo.includes('.svg') || campaign.logo.includes('.png'))) {
+      // 이미 /media/ 경로가 포함되어 있으면 그대로 사용
+      if (campaign.logo.startsWith('/media/')) {
+        return toAbsoluteUrl(campaign.logo);
+      }
+      return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}`);
+    }
+
+    // campaign.logo 값이 있지만 확장자가 없는 경우, svg로 가정
+    if (campaign.logo && animalIcons.includes(campaign.logo)) {
+      return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+    }
+
+    // 캠페인 이름을 기반으로 동물 아이콘 추출
+    const animalFromName = getAnimalIconFromName(campaign.campaignName);
+    if (animalFromName) {
+      return toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+    }
+
+    // 마지막으로 랜덤 동물 아이콘 선택
+    const randomAnimal = getRandomAnimalIcon();
+    console.log(`캠페인 ${campaign.id}에 대한 임의 동물 아이콘 선택: ${randomAnimal}`);
+    return toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+  };
+
   // 필터링 적용
   const filteredData = useMemo(() => {
+    console.log('캠페인 데이터 필터링:', campaigns.length, '개의 캠페인');
+
+    // 디버깅을 위해 캠페인 데이터 형식 로깅
+    if (campaigns.length > 0) {
+      console.log('첫 번째 캠페인 데이터 샘플:', {
+        id: campaigns[0].id,
+        name: campaigns[0].campaignName,
+        logo: campaigns[0].logo,
+        logoPath: getLogoPath(campaigns[0]),
+        originalData: campaigns[0].originalData,
+        add_info: campaigns[0].originalData?.add_info,
+        type: typeof campaigns[0].originalData?.add_info
+      });
+    }
+
     return campaigns.filter(campaign => {
       // 검색어 필터링
       const matchesSearch = campaign.campaignName.toLowerCase().includes(searchInput.toLowerCase()) ||
                           (campaign.description?.toLowerCase().includes(searchInput.toLowerCase()) || false);
-      
+
       // 상태 필터링
-      const matchesStatus = statusFilter === 'all' || 
+      const matchesStatus = statusFilter === 'all' ||
                           (statusFilter === 'active' && campaign.status.label === '진행중') ||
                           (statusFilter === 'pending' && campaign.status.label === '준비중') ||
                           (statusFilter === 'pause' && campaign.status.label === '표시안함');
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [searchInput, statusFilter, campaigns]);
@@ -214,30 +363,31 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   return (
     <>
     <div className="card bg-card">
-      <div className="card-header flex-wrap gap-2 border-b-0 px-5">
-        <h3 className="card-title font-medium text-sm text-card-foreground">
+      <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5">
+        <h3 className="card-title font-medium text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
           전체 {campaigns.length}개 {serviceTitle} 캠페인
         </h3>
 
-        <div className="flex flex-wrap gap-2 lg:gap-5">
-          <div className="flex">
-            <label className="input input-sm">
-              <KeenIcon icon="magnifier" />
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-3 lg:gap-5">
+          <div className="flex w-full sm:w-auto">
+            <label className="input input-sm w-full sm:w-auto">
+              <KeenIcon icon="magnifier" className="text-muted-foreground" />
               <input
                 type="text"
                 placeholder="캠페인명 검색"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full"
               />
             </label>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
-            <Select 
-              value={statusFilter} 
+          <div className="flex items-center justify-between sm:justify-start gap-2.5">
+            <Select
+              value={statusFilter}
               onValueChange={(value) => setStatusFilter(value)}
             >
-              <SelectTrigger className="w-28" size="sm">
+              <SelectTrigger className="w-28 h-9" size="sm">
                 <SelectValue placeholder="상태" />
               </SelectTrigger>
               <SelectContent className="w-32">
@@ -247,27 +397,132 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                 <SelectItem value="pause">표시안함</SelectItem>
               </SelectContent>
             </Select>
-            
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => {
-                if (onAddCampaign) {
-                  onAddCampaign();
-                } else {
-                  console.log('캠페인 추가 버튼 클릭');
-                  // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
-                }
-              }}
-            >
-              <KeenIcon icon="plus" className="me-1" />
-              캠페인 추가
-            </button>
+
+            {onAddCampaign && (
+              <button
+                className="btn btn-sm btn-primary h-9 px-3 sm:px-4"
+                onClick={() => {
+                  if (onAddCampaign) {
+                    onAddCampaign();
+                  } else {
+                    console.log('캠페인 추가 버튼 클릭');
+                    // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
+                  }
+                }}
+              >
+                <KeenIcon icon="plus" className="me-1" />
+                <span className="whitespace-nowrap">캠페인 추가</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
       
       <div className="card-body px-0">
-        <div className="overflow-x-auto">
+        {/* 모바일에서는 카드 형태로 표시 */}
+        <div className="md:hidden px-4">
+          {filteredData.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredData.map((campaign, index) => (
+                <div key={campaign.id} className="bg-background border rounded-lg p-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={getLogoPath(campaign)}
+                        className="rounded-full size-10 shrink-0"
+                        alt={campaign.campaignName || '캠페인'}
+                        onError={(e) => {
+                          console.log('이미지 로드 실패:', e.currentTarget.src);
+                          // 캠페인 이름에서 동물 추출 시도
+                          const animalFromName = getAnimalIconFromName(campaign.campaignName);
+                          if (animalFromName) {
+                            console.log(`이미지 로드 실패 대응: 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+                          } else {
+                            // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
+                            const randomAnimal = getRandomAnimalIcon();
+                            console.log(`이미지 로드 실패 대응: 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                          }
+                        }}
+                      />
+                      <div>
+                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-base font-medium text-foreground hover:text-primary-active line-clamp-1">
+                          {campaign.campaignName}
+                        </Link>
+                        <div className="text-xs text-muted-foreground mt-1">#{index + 1}</div>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-icon btn-info ml-2"
+                      title="상세설정"
+                      onClick={() => openDetailModal(campaign)}
+                    >
+                      <KeenIcon icon="setting-3" />
+                    </button>
+                  </div>
+
+                  <div className="mb-3">
+                    <p className="text-sm text-foreground line-clamp-2">
+                      {campaign.description || '-'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div className="bg-muted/50 p-2 rounded text-center">
+                      <div className="text-xs text-muted-foreground mb-1">상승효율</div>
+                      <div className="text-sm font-medium text-primary">{campaign.efficiency}</div>
+                    </div>
+                    <div className="bg-muted/50 p-2 rounded text-center">
+                      <div className="text-xs text-muted-foreground mb-1">최소수량</div>
+                      <div className="text-sm text-foreground">{campaign.minQuantity}</div>
+                    </div>
+                    <div className="bg-muted/50 p-2 rounded text-center">
+                      <div className="text-xs text-muted-foreground mb-1">마감시간</div>
+                      <div className="text-sm text-foreground">{campaign.deadline}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">상태</label>
+                    <Select
+                      value={getStatusValue(campaign.status.label)}
+                      onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                      disabled={loadingStatus[campaign.id]}
+                    >
+                      <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
+                        {loadingStatus[campaign.id] ? (
+                          <span className="flex items-center">
+                            <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                            처리중...
+                          </span>
+                        ) : (
+                          <>
+                            <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                            <SelectValue>{campaign.status.label}</SelectValue>
+                          </>
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">진행중</SelectItem>
+                        <SelectItem value="pending">준비중</SelectItem>
+                        <SelectItem value="pause">표시안함</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
+              <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+              <p className="text-muted-foreground">생성된 캠페인이 없습니다.</p>
+            </div>
+          )}
+        </div>
+
+        {/* 데스크톱에서는 테이블 형태로 표시 */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-full divide-y divide-border">
             <thead className="bg-muted">
               <tr>
@@ -308,16 +563,22 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-4">
                       <img
-                        src={
-                          typeof campaign.originalData?.add_info === 'object' 
-                            ? campaign.originalData.add_info?.logo_url 
-                            : (campaign.originalData?.add_info_logo_url || toAbsoluteUrl(`/media/${campaign.logo}`))
-                        }
+                        src={getLogoPath(campaign)}
                         className="rounded-full size-10 shrink-0"
-                        alt={campaign.campaignName}
+                        alt={campaign.campaignName || '캠페인'}
                         onError={(e) => {
-                          // 이미지 로드 실패 시 기본 이미지 사용
-                          (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
+                          console.log('이미지 로드 실패:', e.currentTarget.src);
+                          // 캠페인 이름에서 동물 추출 시도
+                          const animalFromName = getAnimalIconFromName(campaign.campaignName);
+                          if (animalFromName) {
+                            console.log(`이미지 로드 실패 대응: 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+                          } else {
+                            // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
+                            const randomAnimal = getRandomAnimalIcon();
+                            console.log(`이미지 로드 실패 대응: 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                          }
                         }}
                       />
                       <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-sm font-medium text-foreground hover:text-primary-active">
@@ -346,8 +607,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
-                    <Select 
-                      value={getStatusValue(campaign.status.label)} 
+                    <Select
+                      value={getStatusValue(campaign.status.label)}
                       onValueChange={(value) => handleStatusChange(campaign.id, value)}
                       disabled={loadingStatus[campaign.id]}
                     >
@@ -373,7 +634,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      <button 
+                      <button
                         className="btn btn-sm btn-icon btn-info"
                         title="상세설정"
                         onClick={() => openDetailModal(campaign)}
@@ -384,7 +645,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   </td>
                 </tr>
               ))}
-              
+
               {filteredData.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-8 text-center text-gray-500">

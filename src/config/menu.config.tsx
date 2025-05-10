@@ -252,7 +252,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
     children: [
       {
         title: 'N 트래픽',
-        path: '/admin/campaigns/naver-traffic',
+        path: '/admin/campaigns/ntraffic',
         iconImage: '/media/ad-brand/naver.png'
       },
       {
@@ -439,7 +439,7 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: 'N 트래픽',
             icon: 'chart-line text-success',
-            path: '/advertise/naver/traffic/desc'
+            path: '/advertise/ntraffic/desc'
           },
           {
             title: 'N 자동완성',
@@ -484,7 +484,7 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: 'N 트래픽',
             icon: 'chart-line text-success',
-            path: '/advertise/naver/traffic/campaign'
+            path: '/advertise/ntraffic/campaign'
           },
           {
             title: 'N 자동완성',

@@ -38,8 +38,10 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
   // URL 기반으로 서비스 카테고리 결정
   const serviceCategory = useServiceCategory(pathname);
 
-  // 서비스 카테고리로부터 서비스 타입 코드 가져오기
-  const serviceType = SERVICE_TYPE_MAP[serviceCategory as keyof typeof SERVICE_TYPE_MAP] || '';
+  // ntraffic 직접 경로에 대한 특별 처리
+  const serviceType = pathname === '/advertise/ntraffic/campaign'
+    ? 'ntraffic'
+    : (SERVICE_TYPE_MAP[serviceCategory as keyof typeof SERVICE_TYPE_MAP] || '');
 
   const [modalOpen, setModalOpen] = useState(false);
   const [memoModalOpen, setMemoModalOpen] = useState(false);

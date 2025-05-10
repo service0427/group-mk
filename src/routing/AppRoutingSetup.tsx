@@ -71,8 +71,14 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
           <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
 
-          {/* 네이버 쇼핑 트래픽 desc 페이지 리디렉션 */}
+          {/* 리디렉션 경로 설정 */}
           <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/desc" />} />
+          <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/ntraffic/desc" />} />
+          <Route path="/advertise/ntraffic" element={<Navigate to="/advertise/ntraffic/desc" />} />
+
+          {/* ntraffic 직접 경로 설정 */}
+          <Route path="/advertise/ntraffic/desc" element={<ServiceDescPage />} />
+          <Route path="/advertise/ntraffic/campaign" element={<ServiceCampaignPage />} />
 
           {/* 동적 광고 페이지 라우트 */}
           {/* 2단계 경로 */}
@@ -112,7 +118,8 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/campaigns/naver-place-save" element={<Campaigns.NaverPlaceSavePage />} />
           <Route path="/admin/campaigns/naver-place-share" element={<Campaigns.NaverPlaceSharePage />} />
           <Route path="/admin/campaigns/naver-auto" element={<Campaigns.NaverAutoPage />} />
-          <Route path="/admin/campaigns/naver-traffic" element={<Campaigns.NaverTrafficPage />} />
+          <Route path="/admin/campaigns/ntraffic" element={<Campaigns.NaverTrafficPage />} />
+          <Route path="/admin/campaigns/naver-traffic" element={<Navigate to="/admin/campaigns/ntraffic" />} />
           <Route path="/admin/campaigns/coupang" element={<Campaigns.CoupangPage />} />
           <Route path="/admin/campaigns/ohouse" element={<Campaigns.OhousePage />} />
 

@@ -173,7 +173,9 @@ export const useServiceCategory = (pathname: string) => {
   
   useEffect(() => {
     // URL 기반으로 서비스 카테고리 결정
-    if (pathname.includes('naver/traffic')) {
+    if (pathname.includes('/ntraffic')) {
+      setServiceCategory('N 트래픽');
+    } else if (pathname.includes('naver/traffic')) {
       setServiceCategory('N 트래픽');
     } else if (pathname.includes('naver/auto')) {
       setServiceCategory('N 자동완성');

@@ -21,5 +21,23 @@
     "/*.woff2",
     "/*.ttf",
     "/*.eot"
+  ],
+  "routes": [
+    {
+      "src": "/advertise/ntraffic/desc",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/advertise/ntraffic/campaign",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/admin/campaigns/ntraffic",
+      "dest": "/index.html"
+    },
+    {
+      "src": ".*",
+      "dest": "/index.html"
+    }
   ]
 }

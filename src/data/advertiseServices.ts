@@ -24,6 +24,22 @@ export interface CampaignData {
 // 서비스 데이터 계층 구조
 // 패턴: serviceData[platform][subservice?][type]
 export const serviceData: Record<string, any> = {
+  ntraffic: {
+    name: "네이버 트래픽",
+    description: "네이버 검색과 배너를 통한 사이트 트래픽 증가 마케팅",
+    features: [
+      {
+        title: "키워드 광고",
+        description: "관련 키워드 검색시 상위 노출 광고",
+        icon: "type"
+      },
+      {
+        title: "배너 광고",
+        description: "네이버 서비스에 배너를 통한 노출",
+        icon: "image"
+      }
+    ]
+  },
   coupang: {
     traffic: {
       name: "쿠팡 트래픽",
@@ -187,6 +203,11 @@ export const getServiceData = (
   subservice?: string
 ): ServiceData | null => {
   try {
+    // ntraffic 특수 처리 (platform이 ntraffic인 경우)
+    if (platform === 'ntraffic') {
+      return serviceData[platform];
+    }
+
     if (subservice) {
       return serviceData[platform][subservice][type];
     }
@@ -218,6 +239,8 @@ export const getServiceTypeFromPath = (
   } else if (platform === 'naver' && type === 'traffic') {
     return 'ntraffic';
   } else if (platform === 'naver' && type === 'ntraffic') {
+    return 'ntraffic';
+  } else if (platform === 'ntraffic') {
     return 'ntraffic';
   } else if (platform === 'coupang' && type === 'traffic') {
     return 'CoupangTraffic';

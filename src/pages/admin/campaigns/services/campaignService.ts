@@ -126,12 +126,21 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
 };
 
 // Supabase에서 캠페인 데이터 가져오기
-export const fetchCampaigns = async (serviceType: string): Promise<ICampaign[]> => {
-  const { data, error } = await supabase
+export const fetchCampaigns = async (serviceType: string, userId?: string): Promise<ICampaign[]> => {
+  // 기본 쿼리 생성
+  let query = supabase
     .from('campaigns')
     .select('*')
-    .eq('service_type', serviceType)
-    .order('id', { ascending: true }); // ID 순서대로 정렬
+    .eq('service_type', serviceType);
+
+  // 사용자 ID가 있으면 본인 캠페인만 필터링
+  if (userId) {
+    query = query.eq('mat_id', userId);
+    console.log(`${userId} 사용자의 캠페인만 필터링합니다.`);
+  }
+
+  // 정렬 적용
+  const { data, error } = await query.order('id', { ascending: true });
 
   if (error) {
     console.error('캠페인 데이터 조회 중 오류:', error);
@@ -147,8 +156,15 @@ export const fetchCampaigns = async (serviceType: string): Promise<ICampaign[]> 
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
       try {
         parsedItem.add_info = JSON.parse(parsedItem.add_info);
+        console.log('add_info 파싱 성공:', parsedItem.add_info);
       } catch (error) {
         console.error('add_info JSON 파싱 오류:', error);
+        // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
+        const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
+        if (logoUrlMatch && logoUrlMatch[1]) {
+          parsedItem.add_info_logo_url = logoUrlMatch[1];
+          console.log('add_info에서 logo_url 추출:', parsedItem.add_info_logo_url);
+        }
       }
     }
     

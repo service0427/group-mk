@@ -81,10 +81,16 @@ export const approveSlot = async (
     }
 
     // 단가 확인 (캠페인 데이터에서)
-    const campaignData = slotData.campaigns;
+    let campaignData;
 
-    if (!campaignData) {
-      console.error('캠페인 데이터가 없음:', slotData);
+    if (slotData.campaigns) {
+      campaignData = slotData.campaigns;
+    } else if (slotData.product_id) {
+      // 슬롯에 캠페인 데이터가 없지만 product_id가 있으면 헬퍼 함수로 조회
+      console.log('슬롯에 캠페인 데이터가 없어 getCampaignInfo 함수로 조회합니다. (승인 처리)');
+      campaignData = await getCampaignInfo(slotData.product_id);
+    } else {
+      console.error('캠페인 데이터 없음:', slotData);
       throw new Error('해당 슬롯의 캠페인 정보를 찾을 수 없습니다.');
     }
 
@@ -323,10 +329,16 @@ export const rejectSlot = async (
     }
 
     // 단가 확인 (캠페인 데이터에서)
-    const campaignData = slotData.campaigns;
+    let campaignData;
 
-    if (!campaignData) {
-      console.error('캠페인 데이터가 없음:', slotData);
+    if (slotData.campaigns) {
+      campaignData = slotData.campaigns;
+    } else if (slotData.product_id) {
+      // 슬롯에 캠페인 데이터가 없지만 product_id가 있으면 헬퍼 함수로 조회
+      console.log('슬롯에 캠페인 데이터가 없어 getCampaignInfo 함수로 조회합니다. (반려 처리)');
+      campaignData = await getCampaignInfo(slotData.product_id);
+    } else {
+      console.error('캠페인 데이터 없음:', slotData);
       throw new Error('해당 슬롯의 캠페인 정보를 찾을 수 없습니다.');
     }
 

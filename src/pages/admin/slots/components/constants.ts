@@ -5,7 +5,7 @@ export const SERVICE_TYPE_MAP = {
   'NP 공유': 'NaverPlaceShare',
   'NP 트래픽': 'NaverPlaceTraffic',
   'N 자동완성': 'NaverAuto',
-  'N 트래픽': 'NaverTraffic',
+  'N 트래픽': 'ntraffic',
   'C 트래픽': 'CoupangTraffic',
   'OH 트래픽': 'OhouseTraffic'
 };

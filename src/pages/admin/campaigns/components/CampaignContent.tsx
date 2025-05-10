@@ -33,7 +33,7 @@ export interface ICampaign {
 // 캠페인 콘텐츠 컴포넌트 props 정의
 interface CampaignContentProps {
   campaigns: ICampaign[];
-  serviceType: string; // 서비스 유형(naver-shopping, naver-place 등)
+  serviceType: string; // 서비스 유형(ntraffic, naver-shopping, naver-place 등)
   onCampaignUpdated?: () => void; // 캠페인 업데이트 시 호출할 콜백 함수
   onAddCampaign?: () => void; // 캠페인 추가 버튼 클릭 시 호출할 콜백 함수
 }
@@ -320,7 +320,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                           (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
                         }}
                       />
-                      <Link to={`/admin/campaigns/${serviceType}/${campaign.id}`} className="text-sm font-medium text-foreground hover:text-primary-active">
+                      <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-sm font-medium text-foreground hover:text-primary-active">
                         {campaign.campaignName}
                       </Link>
                     </div>

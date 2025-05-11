@@ -29,7 +29,7 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
         .single();
 
       if (userError || !userData) {
-        console.error('사용자를 찾을 수 없습니다:', userError?.message);
+        
         toast.error(`사용자를 찾을 수 없습니다: ${email}`);
         setLoading(false);
         return false;
@@ -117,7 +117,7 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
         .insert(notifications);
 
       if (insertError) {
-        console.error('알림 전송 중 오류 발생:', insertError.message);
+        
         toast.error(`알림 전송 중 오류 발생: ${insertError.message}`);
         setLoading(false);
         return false;
@@ -134,7 +134,7 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
 
       return true;
     } catch (error: any) {
-      console.error('테스트 알림 전송 중 오류 발생:', error.message);
+      
       toast.error(`테스트 알림 전송 중 오류 발생: ${error.message}`);
       setLoading(false);
       setShowConfirm(false);

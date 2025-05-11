@@ -212,7 +212,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
       await updateCampaignStatus(parseInt(campaignId), newStatus);
       onCampaignUpdated();
     } catch (error) {
-      console.error('캠페인 상태 변경 실패:', error);
+      
     }
   };
   
@@ -382,7 +382,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                               alt={campaign.campaignName}
                               className="size-10 rounded-full object-cover"
                               onError={(e) => {
-                                console.log('이미지 로드 실패:', e.currentTarget.src);
+                                
                                 // 동물 아이콘 목록
                                 const animalIcons = [
                                   'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',

@@ -52,7 +52,6 @@ const CardAdCampaignRow = ({
                 className={`size-[${logoSize}] shrink-0`}
                 alt=""
                 onError={(e) => {
-                  console.error(`이미지 로드 실패:`, e);
                   (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
                 }}
               />

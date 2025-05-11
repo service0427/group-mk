@@ -28,7 +28,7 @@ export const keywordGroupService = {
 
       return { success: true, data };
     } catch (error) {
-      console.error('Error fetching keyword groups:', error);
+      
       return {
         success: false,
         message: '키워드 그룹을 불러오는 중 오류가 발생했습니다.',
@@ -81,7 +81,7 @@ export const keywordGroupService = {
 
       return { success: true, data: data[0] };
     } catch (error) {
-      console.error('Error creating keyword group:', error);
+      
       return {
         success: false,
         message: '키워드 그룹을 생성하는 중 오류가 발생했습니다.',
@@ -129,7 +129,7 @@ export const keywordGroupService = {
 
       return { success: true, data: data[0] };
     } catch (error) {
-      console.error('Error updating keyword group:', error);
+      
       return {
         success: false,
         message: '키워드 그룹을 업데이트하는 중 오류가 발생했습니다.',
@@ -184,7 +184,7 @@ export const keywordGroupService = {
 
       return { success: true };
     } catch (error) {
-      console.error('Error deleting keyword group:', error);
+      
       return {
         success: false,
         message: '키워드 그룹을 삭제하는 중 오류가 발생했습니다.',
@@ -291,7 +291,7 @@ export const keywordService = {
         }
       };
     } catch (error) {
-      console.error('Error fetching keywords:', error);
+      
       return {
         success: false,
         message: '키워드를 불러오는 중 오류가 발생했습니다.',
@@ -374,7 +374,7 @@ export const keywordService = {
 
       return { success: true, data: transformedData };
     } catch (error) {
-      console.error('Error creating keyword:', error);
+      
       return {
         success: false,
         message: '키워드를 생성하는 중 오류가 발생했습니다.',
@@ -453,7 +453,7 @@ export const keywordService = {
 
       return { success: true, data: transformedData };
     } catch (error) {
-      console.error('Error updating keyword:', error);
+      
       return {
         success: false,
         message: '키워드를 업데이트하는 중 오류가 발생했습니다.',
@@ -498,7 +498,7 @@ export const keywordService = {
 
       return { success: true };
     } catch (error) {
-      console.error('Error deleting keyword:', error);
+      
       return {
         success: false,
         message: '키워드를 삭제하는 중 오류가 발생했습니다.',
@@ -588,7 +588,7 @@ export const keywordService = {
 
       return { success: true, data: transformedData };
     } catch (error) {
-      console.error('Error bulk creating keywords:', error);
+      
       return {
         success: false,
         message: '키워드를 대량 추가하는 중 오류가 발생했습니다.',

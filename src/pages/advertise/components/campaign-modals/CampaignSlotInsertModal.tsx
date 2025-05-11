@@ -250,13 +250,13 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       setSlotsLoading(true);
       
       if (!currentUser?.id) {
-        console.error('로그인 정보를 찾을 수 없습니다.');
+        
         return;
       }
       
-      console.log('슬롯 데이터 가져오기 시작 - 사용자 ID:', currentUser.id);
-      console.log('현재 필터:', JSON.stringify(filters));
-      console.log('현재 페이지:', currentPage, '항목 수:', itemsPerPage);
+      
+      
+      
       
       // 쿼리 빌더 시작
       let query = supabase
@@ -298,11 +298,11 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       
       // 모든 캠페인을 대상으로 함
       const serviceTypeCampaigns = [...campaigns];
-      console.log('슬롯 필터링용 캠페인 목록:', campaigns.map(c => ({ id: c.id, type: c.service_type })));
+      
       if (serviceTypeCampaigns.length > 0) {
         const campaignIds = serviceTypeCampaigns.map(c => c.id);
-        console.log('이미 서비스 타입으로 필터링된 캠페인 사용');
-        console.log('해당 캠페인 ID들:', campaignIds);
+        
+        
         query = query.in('product_id', campaignIds);
       }
       
@@ -315,15 +315,15 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         .range(from, to);
       
       // 쿼리 실행
-      console.log('슬롯 쿼리 실행 중...');
+      
       const { data, error, count } = await query;
       
       if (error) {
-        console.error('슬롯 쿼리 오류:', error);
+        
         throw error;
       }
       
-      console.log(`슬롯 데이터 로드 완료: ${data?.length || 0}개 항목, 총 ${count || 0}개`);
+      
       
       if (data) {
         // 캠페인 정보가 없는 슬롯 데이터 변환
@@ -347,7 +347,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
         setTotalCount(count || 0);
       }
     } catch (error) {
-      console.error('슬롯 데이터 가져오기 오류:', error);
+      
       // 오류 메시지 표시
       showAlert('오류 발생', '슬롯 데이터를 불러오는 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
     } finally {
@@ -366,7 +366,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   // 슬롯 목록 탭이 활성화되거나 페이지 변경 시 슬롯 데이터 가져오기
   useEffect(() => {
     if (open && activeTab === 'list' && campaigns.length > 0) {
-      console.log('슬롯 목록 데이터 가져오기 시작... 캠페인 수:', campaigns.length);
+      
       fetchUserSlots();
     }
   }, [open, activeTab, currentPage, itemsPerPage, filters.status, serviceCode, campaigns]);
@@ -376,38 +376,38 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
     if (!campaign) return;
     
     try {
-      console.log('캠페인 배너 가져오기 시도:', campaign.campaign_name);
+      
       
       // add_info에서 배너 URL 가져오기
       let bannerUrl = null;
       if (campaign.add_info) {
-        console.log('add_info 데이터:', campaign.add_info);
+        
         
         if (typeof campaign.add_info === 'string') {
           try {
             const addInfo = JSON.parse(campaign.add_info);
-            console.log('파싱된 add_info:', addInfo);
+            
             bannerUrl = addInfo.banner_url || null;
           } catch (e) {
-            console.error('add_info JSON 파싱 오류:', e);
+            
           }
         } else {
           bannerUrl = campaign.add_info.banner_url || null;
         }
         
-        console.log('찾은 배너 URL:', bannerUrl);
+        
       }
       
       setBannerUrl(bannerUrl);
     } catch (err) {
-      console.error('배너 이미지 가져오기 오류:', err);
+      
     }
   };
 
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      console.log('Supabase 쿼리 시작...', `서비스 코드: ${serviceCode}`);
+      
       
       // 서비스 코드 맵핑
       const serviceTypeMap: Record<string, string> = {
@@ -421,7 +421,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       
       // 서비스 코드를 DB service_type으로 변환 (없으면 기본값 ntraffic 사용)
       const serviceType = serviceTypeMap[serviceCode] || 'ntraffic';
-      console.log('변환된 서비스 타입:', serviceType);
+      
       
       // Supabase 쿼리 준비
       let query = supabase
@@ -439,19 +439,19 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       const { data, error } = await query;
 
       if (error) {
-        console.error('Supabase 쿼리 오류:', error);
+        
         throw error;
       }
 
-      console.log('Supabase에서 가져온 데이터:', data);
+      
 
       if (data && data.length > 0) {
-        console.log(`${data.length}개의 캠페인을 가져왔습니다.`);
+        
         setCampaigns(data);
         
         // 첫 번째 캠페인을 기본값으로 설정하고 배너 정보 가져오기
         setSelectedCampaignId(data[0].id);
-        console.log('선택된 캠페인 ID 설정:', data[0].id);
+        
         
         // 배너 정보 가져오기
         fetchCampaignBanner(data[0]);
@@ -462,12 +462,12 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
           campaignId: data[0].id
         }));
       } else {
-        console.log('가져온 캠페인이 없습니다.');
+        
         // 사용자에게 캠페인이 없다는 메시지 표시
         showAlert('알림', '현재 사용 가능한 캠페인이 없습니다. 나중에 다시 시도해주세요.', false);
       }
     } catch (error) {
-      console.error('캠페인 가져오기 오류:', error);
+      
       // 오류 메시지 표시
       showAlert('오류 발생', '캠페인 목록을 불러오는 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
     } finally {
@@ -497,7 +497,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   // 캠페인 선택 변경 핸들러
   const handleCampaignChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = parseInt(e.target.value, 10);
-    console.log("선택된 캠페인 ID:", value);
+    
     setSelectedCampaignId(value);
     
     // 선택된 캠페인의 배너 정보 가져오기
@@ -561,7 +561,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       
       // 폼 유효성 검사
       if (!validateForm()) {
-        console.log('폼 유효성 검사 실패:', errors);
+        
         return;
       }
 
@@ -579,13 +579,13 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       }
       
       // 디버깅: 선택된 캠페인 정보 출력
-      console.log('선택된 캠페인 정보:', JSON.stringify(selectedCampaign, null, 2));
+      
 
       // 캠페인의 mat_id 가져오기 (이미 campaigns 배열에 있는 정보 사용)
       let matId = selectedCampaign.mat_id;
       
       if (!matId) {
-        console.error('캠페인 정보:', selectedCampaign);
+        
         throw new Error('캠페인의 mat_id를 찾을 수 없습니다. 이 캠페인은 슬롯을 등록할 수 없습니다.');
       }
 
@@ -602,7 +602,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       };
 
       // 슬롯 서비스를 통한 등록 (클라이언트 측 처리)
-      console.log('슬롯 등록 시도 중...');
+      
       const result = await registerSlot(
         userId,
         selectedCampaignId,
@@ -615,7 +615,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       }
       
       // 슬롯 등록 성공
-      console.log('슬롯 등록 성공:', result.data);
+      
 
       // 캠페인 단가 확인 (성공 메시지용)
       const unitPrice = selectedCampaign.unit_price || 1000; // 기본값 1000원
@@ -631,7 +631,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       // 저장 후 슬롯 목록을 새로고침
       setTimeout(() => {
         fetchUserSlots().catch(error => {
-          console.warn('슬롯 목록 새로고침 중 오류:', error.message);
+          
           // UI 영향 최소화
         });
       }, 500);
@@ -648,7 +648,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       setErrors({});
 
     } catch (error) {
-      console.error('슬롯 저장 중 오류 발생:', error);
+      
       
       // 오류 메시지 처리 개선
       let errorMsg = '슬롯 저장 중 오류가 발생했습니다';
@@ -688,7 +688,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
             logoUrl = addInfo.logo_url;
           }
         } catch (e) {
-          console.error('add_info JSON 파싱 오류:', e);
+          
         }
       } else if (campaign.add_info.logo_url) {
         logoUrl = campaign.add_info.logo_url;
@@ -837,7 +837,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                           className="w-full h-auto object-cover rounded-md"
                           style={{ maxHeight: '250px' }}
                           onError={(e) => {
-                            console.log('배너 이미지 로드 실패:', bannerUrl);
+                            
                             // 이미지 로드 실패 시 기본 배경으로 대체
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center rounded-md";
@@ -877,7 +877,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                               className="rounded-full size-16 shrink-0 object-cover"
                               alt={campaignData.campaignName}
                               onError={(e) => {
-                                console.log('로고 이미지 로드 실패:', campaignData.logo);
+                                
                                 // 이미지 로드 실패 시 기본 이미지 사용
                                 (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
                               }}

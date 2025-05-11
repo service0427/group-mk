@@ -78,7 +78,7 @@ const FaqAccordionItem = ({
         .update({ view_count: (faq.view_count || 0) + 1 })
         .eq('id', faq.id);
     } catch (error) {
-      console.error('조회수 업데이트 중 오류 발생:', error);
+      
     }
   };
 
@@ -162,7 +162,7 @@ const AdMiscFaqModal: React.FC<AdMiscFaqModalProps> = ({ isOpen, onClose }) => {
       if (error) throw error;
       setFAQs(data || []);
     } catch (err: any) {
-      console.error('FAQ를 가져오는 중 오류가 발생했습니다:', err);
+      
       setError('FAQ를 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);

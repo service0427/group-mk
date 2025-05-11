@@ -63,7 +63,7 @@ class BackgroundTaskManager {
 
       return true;
     } catch (error) {
-      console.error(`작업 등록 중 오류 발생: ${config.id}`, error);
+      
       return false;
     }
   }
@@ -85,7 +85,7 @@ class BackgroundTaskManager {
       this.tasks.delete(taskId);
       return true;
     } catch (error) {
-      console.error(`작업 제거 중 오류 발생: ${taskId}`, error);
+      
       return false;
     }
   }
@@ -120,7 +120,7 @@ class BackgroundTaskManager {
 
       return true;
     } catch (error) {
-      console.error(`작업 시작 중 오류 발생: ${taskId}`, error);
+      
       return false;
     }
   }
@@ -133,7 +133,7 @@ class BackgroundTaskManager {
     try {
       await task();
     } catch (error) {
-      console.error(`백그라운드 작업 실행 중 오류 발생: ${taskId}`, error);
+      
     }
   }
 
@@ -155,7 +155,7 @@ class BackgroundTaskManager {
 
       return true;
     } catch (error) {
-      console.error(`작업 중지 중 오류 발생: ${taskId}`, error);
+      
       return false;
     }
   }
@@ -177,7 +177,7 @@ class BackgroundTaskManager {
 
       return successCount > 0;
     } catch (error) {
-      console.error('모든 작업 시작 중 오류 발생', error);
+      
       return false;
     }
   }
@@ -200,7 +200,7 @@ class BackgroundTaskManager {
 
       return successCount > 0;
     } catch (error) {
-      console.error('모든 작업 일시 중지 중 오류 발생', error);
+      
       return false;
     }
   }
@@ -223,7 +223,7 @@ class BackgroundTaskManager {
 
       return successCount > 0;
     } catch (error) {
-      console.error('모든 작업 재개 중 오류 발생', error);
+      
       return false;
     }
   }
@@ -246,7 +246,7 @@ class BackgroundTaskManager {
 
       return successCount > 0;
     } catch (error) {
-      console.error('모든 작업 중지 중 오류 발생', error);
+      
       return false;
     }
   }
@@ -300,7 +300,7 @@ class BackgroundTaskManager {
         toast.success(`백그라운드 작업이 실행되었습니다: ${config.id}`);
         resolve(true);
       } catch (error) {
-        console.error(`작업 즉시 실행 중 오류 발생: ${taskId}`, error);
+        
         toast.dismiss();
         toast.error(`작업 실행 중 오류가 발생했습니다: ${taskId}`);
         resolve(false);

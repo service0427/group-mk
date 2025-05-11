@@ -141,7 +141,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
       // 성공 메시지
       alert('메모가 저장되었습니다.');
     } catch (err) {
-      console.error('메모 저장 실패:', err);
+
       alert('메모 저장 중 오류가 발생했습니다.');
     }
   };

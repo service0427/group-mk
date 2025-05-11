@@ -51,13 +51,13 @@ export const createNotification = async (params: CreateNotificationParams) => {
       .single();
       
     if (error) {
-      console.error('알림 생성 중 오류 발생:', error.message);
+      
       return null;
     }
     
     return data;
   } catch (error: any) {
-    console.error('알림 생성 중 오류 발생:', error.message);
+    
     return null;
   }
 };
@@ -102,13 +102,13 @@ export const createBulkNotifications = async (
       .insert(notificationsToInsert);
       
     if (error) {
-      console.error('대량 알림 생성 중 오류 발생:', error.message);
+      
       return false;
     }
     
     return true;
   } catch (error: any) {
-    console.error('대량 알림 생성 중 오류 발생:', error.message);
+    
     return false;
   }
 };
@@ -126,7 +126,7 @@ export const createSystemNotificationForAll = async (
       .select('id');
     
     if (usersError) {
-      console.error('사용자 목록 가져오기 중 오류 발생:', usersError.message);
+      
       return false;
     }
     
@@ -143,7 +143,7 @@ export const createSystemNotificationForAll = async (
       type: NotificationType.SYSTEM
     });
   } catch (error: any) {
-    console.error('모든 사용자 알림 생성 중 오류 발생:', error.message);
+    
     return false;
   }
 };
@@ -163,7 +163,7 @@ export const createNotificationForRole = async (
       .eq('role', role);
     
     if (usersError) {
-      console.error('역할별 사용자 목록 가져오기 중 오류 발생:', usersError.message);
+      
       return false;
     }
     
@@ -177,7 +177,7 @@ export const createNotificationForRole = async (
     // 대량 알림 생성
     return await createBulkNotifications(userIds, params);
   } catch (error: any) {
-    console.error('역할별 알림 생성 중 오류 발생:', error.message);
+    
     return false;
   }
 };

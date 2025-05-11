@@ -89,11 +89,11 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           setAccountNumber(accountInfo.account_number);
           setAccountHolder(accountInfo.account_holder);
           setLastAccountLoaded(true);
-          console.log('마지막 출금 신청 계좌 정보 자동 입력', accountInfo);
+          
         }
       }
     } catch (err) {
-      console.error('마지막 출금 신청 정보 조회 오류:', err);
+      
     } finally {
       setLoadingLastAccount(false);
     }
@@ -116,7 +116,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
   
   // withdrawSetting 변경 시 로그
   useEffect(() => {
-    console.log('WithdrawForm - withdrawSetting 변경됨:', withdrawSetting);
+    
   }, [withdrawSetting]);
   
   // 은행 목록
@@ -206,56 +206,56 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
   
   // 금액이 변경될 때마다 한글 단위 표시 업데이트 및 수수료 금액 계산
   useEffect(() => {
-    console.log('useEffect 호출됨 - customAmount:', customAmount);
-    console.log('withdrawSetting 전체 객체:', withdrawSetting);
+    
+    
     
     if (customAmount) {
       setKoreanAmount(formatToKorean(customAmount));
       try {
         // Supabase에서 가져온 원본 데이터에 어떤 필드가 있는지 확인
         if (withdrawSetting) {
-          console.log('withdrawSetting의 모든 키:', Object.keys(withdrawSetting));
+          
           
           // 실제 DB 필드 이름인 min_request_percentage 사용
           let feePercentage = withdrawSetting.min_request_percentage;
           // 호환성을 위해 fee_percentage도 확인
           if (feePercentage === undefined) {
             feePercentage = withdrawSetting.fee_percentage || 0;
-            console.log('min_request_percentage가 없어 fee_percentage 사용:', feePercentage);
+            
           } else {
-            console.log('min_request_percentage 사용:', feePercentage);
+            
           }
           
           const amount = parseInt(customAmount) || 0;
-          console.log('수수료 계산 - 금액:', amount);
+          
           
           if (feePercentage !== undefined) {
-            console.log('사용할 수수료 비율:', feePercentage);
+            
             // 수수료 계산 (퍼센트 기준만 적용)
             let fee = Math.floor((amount * feePercentage) / 100);
-            console.log('계산된 퍼센트 기준 수수료:', fee);
+            
             
             // 최소/최대 수수료 제한 없음
             
-            console.log('최종 계산된 수수료:', fee);
+            
             setFeeAmount(fee);
           } else {
-            console.log('수수료 비율 필드를 찾을 수 없음, 기본값 사용');
+            
             // 백업 계산 - 기본 설정값 사용 (퍼센트만 적용)
             let fee = Math.floor((amount * 3) / 100); // 기본 3%
-            console.log('기본값으로 계산된 수수료:', fee);
+            
             setFeeAmount(fee);
           }
         } else {
-          console.log('withdrawSetting이 null임, 기본값 사용');
+          
           // 백업 계산 - 기본 설정값 사용 (퍼센트만 적용)
           const amount = parseInt(customAmount) || 0;
           let fee = Math.floor((amount * 3) / 100); // 기본 3%
-          console.log('기본값으로 계산된 수수료:', fee);
+          
           setFeeAmount(fee);
         }
       } catch (error) {
-        console.error('수수료 계산 오류:', error);
+        
         setFeeAmount(0);
       }
     } else {
@@ -356,7 +356,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       onSuccess(amount);
       
     } catch (err: any) {
-      console.error('출금 요청 오류:', err);
+      
       setError(err.message || '출금 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
       
       // 실패 알림 표시

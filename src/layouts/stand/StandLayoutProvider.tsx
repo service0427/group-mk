@@ -34,24 +34,12 @@ const initalLayoutProps: IStandLayoutProviderProps = {
   mobileSidebarOpen: false, // Mobile sidebar is closed by default
   mobileMegaMenuOpen: false, // Mobile mega menu is closed by default
   sidebarMouseLeave: false, // Sidebar mouse leave is false initially
-  setSidebarMouseLeave: (state: boolean) => {
-    console.log(`${state}`);
-  },
-  setMobileMegaMenuOpen: (open: boolean) => {
-    console.log(`${open}`);
-  },
-  setMobileSidebarOpen: (open: boolean) => {
-    console.log(`${open}`);
-  },
-  setMegaMenuEnabled: (enabled: boolean) => {
-    console.log(`${enabled}`);
-  },
-  setSidebarCollapse: (collapse: boolean) => {
-    console.log(`${collapse}`);
-  },
-  setSidebarTheme: (mode: string) => {
-    console.log(`${mode}`);
-  }
+  setSidebarMouseLeave: (state: boolean) => {},
+  setMobileMegaMenuOpen: (open: boolean) => {},
+  setMobileSidebarOpen: (open: boolean) => {},
+  setMegaMenuEnabled: (enabled: boolean) => {},
+  setSidebarCollapse: (collapse: boolean) => {},
+  setSidebarTheme: (mode: string) => {}
 };
 
 // Creating context for the layout provider with initial properties

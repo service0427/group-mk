@@ -43,7 +43,7 @@ const AllCampaignsPage: React.FC = () => {
         .order('updated_at', { ascending: false });
       
       if (fetchError) {
-        console.error('모든 캠페인 데이터 조회 오류:', fetchError);
+        
         setError('캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
         setCampaigns([]);
         return;
@@ -59,7 +59,7 @@ const AllCampaignsPage: React.FC = () => {
           try {
             parsedItem.add_info = JSON.parse(parsedItem.add_info);
           } catch (error) {
-            console.error('add_info JSON 파싱 오류:', error);
+            
             // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
             const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
             if (logoUrlMatch && logoUrlMatch[1]) {
@@ -135,7 +135,7 @@ const AllCampaignsPage: React.FC = () => {
       setCampaigns(formattedCampaigns);
       setError(null);
     } catch (err) {
-      console.error('캠페인 데이터 로드 중 오류:', err);
+      
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       setCampaigns([]);
     } finally {

@@ -5,7 +5,7 @@ import { USER_ROLES } from '@/config/roles.config';
 // Base64 이미지를 Supabase Storage에 업로드하는 함수
 export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
   try {
-    console.log(`이미지 업로드 시작: ${bucket}/${folder}/${fileName}`);
+    
     
     // Base64 데이터에서 실제 데이터 부분만 추출 (data:image/jpeg;base64, 부분 제거)
     const base64WithoutPrefix = base64Data.split(',')[1];
@@ -21,9 +21,9 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
     // 정책에 맞게 user ID를 경로에 포함
     const filePath = `${uid}/${folder}/${fullFileName}`;
     
-    console.log(`Storage 경로: ${filePath} (사용자: ${uid})`);
     
-    console.log(`파일 경로: ${filePath}, 타입: ${fileType}`);
+    
+    
     
     // Base64 데이터를 Blob 객체로 변환
     const byteCharacters = atob(base64WithoutPrefix);
@@ -34,26 +34,26 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: `image/${fileType}` });
     
-    console.log(`Blob 생성 완료: ${blob.size} 바이트`);
+    
     
     // 먼저 버킷 존재 여부 확인
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
-      console.error('버킷 목록 가져오기 실패:', bucketsError);
+      
     } else {
       const bucketExists = buckets?.some(b => b.name === bucket) || false;
-      console.log(`${bucket} 버킷 ${bucketExists ? '존재함' : '존재하지 않음'}`);
+      
       
       if (!bucketExists) {
-        console.warn(`${bucket} 버킷이 존재하지 않습니다. 업로드 시 문제가 발생할 수 있습니다.`);
+        
       }
     }
     
     // Supabase Storage에 파일 업로드 시도
     let uploadResult;
     try {
-      console.log('Supabase Storage에 파일 업로드 시도 중...');
+      
       
       uploadResult = await supabase
         .storage
@@ -64,15 +64,15 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
           upsert: true
         });
         
-      console.log('업로드 응답:', uploadResult);
+      
     } catch (uploadError) {
-      console.error('Supabase Storage 업로드 실패 (예외):', uploadError);
+      
       uploadResult = { error: uploadError, data: null };
     }
     
     // 업로드 결과 확인
     if (uploadResult.error) {
-      console.error('파일 업로드 중 오류:', uploadResult.error);
+      
       return null;
     }
     
@@ -84,11 +84,11 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
         .getPublicUrl(filePath);
       
       if (publicUrlData && publicUrlData.publicUrl) {
-        console.log('Supabase Storage 영구 Public URL 생성 성공:', publicUrlData.publicUrl);
+        
         return publicUrlData.publicUrl;
       } else {
         // 대체 방법: 만료 기간이 긴 서명된 URL 시도
-        console.log('Public URL을 가져올 수 없어 Signed URL을 시도합니다...');
+        
         const expirySeconds = 365 * 24 * 60 * 60; // 1년
         
         const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -96,32 +96,32 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
           .createSignedUrl(filePath, expirySeconds);
         
         if (signedUrlError) {
-          console.error('Signed URL 생성 실패:', signedUrlError);
+          
           throw signedUrlError;
         }
         
         if (signedUrlData && signedUrlData.signedUrl) {
-          console.log('Supabase Storage Signed URL 생성 성공 (1년 유효):', signedUrlData.signedUrl);
+          
           return signedUrlData.signedUrl;
         } else {
           throw new Error('URL을 생성할 수 없습니다.');
         }
       }
     } catch (urlError) {
-      console.error('URL 생성 오류:', urlError);
+      
       
       // 마지막 대안: 직접 URL 형식 구성 시도
       try {
         const directPublicUrl = `/storage/v1/object/public/${bucket}/${filePath}`;
-        console.log('직접 URL 구성 시도:', directPublicUrl);
+        
         return directPublicUrl;
       } catch (directUrlError) {
-        console.error('직접 URL 구성 실패:', directUrlError);
+        
         return null;
       }
     }
   } catch (error) {
-    console.error('이미지 업로드 처리 중 오류:', error);
+    
     return null;
   }
 };
@@ -137,14 +137,14 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   // 사용자 ID가 있으면 본인 캠페인만 필터링
   if (userId) {
     query = query.eq('mat_id', userId);
-    console.log(`${userId} 사용자의 캠페인만 필터링합니다.`);
+    
   }
 
   // 정렬 적용
   const { data, error } = await query.order('id', { ascending: true });
 
   if (error) {
-    console.error('캠페인 데이터 조회 중 오류:', error);
+    
     return [];
   }
 
@@ -157,14 +157,14 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
       try {
         parsedItem.add_info = JSON.parse(parsedItem.add_info);
-        console.log('add_info 파싱 성공:', parsedItem.add_info);
+        
       } catch (error) {
-        console.error('add_info JSON 파싱 오류:', error);
+        
         // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
         const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
         if (logoUrlMatch && logoUrlMatch[1]) {
           parsedItem.add_info_logo_url = logoUrlMatch[1];
-          console.log('add_info에서 logo_url 추출:', parsedItem.add_info_logo_url);
+          
         }
       }
     }
@@ -202,13 +202,13 @@ export const hasRole = async (userId?: string): Promise<string | null> => {
       .single();
 
     if (error || !data) {
-      console.error('사용자 역할 조회 중 오류:', error);
+      
       return null;
     }
 
     return data.role;
   } catch (err) {
-    console.error('사용자 역할 조회 중 예외 발생:', err);
+    
     return null;
   }
 };
@@ -245,7 +245,7 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
     .eq('id', campaignId);
 
   if (error) {
-    console.error('캠페인 상태 업데이트 중 오류:', error);
+    
     return false;
   }
 
@@ -272,14 +272,14 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .single();
 
     if (fetchError) {
-      console.error('기존 캠페인 정보 가져오기 실패:', fetchError);
+      
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
         try {
           additionalInfo = JSON.parse(existingCampaign.add_info);
         } catch (e) {
-          console.error('add_info JSON 파싱 오류:', e);
+          
           additionalInfo = {};
         }
       } else {
@@ -353,7 +353,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         ...updateData,
         status: data.status
       };
-      console.log(`캠페인 상태를 '${data.status}'로 업데이트합니다.`);
+      
     }
 
     // 반려 사유가 있으면 rejected_reason 필드에 저장 (상태 설정 후 처리)
@@ -362,14 +362,14 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         ...updateData,
         rejected_reason: data.rejectionReason
       };
-      console.log('rejected_reason 필드에 반려 사유 저장:', data.rejectionReason);
+      
     } else if (data.status === 'rejected') {
       // 반려 상태인데 사유가 없는 경우 경고
-      console.warn('반려 상태이지만 사유가 제공되지 않았습니다. 데이터:', data);
+      
     }
 
     // 디버깅: 업데이트에 사용되는 최종 데이터 로깅
-    console.log('캠페인 업데이트 최종 데이터:', JSON.stringify(updateData, null, 2));
+    
 
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
     if (userId && !existingCampaign?.mat_id) {
@@ -387,13 +387,13 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .eq('id', campaignId);
 
     if (error) {
-      console.error('캠페인 데이터 업데이트 중 오류:', error);
+      
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('캠페인 업데이트 중 예외 발생:', err);
+    
     return false;
   }
 };
@@ -489,7 +489,7 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       mat_id: userId
     };
 
-    console.log('INSERT 시도 중인 데이터:', insertData);
+    
     
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회
     const { data: result, error } = await supabaseAdmin
@@ -499,14 +499,14 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       .single();
 
     if (error) {
-      console.error('캠페인 생성 중 오류:', error);
-      console.error('오류 상세 정보:', JSON.stringify(error, null, 2));
+      
+      
       return { success: false, error: error.message };
     }
 
     return { success: true, id: result?.id };
   } catch (err) {
-    console.error('캠페인 생성 중 예외 발생:', err);
+    
     return { success: false, error: '캠페인 생성 중 오류가 발생했습니다.' };
   }
 };

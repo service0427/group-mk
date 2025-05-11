@@ -55,7 +55,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
       const { count, error: countError } = await countQuery;
 
       if (countError) {
-        console.error('사용자 수를 가져오는 중 오류 발생:', countError.message);
+        
       } else if (count !== null) {
         setTotalRecords(count);
         setTotalPages(Math.ceil(count / itemsPerPage));
@@ -90,13 +90,13 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
       const { data, error } = await query;
 
       if (error) {
-        console.error('사용자 목록을 가져오는 중 오류 발생:', error.message);
+        
         return;
       }
 
       setUsers(data || []);
     } catch (error: any) {
-      console.error('사용자 목록을 가져오는 중 오류 발생:', error.message);
+      
       setUsers([]);
     } finally {
       setLoading(false);

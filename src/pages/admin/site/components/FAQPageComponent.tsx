@@ -531,7 +531,7 @@ const FAQPageComponent = () => {
       if (error) throw error;
       setFAQs(data || []);
     } catch (err: any) {
-      console.error('FAQ를 가져오는 중 오류가 발생했습니다:', err);
+      
       setError('FAQ를 불러오는데 실패했습니다.');
       toast.error("FAQ 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -583,7 +583,7 @@ const FAQPageComponent = () => {
       await fetchFAQs();
       return;
     } catch (err) {
-      console.error('FAQ 업데이트 중 오류 발생:', err);
+      
       throw err;
     }
   };
@@ -606,7 +606,7 @@ const FAQPageComponent = () => {
       
       toast(`FAQ가 ${newValue ? '표시' : '숨김'} 상태로 변경되었습니다.`);
     } catch (err) {
-      console.error('상태 변경 중 오류 발생:', err);
+      
       toast.error("상태 변경 중 오류가 발생했습니다.");
     }
   };
@@ -635,7 +635,7 @@ const FAQPageComponent = () => {
       // 추가 후 목록 새로고침
       await fetchFAQs();
     } catch (err) {
-      console.error('FAQ 저장 중 오류 발생:', err);
+      
       throw err;
     }
   };
@@ -666,7 +666,7 @@ const FAQPageComponent = () => {
         setIsDeleteConfirmOpen(false);
         setFAQToDelete(null);
       } catch (err) {
-        console.error('FAQ 삭제 중 오류 발생:', err);
+        
         toast.error("FAQ 삭제 중 오류가 발생했습니다.");
       } finally {
         setIsDeleting(false);

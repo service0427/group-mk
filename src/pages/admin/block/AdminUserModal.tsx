@@ -65,7 +65,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
             setSelectedRole(response.data.role);
             setSelectedStatus(response.data.status);
         } catch (error: any) {
-            console.error("사용자 정보 불러오기 오류:", error.message);
+            
         } finally {
             setLoading(false);
         }
@@ -115,9 +115,9 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
 
     // 회원정보 수정 핸들러
     const handleUpdateUser = async() => {
-        console.log('id', user_id);
-        console.log('status', selectedStatus);
-        console.log('role', selectedRole);
+        
+        
+        
 
         const { error: updateDBError } = await supabase
             .from('users')
@@ -128,7 +128,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
             .eq('id', user_id);
             
         if (updateDBError) {
-            console.log('사용자 업데이트 오류:', updateDBError);
+            
             throw new Error(updateDBError.message);
         }
 

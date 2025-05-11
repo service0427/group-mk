@@ -155,11 +155,11 @@ const ChargePage: React.FC = () => {
         const showPoints = settingData.free_cash_percentage > 0;
         setShowPointInfo(showPoints);
       } else {
-        console.error("캐시 설정 로딩 오류:", result.message);
+        
         setShowPointInfo(false); // 설정을 불러오지 못하면 포인트 정보 숨김
       }
     } catch (err) {
-      console.error("캐시 설정 로딩 오류:", err);
+      
       setShowPointInfo(false); // 오류 발생 시 포인트 정보 숨김
     } finally {
       setIsLoadingSetting(false);
@@ -203,11 +203,11 @@ const ChargePage: React.FC = () => {
       if (result.success) {
         setRecentRequests(result.data || []);
       } else {
-        console.error('최근 충전 내역 조회 오류:', result.message);
+        
         setRecentRequests([]);
       }
     } catch (err) {
-      console.error('최근 충전 내역 조회 오류:', err);
+      
       // 에러 발생 시 빈 배열로 처리하여 로딩 상태 종료
       setRecentRequests([]);
     } finally {
@@ -342,7 +342,7 @@ const ChargePage: React.FC = () => {
         setError(result.message);
       }
     } catch (err: any) {
-      console.error('충전 요청 오류:', err);
+      
       const errorMessage = err.message || '충전 요청 중 오류가 발생했습니다. 다시 시도해주세요.';
       showDialog("충전 요청 오류", errorMessage, false);
       setError(errorMessage);

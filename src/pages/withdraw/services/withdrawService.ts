@@ -53,7 +53,7 @@ export const getRecentWithdrawRequests = async (userId: string, limit: number = 
     
     return data || [];
   } catch (err) {
-    console.error('최근 출금 내역 조회 오류:', err);
+    
     // 에러 발생 시 빈 배열 반환
     return [];
   }
@@ -65,7 +65,7 @@ export const getRecentWithdrawRequests = async (userId: string, limit: number = 
  * @returns 출금 설정 객체
  */
 export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSetting> => {
-  console.log('getWithdrawSettings 호출됨 - userId:', userId);
+  
   
   try {
     // 기본 설정값 (오류 발생 시 사용)
@@ -77,7 +77,7 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
     
     // 사용자 ID가 제공되면 사용자별 설정을 먼저 확인
     if (userId) {
-      console.log('사용자별 설정 확인 시도');
+      
       // 1. 사용자별 설정 확인
       const { data: userSetting, error: userSettingError } = await supabase
         .from('withdraw_user_settings')
@@ -86,11 +86,11 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
         .eq('is_active', true)  // 활성화된 설정만 가져오기
         .maybeSingle();
       
-      console.log('사용자별 설정 결과:', userSetting, '오류:', userSettingError);
+      
       
       // 사용자별 설정이 있고 오류가 없으면 해당 설정 반환
       if (!userSettingError && userSetting) {
-        console.log('사용자별 설정 사용:', userSetting);
+        
         
         // 필드명 매핑 (실제 DB 필드 -> 코드에서 사용하는 필드)
         const mappedSetting: WithdrawSetting = {
@@ -100,27 +100,27 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
           fee_percentage: userSetting.min_request_percentage || 0
         };
         
-        console.log('매핑된 사용자 설정:', mappedSetting);
+        
         return mappedSetting;
       }
     }
     
-    console.log('전역 설정 확인 시도');
+    
     // 2. 사용자별 설정이 없거나 오류 발생 시 전역 설정 확인
     const { data: globalSetting, error: globalSettingError } = await supabase
       .from('withdraw_global_settings')
       .select('*')
       .single();
     
-    console.log('전역 설정 결과:', JSON.stringify(globalSetting), '오류:', globalSettingError);
+    
     
     if (globalSettingError) {
-      console.error("출금 전역 설정 로딩 오류:", globalSettingError);
-      console.log('기본 설정값 사용:', defaultSettings);
+      
+      
       return defaultSettings;
     }
     
-    console.log('전역 설정 사용:', globalSetting);
+    
     
     // 필드명 매핑 (실제 DB 필드 -> 코드에서 사용하는 필드)
     const mappedSetting: WithdrawSetting = {
@@ -130,18 +130,18 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
       fee_percentage: globalSetting.min_request_percentage || 0
     };
     
-    console.log('매핑된 설정:', mappedSetting);
+    
     return mappedSetting;
     
   } catch (err) {
-    console.error("출금 설정 로딩 오류:", err);
+    
     // 오류 발생 시 기본 설정값 반환
     const defaultSettings = {
       min_request_amount: 10000,
       min_request_percentage: 3,
       fee_percentage: 3
     };
-    console.log('오류로 인한 기본 설정값 사용:', defaultSettings);
+    
     return defaultSettings;
   }
 };
@@ -164,7 +164,7 @@ export const getUserCashBalance = async (userId: string): Promise<number> => {
     
     return data?.paid_balance || 0;
   } catch (err) {
-    console.error("캐시 잔액 조회 오류:", err);
+    
     return 0;
   }
 };
@@ -201,7 +201,7 @@ export const getLastWithdrawAccount = async (userId: string): Promise<LastWithdr
     
     return data as LastWithdrawAccount;
   } catch (err) {
-    console.error("마지막 출금 신청 정보 조회 오류:", err);
+    
     return null;
   }
 };
@@ -298,7 +298,7 @@ export const createWithdrawRequest = async (
       data: requestData[0]
     };
   } catch (err: any) {
-    console.error('출금 요청 오류:', err);
+    
     return {
       success: false,
       message: err.message || '출금 요청 중 오류가 발생했습니다. 다시 시도해주세요.'

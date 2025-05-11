@@ -107,7 +107,7 @@ export async function fetchAllNotificationStats(): Promise<NotificationStats> {
     };
 
   } catch (error) {
-    console.error('전체 알림 통계 조회 중 오류 발생:', error);
+    
     // 오류 발생 시 빈 데이터 반환
     return {
       total: 0,

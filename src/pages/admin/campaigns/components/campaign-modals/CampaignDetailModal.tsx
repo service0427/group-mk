@@ -81,7 +81,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   
   useEffect(() => {
     if (campaign) {
-      console.log('캠페인 데이터:', campaign);
+      
       
       // 캠페인 데이터 포맷 처리
       const minQuantity = campaign.minQuantity ? campaign.minQuantity.replace('개', '') : '0';
@@ -112,11 +112,11 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       if (campaign.originalData?.rejected_reason) {
         // 새로운 rejected_reason 필드에서 먼저 확인
         rejectionReasonValue = campaign.originalData.rejected_reason;
-        console.log('rejected_reason 필드에서 반려 사유 로드:', rejectionReasonValue);
+        
       } else if (addInfo.rejection_reason) {
         // 이전 방식(add_info)에서 가져오기 (하위 호환성)
         rejectionReasonValue = addInfo.rejection_reason;
-        console.log('add_info에서 반려 사유 로드:', rejectionReasonValue);
+        
       }
 
       // 항상 최신 데이터 사용
@@ -124,18 +124,18 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       let initialStatus;
       if (typeof campaign.status === 'string') {
         initialStatus = campaign.status;
-        console.log('캠페인 초기화: 상태는 문자열입니다:', initialStatus);
+        
       } else if (typeof campaign.status === 'object') {
         initialStatus = campaign.status.status;
-        console.log('캠페인 초기화: 상태는 객체입니다:', campaign.status, '-> 추출된 값:', initialStatus);
+        
       } else {
         initialStatus = campaign.originalData?.status || 'pending';
-        console.log('캠페인 초기화: 다른 형식, 원본 데이터 사용:', initialStatus);
+        
       }
 
       // originalData에 status가 있으면 그 값을 우선 사용 (서버 데이터 우선)
       const finalStatus = campaign.originalData?.status || initialStatus || 'pending';
-      console.log('캠페인 초기화: 최종 결정된 상태값:', finalStatus);
+      
 
       setEditedCampaign({
         ...campaign,
@@ -247,20 +247,20 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
     try {
       // 상태 값 확인 및 디버깅
-      console.log('캠페인 저장 시작. 원본 상태:', editedCampaign.status);
+      
 
       let statusValue;
       if (typeof editedCampaign.status === 'string') {
         statusValue = editedCampaign.status;
-        console.log('저장 처리: 상태는 문자열입니다:', statusValue);
+        
       } else if (typeof editedCampaign.status === 'object' && editedCampaign.status !== null) {
         // status.status가 있고 유효한 값인지 확인
         statusValue = editedCampaign.status.status || 'pending';
-        console.log('저장 처리: 상태는 객체입니다:', JSON.stringify(editedCampaign.status), '-> 추출된 값:', statusValue);
+        
       } else {
         // 기본값 사용 전에 originalData에서 확인
         statusValue = editedCampaign.originalData?.status || 'pending';
-        console.log('저장 처리: 상태 형식 알 수 없음, 원본 데이터 또는 기본값 사용:', statusValue);
+        
       }
 
       // 반려 상태에서 반려 사유가 비어있는지 확인
@@ -272,9 +272,9 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
       // 반려 상태 처리를 위한 추가 디버깅 로그
       if (statusValue === 'rejected') {
-        console.log('반려 상태로 저장 시도. 캠페인 ID:', editedCampaign.id);
-        console.log('반려 사유:', editedCampaign.rejectionReason);
-        console.log('캠페인 전체 데이터:', editedCampaign);
+        
+        
+        
       }
 
       // 원본 캠페인 상태 확인
@@ -287,22 +287,22 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         // 1. 승인 요청중 또는 반려됨 상태인 경우 - 무조건 waiting_approval로 변경
         if (originalStatus === 'rejected' || originalStatus === 'waiting_approval') {
           finalStatus = 'waiting_approval';
-          console.log('승인 요청중 또는 반려됨 상태에서 저장: 승인 대기중으로 변경');
+          
         }
         // 2. 준비중, 진행중, 표시안함 상태인 경우 - 사용자가 선택한 상태로 변경
         else if (['pending', 'active', 'pause'].includes(originalStatus)) {
           finalStatus = statusValue; // 사용자가 선택한 상태 사용
-          console.log(`일반 상태(${originalStatus})에서 저장: ${finalStatus}로 변경`);
+          
         }
         // 3. 반려 상태에서 저장할 경우, 승인 대기중으로 변경
         else if (originalStatus === 'rejected') {
           finalStatus = 'waiting_approval';
-          console.log('반려 상태에서 저장: 승인 대기중으로 변경');
+          
         }
         // 4. 그 외의 경우는 원래 상태 유지
         else {
           finalStatus = originalStatus;
-          console.log('기타 상태: 원래 상태 유지:', originalStatus);
+          
         }
       }
 
@@ -328,14 +328,14 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         finalStatus
       });
 
-      console.log('업데이트 데이터:', JSON.stringify(updateData, null, 2));
+      
 
       // 반려 상태일 때 반려 사유가 포함되었는지 한번 더 확인
       if (statusValue === 'rejected' && finalStatus === 'rejected') {
-        console.log('반려 상태 최종 확인 - 반려 사유:', updateData.rejectionReason);
+        
 
         if (!updateData.rejectionReason) {
-          console.error('반려 사유가 누락되었습니다. 반려 처리가 제대로 되지 않을 수 있습니다.');
+          
         }
       }
 
@@ -352,7 +352,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         try {
           addInfo = JSON.parse(addInfo);
         } catch (e) {
-          console.error('add_info JSON 파싱 오류:', e);
+          
           addInfo = {};
         }
       }
@@ -367,7 +367,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         status: finalStatus
       };
 
-      console.log('업데이트된 캠페인에 설정할 상태 객체:', statusObject);
+      
 
       const updatedCampaign: ExtendedCampaign = {
         ...editedCampaign,
@@ -419,12 +419,12 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
           default:
             message = '캠페인 상태가 변경되었습니다.';
         }
-        console.log(message);
+        
       }
 
       onClose();
     } catch (err) {
-      console.error('캠페인 저장 중 오류:', err);
+      
       setError('캠페인 정보 저장에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -510,7 +510,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                           // 추출된 동물 이름이 있고 유효한 동물 아이콘인 경우
                           if (animalName && animalIcons.includes(animalName)) {
-                            console.log(`[CampaignDetailModal] 경로에서 동물 이름 추출: ${animalName}`);
+                            
                             return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                           }
 
@@ -519,7 +519,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         // 동물 이름이 있는 경우
                         if (editedCampaign.logo && animalIcons.includes(editedCampaign.logo)) {
-                          console.log(`[CampaignDetailModal] 동물 이름 직접 사용: ${editedCampaign.logo}`);
+                          
                           return toAbsoluteUrl(`/media/animal/svg/${editedCampaign.logo}.svg`);
                         }
 
@@ -533,7 +533,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                           for (const [animalName, iconName] of sortedEntries) {
                             if (name.includes(animalName.toLowerCase())) {
-                              console.log(`[CampaignDetailModal] 캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+                              
                               return toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
                             }
                           }
@@ -545,7 +545,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       className="rounded-full size-16 shrink-0 object-cover"
                       alt="캠페인 로고"
                       onError={(e) => {
-                        console.log('[CampaignDetailModal] 캠페인 로고 로드 실패:', e.currentTarget.src);
+                        
 
                         // 동물 아이콘 및 이름 매핑 정의
                         const animalIcons = [
@@ -556,11 +556,11 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         // logo 필드 체크
                         if (editedCampaign.logo) {
-                          console.log('[CampaignDetailModal] 로고 필드 확인:', editedCampaign.logo);
+                          
 
                           // logo가 동물 이름인 경우
                           if (animalIcons.includes(editedCampaign.logo)) {
-                            console.log(`[CampaignDetailModal][error] 동물 이름 직접 사용: ${editedCampaign.logo}`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${editedCampaign.logo}.svg`);
                             return;
                           }
@@ -572,7 +572,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                               if (segments[i] === 'svg' && i + 1 < segments.length) {
                                 const animalName = segments[i + 1].split('.')[0];
                                 if (animalIcons.includes(animalName)) {
-                                  console.log(`[CampaignDetailModal][error] 경로에서 추출한 동물: ${animalName}`);
+                                  
                                   (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                                   return;
                                 }
@@ -601,7 +601,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         for (const [animalName, iconName] of sortedEntries) {
                           if (name.includes(animalName.toLowerCase())) {
-                            console.log(`[CampaignDetailModal][error] 캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
                             animalFound = true;
                             break;
@@ -611,7 +611,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         // 이름에서 동물을 찾지 못하면 랜덤 아이콘 사용
                         if (!animalFound) {
                           const randomAnimal = animalIcons[Math.floor(Math.random() * animalIcons.length)];
-                          console.log(`이름에서 동물을 찾지 못함. 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                          
                           (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                         }
                       }}
@@ -703,7 +703,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                                 // 선택된 동물 로고 파일 경로에서 동물 이름 추출
                                 const animalName = e.target.value.split('/').pop()?.split('.')[0];
-                                console.log(`로고 선택: ${animalName}`, { value: e.target.value });
+                                
 
                                 // 동물 이름만 저장 (경로 없이)
                                 // 예: 'animal/svg/cat.svg' -> 'cat', 'giraffe.svg' -> 'giraffe'
@@ -899,7 +899,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                             }
                             onChange={(e) => {
                               const statusValue = e.target.value;
-                              console.log('상태 변경:', statusValue);
+                              
                               setEditedCampaign(prev => {
                                 if (!prev) return null;
                                 return {
@@ -1286,7 +1286,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                     setLoading(true);
 
                     // 상태를 반려로 변경하고 반려 사유 설정
-                    console.log('반려 모달에서 입력한 사유:', rejectionReason);
+                    
 
                     setEditedCampaign(prev => {
                       if (!prev) return null;
@@ -1316,7 +1316,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                     // 반려 특수 처리 - setEditedCampaign 상태 변경이 적용되기 전에 직접 DB에 업데이트
                     setTimeout(async () => {
                       try {
-                        console.log('직접 반려 처리 시작...');
+                        
 
                         // 캠페인 ID 가져오기
                         const campaignId = editedCampaign?.id;
@@ -1334,7 +1334,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                           throw new Error('반려 처리 중 오류가 발생했습니다.');
                         }
 
-                        console.log('반려 처리 성공!');
+                        
 
                         // 성공 시 부모 컴포넌트에 알림
                         if (onSave && editedCampaign) {
@@ -1360,7 +1360,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         // 모달 창 닫기
                         onClose();
                       } catch (err) {
-                        console.error('반려 처리 중 오류:', err);
+                        
                         setError('반려 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
                         setLoading(false);
                         setRejectionModalOpen(true); // 모달 다시 열기

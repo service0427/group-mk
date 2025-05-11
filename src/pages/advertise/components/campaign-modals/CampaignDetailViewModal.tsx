@@ -27,15 +27,12 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  console.log('CampaignDetailViewModal campaign:', campaign);
-
   // 캠페인 이름으로 Supabase에서 배너 이미지 URL 가져오기
   useEffect(() => {
     if (open && campaign && campaign.campaignName) {
       const fetchCampaignBanner = async () => {
         setLoading(true);
         try {
-          console.log('캠페인 이름으로 조회:', campaign.campaignName);
           
           // Supabase에서 모든 캠페인 목록 가져오기
           const { data: allCampaigns, error: allError } = await supabase
@@ -44,11 +41,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
             .order('id', { ascending: false });
             
           if (allError) {
-            console.error('캠페인 목록 조회 오류:', allError);
+            
             return;
           }
-          
-          console.log('모든 캠페인 목록:', allCampaigns);
           
           // 이름이 완전히 일치하는 캠페인 찾기
           let matchedCampaign = allCampaigns?.find(c => 
@@ -71,34 +66,28 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           }
           
           if (matchedCampaign) {
-            console.log('캠페인 찾음:', matchedCampaign);
             
             // add_info에서 배너 URL 가져오기
             let bannerUrl = null;
             if (matchedCampaign.add_info) {
-              console.log('add_info 데이터:', matchedCampaign.add_info);
               
               if (typeof matchedCampaign.add_info === 'string') {
                 try {
                   const addInfo = JSON.parse(matchedCampaign.add_info);
-                  console.log('파싱된 add_info:', addInfo);
                   bannerUrl = addInfo.banner_url || null;
                 } catch (e) {
-                  console.error('add_info JSON 파싱 오류:', e);
+                  
                 }
               } else {
                 bannerUrl = matchedCampaign.add_info.banner_url || null;
               }
-              
-              console.log('찾은 배너 URL:', bannerUrl);
             }
             
             setBannerUrl(bannerUrl);
-          } else {
-            console.log('캠페인을 찾을 수 없음');
           }
+          
         } catch (err) {
-          console.error('배너 이미지 가져오기 오류:', err);
+          
         } finally {
           setLoading(false);
         }
@@ -137,7 +126,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 className="w-full h-auto object-cover"
                 style={{ maxHeight: '250px' }}
                 onError={(e) => {
-                  console.log('배너 이미지 로드 실패:', bannerUrl);
                   // 이미지 로드 실패 시 기본 배경으로 대체
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center";
@@ -176,7 +164,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 className="rounded-full size-16 shrink-0 object-cover"
                 alt={campaign.campaignName}
                 onError={(e) => {
-                  console.log('로고 이미지 로드 실패:', campaign.logo);
                   // 이미지 로드 실패 시 기본 이미지 사용
                   (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
                 }}

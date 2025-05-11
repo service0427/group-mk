@@ -39,7 +39,7 @@ export class CashService {
         .single();
 
       if (globalSettingError) {
-        console.error('전역 설정 조회 실패:', globalSettingError);
+        
       }
 
       // 사용자별 설정이 있으면 사용, 없으면 전역 설정 사용
@@ -51,7 +51,7 @@ export class CashService {
         freeCashPercentage = setting.free_cash_percentage || 0;
       }
       
-      console.log(`충전 금액: ${amount}, 최소 요청 금액: ${setting?.min_request_amount}, 무료 캐시 비율: ${freeCashPercentage}`);
+      
 
       // 충전 요청 생성
       const { data, error } = await supabase
@@ -75,7 +75,7 @@ export class CashService {
         data: data?.[0]
       };
     } catch (error: any) {
-      console.error('충전 요청 오류:', error);
+      
       return {
         success: false,
         message: error.message || '충전 요청 중 오류가 발생했습니다. 다시 시도해주세요.'
@@ -116,7 +116,7 @@ export class CashService {
         data: data || []
       };
     } catch (error: any) {
-      console.error('충전 요청 내역 조회 오류:', error);
+      
       return {
         success: false,
         message: error.message || '충전 요청 내역 조회 중 오류가 발생했습니다.'
@@ -179,7 +179,7 @@ export class CashService {
         totalItems: count || 0
       };
     } catch (error: any) {
-      console.error('캐시 내역 조회 오류:', error);
+      
       return {
         success: false,
         message: error.message || '캐시 내역 조회 중 오류가 발생했습니다.'
@@ -232,7 +232,7 @@ export class CashService {
         data: balance
       };
     } catch (error: any) {
-      console.error('잔액 조회 오류:', error);
+      
       return {
         success: false,
         message: error.message || '잔액 조회 중 오류가 발생했습니다.'
@@ -280,7 +280,7 @@ export class CashService {
         data: setting
       };
     } catch (error: any) {
-      console.error('캐시 설정 조회 오류:', error);
+      
       return {
         success: false,
         message: error.message || '캐시 설정 조회 중 오류가 발생했습니다.'

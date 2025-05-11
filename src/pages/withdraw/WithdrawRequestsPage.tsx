@@ -97,7 +97,7 @@ const WithdrawRequestsPage: React.FC = () => {
         
         setPendingSlots(formattedSlots);
       } catch (err) {
-        console.error('슬롯 목록 조회 실패:', err);
+        
         setError('슬롯 목록을 불러오는 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
@@ -124,7 +124,7 @@ const WithdrawRequestsPage: React.FC = () => {
       
       alert('슬롯이 성공적으로 승인되었습니다.');
     } catch (err: any) {
-      console.error('슬롯 승인 중 오류 발생:', err);
+      
       alert(`슬롯 승인 실패: ${err.message || '알 수 없는 오류'}`);
     } finally {
       setProcessingId(null);
@@ -162,7 +162,7 @@ const WithdrawRequestsPage: React.FC = () => {
       setSelectedSlotId(null);
       alert('슬롯이 성공적으로 반려되었습니다.');
     } catch (err: any) {
-      console.error('슬롯 반려 중 오류 발생:', err);
+      
       alert(`슬롯 반려 실패: ${err.message || '알 수 없는 오류'}`);
     } finally {
       setProcessingId(null);

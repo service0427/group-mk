@@ -31,11 +31,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
     heading: '서비스'
   },
   {
-    title: '내 키워드',
-    icon: 'pencil text-info',
-    path: '/keyword'
-  },
-  {
     title: '캠페인 소개',
     icon: 'document text-primary',
     path: '/advertise/ntraffic/desc',
@@ -140,6 +135,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '알림 센터',
         icon: 'notification text-warning',
         path: '/myinfo/notifications'
+      },
+      {
+        title: '내 키워드',
+        icon: 'pencil text-success',
+        path: '/keyword'
       },
       {
         title: '내 서비스 관리',
@@ -286,7 +286,17 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '채팅 관리',
         icon: 'message-text text-success',
         path: '/admin/site/chat'
-      }
+      },
+      {
+        title: '관리자 출금 설정',
+        icon: 'dollar text-warning',
+        path: '/admin/withdraw_setting'
+      },
+      {
+        title: '운영자 출금 승인',
+        icon: 'dollar text-warning',
+        path: '/admin/withdraw_approve'
+      },
     ]
   },
   {
@@ -313,7 +323,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: '캠페인 통합 관리',
         path: '/admin/campaigns/all',
-        icon: 'check-square text-danger',
+        icon: 'setting-3 text-warning',
         authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
       },
     ]
@@ -356,23 +366,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
         icon: 'dollar text-warning',
         path: '/admin/cash_setting'
       }
-    ]
-  },
-  {
-    title: '필요 페이지',
-    icon: 'other text-gray-600',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
-    children: [
-      {
-        title: '관리자 출금 설정',
-        icon: 'dollar text-warning',
-        path: '/admin/withdraw_setting'
-      },
-      {
-        title: '운영자 출금 승인',
-        icon: 'dollar text-warning',
-        path: '/admin/withdraw_approve'
-      },
     ]
   },
   {

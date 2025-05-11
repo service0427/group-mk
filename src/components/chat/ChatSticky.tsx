@@ -328,7 +328,7 @@ const ChatSticky: React.FC = () => {
       // 메시지를 보낼 때 생성할 예정
       return null;
     } catch (err: any) {
-      console.error('채팅방 초기화 오류:', err);
+      
       setError(err.message || '채팅 초기화 중 오류가 발생했습니다.');
       
       // 데이터베이스 진단 실행
@@ -347,7 +347,7 @@ const ChatSticky: React.FC = () => {
           }
         }
       } catch (diagError) {
-        console.error('진단 실행 오류:', diagError);
+        
       }
       
       return null;
@@ -424,7 +424,7 @@ const ChatSticky: React.FC = () => {
         }
       }
     } catch (err: any) {
-      console.error('메시지 전송 오류:', err);
+      
       setError(err.message || '메시지 전송 중 오류가 발생했습니다.');
     }
   };
@@ -444,7 +444,7 @@ const ChatSticky: React.FC = () => {
         setError(result.errorMessage || '알 수 없는 오류');
       }
     } catch (err: any) {
-      console.error('진단 실행 오류:', err);
+      
       setError('진단 오류: ' + err.message);
     } finally {
       setIsLoading(false);

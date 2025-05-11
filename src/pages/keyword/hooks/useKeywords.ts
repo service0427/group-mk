@@ -43,7 +43,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('그룹을 불러오는 중 오류가 발생했습니다.');
-      console.error(err);
+      
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +72,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('키워드를 불러오는 중 오류가 발생했습니다.');
-      console.error(err);
+      
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('그룹 생성 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -123,7 +123,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('그룹 수정 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -153,7 +153,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('그룹 삭제 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -185,7 +185,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('키워드 추가 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -209,7 +209,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('키워드 수정 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -233,7 +233,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('키워드 삭제 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -270,7 +270,7 @@ export const useKeywords = () => {
       }
     } catch (err) {
       setError('키워드 대량 추가 중 오류가 발생했습니다.');
-      console.error(err);
+      
       return false;
     } finally {
       setIsLoading(false);

@@ -34,7 +34,7 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('알림을 가져오는 중 오류 발생:', error.message);
+        
         
         // 오류 발생 시 모킹 데이터 사용 (개발 중에만 활성화)
         const mockData = generateMockNotifications(currentUser.id);
@@ -74,7 +74,7 @@ export const useNotifications = () => {
         setUnreadCount(unread);
       }
     } catch (error: any) {
-      console.error('알림을 가져오는 중 오류 발생:', error.message);
+      
       
       // 오류 발생 시 빈 배열로 설정
       setNotifications([]);
@@ -96,7 +96,7 @@ export const useNotifications = () => {
         .eq('user_id', currentUser.id);
       
       if (error) {
-        console.error('알림 상태 업데이트 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -111,7 +111,7 @@ export const useNotifications = () => {
       
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error: any) {
-      console.error('알림 상태 업데이트 중 오류 발생:', error.message);
+      
     }
   };
   
@@ -135,7 +135,7 @@ export const useNotifications = () => {
       const { error } = await query;
       
       if (error) {
-        console.error('알림 읽음 표시 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -169,7 +169,7 @@ export const useNotifications = () => {
         setUnreadCount(0);
       }
     } catch (error: any) {
-      console.error('알림 읽음 표시 중 오류 발생:', error.message);
+      
     }
   };
   
@@ -185,7 +185,7 @@ export const useNotifications = () => {
         .eq('user_id', currentUser.id);
       
       if (error) {
-        console.error('알림 보관 처리 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -204,7 +204,7 @@ export const useNotifications = () => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error: any) {
-      console.error('알림 보관 처리 중 오류 발생:', error.message);
+      
     }
   };
   
@@ -220,7 +220,7 @@ export const useNotifications = () => {
         .eq('user_id', currentUser.id);
       
       if (error) {
-        console.error('알림 삭제 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -235,7 +235,7 @@ export const useNotifications = () => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error: any) {
-      console.error('알림 삭제 중 오류 발생:', error.message);
+      
     }
   };
   
@@ -258,7 +258,7 @@ export const useNotifications = () => {
         .select();
       
       if (error) {
-        console.error('알림 생성 중 오류 발생:', error.message);
+        
         return null;
       }
       
@@ -276,7 +276,7 @@ export const useNotifications = () => {
       
       return data[0] as INotification;
     } catch (error: any) {
-      console.error('알림 생성 중 오류 발생:', error.message);
+      
       return null;
     }
   };
@@ -403,7 +403,7 @@ export const useNotifications = () => {
         .eq('user_id', currentUser.id);
       
       if (error) {
-        console.error('알림 상태 업데이트 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -418,7 +418,7 @@ export const useNotifications = () => {
       
       setUnreadCount(prev => prev + 1);
     } catch (error: any) {
-      console.error('알림 상태 업데이트 중 오류 발생:', error.message);
+      
     }
   };
 
@@ -439,14 +439,14 @@ export const useNotifications = () => {
       } else {
         // 전체 알림 읽지 않음 처리는 위험할 수 있으므로 
         // 반드시 ID 목록을 받도록 제한
-        console.error('알림 ID 목록이 제공되지 않았습니다.');
+        
         return;
       }
       
       const { error } = await query;
       
       if (error) {
-        console.error('알림 읽지 않음 표시 중 오류 발생:', error.message);
+        
         return;
       }
       
@@ -473,7 +473,7 @@ export const useNotifications = () => {
         setUnreadCount(prev => prev + affectedCount);
       }
     } catch (error: any) {
-      console.error('알림 읽지 않음 표시 중 오류 발생:', error.message);
+      
     }
   };
 

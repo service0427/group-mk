@@ -142,11 +142,11 @@ const NotificationManagePage: React.FC = () => {
               setTimeout(() => refreshStats(), 1000);
             }
           } else {
-            console.warn('⚠️ notification_aggregates 테이블이 존재하지 않습니다!');
+            
           }
         }
       } catch (error) {
-        console.error('테이블 확인 중 오류 발생:', error);
+        
       }
     }
 
@@ -490,7 +490,7 @@ const NotificationManagePage: React.FC = () => {
                           // 테이블 상태 업데이트
                           setTableStatus({ exists: true, checked: true });
                         } catch (error) {
-                          console.error('테이블 초기화 중 오류:', error);
+                          
                           setStatsNotification({ 
                             show: true, 
                             message: '통계 초기화 중 오류가 발생했습니다.', 
@@ -498,7 +498,7 @@ const NotificationManagePage: React.FC = () => {
                           });
                         }
                       } catch (error) {
-                        console.error('모듈 로드 오류:', error);
+                        
                         setStatsNotification({ 
                           show: true, 
                           message: '초기화 작업을 수행할 수 없습니다.', 

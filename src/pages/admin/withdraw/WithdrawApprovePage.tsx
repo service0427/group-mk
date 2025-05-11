@@ -97,7 +97,7 @@ export const WithdrawApprovePage: React.FC = () => {
       
       setRequests(formattedData)
     } catch (error) {
-      console.error('Failed to fetch withdraw requests:', error)
+      
       // 에러 처리 로직
     } finally {
       setLoading(false)

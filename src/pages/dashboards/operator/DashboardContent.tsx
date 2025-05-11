@@ -101,7 +101,7 @@ export const DashboardContent: React.FC = () => {
         .eq('role', 'distributor');
       
       if (currentDistributorsError) {
-        console.error('총판 수 조회 오류:', currentDistributorsError);
+        
         throw new Error('총판 수 조회 중 오류가 발생했습니다.');
       }
       
@@ -113,7 +113,7 @@ export const DashboardContent: React.FC = () => {
         .lt('created_at', lastMonthDate.toISOString());
       
       if (prevDistributorsError) {
-        console.error('이전 총판 수 조회 오류:', prevDistributorsError);
+        
         throw new Error('이전 총판 수 조회 중 오류가 발생했습니다.');
       }
       
@@ -131,7 +131,7 @@ export const DashboardContent: React.FC = () => {
         .select('id', { count: 'exact' });
       
       if (totalCampaignsError) {
-        console.error('총 캠페인 수 조회 오류:', totalCampaignsError);
+        
         throw new Error('총 캠페인 수 조회 중 오류가 발생했습니다.');
       }
       
@@ -162,7 +162,7 @@ export const DashboardContent: React.FC = () => {
         .lt('created_at', lastMonthDate.toISOString());
       
       if (prevCampaignsError) {
-        console.error('이전 캠페인 수 조회 오류:', prevCampaignsError);
+        
         throw new Error('이전 캠페인 수 조회 중 오류가 발생했습니다.');
       }
       
@@ -189,7 +189,7 @@ export const DashboardContent: React.FC = () => {
         .lte('transaction_at', endOfMonth);
       
       if (currentTransactionsError) {
-        console.error('현재 월 거래액 조회 오류:', currentTransactionsError);
+        
         throw new Error('현재 월 거래액 조회 중 오류가 발생했습니다.');
       }
       
@@ -207,7 +207,7 @@ export const DashboardContent: React.FC = () => {
         .lte('transaction_at', endOfPrevMonth);
       
       if (prevTransactionsError) {
-        console.error('이전 월 거래액 조회 오류:', prevTransactionsError);
+        
         throw new Error('이전 월 거래액 조회 중 오류가 발생했습니다.');
       }
       
@@ -230,7 +230,7 @@ export const DashboardContent: React.FC = () => {
         .eq('status', 'pending');
       
       if (pendingWithdrawalsError) {
-        console.error('보류 중인 출금 요청 조회 오류:', pendingWithdrawalsError);
+        
         throw new Error('보류 중인 출금 요청 조회 중 오류가 발생했습니다.');
       }
       
@@ -263,7 +263,7 @@ export const DashboardContent: React.FC = () => {
       });
       
     } catch (error) {
-      console.error('통계 데이터 로드 오류:', error);
+      
       toast.error('통계 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -289,7 +289,7 @@ export const DashboardContent: React.FC = () => {
         .single();
       
       if (error) {
-        console.error('캐시 설정 로드 오류:', error);
+        
         throw new Error('캐시 설정을 불러오는 중 오류가 발생했습니다.');
       }
       
@@ -298,7 +298,7 @@ export const DashboardContent: React.FC = () => {
         setDefaultBonusRate(String(data.free_cash_percentage || 0));
       }
     } catch (error) {
-      console.error('캐시 설정 로드 오류:', error);
+      
       toast.error('캐시 설정을 불러오는 중 오류가 발생했습니다.');
     }
   };
@@ -333,7 +333,7 @@ export const DashboardContent: React.FC = () => {
         .limit(5);
       
       if (error) {
-        console.error('출금 요청 데이터 로드 오류:', error);
+        
         throw new Error('출금 요청 데이터를 불러오는 중 오류가 발생했습니다.');
       }
       
@@ -358,7 +358,7 @@ export const DashboardContent: React.FC = () => {
       
       setWithdrawalRequests(distributorRequests);
     } catch (error) {
-      console.error('출금 요청 데이터 로드 오류:', error);
+      
     }
   };
 
@@ -383,7 +383,7 @@ export const DashboardContent: React.FC = () => {
         .limit(5);
       
       if (distributorsError) {
-        console.error('총판 목록 로드 오류:', distributorsError);
+        
         throw new Error('총판 목록을 불러오는 중 오류가 발생했습니다.');
       }
       
@@ -474,7 +474,7 @@ export const DashboardContent: React.FC = () => {
       
       setDistributorList(sortedDistributorData);
     } catch (error) {
-      console.error('총판 데이터 로드 오류:', error);
+      
     }
   };
 
@@ -503,7 +503,7 @@ export const DashboardContent: React.FC = () => {
           .single();
         
         if (error) {
-          console.error('캐시 설정 생성 오류:', error);
+          
           throw new Error('캐시 설정을 생성하는 중 오류가 발생했습니다.');
         }
         
@@ -519,7 +519,7 @@ export const DashboardContent: React.FC = () => {
           .eq('id', cashSettings.id);
         
         if (error) {
-          console.error('캐시 설정 업데이트 오류:', error);
+          
           throw new Error('캐시 설정을 업데이트하는 중 오류가 발생했습니다.');
         }
         
@@ -531,7 +531,7 @@ export const DashboardContent: React.FC = () => {
         toast.success(`기본 보너스가 ${bonusRate}%로 업데이트되었습니다.`);
       }
     } catch (error) {
-      console.error('기본 보너스 설정 오류:', error);
+      
       toast.error('기본 보너스 설정 중 오류가 발생했습니다.');
     } finally {
       setSettingsLoading(false);
@@ -564,7 +564,7 @@ export const DashboardContent: React.FC = () => {
         .single();
       
       if (userError) {
-        console.error('사용자 조회 오류:', userError);
+        
         toast.error('해당 계정을 찾을 수 없습니다.');
         return;
       }
@@ -577,7 +577,7 @@ export const DashboardContent: React.FC = () => {
         .single();
       
       if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error('사용자 설정 조회 오류:', settingsError);
+        
         throw new Error('사용자 설정을 조회하는 중 오류가 발생했습니다.');
       }
       
@@ -610,7 +610,7 @@ export const DashboardContent: React.FC = () => {
       }
       
       if (result.error) {
-        console.error('사용자 설정 저장 오류:', result.error);
+        
         throw new Error('사용자 설정을 저장하는 중 오류가 발생했습니다.');
       }
       
@@ -618,7 +618,7 @@ export const DashboardContent: React.FC = () => {
       setIndividualAccount(''); // 입력 필드 초기화
       setIndividualBonusRate(''); // 보너스율 필드도 초기화
     } catch (error) {
-      console.error('개별 보너스 설정 오류:', error);
+      
       toast.error('개별 보너스 설정 중 오류가 발생했습니다.');
     } finally {
       setSettingsLoading(false);
@@ -646,7 +646,7 @@ export const DashboardContent: React.FC = () => {
           .single();
         
         if (error) {
-          console.error('캐시 설정 초기화 오류:', error);
+          
           throw new Error('캐시 설정을 초기화하는 중 오류가 발생했습니다.');
         }
         
@@ -661,7 +661,7 @@ export const DashboardContent: React.FC = () => {
           .eq('id', cashSettings.id);
         
         if (error) {
-          console.error('캐시 설정 업데이트 오류:', error);
+          
           throw new Error('캐시 설정을 업데이트하는 중 오류가 발생했습니다.');
         }
         
@@ -678,7 +678,7 @@ export const DashboardContent: React.FC = () => {
       
       toast.success('캐시 설정이 초기화되었습니다.');
     } catch (error) {
-      console.error('설정 초기화 오류:', error);
+      
       toast.error('설정 초기화 중 오류가 발생했습니다.');
     } finally {
       setSettingsLoading(false);

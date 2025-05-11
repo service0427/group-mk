@@ -93,11 +93,9 @@ const CardAdCampaign = ({
                 className={`size-[30px] shrink-0`}
                 alt=""
                 onError={(e) => {
-                  console.error(`이미지 로드 실패:`, e);
                   // 캠페인 이름에서 동물 추출 시도
                   const animalFromName = getAnimalIconFromName(title);
                   if (animalFromName) {
-                    console.log(`이미지 로드 실패 대응: 캠페인 이름 ${title}에서 ${animalFromName} 동물 아이콘 사용`);
                     (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
                   } else {
                     // 기본 이미지 사용

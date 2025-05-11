@@ -24,14 +24,14 @@ export const createTestNotification = async (userId: string) => {
       .select();
       
     if (error) {
-      console.error('테스트 알림 생성 중 오류 발생:', error.message);
+      
       return null;
     }
     
-    console.log('테스트 알림 생성 성공:', data[0]);
+    
     return data[0];
   } catch (error: any) {
-    console.error('테스트 알림 생성 중 오류 발생:', error.message);
+    
     return null;
   }
 };
@@ -48,14 +48,14 @@ export const deleteAllTestNotifications = async (userId: string) => {
       .like('title', '테스트 알림%');
       
     if (error) {
-      console.error('테스트 알림 삭제 중 오류 발생:', error.message);
+      
       return false;
     }
     
-    console.log(`${count}개의 테스트 알림이 삭제되었습니다.`);
+    
     return true;
   } catch (error: any) {
-    console.error('테스트 알림 삭제 중 오류 발생:', error.message);
+    
     return false;
   }
 };

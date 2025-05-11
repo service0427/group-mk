@@ -11,7 +11,7 @@ export async function getWithdrawGlobalSettings() {
         .single();
 
     if (error) {
-        console.error("Error fetching global settings:", error);
+        
         throw new Error("Failed to fetch global settings");
     }
     return data;
@@ -31,7 +31,7 @@ export async function updateWithdrawGlobalSettings(settings: {
         .eq("id", settings.id);
 
     if (error) {
-        console.error("Error updating global settings:", error);
+        
         throw new Error("Failed to update global settings");
     }
     return data;
@@ -45,7 +45,7 @@ export async function getDistributor() {
         .eq('role', 'distributor');
 
     if (error) {
-        console.error("Error fetching distributor IDs:", error);
+        
         throw new Error("Failed to fetch distributor IDs");
     }
     return data;
@@ -67,7 +67,7 @@ export async function saveUserWithdrawSettings(settings: {
             });
 
     if (error) {
-        console.error("Error saving user settings:", error);
+        
         throw new Error("Failed to save user settings");
     }
     return data;
@@ -94,7 +94,7 @@ export async function getUserWithdrawSettings() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("Error fetching user withdraw settings:", error);
+        
         throw new Error("Failed to fetch user withdraw settings");
     }
     return data;
@@ -108,7 +108,7 @@ export async function deleteUserWithdrawSetting(id: string) {
         .eq("id", id);
 
     if (error) {
-        console.error("Error deleting user withdraw setting:", error);
+        
         throw new Error("Failed to delete user withdraw setting");
     }
     return data;
@@ -128,7 +128,7 @@ export async function getWithdrawApproveList() {
         `);
         
     if (error) {
-        console.error("Error fetching withdraw approve list:", error);
+        
         throw new Error("Failed to fetch withdraw approve list");
     }
     return data;
@@ -145,13 +145,13 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
             .single();
             
         if (requestError) {
-            console.error("Error fetching withdraw request:", requestError);
+            
             throw new Error("출금 요청 정보를 가져오는데 실패했습니다.");
         }
         
         // 이미 처리된 요청인지 확인
         if (requestData.status !== 'pending') {
-            console.warn(`Withdraw request ${id} is already ${requestData.status}`);
+            
             throw new Error(`이미 ${requestData.status === 'approved' ? '승인' : '반려'}된 요청입니다.`);
         }
         
@@ -170,7 +170,7 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
             .eq("status", "pending"); // 상태가 pending인 경우에만 업데이트
             
         if (updateError) {
-            console.error("Error approving withdraw request:", updateError);
+            
             throw new Error("출금 요청 승인 중 오류가 발생했습니다.");
         }
         
@@ -191,7 +191,7 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
                     created_at: now
                 });
         } catch (logError) {
-            console.warn("관리자 로그 기록 실패 (처리는 계속 진행됨):", logError);
+            
         }
         
         return {
@@ -200,7 +200,7 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
             data: requestData
         };
     } catch (error: any) {
-        console.error("Error in approve withdraw process:", error);
+        
         return {
             success: false,
             message: error.message || "출금 요청 승인 중 오류가 발생했습니다."
@@ -220,13 +220,13 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
             .single();
             
         if (requestError) {
-            console.error("Error fetching withdraw request:", requestError);
+            
             throw new Error("출금 요청 정보를 가져오는데 실패했습니다.");
         }
         
         // 이미 처리된 요청인지 확인
         if (requestData.status !== 'pending') {
-            console.warn(`Withdraw request ${id} is already ${requestData.status}`);
+            
             throw new Error(`이미 ${requestData.status === 'approved' ? '승인' : '반려'}된 요청입니다.`);
         }
         
@@ -235,7 +235,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
         let amount = Number(requestData.amount);
         
         if (isNaN(amount) || amount <= 0) {
-            console.error(`Invalid amount for withdraw request ${id}: ${requestData.amount}`);
+            
             throw new Error("금액 정보가 올바르지 않습니다.");
         }
         
@@ -254,7 +254,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
             .eq("status", "pending"); // 추가 안전장치: 상태가 pending인 경우에만 업데이트
             
         if (updateError) {
-            console.error("Error rejecting withdraw request:", updateError);
+            
             throw new Error("출금 요청 상태 업데이트 중 오류가 발생했습니다.");
         }
         
@@ -267,7 +267,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
             .single();
             
         if (balanceError) {
-            console.error("Error fetching user balance:", balanceError);
+            
             throw new Error("사용자 잔액 조회 중 오류가 발생했습니다.");
         }
         
@@ -287,7 +287,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
             .eq("user_id", userId);
             
         if (updateBalanceError) {
-            console.error("Error updating user balance:", updateBalanceError);
+            
             throw new Error("사용자 잔액 업데이트 중 오류가 발생했습니다.");
         }
         
@@ -306,10 +306,10 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
                 });
                 
             if (historyError) {
-                console.error("거래 내역 추가 중 오류 발생:", historyError);
+                
             }
         } catch (e) {
-            console.warn("거래 내역 추가 실패 (처리는 계속 진행됨):", e);
+            
         }
         
         // 3.4 감사 로그 추가 (balance_audit_log)
@@ -332,7 +332,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
                     created_at: now
                 });
         } catch (auditLogError) {
-            console.warn("감사 로그 추가 실패 (처리는 계속 진행됨):", auditLogError);
+            
         }
         
         return {
@@ -340,7 +340,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
             message: "출금 요청이 성공적으로 반려되었습니다."
         };
     } catch (error: any) {
-        console.error("Error in reject withdraw process:", error);
+        
         return {
             success: false,
             message: error.message || "출금 요청 반려 중 오류가 발생했습니다."

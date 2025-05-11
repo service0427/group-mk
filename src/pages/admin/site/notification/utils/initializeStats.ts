@@ -40,16 +40,16 @@ export const validateAggregateTable = async (): Promise<boolean> => {
       .limit(1);
 
     if (error) {
-      console.error('테이블 검증 오류:', error.message);
+      
       toast.error('통계 테이블 검증 실패: ' + error.message);
       return false;
     }
 
-    console.log('테이블 검증 성공:', data);
+    
     toast.success('통계 테이블이 정상적으로 존재합니다');
     return true;
   } catch (error: any) {
-    console.error('테이블 검증 예외:', error);
+    
     toast.error('통계 테이블 검증 중 예외 발생');
     return false;
   }
@@ -61,7 +61,7 @@ export const validateAggregateTable = async (): Promise<boolean> => {
 export const refreshStats = async (): Promise<boolean> => {
   try {
     toast.loading('알림 통계 집계 중...');
-    console.log('알림 통계 전체 집계 시작');
+    
 
     // 초기 집계 객체 생성
     const aggregate = createDefaultAggregate();
@@ -72,7 +72,7 @@ export const refreshStats = async (): Promise<boolean> => {
       .select('*', { count: 'exact', head: true });
 
     if (countError) {
-      console.error('전체 알림 개수 조회 중 오류 발생:', countError.message);
+      
       toast.dismiss();
       toast.error('알림 통계 집계 중 오류가 발생했습니다.');
       return false;
@@ -88,7 +88,7 @@ export const refreshStats = async (): Promise<boolean> => {
         .eq('type', type);
 
       if (error) {
-        console.error(`${type} 타입 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { type, count: 0 };
       }
 
@@ -110,7 +110,7 @@ export const refreshStats = async (): Promise<boolean> => {
         .eq('status', status);
 
       if (error) {
-        console.error(`${status} 상태 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { status, count: 0 };
       }
 
@@ -132,7 +132,7 @@ export const refreshStats = async (): Promise<boolean> => {
       .limit(10000);  // 대량 데이터 고려하여 제한
 
     if (userError) {
-      console.error('알림 사용자 ID 조회 중 오류 발생:', userError.message);
+      
     } else if (notificationUsers && notificationUsers.length > 0) {
       // 유니크한 사용자 ID 목록 생성
       const uniqueUserIds = [...new Set(notificationUsers.map(n => n.user_id))];
@@ -153,7 +153,7 @@ export const refreshStats = async (): Promise<boolean> => {
         .in('id', uniqueUserIds);
 
       if (roleError) {
-        console.error('사용자 역할 조회 중 오류 발생:', roleError.message);
+        
       } else if (users) {
         // 역할별 알림 개수 집계
         users.forEach(user => {
@@ -179,7 +179,7 @@ export const refreshStats = async (): Promise<boolean> => {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116'는 결과가 없을 때의 에러 코드
-      console.error('기존 집계 데이터 확인 중 오류 발생:', fetchError.message);
+      
       toast.dismiss();
       toast.error('알림 통계 집계 중 오류가 발생했습니다.');
       return false;
@@ -197,7 +197,7 @@ export const refreshStats = async (): Promise<boolean> => {
         .eq('id', existingAggregate.id);
 
       if (updateError) {
-        console.error('집계 데이터 업데이트 중 오류 발생:', updateError.message);
+        
         toast.dismiss();
         toast.error('알림 통계 업데이트 중 오류가 발생했습니다.');
         return false;
@@ -212,20 +212,20 @@ export const refreshStats = async (): Promise<boolean> => {
         });
 
       if (insertError) {
-        console.error('집계 데이터 생성 중 오류 발생:', insertError.message);
+        
         toast.dismiss();
         toast.error('알림 통계 생성 중 오류가 발생했습니다.');
         return false;
       }
     }
 
-    console.log('알림 통계 집계 완료', new Date().toISOString());
+    
     toast.dismiss();
     toast.success('알림 통계가 성공적으로 업데이트되었습니다.');
     return true;
 
   } catch (error: any) {
-    console.error('알림 통계 집계 중 예외 발생:', error);
+    
     toast.dismiss();
     toast.error(`알림 통계 집계 중 오류: ${error.message || '알 수 없는 오류'}`);
     return false;
@@ -246,8 +246,8 @@ if (typeof window !== 'undefined') {
   window.refreshNotificationStats = refreshStats;
 
   // 메시지 표시
-  console.log('알림 통계 초기화 유틸리티가 로드되었습니다.');
-  console.log('다음 함수를 사용할 수 있습니다:');
-  console.log('- window.validateNotificationTable(): 테이블 존재 확인');
-  console.log('- window.refreshNotificationStats(): 통계 갱신');
+  
+  
+  
+  
 }

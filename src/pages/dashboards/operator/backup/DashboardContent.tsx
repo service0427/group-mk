@@ -77,7 +77,7 @@ export const DashboardContent: React.FC = () => {
   // 기본 보너스 지급률 적용 처리 함수
   const handleApplyDefaultBonus = () => {
     // API 호출 또는 상태 업데이트 로직 구현
-    console.log(`기본 보너스 ${defaultBonusRate}% 적용`);
+    
   };
 
   // 개별 보너스 적용 처리 함수
@@ -87,7 +87,7 @@ export const DashboardContent: React.FC = () => {
       return;
     }
     // API 호출 또는 상태 업데이트 로직 구현
-    console.log(`${individualAccount}에 ${individualBonusRate}% 보너스 적용`);
+    
     setIndividualAccount(''); // 입력 필드 초기화
   };
 

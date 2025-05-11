@@ -57,7 +57,7 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
       const data = await getRecentWithdrawRequests(userId);
       setRecentRequests(data);
     } catch (err) {
-      console.error('최근 출금 내역 조회 오류:', err);
+      
       setRecentRequests([]);
     } finally {
       setIsLoading(false);

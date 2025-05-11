@@ -148,7 +148,7 @@ export const useSlotEditing = (
         });
       });
     } catch (err) {
-      console.error('슬롯 수정 실패:', err);
+      
     } finally {
       // 편집 상태 초기화 (성공/실패 상관없이)
       setEditingCell({ id: '', field: '' });
@@ -239,7 +239,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
   // 슬롯 데이터 가져오기
   const fetchSlots = useCallback(async () => {
     if (!serviceType || !userId) {
-      console.error('서비스 타입 또는 사용자 ID가 없습니다.');
+      
       return;
     }
 
@@ -349,7 +349,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
         setTotalCount(count || 0);
       }
     } catch (err) {
-      console.error('슬롯 데이터 가져오기 실패:', err);
+      
       setError('슬롯 데이터를 불러오는 중 오류가 발생했습니다.');
       
       // 개발 모드에서만 임시 데이터 사용
@@ -442,7 +442,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
       setFilteredSlots(updatedFilteredSlots);
 
     } catch (err) {
-      console.error('슬롯 삭제 실패:', err);
+      
       alert('슬롯 삭제 중 오류가 발생했습니다.');
     }
   };

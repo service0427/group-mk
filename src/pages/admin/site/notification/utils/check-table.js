@@ -15,10 +15,10 @@ export const checkNotificationAggregatesTable = async () => {
 
     if (error) {
       if (error.message && error.message.includes('does not exist')) {
-        console.error('❌ notification_aggregates 테이블이 존재하지 않습니다.');
+        
         return { exists: false, error: error.message };
       } else {
-        console.error('❌ 테이블 확인 중 오류 발생:', error.message);
+        
         return { exists: false, error: error.message };
       }
     }
@@ -31,7 +31,7 @@ export const checkNotificationAggregatesTable = async () => {
     };
 
   } catch (error) {
-    console.error('테이블 확인 중 예외 발생:', error);
+    
     return { exists: false, error: error.message || '알 수 없는 오류' };
   }
 };
@@ -50,14 +50,14 @@ export const checkAndInitializeTable = async () => {
     }
 
     // 2. 테이블이 없는 경우: 메시지 출력
-    console.error('테이블이 존재하지 않습니다. SQL 스크립트를 실행해야 합니다.');
+    
     return {
       success: false,
       message: 'notification_aggregates 테이블이 존재하지 않습니다. SQL 스크립트 실행이 필요합니다.'
     };
 
   } catch (error) {
-    console.error('테이블 확인 및 초기화 중 오류 발생:', error);
+    
     return { success: false, error: error.message || '알 수 없는 오류' };
   }
 };

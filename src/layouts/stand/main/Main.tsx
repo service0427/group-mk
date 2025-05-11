@@ -117,14 +117,10 @@ const ChatWithRoleCheck = () => {
   // 관리자 또는 일반 사용자만 채팅 접근 가능
   const allowedRoles = ['admin', 'advertiser', 'user', 'distributor', 'operator'];
   
-  // 디버깅 메시지 추가
-  console.log('Chat role check:', { 
-    userRole: currentUser.role,
-    allowed: allowedRoles.includes(currentUser.role || 'unknown') 
-  });
+  // 사용자 역할 확인
 
   if (!currentUser.role || !allowedRoles.includes(currentUser.role)) {
-    console.log('Chat not shown: User role not allowed');
+    
     return null;
   }
   

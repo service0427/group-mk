@@ -17,7 +17,7 @@ const getAuth = (): AuthModel | undefined => {
       return undefined;
     }
   } catch (error) {
-    console.error('AUTH LOCAL STORAGE PARSE ERROR', error);
+    
   }
 };
 
@@ -33,7 +33,7 @@ const removeAuth = () => {
   try {
     localStorage.removeItem(AUTH_LOCAL_STORAGE_KEY);
   } catch (error) {
-    console.error('AUTH LOCAL STORAGE REMOVE ERROR', error);
+    
   }
 };
 

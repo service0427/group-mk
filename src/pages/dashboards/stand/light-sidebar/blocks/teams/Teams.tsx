@@ -171,7 +171,7 @@ const Teams = () => {
         description: `An error occurred while fetching data. Please try again later`,
         action: {
           label: 'Ok',
-          onClick: () => console.log('Ok')
+          onClick: () => { /* 클릭 핸들러 */ }
         }
       });
 
@@ -190,7 +190,7 @@ const Teams = () => {
         description: `Selected row IDs: ${selectedRowIds}`,
         action: {
           label: 'Undo',
-          onClick: () => console.log('Undo')
+          onClick: () => { /* 실행 취소 처리 */ }
         }
       });
     }

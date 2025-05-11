@@ -71,7 +71,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 <span className="label-text text-sm font-medium text-foreground">캠페인</span>
               </label>
               <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
+                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
                 value={selectedCampaignId.toString()}
                 onChange={(e) => onCampaignChange(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
               >
@@ -123,7 +123,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 <span className="label-text text-sm font-medium text-foreground">상태</span>
               </label>
               <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary bg-card"
+                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
                 value={statusFilter}
                 onChange={(e) => onStatusChange(e.target.value)}
               >

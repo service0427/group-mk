@@ -233,7 +233,7 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
       
       onClose();
     } catch (err) {
-      console.error('캠페인 생성 중 오류:', err);
+      
       setError(err instanceof Error ? err.message : '캠페인 생성에 실패했습니다.');
     } finally {
       setLoading(false);

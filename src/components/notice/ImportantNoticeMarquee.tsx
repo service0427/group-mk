@@ -34,7 +34,7 @@ const ImportantNoticeMarquee: React.FC = () => {
         if (error) throw error;
         setNotices(data || []);
       } catch (err) {
-        console.error('중요 공지사항을 가져오는 중 오류가 발생했습니다:', err);
+        
       } finally {
         setLoading(false);
       }

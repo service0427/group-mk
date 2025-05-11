@@ -124,7 +124,7 @@ export const DashboardContent: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('캐시 잔액 조회 오류:', error);
+        
       }
       
       // 2. 진행 중인 캠페인 수 조회 - slots 테이블 사용
@@ -158,7 +158,7 @@ export const DashboardContent: React.FC = () => {
           campaignsTrend = ((activeCampaignsCount - prevCount) / prevCount) * 100;
         }
       } catch (error) {
-        console.error('활성 캠페인 수 조회 오류:', error);
+        
       }
       
       // 3. 총 구매 금액 조회 - user_cash_history 테이블의 'purchase' 트랜잭션 합계
@@ -207,7 +207,7 @@ export const DashboardContent: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('총 구매 금액 조회 오류:', error);
+        
       }
       
       // 4. 보너스 캐시 잔액 조회 - user_balances 테이블의 free_balance
@@ -249,7 +249,7 @@ export const DashboardContent: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('보너스 캐시 조회 오류:', error);
+        
       }
       
       // 상태 업데이트
@@ -330,10 +330,10 @@ export const DashboardContent: React.FC = () => {
           setActiveCampaigns(formattedCampaigns);
         }
       } catch (error) {
-        console.error('활성 캠페인 조회 오류:', error);
+        
       }
     } catch (error) {
-      console.error('통계 데이터 로드 오류:', error);
+      
       toast.error('통계 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -395,7 +395,7 @@ export const DashboardContent: React.FC = () => {
         .eq('status', 'active');
         
       if (error) {
-        console.error('활성 캠페인 로드 오류:', error);
+        
         // 오류 발생 시 테스트 데이터 사용
         const testData = [
           { id: 'camp-1', campaign_id: 'C001', campaign_name: '여름 프로모션', service_type: '소셜미디어', unit_price: 50000, min_quantity: 2 },
@@ -418,7 +418,7 @@ export const DashboardContent: React.FC = () => {
         setAvailableCampaigns(testData);
       }
     } catch (error) {
-      console.error('캠페인 로드 중 오류 발생:', error);
+      
       // 예외 발생 시 테스트 데이터 사용
       const testData = [
         { id: 'camp-1', campaign_id: 'C001', campaign_name: '여름 프로모션', service_type: '소셜미디어', unit_price: 50000, min_quantity: 2 },
@@ -513,7 +513,7 @@ export const DashboardContent: React.FC = () => {
       loadStats();
       
     } catch (error) {
-      console.error('캠페인 구매 중 오류 발생:', error);
+      
       toast.error('캠페인 구매 중 오류가 발생했습니다.');
     }
   };
@@ -566,7 +566,7 @@ export const DashboardContent: React.FC = () => {
       setChargeAmount('');
       
     } catch (error) {
-      console.error('캐시 충전 중 오류 발생:', error);
+      
       toast.error('캐시 충전 요청 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -632,7 +632,7 @@ export const DashboardContent: React.FC = () => {
         .limit(10);
       
       if (error) {
-        console.error('거래 내역 로드 오류:', error);
+        
         setTransactionHistory([]);
         return;
       }
@@ -678,7 +678,7 @@ export const DashboardContent: React.FC = () => {
         setTransactionHistory([]);
       }
     } catch (error) {
-      console.error('거래 내역 로드 중 오류:', error);
+      
       setTransactionHistory([]);
     }
   };

@@ -34,7 +34,7 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
       setReason(''); // 초기화
       onClose();
     } catch (error) {
-      console.error('거부 처리 중 오류 발생:', error);
+      
     } finally {
       setProcessing(false);
     }

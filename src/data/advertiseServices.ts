@@ -213,8 +213,8 @@ export const getServiceData = (
     }
     return serviceData[platform][type];
   } catch (error) {
-    console.log(error);
-    console.error(`Service data not found for ${platform}/${subservice}/${type}`);
+    
+    
     return null;
   }
 };
@@ -249,7 +249,7 @@ export const getServiceTypeFromPath = (
   }
 
   // 일치하는 서비스 타입이 없는 경우
-  console.error('No matching service type for:', { platform, type, subservice });
+  
   return '';
 };
 
@@ -272,8 +272,8 @@ export const getCampaignData = (
       campaigns: []
     };
   } catch (error) {
-    console.log(error);
-    console.error(`Campaign data not found for ${platform}/${subservice}/${type}`);
+    
+    
     return null;
   }
 };
@@ -288,7 +288,7 @@ export const fetchRealCampaignData = async (
     // 서비스 정보 가져오기
     const serviceInfo = getServiceData(platform, type, subservice);
     if (!serviceInfo) {
-      console.error('Service info not found');
+      
       return null;
     }
 
@@ -296,7 +296,7 @@ export const fetchRealCampaignData = async (
     const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
 
     if (!serviceTypeCode) {
-      console.error('Service type code not found for the given path');
+      
       return null;
     }
 
@@ -308,13 +308,13 @@ export const fetchRealCampaignData = async (
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Error fetching campaign data:', error);
+      
       return null;
     }
 
     // 데이터가 없으면 빈 배열 반환
     if (!data || data.length === 0) {
-      console.warn('No data found in Supabase');
+      
       return {
         serviceData: serviceInfo,
         campaigns: []
@@ -341,7 +341,7 @@ export const fetchRealCampaignData = async (
       campaigns: formattedCampaigns
     };
   } catch (error) {
-    console.error('Error in fetchRealCampaignData:', error);
+    
     return null;
   }
 };

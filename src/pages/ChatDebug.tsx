@@ -9,15 +9,7 @@ import { useAuthContext } from '@/auth';
  */
 const ChatDebug: React.FC = () => {
   const { currentUser, isAuthenticated } = useAuthContext();
-  
-  useEffect(() => {
-    console.log('채팅 디버그 페이지 - 사용자 정보:', { 
-      isAuthenticated, 
-      user: currentUser,
-      role: currentUser?.role
-    });
-  }, [currentUser, isAuthenticated]);
-  
+    
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">채팅 디버그 페이지</h1>

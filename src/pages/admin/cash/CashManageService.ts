@@ -121,10 +121,10 @@ export class CashManageService {
             if (freeHistoryError) throw new Error(`무료 캐시 내역 추가 실패: ${freeHistoryError.message}`);
           }
         } else {
-          console.log(`무료 캐시 적용 조건 불충족: 충전 금액 ${requestData.amount}원, 최소 충전 금액 ${setting.min_request_amount}원`);
+          
         }
       } else {
-        console.log('무료 캐시 비율이 0이므로 무료 캐시를 지급하지 않습니다.');
+        
       }
 
       // 4.5. 사용자 잔액 테이블 업데이트
@@ -164,7 +164,7 @@ export class CashManageService {
         message: `${requestData.amount.toLocaleString()}원 충전이 승인되었습니다. ${freeAmount > 0 ? `무료 캐시 ${freeAmount.toLocaleString()}원이 추가 지급되었습니다.` : ''}`
       };
     } catch (error: any) {
-      console.error('캐시 충전 승인 오류:', error);
+      
       return {
         success: false,
         message: error.message || '캐시 충전 승인 중 오류가 발생했습니다.'
@@ -215,7 +215,7 @@ export class CashManageService {
         message: `충전 요청이 거부되었습니다. 사유: ${rejectionReason || '사유 없음'}`
       };
     } catch (error: any) {
-      console.error('캐시 충전 거부 오류:', error);
+      
       return {
         success: false,
         message: error.message || '캐시 충전 거부 중 오류가 발생했습니다.'
@@ -439,7 +439,7 @@ export class CashManageService {
         totalItems: count || 0
       };
     } catch (error: any) {
-      console.error('캐시 충전 내역 조회 오류:', error);
+      
       return {
         success: false,
         message: error.message || '캐시 충전 내역 조회 중 오류가 발생했습니다.'

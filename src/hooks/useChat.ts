@@ -128,13 +128,13 @@ export const useChat = () => {
               .single();
             
             if (error) {
-              console.error(`채팅방 ${room.id}의 마지막 메시지 조회 오류:`, error.message);
+              
               return { roomId: room.id, message: null };
             }
             
             return { roomId: room.id, message: data };
           } catch (err) {
-            console.error(`채팅방 ${room.id}의 마지막 메시지 조회 중 오류 발생`, err);
+            
             return { roomId: room.id, message: null };
           }
         });
@@ -166,7 +166,7 @@ export const useChat = () => {
       
       setRooms(formattedRooms);
     } catch (err: any) {
-      console.error('채팅방 목록을 가져오는 중 오류 발생:', err.message);
+      
       setError(new Error('채팅방 목록을 불러오는데 실패했습니다.'));
       
       // 오류 시 빈 배열로 초기화
@@ -225,7 +225,7 @@ export const useChat = () => {
         )
       );
     } catch (err: any) {
-      console.error('메시지를 가져오는 중 오류 발생:', err.message);
+      
       setError(new Error('메시지를 불러오는데 실패했습니다.'));
       
       // 오류 시 빈 배열로 초기화
@@ -253,7 +253,7 @@ export const useChat = () => {
         .eq('room_id', roomId)
         .eq('user_id', currentUser.id);
     } catch (err: any) {
-      console.error('읽음 상태 업데이트 중 오류 발생:', err.message);
+      
     }
   };
 
@@ -340,7 +340,7 @@ export const useChat = () => {
       
       return formattedMessage;
     } catch (err: any) {
-      console.error('메시지 전송 중 오류 발생:', err.message);
+      
       return null;
     }
   };
@@ -415,7 +415,7 @@ export const useChat = () => {
       
       return newRoomId;
     } catch (err: any) {
-      console.error('채팅방 생성 중 오류 발생:', err.message);
+      
       setError(new Error(err.message));
       return null;
     }
@@ -476,7 +476,7 @@ export const useChat = () => {
       
       return true;
     } catch (err: any) {
-      console.error('채팅방 나가기 중 오류 발생:', err.message);
+      
       return false;
     }
   };
@@ -510,7 +510,7 @@ export const useChat = () => {
         attachments: message.attachments || []
       })).reverse();
     } catch (err: any) {
-      console.error('메시지 검색 중 오류 발생:', err.message);
+      
       return [];
     }
   };
@@ -529,7 +529,7 @@ export const useChat = () => {
       try {
         fetchChatRooms();
       } catch (err) {
-        console.error('Chat: Error fetching initial chat data', err);
+        
       }
     }
   }, [currentUser?.id, currentUser?.role, fetchChatRooms, isLoggingOut]);

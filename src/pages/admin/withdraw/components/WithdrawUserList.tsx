@@ -60,7 +60,7 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
             setUserSettings(transformedData as UserWithdrawSetting[]);
             setFilteredSettings(transformedData as UserWithdrawSetting[]); // 초기 필터링된 결과는 전체 데이터
         } catch (error) {
-            console.error("Error fetching user withdraw settings:", error);
+            
             showNotification("사용자별 출금 설정 목록을 불러오는데 실패했습니다.", "error");
         } finally {
             setLoading(false);
@@ -105,7 +105,7 @@ const WithdrawUserList: React.FC<WithdrawUserListProps> = ({ onRefresh, showNoti
             fetchUserSettings(); // 목록 새로고침
             if (onRefresh) onRefresh();
         } catch (error) {
-            console.error("Error deleting user withdraw setting:", error);
+            
             showNotification("설정 삭제에 실패했습니다.", "error");
         } finally {
             setDeleting(prev => ({ ...prev, [id]: false }));

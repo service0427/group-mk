@@ -48,7 +48,7 @@ export const DashboardContent: React.FC = () => {
         .select('id', { count: 'exact' });
       
       if (countError) {
-        console.error('사용자 정보 로드 중 오류:', countError.message);
+        
         return;
       }
 
@@ -62,7 +62,7 @@ export const DashboardContent: React.FC = () => {
         .gte('created_at', oneMonthAgo.toISOString());
       
       if (newUsersError) {
-        console.error('신규 사용자 정보 로드 중 오류:', newUsersError.message);
+        
         return;
       }
 
@@ -78,7 +78,7 @@ export const DashboardContent: React.FC = () => {
         }
       }));
     } catch (error: any) {
-      console.error('사용자 통계 로드 중 오류:', error.message);
+      
     }
   };
 
@@ -112,7 +112,7 @@ export const DashboardContent: React.FC = () => {
         .limit(10);
       
       if (error) {
-        console.error('시스템 로그 로드 중 오류:', error.message);
+        
         setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
         return;
       }
@@ -137,7 +137,7 @@ export const DashboardContent: React.FC = () => {
         setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
       }
     } catch (error: any) {
-      console.error('시스템 로그 로드 중 예상치 못한 오류:', error.message);
+      
       setSystemLogs([]); // 오류 발생 시 빈 배열로 설정
     }
   };

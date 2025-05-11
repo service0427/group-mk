@@ -66,7 +66,7 @@ const Signup = () => {
           state: { registeredEmail: values.email }
         });
       } catch (error) {
-        console.error(error);
+        
         setStatus('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');
         setSubmitting(false);
         setLoading(false);

@@ -22,14 +22,14 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
   const fetchWithdrawSetting = async () => {
     setIsLoading(true);
     setError(null);
-    console.log('fetchWithdrawSetting 호출됨 - userId:', userId);
+    
     
     try {
       const settings = await getWithdrawSettings(userId);
-      console.log('받아온 출금 설정:', settings);
+      
       setWithdrawSetting(settings);
     } catch (err) {
-      console.error("출금 설정 로딩 오류:", err);
+      
       setError('출금 설정을 불러오는데 실패했습니다.');
       
       // 기본 설정값 사용
@@ -40,7 +40,7 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
         max_fee_amount: 5000,
         min_request_percentage: 3
       };
-      console.log('기본값으로 설정:', defaultSettings);
+      
       setWithdrawSetting(defaultSettings);
     } finally {
       setIsLoading(false);
@@ -54,19 +54,19 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
   
   // 수수료 금액 계산
   const calculateFeeAmount = (amountStr: string): number => {
-    console.log('calculateFeeAmount 호출됨 - amountStr:', amountStr);
-    console.log('withdrawSetting 값:', withdrawSetting);
+    
+    
     
     if (!withdrawSetting || !amountStr) {
-      console.log('withdrawSetting 또는 amountStr이 유효하지 않음');
+      
       return 0;
     }
     
     const amount = parseInt(amountStr);
-    console.log('parseInt 결과:', amount);
+    
     
     if (isNaN(amount) || amount <= 0) {
-      console.log('금액이 유효하지 않음');
+      
       return 0;
     }
     
@@ -76,13 +76,13 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
       ? withdrawSetting.min_request_percentage 
       : (withdrawSetting.fee_percentage || 0);
       
-    console.log('사용할 수수료 비율:', feePercentage);
+    
     let fee = Math.floor((amount * feePercentage) / 100);
-    console.log('계산된 퍼센트 수수료:', fee);
+    
     
     // 최소/최대 수수료 제한 없음
     
-    console.log('최종 계산된 수수료:', fee);
+    
     return fee;
   };
 

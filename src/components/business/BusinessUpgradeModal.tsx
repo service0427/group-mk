@@ -82,23 +82,23 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
   // 버킷이 존재하는지 확인하는 함수
   const checkBucketExists = async (bucketName: string): Promise<boolean> => {
     try {
-      console.log(`${bucketName} 버킷 존재 여부 확인 중...`);
+      
       
       // 버킷 목록 가져오기
       const { data: buckets, error } = await supabase.storage.listBuckets();
       
       if (error) {
-        console.error('버킷 목록 가져오기 실패:', error);
+        
         return false;
       }
       
       // 버킷 존재 여부 확인
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName) || false;
-      console.log(`${bucketName} 버킷 ${bucketExists ? '존재함' : '존재하지 않음'}`);
+      
       
       return bucketExists;
     } catch (err) {
-      console.error('버킷 확인 중 오류 발생:', err);
+      
       return false;
     }
   };
@@ -111,7 +111,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     // 먼저 버킷 존재 여부 확인
     const bucketExists = await checkBucketExists('business-images');
     if (!bucketExists) {
-      console.warn('business-images 버킷이 존재하지 않습니다. 업로드 시 문제가 발생할 수 있습니다.');
+      
     }
     
     // 유효성 검사
@@ -143,10 +143,10 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
           const fileExt = businessImage.name.split('.').pop();
           const filePath = `${userId}/${fileName}.${fileExt}`;
           
-          console.log('Supabase Storage에 이미지 업로드 시도 중...');
-          console.log('버킷: business-images, 경로:', filePath);
           
-          console.log('파일 크기:', (businessImage.size / 1024).toFixed(2), 'KB');
+          
+          
+          
           
           // 이미지 업로드 시도
           let uploadResult;
@@ -158,18 +158,18 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                 upsert: true
               });
               
-            console.log('업로드 응답:', uploadResult);
+            
           } catch (err) {
-            console.error('Supabase Storage 업로드 실패 (예외):', err);
+            
             uploadResult = { error: err, data: null };
           }
           
           // 업로드 결과 확인
           if (uploadResult.error) {
-            console.error('Supabase Storage 업로드 실패:', uploadResult.error);
+            
             
             // 실패 시 Base64로 대체 (폴백)
-            console.log('Base64 인코딩으로 대체합니다.');
+            
             const reader = new FileReader();
             
             // FileReader를 Promise로 감싸기
@@ -184,7 +184,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
             // 이미지를 Base64로 변환
             const base64Image = await readFileAsDataURL(businessImage);
             business_image_url = base64Image;
-            console.log('Base64 이미지 데이터 생성 완료');
+            
           } else {
             // 업로드 성공 시 URL 생성
             try {
@@ -195,17 +195,17 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
               
               if (publicUrlData && publicUrlData.publicUrl) {
                 business_image_url = publicUrlData.publicUrl;
-                console.log('Supabase Storage 영구 Public URL 생성 성공:', business_image_url);
+                
                 
                 // URL 구조 확인 및 로깅
-                console.log('URL 구성 분석:');
-                console.log('- 버킷:', 'business-images');
-                console.log('- 파일 경로:', filePath);
-                console.log('- 도메인:', new URL(business_image_url).hostname);
-                console.log('- 전체 경로:', new URL(business_image_url).pathname);
+                
+                
+                
+                
+                
               } else {
                 // 대체 방법: 만료 기간이 긴 서명된 URL 시도
-                console.log('Public URL을 가져올 수 없어 Signed URL을 시도합니다...');
+                
                 const expirySeconds = 365 * 24 * 60 * 60; // 1년
                 
                 const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -216,13 +216,13 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                 
                 if (signedUrlData && signedUrlData.signedUrl) {
                   business_image_url = signedUrlData.signedUrl;
-                  console.log('Supabase Storage Signed URL 생성 성공 (1년 유효):', business_image_url);
+                  
                 } else {
                   throw new Error('URL을 생성할 수 없습니다.');
                 }
               }
             } catch (urlError) {
-              console.error('URL 생성 오류:', urlError);
+              
               
               // 마지막 대안: 직접 URL 형식 구성 시도 (하드코딩 방식)
               try {
@@ -230,12 +230,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                 const directPublicUrl = `/storage/v1/object/public/business-images/${filePath}`;
                 
                 business_image_url = directPublicUrl;
-                console.log('직접 URL 구성 시도:', directPublicUrl);
+                
               } catch (directUrlError) {
-                console.error('직접 URL 구성 실패:', directUrlError);
+                
                 
                 // 모든 시도 실패 시 Base64로 대체
-                console.log('URL 생성 실패로 Base64로 대체합니다.');
+                
                 const reader = new FileReader();
                 
                 const readFileAsDataURL = (file: File): Promise<string> => {
@@ -253,7 +253,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
             }
           }
         } catch (error) {
-          console.error('이미지 처리 오류:', error);
+          
           // 이미지 처리 실패해도 계속 진행 (선택사항이므로)
         }
       }
@@ -275,13 +275,13 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
           // Base64 이미지인 경우
           businessData.business_image_url = business_image_url;
           businessData.business_image_storage_type = 'base64';
-          console.log('Base64 이미지 URL이 business 객체에 저장됨');
+          
         } else {
           // Supabase Storage URL인 경우
           businessData.business_image_url = business_image_url;
           businessData.business_image_storage_type = 'supabase_storage';
           businessData.business_image_bucket = 'business-images';
-          console.log('Supabase Storage 이미지 URL이 business 객체에 저장됨:', business_image_url);
+          
         }
       }
       
@@ -298,7 +298,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
       if (!isEditMode) {
         try {
           // 간단하게: 테이블 구조 분석 없이 기본 필드만 사용
-          console.log('levelup_apply 테이블에 최소 필드만 사용합니다');
+          
           
           // 기본 데이터 - 필수 필드만 포함
           const applyData: any = {
@@ -307,33 +307,33 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
           };
           
           // 단순화: 이미지와 이메일 관련 필드는 제외하고 기본 필드만 사용
-          console.log('levelup_apply에 추가할 데이터:', applyData);
+          
           
           const { error: applyError } = await supabase
             .from('levelup_apply')
             .insert([applyData]);
           
           if (applyError) {
-            console.error('등업 신청 기록 생성 실패:', applyError);
-            console.warn('등업 신청 테이블 오류가 발생했지만, 사업자 정보는 저장되었습니다.');
+            
+            
             // 오류는 로그만 남기고 진행 (테스트용)
           } else {
-            console.log('등업 신청 레코드 생성 성공!');
+            
           }
         } catch (tableError: any) {
-          console.error('levelup_apply 테이블 오류:', tableError);
-          console.warn('등업 신청 테이블 오류가 발생했지만, 사업자 정보는 저장되었습니다.');
+          
+          
           // 사용자에게 알림은 하지 않고 진행 (테스트용)
         }
       } else {
-        console.log('수정 모드: 등업 신청 레코드를 생성하지 않고 사업자 정보만 업데이트합니다.');
+        
       }
       
       // 테이블 저장 오류여도 성공으로 처리 (사업자 정보는 저장되었으므로)
 
       // 업데이트된 사용자 정보 가져오기
       try {
-        console.log('업데이트된 사용자 정보 가져오기...');
+        
         const { data: updatedUserData, error: userFetchError } = await supabase
           .from('users')
           .select('*')
@@ -341,18 +341,18 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
           .single();
           
         if (userFetchError) {
-          console.error('사용자 정보 가져오기 실패:', userFetchError);
+          
         } else if (updatedUserData) {
-          console.log('사용자 정보 새로고침 성공');
+          
           // 새 정보로 현재 사용자 상태 업데이트
           // setCurrentUser 함수를 사용하여 AuthContext의 사용자 정보 업데이트
           if (setCurrentUser) {
             setCurrentUser(updatedUserData);
-            console.log('상태 업데이트 완료');
+            
           }
         }
       } catch (refreshError) {
-        console.error('사용자 정보 새로고침 오류:', refreshError);
+        
       }
 
       setSuccess(true);
@@ -364,7 +364,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         onClose();
       }, 3000);
     } catch (err: any) {
-      console.error('등업 신청 에러:', err);
+      
       setError(err.message || '등업 신청 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -483,7 +483,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                                 alt="사업자등록증" 
                                 className="w-full h-auto rounded-md object-contain max-h-[200px]" 
                                 onError={(e) => {
-                                  console.error('이미지 로드 실패');
+                                  
                                   (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+"
                                 }}
                               />

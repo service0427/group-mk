@@ -112,7 +112,7 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
         handleSelectRoom(newRoomId);
       }
     } catch (error) {
-      console.error('채팅방 생성 오류:', error);
+      
     }
   }, [currentUser?.role, createChatRoom, handleSelectRoom]);
   
@@ -125,14 +125,14 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
   // 메시지 전송
   const handleSendMessage = async (content: string) => {
     if (!currentRoomId) {
-      console.log('선택된 채팅방이 없습니다. 첫 메시지 전송 시 새 채팅방 생성을 시도합니다.');
+      
       
       // 채팅방이 없는 경우 새 채팅방 생성 (일반 사용자만)
       if (currentUser?.role !== 'admin') {
         // 메시지 전송 시점에 채팅방 생성
         const newRoomId = await createChatRoom([], '운영자와의 대화');
         if (newRoomId) {
-          console.log('새로운 채팅방 생성됨:', newRoomId);
+          
           // 새 채팅방 생성 후 메시지 전송
           await handleSelectRoom(newRoomId);
           // 약간의 지연 후 메시지 전송 (채팅방 선택이 완료되도록)
@@ -149,13 +149,13 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
     
     const currentRoom = rooms.find(room => room.id === currentRoomId);
     if (!currentRoom || currentRoom.status !== 'active') {
-      console.log('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다. 새 채팅방을 생성합니다.');
+      
       
       // 비활성 방인 경우 새 채팅방 생성 (일반 사용자만)
       if (currentUser?.role !== 'admin') {
         const newRoomId = await createChatRoom([], '운영자와의 대화');
         if (newRoomId) {
-          console.log('새로운 채팅방 생성됨:', newRoomId);
+          
           // 새 채팅방 생성 후 메시지 전송
           await handleSelectRoom(newRoomId);
           // 약간의 지연 후 메시지 전송 (채팅방 선택이 완료되도록)
@@ -170,7 +170,7 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
     // 모든 검증을 통과한 경우에만 메시지 전송
     const result = await sendMessage(currentRoomId, content);
     if (!result) {
-      console.error('메시지 전송 실패: 채팅방 상태 확인 필요');
+      
       // 메시지 전송 실패 시 채팅방 목록 갱신
       await fetchChatRooms();
     }
@@ -215,7 +215,7 @@ const Chat: React.FC<ChatProps> = ({ open: externalOpen, onClose: externalOnClos
           // 활성화된 방이 없어도 자동으로 채팅방을 생성하지 않음
         }
       } catch (error) {
-        console.error('채팅 초기화 중 오류 발생:', error);
+        
       }
     };
     

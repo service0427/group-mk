@@ -140,7 +140,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
             setNewUserData(initialUserData);
             
         } catch (error: any) {
-            console.error("사용자 추가 오류:", error.message);
+            
             alert(`사용자 추가 중 오류가 발생했습니다: ${error.message}`);
         } finally {
             setLoading(false);

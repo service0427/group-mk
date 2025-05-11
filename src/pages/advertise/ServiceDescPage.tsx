@@ -47,7 +47,7 @@ const ServiceDescPage: React.FC = () => {
       setLoading(false);
     } catch (err) {
       // TODO: 오류시 경우 파라미터를 직접하여 변경할 것
-      console.error('서비스 정보 로드 오류:', err);
+
       setError('서비스 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }

@@ -33,7 +33,7 @@ const PathnameProvider = ({ children }: { children: ReactNode }) => {
           setData('menu_accordions', menuState);
         }
       } catch (e) {
-        console.error('메뉴 상태 유지 오류:', e);
+        
       }
     }
   }, [pathname]);

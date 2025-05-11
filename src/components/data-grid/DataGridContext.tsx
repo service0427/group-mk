@@ -97,7 +97,7 @@ export const DataGridProvider = <TData extends object>(props: TDataGridProps<TDa
       setData(data || []);
       setTotalRows(totalCount || 0);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      
     } finally {
       setLoading(false);
     }

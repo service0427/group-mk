@@ -5,7 +5,7 @@ import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, getRoleBadgeColor, getRoleDisplayName } from '@/config/roles.config';
 
-const MakeUserRow = (user:any) => {
+const MakeUserRow = (user: any) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
     const [insertModalOpen, setInsertModalOpen] = useState<boolean>(false);
 
@@ -13,11 +13,8 @@ const MakeUserRow = (user:any) => {
     const openUserModalOpen = () => setUserModalOpen(true);
     // 회원 정보 모달 닫기
     const closeUserModalOpen = () => setUserModalOpen(false);
-    useEffect(() => {
-        console.log(user.user.user);
-    },[])
 
-    const renderRoleBadge = (role: string): {name: string, class: string} => {
+    const renderRoleBadge = (role: string): { name: string, class: string } => {
         return {
             name: getRoleDisplayName(role),
             class: `text-${getRoleBadgeColor(role)}`
@@ -28,7 +25,7 @@ const MakeUserRow = (user:any) => {
         let badgeClass = '';
         let statusText = '';
 
-        switch(status) {
+        switch (status) {
             case 'active':
                 badgeClass = 'bg-success/10 text-success';
                 statusText = '활성';
@@ -51,62 +48,62 @@ const MakeUserRow = (user:any) => {
         );
     }
 
-    return(
-      <>
-        {/* 데스크톱 버전에서만 표시 (md 이상 화면) */}
-        <tr className="border-b border-border hover:bg-muted/40 hidden md:table-row">
-            <td className="py-4 px-5">
-                <div className="flex items-center">
-                    <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
-                </div>
-            </td>
-            <td className="py-4 px-5">
-                <span className="text-gray-800 font-medium">{user.user.email}</span>
-            </td>
-            <td className="py-4 px-5">
-                <div className="flex items-center">
-                    <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                        {user.user.full_name ? user.user.full_name.charAt(0) : '?'}
+    return (
+        <>
+            {/* 데스크톱 버전에서만 표시 (md 이상 화면) */}
+            <tr className="border-b border-border hover:bg-muted/40 hidden md:table-row">
+                <td className="py-4 px-5">
+                    <div className="flex items-center">
+                        <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
                     </div>
-                    <span className="text-gray-800">{user.user.full_name}</span>
-                </div>
-            </td>
-            <td className="py-4 px-5">
-                <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.user.role)?.class}`}>{renderRoleBadge(user.user.role)?.name}</span>
-                
-            </td>
-            <td className="py-4 px-5">
-                {renderStatusBadge(user.user.status)}
-            </td>
-            <td className="py-4 px-5">
-                <span className="text-gray-800 font-medium">
-                    ₩{user.user.paid_balance ? user.user.paid_balance.toLocaleString() : '0'}
-                    {user.user.free_balance > 0 ? ` (+${user.user.free_balance.toLocaleString()})` : ''}
-                </span>
-            </td>
-            <td className="py-4 px-5 text-end">
-                <div className="flex justify-end gap-2">
-                    <button className="btn btn-icon btn-sm btn-light" onClick={openUserModalOpen} data-user-id={user.user.id}>
-                        <KeenIcon icon="setting-2" className='text-gray-900'/>
-                    </button>
-                    <button className="btn btn-icon btn-sm btn-light">
-                        <KeenIcon icon="trash"/>
-                    </button>
-                </div>
-            </td>
-        </tr>
+                </td>
+                <td className="py-4 px-5">
+                    <span className="text-gray-800 font-medium">{user.user.email}</span>
+                </td>
+                <td className="py-4 px-5">
+                    <div className="flex items-center">
+                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
+                            {user.user.full_name ? user.user.full_name.charAt(0) : '?'}
+                        </div>
+                        <span className="text-gray-800">{user.user.full_name}</span>
+                    </div>
+                </td>
+                <td className="py-4 px-5">
+                    <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.user.role)?.class}`}>{renderRoleBadge(user.user.role)?.name}</span>
 
-        <AdminUserModal
-          open = {userModalOpen}
-          user_id= {user.user.id}
-          onClose={closeUserModalOpen}
-        />
-      </>
+                </td>
+                <td className="py-4 px-5">
+                    {renderStatusBadge(user.user.status)}
+                </td>
+                <td className="py-4 px-5">
+                    <span className="text-gray-800 font-medium">
+                        ₩{user.user.paid_balance ? user.user.paid_balance.toLocaleString() : '0'}
+                        {user.user.free_balance > 0 ? ` (+${user.user.free_balance.toLocaleString()})` : ''}
+                    </span>
+                </td>
+                <td className="py-4 px-5 text-end">
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-icon btn-sm btn-light" onClick={openUserModalOpen} data-user-id={user.user.id}>
+                            <KeenIcon icon="setting-2" className='text-gray-900' />
+                        </button>
+                        <button className="btn btn-icon btn-sm btn-light">
+                            <KeenIcon icon="trash" />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+
+            <AdminUserModal
+                open={userModalOpen}
+                user_id={user.user.id}
+                onClose={closeUserModalOpen}
+            />
+        </>
     )
 }
 
 const UsersPage = () => {
-  
+
     const [users, setUsers] = useState<any[]>([]);
     const [limit, setLimit] = useState<number>(10);
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -117,14 +114,14 @@ const UsersPage = () => {
     const [searchName, setSearchName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
 
-    const getUserList = async(page:number) => {
+    const getUserList = async (page: number) => {
         setLoading(true);
         try {
             // 먼저 전체 개수를 가져오기
             const countQuery = supabase
                 .from('users')
                 .select('id', { count: 'exact' });
-                
+
             // 검색 필터 적용
             if (searchRole) {
                 countQuery.eq('role', searchRole);
@@ -138,19 +135,19 @@ const UsersPage = () => {
             if (searchName) {
                 countQuery.ilike('full_name', `%${searchName}%`);
             }
-            
+
             const { count, error: countError } = await countQuery;
-            
+
             if (countError) {
                 throw new Error(countError.message);
             }
-            
+
             setTotalItems(count || 0);
-            
+
             // 데이터 가져오기
             const offset = (page - 1) * limit;
             const end = offset + parseInt(limit.toString()) - 1;
-            
+
             // users 테이블과 user_balances 테이블 조인하여 캐시 정보 가져오기
             const dataQuery = supabase
                 .from('users')
@@ -175,13 +172,13 @@ const UsersPage = () => {
             if (searchName) {
                 dataQuery.ilike('full_name', `%${searchName}%`);
             }
-            
+
             const response = await dataQuery.range(offset, end);
-            
+
             if (response.error) {
                 throw new Error(response.error.message);
             }
-            
+
             // 캐시 정보 포함하여 사용자 데이터 가공
             const processedUsers = response.data.map(user => {
                 const userWithCash = {
@@ -191,11 +188,11 @@ const UsersPage = () => {
                 };
                 return userWithCash;
             });
-            
+
             setUsers(processedUsers || []);
+
+        } catch (error: any) {
             
-        } catch (error:any) {
-            console.error("데이터 로딩 오류:", error.message);
         } finally {
             setLoading(false);
         }
@@ -209,18 +206,18 @@ const UsersPage = () => {
         setCurrentPage(1);
         // useEffect에서 처리하므로 여기서는 getUserList 호출하지 않음
     }
-    
+
     // 페이지 이동 처리
     const handlePageChange = (page: number) => {
         if (page < 1 || page > getTotalPages()) return;
         setCurrentPage(page);
     }
-    
+
     // 총 페이지 수 계산
     const getTotalPages = () => {
         return Math.max(1, Math.ceil(totalItems / limit));
     }
-    
+
     // 현재 표시 중인 항목 범위 계산
     const getDisplayRange = () => {
         if (totalItems === 0) return "0-0 / 0";
@@ -231,69 +228,69 @@ const UsersPage = () => {
 
     useEffect(() => {
         getUserList(currentPage);
-    }, [limit, currentPage]); 
-    
+    }, [limit, currentPage]);
+
     // 검색 조건이 변경되면 페이지를 1로 리셋
     useEffect(() => {
         setCurrentPage(1);
     }, [searchRole, searchStatus, searchEmail, searchName]);
 
     const roles_array = [
-        {"code":"", "name": "All"},
-        {"code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR)},
-        {"code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER)},
-        {"code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR)},
-        {"code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY)},
-        {"code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER)},
+        { "code": "", "name": "All" },
+        { "code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR) },
+        { "code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER) },
+        { "code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR) },
+        { "code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY) },
+        { "code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER) },
     ];
 
     const status_array = [
-        {"code":"", "name": "전체"},
-        {"code":"active", "name": "활성"},
-        {"code":"inactive", "name": "비활성"},
-        {"code":"pending", "name": "대기중"},
+        { "code": "", "name": "전체" },
+        { "code": "active", "name": "활성" },
+        { "code": "inactive", "name": "비활성" },
+        { "code": "pending", "name": "대기중" },
     ];
 
     // 툴바 액션 버튼
     const toolbarActions = (
-      <div className="flex gap-2">
-        <button className="btn btn-light btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span className="hidden md:inline">내보내기</span>
-        </button>
-        <button className="btn btn-primary btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span className="hidden md:inline">회원 추가</span>
-        </button>
-      </div>
+        <div className="flex gap-2">
+            <button className="btn btn-light btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span className="hidden md:inline">내보내기</span>
+            </button>
+            <button className="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span className="hidden md:inline">회원 추가</span>
+            </button>
+        </div>
     );
 
     return (
         <CommonTemplate
-          title="회원 관리"
-          description="시스템을 이용하는 회원을 관리합니다"
-          toolbarActions={toolbarActions}
-          showPageMenu={false}
-          // 그리드 레이아웃 영향을 확인하기 위해 childrenClassName 커스텀 설정
-          childrenClassName="flex flex-col space-y-4"
+            title="회원 관리"
+            description="시스템을 이용하는 회원을 관리합니다"
+            toolbarActions={toolbarActions}
+            showPageMenu={false}
+            // 그리드 레이아웃 영향을 확인하기 위해 childrenClassName 커스텀 설정
+            childrenClassName="flex flex-col space-y-4"
         >
             {/* 검색 영역 */}
             <div className="card p-6 mb-5 shadow-sm bg-card">
                 <h3 className="text-lg font-semibold mb-3">회원 검색</h3>
-                
+
                 <div className="flex flex-wrap md:flex-nowrap items-end gap-3">
                     <div className="w-full md:w-auto">
                         <label className="block text-sm font-medium text-foreground mb-1">권한</label>
-                        <select className="select select-bordered w-full h-10" 
-                                value={searchRole}
-                                onChange={(e)=>setSearchRole(e.target.value)}>
+                        <select className="select select-bordered w-full h-10"
+                            value={searchRole}
+                            onChange={(e) => setSearchRole(e.target.value)}>
                             {roles_array.map((option) => (
                                 <option key={option.code} value={option.code}>
                                     {option.name}
@@ -305,8 +302,8 @@ const UsersPage = () => {
                     <div className="w-full md:w-auto">
                         <label className="block text-sm font-medium text-foreground mb-1">상태</label>
                         <select className="select select-bordered w-full h-10"
-                                value={searchStatus}
-                                onChange={(e) => setSearchStatus(e.target.value)}>
+                            value={searchStatus}
+                            onChange={(e) => setSearchStatus(e.target.value)}>
                             {status_array.map((option) => (
                                 <option key={option.code} value={option.code}>
                                     {option.name}
@@ -317,26 +314,26 @@ const UsersPage = () => {
 
                     <div className="w-full md:w-auto flex-grow">
                         <label className="block text-sm font-medium text-foreground mb-1">이메일</label>
-                        <input 
-                            type="text" 
-                            placeholder="이메일을 입력하세요" 
+                        <input
+                            type="text"
+                            placeholder="이메일을 입력하세요"
                             className="input input-bordered w-full h-10"
                             value={searchEmail}
-                            onChange={(e) => setSearchEmail(e.target.value)} 
+                            onChange={(e) => setSearchEmail(e.target.value)}
                         />
                     </div>
 
                     <div className="w-full md:w-auto flex-grow">
                         <label className="block text-sm font-medium text-foreground mb-1">이름</label>
-                        <input 
-                            type="text" 
-                            placeholder="이름을 입력하세요" 
+                        <input
+                            type="text"
+                            placeholder="이름을 입력하세요"
                             className="input input-bordered w-full h-10"
                             value={searchName}
                             onChange={(e) => setSearchName(e.target.value)}
                         />
                     </div>
-                    
+
                     <button className="btn btn-primary h-10 px-6 md:mt-0 w-full md:w-auto" onClick={() => getUserList(1)}>
                         <KeenIcon icon="search" className="md:me-2 flex-none" />
                         <span className="hidden md:inline">검색</span>
@@ -349,7 +346,7 @@ const UsersPage = () => {
                 <div className="card-header p-6 pb-5 flex justify-between items-center">
                     <h3 className="card-title text-lg font-semibold">회원 리스트</h3>
                 </div>
-                
+
                 <div className="card-body p-0">
                     {loading ? (
                         <div className="flex justify-center items-center py-10">
@@ -434,9 +431,9 @@ const UsersPage = () => {
                                                 <div className="flex gap-3">
                                                     {/* 왼쪽 번호와 체크박스 */}
                                                     <div className="flex flex-col items-center gap-2">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            className="checkbox checkbox-sm checkbox-primary" 
+                                                        <input
+                                                            type="checkbox"
+                                                            className="checkbox checkbox-sm checkbox-primary"
                                                         />
                                                         <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
                                                             {index + 1}
@@ -458,7 +455,7 @@ const UsersPage = () => {
                                                                 let badgeClass = '';
                                                                 let statusText = '';
 
-                                                                switch(user.status) {
+                                                                switch (user.status) {
                                                                     case 'active':
                                                                         badgeClass = 'bg-success/10 text-success';
                                                                         statusText = '활성';
@@ -489,7 +486,7 @@ const UsersPage = () => {
                                                             </div>
                                                             <p className="font-medium text-foreground truncate">{user.email}</p>
                                                         </div>
-                                                        
+
                                                         {/* 권한과 캐시 정보 */}
                                                         <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-3">
                                                             <div>
@@ -514,10 +511,10 @@ const UsersPage = () => {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* 액션 버튼 */}
                                                         <div className="flex justify-end gap-2 mt-3">
-                                                            <button 
+                                                            <button
                                                                 className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -534,7 +531,7 @@ const UsersPage = () => {
                                                                 <KeenIcon icon="setting-2" className="h-5 w-5" />
                                                                 <span>설정</span>
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 className="btn btn-sm btn-soft-danger flex items-center gap-1 px-3 py-1 h-9"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
@@ -556,13 +553,13 @@ const UsersPage = () => {
                         </>
                     )}
                 </div>
-                
+
                 <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
                         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
-                        <select 
-                            className="select select-sm select-bordered flex-grow min-w-[100px]" 
-                            name="perpage" 
+                        <select
+                            className="select select-sm select-bordered flex-grow min-w-[100px]"
+                            name="perpage"
                             value={limit}
                             onChange={handleChangeLimit}
                         >
@@ -572,11 +569,11 @@ const UsersPage = () => {
                             <option value="100">100</option>
                         </select>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 order-1 md:order-2">
                         <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
                         <div className="flex">
-                            <button 
+                            <button
                                 className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage <= 1}
@@ -585,7 +582,7 @@ const UsersPage = () => {
                                     <path d="m15 18-6-6 6-6"></path>
                                 </svg>
                             </button>
-                            <button 
+                            <button
                                 className="btn btn-icon btn-sm btn-light rounded-l-none"
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage >= getTotalPages()}

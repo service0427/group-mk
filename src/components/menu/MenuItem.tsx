@@ -370,11 +370,16 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
 
           setHere(true);
         } else {
-          // 페이지 이동 시 메뉴 상태 유지를 위해 강제로 상태를 닫지 않음
-          // 사용자가 명시적으로 닫은 상태만 닫힘 상태로 유지
-          
-          // 활성화 상태만 업데이트
-          setHere(false);
+          // 단일 페이지 메뉴 처리 - 해시 라우터에서 URL 확인
+          const singlePagePaths = ['/notice', '/faq', '/sitemap', '/'];
+          if (path && !hasSub && singlePagePaths.includes(path)) {
+            // 현재 URL이 이 경로에 정확히 일치하는지 확인
+            const currentPath = window.location.hash.replace('#', '');
+            setHere(currentPath === path);
+          } else {
+            // 드롭다운 메뉴의 경우 활성화 상태만 업데이트
+            setHere(false);
+          }
         }
       }
 
@@ -382,7 +387,7 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
       if (prevPathname && pathname && prevPathname.split('/')[1] !== pathname.split('/')[1] && hasSub && propToggle === 'dropdown') {
         handleHide();
       }
-    }, [pathname]);
+    }, [pathname, path, hasSub]);
 
     // Cleanup: ensure that any timeouts are cleared when the component unmounts
     useEffect(() => {

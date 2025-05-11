@@ -32,7 +32,7 @@ export const useUserCashBalance = (userId?: string): UseUserCashBalanceReturn =>
       const cashBalance = await getUserCashBalance(userId);
       setBalance(cashBalance);
     } catch (err) {
-      console.error("캐시 잔액 조회 오류:", err);
+      
       setError('캐시 잔액을 불러오는데 실패했습니다.');
       setBalance(0);
     } finally {

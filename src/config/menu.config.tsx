@@ -31,6 +31,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
     heading: '서비스'
   },
   {
+    title: '내 키워드',
+    icon: 'pencil text-info',
+    path: '/keyword'
+  },
+  {
     title: '캠페인 소개',
     icon: 'document text-primary',
     path: '/advertise/ntraffic/desc',

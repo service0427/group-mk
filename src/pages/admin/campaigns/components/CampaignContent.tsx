@@ -24,10 +24,15 @@ export interface ICampaign {
   status: {
     label: string;
     color: string;
+    status?: string;
   };
   additionalLogic?: string;
   detailedDescription?: string;
   originalData?: any; // DB에서 가져온 원본 데이터
+  serviceType?: string; // 서비스 유형
+  matId?: string; // 매트 ID
+  serviceName?: string; // 서비스 이름
+  updatedAt?: string; // 업데이트 시간
 }
 
 // 캠페인 콘텐츠 컴포넌트 props 정의
@@ -36,13 +41,15 @@ interface CampaignContentProps {
   serviceType: string; // 서비스 유형(ntraffic, naver-shopping, naver-place 등)
   onCampaignUpdated?: () => void; // 캠페인 업데이트 시 호출할 콜백 함수
   onAddCampaign?: () => void; // 캠페인 추가 버튼 클릭 시 호출할 콜백 함수
+  isOperator?: boolean; // 운영자 모드 여부
 }
 
 const CampaignContent: React.FC<CampaignContentProps> = ({
   campaigns: initialCampaigns,
   serviceType,
   onCampaignUpdated,
-  onAddCampaign
+  onAddCampaign,
+  isOperator = false // 기본값은 총판 모드
 }) => {
   const location = useLocation();
   const [searchInput, setSearchInput] = useState('');
@@ -271,10 +278,24 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     // 캠페인 이름에서 동물 이름을 찾아서 매핑된 아이콘 반환
     const lowerName = name.toLowerCase();
 
-    // 이름에 동물 이름이 포함되어 있는지 확인
+    // 정확한 일치 먼저 검사
     for (const [animalName, iconName] of Object.entries(animalNameMap)) {
+      const normalizedName = lowerName.replace(/\s+/g, '');
+      const normalizedAnimal = animalName.toLowerCase().replace(/\s+/g, '');
+
+      if (normalizedName === normalizedAnimal) {
+        console.log(`[CampaignContent] 캠페인 이름 "${name}"이 동물 이름 "${animalName}"과 정확히 일치, 아이콘 "${iconName}" 사용`);
+        return iconName;
+      }
+    }
+
+    // 길이가 긴 동물 이름부터 검사 (더 구체적인 이름 우선)
+    const sortedEntries = Object.entries(animalNameMap)
+      .sort((a, b) => b[0].length - a[0].length);
+
+    for (const [animalName, iconName] of sortedEntries) {
       if (lowerName.includes(animalName.toLowerCase())) {
-        console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+        console.log(`[CampaignContent] 캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
         return iconName;
       }
     }
@@ -300,13 +321,31 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       return campaign.originalData.add_info_logo_url;
     }
 
-    // campaign.logo 값이 있고, 확장자가 있으면 그대로 사용
+    // campaign.logo 값이 있고, 확장자가 있으면 처리
     if (campaign.logo && (campaign.logo.includes('.svg') || campaign.logo.includes('.png'))) {
+      console.log(`[CampaignContent] logo 필드에 경로 포함: ${campaign.logo}`);
+
+      // 경로에서 동물 아이콘 이름 추출 시도
+      if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
+        const segments = campaign.logo.split(/[\/\\]/);
+        for (let i = 0; i < segments.length; i++) {
+          if (segments[i] === 'svg' && i + 1 < segments.length) {
+            const animalName = segments[i + 1].split('.')[0];
+            if (animalIcons.includes(animalName)) {
+              console.log(`[CampaignContent] 경로에서 동물 이름 추출: ${animalName}`);
+              return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
+            }
+          }
+        }
+      }
+
       // 이미 /media/ 경로가 포함되어 있으면 그대로 사용
       if (campaign.logo.startsWith('/media/')) {
         return toAbsoluteUrl(campaign.logo);
       }
-      return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}`);
+
+      // 그 외에는 기본 경로에 추가
+      return toAbsoluteUrl(`/media/${campaign.logo}`);
     }
 
     // campaign.logo 값이 있지만 확장자가 없는 경우, svg로 가정
@@ -352,6 +391,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       const matchesStatus = statusFilter === 'all' ||
                           (statusFilter === 'active' && campaign.status.label === '진행중') ||
                           (statusFilter === 'pending' && campaign.status.label === '준비중') ||
+                          (statusFilter === 'waiting_approval' && campaign.status.label === '승인 대기중') ||
+                          (statusFilter === 'rejected' && campaign.status.label === '반려됨') ||
                           (statusFilter === 'pause' && campaign.status.label === '표시안함');
 
       return matchesSearch && matchesStatus;
@@ -390,10 +431,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
               <SelectTrigger className="w-28 h-9" size="sm">
                 <SelectValue placeholder="상태" />
               </SelectTrigger>
-              <SelectContent className="w-32">
+              <SelectContent className="w-44">
                 <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="active">진행중</SelectItem>
                 <SelectItem value="pending">준비중</SelectItem>
+                <SelectItem value="waiting_approval">승인 대기중</SelectItem>
+                <SelectItem value="rejected">반려됨</SelectItem>
                 <SelectItem value="pause">표시안함</SelectItem>
               </SelectContent>
             </Select>
@@ -432,16 +475,44 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName || '캠페인'}
                         onError={(e) => {
-                          console.log('이미지 로드 실패:', e.currentTarget.src);
+                          console.log('[CampaignContent] 이미지 로드 실패:', e.currentTarget.src);
+
+                          // logo 필드 다시 확인
+                          if (campaign.logo) {
+                            console.log('[CampaignContent][error] logo 필드 재확인:', campaign.logo);
+
+                            // 로고가 동물 이름인 경우
+                            if (animalIcons.includes(campaign.logo)) {
+                              console.log(`[CampaignContent][error] 동물 이름 직접 사용: ${campaign.logo}`);
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                              return;
+                            }
+
+                            // 경로에서 동물 이름 추출 시도
+                            if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
+                              const segments = campaign.logo.split(/[\/\\]/);
+                              for (let i = 0; i < segments.length; i++) {
+                                if (segments[i] === 'svg' && i + 1 < segments.length) {
+                                  const animalName = segments[i + 1].split('.')[0];
+                                  if (animalIcons.includes(animalName)) {
+                                    console.log(`[CampaignContent][error] 경로에서 추출한 동물: ${animalName}`);
+                                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
+                                    return;
+                                  }
+                                }
+                              }
+                            }
+                          }
+
                           // 캠페인 이름에서 동물 추출 시도
                           const animalFromName = getAnimalIconFromName(campaign.campaignName);
                           if (animalFromName) {
-                            console.log(`이미지 로드 실패 대응: 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            console.log(`[CampaignContent][error] 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
                           } else {
                             // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
                             const randomAnimal = getRandomAnimalIcon();
-                            console.log(`이미지 로드 실패 대응: 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            console.log(`[CampaignContent][error] 랜덤 동물 ${randomAnimal} 아이콘 사용`);
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                           }
                         }}
@@ -509,6 +580,14 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         <SelectItem value="pause">표시안함</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    {/* 반려된 캠페인인 경우 반려 사유 표시 */}
+                    {campaign.status.label === '반려됨' && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-md">
+                        <div className="font-medium mb-0.5">반려 사유:</div>
+                        <div>{campaign.originalData?.rejected_reason || '반려 사유 없음'}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -567,16 +646,44 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName || '캠페인'}
                         onError={(e) => {
-                          console.log('이미지 로드 실패:', e.currentTarget.src);
+                          console.log('[CampaignContent] 이미지 로드 실패:', e.currentTarget.src);
+
+                          // logo 필드 다시 확인
+                          if (campaign.logo) {
+                            console.log('[CampaignContent][error] logo 필드 재확인:', campaign.logo);
+
+                            // 로고가 동물 이름인 경우
+                            if (animalIcons.includes(campaign.logo)) {
+                              console.log(`[CampaignContent][error] 동물 이름 직접 사용: ${campaign.logo}`);
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                              return;
+                            }
+
+                            // 경로에서 동물 이름 추출 시도
+                            if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
+                              const segments = campaign.logo.split(/[\/\\]/);
+                              for (let i = 0; i < segments.length; i++) {
+                                if (segments[i] === 'svg' && i + 1 < segments.length) {
+                                  const animalName = segments[i + 1].split('.')[0];
+                                  if (animalIcons.includes(animalName)) {
+                                    console.log(`[CampaignContent][error] 경로에서 추출한 동물: ${animalName}`);
+                                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
+                                    return;
+                                  }
+                                }
+                              }
+                            }
+                          }
+
                           // 캠페인 이름에서 동물 추출 시도
                           const animalFromName = getAnimalIconFromName(campaign.campaignName);
                           if (animalFromName) {
-                            console.log(`이미지 로드 실패 대응: 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            console.log(`[CampaignContent][error] 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
                           } else {
                             // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
                             const randomAnimal = getRandomAnimalIcon();
-                            console.log(`이미지 로드 실패 대응: 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            console.log(`[CampaignContent][error] 랜덤 동물 ${randomAnimal} 아이콘 사용`);
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                           }
                         }}
@@ -607,30 +714,39 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
-                    <Select
-                      value={getStatusValue(campaign.status.label)}
-                      onValueChange={(value) => handleStatusChange(campaign.id, value)}
-                      disabled={loadingStatus[campaign.id]}
-                    >
-                      <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
-                        {loadingStatus[campaign.id] ? (
-                          <span className="flex items-center">
-                            <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                            처리중...
-                          </span>
-                        ) : (
-                          <>
-                            <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                            <SelectValue>{campaign.status.label}</SelectValue>
-                          </>
-                        )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">진행중</SelectItem>
-                        <SelectItem value="pending">준비중</SelectItem>
-                        <SelectItem value="pause">표시안함</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col items-center gap-1">
+                      <Select
+                        value={getStatusValue(campaign.status.label)}
+                        onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                        disabled={loadingStatus[campaign.id]}
+                      >
+                        <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
+                          {loadingStatus[campaign.id] ? (
+                            <span className="flex items-center">
+                              <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                              처리중...
+                            </span>
+                          ) : (
+                            <>
+                              <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                              <SelectValue>{campaign.status.label}</SelectValue>
+                            </>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">진행중</SelectItem>
+                          <SelectItem value="pending">준비중</SelectItem>
+                          <SelectItem value="pause">표시안함</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {/* 반려된 캠페인인 경우 반려 사유 표시 */}
+                      {campaign.status.label === '반려됨' && (
+                        <div className="mt-1 text-xs text-red-500 max-w-[200px] truncate" title={campaign.originalData?.rejected_reason || '반려 사유 없음'}>
+                          <span className="font-medium">반려 사유:</span> {campaign.originalData?.rejected_reason || '반려 사유 없음'}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
@@ -664,11 +780,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     
 
     {/* 캠페인 상세 정보 모달 */}
-    <CampaignDetailModal 
-      open={detailModalOpen} 
+    <CampaignDetailModal
+      open={detailModalOpen}
       onClose={() => setDetailModalOpen(false)}
       campaign={selectedCampaign}
       onSave={handleSaveCampaign}
+      isOperator={isOperator} // 부모 컴포넌트에서 전달받은 운영자 모드 여부 전달
     />
     </>
   );

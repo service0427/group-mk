@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from '@/supabase';
 import { ICampaign } from '../components/CampaignContent';
+import { USER_ROLES } from '@/config/roles.config';
 
 // Base64 이미지를 Supabase Storage에 업로드하는 함수
 export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
@@ -188,12 +189,38 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   });
 };
 
+// 사용자 ID로 역할 확인
+export const hasRole = async (userId?: string): Promise<string | null> => {
+  if (!userId) return null;
+
+  try {
+    // 사용자 역할 가져오기
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      console.error('사용자 역할 조회 중 오류:', error);
+      return null;
+    }
+
+    return data.role;
+  } catch (err) {
+    console.error('사용자 역할 조회 중 예외 발생:', err);
+    return null;
+  }
+};
+
 // 상태값에 따른 라벨 반환
 export const getStatusLabel = (status: string): string => {
   switch (status) {
     case 'active': return '진행중';
     case 'pending': return '준비중';
     case 'pause': return '표시안함';
+    case 'waiting_approval': return '승인 대기중';
+    case 'rejected': return '반려됨';
     default: return '준비중';
   }
 };
@@ -232,18 +259,18 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     let logoUrl = null;
     let bannerUrl = null;
     let additionalInfo: any = {};
-    
+
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();
     const userId = authData.session?.user?.id;
-    
-    // 기존 캠페인 정보 가져오기 (add_info 필드와 mat_id 확인을 위해)
+
+    // 기존 캠페인 정보 가져오기 (add_info 필드, mat_id, rejected_reason 확인을 위해)
     const { data: existingCampaign, error: fetchError } = await supabase
       .from('campaigns')
-      .select('add_info, mat_id')
+      .select('add_info, mat_id, rejected_reason')
       .eq('id', campaignId)
       .single();
-      
+
     if (fetchError) {
       console.error('기존 캠페인 정보 가져오기 실패:', fetchError);
     } else if (existingCampaign?.add_info) {
@@ -259,39 +286,56 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         additionalInfo = existingCampaign.add_info;
       }
     }
-    
+
     // 1. 업로드된 로고 이미지가 있으면 저장
     if (data.uploadedLogo) {
       logoUrl = await uploadImageToStorage(
-        data.uploadedLogo, 
+        data.uploadedLogo,
         'campaigns-image',  // 버킷 이름
         'logos',            // 폴더 이름
         `logo-${campaignId}-${Date.now()}`, // 캠페인 ID와 타임스탬프로 고유한 파일명 생성
         userId              // 사용자 ID 전달
       );
-      
+
       if (logoUrl) {
         additionalInfo.logo_url = logoUrl;
       }
     }
-    
+
     // 2. 업로드된 배너 이미지가 있으면 저장
     if (data.uploadedBannerImage) {
       bannerUrl = await uploadImageToStorage(
-        data.uploadedBannerImage, 
+        data.uploadedBannerImage,
         'campaigns-image',     // 버킷 이름
         'banners',             // 폴더 이름
         `banner-${campaignId}-${Date.now()}`, // 캠페인 ID와 타임스탬프로 고유한 파일명 생성
         userId                 // 사용자 ID 전달
       );
-      
+
       if (bannerUrl) {
         additionalInfo.banner_url = bannerUrl;
       }
     }
-    
+
+    // 3. 반려 사유는 더 이상 add_info에 저장하지 않음
+    // (rejected_reason 필드에 직접 저장)
+
+    // 업데이트 데이터 타입 정의
+    interface IUpdateData {
+      campaign_name: string;
+      description: string;
+      detailed_description?: string;
+      unit_price: number;
+      deadline: string;
+      updated_at: Date;
+      add_info: any;
+      logo?: string;
+      status?: string;
+      rejected_reason?: string;
+    }
+
     // DB 컬럼명에 맞게 데이터 변환
-    let updateData = {
+    let updateData: IUpdateData = {
       campaign_name: data.campaignName,
       description: data.description,
       detailed_description: data.detailedDescription,
@@ -302,9 +346,33 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       // 로고 이미지 경로 변경 (업로드된 로고가 있을 경우만)
       ...(data.uploadedLogo ? { logo: data.logo } : {})
     };
-    
+
+    // 상태 변경이 있으면 업데이트 (먼저 처리)
+    if (data.status) {
+      updateData = {
+        ...updateData,
+        status: data.status
+      };
+      console.log(`캠페인 상태를 '${data.status}'로 업데이트합니다.`);
+    }
+
+    // 반려 사유가 있으면 rejected_reason 필드에 저장 (상태 설정 후 처리)
+    if (data.status === 'rejected' && data.rejectionReason) {
+      updateData = {
+        ...updateData,
+        rejected_reason: data.rejectionReason
+      };
+      console.log('rejected_reason 필드에 반려 사유 저장:', data.rejectionReason);
+    } else if (data.status === 'rejected') {
+      // 반려 상태인데 사유가 없는 경우 경고
+      console.warn('반려 상태이지만 사유가 제공되지 않았습니다. 데이터:', data);
+    }
+
+    // 디버깅: 업데이트에 사용되는 최종 데이터 로깅
+    console.log('캠페인 업데이트 최종 데이터:', JSON.stringify(updateData, null, 2));
+
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
-    if (userId) {
+    if (userId && !existingCampaign?.mat_id) {
       // 타입 안전하게 mat_id 추가 (존재 여부 확인 후)
       const updatedData = {
         ...updateData,
@@ -412,7 +480,7 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       deadline: formatTimeHHMM(data.deadline || '22:00'), // 시:분 형식으로 저장
       additional_logic: data.additionalLogic ? parseInt(data.additionalLogic) : 0,
       logo: data.logo || 'animal-default.svg',
-      status: data.status || 'pending',
+      status: data.status || 'waiting_approval', // 기본적으로 승인 대기 상태로 설정
       created_at: new Date(),
       updated_at: new Date(),
       // 추가 정보 (업로드된 이미지 URL)

@@ -54,17 +54,17 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
   // 사용자 메모(user_reason) 찾기
   useEffect(() => {
     if (slotData && slotData.user_reason) {
-      console.log('user_reason 찾기 시작');
+      
       
       // 1. 직접 input_data에 있는 경우
       if (slotData.user_reason) {
-        console.log('user_reason을 input_data에서 직접 찾음:', slotData.user_reason);
+        
         setUserReason(slotData.user_reason);
       } 
       // 2. 재귀적으로 탐색
       else {
         const foundReason = findValueByKey(slotData.input_data, 'user_reason');
-        console.log('재귀 탐색으로 찾은 user_reason:', foundReason);
+        
         setUserReason(foundReason);
       }
     }
@@ -73,28 +73,22 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
   // 슬롯 데이터 가져오기
   useEffect(() => {
     if (open && slotId) {
-      console.log('메모 모달 열림 - 슬롯 ID:', slotId);
-      console.log('전달받은 슬롯 데이터:', slot);
+      
+      
       
       if (slot) {
-        console.log('부모 컴포넌트에서 전달받은 슬롯 데이터 사용:', slot);
+        
         setSlotData(slot);
       } else {
-        console.log('API를 통해 슬롯 데이터 조회 시작');
+        
         fetchSlotData();
       }
     }
   }, [open, slotId, slot]);
   
-  // 초기 로딩 시 상태 출력
+  // 상태 모니터링
   useEffect(() => {
-    console.log('메모 모달 상태 업데이트:', {
-      slotData: slotData,
-      memo: memo,
-      open: open,
-      slotId: slotId,
-      userReason: userReason
-    });
+    // 상태 변경 감지
   }, [slotData, memo, open, slotId, userReason]);
 
   // 슬롯 데이터 조회 함수
@@ -102,7 +96,7 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
     try {
       if (!slotId) return;
       
-      console.log('슬롯 데이터 API 조회 시작:', slotId);
+      
       
       const { data, error } = await supabase
         .from('slots')
@@ -114,40 +108,40 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
         .single();
         
       if (error) {
-        console.error('슬롯 데이터 가져오기 오류:', error);
+        
         return;
       }
       
       if (data) {
         // 전체 데이터 구조를 자세히 출력
-        console.log('전체 슬롯 데이터 구조:', JSON.stringify(data, null, 2));
+        
         
         if (data.input_data) {
-          console.log('input_data 구조:', JSON.stringify(data.input_data, null, 2));
-          console.log('input_data의 모든 키:', Object.keys(data.input_data));
+          
+          
           
           // user_reason이 직접적으로 있는지 확인
           if ('user_reason' in data.input_data) {
-            console.log('user_reason 값:', data.input_data.user_reason);
-            console.log('user_reason 타입:', typeof data.input_data.user_reason);
+            
+            
           } 
           // 중첩된 객체 내에 있는지 확인
           else {
-            console.log('직접 user_reason 키를 찾을 수 없음, 중첩 구조 탐색');
+            
             
             // 중첩 객체 탐색
             Object.keys(data.input_data).forEach(key => {
               if (typeof data.input_data[key] === 'object' && data.input_data[key] !== null) {
-                console.log(`input_data.${key} 내부 키:`, Object.keys(data.input_data[key]));
+                
                 
                 if ('user_reason' in data.input_data[key]) {
-                  console.log(`user_reason을 input_data.${key}.user_reason에서 찾음:`, data.input_data[key].user_reason);
+                  
                 }
               }
             });
           }
         } else {
-          console.log('input_data가 존재하지 않습니다');
+          
         }
         
         // 사용자 정보 변환
@@ -156,23 +150,23 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
         setSlotData({ ...slotWithoutUsers, user });
       }
     } catch (error) {
-      console.error('슬롯 데이터 가져오기 중 오류 발생:', error);
+      
     }
   };
 
   const handleSave = async () => {
     if (!slotId) return;
     
-    console.log('메모 저장 시도:', { slotId, memo });
+    
     setSaving(true);
     try {
       const success = await onSave(slotId, memo);
-      console.log('메모 저장 결과:', success);
+      
       if (success) {
         onClose();
       }
     } catch (error) {
-      console.error('메모 저장 중 오류 발생:', error);
+      
       alert('메모 저장 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);

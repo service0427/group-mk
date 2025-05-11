@@ -23,21 +23,17 @@ const ProfilePage = () => {
   const [selectedImage, setSelectedImage] = useState<string>('');
   
   // 사업자 정보와 등업 신청 현황 체크
-  // 초기 상태 설정 및 디버깅을 위한 useEffect
+  // 초기 상태 설정을 위한 useEffect
   useEffect(() => {
-    console.log('[초기화] 프로필 페이지 컴포넌트 마운트됨');
-    
     const checkBusinessStatus = async () => {
       try {
         // 사용자 정보 설정
         if (currentUser?.full_name) {
-          console.log('[초기화] 사용자 이름 설정:', currentUser.full_name);
           setFullName(currentUser.full_name);
         }
-        
+
         // 사용자의 business 정보 체크
         if (currentUser?.business) {
-          console.log('[초기화] 사업자 정보 있음');
           setHasBusinessInfo(true);
         }
         
@@ -71,7 +67,7 @@ const ProfilePage = () => {
           setRejectionReason('');
         }
       } catch (err) {
-        console.error('사업자 정보 조회 에러:', err);
+        
       }
     };
     
@@ -82,7 +78,6 @@ const ProfilePage = () => {
 
   const roleClass = currentUser?.role ? `badge-${getRoleBadgeColor(currentUser.role)}` : '';
   const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
-  console.log(currentUser)
 
   const statusClass = currentUser?.status === 'active' ? 'badge-success' :
     currentUser?.status === 'inactive' ? 'badge-secondary' :
@@ -107,7 +102,6 @@ const ProfilePage = () => {
   // 이미지 모달 열기 함수 - null/undefined 체크 추가
   const openImageModal = (imageUrl: string | undefined) => {
     if (!imageUrl) {
-      console.warn('열려는 이미지 URL이 없습니다');
       return;
     }
     setSelectedImage(imageUrl);
@@ -125,30 +119,23 @@ const ProfilePage = () => {
     try {
       // 사용자 ID가 없으면 실행하지 않음
       if (!currentUser?.id) {
-        console.warn('사용자 정보가 없어 데이터 새로고침을 건너뜁니다');
         return;
       }
-      
-      console.log('등업 신청 성공 후 데이터 새로고침');
+
       const { data: refreshedUser, error: refreshError } = await supabase
         .from('users')
         .select('*')
         .eq('id', currentUser.id) // currentUser?.id가 있다고 확인되었으므로 안전하게 사용
         .single();
-        
-      if (refreshError) {
-        console.error('사용자 정보 새로고침 오류:', refreshError);
-      } else if (refreshedUser) {
+
+      if (!refreshError && refreshedUser) {
         // setCurrentUser 함수가 있는지 확인
         if (typeof setCurrentUser === 'function') {
-          console.log('성공 후 사용자 정보 업데이트');
           setCurrentUser(refreshedUser);
-        } else {
-          console.warn('setCurrentUser 함수가 없어 사용자 정보를 업데이트할 수 없습니다');
         }
       }
     } catch (err) {
-      console.error('사용자 정보 갱신 실패:', err);
+      // 오류 발생 시 처리 (콘솔 로그 제거)
     }
   };
   
@@ -178,11 +165,8 @@ const ProfilePage = () => {
     let updatedSuccessfully = false;
     let successMessage = '';
     let messageTimer: NodeJS.Timeout;
-    
+
     try {
-      console.log('저장하기 버튼 클릭됨');
-      console.log('초기 상태 현재 이름:', currentUser?.full_name, '입력 이름:', fullName);
-      
       // 변경 감지 변수
       let nameUpdated = false;
       let passwordUpdated = false;
@@ -190,7 +174,6 @@ const ProfilePage = () => {
       
       // 1. 이름 업데이트 (값이 있고 변경되었을 때만)
       if (fullName && fullName !== currentUser?.full_name) {
-        console.log('이름 변경 감지:', currentUser?.full_name, '->', fullName);
         
         try {
           // Supabase Auth 메타데이터 업데이트
@@ -199,11 +182,8 @@ const ProfilePage = () => {
           });
   
           if (updateAuthError) {
-            console.error('Auth 사용자 이름 변경 실패:', updateAuthError);
             throw new Error(updateAuthError.message);
           }
-          
-          console.log('Auth 사용자 이름 변경 성공');
   
           // users 테이블 업데이트
           const { error: updateDBError } = await supabase
@@ -212,11 +192,11 @@ const ProfilePage = () => {
             .eq('id', currentUser?.id);
   
           if (updateDBError) {
-            console.error('DB 이름 업데이트 오류:', updateDBError);
+            
             throw new Error(updateDBError.message);
           }
           
-          console.log('DB 사용자 이름 업데이트 성공');
+          
           
           // 현재 사용자 상태 업데이트 
           if (currentUser) {
@@ -227,35 +207,35 @@ const ProfilePage = () => {
             
             // 상태 업데이트
             setCurrentUser(updatedUser);
-            console.log('로컬 상태 업데이트됨');
+            
             
             // 세션 스토리지에 업데이트된 사용자 정보 저장 (새로고침 시 활용)
             try {
               sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
-              console.log('세션 스토리지 업데이트됨');
+              
             } catch (e) {
-              console.error('캐시 저장 오류:', e);
+              
             }
             
             // 새로운 사용자 정보로 세션 갱신
             try {
               await supabase.auth.refreshSession();
-              console.log('이름 변경 후 세션 갱신됨');
+              
             } catch (refreshError) {
-              console.error('세션 갱신 실패:', refreshError);
+              
             }
           }
           
           // 이름이 변경되었다고 표시
           nameUpdated = true;
-          console.log('이름 변경 작업 완료, nameUpdated=', nameUpdated);
+          
           
         } catch (nameError: any) {
-          console.error('이름 변경 중 오류 발생:', nameError);
+          
           alert('이름 변경 중 오류가 발생했습니다: ' + nameError.message);
         }
       } else {
-        console.log('이름 변경 없음 -', '현재:', currentUser?.full_name, '입력:', fullName);
+        
       }
 
       // 2. 비밀번호 업데이트 (입력된 경우에만)
@@ -271,10 +251,10 @@ const ProfilePage = () => {
             });
             
             if (!verifyPassword.data || verifyPassword.error) {
-              console.error('비밀번호 확인 오류:', verifyPassword.error);
+              
               alert('현재 비밀번호가 일치하지 않습니다.');
             } else {
-              console.log('비밀번호 확인 성공:', verifyPassword.data);
+              
               
               // 1. 먼저 users 테이블에 새 비밀번호의 해시값 저장
               const hashPassword = await supabase.rpc('hash_password', {
@@ -282,7 +262,7 @@ const ProfilePage = () => {
               });
               
               if (hashPassword.error) {
-                console.error('비밀번호 해싱 오류:', hashPassword.error);
+                
                 throw new Error(hashPassword.error.message);
               }
               
@@ -293,26 +273,26 @@ const ProfilePage = () => {
                 .eq('id', currentUser?.id);
               
               if (updateDBError) {
-                console.error('DB 업데이트 오류:', updateDBError);
+                
                 throw new Error(updateDBError.message);
               }
               
               // 3. Supabase Auth 업데이트
-              console.log('비밀번호 변경 시도');
+              
               const { error: updateAuthError } = await supabase.auth.updateUser({
                 password: change_password,
               });
               
               if (updateAuthError) {
-                console.error('Auth 비밀번호 변경 실패:', updateAuthError);
+                
                 throw new Error(updateAuthError.message);
               }
               
-              console.log('비밀번호 변경 완료');
+              
               
               // 비밀번호가 변경되었다고 표시
               passwordUpdated = true;
-              console.log('비밀번호 변경 작업 완료, passwordUpdated=', passwordUpdated);
+              
               
               // 입력 필드 초기화
               setPassword('');
@@ -320,14 +300,14 @@ const ProfilePage = () => {
             }
           }
         } catch (passwordError: any) {
-          console.error('비밀번호 변경 중 오류 발생:', passwordError);
+          
           alert('비밀번호 변경 중 오류가 발생했습니다: ' + passwordError.message);
         }
       }
       
       // 3. 사업자 정보 업데이트 (승인 대기 중에도 가능하게 수정)
       if (currentUser && currentUser.business) {
-        console.log('사업자 정보 업데이트 시도');
+        
         
         try {
           // 데이터 복사하고 비교하기 위한 원본 저장
@@ -337,11 +317,11 @@ const ProfilePage = () => {
           let businessData = { ...currentUser.business };
           
           if (hasPendingRequest) {
-            console.log('승인 대기 중에도 사업자 정보 업데이트 진행');
+            
             
             // 이미지는 Base64인 경우 처리
             if (businessData && businessData.business_image_url && businessData.business_image_url.startsWith('data:image')) {
-              console.log('Base64 이미지 처리: 이미지 데이터 저장 중');
+              
               // 이미지가 이미 Base64면 그대로 사용
             }
           }
@@ -355,27 +335,27 @@ const ProfilePage = () => {
             .eq('id', currentUser?.id);
           
           if (updateBusinessError) {
-            console.error('사업자 정보 업데이트 오류:', updateBusinessError);
+            
             throw new Error(updateBusinessError.message);
           }
           
-          console.log('사업자 정보 업데이트 성공');
+          
           
           // 세션 스토리지에 업데이트된 사용자 정보 저장 (새로고침 시 활용)
           try {
             sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            console.log('사업자 정보가 포함된 세션 스토리지 업데이트됨');
+            
           } catch (e) {
-            console.error('캐시 저장 오류:', e);
+            
           }
           
           // 변경 감지
           if (currentUser && currentUser.business && originalBusiness !== JSON.stringify(currentUser.business)) {
             businessInfoUpdated = true;
-            console.log('사업자 정보 변경됨');
+            
           }
         } catch (businessError: any) {
-          console.error('사업자 정보 업데이트 오류:', businessError);
+          
           alert('사업자 정보 업데이트 중 오류가 발생했습니다: ' + businessError.message);
         }
       }
@@ -403,8 +383,8 @@ const ProfilePage = () => {
       }
       
       // 최종 작업 상태 확인
-      console.log('최종 작업 완료 상태:', updatedSuccessfully);
-      console.log('nameUpdated=', nameUpdated, 'passwordUpdated=', passwordUpdated, 'businessInfoUpdated=', businessInfoUpdated);
+      
+      
       
       // 변경사항이 있는지, 없는지에 따라 메시지 표시
       const displayMessage = updatedSuccessfully 
@@ -412,7 +392,7 @@ const ProfilePage = () => {
         : '변경된 내용이 없습니다.';
       
       // 최종 메시지 디버깅
-      console.log('표시할 메시지:', displayMessage);
+      
       
       // 항상 alert로 표시 (디버깅용)
       alert(displayMessage);
@@ -421,17 +401,17 @@ const ProfilePage = () => {
       setMessage(displayMessage);
       
       // 메시지가 화면에 표시되는지 확인하기 위한 디버깅 로그
-      console.log('메시지 설정 직후 메시지 상태:', displayMessage);
+      
       
       // 5초 후에 메시지 숨기기
       messageTimer = setTimeout(() => {
-        console.log('메시지 타이머 완료, 메시지 초기화');
+        
         setMessage('');
       }, 5000);
 
     } catch (error: any) {
       // 전체 함수에 대한 에러 처리
-      console.error('프로필 업데이트 중 오류가 발생했습니다.', error);
+      
       
       // 에러 메시지 표시
       const errorMessage = '업데이트에 실패했습니다: ' + error.message;
@@ -629,20 +609,20 @@ const ProfilePage = () => {
                                     alt="사업자등록증"
                                     className="max-h-48 object-contain mb-2 hover:opacity-90 transition-opacity"
                                     onError={(e) => {
-                                      console.error('이미지 로드 실패:', imageUrl);
+                                      
                                       
                                       // URL 상세 정보 로깅
                                       try {
                                         if (imageUrl && !imageUrl.startsWith('data:')) {
                                           const url = new URL(imageUrl);
-                                          console.log('이미지 URL 분석:');
-                                          console.log('- 프로토콜:', url.protocol);
-                                          console.log('- 호스트:', url.hostname);
-                                          console.log('- 경로:', url.pathname);
-                                          console.log('- 쿼리 파라미터:', url.search);
+                                          
+                                          
+                                          
+                                          
+                                          
                                         }
                                       } catch (urlError) {
-                                        console.error('URL 분석 오류:', urlError);
+                                        
                                       }
                                       
                                       // 대체 이미지 표시
@@ -650,11 +630,11 @@ const ProfilePage = () => {
                                       
                                       // URL이 Supabase Storage URL이고 만료되었을 가능성이 있는 경우
                                       if (business.business_image_storage_type === 'supabase_storage') {
-                                        console.warn('Supabase Storage URL 로드 실패. URL이 만료되었거나 접근 권한이 없을 수 있습니다.');
+                                        
                                       }
                                     }}
                                     onLoad={() => {
-                                      console.log('이미지 로드 성공');
+                                      
                                     }}
                                   />
                                   <div className="absolute top-0 right-0 bg-primary/80 text-white rounded-full w-5 h-5 flex items-center justify-center">
@@ -802,7 +782,7 @@ const ProfilePage = () => {
               alt="사업자등록증" 
               className="max-h-[85vh] object-contain"
               onError={(e) => {
-                console.error('이미지 모달 로드 실패');
+                
                 (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
               }}
             />

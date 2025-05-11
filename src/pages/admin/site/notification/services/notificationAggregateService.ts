@@ -43,11 +43,11 @@ export const initializeAggregateTable = async (): Promise<boolean> => {
 
     if (checkError) {
       if (checkError.message.includes('does not exist')) {
-        console.error('집계 테이블이 존재하지 않습니다:', checkError.message);
+        
         return false;
       }
 
-      console.error('집계 테이블 확인 중 오류 발생:', checkError.message);
+      
       return false;
     }
 
@@ -63,7 +63,7 @@ export const initializeAggregateTable = async (): Promise<boolean> => {
         });
 
       if (createError) {
-        console.error('집계 테이블 초기화 중 오류 발생:', createError.message);
+        
         return false;
       }
 
@@ -74,7 +74,7 @@ export const initializeAggregateTable = async (): Promise<boolean> => {
     return true;
 
   } catch (error: any) {
-    console.error('집계 테이블 초기화 중 예외 발생:', error.message);
+    
     return false;
   }
 };
@@ -92,14 +92,14 @@ export const fetchNotificationAggregate = async (): Promise<INotificationAggrega
       .single();
 
     if (error) {
-      console.error('집계 데이터 조회 중 오류 발생:', error.message);
+      
       return null;
     }
 
     return data as INotificationAggregate;
 
   } catch (error: any) {
-    console.error('집계 데이터 조회 중 예외 발생:', error.message);
+    
     return null;
   }
 };
@@ -138,7 +138,7 @@ export const refreshNotificationAggregate = async (
         );
       }
     } else {
-      console.log('알림 통계 집계 중...');
+      
     }
 
     // 초기 집계 객체 생성
@@ -150,7 +150,7 @@ export const refreshNotificationAggregate = async (
       .select('*', { count: 'exact', head: true });
 
     if (countError) {
-      console.error('전체 알림 개수 조회 중 오류 발생:', countError.message);
+      
       if (showToastOrSetNotification) {
         // 함수 타입 확인 (매개변수 개수로 구분)
         const isNewToastFn = showToastOrSetNotification.length === 2;
@@ -181,7 +181,7 @@ export const refreshNotificationAggregate = async (
         .eq('type', type);
 
       if (error) {
-        console.error(`${type} 타입 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { type, count: 0 };
       }
 
@@ -203,7 +203,7 @@ export const refreshNotificationAggregate = async (
         .eq('status', status);
 
       if (error) {
-        console.error(`${status} 상태 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { status, count: 0 };
       }
 
@@ -227,7 +227,7 @@ export const refreshNotificationAggregate = async (
       .limit(10000);  // 대량 데이터 고려하여 제한
 
     if (userError) {
-      console.error('알림 사용자 ID 조회 중 오류 발생:', userError.message);
+      
     } else if (notificationUsers && notificationUsers.length > 0) {
       // 유니크한 사용자 ID 목록 생성
       const uniqueUserIds = [...new Set(notificationUsers.map(n => n.user_id))];
@@ -248,7 +248,7 @@ export const refreshNotificationAggregate = async (
         .in('id', uniqueUserIds);
 
       if (roleError) {
-        console.error('사용자 역할 조회 중 오류 발생:', roleError.message);
+        
       } else if (users) {
         // 역할별 알림 개수 집계
         users.forEach(user => {
@@ -274,7 +274,7 @@ export const refreshNotificationAggregate = async (
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116'는 결과가 없을 때의 에러 코드
-      console.error('기존 집계 데이터 확인 중 오류 발생:', fetchError.message);
+      
       if (showToastOrSetNotification) {
         // 함수 타입 확인 (매개변수 개수로 구분)
         const isNewToastFn = showToastOrSetNotification.length === 2;
@@ -307,7 +307,7 @@ export const refreshNotificationAggregate = async (
         .eq('id', existingAggregate.id);
 
       if (updateError) {
-        console.error('집계 데이터 업데이트 중 오류 발생:', updateError.message);
+        
         if (showToastOrSetNotification) {
           // 함수 타입 확인 (매개변수 개수로 구분)
           const isNewToastFn = showToastOrSetNotification.length === 2;
@@ -337,7 +337,7 @@ export const refreshNotificationAggregate = async (
         });
 
       if (insertError) {
-        console.error('집계 데이터 생성 중 오류 발생:', insertError.message);
+        
         if (showToastOrSetNotification) {
           // 함수 타입 확인 (매개변수 개수로 구분)
           const isNewToastFn = showToastOrSetNotification.length === 2;
@@ -379,7 +379,7 @@ export const refreshNotificationAggregate = async (
     return true;
 
   } catch (error: any) {
-    console.error('알림 통계 집계 중 예외 발생:', error.message);
+    
     if (showToastOrSetNotification) {
       // 함수 타입 확인 (매개변수 개수로 구분)
       const isNewToastFn = showToastOrSetNotification.length === 2;
@@ -419,7 +419,7 @@ export const incrementNotificationAggregate = async (
       .single();
 
     if (fetchError) {
-      console.error('집계 데이터 조회 중 오류 발생:', fetchError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -462,7 +462,7 @@ export const incrementNotificationAggregate = async (
       .eq('id', aggregate.id);
 
     if (updateError) {
-      console.error('집계 데이터 증분 업데이트 중 오류 발생:', updateError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -470,7 +470,7 @@ export const incrementNotificationAggregate = async (
     return true;
 
   } catch (error: any) {
-    console.error('알림 통계 증분 업데이트 중 예외 발생:', error.message);
+    
     // 실패시 전체 갱신 시도
     return await refreshNotificationAggregate();
   }
@@ -496,7 +496,7 @@ export const updateNotificationStatusAggregate = async (
       .single();
 
     if (fetchError) {
-      console.error('집계 데이터 조회 중 오류 발생:', fetchError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -521,7 +521,7 @@ export const updateNotificationStatusAggregate = async (
       .eq('id', aggregate.id);
 
     if (updateError) {
-      console.error('집계 데이터 상태 업데이트 중 오류 발생:', updateError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -529,7 +529,7 @@ export const updateNotificationStatusAggregate = async (
     return true;
 
   } catch (error: any) {
-    console.error('알림 통계 상태 업데이트 중 예외 발생:', error.message);
+    
     // 실패시 전체 갱신 시도
     return await refreshNotificationAggregate();
   }
@@ -553,7 +553,7 @@ export const decrementNotificationAggregate = async (
       .single();
 
     if (fetchError) {
-      console.error('집계 데이터 조회 중 오류 발생:', fetchError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -589,7 +589,7 @@ export const decrementNotificationAggregate = async (
       .eq('id', aggregate.id);
 
     if (updateError) {
-      console.error('집계 데이터 감소 업데이트 중 오류 발생:', updateError.message);
+      
       // 실패시 전체 갱신 시도
       return await refreshNotificationAggregate();
     }
@@ -597,7 +597,7 @@ export const decrementNotificationAggregate = async (
     return true;
 
   } catch (error: any) {
-    console.error('알림 통계 감소 업데이트 중 예외 발생:', error.message);
+    
     // 실패시 전체 갱신 시도
     return await refreshNotificationAggregate();
   }

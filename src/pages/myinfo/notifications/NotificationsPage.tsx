@@ -68,7 +68,7 @@ const NotificationsPage = () => {
       // 다른 연도인 경우 전체 날짜 표시 (간소화된 형식)
       return format(date, 'yy/MM/dd HH:mm', { locale: ko });
     } catch (error) {
-      console.error('NotificationsPage - 날짜 포맷팅 오류:', error);
+      
       return '날짜 형식 오류';
     }
   };

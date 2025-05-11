@@ -100,13 +100,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           )
         );
         
-        console.log(`캠페인 ID: ${campaignId}의 상태를 ${newStatus}로 변경했습니다.`);
+        
       } else {
-        console.error(`캠페인 ID: ${campaignId}의 상태 변경에 실패했습니다.`);
+        
         alert('상태 변경 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      console.error('상태 변경 중 오류:', error);
+      
       alert('상태 변경 중 오류가 발생했습니다.');
     } finally {
       // 로딩 상태 해제
@@ -170,7 +170,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     // 선택된 캠페인도 업데이트 - 모달이 다시 열릴 때 최신 데이터 표시
     setSelectedCampaign(updatedCampaign);
     
-    console.log(`캠페인 ID: ${updatedCampaign.id}의 정보가 업데이트되었습니다.`, updatedCampaign);
+    
     
     // 부모 컴포넌트에게 업데이트 알림 (있을 경우만)
     // 이렇게 하면 Template 컴포넌트에서 최신 데이터를 다시 가져올 수 있음
@@ -284,7 +284,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       const normalizedAnimal = animalName.toLowerCase().replace(/\s+/g, '');
 
       if (normalizedName === normalizedAnimal) {
-        console.log(`[CampaignContent] 캠페인 이름 "${name}"이 동물 이름 "${animalName}"과 정확히 일치, 아이콘 "${iconName}" 사용`);
+        
         return iconName;
       }
     }
@@ -295,7 +295,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     for (const [animalName, iconName] of sortedEntries) {
       if (lowerName.includes(animalName.toLowerCase())) {
-        console.log(`[CampaignContent] 캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+        
         return iconName;
       }
     }
@@ -323,7 +323,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     // campaign.logo 값이 있고, 확장자가 있으면 처리
     if (campaign.logo && (campaign.logo.includes('.svg') || campaign.logo.includes('.png'))) {
-      console.log(`[CampaignContent] logo 필드에 경로 포함: ${campaign.logo}`);
+      
 
       // 경로에서 동물 아이콘 이름 추출 시도
       if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
@@ -332,7 +332,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           if (segments[i] === 'svg' && i + 1 < segments.length) {
             const animalName = segments[i + 1].split('.')[0];
             if (animalIcons.includes(animalName)) {
-              console.log(`[CampaignContent] 경로에서 동물 이름 추출: ${animalName}`);
+              
               return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
             }
           }
@@ -361,13 +361,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     // 마지막으로 랜덤 동물 아이콘 선택
     const randomAnimal = getRandomAnimalIcon();
-    console.log(`캠페인 ${campaign.id}에 대한 임의 동물 아이콘 선택: ${randomAnimal}`);
+    
     return toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
   };
 
   // 필터링 적용
   const filteredData = useMemo(() => {
-    console.log('캠페인 데이터 필터링:', campaigns.length, '개의 캠페인');
+    
 
     // 디버깅을 위해 캠페인 데이터 형식 로깅
     if (campaigns.length > 0) {
@@ -448,7 +448,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   if (onAddCampaign) {
                     onAddCampaign();
                   } else {
-                    console.log('캠페인 추가 버튼 클릭');
+                    
                     // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
                   }
                 }}
@@ -475,15 +475,15 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName || '캠페인'}
                         onError={(e) => {
-                          console.log('[CampaignContent] 이미지 로드 실패:', e.currentTarget.src);
+                          
 
                           // logo 필드 다시 확인
                           if (campaign.logo) {
-                            console.log('[CampaignContent][error] logo 필드 재확인:', campaign.logo);
+                            
 
                             // 로고가 동물 이름인 경우
                             if (animalIcons.includes(campaign.logo)) {
-                              console.log(`[CampaignContent][error] 동물 이름 직접 사용: ${campaign.logo}`);
+                              
                               (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
                               return;
                             }
@@ -495,7 +495,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                                 if (segments[i] === 'svg' && i + 1 < segments.length) {
                                   const animalName = segments[i + 1].split('.')[0];
                                   if (animalIcons.includes(animalName)) {
-                                    console.log(`[CampaignContent][error] 경로에서 추출한 동물: ${animalName}`);
+                                    
                                     (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                                     return;
                                   }
@@ -507,12 +507,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                           // 캠페인 이름에서 동물 추출 시도
                           const animalFromName = getAnimalIconFromName(campaign.campaignName);
                           if (animalFromName) {
-                            console.log(`[CampaignContent][error] 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
                           } else {
                             // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
                             const randomAnimal = getRandomAnimalIcon();
-                            console.log(`[CampaignContent][error] 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                           }
                         }}
@@ -646,15 +646,15 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         className="rounded-full size-10 shrink-0"
                         alt={campaign.campaignName || '캠페인'}
                         onError={(e) => {
-                          console.log('[CampaignContent] 이미지 로드 실패:', e.currentTarget.src);
+                          
 
                           // logo 필드 다시 확인
                           if (campaign.logo) {
-                            console.log('[CampaignContent][error] logo 필드 재확인:', campaign.logo);
+                            
 
                             // 로고가 동물 이름인 경우
                             if (animalIcons.includes(campaign.logo)) {
-                              console.log(`[CampaignContent][error] 동물 이름 직접 사용: ${campaign.logo}`);
+                              
                               (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
                               return;
                             }
@@ -666,7 +666,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                                 if (segments[i] === 'svg' && i + 1 < segments.length) {
                                   const animalName = segments[i + 1].split('.')[0];
                                   if (animalIcons.includes(animalName)) {
-                                    console.log(`[CampaignContent][error] 경로에서 추출한 동물: ${animalName}`);
+                                    
                                     (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                                     return;
                                   }
@@ -678,12 +678,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                           // 캠페인 이름에서 동물 추출 시도
                           const animalFromName = getAnimalIconFromName(campaign.campaignName);
                           if (animalFromName) {
-                            console.log(`[CampaignContent][error] 캠페인 이름 ${campaign.campaignName}에서 ${animalFromName} 동물 아이콘 사용`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
                           } else {
                             // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
                             const randomAnimal = getRandomAnimalIcon();
-                            console.log(`[CampaignContent][error] 랜덤 동물 ${randomAnimal} 아이콘 사용`);
+                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                           }
                         }}

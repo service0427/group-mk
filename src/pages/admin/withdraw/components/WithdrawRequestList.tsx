@@ -128,7 +128,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
       
       onRequestUpdated() // 목록 갱신
     } catch (error: any) {
-      console.error('출금 요청 승인 실패:', error)
+      
       setNotification({
         visible: true,
         type: 'error',
@@ -213,7 +213,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
       
       onRequestUpdated() // 목록 갱신
     } catch (error: any) {
-      console.error('출금 요청 반려 실패:', error)
+      
       setNotification({
         visible: true,
         type: 'error',

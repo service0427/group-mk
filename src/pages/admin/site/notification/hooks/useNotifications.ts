@@ -104,7 +104,7 @@ export const useNotifications = ({ isAdmin }: UseNotificationsProps): UseNotific
       setStats(updatedStats);
 
     } catch (error: any) {
-      console.error('알림을 가져오는 중 오류 발생:', error.message);
+      
       toast.error('알림 데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);

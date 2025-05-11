@@ -27,7 +27,6 @@ const App = () => {
         
         // 현재 경로가 이미 로그인 페이지가 아닌 경우에만 리디렉트
         if (!window.location.hash.includes('/auth/login')) {
-          console.log('로그아웃 후 리디렉션: 로그인 페이지로 이동합니다.');
           window.location.href = '/#/auth/login';
         }
       }

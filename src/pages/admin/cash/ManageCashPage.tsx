@@ -84,7 +84,7 @@ const ManageCashPage = () => {
         throw new Error(result.message);
       }
     } catch (error: any) {
-      console.error("승인 처리 오류:", error.message);
+      
       showDialog("승인 처리 오류", error.message, false);
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ const ManageCashPage = () => {
         throw new Error(result.message);
       }
     } catch (error: any) {
-      console.error("거부 처리 오류:", error.message);
+      
       showDialog("거부 처리 오류", error.message, false);
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ const ManageCashPage = () => {
         showDialog("데이터 로딩 실패", result.message, false);
       }
     } catch (error:any) {
-      console.error("데이터 로딩 오류:", error.message);
+      
       showDialog("데이터 로딩 오류", error.message, false);
     } finally {
       setLoading(false);

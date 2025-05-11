@@ -22,7 +22,7 @@ export const registerSlot = async (
       .single();
 
     if (campaignError) {
-      console.error('캠페인 정보 조회 실패:', campaignError.message);
+      
       throw new Error('캠페인 정보를 찾을 수 없습니다.');
     }
 
@@ -79,7 +79,7 @@ export const registerSlot = async (
       .select();
 
     if (slotError) {
-      console.error('슬롯 생성 실패:', slotError.message);
+      
       throw new Error('슬롯 생성에 실패했습니다.');
     }
 
@@ -115,7 +115,7 @@ export const registerSlot = async (
       .eq('user_id', userId);
 
     if (updateBalanceError) {
-      console.error('잔액 업데이트 실패:', updateBalanceError.message);
+      
       // 오류 시 슬롯 삭제하여 롤백 시도
       await supabase.from('slots').delete().eq('id', slotData[0].id);
       throw new Error('결제 처리 중 오류가 발생했습니다.');
@@ -145,7 +145,7 @@ export const registerSlot = async (
       });
 
     if (pendingBalanceError) {
-      console.error('보류 잔액 기록 실패:', pendingBalanceError.message);
+      
       // 오류 시 슬롯 삭제하여 롤백 시도, 이미 차감된 잔액 복구 필요
       try {
         await supabase
@@ -158,7 +158,7 @@ export const registerSlot = async (
           })
           .eq('user_id', userId);
       } catch (rollbackError) {
-        console.error('잔액 롤백 실패:', rollbackError);
+        
       }
       
       await supabase.from('slots').delete().eq('id', slotData[0].id);
@@ -183,7 +183,7 @@ export const registerSlot = async (
         });
         
       if (freeTransactionError) {
-        console.error('무료 캐시 사용 거래 내역 기록 실패:', freeTransactionError.message);
+        
       }
       
       // 유료 캐시 사용 내역 기록
@@ -201,7 +201,7 @@ export const registerSlot = async (
         });
         
       if (paidTransactionError) {
-        console.error('유료 캐시 사용 거래 내역 기록 실패:', paidTransactionError.message);
+        
       }
     }
     // 무료 캐시만 사용하거나 유료 캐시만 사용한 경우
@@ -220,7 +220,7 @@ export const registerSlot = async (
         });
 
       if (transactionError) {
-        console.error('거래 내역 기록 실패:', transactionError.message);
+        
         // 거래 내역 기록 실패는 전체 과정을 실패로 처리하지 않음
       }
     }
@@ -249,7 +249,7 @@ export const registerSlot = async (
       });
 
     if (auditLogError) {
-      console.error('잔액 감사 로그 기록 실패:', auditLogError.message);
+      
       // 감사 로그 실패는 전체 과정을 실패로 처리하지 않음
     }
     
@@ -280,7 +280,7 @@ export const registerSlot = async (
       });
 
     if (historyLogError) {
-      console.error('슬롯 이력 기록 실패:', historyLogError.message);
+      
       // 이력 기록 실패는 전체 과정을 실패로 처리하지 않음
     }
 
@@ -290,7 +290,7 @@ export const registerSlot = async (
       data: slotData[0]
     };
   } catch (err: any) {
-    console.error('슬롯 등록 중 오류 발생:', err);
+    
     return {
       success: false,
       message: err.message || '슬롯 등록 중 오류가 발생했습니다.'
@@ -315,7 +315,7 @@ export const approveSlot = async (
       .single();
 
     if (slotError) {
-      console.error('슬롯 정보 조회 실패:', slotError);
+      
       throw new Error('슬롯을 찾을 수 없습니다.');
     }
 
@@ -340,7 +340,7 @@ export const approveSlot = async (
       .single();
       
     if (pendingBalanceError) {
-      console.error('보류 잔액 조회 실패:', pendingBalanceError);
+      
       throw new Error('거래 정보를 찾을 수 없습니다.');
     }
     
@@ -360,7 +360,7 @@ export const approveSlot = async (
       .eq('slot_id', slotId);
       
     if (updatePendingError) {
-      console.error('보류 잔액 업데이트 실패:', updatePendingError);
+      
       throw new Error('거래 승인 처리에 실패했습니다.');
     }
 
@@ -372,7 +372,7 @@ export const approveSlot = async (
       .single();
 
     if (adminBalanceError && adminBalanceError.code !== 'PGRST116') {
-      console.error('관리자 잔액 조회 실패:', adminBalanceError);
+      
       throw new Error('관리자 계정 정보를 찾을 수 없습니다.');
     }
 
@@ -395,7 +395,7 @@ export const approveSlot = async (
         });
         
       if (insertBalanceError) {
-        console.error('관리자 잔액 생성 실패:', insertBalanceError);
+        
         throw new Error('관리자 계정 잔액 생성에 실패했습니다.');
       }
       
@@ -416,7 +416,7 @@ export const approveSlot = async (
         .eq('user_id', adminUserId);
         
       if (updateBalanceError) {
-        console.error('관리자 잔액 업데이트 실패:', updateBalanceError);
+        
         throw new Error('관리자 계정 잔액 업데이트에 실패했습니다.');
       }
     }
@@ -432,7 +432,7 @@ export const approveSlot = async (
       .select();
       
     if (updateSlotError) {
-      console.error('슬롯 상태 업데이트 실패:', updateSlotError);
+      
       throw new Error('슬롯 승인 처리에 실패했습니다.');
     }
 
@@ -450,7 +450,7 @@ export const approveSlot = async (
       });
       
     if (transactionError) {
-      console.error('관리자 거래 내역 기록 실패:', transactionError);
+      
       // 거래 내역 기록 실패는 전체 과정을 실패로 처리하지 않음
     }
     
@@ -477,7 +477,7 @@ export const approveSlot = async (
       });
       
     if (adminAuditLogError) {
-      console.error('관리자 잔액 감사 로그 기록 실패:', adminAuditLogError);
+      
       // 감사 로그 실패는 전체 과정을 실패로 처리하지 않음
     }
     
@@ -499,7 +499,7 @@ export const approveSlot = async (
       });
       
     if (historyLogError) {
-      console.error('슬롯 이력 기록 실패:', historyLogError);
+      
       // 이력 기록 실패는 전체 과정을 실패로 처리하지 않음
     }
 
@@ -518,7 +518,7 @@ export const approveSlot = async (
           created_at: now
         });
     } catch (notifyError) {
-      console.error('알림 생성 실패:', notifyError);
+      
       // 알림 실패는 무시
     }
 
@@ -528,7 +528,7 @@ export const approveSlot = async (
       data: updatedSlot[0]
     };
   } catch (err: any) {
-    console.error('슬롯 승인 중 오류 발생:', err);
+    
     return {
       success: false,
       message: err.message || '슬롯 승인 중 오류가 발생했습니다.'
@@ -558,7 +558,7 @@ export const rejectSlot = async (
       .single();
 
     if (slotError) {
-      console.error('슬롯 정보 조회 실패:', slotError);
+      
       throw new Error('슬롯을 찾을 수 없습니다.');
     }
 
@@ -583,7 +583,7 @@ export const rejectSlot = async (
       .single();
       
     if (pendingBalanceError) {
-      console.error('보류 잔액 조회 실패:', pendingBalanceError);
+      
       throw new Error('거래 정보를 찾을 수 없습니다.');
     }
     
@@ -606,7 +606,7 @@ export const rejectSlot = async (
         }
       }
     } catch (e) {
-      console.warn('결제 정보 파싱 실패, 기본 환불 방식 사용:', e);
+      
     }
     
     // 보류 잔액 상태 업데이트 (processor_id 필드 사용)
@@ -631,7 +631,7 @@ export const rejectSlot = async (
       .eq('slot_id', slotId);
       
     if (updatePendingError) {
-      console.error('보류 잔액 업데이트 실패:', updatePendingError);
+      
       throw new Error('거래 반려 처리에 실패했습니다.');
     }
 
@@ -643,7 +643,7 @@ export const rejectSlot = async (
       .single();
 
     if (userError) {
-      console.error('사용자 잔액 조회 실패:', userError);
+      
       throw new Error('사용자 잔액 정보를 찾을 수 없습니다.');
     }
 
@@ -676,7 +676,7 @@ export const rejectSlot = async (
       .eq('user_id', slotData.user_id);
       
     if (updateBalanceError) {
-      console.error('사용자 잔액 환불 실패:', updateBalanceError);
+      
       throw new Error('환불 처리에 실패했습니다.');
     }
 
@@ -692,7 +692,7 @@ export const rejectSlot = async (
       .select();
       
     if (updateSlotError) {
-      console.error('슬롯 상태 업데이트 실패:', updateSlotError);
+      
       throw new Error('슬롯 반려 처리에 실패했습니다.');
     }
 
@@ -717,7 +717,7 @@ export const rejectSlot = async (
         });
         
       if (freeCashTransactionError) {
-        console.error('무료 캐시 환불 거래 내역 기록 실패:', freeCashTransactionError);
+        
       }
       
       // 유료 캐시 환불 내역 기록
@@ -736,7 +736,7 @@ export const rejectSlot = async (
         });
         
       if (paidCashTransactionError) {
-        console.error('유료 캐시 환불 거래 내역 기록 실패:', paidCashTransactionError);
+        
       }
     }
     // 무료 캐시만 환불되는 경우
@@ -756,7 +756,7 @@ export const rejectSlot = async (
         });
         
       if (freeCashTransactionError) {
-        console.error('무료 캐시 환불 거래 내역 기록 실패:', freeCashTransactionError);
+        
       }
     }
     // 유료 캐시만 환불되는 경우
@@ -776,7 +776,7 @@ export const rejectSlot = async (
         });
         
       if (paidCashTransactionError) {
-        console.error('유료 캐시 환불 거래 내역 기록 실패:', paidCashTransactionError);
+        
       }
     }
     // 결제 정보가 없는 경우 (이전 방식대로 단일 환불 내역 기록)
@@ -796,7 +796,7 @@ export const rejectSlot = async (
         });
         
       if (transactionError) {
-        console.error('환불 거래 내역 기록 실패:', transactionError);
+        
       }
     }
     
@@ -827,7 +827,7 @@ export const rejectSlot = async (
       });
       
     if (auditLogError) {
-      console.error('잔액 감사 로그 기록 실패:', auditLogError);
+      
       // 감사 로그 실패는 전체 과정을 실패로 처리하지 않음
     }
     
@@ -864,7 +864,7 @@ export const rejectSlot = async (
       });
       
     if (historyLogError) {
-      console.error('슬롯 이력 기록 실패:', historyLogError);
+      
       // 이력 기록 실패는 전체 과정을 실패로 처리하지 않음
     }
 
@@ -883,7 +883,7 @@ export const rejectSlot = async (
           created_at: now
         });
     } catch (notifyError) {
-      console.error('알림 생성 실패:', notifyError);
+      
       // 알림 실패는 무시
     }
 
@@ -893,7 +893,7 @@ export const rejectSlot = async (
       data: updatedSlot[0]
     };
   } catch (err: any) {
-    console.error('슬롯 반려 중 오류 발생:', err);
+    
     return {
       success: false,
       message: err.message || '슬롯 반려 중 오류가 발생했습니다.'
@@ -956,7 +956,7 @@ export const getUserSlots = async (
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('슬롯 목록 조회 실패:', error.message);
+      
       throw new Error('슬롯 목록을 가져오는데 실패했습니다.');
     }
 
@@ -999,7 +999,7 @@ export const getUserSlots = async (
       count: count || filteredData.length
     };
   } catch (err: any) {
-    console.error('슬롯 목록 조회 중 오류 발생:', err);
+    
     return {
       success: false,
       message: err.message || '슬롯 목록 조회 중 오류가 발생했습니다.'
@@ -1021,7 +1021,7 @@ export const getSlotStats = async (
       .eq('user_id', userId);
 
     if (error) {
-      console.error('슬롯 통계 조회 실패:', error.message);
+      
       throw new Error('슬롯 통계를 가져오는데 실패했습니다.');
     }
 
@@ -1061,7 +1061,7 @@ export const getSlotStats = async (
       data: stats
     };
   } catch (err: any) {
-    console.error('슬롯 통계 조회 중 오류 발생:', err);
+    
     return {
       success: false,
       message: err.message || '슬롯 통계 조회 중 오류가 발생했습니다.'

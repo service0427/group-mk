@@ -173,9 +173,9 @@ export const DashboardContent: React.FC = () => {
           }
         }
         
-        console.log('사용자 캐시 데이터 로드 성공:', userCash, cashTrend);
+        
       } catch (cashError) {
-        console.error('사용자 캐시 조회 오류:', cashError);
+        
       }
       
       // 현재는 실제 Supabase 테이블이 없으므로 더미 데이터를 사용
@@ -188,7 +188,7 @@ export const DashboardContent: React.FC = () => {
         .eq('creator_id', currentUser.id);
       
       if (salesError) {
-        console.error('판매 수 조회 오류:', salesError);
+        
       }
       
       // 2. 활성 상품 수
@@ -199,7 +199,7 @@ export const DashboardContent: React.FC = () => {
         .eq('status', 'active');
       
       if (campaignsError) {
-        console.error('활성 상품 수 조회 오류:', campaignsError);
+        
       } */
       
       // 임의의 통계 데이터로 설정 (캐시는 실제 사용자 데이터 사용)
@@ -215,7 +215,7 @@ export const DashboardContent: React.FC = () => {
         setLoading(false);
       }, 500);
     } catch (error) {
-      console.error('데이터 로드 오류:', error);
+      
       setLoading(false);
     }
   };

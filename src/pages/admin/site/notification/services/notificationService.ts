@@ -53,7 +53,7 @@ export const fetchNotifications = async ({
     const { count, error: countError } = await countQuery;
 
     if (countError) {
-      console.error('알림 개수 조회 중 오류 발생:', countError.message);
+      
       toast.error('알림 정보를 불러오는데 실패했습니다.');
       throw countError;
     }
@@ -88,7 +88,7 @@ export const fetchNotifications = async ({
       statusCounts[NotificationStatus.READ] = readCount || 0;
       statusCounts[NotificationStatus.ARCHIVED] = archivedCount || 0;
     } catch (error) {
-      console.error('상태별 알림 수 조회 중 오류 발생:', error);
+      
     }
 
     // 페이지네이션 정보 계산
@@ -105,7 +105,7 @@ export const fetchNotifications = async ({
     const { data, error } = await dataQuery;
 
     if (error) {
-      console.error('알림을 가져오는 중 오류 발생:', error.message);
+      
       toast.error('알림 데이터를 불러오는데 실패했습니다.');
       throw error;
     }
@@ -189,7 +189,7 @@ export const fetchNotifications = async ({
         statusCounts
       };
     } catch (userError) {
-      console.error('사용자 정보 조회 중 오류 발생:', userError);
+      
 
       // 오류가 발생해도 알림 데이터는 표시 (사용자 정보 없이)
       const basicTypedData = data.map((item: any) => ({
@@ -212,7 +212,7 @@ export const fetchNotifications = async ({
       };
     }
   } catch (error: any) {
-    console.error('알림을 가져오는 중 오류 발생:', error.message);
+    
     throw error;
   }
 };
@@ -308,7 +308,7 @@ export const calculateStats = async (
       byStatus: statusCounts
     };
   } catch (error) {
-    console.error('알림 통계 계산 중 오류 발생:', error);
+    
 
     // 오류 발생 시에도 기본 통계 정보는 반환
     return {
@@ -347,7 +347,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
         .lt('created_at', options.olderThan.toISOString());
 
       if (error) {
-        console.error('알림 개수 조회 중 오류 발생:', error.message);
+        
         toast.dismiss();
         toast.error('알림 개수 조회 중 오류가 발생했습니다.');
         return false;
@@ -361,7 +361,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
         .select('*', { count: 'exact', head: true });
 
       if (error) {
-        console.error('알림 개수 조회 중 오류 발생:', error.message);
+        
         toast.dismiss();
         toast.error('알림 개수 조회 중 오류가 발생했습니다.');
         return false;
@@ -396,7 +396,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
             .in('id', batch);
 
           if (error) {
-            console.error(`배치 ${i / batchSize + 1} 아카이브 중 오류 발생:`, error.message);
+            
           }
 
           processedCount += batch.length;
@@ -423,7 +423,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
         const { error } = await query;
 
         if (error) {
-          console.error('알림 아카이브 중 오류 발생:', error.message);
+          
           toast.dismiss();
           toast.error('알림 아카이브 중 오류가 발생했습니다.');
           return false;
@@ -447,7 +447,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
             .in('id', batch);
 
           if (error) {
-            console.error(`배치 ${i / batchSize + 1} 삭제 중 오류 발생:`, error.message);
+            
           }
 
           processedCount += batch.length;
@@ -466,7 +466,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
           .lt('created_at', options.olderThan.toISOString());
 
         if (error) {
-          console.error('알림 삭제 중 오류 발생:', error.message);
+          
           toast.dismiss();
           toast.error('알림 삭제 중 오류가 발생했습니다.');
           return false;
@@ -487,7 +487,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
             .limit(10000); // 최대 1만개까지만 처리 (필요시 더 많이 처리하려면 페이지네이션 로직 추가 필요)
 
           if (idError) {
-            console.error('알림 ID 조회 중 오류 발생:', idError.message);
+            
             toast.dismiss();
             toast.error('알림 ID 조회 중 오류가 발생했습니다.');
             return false;
@@ -514,7 +514,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
               .in('id', batch);
 
             if (deleteError) {
-              console.error(`배치 ${i / batchSize + 1} 삭제 중 오류 발생:`, deleteError.message);
+              
             } else {
               deleted += batch.length;
             }
@@ -529,7 +529,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
 
           processedCount = deleted;
         } catch (error: any) {
-          console.error('전체 알림 삭제 중 오류 발생:', error.message);
+          
           toast.dismiss();
           toast.error(`전체 알림 삭제 중 오류 발생: ${error.message}`);
           return false;
@@ -546,13 +546,13 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
       // 대량 삭제이므로 전체 통계 갱신
       await handleBulkDeleteAggregate();
     } catch (statsError) {
-      console.error('알림 통계 업데이트 중 오류 발생:', statsError);
+      
       // 통계 업데이트 실패는 알림 삭제 성공 여부에 영향을 주지 않음
     }
 
     return true;
   } catch (error: any) {
-    console.error('알림 삭제 중 오류 발생:', error.message);
+    
     toast.dismiss();
     toast.error(`알림 삭제 중 오류 발생: ${error.message}`);
     return false;
@@ -592,7 +592,7 @@ export const createMultipleNotifications = async (
       const { data, error } = await query;
 
       if (error) {
-        console.error('사용자 ID 조회 중 오류 발생:', error.message);
+        
         toast.error('사용자 ID 조회 중 오류가 발생했습니다.');
         return false;
       }
@@ -604,7 +604,7 @@ export const createMultipleNotifications = async (
     }
 
     if (userIds.length === 0) {
-      console.error('알림을 보낼 사용자가 없습니다.');
+      
       toast.error('알림을 보낼 사용자가 없습니다.');
       return false;
     }
@@ -636,7 +636,7 @@ export const createMultipleNotifications = async (
 
       try {
         // 관리자 권한으로 알림 생성 시도 (RLS 정책 우회 확인)
-        console.log('알림 전송 시도 - 관리자 클라이언트 사용');
+        
 
         // 커스텀 헤더를 추가하여 명시적으로 서비스 롤 설정
         const { error } = await supabaseAdmin
@@ -645,11 +645,11 @@ export const createMultipleNotifications = async (
           .select(); // select를 추가하여 응답 확인
 
         if (error) {
-          console.error('supabaseAdmin 삽입 오류:', error);
+          
 
           // RLS 오류 발생 시 대체 방식 시도 (직접 헤더 설정)
           if (error.message.includes('row-level security')) {
-            console.log('RLS 우회 실패, 대체 방식 시도...');
+            
 
             // 직접 서비스 롤 키를 헤더에 명시적으로 지정하는 방식 시도
             // Create a custom fetch function with the headers
@@ -671,22 +671,22 @@ export const createMultipleNotifications = async (
               .insert(notificationsToInsert);
 
             if (retryError) {
-              console.error('대체 방식도 실패:', retryError);
+              
               throw retryError;
             } else {
-              console.log('대체 방식 성공!');
+              
               successCount += batch.length;
             }
           } else {
             throw error;
           }
         } else {
-          console.log('알림 전송 성공!');
+          
           // 성공 처리
           successCount += batch.length;
         }
       } catch (err: any) {
-        console.error(`배치 ${i / batchSize + 1} 처리 중 오류 발생:`, err.message);
+        
         toast.error(`알림 전송 중 오류: ${err.message}`);
         // 실패 처리
         failCount += batch.length;
@@ -740,13 +740,13 @@ export const createMultipleNotifications = async (
         }
       }
     } catch (statsError) {
-      console.error('알림 통계 업데이트 중 오류 발생:', statsError);
+      
       // 통계 업데이트 실패는 알림 생성 성공 여부에 영향을 주지 않음
     }
 
     return successCount > 0;
   } catch (error: any) {
-    console.error('알림 생성 중 오류 발생:', error.message);
+    
     return false;
   }
 };

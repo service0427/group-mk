@@ -47,7 +47,7 @@ const UserInfoDisplay = () => {
         const balance = await getUserCashBalance(currentUser.id);
         setCashBalance(balance);
       } catch (error) {
-        console.error('캐시 잔액 조회 오류:', error);
+        
       } finally {
         setIsLoading(false);
       }
@@ -115,7 +115,7 @@ const UserInfoDisplay = () => {
       // navigate, window.location.href 대신 페이지 새로고침으로 권한 재확인하도록
       window.location.reload();
     } catch (error) {
-      console.error('로그아웃 처리 중 오류:', error);
+      
       setIsLogoutLoading(false);
       
       // 오류 발생해도 로그인 페이지로 강제 이동

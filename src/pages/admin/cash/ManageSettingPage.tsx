@@ -49,7 +49,7 @@ const ManageSettingPage = () => {
         .single();
 
       if (error) {
-        console.error("전역 설정 로딩 오류:", error);
+        
         // 오류가 날 경우 기본값 유지
       } else if (data) {
         setGlobalSettings({
@@ -61,7 +61,7 @@ const ManageSettingPage = () => {
         });
       }
     } catch (error: any) {
-      console.error("전역 설정 로딩 오류:", error.message);
+      
     } finally {
       setLoading(false);
     }
@@ -78,12 +78,12 @@ const ManageSettingPage = () => {
         .order('created_at', { ascending: false });
 
       if (settingsError) {
-        console.error("사용자별 설정 로딩 오류:", settingsError);
+        
       } else if (settingsData) {
         setUserSettings(settingsData);
       }
     } catch (error: any) {
-      console.error("사용자별 설정 로딩 오류:", error.message);
+      
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ const ManageSettingPage = () => {
 
       showNotification('전역 설정이 저장되었습니다.', 'success');
     } catch (error: any) {
-      console.error("전역 설정 저장 오류:", error.message);
+      
       showNotification('설정 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setSavingGlobal(false);
@@ -199,7 +199,7 @@ const ManageSettingPage = () => {
       fetchUserSettings(); // 목록 새로고침
 
     } catch (error: any) {
-      console.error("사용자별 설정 저장 오류:", error.message);
+      
       showNotification('설정 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setSavingUser(false);
@@ -225,7 +225,7 @@ const ManageSettingPage = () => {
       setSearchedUsers(data || []);
       setShowUserSearch(true);
     } catch (error: any) {
-      console.error("사용자 검색 오류:", error.message);
+      
     }
   };
 
@@ -278,7 +278,7 @@ const ManageSettingPage = () => {
       showNotification('설정이 삭제되었습니다.', 'success');
       fetchUserSettings(); // 목록 새로고침
     } catch (error: any) {
-      console.error("설정 삭제 오류:", error.message);
+      
       showNotification('설정 삭제 중 오류가 발생했습니다.', 'error');
     }
   };

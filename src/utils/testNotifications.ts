@@ -60,14 +60,14 @@ export const createTestNotification = async (userId: string, type?: Notification
       .select();
       
     if (error) {
-      console.error('테스트 알림 생성 중 오류 발생:', error.message);
+      
       return null;
     }
     
-    console.log('테스트 알림 생성 성공:', data[0]);
+    
     return data[0];
   } catch (error: any) {
-    console.error('테스트 알림 생성 중 오류 발생:', error.message);
+    
     return null;
   }
 };
@@ -93,7 +93,7 @@ export const createAllTypeNotifications = async (userId: string) => {
     
     return results;
   } catch (error: any) {
-    console.error('모든 유형 알림 생성 중 오류 발생:', error.message);
+    
     return [];
   }
 };
@@ -119,7 +119,7 @@ export const createMultipleTestNotifications = async (userId: string, count: num
     
     return results;
   } catch (error: any) {
-    console.error('다중 테스트 알림 생성 중 오류 발생:', error.message);
+    
     return [];
   }
 };
@@ -142,14 +142,14 @@ export const deleteAllTestNotifications = async (userId: string) => {
       .like('title', '테스트 알림%');
       
     if (error) {
-      console.error('테스트 알림 삭제 중 오류 발생:', error.message);
+      
       return false;
     }
     
-    console.log(`${count}개의 테스트 알림이 삭제되었습니다.`);
+    
     return true;
   } catch (error: any) {
-    console.error('테스트 알림 삭제 중 오류 발생:', error.message);
+    
     return false;
   }
 };

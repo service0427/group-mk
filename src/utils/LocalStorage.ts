@@ -6,7 +6,7 @@ const getData = (key: string): unknown | undefined => {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error('Read from local storage', error);
+    
   }
 };
 
@@ -14,7 +14,7 @@ const setData = (key: string, value: unknown): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error('Save in local storage', error);
+    
   }
 };
 

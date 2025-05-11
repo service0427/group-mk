@@ -69,7 +69,7 @@ const WithdrawSettingPage: React.FC = () => {
                 const data = await getWithdrawGlobalSettings();
                 setGlobalSettings(data);
             } catch (error) {
-                console.error('Error fetching global settings:', error);
+                
                 setNotification({ show: true, message: '전역 설정을 불러오는데 실패했습니다.', type: 'error' });
             } finally {
                 setLoading(false);
@@ -85,9 +85,9 @@ const WithdrawSettingPage: React.FC = () => {
                 setLoading(true);
                 const data = await getDistributor();
                 setUserList(data);
-                console.log(data);
+                
             } catch (error) {
-                console.error('Error fetching distributor IDs:', error);
+                
             } finally {
                 setLoading(false);
             }
@@ -185,7 +185,7 @@ const WithdrawSettingPage: React.FC = () => {
                                     setNotification({ show: true, message: '전역 출금 설정이 저장 되었습니다!', type: 'success' });
                                     return true;
                                 } catch (error) {
-                                    console.error('Error saving global settings:', error);
+                                    
                                     setNotification({ show: true, message: '전역 출금 설정에 실패하였습니다!', type: 'error' });
                                     return false;
                                 } finally {
@@ -249,7 +249,7 @@ const WithdrawSettingPage: React.FC = () => {
 
                                             return true;
                                         } catch (error) {
-                                            console.error('Error saving user settings:', error);
+                                            
                                             setNotification({ show: true, message: '유저 출금 설정에 실패하였습니다!', type: 'error' });
                                             return false;
                                         } finally {

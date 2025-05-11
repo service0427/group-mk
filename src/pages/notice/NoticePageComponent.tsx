@@ -40,7 +40,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
             .update({ view_count: (notice.view_count || 0) + 1 })
             .eq('id', notice.id);
         } catch (error) {
-          console.error('조회수 업데이트 중 오류 발생:', error);
+          
         }
       }
     };
@@ -298,7 +298,7 @@ const NoticePageComponent = () => {
       setNormalNotices(paginatedNormal);
       setNotices([...important, ...paginatedNormal]);
     } catch (err: any) {
-      console.error('공지사항을 가져오는 중 오류가 발생했습니다:', err);
+      
       setError('공지사항을 불러오는데 실패했습니다.');
       toast.error("공지사항 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {

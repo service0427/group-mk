@@ -52,7 +52,7 @@ const RoleBasedDashboard: React.FC = () => {
     case USER_ROLES.ADVERTISER:
       return <AdvertiserDashboardContent />;
     default:
-      console.warn(`Unknown role: ${userRole}, showing advertiser dashboard as fallback`);
+      
       return <AdvertiserDashboardContent />;
   }
 };

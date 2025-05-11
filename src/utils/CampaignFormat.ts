@@ -195,7 +195,6 @@ export const getAnimalIconFromName = (name: string): string | null => {
     const normalizedAnimal = animalName.toLowerCase().replace(/\s+/g, '');
 
     if (normalizedName === normalizedAnimal) {
-      console.log(`캠페인 이름 "${name}"이 동물 이름 "${animalName}"과 정확히 일치, 아이콘 "${iconName}" 사용`);
       return iconName;
     }
   }
@@ -204,7 +203,6 @@ export const getAnimalIconFromName = (name: string): string | null => {
   for (const [animalName, iconName] of Object.entries(animalNameMap)) {
     if (lowerName.includes(`${animalName.toLowerCase()} 선택`) ||
         lowerName.includes(`selected ${animalName.toLowerCase()}`)) {
-      console.log(`캠페인 이름 "${name}"에서 동물 선택 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
       return iconName;
     }
   }
@@ -215,7 +213,6 @@ export const getAnimalIconFromName = (name: string): string | null => {
 
   for (const [animalName, iconName] of sortedEntries) {
     if (lowerName.includes(animalName.toLowerCase())) {
-      console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
       return iconName;
     }
   }
@@ -227,12 +224,8 @@ export const getAnimalIconFromName = (name: string): string | null => {
  * 이미지 URL 포맷팅
  */
 export const formatImageUrl = (logo: string | undefined, addInfo?: any, campaignName?: string): string => {
-  // 디버깅 로그: 입력 파라미터 기록
-  console.log('formatImageUrl 호출:', { logo, addInfo, campaignName });
-
   // 1. add_info.logo_url이 있으면 그것을 사용 (업로드된 이미지)
   if (addInfo?.logo_url) {
-    console.log('add_info.logo_url 사용:', addInfo.logo_url);
     return addInfo.logo_url;
   }
 
@@ -240,19 +233,16 @@ export const formatImageUrl = (logo: string | undefined, addInfo?: any, campaign
   if (logo) {
     // 로고가 이미 URL인 경우 그대로 반환
     if (logo.includes('http')) {
-      console.log('로고 URL 직접 사용:', logo);
       return logo;
     }
 
     // 로고가 동물 이름(예: 'cat', 'giraffe')인 경우
     if (animalIcons.includes(logo)) {
-      console.log('드롭다운에서 선택된 동물 아이콘 사용:', logo);
       return toAbsoluteUrl(`/media/animal/svg/${logo}.svg`);
     }
 
     // 로고가 media 경로부터 시작하는 경우
     if (logo.startsWith('/media')) {
-      console.log('미디어 경로 로고 사용:', logo);
       return toAbsoluteUrl(logo);
     }
 
@@ -273,16 +263,13 @@ export const formatImageUrl = (logo: string | undefined, addInfo?: any, campaign
 
       // 추출된 동물 이름이 있고 유효한 동물 아이콘인 경우
       if (animalName && animalIcons.includes(animalName)) {
-        console.log(`경로에서 동물 이름 추출 (formatImageUrl): ${animalName}`);
         return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
       }
 
-      console.log('확장자 포함 로고 사용 (formatImageUrl):', logo);
       return toAbsoluteUrl(`/media/${logo}`);
     }
 
     // 그 외의 경우, /media/animal/svg/ 폴더에서 찾음
-    console.log('기타 로고 케이스 처리 (formatImageUrl):', logo);
     return toAbsoluteUrl(`/media/animal/svg/${logo}.svg`);
   }
 
@@ -291,13 +278,11 @@ export const formatImageUrl = (logo: string | undefined, addInfo?: any, campaign
   if (campaignName) {
     const animalFromName = getAnimalIconFromName(campaignName);
     if (animalFromName) {
-      console.log('캠페인 이름에서 추출한 동물 아이콘 사용:', animalFromName);
       return toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
     }
   }
 
   // 4. 기본 이미지 사용
-  console.log('기본 이미지(사자) 사용');
   return toAbsoluteUrl('/media/animal/svg/lion.svg');
 };
 
@@ -365,11 +350,6 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
   }
 
   // 로고 경로 우선순위: 1. 업로드된 로고 -> 2. logo 필드 -> 3. 이름에서 추출 -> 4. 기본값
-  console.log('formatCampaignData 로고 결정:', {
-    logo_url: campaign.add_info?.logo_url,
-    logo_field: campaign.logo,
-    campaignName: campaign.campaign_name
-  });
 
   // 로고 선택 로직
   let logoPath;
@@ -377,14 +357,12 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
   // 1. 업로드된 로고 (add_info.logo_url)
   if (campaign.add_info?.logo_url) {
     logoPath = campaign.add_info.logo_url;
-    console.log('업로드된 로고 사용:', logoPath);
   }
   // 2. logo 필드가 있는 경우 (직접 선택된 동물 아이콘)
   else if (campaign.logo) {
     // logo가 동물 이름인 경우
     if (animalIcons.includes(campaign.logo)) {
       logoPath = `/media/animal/svg/${campaign.logo}.svg`;
-      console.log('logo 필드의 동물 이름 사용:', logoPath);
     }
     // logo가 경로인 경우
     else {
@@ -407,12 +385,10 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
       // 추출된 동물 이름이 있고 유효한 동물 아이콘인 경우
       if (animalName && animalIcons.includes(animalName)) {
         logoPath = `/media/animal/svg/${animalName}.svg`;
-        console.log(`경로에서 동물 이름 추출: ${animalName}, 경로: ${logoPath}`);
       }
       // 그렇지 않으면 원래 경로 사용
       else {
         logoPath = logoValue.startsWith('/media') ? logoValue : `/media/${logoValue}`;
-        console.log('logo 필드의 경로 직접 사용:', logoPath);
       }
     }
   }
@@ -421,12 +397,10 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
     const animalFromName = getAnimalIconFromName(campaign.campaign_name);
     if (animalFromName) {
       logoPath = `/media/animal/svg/${animalFromName}.svg`;
-      console.log('캠페인 이름에서 추출한 아이콘 사용:', logoPath);
     }
     // 4. 기본값
     else {
       logoPath = '/media/animal/svg/lion.svg';
-      console.log('기본 아이콘(사자) 사용:', logoPath);
     }
   }
 

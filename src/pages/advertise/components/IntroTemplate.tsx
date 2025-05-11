@@ -48,7 +48,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         // URL 경로에서 서비스 타입 추출
         const pathSegments = pathname.split('/').filter(Boolean);
         
-        console.log('Path segments:', pathSegments);
+        
         
         // /advertise/platform/type/intro 와 /advertise/platform/subservice/type/intro 구분
         let platform = '';
@@ -69,13 +69,13 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           }
         }
         
-        console.log('Parsed URL params:', {platform, subservice, type});
+        
         
         // 서비스 타입 코드 변환
         const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
         
         if (!serviceTypeCode) {
-          console.error('Service type code not found for the given path');
+          
           setLoading(false);
           return;
         }
@@ -89,7 +89,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           .order('id', { ascending: true });
           
         if (error) {
-          console.error('Error fetching campaign data:', error);
+          
           setLoading(false);
           return;
         }
@@ -102,7 +102,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         setItems(formattedItems);
         setLoading(false);
       } catch (error) {
-        console.error('캠페인 데이터 로딩 오류:', error);
+        
         setItems([]);
         setLoading(false);
       }

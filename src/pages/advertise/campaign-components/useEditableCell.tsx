@@ -114,7 +114,7 @@ export const useEditableCell = ({ slots, updateSlot }: UseEditableCellProps) => 
       // 데이터 업데이트
       await updateSlot(editingCell.id, updatedInputData);
     } catch (err) {
-      console.error('슬롯 수정 실패:', err);
+      
     } finally {
       // 편집 상태 초기화 (성공/실패 상관없이)
       setEditingCell({ id: '', field: '' });

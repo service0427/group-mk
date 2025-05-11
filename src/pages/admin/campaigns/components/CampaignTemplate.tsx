@@ -78,12 +78,12 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
 
           // 사용자 필터링 로그
           if (userId) {
-            console.log(`사용자 ${userId}의 캠페인만 표시합니다. 총 ${data.length}개`);
+            
           } else {
-            console.log(`모든 캠페인을 표시합니다. 총 ${data.length}개`);
+            
           }
         } catch (dbError) {
-          console.error('DB 데이터 조회 오류:', dbError);
+          
           useBackupData = true;
         }
       } else {
@@ -92,7 +92,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
 
       // DB에 데이터가 없을 경우 빈 배열 유지, 백업 데이터 사용하지 않음
       if (useBackupData) {
-        console.warn('DB에서 데이터를 가져오지 못했습니다.');
+        
         setCampaigns([]);
       } else {
         // DB에서 데이터를 성공적으로 가져온 경우
@@ -101,7 +101,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
 
       setError(null);
     } catch (err) {
-      console.error('캠페인 데이터 로드 중 오류:', err);
+      
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
 
       // 오류 발생 시에도 빈 배열 사용 (백업 데이터 사용 안함)

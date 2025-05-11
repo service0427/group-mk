@@ -53,7 +53,7 @@ const LevelUpRequestsPage = () => {
       
       setRequests(data as RequestWithUser[] || []);
     } catch (err: any) {
-      console.error('등업 신청 조회 에러:', err);
+      
       setError('등업 신청 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -90,10 +90,10 @@ const LevelUpRequestsPage = () => {
       try {
         // 현재 로그인된 사용자는 운영자이므로 다른 사용자의 메타데이터를 직접 업데이트할 수 없음
         // 대신, 해당 사용자가 다음에 로그인할 때 users 테이블의 역할이 적용되도록 함
-        console.log('사용자 역할이 users 테이블에서 distributor로 업데이트되었습니다.');
-        console.log('auth.users 메타데이터는 사용자의 다음 로그인 시 업데이트될 것입니다.');
+        
+        
       } catch (error) {
-        console.error('사용자 역할 업데이트 알림 오류:', error);
+        
       }
       
       // 2. 등업 신청 상태 업데이트
@@ -119,7 +119,7 @@ const LevelUpRequestsPage = () => {
       fetchRequests();
       
     } catch (err: any) {
-      console.error('등업 신청 승인 에러:', err);
+      
       showStatusModal(
         "승인 실패", 
         `처리 중 오류가 발생했습니다: ${err.message}`, 
@@ -173,7 +173,7 @@ const LevelUpRequestsPage = () => {
       fetchRequests();
       
     } catch (err: any) {
-      console.error('등업 신청 거부 에러:', err);
+      
       showStatusModal(
         "거부 실패", 
         `처리 중 오류가 발생했습니다: ${err.message}`, 
@@ -291,7 +291,7 @@ const LevelUpRequestsPage = () => {
                                 alt="사업자등록증" 
                                 className="object-cover w-16 h-16 border rounded hover:opacity-80 transition-opacity"
                                 onError={(e) => {
-                                  console.error('이미지 로드 실패');
+                                  
                                   (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
                                 }}
                               />
@@ -400,7 +400,7 @@ const LevelUpRequestsPage = () => {
               alt="사업자등록증" 
               className="max-h-[85vh] object-contain"
               onError={(e) => {
-                console.error('이미지 모달 로드 실패');
+                
                 (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
               }}
             />

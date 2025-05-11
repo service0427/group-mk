@@ -69,7 +69,7 @@ export const DashboardContent: React.FC = () => {
       return;
     }
 
-    console.log(`${amount}원을 ${paymentMethod === 'card' ? '신용카드' : '계좌이체'}로 충전 요청`);
+    
     // API 호출 로직 추가
 
     // 입력 필드 초기화

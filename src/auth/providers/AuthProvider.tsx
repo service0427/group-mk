@@ -51,7 +51,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             );
             return JSON.parse(jsonPayload);
         } catch (error) {
-            console.error('토큰 디코딩 오류:', error);
             return null;
         }
     }, []);
@@ -72,12 +71,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const storeAuth = authHelper.getAuth();
             if (!storeAuth) return false;
 
-            console.log('토큰 갱신 시도...');
             // 현재 세션 가져오기
             const { data, error } = await supabase.auth.getSession();
 
             if (error || !data.session) {
-                console.error('세션을 가져오는 중 오류 발생:', error?.message);
                 return false;
             }
 
@@ -90,10 +87,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
             saveAuth(authData);
             setLastTokenCheck(Date.now());
-            console.log('토큰 갱신 성공');
             return true;
         } catch (error: any) {
-            console.error('토큰 새로고침 중 오류:', error.message);
             return false;
         }
     }, [saveAuth]);
@@ -111,13 +106,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
             // 이미 만료되었거나 10분 이내에 만료 예정이면 갱신
             if (currentTime >= expiryTime || expiryTime - currentTime < 10 * 60 * 1000) {
-                console.log('토큰 만료 또는 곧 만료 예정, 갱신 시도');
                 return await refreshToken();
             }
 
             return true;
         } catch (error) {
-            console.error('토큰 검증 중 오류:', error);
             return false;
         }
     }, [auth, decodeToken, refreshToken]);
@@ -129,7 +122,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
             if (sessionError || !sessionData.session) {
-                console.error('유효한 세션이 없습니다:', sessionError?.message);
                 return null;
             }
 
@@ -137,12 +129,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const { data: { user }, error } = await supabase.auth.getUser();
 
             if (error || !user) {
-                console.error('사용자 정보를 가져올 수 없음: ', error?.message);
                 return null;
             }
-
-            console.log('Auth 사용자 정보 가져옴:', user.id);
-            console.log('Auth 사용자 메타데이터:', user.user_metadata);
 
             try {
                 // users 테이블에서 사용자 정보 조회
@@ -153,10 +141,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     .single();
 
                 if (userError) {
-
                     // 기본 사용자 정보 반환 - 메타데이터 역할 유지
                     const metadataRole = user.user_metadata?.role;
-                    console.log('기본 데이터 생성 - 메타데이터 역할:', metadataRole);
 
                     const basicUserData: CustomUser = {
                         id: user.id,
@@ -170,10 +156,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     return basicUserData;
                 }
 
-                console.log('사용자 데이터 성공적으로 가져옴:', userData);
                 return userData as CustomUser;
             } catch (error: any) {
-                console.error('사용자 데이터 처리 중 오류:', error.message);
                 // 오류 시 기본 사용자 정보 반환
                 const basicUserData: CustomUser = {
                     id: user.id,
@@ -187,7 +171,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             }
 
         } catch (error: any) {
-            console.error('getUser 함수 오류:', error.message);
             return null;
         }
     }, []);
@@ -208,10 +191,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         if (cachedUser) {
                             const parsedUser = JSON.parse(cachedUser);
                             setCurrentUser(parsedUser);
-                            console.log('세션 스토리지에서 사용자 정보 임시 복원됨');
                         }
                     } catch (cacheError) {
-                        console.error('캐시된 사용자 정보 복원 오류:', cacheError);
+                        // 캐시 복원 실패 시 무시
                     }
 
                     // 백그라운드에서 토큰 갱신 및 사용자 정보 업데이트
@@ -227,18 +209,16 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                                 if (user) {
                                     setCurrentUser(user);
                                     setAuthVerified(true);
-                                    console.log('사용자 정보 로드 성공:', user);
 
                                     // 검증된 사용자 정보 캐싱
                                     try {
                                         sessionStorage.setItem('currentUser', JSON.stringify(user));
                                         sessionStorage.setItem('lastAuthCheck', Date.now().toString());
                                     } catch (e) {
-                                        console.error('캐시 저장 오류:', e);
+                                        // 캐시 저장 실패 시 무시
                                     }
                                 } else {
                                     // 사용자 정보가 없으면 인증 정보 제거
-                                    console.warn('사용자 정보를 가져올 수 없음, 로그아웃');
                                     authHelper.removeAuth();
                                     setAuth(undefined);
                                     setCurrentUser(null);
@@ -248,7 +228,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                                 }
                             } else {
                                 // 토큰 갱신 실패 시 인증 정보 제거
-                                console.warn('토큰 갱신 실패, 로그아웃');
                                 authHelper.removeAuth();
                                 setAuth(undefined);
                                 setCurrentUser(null);
@@ -257,13 +236,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                                 sessionStorage.removeItem('lastAuthCheck');
                             }
                         } catch (backgroundError) {
-                            console.error('백그라운드 인증 초기화 오류:', backgroundError);
                             // 오류 발생 시 인증 정보는 그대로 유지 (UI 깜빡임 방지)
                         }
                     }, 0);
                 }
             } catch (error) {
-                console.error('인증 초기화 오류:', error);
                 // 오류 발생 시 인증 정보 제거
                 authHelper.removeAuth();
                 setAuth(undefined);
@@ -299,8 +276,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         // Supabase의 세션 변경 이벤트 리스너 설정
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('인증 상태 변경 감지:', event);
-
                 // 비밀번호 변경 이벤트 (PASSWORD_RECOVERY)는 별도 처리
                 if (event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') {
                     // 토큰만 갱신하고 전체 로그인 프로세스는 실행하지 않음
@@ -313,7 +288,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
                         setAuth(authData);
                         authHelper.setAuth(authData);
-                        console.log('비밀번호 변경 후 토큰 갱신됨');
                     }
                     return;
                 }
@@ -331,13 +305,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     // 사용자 정보 가져오기
                     const user = await getUser();
                     setCurrentUser(user);
-                    console.log('인증 상태 변경 후 사용자 정보:', user);
                 } else if (event === 'SIGNED_OUT') {
                     // 로그아웃 이벤트 처리
                     setAuth(undefined);
                     setCurrentUser(null);
                     authHelper.removeAuth();
-                    console.log('로그아웃 감지');
                 }
             }
         );
@@ -348,32 +320,24 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         };
     }, [authInitialized, getUser]);
 
-    // 로그인 함수 - 추가 디버깅 로깅
+    // 로그인 함수
     const login = async (email: string, password: string) => {
-        console.log('로그인 시도:', email);
         setLoading(true);
 
         try {
-            console.log('Supabase 인증 요청 시작');
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) {
-                console.error('Supabase 로그인 에러:', error.message);
-                console.error('에러 코드:', error.code || '코드 없음');
-                console.error('에러 상세:', JSON.stringify(error));
                 throw new Error(error.message);
             }
 
-            console.log('인증 응답 데이터:', data);
             if (!data || !data.session) {
-                console.error('로그인 데이터 없음');
                 throw new Error('로그인 데이터가 없습니다');
             }
 
-            console.log('Supabase 로그인 성공, 세션 획득');
             const session = data.session;
             const authData: AuthModel = {
                 access_token: session.access_token,
@@ -385,12 +349,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             saveAuth(authData);
 
             try {
-                console.log('사용자 정보 가져오기 시도');
                 const user = await getUser();
-                console.log('사용자 정보 획득:', user);
 
                 if (!user) {
-                    console.error('사용자 정보가 없음');
                     throw new Error('사용자 정보를 가져올 수 없습니다.');
                 }
 
@@ -402,16 +363,14 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     sessionStorage.setItem('currentUser', JSON.stringify(user));
                     sessionStorage.setItem('lastAuthCheck', Date.now().toString());
                 } catch (e) {
-                    console.error('캐시 저장 오류:', e);
+                    // 캐시 저장 실패 시 무시
                 }
             } catch (getUserError) {
-                console.error('사용자 정보 가져오기 실패:', getUserError);
                 throw new Error('사용자 정보를 가져오는데 실패했습니다.');
             }
 
             return true;
         } catch (error: any) {
-            console.error('로그인 실패:', error);
             // 초기화
             saveAuth(undefined);
             throw error;
@@ -424,19 +383,14 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const requestPasswordResetLink = async (email: string) => {
         setLoading(true);
         try {
-            console.log('비밀번호 재설정 링크 요청:', email);
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/auth/reset-password`,
             });
 
             if (error) {
-                console.error('비밀번호 재설정 링크 요청 오류:', error.message);
                 throw new Error(error.message);
             }
-
-            console.log('비밀번호 재설정 이메일 전송 성공');
         } catch (error: any) {
-            console.error('비밀번호 재설정 링크 요청 실패:', error);
             throw error;
         } finally {
             setLoading(false);
@@ -456,21 +410,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 throw new Error("비밀번호가 일치하지 않습니다.");
             }
 
-            console.log('비밀번호 변경 시도');
-
             // Supabase API로 비밀번호 변경
             const { error } = await supabase.auth.updateUser({
                 password: newPassword
             });
 
             if (error) {
-                console.error('비밀번호 변경 오류:', error.message);
                 throw new Error(error.message);
             }
-
-            console.log('비밀번호 변경 성공');
         } catch (error: any) {
-            console.error('비밀번호 변경 실패:', error);
             throw error;
         } finally {
             setLoading(false);
@@ -479,15 +427,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
     const register = async (email: string, full_name: string, password: string, password_confirmation: string) => {
         setLoading(true);
-  
+
         try {
             // 비밀번호 유효성 검사
             if (password !== password_confirmation) {
                 throw new Error('비밀번호가 일치하지 않습니다.');
             }
-  
-            console.log('회원가입 시작:', email, full_name);
-            
+
             // Supabase Auth에 사용자 등록
             const { data, error } = await supabase.auth.signUp({
                 email,
@@ -499,19 +445,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     }
                 }
             });
-  
+
             if (error) {
-                console.error('회원가입 오류:', error);
                 throw new Error(error.message);
             }
-  
+
             if (!data.user) {
-                console.error('사용자 데이터가 없습니다');
                 throw new Error('사용자 데이터가 없습니다');
             }
-  
-            console.log('Auth에 사용자 등록 성공:', data.user.id);
-  
+
             try {
                 // public.users 테이블에 사용자 정보 직접 삽입
                 const newUser = {
@@ -521,38 +463,27 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     status: 'active',
                     role: USER_ROLES.ADVERTISER // 기본 역할
                 };
-    
-                console.log('public.users 테이블에 사용자 추가 준비:', newUser);
-    
+
                 // 비밀번호 해시 생성
-                console.log('비밀번호 해시 생성 시도');
                 const hashPassword = await supabase.rpc('hash_password', {
                     password: password
                 });
-    
+
                 if (hashPassword.error) {
-                    console.error('비밀번호 해싱 오류:', hashPassword.error);
                     throw new Error(hashPassword.error.message);
                 }
-    
-                console.log('비밀번호 해시 생성 성공:', !!hashPassword.data);
-    
+
                 // public.users 테이블에 사용자 정보 삽입
-                console.log('사용자 정보 삽입 시도');
                 const { error: insertError } = await supabase.from('users').insert([{
                     ...newUser,
                     password_hash: hashPassword.data
                 }]);
-    
+
                 if (insertError) {
-                    console.error('사용자 정보 저장 오류:', insertError);
                     throw new Error(insertError.message);
                 }
-    
-                console.log('users 테이블에 사용자 정보 저장 완료');
-                
+
                 // user_balances 테이블에 초기 잔액 정보 추가
-                console.log('user_balances 테이블에 잔액 정보 추가 시도');
                 const { error: balanceError } = await supabase.from('user_balances').insert([{
                     user_id: data.user.id,
                     paid_balance: 0,
@@ -560,32 +491,20 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     total_balance: 0
                 }]);
 
-                if (balanceError) {
-                    console.error('잔액 정보 저장 오류:', balanceError);
-                    // 잔액 정보 추가 실패는 회원가입 과정을 중단시키지 않음
-                    console.warn('잔액 정보 추가 실패했지만 회원가입은 계속 진행됨');
-                } else {
-                    console.log('user_balances 테이블에 잔액 정보 추가 완료');
-                }
+                // 잔액 정보 추가 실패는 회원가입 과정을 중단시키지 않음
 
-                console.log('사용자 등록 및 모든 정보 저장 완료');
-                
-                // 회원가입 후 자동 로그인 방지 (로그인 페이지로 이동을 위해)
-                console.log('회원가입 후 자동 로그인 방지를 위해 인증 상태 초기화');
-                
                 // 클라이언트측 인증 상태 초기화
                 setAuth(undefined);
                 setCurrentUser(null);
                 authHelper.removeAuth();
-                
+
                 // Supabase 세션 로그아웃 처리
                 try {
                     await supabase.auth.signOut();
-                    console.log('회원가입 후 Supabase 세션 로그아웃 완료');
                 } catch (logoutError) {
-                    console.error('회원가입 후 Supabase 세션 로그아웃 실패:', logoutError);
+                    // 로그아웃 실패 시 무시
                 }
-                
+
                 // 로컬 스토리지에서 Supabase 관련 항목 제거
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith('sb-') || key.includes('supabase')) {
@@ -593,13 +512,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     }
                 });
             } catch (dbError: any) {
-                console.error('사용자 정보 저장 중 오류:', dbError);
                 throw new Error(dbError.message);
             }
-  
+
             return data;
         } catch (error: any) {
-            console.error('회원가입 처리 중 오류:', error);
             throw new Error(error.message);
         } finally {
             setLoading(false);
@@ -613,7 +530,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         try {
             // 이미 검증된 상태라면 추가 작업 불필요
             if (authVerified && currentUser) {
-                console.log('이미 검증된 인증 정보, 검증 생략');
                 setLoading(false);
                 return;
             }
@@ -633,7 +549,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         sessionStorage.setItem('currentUser', JSON.stringify(user));
                         sessionStorage.setItem('lastAuthCheck', Date.now().toString());
                     } catch (e) {
-                        console.error('캐시 저장 오류:', e);
+                        // 캐시 저장 실패 시 무시
                     }
                 } else {
                     // 사용자 정보가 없으면 로그아웃
@@ -652,7 +568,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 sessionStorage.removeItem('lastAuthCheck');
             }
         } catch (error) {
-            console.error('검증 오류:', error);
             saveAuth(undefined);
             setCurrentUser(null);
             setAuthVerified(false);
@@ -668,39 +583,40 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         try {
             // 1. 로그아웃 플래그 설정
             setIsLoggingOut(true);
-            
+
             // 2. 모든 구독 및 훅 정리 시간 확보 (비동기 태스크 이전에 UI 업데이트가 완료되도록)
             await new Promise(resolve => setTimeout(resolve, 50));
-            
+
             // 3. 페이지 이동을 위한 준비
             window.location.href = '/auth/login'; // 페이지 리다이렉트 준비
-            
+
             // 4. 로컬 및 세션 스토리지 정리 전에 리다이렉트 실행
             setTimeout(() => {
                 // 로컬 스토리지 데이터 정리
                 authHelper.removeAuth();
                 sessionStorage.removeItem('currentUser');
                 sessionStorage.removeItem('lastAuthCheck');
-                
+
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                         localStorage.removeItem(key);
                     }
                 });
-    
+
                 Object.keys(sessionStorage).forEach(key => {
                     if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                         sessionStorage.removeItem(key);
                     }
                 });
-                
+
                 // 서버 로그아웃을 제일 마지막에 수행
-                supabase.auth.signOut().catch(e => console.error('서버 로그아웃 오류:', e));
+                supabase.auth.signOut().catch(e => {
+                    // 서버 로그아웃 오류 시 무시
+                });
             }, 0);
-            
+
             return true;
         } catch (error: any) {
-            console.error('로그아웃 실패:', error);
             return false;
         }
     };
@@ -712,29 +628,24 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
                 return await logoutForOperator();
             }
-            
+
             // 일반 사용자 로그아웃 시작
             setIsLoggingOut(true);
-            
+
             // 1. 먼저 서버 측 로그아웃 처리 (모든 상태 변경 전에 수행)
             try {
-                const { error } = await supabase.auth.signOut();
-                
-                if (error) {
-                    console.error('서버 로그아웃 에러:', error.message);
-                }
+                await supabase.auth.signOut();
             } catch (serverError) {
-                console.error('서버 로그아웃 예외:', serverError);
                 // 서버 로그아웃에 실패해도 계속 진행
             }
-            
+
             // 2. 클라이언트 측 인증 정보 초기화
             authHelper.removeAuth();
-            
+
             // 3. 로컬 및 세션 스토리지 정리 (상태 업데이트 전에)
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
-            
+
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('auth') || key.includes('supabase')) {
                     localStorage.removeItem(key);
@@ -746,7 +657,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     sessionStorage.removeItem(key);
                 }
             });
-            
+
             // 4. 상태 업데이트 (스토리지 정리 이후)
             // 예측 가능한 순서로 상태 업데이트
             setAuth(undefined);
@@ -755,7 +666,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
             return true;
         } catch (error: any) {
-            console.error('로그아웃 실패:', error);
             return false;
         }
     }
@@ -767,15 +677,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         (currentUser?.raw_user_meta_data?.role) ||
         'guest';
 
-    // 역할 디버깅
+    // 역할 정보 관리
     useEffect(() => {
-        if (currentUser) {
-            console.log('현재 사용자 역할 정보:', {
-                directRole: currentUser?.role,
-                metadataRole: currentUser?.raw_user_meta_data?.role,
-                effectiveRole: userRole
-            });
-        }
+        // currentUser나 userRole이 변경될 때 역할 정보가 자동으로 업데이트됨
     }, [currentUser, userRole]);
 
     // 메모이제이션된 컨텍스트 값

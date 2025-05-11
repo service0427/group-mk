@@ -74,7 +74,7 @@ const WithdrawGlobalForm: React.FC<WithdrawGlobalFormProps> = ({ settings, onSav
       // 저장 시에는 포맷팅 없는 숫자 값으로 전달
       const success = await onSave(globalSettings);
     } catch (error) {
-      console.error('Error saving global settings:', error);
+      
     } finally {
       setSavingGlobal(false);
     }

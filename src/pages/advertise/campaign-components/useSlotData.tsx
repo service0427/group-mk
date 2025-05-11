@@ -23,7 +23,7 @@ export const useSlotData = (serviceType: string, userId: string | undefined) => 
   // 슬롯 데이터 가져오기
   const fetchSlots = async () => {
     if (!userId) {
-      console.error('로그인 정보를 찾을 수 없습니다.');
+      
       return;
     }
 
@@ -132,7 +132,7 @@ export const useSlotData = (serviceType: string, userId: string | undefined) => 
         setTotalCount(count || 0);
       }
     } catch (err) {
-      console.error('슬롯 데이터 가져오기 실패:', err);
+      
       setError('슬롯 데이터를 불러오는 중 오류가 발생했습니다.');
       
       // 개발 모드에서만 임시 데이터 사용
@@ -252,7 +252,7 @@ export const useSlotData = (serviceType: string, userId: string | undefined) => 
         return item;
       }));
     } catch (err) {
-      console.error('슬롯 수정 실패:', err);
+      
       throw err;
     }
   };
@@ -277,7 +277,7 @@ export const useSlotData = (serviceType: string, userId: string | undefined) => 
       
       return true;
     } catch (err) {
-      console.error('슬롯 삭제 실패:', err);
+      
       throw err;
     }
   };

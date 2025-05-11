@@ -38,12 +38,12 @@ export const logBalanceChange = async ({
       });
 
     if (error) {
-      console.error('잔액 감사 로그 기록 실패:', error);
+      
       return false;
     }
     return true;
   } catch (err) {
-    console.error('잔액 감사 로그 기록 중 오류 발생:', err);
+    
     return false;
   }
 };
@@ -80,12 +80,12 @@ export const logSlotStatusChange = async ({
       });
 
     if (error) {
-      console.error('슬롯 상태 변경 이력 기록 실패:', error);
+      
       return false;
     }
     return true;
   } catch (err) {
-    console.error('슬롯 상태 변경 이력 기록 중 오류 발생:', err);
+    
     return false;
   }
 };
@@ -117,12 +117,12 @@ export const createPendingBalance = async ({
       });
 
     if (error) {
-      console.error('보류 잔액 생성 실패:', error);
+      
       return false;
     }
     return true;
   } catch (err) {
-    console.error('보류 잔액 생성 중 오류 발생:', err);
+    
     return false;
   }
 };
@@ -153,12 +153,12 @@ export const updatePendingBalanceStatus = async ({
       .eq('slot_id', slotId);
 
     if (error) {
-      console.error('보류 잔액 상태 업데이트 실패:', error);
+      
       return false;
     }
     return true;
   } catch (err) {
-    console.error('보류 잔액 상태 업데이트 중 오류 발생:', err);
+    
     return false;
   }
 };

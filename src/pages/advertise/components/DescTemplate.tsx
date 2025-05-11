@@ -51,7 +51,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
             .order('id', { ascending: true });
 
           if (error) {
-            console.error('Error fetching ntraffic campaign data:', error);
+
             setLoading(false);
             return;
           }
@@ -93,7 +93,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
 
         if (!serviceTypeCode) {
-          console.error('Service type code not found for the given path', { platform, type, subservice });
+
           setLoading(false);
           return;
         }
@@ -107,7 +107,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
           .order('id', { ascending: true });
 
         if (error) {
-          console.error('Error fetching campaign data:', error);
+
           setLoading(false);
           return;
         }
@@ -120,7 +120,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         setItems(formattedItems);
         setLoading(false);
       } catch (error) {
-        console.error('캠페인 데이터 로딩 오류:', error);
+
         setItems([]);
         setLoading(false);
       }
@@ -144,7 +144,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
   } else if (pathname.includes('naver/traffic') || pathname.includes('/ntraffic')) {
     serviceCategory = 'N 트래픽';
   } else if (pathname.includes('coupang/traffic')) {
-    serviceCategory = 'C 트래픽';
+    serviceCategory = 'CP 트래픽';
   } else if (pathname.includes('ohouse/traffic')) {
     serviceCategory = 'OH 트래픽';
   } else {

@@ -56,7 +56,7 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
           // 최소한의 유효성 검사
           hasCachedUser = !!(cachedUser && cachedUser.id && cachedUser.email);
         } catch (e) {
-          console.warn('세션 스토리지 사용자 데이터 파싱 오류:', e);
+          
           // 손상된 데이터 제거
           sessionStorage.removeItem('currentUser');
         }
@@ -64,7 +64,7 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 정보가 일치하지 않는 경우 (토큰은 있지만 사용자 정보 없음 등) 세션 정리
       if ((hasAuth && !hasCachedUser) || (!hasAuth && hasCachedUser)) {
-        console.warn('인증 상태 불일치 감지, 세션 정리');
+        
         // 모든 인증 관련 데이터 정리
         authHelper.removeAuth();
         sessionStorage.removeItem('currentUser');

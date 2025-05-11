@@ -76,7 +76,7 @@ export const DashboardContent: React.FC = () => {
       return;
     }
 
-    console.log('캠페인 생성:', campaignForm);
+    
     // API 호출 또는 상태 업데이트 로직 구현
 
     // 폼 초기화

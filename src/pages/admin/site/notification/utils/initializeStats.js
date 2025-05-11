@@ -53,7 +53,7 @@ export const validateAggregateTable = async () => {
       .limit(1);
 
     if (error) {
-      console.error('테이블 검증 오류:', error.message);
+      
       toast.error('통계 테이블 검증 실패: ' + error.message);
       return false;
     }
@@ -61,7 +61,7 @@ export const validateAggregateTable = async () => {
     toast.success('통계 테이블이 정상적으로 존재합니다');
     return true;
   } catch (error) {
-    console.error('테이블 검증 예외:', error);
+    
     toast.error('통계 테이블 검증 중 예외 발생');
     return false;
   }
@@ -83,7 +83,7 @@ export const refreshStats = async () => {
       .select('*', { count: 'exact', head: true });
 
     if (countError) {
-      console.error('전체 알림 개수 조회 중 오류 발생:', countError.message);
+      
       toast.dismiss();
       toast.error('알림 통계 집계 중 오류가 발생했습니다.');
       return false;
@@ -99,7 +99,7 @@ export const refreshStats = async () => {
         .eq('type', type);
 
       if (error) {
-        console.error(`${type} 타입 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { type, count: 0 };
       }
 
@@ -121,7 +121,7 @@ export const refreshStats = async () => {
         .eq('status', status);
 
       if (error) {
-        console.error(`${status} 상태 알림 개수 조회 중 오류 발생:`, error.message);
+        
         return { status, count: 0 };
       }
 
@@ -143,7 +143,7 @@ export const refreshStats = async () => {
       .limit(10000);  // 대량 데이터 고려하여 제한
 
     if (userError) {
-      console.error('알림 사용자 ID 조회 중 오류 발생:', userError.message);
+      
     } else if (notificationUsers && notificationUsers.length > 0) {
       // 유니크한 사용자 ID 목록 생성
       const uniqueUserIds = [...new Set(notificationUsers.map(n => n.user_id))];
@@ -164,7 +164,7 @@ export const refreshStats = async () => {
         .in('id', uniqueUserIds);
 
       if (roleError) {
-        console.error('사용자 역할 조회 중 오류 발생:', roleError.message);
+        
       } else if (users) {
         // 역할별 알림 개수 집계
         users.forEach(user => {
@@ -190,7 +190,7 @@ export const refreshStats = async () => {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116'는 결과가 없을 때의 에러 코드
-      console.error('기존 집계 데이터 확인 중 오류 발생:', fetchError.message);
+      
       toast.dismiss();
       toast.error('알림 통계 집계 중 오류가 발생했습니다.');
       return false;
@@ -208,7 +208,7 @@ export const refreshStats = async () => {
         .eq('id', existingAggregate.id);
 
       if (updateError) {
-        console.error('집계 데이터 업데이트 중 오류 발생:', updateError.message);
+        
         toast.dismiss();
         toast.error('알림 통계 업데이트 중 오류가 발생했습니다.');
         return false;
@@ -223,7 +223,7 @@ export const refreshStats = async () => {
         });
 
       if (insertError) {
-        console.error('집계 데이터 생성 중 오류 발생:', insertError.message);
+        
         toast.dismiss();
         toast.error('알림 통계 생성 중 오류가 발생했습니다.');
         return false;
@@ -235,7 +235,7 @@ export const refreshStats = async () => {
     return true;
 
   } catch (error) {
-    console.error('알림 통계 집계 중 예외 발생:', error);
+    
     toast.dismiss();
     toast.error(`알림 통계 집계 중 오류: ${error.message || '알 수 없는 오류'}`);
     return false;

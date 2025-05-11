@@ -116,7 +116,7 @@ export const useNotificationStats = (options: {
           }
         }
       } catch (error: any) {
-        console.error('집계 테이블 방식 실패, 폴백 모드로 전환:', error);
+        
 
         if (fallbackToOldMethod) {
           setUseFallback(true);
@@ -126,7 +126,7 @@ export const useNotificationStats = (options: {
         }
       }
     } catch (e: any) {
-      console.error('알림 통계 로드 중 오류 발생:', e);
+      
       setError(new Error(e.message || '알림 통계를 불러오는데 실패했습니다'));
 
       // 기본값으로 설정
@@ -165,13 +165,13 @@ export const useNotificationStats = (options: {
           fallbackStats = oldStats;
         }
       } catch (loadError) {
-        console.error('데이터 로드 중 오류:', loadError);
+        
       }
 
       setStats(fallbackStats);
       setLastUpdated(new Date());
     } catch (e: any) {
-      console.error('폴백 방식 통계 로드 중 오류 발생:', e);
+      
       setError(new Error(e.message || '알림 통계를 불러오는데 실패했습니다'));
       setStats(createDefaultStats());
       setLastUpdated(new Date());
@@ -226,7 +226,7 @@ export const useNotificationStats = (options: {
           throw new Error('갱신된 통계 데이터 로드 실패');
         }
       } catch (error: any) {
-        console.error('집계 테이블 방식 갱신 실패, 폴백 모드로 전환:', error);
+        
 
         if (fallbackToOldMethod) {
           setUseFallback(true);
@@ -241,7 +241,7 @@ export const useNotificationStats = (options: {
         }
       }
     } catch (e: any) {
-      console.error('알림 통계 갱신 중 오류 발생:', e);
+      
       setError(new Error(e.message || '알림 통계를 갱신하는데 실패했습니다'));
 
       // 오류 발생해도 최소한의 표시를 위해 기본값 적용
@@ -297,7 +297,7 @@ export const useNotificationStats = (options: {
                 }
               } catch (tableError) {
                 // 테이블 접근 오류 발생 시
-                console.error('통계 테이블 접근 중 오류 발생:', tableError);
+                
 
                 if (fallbackToOldMethod && !useFallback) {
                   setUseFallback(true);
@@ -307,14 +307,14 @@ export const useNotificationStats = (options: {
             }
           } catch (e) {
             // 최상위 try-catch로 모든 예외 처리
-            console.error('백그라운드 작업 실행 중 예외 발생:', e);
+            
 
             if (fallbackToOldMethod && !useFallback) {
               setUseFallback(true);
               try {
                 await loadStatsFallback();
               } catch (fallbackError) {
-                console.error('폴백 시도 중 추가 오류:', fallbackError);
+                
               }
             }
           }
@@ -351,7 +351,7 @@ export const useNotificationStats = (options: {
           await loadStats(); // 갱신된 데이터 다시 로드
         }
       } catch (e) {
-        console.error('초기 테이블 확인 중 오류:', e);
+        
       }
     }, 2000);
   }, [loadStats, useFallback]);

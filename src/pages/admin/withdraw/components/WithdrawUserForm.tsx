@@ -154,7 +154,7 @@ const WithdrawUserForm: React.FC<WithdrawUserFormProps> = ({ users, globalSettin
                 }
             }
         } catch (error) {
-            console.error('Error saving user settings:', error);
+            
         } finally {
             setIsSaving(false);
         }

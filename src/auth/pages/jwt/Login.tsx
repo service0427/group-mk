@@ -143,7 +143,7 @@ const Login = () => {
         navigate(from, { replace: true });
 
       } catch (error: any) {
-        console.error('로그인 오류:', error);
+        
         setStatus('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
         setSubmitting(false);
         setLoading(false);
@@ -177,7 +177,7 @@ const Login = () => {
       toast.success('비밀번호 재설정 이메일이 전송되었습니다. 이메일을 확인해주세요.');
       setShowResetPasswordForm(false);
     } catch (error: any) {
-      console.error('비밀번호 재설정 오류:', error);
+      
       toast.error(`비밀번호 재설정 요청에 실패했습니다: ${error.message}`);
     } finally {
       setResetPasswordLoading(false);

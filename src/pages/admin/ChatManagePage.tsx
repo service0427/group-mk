@@ -118,7 +118,7 @@ const ChatManagePage: React.FC = () => {
         .range(page * messagePageSize, (page + 1) * messagePageSize - 1);
 
       if (error) {
-        console.error('메시지 조회 오류:', error);
+        
         if (!append) setCurrentMessages([]);
         return;
       }
@@ -164,7 +164,7 @@ const ChatManagePage: React.FC = () => {
       setCurrentPage(page);
 
     } catch (error) {
-      console.error('메시지 로드 오류:', error);
+      
       if (!append) setCurrentMessages([]);
     } finally {
       setLoadingMessages(false);
@@ -192,7 +192,7 @@ const ChatManagePage: React.FC = () => {
         .eq('room_id', roomId)
         .eq('user_id', currentUser.id);
     } catch (error) {
-      console.error('읽음 상태 업데이트 오류:', error);
+      
     }
   };
 
@@ -287,7 +287,7 @@ const ChatManagePage: React.FC = () => {
 
       // 메시지 저장 오류 확인
       if (messageError) {
-        console.error('메시지 전송 오류:', messageError);
+        
         throw new Error(messageError.message);
       }
 
@@ -303,14 +303,14 @@ const ChatManagePage: React.FC = () => {
           .eq('id', currentRoomId);
 
         if (roomError) {
-          console.error('채팅방 업데이트 오류:', roomError);
+          
           // 메시지는 이미 저장됐으므로 심각한 오류는 아님
-          console.warn('메시지는 저장되었지만 채팅방 업데이트에 실패했습니다.');
+          
         }
       }
 
     } catch (error) {
-      console.error('메시지 전송 중 오류:', error);
+      
       alert('메시지 전송 중 오류가 발생했습니다');
     }
   }, [inputValue, currentRoomId, currentUser]);
@@ -342,7 +342,7 @@ const ChatManagePage: React.FC = () => {
         .range(page * roomPageSize, (page + 1) * roomPageSize - 1);
 
       if (roomsError) {
-        console.error('채팅방 목록 조회 오류:', roomsError);
+        
         if (page === 0) setAllRooms([]);
         return;
       }
@@ -421,7 +421,7 @@ const ChatManagePage: React.FC = () => {
       }
 
     } catch (error) {
-      console.error('운영자 채팅방 목록 가져오기 오류:', error);
+      
       if (page === 0) {
         setAllRooms([]);
       }
@@ -549,7 +549,7 @@ const ChatManagePage: React.FC = () => {
           // 구독 시점 갱신 (이 시점 이후 메시지만 처리)
           lastSubscriptionTime = new Date().toISOString();
         } else {
-          console.error('실시간 메시지 구독 실패:', status);
+          
         }
       });
 
@@ -592,7 +592,9 @@ const ChatManagePage: React.FC = () => {
           }, 300); // DOM 업데이트를 위해 약간의 지연 시간 부여
         }
       })
-      .catch(error => console.error('메시지 로드 오류:', error));
+      .catch(error => {
+        // 오류 처리
+      });
 
     // 3. 백그라운드에서 운영자 참여 처리 (병렬로 처리)
     if (currentUser?.id) {
@@ -622,11 +624,11 @@ const ChatManagePage: React.FC = () => {
               });
 
             if (insertError) {
-              console.error('참여자 추가 오류:', insertError);
+              
             }
           }
         } catch (error) {
-          console.error('운영자 참여 처리 오류:', error);
+          
           // 에러가 발생해도 사용자 경험에 영향을 주지 않음
         }
       }, 0);
@@ -650,7 +652,7 @@ const ChatManagePage: React.FC = () => {
         .eq('id', roomId);
 
       if (error) {
-        console.error(`채팅방 상태 업데이트 오류 (${status}):`, error);
+        
         alert(`채팅방 상태 변경 중 오류가 발생했습니다: ${error.message}`);
         return;
       }
@@ -686,7 +688,7 @@ const ChatManagePage: React.FC = () => {
         });
 
       if (messageError) {
-        console.error('시스템 메시지 추가 오류:', messageError);
+        
       }
 
       // 채팅방 업데이트 (마지막 메시지 설정)
@@ -719,7 +721,7 @@ const ChatManagePage: React.FC = () => {
       // 채팅방 목록 새로고침
       fetchAllChatRooms(0);
     } catch (error) {
-      console.error('채팅방 상태 변경 오류:', error);
+      
       alert('채팅방 상태 변경 중 오류가 발생했습니다.');
     }
   }, [currentRoomId, fetchRoomMessages]);

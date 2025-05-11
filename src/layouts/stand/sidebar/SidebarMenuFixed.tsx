@@ -54,6 +54,37 @@ const SidebarMenu = () => {
     'before:start-[32px]',
     'before:start-[32px]'
   ];
+  const { userRole } = useAuthContext();
+
+  // 사용자 역할에 따라 메뉴 항목 필터링하는 함수 (최상위부터 최하위까지 재귀적으로 처리)
+  const filterMenuByRole = (items: TMenuConfig): TMenuConfig => {
+    if (!items || !Array.isArray(items)) return [];
+
+    return items.reduce<TMenuConfig>((acc, item) => {
+      // authCheck 함수가 있다면 역할 검사를 수행
+      if (item.authCheck && !item.authCheck(userRole)) {
+        return acc; // 권한이 없으면 제외
+      }
+
+      // 자식 메뉴가 있는 경우 재귀적으로 필터링
+      if (item.children && Array.isArray(item.children)) {
+        const filteredChildren = filterMenuByRole(item.children);
+        
+        // 자식 메뉴도 필터링한 후 메뉴 항목 추가
+        if (filteredChildren.length > 0 || !item.children.length) {
+          acc.push({
+            ...item,
+            children: filteredChildren
+          });
+        }
+      } else {
+        // 자식 메뉴가 없는 경우 그대로 추가
+        acc.push(item);
+      }
+
+      return acc;
+    }, []);
+  };
 
   const buildMenu = (items: TMenuConfig) => {
     return items.map((item, index) => {
@@ -320,39 +351,8 @@ const SidebarMenu = () => {
 
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
-  const { userRole } = useAuthContext();
 
   // 사용자 역할에 따라 메뉴 필터링 (재귀적으로 처리)
-  const filterMenuByRole = (items: TMenuConfig): TMenuConfig => {
-    if (!items || !Array.isArray(items)) return [];
-
-    return items.reduce<TMenuConfig>((acc, item) => {
-      // authCheck 함수가 있다면 역할 검사를 수행
-      if (item.authCheck && !item.authCheck(userRole)) {
-        return acc; // 권한이 없으면 제외
-      }
-
-      // 자식 메뉴가 있는 경우 재귀적으로 필터링
-      if (item.children && Array.isArray(item.children)) {
-        const filteredChildren = filterMenuByRole(item.children);
-
-        // 자식 메뉴도 필터링한 후 메뉴 항목 추가
-        if (filteredChildren.length > 0 || !item.children.length) {
-          acc.push({
-            ...item,
-            children: filteredChildren
-          });
-        }
-      } else {
-        // 자식 메뉴가 없는 경우 그대로 추가
-        acc.push(item);
-      }
-
-      return acc;
-    }, []);
-  };
-
-  // 전체 메뉴 구조를 재귀적으로 필터링
   const filteredMenuConfig = filterMenuByRole(menuConfig || []);
 
   return (

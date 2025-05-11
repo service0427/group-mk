@@ -28,7 +28,6 @@ import { supabase } from '@/supabase';
 
 interface CampaignTemplateProps {
   campaignData: CampaignData;
-  introPath: string;
 }
 
 const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => {
@@ -182,7 +181,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
       title="캠페인 리스트"
       description={`캠페인 관리 > ${serviceCategory}`}
       toolbarActions={toolbarActions}
-      showPageMenu={true}
+      showPageMenu={false}
     >
       <div className="grid gap-5 lg:gap-7.5">
         {/* 검색 영역 */}

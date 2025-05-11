@@ -121,88 +121,6 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
     const handleShow = () => {
       if (hasSub) {
         setShow(true);
-
-        // 메뉴가 펼쳐질 때 마지막 메뉴 아이템으로 스크롤
-        setTimeout(() => { // 메뉴 아코디언 애니메이션이 끝난 후에 스크롤 처리
-          try {
-            // 현재 요소가 실제 DOM에 존재하는지 확인
-            const element = menuItemRef.current;
-            if (element) {
-              // 긴 지연 시간을 추가하여 DOM이 완전히 업데이트되고 애니메이션이 끝날 때까지 기다림
-              setTimeout(() => {
-                try {
-                  // 펼쳐진 메뉴의 마지막 항목 찾기 (모든 자식 요소가 로드된 후)
-                  const subMenu = element.querySelector('.menu-sub');
-                  if (subMenu) {
-                    // 가장 마지막 메뉴 항목 찾기
-                    // 중첩된 구조에서도 마지막 메뉴 항목을 찾기 위해 모든 하위 메뉴 항목 탐색
-                    const allMenuItems = subMenu.querySelectorAll('.menu-item');
-                    let lastMenuItem = null;
-
-                    if (allMenuItems.length > 0) {
-                      // 가장 마지막 항목을 선택
-                      lastMenuItem = allMenuItems[allMenuItems.length - 1];
-                    } else {
-                      // 서브메뉴에서 직접 마지막 자식 요소 선택
-                      lastMenuItem = subMenu.lastElementChild;
-                    }
-
-                    // 가장 마지막 요소의 바운딩 박스를 가져와서 영역이 충분히 보이게 스크롤
-                    if (lastMenuItem) {
-                      // 부모 스크롤 컨테이너 찾기
-                      const scrollContainer = document.querySelector('.sidebar-content') || document.querySelector('.sidebar');
-                      if (scrollContainer) {
-                        // 마지막 항목의 위치와 크기
-                        const lastItemRect = lastMenuItem.getBoundingClientRect();
-                        // 스크롤 컨테이너의 위치
-                        const containerRect = scrollContainer.getBoundingClientRect();
-
-                        // 마지막 항목이 컨테이너 뷰포트 안에 있는지 확인
-                        const isInView =
-                          lastItemRect.top >= containerRect.top &&
-                          lastItemRect.bottom <= containerRect.bottom;
-
-                        if (!isInView) {
-                          // 항목이 뷰포트 밖에 있으면 스크롤 조정
-                          // 항목이 컨테이너 하단에 위치하도록 스크롤
-                          scrollContainer.scrollTop = scrollContainer.scrollTop +
-                                                    (lastItemRect.bottom - containerRect.bottom) +
-                                                    100; // 여유 공간 추가
-                        }
-                      } else {
-                        // 스크롤 컨테이너를 찾지 못했을 때 폴백 처리
-                        lastMenuItem.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'end'
-                        });
-                      }
-                    } else {
-                      // 마지막 항목이 없으면 현재 요소로 스크롤
-                      element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                      });
-                    }
-                  } else {
-                    // 서브메뉴가 없으면 현재 요소로 스크롤
-                    element.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'nearest'
-                    });
-                  }
-                } catch (innerError) {
-                  console.error('내부 스크롤 처리 오류:', innerError);
-                }
-              }, 100);
-            }
-          } catch (error) {
-            console.error('스크롤 오류:', error);
-          }
-        }, 300);
-      }
-
-      if (hasSub && propToggle === 'accordion' && multipleExpand === false) {
-        setOpenAccordion(finalParentId, finalId);
       }
     };
 
@@ -452,15 +370,16 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
 
           setHere(true);
         } else {
-          if (propToggle === 'accordion') {
-            setShow(false);
-          }
-
+          // 페이지 이동 시 메뉴 상태 유지를 위해 강제로 상태를 닫지 않음
+          // 사용자가 명시적으로 닫은 상태만 닫힘 상태로 유지
+          
+          // 활성화 상태만 업데이트
           setHere(false);
         }
       }
 
-      if (prevPathname !== pathname && hasSub && propToggle === 'dropdown') {
+      // 완전히 다른 최상위 경로로 이동할 때만 드롭다운 메뉴 닫기
+      if (prevPathname && pathname && prevPathname.split('/')[1] !== pathname.split('/')[1] && hasSub && propToggle === 'dropdown') {
         handleHide();
       }
     }, [pathname]);

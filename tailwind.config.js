@@ -46,11 +46,11 @@ module.exports = {
               tooltip: '0'
             },
             dark: {
-              card: '1px solid #15171C',
-              table: '1px solid #15171C',
-              dropdown: '1px solid #15171C',
-              tooltip: '1px solid #15171C',
-              popover: '1px solid #15171C'
+              card: '1px solid #252A36',
+              table: '1px solid #252A36',
+              dropdown: '1px solid #252A36',
+              tooltip: '1px solid #252A36',
+              popover: '1px solid #252A36'
             }
           },
           boxShadows: {

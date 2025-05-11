@@ -115,7 +115,7 @@ const FAQPageComponent = () => {
     >
       <div className="grid gap-5 lg:gap-7.5">
         {/* 카테고리별 필터 */}
-        <div className="bg-card rounded-lg shadow-sm p-5">
+        <div className="card rounded-lg shadow-sm p-5">
           <div className="flex flex-wrap gap-2">
             {faqCategories.map((category) => (
               <Button
@@ -130,7 +130,7 @@ const FAQPageComponent = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+        <div className="card rounded-lg shadow-sm overflow-hidden">
           <div className="flex justify-between items-center p-5 border-b">
             <h3 className="text-lg font-medium text-card-foreground">FAQ ({activeCategory})</h3>
             <span className="text-sm text-muted-foreground">총 {filteredFAQs.length}개의 FAQ</span>

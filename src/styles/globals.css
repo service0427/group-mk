@@ -16,6 +16,7 @@
 @import "chat.css"; /* 채팅 스타일 */
 @import "keyframes.css"; /* 애니메이션 키프레임 */
 @import "dark-mode.css"; /* 다크모드 스타일 */
+@import "card-fix.css"; /* 카드 스타일 통일 */
 @import "css/hide-scrollbar.css"; /* 모바일 스크롤바 숨기기 */
 @import "css/menu-active-child.css"; /* 메뉴 활성 상태 스타일 */
 

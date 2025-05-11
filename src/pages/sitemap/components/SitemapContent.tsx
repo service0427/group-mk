@@ -118,19 +118,21 @@ const SitemapContent: React.FC = () => {
     const allCategories = ["전체", ...Object.keys(categories).filter(cat => categories[cat].length > 0)];
 
     return (
-      <div className="flex flex-wrap gap-2 mb-6">
-        {allCategories.map(category => (
-          <button
-            key={category}
-            onClick={() => setActiveCategory(category)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === category
+      <div className="card rounded-lg shadow-sm p-5">
+        <div className="flex flex-wrap gap-2">
+          {allCategories.map(category => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === category
                 ? 'bg-primary text-white'
                 : 'bg-gray-100 dark:bg-coal-400 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-coal-300'
-              }`}
-          >
-            {category}
-          </button>
-        ))}
+                }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
       </div>
     );
   };

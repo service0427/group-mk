@@ -3,17 +3,15 @@ import { ServiceData } from '@/data/advertiseServices';
 import { IAdCampaignsContentItem } from '../data/adCampaignTypes';
 import { useLocation } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { IntroLogo } from '@/partials/intro-logo';
-import { toAbsoluteUrl } from '@/utils';
+// import { IntroLogo } from '@/partials/intro-logo'; // 상단 이미지 제거
+// import { toAbsoluteUrl } from '@/utils'; // 이미지 경로 관련 유틸 제거
 import { useMenus } from '@/providers';
-import { useMenuBreadcrumbs, useMenuCurrentItem, KeenIcon } from '@/components';
+import { useMenuBreadcrumbs, KeenIcon } from '@/components';
 import { CardAdCampaign, CardAdCampaignRow } from './campaign-cards';
 import { supabase } from '@/supabase';
 import {
   formatCampaignData,
   CampaignData,
-  getStatusBadgeClass,
-  getStatusLabel
 } from '@/utils/CampaignFormat';
 import { getServiceTypeFromPath } from '@/data/advertiseServices';
 
@@ -29,7 +27,6 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
 
   // 상태 관리
-  const [currentMode, setCurrentMode] = useState('cards');
   const [items, setItems] = useState<IAdCampaignsContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -156,32 +153,12 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     serviceCategory = pathSegments.length >= 3 ? `${pathSegments[1]} > ${pathSegments[2]}` : '';
   }
 
-  // 서비스 로고 이미지 결정
-  let logoPath = '';
-  if (pathname.includes('naver/shopping')) {
-    logoPath = '/media/ad-brand/naver-shopping.png';
-  } else if (pathname.includes('naver/place')) {
-    logoPath = '/media/ad-brand/naver-place.png';
-  } else if (pathname.includes('naver/auto')) {
-    logoPath = '/media/ad-brand/naver.png';
-  } else if (pathname.includes('naver/traffic') || pathname.includes('/ntraffic')) {
-    logoPath = '/media/ad-brand/naver.png';
-  } else if (pathname.includes('coupang')) {
-    logoPath = '/media/ad-brand/coupang-app.png';
-  } else if (pathname.includes('ohouse')) {
-    logoPath = '/media/ad-brand/ohouse.png';
-  } else {
-    // 기본 이미지 설정
-    logoPath = '/media/ad-brand/naver.png';
-  }
+  // 서비스 로고 이미지 코드 제거
 
-  const image = (
-    <img
-      src={toAbsoluteUrl(logoPath)}
-      className="rounded-full border-3 h-[100px] shrink-0"
-    />
-  );
+  // 카드/목록 형식 모두 지원
+  const [currentMode, setCurrentMode] = useState('cards');
 
+  // 카드 형식으로 렌더링
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
     return (
       <CardAdCampaign
@@ -198,6 +175,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     );
   };
 
+  // 리스트 형식으로 렌더링
   const renderItem = (data: IAdCampaignsContentItem, index: number) => {
     return (
       <CardAdCampaignRow
@@ -213,23 +191,15 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     );
   };
 
-  // IntroLogo와 캠페인 정보를 보여줄 페이지 콘텐츠
+  // 캠페인 정보만 보여줄 페이지 콘텐츠 (IntroLogo 제거)
   const pageContent = (
     <>
-      <IntroLogo
-        name={serviceData.name}
-        image={image}
-        info={[
-          { label: `${serviceData.name}의 캠페인을 소개합니다`, icon: 'information-3 text-primary' },
-        ]}
-      />
-
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
         </div>
       ) : (
-        <div className="flex flex-col items-stretch gap-5 lg:gap-7.5 mt-5">
+        <div className="flex flex-col items-stretch gap-5 lg:gap-7.5">
           <div className="flex flex-wrap items-center gap-5 justify-between">
             <h3 className="text-lg text-gray-900 font-semibold">총 {items.length} 개의 캠페인</h3>
 
@@ -295,7 +265,7 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
     <CommonTemplate
       title="캠페인 소개"
       description={`캠페인 소개 > ${serviceCategory}`}
-      showPageMenu={true}
+      showPageMenu={false}
       showBreadcrumb={true}
     >
       {pageContent}

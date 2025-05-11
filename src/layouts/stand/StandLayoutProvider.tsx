@@ -7,6 +7,7 @@ import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useMenus } from '@/providers';
 import { ILayoutConfig, useLayout } from '@/providers';
 import { deepMerge } from '@/utils';
+import { getData, setData } from '@/utils/LocalStorage';
 import { standLayoutConfig } from './';
 
 // Interface defining the structure for layout provider properties
@@ -83,19 +84,44 @@ const StandLayoutProvider = ({ children }: PropsWithChildren) => {
     setCurrentLayout(layout);
   });
   
-  // PC 버전에서 사이드바가 항상 열린 상태로 시작되도록 설정
+  // 사이드바 상태를 로컬 스토리지에서 불러와 초기화
   useEffect(() => {
-    // 사이드바 확장 상태로 초기화 (collapse: false)
-    const updatedLayout = {
-      options: {
-        sidebar: {
-          collapse: false
+    const savedSidebarState = getData('sidebar_collapsed');
+    if (savedSidebarState !== undefined) {
+      // 저장된 상태가 있으면 그 값으로 초기화
+      const updatedLayout = {
+        options: {
+          sidebar: {
+            collapse: savedSidebarState as boolean
+          }
         }
-      }
-    };
-    updateLayout(standLayoutConfig.name, updatedLayout);
-    setLayout(getLayoutConfig());
+      };
+      updateLayout(standLayoutConfig.name, updatedLayout);
+      setLayout(getLayoutConfig());
+    } else {
+      // 저장된 상태가 없으면 기본값(확장)으로 초기화
+      const updatedLayout = {
+        options: {
+          sidebar: {
+            collapse: false
+          }
+        }
+      };
+      updateLayout(standLayoutConfig.name, updatedLayout);
+      setLayout(getLayoutConfig());
+    }
   }, []);
+
+  // 경로 변경 시 페이지 이동으로 인한 메뉴 상태 초기화 방지
+  useEffect(() => {
+    // 페이지 이동시 로컬스토리지에 저장된 메뉴 상태 강제 복원
+    const savedMenuState = getData('menu_accordions');
+    if (savedMenuState) {
+      // 메뉴 상태 유지를 위해 localStorage를 통해 상태를 강제로 유지
+      // 이렇게 하면 페이지 이동 시에도 이전 메뉴 상태가 보존됨
+      localStorage.setItem('menu_accordions', JSON.stringify(savedMenuState));
+    }
+  }, [pathname]);
 
   const [megaMenuEnabled, setMegaMenuEnabled] = useState(false); // State for mega menu toggle
 
@@ -119,6 +145,9 @@ const StandLayoutProvider = ({ children }: PropsWithChildren) => {
         }
       }
     };
+
+    // 로컬 스토리지에 사이드바 상태 저장
+    setData('sidebar_collapsed', collapse);
 
     updateLayout(standLayoutConfig.name, updatedLayout); // Updates the layout with the collapsed state
     setLayout(getLayoutConfig()); // Refreshes the layout configuration

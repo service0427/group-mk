@@ -6,6 +6,7 @@ import { CampaignNAutoPage } from './CampaignNAutoPage';
 import { CampaignNTrafficPage } from './CampaignNTrafficPage';
 import { CampaignCPTrafficPage } from './CampaignCPTrafficPage';
 import { CampaignOHTrafficPage } from './CampaignOHTrafficPage';
+import { AllCampaignsPage } from './AllCampaignsPage';
 
 export {
   CampaignNShopTrafficPage as NaverShoppingPage,
@@ -15,5 +16,6 @@ export {
   CampaignNAutoPage as NaverAutoPage,
   CampaignNTrafficPage as NaverTrafficPage,
   CampaignCPTrafficPage as CoupangPage,
-  CampaignOHTrafficPage as OhousePage
+  CampaignOHTrafficPage as OhousePage,
+  AllCampaignsPage
 };

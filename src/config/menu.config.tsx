@@ -251,6 +251,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'setting-3 text-warning',
     children: [
       {
+        title: '모든 캠페인 통합 관리',
+        path: '/admin/campaigns/all',
+        icon: 'check-square text-danger',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
+      },
+      {
         title: 'N 트래픽',
         path: '/admin/campaigns/ntraffic',
         iconImage: '/media/ad-brand/naver.png'
@@ -642,6 +648,12 @@ export const MENU_MEGA: TMenuConfig = [
       {
         heading: '캠페인 관리',
         children: [
+          {
+            title: '모든 캠페인 통합 관리',
+            icon: 'check-square text-danger',
+            path: '/admin/campaigns/all',
+            authCheck: (role) => role === USER_ROLES.OPERATOR || role === USER_ROLES.DEVELOPER, // 최고 운영자 전용
+          },
           {
             title: 'NAVER 쇼핑',
             icon: 'shop text-primary',

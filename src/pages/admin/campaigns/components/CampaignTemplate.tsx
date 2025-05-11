@@ -145,6 +145,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
               serviceType={serviceType}
               onCampaignUpdated={loadCampaigns} // 캠페인 업데이트 시 다시 로드하는 함수 전달
               onAddCampaign={!isAdvertiserOrAgency ? handleAddCampaign : undefined} // 광고주나 대행사는 캠페인 추가 버튼 비활성화
+              isOperator={userRole === USER_ROLES.OPERATOR || userRole === USER_ROLES.DEVELOPER} // 역할에 따라 운영자 모드 설정
             />
           )}
           <AdMiscFaq />

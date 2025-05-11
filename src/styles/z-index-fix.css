@@ -1,0 +1,52 @@
+/* 다크모드에서 z-index 오버레이 문제 해결 */
+
+/* 기본 z-index 설정 - 다크모드/라이트모드 모두 적용 */
+#root {
+  position: relative;
+}
+
+/* 다크모드에서 body 스타일 수정 */
+body.dark {
+  position: relative !important;
+  z-index: auto !important;
+}
+
+/* 오버레이 방지 */
+body::before,
+html::before,
+.dark::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* body.dark에 직접 배경색 적용 */
+body.dark {
+  background-color: #111217 !important;
+}
+
+/* 다크모드에서 콘텐츠가 더 높은 z-index를 가지도록 */
+.dark .page-template-wrapper,
+.dark .dashboard-template-wrapper {
+  position: relative;
+  z-index: 15;
+}
+
+/* 다크모드 여부와 관계없이 항상 상위에 표시되어야 하는 요소들 */
+.dropdown-menu,
+.modal,
+.tooltip,
+[role="dialog"],
+[role="tooltip"],
+[role="menu"] {
+  z-index: 50;
+}
+
+/* 로더는 최상위에 표시 */
+.loader,
+.progress-bar,
+.spinner,
+[class*="loader"],
+[class*="progress"],
+[class*="circular"] {
+  z-index: 100 !important;
+}

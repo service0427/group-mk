@@ -34,10 +34,10 @@ const DialogContent = React.forwardRef<
         'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
         className
       )}
-      style={{ 
-        position: 'fixed', 
-        top: '50%', 
-        left: '50%', 
+      style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 1000
       }}
@@ -146,11 +146,11 @@ const ChargePage: React.FC = () => {
 
     try {
       const result = await CashService.getCashSetting(currentUser.id || '');
-      
+
       if (result.success && result.data) {
         const settingData = result.data;
         setCashSetting(settingData);
-        
+
         // 포인트 표시 여부 설정 (설정의 free_cash_percentage 값에 따라)
         const showPoints = settingData.free_cash_percentage > 0;
         console.log('설정 로드: 포인트 표시 여부 =', showPoints, 'free_cash_percentage =', settingData.free_cash_percentage);
@@ -165,7 +165,7 @@ const ChargePage: React.FC = () => {
     } finally {
       setIsLoadingSetting(false);
     }
-    
+
     return Promise.resolve(); // 항상 Promise 반환
   };
 
@@ -200,7 +200,7 @@ const ChargePage: React.FC = () => {
 
     try {
       const result = await CashService.getChargeRequestHistory(currentUser.id || '', 5);
-      
+
       if (result.success) {
         setRecentRequests(result.data || []);
       } else {
@@ -214,7 +214,7 @@ const ChargePage: React.FC = () => {
     } finally {
       setIsLoadingHistory(false);
     }
-    
+
     return Promise.resolve(); // 항상 Promise 반환
   };
 
@@ -237,13 +237,13 @@ const ChargePage: React.FC = () => {
 
   // 설정에서 포인트 표시 여부 확인 (기본값 false)
   const [showPointInfo, setShowPointInfo] = useState<boolean>(false);
-  
+
   // 알림 다이얼로그 상태 관리
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [dialogTitle, setDialogTitle] = useState<string>("");
   const [dialogDescription, setDialogDescription] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
-  
+
   // 디버깅을 위한 로깅
   useEffect(() => {
     console.log('showPointInfo 상태 변경:', showPointInfo);
@@ -259,7 +259,7 @@ const ChargePage: React.FC = () => {
         await fetchCashSetting(); // 설정 먼저 로드
         await fetchRecentRequests(); // 설정 로드 후 충전 내역 가져오기
       };
-      
+
       loadData();
     }
   }, [currentUser]); // currentUser에 의존
@@ -322,18 +322,18 @@ const ChargePage: React.FC = () => {
 
     try {
       const result = await CashService.createChargeRequest(
-        currentUser.id || '', 
+        currentUser.id || '',
         Number(customAmount)
       );
 
       if (result.success) {
         // Dialog로 표시
         showDialog(
-          "충전 요청 완료", 
-          `${result.message}\n관리자 승인 후 충전이 완료됩니다.`, 
+          "충전 요청 완료",
+          `${result.message}\n관리자 승인 후 충전이 완료됩니다.`,
           true
         );
-        
+
         // 성공 후 폼 초기화 및 내역 갱신
         setCustomAmount('');
         setSelectedAmount('');
@@ -354,14 +354,14 @@ const ChargePage: React.FC = () => {
   };
 
   return (
-    <CommonTemplate 
-      title="캐쉬 충전" 
+    <CommonTemplate
+      title="캐쉬 충전"
       description="캐쉬/포인트 관리 > 캐쉬 충전"
       showPageMenu={false}
     >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent 
-          className="max-w-md mx-auto text-center" 
+        <DialogContent
+          className="max-w-md mx-auto text-center"
           onPointerDownOutside={() => setDialogOpen(false)} // 모달 외부 클릭 시 닫기
         >
           <DialogHeader className="text-center">
@@ -373,7 +373,7 @@ const ChargePage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-center mt-6 sm:justify-center">
-            <Button 
+            <Button
               onClick={() => setDialogOpen(false)}
               className={`min-w-[100px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}`}
             >

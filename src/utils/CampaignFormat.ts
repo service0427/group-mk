@@ -120,21 +120,108 @@ export const addUnit = (value: string | number | undefined, unit: string): strin
 };
 
 /**
+ * 동물 이름과 아이콘을 매핑하는 객체
+ */
+export const animalNameMap: Record<string, string> = {
+  // 한글 동물 이름
+  '곰': 'bear',
+  '고양이': 'cat',
+  '소': 'cow',
+  '악어': 'crocodile',
+  '돌고래': 'dolphin',
+  '코끼리': 'elephant',
+  '플라밍고': 'flamingo',
+  '기린': 'giraffe',
+  '말': 'horse',
+  '캥거루': 'kangaroo',
+  '코알라': 'koala',
+  '표범': 'leopard',
+  '사자': 'lion',
+  '라마': 'llama',
+  '올빼미': 'owl',
+  '펠리컨': 'pelican',
+  '펭귄': 'penguin',
+  '양': 'sheep',
+  '테디베어': 'teddy-bear',
+  '거북이': 'turtle',
+
+  // 영어 동물 이름
+  'bear': 'bear',
+  'cat': 'cat',
+  'cow': 'cow',
+  'crocodile': 'crocodile',
+  'dolphin': 'dolphin',
+  'elephant': 'elephant',
+  'flamingo': 'flamingo',
+  'giraffe': 'giraffe',
+  'horse': 'horse',
+  'kangaroo': 'kangaroo',
+  'koala': 'koala',
+  'leopard': 'leopard',
+  'lion': 'lion',
+  'llama': 'llama',
+  'owl': 'owl',
+  'pelican': 'pelican',
+  'penguin': 'penguin',
+  'sheep': 'sheep',
+  'teddy-bear': 'teddy-bear',
+  'teddy': 'teddy-bear',
+  'turtle': 'turtle',
+};
+
+/**
+ * 동물 아이콘 목록
+ */
+export const animalIcons = [
+  'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
+  'giraffe', 'horse', 'kangaroo', 'koala', 'leopard', 'lion', 'llama',
+  'owl', 'pelican', 'penguin', 'sheep', 'teddy-bear', 'turtle'
+];
+
+/**
+ * 캠페인 이름에서 동물 아이콘 추출
+ */
+export const getAnimalIconFromName = (name: string): string | null => {
+  if (!name) return null;
+
+  // 캠페인 이름에서 동물 이름을 찾아서 매핑된 아이콘 반환
+  const lowerName = name.toLowerCase();
+
+  // 이름에 동물 이름이 포함되어 있는지 확인
+  for (const [animalName, iconName] of Object.entries(animalNameMap)) {
+    if (lowerName.includes(animalName.toLowerCase())) {
+      console.log(`캠페인 이름 "${name}"에서 동물 이름 "${animalName}" 발견, 아이콘 "${iconName}" 사용`);
+      return iconName;
+    }
+  }
+
+  return null;
+};
+
+/**
  * 이미지 URL 포맷팅
  */
-export const formatImageUrl = (logo: string | undefined, addInfo?: any): string => {
+export const formatImageUrl = (logo: string | undefined, addInfo?: any, campaignName?: string): string => {
   // add_info.logo_url이 있으면 그것을 사용
   if (addInfo?.logo_url) return addInfo.logo_url;
-  
+
+  // 캠페인 이름에서 동물 아이콘 추출
+  if (campaignName) {
+    const animalFromName = getAnimalIconFromName(campaignName);
+    if (animalFromName) {
+      return toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+    }
+  }
+
   // 로고가 없는 경우 기본 이미지 사용
   if (!logo) return toAbsoluteUrl('/media/animal/svg/lion.svg');
-  
+
   // 로고가 이미 URL인 경우 그대로 반환
   if (logo.includes('http')) return logo;
-  
+
   // 로고가 media 경로부터 시작하는 경우
   if (logo.startsWith('/media')) return toAbsoluteUrl(logo);
-  
+
   // 그 외의 경우, /media/animal/svg/ 폴더에서 찾음
   return toAbsoluteUrl(`/media/animal/svg/${logo}`);
 };
@@ -202,8 +289,14 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
     });
   }
 
+  // 캠페인 이름에서 동물 아이콘 추출
+  const animalFromName = getAnimalIconFromName(campaign.campaign_name);
+  const logoPath = campaign.add_info?.logo_url ||
+                  (animalFromName ? `/media/animal/svg/${animalFromName}.svg` :
+                  (campaign.logo || '/media/animal/svg/lion.svg'));
+
   return {
-    logo: campaign.add_info?.logo_url || campaign.logo || '/media/animal/svg/lion.svg',
+    logo: logoPath,
     logoSize: '50px',
     title: campaign.campaign_name,
     description: campaign.description?.replace(/\\n/g, '\n') || '',

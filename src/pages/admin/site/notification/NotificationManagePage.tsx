@@ -28,8 +28,8 @@ import { ko } from 'date-fns/locale';
 const NotificationManagePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
 
-  // 커스텀 토스트 상태
-  const [notification, setNotification] = useState<{
+  // 커스텀 알림 토스트 상태
+  const [notificationToast, setNotificationToast] = useState<{
     show: boolean;
     message: string;
     type: 'success' | 'error';
@@ -85,14 +85,14 @@ const NotificationManagePage: React.FC = () => {
 
   // 알림 자동 사라짐 처리
   useEffect(() => {
-    if (notification.show) {
+    if (notificationToast.show) {
       const timer = setTimeout(() => {
-        setNotification({ ...notification, show: false });
+        setNotificationToast({ ...notificationToast, show: false });
       }, 5000); // 5초 후 자동으로 닫힘
 
       return () => clearTimeout(timer);
     }
-  }, [notification.show, notification.message]);
+  }, [notificationToast.show, notificationToast.message]);
 
   // 통계 알림 자동 사라짐 처리
   useEffect(() => {
@@ -196,9 +196,9 @@ const NotificationManagePage: React.FC = () => {
     }
 
     if (success) {
-      setNotification({ 
-        show: true, 
-        message: '알림이 성공적으로 전송되었습니다.', 
+      setNotificationToast({
+        show: true,
+        message: '알림이 성공적으로 전송되었습니다.',
         type: 'success'
       });
       setIsOpenSendModal(false);
@@ -209,9 +209,9 @@ const NotificationManagePage: React.FC = () => {
         refreshStats();
       }, 1000);
     } else {
-      setNotification({ 
-        show: true, 
-        message: '알림 전송에 실패했습니다. 다시 시도해주세요.', 
+      setNotificationToast({
+        show: true,
+        message: '알림 전송에 실패했습니다. 다시 시도해주세요.',
         type: 'error'
       });
     }
@@ -233,9 +233,9 @@ const NotificationManagePage: React.FC = () => {
 
     const success = await deleteNotificationsHandler(deleteOption);
     if (success) {
-      setNotification({ 
-        show: true, 
-        message: '알림이 성공적으로 삭제되었습니다.', 
+      setNotificationToast({
+        show: true,
+        message: '알림이 성공적으로 삭제되었습니다.',
         type: 'success'
       });
 
@@ -244,9 +244,9 @@ const NotificationManagePage: React.FC = () => {
         refreshStats();
       }, 1000);
     } else {
-      setNotification({ 
-        show: true, 
-        message: '알림 삭제에 실패했습니다. 다시 시도해주세요.', 
+      setNotificationToast({
+        show: true,
+        message: '알림 삭제에 실패했습니다. 다시 시도해주세요.',
         type: 'error'
       });
     }
@@ -306,17 +306,17 @@ const NotificationManagePage: React.FC = () => {
         showPageMenu={false}
       >
         {/* 알림 메시지 - 커스텀 토스트 */}
-        {notification.show && (
+        {notificationToast.show && (
           <div
             className={`fixed top-5 left-5 sm:left-auto sm:right-5 z-50 p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${
-              notification.type === 'success' 
+              notificationToast.type === 'success'
                 ? 'bg-green-50 text-green-700 border-l-4 border-green-500 dark:bg-green-950/50 dark:text-green-300 dark:border-green-600'
                 : 'bg-red-50 text-red-700 border-l-4 border-red-500 dark:bg-red-950/50 dark:text-red-300 dark:border-red-600'
             }`}
           >
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {notification.type === 'success' ? (
+                {notificationToast.type === 'success' ? (
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -327,12 +327,12 @@ const NotificationManagePage: React.FC = () => {
                 )}
               </div>
               <div className="ml-3 flex-grow">
-                <p className="text-sm font-medium truncate">{notification.message}</p>
+                <p className="text-sm font-medium truncate">{notificationToast.message}</p>
               </div>
               <button
                 type="button"
                 className="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 hover:bg-muted/60 flex-shrink-0"
-                onClick={() => setNotification({ ...notification, show: false })}
+                onClick={() => setNotificationToast({ ...notificationToast, show: false })}
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>

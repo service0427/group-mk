@@ -9,7 +9,7 @@ import { Slot } from '../components/types';
 // 캠페인 정보 조회 헬퍼 함수 (오류 처리 개선)
 async function getCampaignInfo(productId: number) {
   try {
-    // 1. 먼저 기본 campaigns 테이블에서 시도
+    // campaigns 테이블에서 조회
     const { data: campaign, error: campaignError } = await supabase
       .from('campaigns')
       .select('*')
@@ -22,19 +22,7 @@ async function getCampaignInfo(productId: number) {
 
     console.warn('캠페인 정보 조회 실패:', campaignError?.message);
 
-    // 2. campaigns_bak_old 테이블에서 시도
-    const { data: oldCampaign, error: oldCampaignError } = await supabase
-      .from('campaigns_bak_old')
-      .select('*')
-      .eq('id', productId)
-      .maybeSingle();
-
-    if (!oldCampaignError && oldCampaign) {
-      console.log('campaigns_bak_old 테이블에서 캠페인 정보를 가져왔습니다.');
-      return oldCampaign;
-    }
-
-    // 3. 기본 정보 생성
+    // 기본 정보 생성
     console.warn('캠페인 정보를 찾을 수 없어 기본값을 사용합니다. product_id:', productId);
     return {
       id: productId,

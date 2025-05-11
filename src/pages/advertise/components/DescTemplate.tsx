@@ -45,12 +45,12 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         if (pathname === '/advertise/ntraffic/desc') {
           const serviceTypeCode = 'ntraffic';
 
-          // Supabase에서 ntraffic 서비스 타입의 캠페인 가져오기
+          // Supabase에서 ntraffic 서비스 타입의 캠페인 가져오기 (active 상태만)
           const { data, error } = await supabase
             .from('campaigns')
             .select('*')
             .eq('service_type', serviceTypeCode)
-            .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
+            .eq('status', 'active') // 오직 'active' 상태인 캠페인만 표시
             .order('id', { ascending: true });
 
           if (error) {
@@ -101,12 +101,12 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
           return;
         }
 
-        // Supabase에서 해당 서비스 타입의 캠페인 가져오기 (표시안함 상태 제외)
+        // Supabase에서 해당 서비스 타입의 캠페인 가져오기 (active 상태만)
         const { data, error } = await supabase
           .from('campaigns')
           .select('*')
           .eq('service_type', serviceTypeCode)
-          .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
+          .eq('status', 'active') // 오직 'active' 상태인 캠페인만 표시
           .order('id', { ascending: true });
 
         if (error) {

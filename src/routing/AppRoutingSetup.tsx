@@ -113,6 +113,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
           
           {/* 캠페인 관리 라우트 */}
+          <Route path="/admin/campaigns/all" element={<Campaigns.AllCampaignsPage />} />
           <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
           <Route path="/admin/campaigns/naver-place-traffic" element={<Campaigns.NaverPlaceTrafficPage />} />
           <Route path="/admin/campaigns/naver-place-save" element={<Campaigns.NaverPlaceSavePage />} />

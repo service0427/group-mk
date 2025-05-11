@@ -7,13 +7,11 @@ import { CommonTemplate } from '@/components/pageTemplate';
 // import { toAbsoluteUrl } from '@/utils'; // 이미지 경로 관련 유틸 제거
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, KeenIcon } from '@/components';
-import { CardAdCampaign } from './campaign-cards';
+import { CardAdCampaign, CardAdCampaignRow } from './campaign-cards';
 import { supabase } from '@/supabase';
 import {
   formatCampaignData,
   CampaignData,
-  getStatusBadgeClass,
-  getStatusLabel
 } from '@/utils/CampaignFormat';
 import { getServiceTypeFromPath } from '@/data/advertiseServices';
 
@@ -157,7 +155,10 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
 
   // 서비스 로고 이미지 코드 제거
 
-  // 카드 형식으로만 렌더링 (목록 형식 제거)
+  // 카드/목록 형식 모두 지원
+  const [currentMode, setCurrentMode] = useState('cards');
+
+  // 카드 형식으로 렌더링
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
     return (
       <CardAdCampaign
@@ -168,6 +169,22 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         status={item.status}
         statistics={item.statistics}
         progress={item.progress}
+        url={campaignPath}
+        key={index}
+      />
+    );
+  };
+
+  // 리스트 형식으로 렌더링
+  const renderItem = (data: IAdCampaignsContentItem, index: number) => {
+    return (
+      <CardAdCampaignRow
+        logo={data.logo}
+        logoSize={data.logoSize}
+        title={data.title}
+        description={data.description}
+        status={data.status}
+        statistics={data.statistics}
         url={campaignPath}
         key={index}
       />
@@ -185,6 +202,33 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
         <div className="flex flex-col items-stretch gap-5 lg:gap-7.5">
           <div className="flex flex-wrap items-center gap-5 justify-between">
             <h3 className="text-lg text-gray-900 font-semibold">총 {items.length} 개의 캠페인</h3>
+
+            <div className="flex gap-5">
+              <div className="btn-tabs" data-tabs="true">
+                <a
+                  href="#"
+                  className={`btn btn-icon ${currentMode === 'cards' ? 'active' : ''}`}
+                  data-tab-toggle="#campaigns_cards"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentMode('cards');
+                  }}
+                >
+                  <KeenIcon icon="category" />
+                </a>
+                <a
+                  href="#"
+                  className={`btn btn-icon ${currentMode === 'list' ? 'active' : ''}`}
+                  data-tab-toggle="#campaigns_list"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentMode('list');
+                  }}
+                >
+                  <KeenIcon icon="row-horizontal" />
+                </a>
+              </div>
+            </div>
           </div>
 
           {items.length === 0 ? (
@@ -194,11 +238,23 @@ export const DescTemplate: React.FC<DescTemplateProps> = ({ serviceData, campaig
               <p className="text-sm text-gray-400">현재 제공 가능한 캠페인이 없습니다. 나중에 다시 확인해 주세요.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7.5">
-              {items.map((item, index) => {
-                return renderProject(item, index);
-              })}
-            </div>
+            <>
+              <div id="campaigns_cards" className={currentMode === 'list' ? 'hidden' : ''}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7.5">
+                  {items.map((item, index) => {
+                    return renderProject(item, index);
+                  })}
+                </div>
+              </div>
+
+              <div id="campaigns_list" className={currentMode === 'cards' ? 'hidden' : ''}>
+                <div className="flex flex-col gap-5 lg:gap-7.5">
+                  {items.map((data, index) => {
+                    return renderItem(data, index);
+                  })}
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}

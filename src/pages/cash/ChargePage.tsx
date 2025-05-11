@@ -153,7 +153,6 @@ const ChargePage: React.FC = () => {
 
         // 포인트 표시 여부 설정 (설정의 free_cash_percentage 값에 따라)
         const showPoints = settingData.free_cash_percentage > 0;
-        console.log('설정 로드: 포인트 표시 여부 =', showPoints, 'free_cash_percentage =', settingData.free_cash_percentage);
         setShowPointInfo(showPoints);
       } else {
         console.error("캐시 설정 로딩 오류:", result.message);
@@ -246,7 +245,6 @@ const ChargePage: React.FC = () => {
 
   // 디버깅을 위한 로깅
   useEffect(() => {
-    console.log('showPointInfo 상태 변경:', showPointInfo);
   }, [showPointInfo]);
 
   // 컴포넌트 마운트 시 캐시 설정 먼저 가져오기

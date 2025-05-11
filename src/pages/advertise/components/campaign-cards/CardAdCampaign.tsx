@@ -2,7 +2,11 @@ import { KeenIcon } from '@/components';
 import { useState } from 'react';
 import { CampaignDetailViewModal } from '@/pages/advertise/components';
 import { toAbsoluteUrl } from '@/utils/Assets';
-import { getStatusColorClass, formatCampaignDetailData } from '@/utils/CampaignFormat';
+import {
+  getStatusColorClass,
+  formatCampaignDetailData,
+  getAnimalIconFromName
+} from '@/utils/CampaignFormat';
 
 interface IAdCampaignItem {
   total: string;
@@ -86,11 +90,19 @@ const CardAdCampaign = ({
             <div className="flex items-center gap-2 mb-3">
               <img
                 src={logo && logo.includes('http') ? logo : (logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/animal/svg/${logo}`))}
-                className={`size-[30px] shrink-0`} 
+                className={`size-[30px] shrink-0`}
                 alt=""
                 onError={(e) => {
                   console.error(`이미지 로드 실패:`, e);
-                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                  // 캠페인 이름에서 동물 추출 시도
+                  const animalFromName = getAnimalIconFromName(title);
+                  if (animalFromName) {
+                    console.log(`이미지 로드 실패 대응: 캠페인 이름 ${title}에서 ${animalFromName} 동물 아이콘 사용`);
+                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+                  } else {
+                    // 기본 이미지 사용
+                    (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                  }
                 }}
               />
               <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">

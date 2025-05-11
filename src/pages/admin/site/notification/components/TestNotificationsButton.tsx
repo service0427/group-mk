@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { useToast } from '@/providers/ToastProvider';
 import { supabaseAdmin } from '@/supabase';
 import { NotificationType, NotificationPriority, NotificationStatus } from '@/types/notification';
 import { KeenIcon } from '@/components/keenicons';
@@ -13,12 +13,13 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
   const [showConfirm, setShowConfirm] = useState(false);
   const [email, setEmail] = useState('dev.junh@gmail.com');
   const [cleanupOldNotifications, setCleanupOldNotifications] = useState(true);
+  const toast = useToast(); // 새로운 토스트 API 사용
 
   // 테스트 알림 전송 함수
   const sendTestNotifications = async () => {
     try {
       setLoading(true);
-      toast.loading('테스트 알림 준비 중...');
+      toast.info('테스트 알림 준비 중...');
 
       // 1. 사용자 ID 찾기
       const { data: userData, error: userError } = await supabaseAdmin
@@ -29,14 +30,13 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
 
       if (userError || !userData) {
         console.error('사용자를 찾을 수 없습니다:', userError?.message);
-        toast.dismiss();
         toast.error(`사용자를 찾을 수 없습니다: ${email}`);
         setLoading(false);
         return false;
       }
 
       const userId = userData.id;
-      toast.loading(`사용자 ID: ${userId} (${email})`);
+      toast.info(`사용자 ID: ${userId} (${email})`);
 
       // 기존 알림 확인 및 삭제 (선택적)
       if (cleanupOldNotifications) {
@@ -48,7 +48,7 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
           .limit(100);
 
         if (existingNotifications && existingNotifications.length > 0) {
-          toast.loading(`기존 알림(${existingNotifications.length}개) 정리 중...`);
+          toast.info(`기존 알림(${existingNotifications.length}개) 정리 중...`);
 
           // 기존 알림 일부 삭제 (남기고 싶은 알림이 있으면 수를 조정)
           const notificationsToDelete = existingNotifications.map(n => n.id);
@@ -59,7 +59,7 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
               .delete()
               .in('id', notificationsToDelete);
 
-            toast.loading(`${notificationsToDelete.length}개의 알림을 정리했습니다.`);
+            toast.info(`${notificationsToDelete.length}개의 알림을 정리했습니다.`);
           }
         }
       }
@@ -111,20 +111,18 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
       }
 
       // 3. 알림 삽입
-      toast.loading(`${notifications.length}개의 테스트 알림을 전송합니다...`);
+      toast.info(`${notifications.length}개의 테스트 알림을 전송합니다...`);
       const { error: insertError } = await supabaseAdmin
         .from('notifications')
         .insert(notifications);
 
       if (insertError) {
         console.error('알림 전송 중 오류 발생:', insertError.message);
-        toast.dismiss();
         toast.error(`알림 전송 중 오류 발생: ${insertError.message}`);
         setLoading(false);
         return false;
       }
 
-      toast.dismiss();
       toast.success(`${notifications.length}개의 테스트 알림이 ${email}에게 전송되었습니다!`);
       setLoading(false);
       setShowConfirm(false);
@@ -137,7 +135,6 @@ const TestNotificationsButton: React.FC<TestNotificationsButtonProps> = ({ onCom
       return true;
     } catch (error: any) {
       console.error('테스트 알림 전송 중 오류 발생:', error.message);
-      toast.dismiss();
       toast.error(`테스트 알림 전송 중 오류 발생: ${error.message}`);
       setLoading(false);
       setShowConfirm(false);

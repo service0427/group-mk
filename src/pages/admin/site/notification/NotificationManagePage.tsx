@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
 import { NotificationPriority, NotificationType, NotificationStatus } from '@/types/notification';
 import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
-import { toast } from 'sonner';
+import { useToast } from '@/providers/ToastProvider';
 // 테이블 확인 유틸리티 추가 - 이제 TypeScript 파일
 import { checkNotificationAggregatesTable } from './utils/check-table';
 import SendNotificationModal from './components/SendNotificationModal';
@@ -27,17 +27,7 @@ import { ko } from 'date-fns/locale';
 
 const NotificationManagePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
-
-  // 커스텀 토스트 상태
-  const [notification, setNotification] = useState<{
-    show: boolean;
-    message: string;
-    type: 'success' | 'error';
-  }>({
-    show: false,
-    message: '',
-    type: 'success'
-  });
+  const toast = useToast();
 
   // 관리자 권한 체크
   const isAdmin = currentUser?.role ? hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN) : false;
@@ -83,27 +73,21 @@ const NotificationManagePage: React.FC = () => {
   // 테이블 존재 확인
   const [tableStatus, setTableStatus] = useState({ exists: false, checked: false });
 
-  // 알림 자동 사라짐 처리
-  useEffect(() => {
-    if (notification.show) {
-      const timer = setTimeout(() => {
-        setNotification({ ...notification, show: false });
-      }, 5000); // 5초 후 자동으로 닫힘
+  // 커스텀 토스트를 사용하므로 자동 사라짐 처리는 필요 없음
 
-      return () => clearTimeout(timer);
-    }
-  }, [notification.show, notification.message]);
-
-  // 통계 알림 자동 사라짐 처리
+  // 통계 알림 처리 - 커스텀 토스트로 변환
   useEffect(() => {
     if (statsNotification?.show) {
-      const timer = setTimeout(() => {
-        setStatsNotification({ ...statsNotification, show: false });
-      }, 5000); // 5초 후 자동으로 닫힘
+      if (statsNotification.type === 'success') {
+        toast.success(statsNotification.message);
+      } else if (statsNotification.type === 'error') {
+        toast.error(statsNotification.message);
+      }
 
-      return () => clearTimeout(timer);
+      // 통계 알림 상태 초기화
+      setStatsNotification({ ...statsNotification, show: false });
     }
-  }, [statsNotification?.show, statsNotification?.message]);
+  }, [statsNotification?.show, statsNotification?.message, toast]);
 
   // 페이지 로드 시 테이블 존재 여부 확인
   useEffect(() => {

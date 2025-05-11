@@ -3,7 +3,6 @@ import { HashRouter } from 'react-router-dom'; // BrowserRouter에서 HashRouter
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
-import { Toaster } from '@/components/ui/sonner';
 import { ScrollToTop } from '@/components';
 
 const App = () => {
@@ -52,7 +51,6 @@ const App = () => {
         <ScrollToTop />
         <AppRouting />
       </PathnameProvider>
-      <Toaster />
     </HashRouter>
   );
 };

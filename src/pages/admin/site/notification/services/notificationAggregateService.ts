@@ -107,16 +107,36 @@ export const fetchNotificationAggregate = async (): Promise<INotificationAggrega
 /**
  * 알림 통계 전체 갱신
  * 모든 알림 데이터를 스캔하여 집계 테이블 업데이트
- * 
- * @param setNotification 토스트 알림을 표시하기 위한 상태 설정 함수 (옵션)
+ *
+ * @param showToast 토스트 알림을 표시하기 위한 함수 (옵션)
+ *
+ * 마이그레이션 참고: 이전 버전과의 호환성을 위해 두 가지 방식 모두 지원
+ * - showToast: 새로운 커스텀 토스트 함수
+ * - setNotification: 기존 커스텀 토스트 상태 설정 함수
  */
 export const refreshNotificationAggregate = async (
-  setNotification?: (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void
+  showToastOrSetNotification?:
+    | ((message: string, type: 'success' | 'error') => void)
+    | ((notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)
 ): Promise<boolean> => {
   try {
-    // 상태 설정 함수가 제공된 경우 커스텀 토스트 표시, 아니면 콘솔 로깅
-    if (setNotification) {
-      setNotification({ show: true, message: '알림 통계 집계 중...', type: 'success' });
+    // 함수가 제공된 경우 토스트 표시, 아니면 콘솔 로깅
+    if (showToastOrSetNotification) {
+      // 함수 타입 확인 (매개변수 개수로 구분)
+      const isNewToastFn = showToastOrSetNotification.length === 2;
+
+      if (isNewToastFn) {
+        // 새로운 커스텀 토스트 API 사용
+        (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+          '알림 통계 집계 중...',
+          'success'
+        );
+      } else {
+        // 기존 커스텀 토스트 상태 설정 API 사용
+        (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+          { show: true, message: '알림 통계 집계 중...', type: 'success' }
+        );
+      }
     } else {
       console.log('알림 통계 집계 중...');
     }
@@ -131,8 +151,22 @@ export const refreshNotificationAggregate = async (
 
     if (countError) {
       console.error('전체 알림 개수 조회 중 오류 발생:', countError.message);
-      if (setNotification) {
-        setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+      if (showToastOrSetNotification) {
+        // 함수 타입 확인 (매개변수 개수로 구분)
+        const isNewToastFn = showToastOrSetNotification.length === 2;
+
+        if (isNewToastFn) {
+          // 새로운 커스텀 토스트 API 사용
+          (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+            '알림 통계 업데이트 중 오류가 발생했습니다.',
+            'error'
+          );
+        } else {
+          // 기존 커스텀 토스트 상태 설정 API 사용
+          (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+            { show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' }
+          );
+        }
       }
       return false;
     }
@@ -241,8 +275,22 @@ export const refreshNotificationAggregate = async (
 
     if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116'는 결과가 없을 때의 에러 코드
       console.error('기존 집계 데이터 확인 중 오류 발생:', fetchError.message);
-      if (setNotification) {
-        setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+      if (showToastOrSetNotification) {
+        // 함수 타입 확인 (매개변수 개수로 구분)
+        const isNewToastFn = showToastOrSetNotification.length === 2;
+
+        if (isNewToastFn) {
+          // 새로운 커스텀 토스트 API 사용
+          (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+            '알림 통계 업데이트 중 오류가 발생했습니다.',
+            'error'
+          );
+        } else {
+          // 기존 커스텀 토스트 상태 설정 API 사용
+          (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+            { show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' }
+          );
+        }
       }
       return false;
     }
@@ -260,8 +308,22 @@ export const refreshNotificationAggregate = async (
 
       if (updateError) {
         console.error('집계 데이터 업데이트 중 오류 발생:', updateError.message);
-        if (setNotification) {
-          setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' });
+        if (showToastOrSetNotification) {
+          // 함수 타입 확인 (매개변수 개수로 구분)
+          const isNewToastFn = showToastOrSetNotification.length === 2;
+
+          if (isNewToastFn) {
+            // 새로운 커스텀 토스트 API 사용
+            (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+              '알림 통계 업데이트 중 오류가 발생했습니다.',
+              'error'
+            );
+          } else {
+            // 기존 커스텀 토스트 상태 설정 API 사용
+            (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+              { show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다.', type: 'error' }
+            );
+          }
         }
         return false;
       }
@@ -276,22 +338,64 @@ export const refreshNotificationAggregate = async (
 
       if (insertError) {
         console.error('집계 데이터 생성 중 오류 발생:', insertError.message);
-        if (setNotification) {
-          setNotification({ show: true, message: '알림 통계 생성 중 오류가 발생했습니다.', type: 'error' });
+        if (showToastOrSetNotification) {
+          // 함수 타입 확인 (매개변수 개수로 구분)
+          const isNewToastFn = showToastOrSetNotification.length === 2;
+
+          if (isNewToastFn) {
+            // 새로운 커스텀 토스트 API 사용
+            (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+              '알림 통계 생성 중 오류가 발생했습니다.',
+              'error'
+            );
+          } else {
+            // 기존 커스텀 토스트 상태 설정 API 사용
+            (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+              { show: true, message: '알림 통계 생성 중 오류가 발생했습니다.', type: 'error' }
+            );
+          }
         }
         return false;
       }
     }
 
-    if (setNotification) {
-      setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다.', type: 'success' });
+    if (showToastOrSetNotification) {
+      // 함수 타입 확인 (매개변수 개수로 구분)
+      const isNewToastFn = showToastOrSetNotification.length === 2;
+
+      if (isNewToastFn) {
+        // 새로운 커스텀 토스트 API 사용
+        (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+          '알림 통계가 성공적으로 업데이트되었습니다.',
+          'success'
+        );
+      } else {
+        // 기존 커스텀 토스트 상태 설정 API 사용
+        (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+          { show: true, message: '알림 통계가 성공적으로 업데이트되었습니다.', type: 'success' }
+        );
+      }
     }
     return true;
 
   } catch (error: any) {
     console.error('알림 통계 집계 중 예외 발생:', error.message);
-    if (setNotification) {
-      setNotification({ show: true, message: `알림 통계 업데이트 중 오류: ${error.message}`, type: 'error' });
+    if (showToastOrSetNotification) {
+      // 함수 타입 확인 (매개변수 개수로 구분)
+      const isNewToastFn = showToastOrSetNotification.length === 2;
+
+      if (isNewToastFn) {
+        // 새로운 커스텀 토스트 API 사용
+        (showToastOrSetNotification as (message: string, type: 'success' | 'error') => void)(
+          `알림 통계 업데이트 중 오류: ${error.message}`,
+          'error'
+        );
+      } else {
+        // 기존 커스텀 토스트 상태 설정 API 사용
+        (showToastOrSetNotification as (notification: { show: boolean; message: string; type: 'success' | 'error' }) => void)(
+          { show: true, message: `알림 통계 업데이트 중 오류: ${error.message}`, type: 'error' }
+        );
+      }
     }
     return false;
   }

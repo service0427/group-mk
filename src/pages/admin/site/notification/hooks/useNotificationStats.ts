@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
+import { useToast } from '@/providers/ToastProvider';
 import { backgroundTaskManager } from '@/utils/backgroundTasks';
 import { NotificationStats } from '../services/notificationService';
 import { INotificationAggregate } from '@/types/notification/statistics';
@@ -66,6 +66,7 @@ export const useNotificationStats = (options: {
   const [error, setError] = useState<Error | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [useFallback, setUseFallback] = useState(false); // 폴백 사용 여부
+  const toast = useToast(); // 새로운 토스트 API 사용
 
   const {
     refreshInterval = 60000, // 기본 1분마다 갱신
@@ -189,13 +190,25 @@ export const useNotificationStats = (options: {
       if (useFallback) {
         // 폴백 모드 사용 중인 경우 기존 방식으로 갱신
         await loadStatsFallback();
+        // 새로운 토스트 API 사용
+        toast.success('알림 통계가 성공적으로 업데이트되었습니다');
+        // 기존 방식과의 호환성 유지를 위해 상태도 설정
         setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다', type: 'success' });
         return true;
       }
 
       try {
-        // 전체 통계 재계산 요청 - 상태 설정 함수 전달
-        const refreshSuccess = await refreshNotificationAggregate(setNotification);
+        // 전체 통계 재계산 요청 - 토스트 함수 전달
+        // 토스트 함수를 전달하여 새로운 방식 사용
+        const refreshSuccess = await refreshNotificationAggregate((message, type) => {
+          if (type === 'success') {
+            toast.success(message);
+          } else {
+            toast.error(message);
+          }
+          // 기존 방식과의 호환성 유지를 위해 상태도 설정
+          setNotification({ show: true, message, type });
+        });
 
         if (!refreshSuccess) {
           throw new Error('통계 갱신 실패');
@@ -218,6 +231,9 @@ export const useNotificationStats = (options: {
         if (fallbackToOldMethod) {
           setUseFallback(true);
           await loadStatsFallback();
+          // 새로운 토스트 API 사용
+          toast.success('알림 통계가 성공적으로 업데이트되었습니다 (기본 방식)');
+          // 기존 방식과의 호환성 유지를 위해 상태도 설정
           setNotification({ show: true, message: '알림 통계가 성공적으로 업데이트되었습니다 (기본 방식)', type: 'success' });
           return true;
         } else {
@@ -231,12 +247,15 @@ export const useNotificationStats = (options: {
       // 오류 발생해도 최소한의 표시를 위해 기본값 적용
       setStats(createDefaultStats());
       setLastUpdated(new Date());
+      // 새로운 토스트 API 사용
+      toast.error('알림 통계 업데이트 중 오류가 발생했습니다');
+      // 기존 방식과의 호환성 유지를 위해 상태도 설정
       setNotification({ show: true, message: '알림 통계 업데이트 중 오류가 발생했습니다', type: 'error' });
       return false;
     } finally {
       setLoading(false);
     }
-  }, [fallbackToOldMethod, useFallback, loadStatsFallback]);
+  }, [fallbackToOldMethod, useFallback, loadStatsFallback, toast]);
 
   // 백그라운드 작업 설정
   useEffect(() => {

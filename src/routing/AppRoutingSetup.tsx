@@ -46,6 +46,7 @@ import NoticePage from '@/pages/notice';
 import FAQPage from '@/pages/faq';
 import SitemapPage from '@/pages/sitemap';
 import NotificationsPage from '@/pages/myinfo/notifications';
+import KeywordPage from '@/pages/keyword';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
@@ -107,6 +108,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/sitemap" element={<SitemapPage />} />
           <Route path="/myinfo/notifications" element={<NotificationsPage />} />
+          <Route path="/keyword" element={<KeywordPage />} />
 
           {/* 관리자 메뉴 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />

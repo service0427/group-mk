@@ -717,7 +717,7 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="광고주 대시보드"
       description="광고 캠페인 관리, 성과 분석 및 타겟 그룹별 성과를 확인할 수 있는 종합 대시보드입니다."
-      headerBgClass="bg-green-600"
+      headerBgClass="bg-blue-600"
       headerTextClass="text-white"
       toolbarActions={
         <>
@@ -738,7 +738,7 @@ export const DashboardContent: React.FC = () => {
           unit={isMobile ? "만원" : "원"}
           trend={0} // 요율 제거 (0으로 설정)
           icon="dollar"
-          iconColor="bg-green-600"
+          iconColor="bg-blue-600"
         />
         <DashboardColorCard
           title="진행 중인 캠페인"

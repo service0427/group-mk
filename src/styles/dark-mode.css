@@ -29,7 +29,7 @@
 /* 카드 스타일 */
 .dark .card {
   background-color: #111217 !important; /* coal-300 색상 */
-  border-color: #15171C !important; /* coal-100 색상 */
+  border-color: #252A36 !important; /* 훨씬 더 진한 색상으로 변경 */
 }
 
 /* 테이블 배경 스타일 */
@@ -43,7 +43,7 @@
 .dark td,
 .dark th {
   background-color: #111217; /* coal-300 색상 */
-  border-color: #15171C !important; /* coal-100 색상 */
+  border-color: #252A36 !important; /* 훨씬 더 진한 색상으로 변경 */
   color: #f0f0f0;
 }
 
@@ -56,7 +56,7 @@
 .dark textarea,
 .dark select {
   background-color: #13141A !important; /* coal-200 색상 */
-  border-color: #15171C !important; /* coal-100 색상 */
+  border-color: #252A36 !important; /* 훨씬 더 진한 색상으로 변경 */
   color: #FFFFFF !important;
 }
 
@@ -71,6 +71,8 @@
   background-color: #111217 !important; /* coal-300 색상 */
 }
 
+/* 카드 관련 테두리 색상은 card-fix.css로 이동했습니다 */
+
 .dark .bg-gray-100 {
   background-color: #13141A !important; /* coal-200 색상 */
 }
@@ -79,10 +81,15 @@
   background-color: #15171C !important; /* coal-100 색상 */
 }
 
+/* 그라데이션 배경 제외 (오버라이드 방지) */
+.dark [class*="bg-gradient-to-"] {
+  /* 그라데이션은 오버라이드하지 않음 */
+}
+
 /* 중요 알림 및 알림 배경색 */
 .dark .bg-amber-50\/90 {
   background-color: rgba(19, 20, 26, 0.9) !important; /* coal-200 색상 90% 투명도 */
-  border-bottom: 1px solid #15171C !important; /* coal-100 색상 */
+  border-bottom: 1px solid #252A36 !important; /* 훨씬 더 진한 색상으로 변경 */
 }
 
 /* 글자 색상 스타일 */
@@ -114,18 +121,31 @@
 
 /* 툴바와 상태 표시줄 배경색 */
 .dark .border-b.border-gray-200 {
-  border-color: #15171C !important; /* coal-100 색상 */
+  border-color: #252A36 !important; /* 훨씬 더 진한 색상으로 변경 */
 }
 
-/* HTML 요소 배경색 */
+/* HTML 및 body 배경색 */
 .dark html {
   background-color: #111217 !important; /* coal-300 색상 */
+  position: relative;
+  z-index: 0;
+}
+
+/* 다크모드에서 body 스타일 */
+.dark body {
+  position: relative;
+  z-index: 1;
 }
 
 /* #root 배경색 */
-.dark #root,
+.dark #root {
+  position: relative;
+  z-index: 2;
+}
+
 .dark #root > div {
-  background-color: #111217 !important; /* coal-300 색상 */
+  position: relative;
+  z-index: 3;
 }
 
 /* 대시보드 템플릿 배경색 */
@@ -133,9 +153,26 @@
   background-color: #111217 !important; /* coal-300 색상 */
 }
 
-/* 컨텐츠 영역 배경색 */
+/* 컨텐츠 영역 z-index 설정 */
 .dark main,
-.dark .content,
-.dark div[class*="content"] {
-  background-color: #111217 !important; /* coal-300 색상 */
+.dark .content {
+  position: relative;
+  z-index: 5;
+}
+
+.dark div[class*="content"],
+.dark div[class*="wrapper"] {
+  position: relative;
+  z-index: 6;
+}
+
+/* 상호작용 요소 (버튼, 링크 등)의 z-index 설정 */
+.dark button,
+.dark a,
+.dark input,
+.dark select,
+.dark [role="button"],
+.dark [tabindex="0"] {
+  position: relative;
+  z-index: 10;
 }

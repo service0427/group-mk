@@ -1,0 +1,35 @@
+/* 카드 스타일 통일 수정 */
+
+/* 라이트 모드에서 bg-card 요소에 테두리 추가 */
+.bg-card {
+  border: 1px solid var(--tw-gray-200) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: var(--tw-card-box-shadow) !important;
+}
+
+/* 기본 패딩이 없는 bg-card 요소에 패딩 추가 */
+.bg-card:not([class*="p-"]) {
+  padding: 1rem !important;
+}
+
+/* 다크 모드에서 모든 카드 관련 요소 테두리 색상 통일 */
+.dark .bg-card,
+.dark div[class*="card"], /* 모든 card 클래스 포함 요소 */
+.dark .Card,
+.dark .border-gray-700,
+.dark .border-border,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-gray-400,
+.dark .border-gray-500,
+.dark .border-gray-600 {
+  border-color: #252A36 !important;
+  box-shadow: none !important;
+}
+
+/* 특정 컴포넌트에 직접 border 클래스를 추가하는 경우를 위한 선택적 적용 */
+.dark .card[class*="border"],
+.dark .bg-card[class*="border"],
+.dark div[class*="card"][class*="border"] {
+  border-color: #252A36 !important;
+}

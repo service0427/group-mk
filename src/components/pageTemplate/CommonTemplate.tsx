@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
-import { Toolbar, ToolbarActions, ToolbarDescription, ToolbarHeading, ToolbarPageTitle } from '@/partials/toolbar';
+import { Toolbar, ToolbarActions, ToolbarDescription, ToolbarHeading, ToolbarPageTitle, StyledToolbar } from '@/partials/toolbar';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
 import { Navbar } from '@/partials/navbar';
@@ -11,15 +11,15 @@ import { PageMenu } from '@/partials/pagemenu';
  * 모든 페이지에서 사용할 수 있는 공통 템플릿
  * 페이지 제목, 설명, 액션 버튼 등을 일관되게 표시
  * 캠페인 소개 하위 페이지 스타일을 기준으로 제작
- * 
+ *
  * 고정된 마진과 패딩 값을 사용하여 일관된 레이아웃 제공
  * 복잡한 동적 계산을 제거하고 CSS 클래스 기반으로 변경
  */
 interface CommonTemplateProps {
   title?: string;                   // 페이지 제목 (수동 지정)
-  description?: string;             // 페이지 설명 (수동 지정) 
+  description?: string;             // 페이지 설명 (수동 지정)
   showPageMenu?: boolean;           // 페이지 메뉴 표시 여부
-  showBreadcrumb?: boolean;         // 브레드크럼 표시 여부 
+  showBreadcrumb?: boolean;         // 브레드크럼 표시 여부
   hideDescription?: boolean;        // 설명 숨김 여부 (기본값: false)
   toolbarActions?: React.ReactNode; // 툴바 액션 버튼 영역
   container?: boolean;              // 컨테이너 사용 여부 (기본값: true)
@@ -40,7 +40,7 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   fullWidth = true,
   containerClassName = "",
   children,
-  childrenClassName = "grid gap-2 lg:gap-3 pb-2"  // 간격을 최소화
+  childrenClassName = "grid gap-4 lg:gap-5 pb-4"  // 간격을 확보
 }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
@@ -58,7 +58,7 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   const pageDescription = description || (showBreadcrumb && parentMenu ? `${parentMenu} > ${pageTitle}` : pageTitle);
 
   // 페이지 템플릿에 적용할 클래스 (페이지 메뉴 표시 여부에 따라 다름)
-  const pageTemplateClass = `page-template-wrapper ${showPageMenu ? 'pt-3' : 'pt-2 no-page-menu'}`;
+  const pageTemplateClass = `page-template-wrapper ${showPageMenu ? 'pt-5' : 'pt-4 no-page-menu'}`;
 
   // 컨텐츠 클래스 구성 (기본 클래스 + 사용자 정의 클래스)
   const contentClasses = `template-content ${childrenClassName}`;
@@ -99,22 +99,14 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
           </Navbar>
         )}
 
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarPageTitle customTitle={pageTitle} />
-            {!hideDescription && (
-              <ToolbarDescription>
-                {pageDescription}
-              </ToolbarDescription>
-            )}
-          </ToolbarHeading>
-
-          {toolbarActions && (
-            <ToolbarActions className="flex flex-wrap gap-2 w-full sm:w-auto self-end sm:self-auto justify-end">
-              {toolbarActions}
-            </ToolbarActions>
-          )}
-        </Toolbar>
+        <StyledToolbar
+          title={pageTitle}
+          description={!hideDescription ? pageDescription : undefined}
+          hideDescription={hideDescription}
+          toolbarActions={toolbarActions}
+          bgClass="bg-gradient-to-r from-blue-500 to-indigo-600"
+          textClass="text-white"
+        />
       </Container>
 
       {/* 컨텐츠 영역 */}

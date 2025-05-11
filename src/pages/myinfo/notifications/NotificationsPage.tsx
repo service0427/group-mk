@@ -114,7 +114,7 @@ const NotificationsPage = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* 왼쪽 사이드바 - 필터 (모바일에서는 상단 드롭다운으로 표시) */}
         <div className="col-span-12 md:col-span-2 md:block hidden">
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+          <div className="card rounded-lg shadow-sm overflow-hidden">
             <div className="p-5 border-b">
               <h3 className="text-lg font-medium text-card-foreground">필터</h3>
             </div>
@@ -248,7 +248,7 @@ const NotificationsPage = () => {
 
         {/* 오른쪽 메인 콘텐츠 - 알림 목록 */}
         <div className="col-span-12 md:col-span-10">
-          <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+          <div className="card rounded-lg shadow-sm overflow-hidden">
             <div className="p-5 flex flex-col md:flex-row md:justify-between md:items-center border-b gap-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-medium text-card-foreground">

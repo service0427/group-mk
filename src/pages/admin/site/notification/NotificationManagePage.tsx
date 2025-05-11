@@ -99,6 +99,17 @@ const NotificationManagePage: React.FC = () => {
 
   // 커스텀 토스트를 사용하므로 자동 사라짐 처리는 필요 없음
 
+  // 알림 상태 추가
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error';
+  }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
   // 통계 알림 처리 - 커스텀 토스트로 변환
 
   useEffect(() => {

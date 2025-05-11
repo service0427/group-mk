@@ -6,10 +6,12 @@ import {
   isValidElement,
   memo,
   useContext,
-  useState
+  useState,
+  useEffect
 } from 'react';
 import { IMenuContextProps, IMenuItemProps, IMenuProps } from './';
 import { MenuItem } from './';
+import { getData, setData } from '@/utils/LocalStorage';
 
 const initalProps: IMenuContextProps = {
   disabled: false,
@@ -39,14 +41,22 @@ const MenuComponent = ({
   dropdownTimeout = 150,
   multipleExpand = false
 }: IMenuProps) => {
-  const [openAccordions, setOpenAccordions] = useState<{ [key: string]: string | null }>({});
+  // 로컬 스토리지에서 저장된 열린 아코디언 상태 불러오기
+  const initialAccordions = (getData('menu_accordions') as { [key: string]: string | null }) || {};
+  const [openAccordions, setOpenAccordions] = useState<{ [key: string]: string | null }>(initialAccordions);
 
   // Function to handle the accordion toggle
   const setOpenAccordion = (parentId: string, id: string) => {
-    setOpenAccordions((prevState) => ({
-      ...prevState,
-      [parentId]: prevState[parentId] === id ? null : id // Toggle the current item and collapse others at the same level
-    }));
+    setOpenAccordions((prevState) => {
+      const newState = {
+        ...prevState,
+        [parentId]: prevState[parentId] === id ? null : id // Toggle the current item and collapse others at the same level
+      };
+      
+      // 로컬 스토리지에 상태 저장
+      setData('menu_accordions', newState);
+      return newState;
+    });
   };
 
   const isOpenAccordion = (parentId: string, id: string) => {

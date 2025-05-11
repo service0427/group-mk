@@ -53,19 +53,7 @@ const ServiceCampaignPage: React.FC = () => {
     }
   }, [platform, subservice, type, pathname]);
 
-  // 소개 페이지 경로 생성
-  const getIntroPath = (): string => {
-    // 직접 경로 '/advertise/ntraffic/campaign' 처리
-    if (pathname === '/advertise/ntraffic/campaign') {
-      return '/advertise/ntraffic/desc';
-    }
-
-    // 일반 동적 라우트 처리
-    if (subservice) {
-      return `/advertise/${platform}/${subservice}/${type}/desc`;
-    }
-    return `/advertise/${platform}/${type}/desc`;
-  };
+  // 소개 페이지 경로 로직 제거
 
   if (loading) {
     return (
@@ -96,7 +84,7 @@ const ServiceCampaignPage: React.FC = () => {
 
   // CampaignTemplate 내부에서는 이미 CommonTemplate과 유사한 구조를 사용하고 있으므로,
   // 여기에서는 그대로 사용하고, 필요에 따라 CampaignTemplate 자체를 나중에 수정합니다.
-  return <CampaignTemplate campaignData={campaignData} introPath={getIntroPath()} />;
+  return <CampaignTemplate campaignData={campaignData} />;
 };
 
 export { ServiceCampaignPage };

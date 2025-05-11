@@ -1,6 +1,7 @@
 import React from 'react';
 import { CommonTemplate } from './CommonTemplate';
 import { Container } from '@/components/container';
+import { StyledToolbar } from '@/partials/toolbar';
 
 interface DashboardTemplateProps {
   title?: string;
@@ -35,31 +36,54 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   containerClassName = "",
   childrenClassName = "",
   children,
-  headerBgClass = "bg-indigo-600",
+  headerBgClass = "bg-info",
   headerTextClass = "text-white",
 }) => {
   // 대시보드 컨텐츠 클래스
   const contentClasses = `grid gap-5 pb-5 ${childrenClassName}`;
 
+  // 그라데이션 클래스 생성
+  let gradientClass = headerBgClass;
+
+  // CSS 정의 색상 처리 맵
+  const colorMap: Record<string, string> = {
+    'bg-purple-600': 'bg-gradient-to-r from-primary to-primary',
+    'bg-blue-600': 'bg-gradient-to-r from-primary to-primary',
+    'bg-indigo-600': 'bg-gradient-to-r from-info to-info',
+    'bg-amber-600': 'bg-gradient-to-r from-warning to-warning',
+    'bg-red-600': 'bg-gradient-to-r from-danger to-danger'
+  };
+
+  // 맵에 있는 색상인 경우 CSS 변수 사용
+  if (colorMap[headerBgClass]) {
+    gradientClass = colorMap[headerBgClass];
+  }
+  // 맵에 없는 기존 Tailwind 색상 처리
+  else {
+    // 색상 클래스에서 'bg-' 접두사 제거 (존재하는 경우)
+    const colorClass = headerBgClass.replace(/^bg-/, '');
+
+    // 마지막 강도(숫자) 부분만 추출
+    const baseColorMatch = colorClass.match(/^(\w+(?:-\w+)?)-\d+$/);
+
+    if (baseColorMatch && baseColorMatch[1]) {
+      const baseColor = baseColorMatch[1]; // 예: 'blue', 'yellow'
+      gradientClass = `bg-gradient-to-r from-${baseColor}-500 to-${baseColor}-600`;
+    }
+  }
+
   return (
     <div className="dashboard-template-wrapper">
       {/* 헤더 영역 - 커스텀 배경색 */}
-      <Container fullWidth={fullWidth} className={`${containerClassName} mb-5`}>
-        <div className={`${headerBgClass} ${headerTextClass} rounded-lg shadow-md px-5 py-4 dark:shadow-none`}>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-            <div>
-              <h2 className="text-xl md:text-2xl font-semibold mb-1">{title}</h2>
-              {!hideDescription && (
-                <p className="text-sm md:text-base opacity-80">{description}</p>
-              )}
-            </div>
-            {toolbarActions && (
-              <div className="mt-3 lg:mt-0 flex flex-wrap gap-2 justify-start lg:justify-end">
-                {toolbarActions}
-              </div>
-            )}
-          </div>
-        </div>
+      <Container fullWidth={fullWidth} className={`${containerClassName} mb-8 pt-5`}>
+        <StyledToolbar
+          title={title}
+          description={description}
+          hideDescription={hideDescription}
+          toolbarActions={toolbarActions}
+          bgClass={gradientClass}
+          textClass={headerTextClass}
+        />
       </Container>
 
       {/* 메인 컨텐츠 영역 - 직접 Container 사용 (CommonTemplate과 일관성 맞춤) */}

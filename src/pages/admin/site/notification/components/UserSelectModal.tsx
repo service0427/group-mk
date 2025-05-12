@@ -4,7 +4,7 @@ import { KeenIcon } from '@/components/keenicons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors } from '@/config/roles.config';
+import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 interface User {
   id: string;
@@ -140,14 +140,32 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
   // 역할에 따른 테마 클래스 및 인라인 스타일
   const getRoleClasses = (role: string) => {
     const color = getRoleBadgeColor(role);
-    const themeColors = getRoleThemeColors(role);
+    // 기본 스타일 설정
+    const baseStyle: React.CSSProperties = {
+      backgroundColor: '#e5e7eb15', // 기본 배경색 (회색 10%)
+      color: '#6b7280' // 기본 텍스트 색상 (회색)
+    };
 
+    try {
+      // USER_ROLE_THEME_COLORS에서 직접 가져오기
+      const roleTheme = USER_ROLE_THEME_COLORS[role];
+      if (roleTheme && roleTheme.baseHex) {
+        return {
+          className: `bg-${color}/10 text-${color}`,
+          style: {
+            backgroundColor: `${roleTheme.baseHex}15`,
+            color: roleTheme.baseHex
+          }
+        };
+      }
+    } catch (error) {
+      // 에러 처리 - 기본값 사용
+    }
+
+    // 기본값 반환
     return {
       className: `bg-${color}/10 text-${color}`,
-      style: {
-        backgroundColor: `${themeColors.baseHex}15`,
-        color: themeColors.baseHex
-      }
+      style: baseStyle
     };
   };
 

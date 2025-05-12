@@ -3,7 +3,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
-import { USER_ROLES, USER_ROLE_BADGE_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors } from '@/config/roles.config';
+import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const MakeUserRow = (user: any) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
@@ -15,14 +15,34 @@ const MakeUserRow = (user: any) => {
     const closeUserModalOpen = () => setUserModalOpen(false);
 
     const renderRoleBadge = (role: string): { name: string, class: string, style?: React.CSSProperties } => {
-        const themeColors = getRoleThemeColors(role);
+        // 기본 스타일 설정
+        const baseStyle: React.CSSProperties = {
+            backgroundColor: '#e5e7eb15', // 기본 배경색 (회색 10%)
+            color: '#6b7280' // 기본 텍스트 색상 (회색)
+        };
+
+        try {
+            // USER_ROLE_THEME_COLORS에서 직접 가져오기
+            const roleTheme = USER_ROLE_THEME_COLORS[role];
+            if (roleTheme && roleTheme.baseHex) {
+                return {
+                    name: getRoleDisplayName(role),
+                    class: `bg-${getRoleBadgeColor(role)}/10 text-${getRoleBadgeColor(role)}`,
+                    style: {
+                        backgroundColor: `${roleTheme.baseHex}15`, /* 10% 투명도 */
+                        color: roleTheme.baseHex
+                    }
+                };
+            }
+        } catch (error) {
+            // 에러 처리 - 기본값 사용
+        }
+
+        // 기본값 반환
         return {
             name: getRoleDisplayName(role),
             class: `bg-${getRoleBadgeColor(role)}/10 text-${getRoleBadgeColor(role)}`,
-            style: {
-                backgroundColor: `${themeColors.baseHex}15`, /* 10% 투명도 */
-                color: themeColors.baseHex
-            }
+            style: baseStyle
         };
     }
 
@@ -506,7 +526,7 @@ const UsersPage = () => {
                                                                 {(() => {
                                                                     return (
                                                                         <p className="font-medium" style={{
-                                                                    color: getRoleThemeColors(user.role).baseHex
+                                                                    color: USER_ROLE_THEME_COLORS[user.role]?.baseHex || '#6b7280'
                                                                 }}>{getRoleDisplayName(user.role)}</p>
                                                                     );
                                                                 })()}

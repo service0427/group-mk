@@ -4,7 +4,7 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { BusinessUpgradeModal } from '@/components/business';
-import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors } from '@/config/roles.config';
+import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const ProfilePage = () => {
   const { currentUser, setCurrentUser } = useAuthContext();
@@ -80,7 +80,7 @@ const ProfilePage = () => {
   const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
 
   // 역할별 테마 색상 가져오기
-  const roleThemeColors = currentUser?.role ? getRoleThemeColors(currentUser.role) : null;
+  const roleThemeColors = currentUser?.role ? USER_ROLE_THEME_COLORS[currentUser.role] || null : null;
 
   const statusClass = currentUser?.status === 'active' ? 'badge-success' :
     currentUser?.status === 'inactive' ? 'badge-secondary' :

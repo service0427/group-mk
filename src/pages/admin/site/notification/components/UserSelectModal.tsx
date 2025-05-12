@@ -4,7 +4,7 @@ import { KeenIcon } from '@/components/keenicons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor } from '@/config/roles.config';
+import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors } from '@/config/roles.config';
 
 interface User {
   id: string;
@@ -137,10 +137,18 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
     }
   };
 
-  // 역할에 따른 아이콘 및 배경색 클래스
+  // 역할에 따른 테마 클래스 및 인라인 스타일
   const getRoleClasses = (role: string) => {
     const color = getRoleBadgeColor(role);
-    return `bg-${color}-100 dark:bg-${color}-900/40 text-${color}-800 dark:text-${color}-300`;
+    const themeColors = getRoleThemeColors(role);
+
+    return {
+      className: `bg-${color}/10 text-${color}`,
+      style: {
+        backgroundColor: `${themeColors.baseHex}15`,
+        color: themeColors.baseHex
+      }
+    };
   };
 
   // 선택 완료
@@ -313,7 +321,10 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
                             {user.email}
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${getRoleClasses(user.role)}`}>
+                            <span
+                              className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${getRoleClasses(user.role).className}`}
+                              style={getRoleClasses(user.role).style}
+                            >
                               {getRoleDisplayName(user.role)}
                             </span>
                           </td>

@@ -407,7 +407,7 @@ const ManageSettingPage = () => {
                     <input
                       type="text"
                       placeholder="예: 1,000,000"
-                      className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                      className="input pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                       value={globalSettings.min_request_amount.toLocaleString()}
                       onChange={(e) => {
                         // 입력에서 콤마를 제거하고 숫자만 파싱
@@ -440,7 +440,7 @@ const ManageSettingPage = () => {
                     <input
                       type="number"
                       placeholder="예: 10"
-                      className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
                       value={globalSettings.free_cash_percentage}
                       onChange={(e) => setGlobalSettings({ ...globalSettings, free_cash_percentage: parseInt(e.target.value) || 0 })}
                       min="0"
@@ -474,7 +474,7 @@ const ManageSettingPage = () => {
                     <input
                       type="number"
                       placeholder="예: 1"
-                      className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-16"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-16"
                       value={globalSettings.expiry_months}
                       onChange={(e) => setGlobalSettings({ ...globalSettings, expiry_months: parseInt(e.target.value) || 0 })}
                       min="0"
@@ -513,7 +513,7 @@ const ManageSettingPage = () => {
                     <input
                       type="text"
                       placeholder="예: 10,000"
-                      className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                      className="input pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                       value={globalSettings.min_usage_amount.toLocaleString()}
                       onChange={(e) => {
                         // 입력에서 콤마를 제거하고 숫자만 파싱
@@ -546,7 +546,7 @@ const ManageSettingPage = () => {
                     <input
                       type="number"
                       placeholder="예: 5"
-                      className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
                       value={globalSettings.min_usage_percentage}
                       onChange={(e) => setGlobalSettings({ ...globalSettings, min_usage_percentage: parseInt(e.target.value) || 0 })}
                       min="0"
@@ -635,7 +635,7 @@ const ManageSettingPage = () => {
                       <input
                         type="text"
                         placeholder="이메일로 사용자 검색..."
-                        className="pl-10 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                        className="input pl-10 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                         value={searchUserEmail}
                         onChange={(e) => setSearchUserEmail(e.target.value)}
                         onFocus={() => setShowUserSearch(true)}
@@ -694,7 +694,7 @@ const ManageSettingPage = () => {
                               </div>
                               <input
                                 type="text"
-                                className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                                className="input pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                                 value={userSetting.min_request_amount.toLocaleString()}
                                 onChange={(e) => {
                                   const value = e.target.value.replace(/,/g, '');
@@ -724,7 +724,7 @@ const ManageSettingPage = () => {
                             <div className="relative">
                               <input
                                 type="number"
-                                className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-8"
+                                className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-8"
                                 value={userSetting.free_cash_percentage}
                                 onChange={(e) => setUserSetting({ ...userSetting, free_cash_percentage: parseInt(e.target.value) || 0 })}
                                 min="0"
@@ -758,7 +758,7 @@ const ManageSettingPage = () => {
                             <div className="relative">
                               <input
                                 type="number"
-                                className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
+                                className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12"
                                 value={userSetting.expiry_months}
                                 onChange={(e) => setUserSetting({ ...userSetting, expiry_months: parseInt(e.target.value) || 0 })}
                                 min="0"
@@ -790,7 +790,7 @@ const ManageSettingPage = () => {
                             <div className="relative">
                               <input
                                 type="number"
-                                className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-8"
+                                className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-8"
                                 value={userSetting.min_usage_percentage}
                                 onChange={(e) => setUserSetting({ ...userSetting, min_usage_percentage: parseInt(e.target.value) || 0 })}
                                 min="0"
@@ -826,7 +826,7 @@ const ManageSettingPage = () => {
                             </div>
                             <input
                               type="text"
-                              className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                              className="input pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
                               value={userSetting.min_usage_amount.toLocaleString()}
                               onChange={(e) => {
                                 const value = e.target.value.replace(/,/g, '');
@@ -843,7 +843,7 @@ const ManageSettingPage = () => {
                             <div className="flex items-center h-5">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+                                className="input h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
                                 checked={userSetting.is_active}
                                 onChange={(e) => setUserSetting({ ...userSetting, is_active: e.target.checked })}
                               />

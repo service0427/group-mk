@@ -107,7 +107,7 @@ const WithdrawGlobalForm: React.FC<WithdrawGlobalFormProps> = ({ settings, onSav
               type="text"
               name="min_request_amount"
               placeholder="예: 10,000"
-              className="pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary h-10"
+              className="input pl-8 block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary h-10"
               value={formattedValues.min_request_amount}
               onChange={handleChange}
             />
@@ -135,7 +135,7 @@ const WithdrawGlobalForm: React.FC<WithdrawGlobalFormProps> = ({ settings, onSav
               type="number"
               name="min_request_percentage"
               placeholder="예: 5"
-              className="block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12 h-10"
+              className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary pr-12 h-10"
               value={formattedValues.min_request_percentage}
               onChange={handleChange}
               min="0"
@@ -152,7 +152,7 @@ const WithdrawGlobalForm: React.FC<WithdrawGlobalFormProps> = ({ settings, onSav
         <div className="flex items-end">
           <button
             type="submit"
-            className="inline-flex justify-center items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors h-10"
+            className="btn btn-primary inline-flex justify-center items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors h-10"
             disabled={savingGlobal}
           >
             {savingGlobal ? (

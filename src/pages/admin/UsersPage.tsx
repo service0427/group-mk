@@ -3,7 +3,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
-import { USER_ROLES, USER_ROLE_BADGE_COLORS, getRoleBadgeColor, getRoleDisplayName } from '@/config/roles.config';
+import { USER_ROLES, USER_ROLE_BADGE_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors } from '@/config/roles.config';
 
 const MakeUserRow = (user: any) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
@@ -14,10 +14,15 @@ const MakeUserRow = (user: any) => {
     // 회원 정보 모달 닫기
     const closeUserModalOpen = () => setUserModalOpen(false);
 
-    const renderRoleBadge = (role: string): { name: string, class: string } => {
+    const renderRoleBadge = (role: string): { name: string, class: string, style?: React.CSSProperties } => {
+        const themeColors = getRoleThemeColors(role);
         return {
             name: getRoleDisplayName(role),
-            class: `text-${getRoleBadgeColor(role)}`
+            class: `bg-${getRoleBadgeColor(role)}/10 text-${getRoleBadgeColor(role)}`,
+            style: {
+                backgroundColor: `${themeColors.baseHex}15`, /* 10% 투명도 */
+                color: themeColors.baseHex
+            }
         };
     }
 
@@ -69,8 +74,12 @@ const MakeUserRow = (user: any) => {
                     </div>
                 </td>
                 <td className="py-4 px-5">
-                    <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.user.role)?.class}`}>{renderRoleBadge(user.user.role)?.name}</span>
-
+                    <span
+                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.user.role)?.class}`}
+                        style={renderRoleBadge(user.user.role)?.style}
+                    >
+                        {renderRoleBadge(user.user.role)?.name}
+                    </span>
                 </td>
                 <td className="py-4 px-5">
                     {renderStatusBadge(user.user.status)}
@@ -496,7 +505,9 @@ const UsersPage = () => {
                                                                 </div>
                                                                 {(() => {
                                                                     return (
-                                                                        <p className={`font-medium text-${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role)}</p>
+                                                                        <p className="font-medium" style={{
+                                                                    color: getRoleThemeColors(user.role).baseHex
+                                                                }}>{getRoleDisplayName(user.role)}</p>
                                                                     );
                                                                 })()}
                                                             </div>

@@ -62,15 +62,15 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
   };
 
   return (
-    <div className="w-full mb-6">
-      <div className="bg-gray-50 rounded-lg p-4">
+    <div className="w-full mb-4">
+      <div className="bg-gray-50 rounded-lg p-3 card">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
           {/* 검색 유형 선택 */}
           <div className="lg:col-span-2">
             <select
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="select w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {searchTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -87,7 +87,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               placeholder="검색어를 입력하세요"
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -96,7 +96,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="select w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {statusTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -112,7 +112,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -122,7 +122,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input w-full h-10 px-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -130,7 +130,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
           <div className="lg:col-span-2">
             <button
               onClick={handleSearch}
-              className="w-full h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="btn btn-primary w-full h-10 flex items-center justify-center"
             >
               검색
             </button>

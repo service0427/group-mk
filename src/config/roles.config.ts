@@ -110,7 +110,7 @@ export const USER_ROLE_THEME_COLORS: Record<string, RoleThemeColors> = {
     transparent: 'bg-indigo-50'
   },
 
-  // 유통사 테마 색상 (호박색 계열)
+  // 총판 테마 색상 (호박색 계열)
   [USER_ROLES.DISTRIBUTOR]: {
     base: 'bg-amber-600',
     gradient: 'bg-gradient-to-r from-amber-500 to-orange-600',

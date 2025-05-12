@@ -229,7 +229,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   return (
-    <div className="w-full">
+    <div className="w-full card">
       {loading ? (
         <div className="flex justify-center items-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
@@ -296,7 +296,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
           </div>
 
           {/* 테이블 뷰 (md 이상 화면에서만 표시) */}
-          <div className="hidden md:block overflow-x-auto rounded-lg shadow-sm border border-gray-200">
+          <div className="hidden md:block overflow-x-auto rounded-lg shadow-sm border border-gray-200 card">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>

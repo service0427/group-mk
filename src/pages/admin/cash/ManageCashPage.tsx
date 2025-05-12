@@ -375,7 +375,7 @@ const ManageCashPage = () => {
                         <tr className="border-b border-border bg-muted">
                           <th className="py-4 px-5 text-start">
                             <div className="flex items-center">
-                              <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
+                              <input type="checkbox" className="input checkbox checkbox-sm checkbox-primary" />
                             </div>
                           </th>
                           <th className="py-4 px-5 text-start min-w-[120px]">
@@ -419,7 +419,7 @@ const ManageCashPage = () => {
                             <tr key={index} className="border-b border-border hover:bg-muted/40">
                               <td className="py-4 px-5">
                                 <div className="flex items-center">
-                                  <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
+                                  <input type="checkbox" className="input checkbox checkbox-sm checkbox-primary" />
                                 </div>
                               </td>
                               <td className="py-4 px-5">
@@ -503,7 +503,7 @@ const ManageCashPage = () => {
                         <div key={index} className="p-4 hover:bg-muted/40">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center">
-                              <input type="checkbox" className="checkbox checkbox-sm checkbox-primary mr-3" />
+                              <input type="checkbox" className="input checkbox checkbox-sm checkbox-primary mr-3" />
                               <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
                                 {request.full_name ? request.full_name.charAt(0) : '?'}
                               </div>

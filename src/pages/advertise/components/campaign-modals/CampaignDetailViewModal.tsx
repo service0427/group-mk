@@ -3,13 +3,37 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogBody,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
 import { getStatusColorClass, CampaignDetailData as ICampaignDetailData } from '@/utils/CampaignFormat';
 import { supabase } from '@/supabase';
+import ReactApexChart from 'react-apexcharts';
+import { getFilteredRankingData, calculateDataStats } from '@/utils/ChartSampleData';
+
+// 가격에 콤마 추가하는 함수
+const formatPriceWithCommas = (price: string | number): string => {
+  if (price === undefined || price === null) return '0';
+
+  // 문자열로 변환
+  let priceStr = String(price);
+
+  // "원" 단위가 포함된 경우 제거
+  priceStr = priceStr.replace(/원/g, '');
+
+  // 숫자만 추출
+  priceStr = priceStr.replace(/[^0-9]/g, '');
+
+  // 비어있으면 0 반환
+  if (!priceStr) return '0';
+
+  // 숫자에 천 단위 콤마 추가
+  return priceStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
 // 기존 인터페이스를 유틸리티에서 가져온 인터페이스로 대체
 
@@ -26,7 +50,452 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
 }) => {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // 차트 관련 상태
+  const [activePeriod, setActivePeriod] = useState<number>(7);
+  const [chartData, setChartData] = useState({
+    upperRank: [] as number[],
+    lowerRank: [] as number[],
+    dates: [] as string[]
+  });
+  const [stats, setStats] = useState({
+    upperRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 },
+    lowerRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 }
+  });
+  const [hasRankingData, setHasRankingData] = useState<boolean>(false);
+  
+  // 다크 모드 감지
+  const isDarkMode = () => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  };
+  
+  // 차트 옵션 상태
+  const [chartOptions, setChartOptions] = useState<ApexCharts.ApexOptions>({
+    chart: {
+      type: 'line',
+      height: 350,
+      toolbar: {
+        show: false
+      },
+      zoom: {
+        enabled: false
+      },
+      fontFamily: 'inherit',
+      background: 'transparent',
+      parentHeightOffset: 0
+    },
+    colors: ['#4285F4', '#F47E43'], // 파란색, 주황색
+    stroke: {
+      width: [3, 3],
+      curve: 'straight'
+    },
+    grid: {
+      borderColor: isDarkMode() ? '#374151' : '#e0e0e0',
+      padding: {
+        right: 5,
+        left: 5,
+        bottom: 15
+      }
+    },
+    markers: {
+      size: 4,
+      colors: ['#4285F4', '#F47E43'], // 파란색, 주황색
+      strokeColors: isDarkMode() ? '#1f2937' : '#fff',
+      strokeWidth: 2,
+      hover: {
+        size: 6
+      }
+    },
+    xaxis: {
+      categories: [],
+      labels: {
+        style: {
+          colors: isDarkMode() ? '#d1d5db' : '#666',
+          fontSize: '12px'
+        },
+        offsetY: 2,
+        trim: false
+      },
+      axisBorder: {
+        show: false
+      },
+      axisTicks: {
+        show: false
+      }
+    },
+    yaxis: {
+      min: 0,
+      max: 50,
+      reversed: true,  // 역순으로 표시(낮은 순위가 위에 오도록)
+      tickAmount: 10,
+      labels: {
+        style: {
+          colors: isDarkMode() ? '#d1d5db' : '#666',
+          fontSize: '12px'
+        },
+        formatter: (value) => {
+          // Y축 라벨을 실제 순위로 표시
+          if (value === 0) return '';
+          if (value === 1) return '1등';
+          if (value === 5) return '5등';
+          if (value === 10) return '10등';
+          if (value === 15) return '15등';
+          if (value === 20) return '20등';
+          if (value === 25) return '25등';
+          if (value === 30) return '30등';
+          if (value === 40) return '40등';
+          if (value === 50) return '50등';
+          return '';
+        }
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    tooltip: {
+      shared: true,
+      intersect: false,
+      theme: isDarkMode() ? 'dark' : 'light',
+      style: {
+        fontSize: '12px'
+      },
+      marker: {
+        show: true
+      },
+      x: {
+        show: true,
+        formatter: (value, opts) => {
+          let dateStr;
+          
+          // 직접 날짜 형식 생성
+          if (opts && opts.dataPointIndex !== undefined) {
+            const today = new Date();
+            const daysFromToday = activePeriod - opts.dataPointIndex - 1;
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() - daysFromToday);
+            
+            const month = targetDate.getMonth() + 1;
+            const day = targetDate.getDate();
+            dateStr = `${month}월 ${day}일`;
+          } else {
+            dateStr = value;
+          }
+          
+          return isDarkMode() 
+            ? `<div class="font-semibold bg-blue-700 px-3 py-1.5 rounded text-white">${dateStr}</div>`
+            : `<div class="font-semibold bg-blue-100 px-3 py-1.5 rounded text-blue-800">${dateStr}</div>`;
+        }
+      },
+      y: {
+        formatter: (value) => {
+          // value는 이미 실제 순위이므로 직접 표시
+          return `${Math.round(value)}등`;
+        }
+      }
+    },
+    legend: {
+      position: 'top',
+      horizontalAlign: 'center',
+      offsetY: 0,
+      labels: {
+        colors: isDarkMode() ? '#d1d5db' : '#666'
+      }
+    },
+    noData: {
+      text: '기간별 통계 데이터가 없습니다',
+      align: 'center',
+      verticalAlign: 'middle',
+      offsetX: 0,
+      offsetY: 0,
+      style: {
+        color: '#6B7280',
+        fontSize: '16px',
+        fontFamily: 'inherit'
+      }
+    }
+  });
+  
+  // 차트 시리즈 상태
+  const [chartSeries, setChartSeries] = useState<ApexCharts.ApexOptions['series']>([
+    {
+      name: '30등 이내',
+      data: []
+    },
+    {
+      name: '30등 이하',
+      data: []
+    }
+  ]);
 
+  // 기간 변경 핸들러
+  const handlePeriodChange = (period: number) => {
+    setActivePeriod(period);
+    loadChartData(period);
+  };
+  
+  // 차트 데이터 로드 함수
+  const loadChartData = (period: number) => {
+    // 항상 데이터가 없는 것처럼 표시
+    const hasData = false;
+    setHasRankingData(hasData);
+    
+    if (!hasData) {
+      // 데이터가 없는 경우 빈 배열로 설정
+      setChartData({
+        upperRank: [],
+        lowerRank: [],
+        dates: []
+      });
+      setStats({
+        upperRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 },
+        lowerRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 }
+      });
+      setChartSeries([
+        { name: '30등 이내', data: [] },
+        { name: '30등 이하', data: [] }
+      ]);
+      return;
+    }
+    
+    const data = getFilteredRankingData(period);
+    setChartData(data);
+    
+    setStats({
+      upperRank: calculateDataStats(data.upperRank),
+      lowerRank: calculateDataStats(data.lowerRank)
+    });
+    
+    // 차트 시리즈 및 옵션 업데이트
+    setChartSeries([
+      {
+        name: '30등 이내',
+        data: data.upperRank
+      },
+      {
+        name: '30등 이하',
+        data: data.lowerRank
+      }
+    ]);
+    
+    // 기간에 따라 X축 표시 간격 조정
+    const tickAmount = period <= 7 ? 6 : period <= 14 ? 7 : 10;
+    
+    setChartOptions(prevOptions => ({
+      ...prevOptions,
+      chart: {
+        ...prevOptions.chart,
+        parentHeightOffset: 0
+      },
+      grid: {
+        ...prevOptions.grid,
+        padding: {
+          right: 5,
+          left: 5,
+          bottom: 20
+        }
+      },
+      xaxis: {
+        ...prevOptions.xaxis,
+        categories: data.dates,
+        tickAmount: tickAmount,
+        labels: {
+          ...prevOptions.xaxis?.labels,
+          rotate: 0,
+          offsetY: 5,
+          trim: false,
+          style: {
+            ...prevOptions.xaxis?.labels?.style,
+            fontSize: '11px'
+          }
+        }
+      },
+      tooltip: {
+        ...prevOptions.tooltip,
+        theme: isDarkMode() ? 'dark' : 'light',
+        x: {
+          ...prevOptions.tooltip?.x,
+          formatter: (value, opts) => {
+            let dateStr;
+            
+            // 직접 날짜 형식 생성
+            if (opts && opts.dataPointIndex !== undefined) {
+              const today = new Date();
+              const daysFromToday = period - opts.dataPointIndex - 1;
+              const targetDate = new Date(today);
+              targetDate.setDate(today.getDate() - daysFromToday);
+              
+              const month = targetDate.getMonth() + 1;
+              const day = targetDate.getDate();
+              dateStr = `${month}월 ${day}일`;
+            } else {
+              dateStr = value;
+            }
+            
+            return isDarkMode() 
+              ? `<div class="font-semibold bg-blue-700 px-3 py-1.5 rounded text-white">${dateStr}</div>`
+              : `<div class="font-semibold bg-blue-100 px-3 py-1.5 rounded text-blue-800">${dateStr}</div>`;
+          }
+        }
+      }
+    }));
+  };
+  
+  // 컴포넌트 마운트 시 차트 데이터 생성
+  useEffect(() => {
+    if (open) {
+      loadChartData(activePeriod);
+    }
+  }, [open]);
+  
+  // 다크 모드 변경 감지 및 차트 테마 업데이트
+  useEffect(() => {
+    const updateChartTheme = () => {
+      const isDark = isDarkMode();
+
+      // 차트 시리즈 데이터 참조
+      const currentSeries = chartSeries as ApexCharts.ApexOptions['series'];
+
+      setChartOptions(prevOptions => ({
+        ...prevOptions,
+        chart: {
+          ...prevOptions.chart,
+          background: isDark ? '#1e293b' : 'transparent',
+          foreColor: isDark ? '#d1d5db' : '#666',
+          animations: {
+            enabled: true, // 애니메이션 활성화
+            easing: 'easeinout',
+            speed: 800,
+            animateGradually: {
+              enabled: true,
+              delay: 150
+            },
+            dynamicAnimation: {
+              enabled: true,
+              speed: 350
+            }
+          }
+        },
+        grid: {
+          ...prevOptions.grid,
+          borderColor: isDark ? '#475569' : '#e0e0e0',
+          strokeDashArray: 3,
+          padding: {
+            right: 5,
+            left: 5,
+            bottom: 15
+          }
+        },
+        markers: {
+          ...prevOptions.markers,
+          strokeColors: isDark ? '#1e293b' : '#fff'
+        },
+        xaxis: {
+          ...prevOptions.xaxis,
+          categories: chartData.dates, // 데이터 명시적 설정
+          labels: {
+            ...prevOptions.xaxis?.labels,
+            show: true,
+            offsetY: 2,
+            trim: false,
+            style: {
+              ...prevOptions.xaxis?.labels?.style,
+              colors: isDark ? '#d1d5db' : '#666'
+            }
+          },
+          axisBorder: {
+            ...prevOptions.xaxis?.axisBorder,
+            color: isDark ? '#475569' : '#e0e0e0'
+          },
+          crosshairs: {
+            stroke: {
+              color: isDark ? '#475569' : '#e0e0e0'
+            }
+          }
+        },
+        yaxis: {
+          ...prevOptions.yaxis,
+          min: 0,
+          max: 50,
+          reversed: true,
+          tickAmount: 10,
+          labels: {
+            style: {
+              colors: isDark ? '#d1d5db' : '#666'
+            },
+            formatter: (value) => {
+              if (value === 0) return '';
+              if (value === 1) return '1등';
+              if (value === 5) return '5등';
+              if (value === 10) return '10등';
+              if (value === 15) return '15등';
+              if (value === 20) return '20등';
+              if (value === 25) return '25등';
+              if (value === 30) return '30등';
+              if (value === 40) return '40등';
+              if (value === 50) return '50등';
+              return '';
+            }
+          }
+        },
+        tooltip: {
+          ...prevOptions.tooltip,
+          theme: isDark ? 'dark' : 'light'
+        },
+        legend: {
+          ...prevOptions.legend,
+          position: 'top',
+          horizontalAlign: 'center',
+          offsetY: 0,
+          labels: {
+            ...prevOptions.legend?.labels,
+            colors: isDark ? '#d1d5db' : '#666'
+          }
+        }
+      }));
+
+      // 다크모드 변경 후 시리즈 데이터 재설정 (명시적으로 데이터 갱신)
+      setTimeout(() => {
+        setChartSeries([
+          {
+            name: '30등 이내',
+            data: [...chartData.upperRank]
+          },
+          {
+            name: '30등 이하',
+            data: [...chartData.lowerRank]
+          }
+        ]);
+      }, 50);
+    };
+
+    // MutationObserver로 다크 모드 변경 감지
+    if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (
+            mutation.type === 'attributes' &&
+            mutation.attributeName === 'class'
+          ) {
+            updateChartTheme();
+          }
+        });
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+
+      // 초기 설정 적용
+      updateChartTheme();
+
+      return () => observer.disconnect();
+    }
+  }, [chartData]);
+  
   // 캠페인 이름으로 Supabase에서 배너 이미지 URL 가져오기
   useEffect(() => {
     if (open && campaign && campaign.campaignName) {
@@ -104,145 +573,297 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden overflow-y-auto max-h-[90vh] border-4 border-primary">
-        <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-10 shadow-sm">
-          <DialogTitle className="text-lg font-semibold text-foreground flex items-center">
-            <KeenIcon icon="eye" className="mr-2 text-primary" />
-            캠페인 정보
-          </DialogTitle>
+      <DialogContent className="sm:max-w-[880px] md:max-w-[880px] p-0 overflow-hidden flex flex-col max-h-[90vh] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-300">
+        <DialogHeader className="bg-background py-4 sm:py-5 px-5 sm:px-8 border-b sticky top-0 z-10">
+          <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
         </DialogHeader>
-        
-        <div className="bg-background">
-          {/* 배너 이미지 (Supabase에서 직접 가져옴) */}
-          {loading ? (
-            <div className="w-full h-[180px] bg-gray-100 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : bannerUrl ? (
-            <div className="w-full">
-              <img 
+
+        {/* 배너 이미지 영역 - 블러 효과 추가 */}
+        {loading ? (
+          <div className="w-full h-[150px] sm:h-[180px] bg-gray-100 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : bannerUrl ? (
+          <div className="w-full relative">
+            <div className="absolute inset-0 overflow-hidden">
+              {/* 배경 이미지(블러용) */}
+              <img
                 src={bannerUrl}
-                alt="캠페인 배너" 
-                className="w-full h-auto object-cover"
-                style={{ maxHeight: '250px' }}
+                alt=""
+                className="w-full h-full object-cover"
+                style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
+              />
+              {/* 배경 오버레이 */}
+              <div className="absolute inset-0 bg-black/20"></div>
+            </div>
+            {/* 실제 이미지 (블러 없음) */}
+            <div className="relative z-10 flex justify-center items-center py-6">
+              <img
+                src={bannerUrl}
+                alt="캠페인 배너"
+                className="object-contain max-h-[160px] sm:max-h-[200px] max-w-[90%] shadow-lg rounded-md transition-all duration-300"
                 onError={(e) => {
                   // 이미지 로드 실패 시 기본 배경으로 대체
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement!.className = "w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center";
-                  
-                  // 로고 이미지 추가
-                  const logoImg = document.createElement('img');
-                  logoImg.src = toAbsoluteUrl('/media/app/mini-logo-primary.svg');
-                  logoImg.alt = '캠페인 로고';
-                  logoImg.className = 'h-16 w-auto opacity-50';
-                  e.currentTarget.parentElement!.appendChild(logoImg);
+                  const parentDiv = e.currentTarget.parentElement;
+                  if (parentDiv) {
+                    parentDiv.innerHTML = `
+                      <div class="size-20 rounded-full bg-white/30 flex items-center justify-center">
+                        <img
+                          src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}"
+                          alt="캠페인 로고"
+                          class="h-14 w-auto"
+                        />
+                      </div>
+                    `;
+                  }
                 }}
               />
             </div>
-          ) : (
-            <div className="w-full">
-              <div className="w-full h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
-                <img 
+          </div>
+        ) : (
+          <div className="w-full">
+            <div className="w-full h-[140px] sm:h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
+              <div className="size-20 rounded-full bg-white/30 flex items-center justify-center">
+                <img
                   src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
-                  alt="캠페인 배너" 
-                  className="h-16 w-auto opacity-50"
+                  alt="캠페인 배너"
+                  className="h-14 w-auto"
                 />
               </div>
             </div>
-          )}
-          
-          <div className="p-6">
-            {/* 캠페인 ID 숨김 처리 */}
-            <input type="hidden" value={campaignId} />
-            
-            {/* 캠페인 헤더 정보 */}
-            <div className="flex items-center gap-4 mb-6">
-              <img
-                src={campaign.logo.startsWith('/media') || campaign.logo.startsWith('http') 
-                  ? campaign.logo 
-                  : toAbsoluteUrl(`/media/${campaign.logo}`)}
-                className="rounded-full size-16 shrink-0 object-cover"
-                alt={campaign.campaignName}
-                onError={(e) => {
-                  // 이미지 로드 실패 시 기본 이미지 사용
-                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-                }}
-              />
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  {campaign.campaignName}
-                </h2>
-                <div className="mt-1 flex gap-2">
-                  <span className={`badge ${campaign.status.color} badge-outline rounded-[30px]`}>
-                    <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign.status.color)} me-1.5`}></span>
-                    {campaign.status.label}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    마감시간: {campaign.deadline || '18:00'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* 캠페인 주요 정보 */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-muted p-4 rounded-md">
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">건당 단가</h3>
-                <p className="text-xl font-semibold text-primary">
-                  {campaign.unitPrice ? (campaign.unitPrice.endsWith('원') ? campaign.unitPrice : `${campaign.unitPrice}원`) : '1,000원'}
-                </p>
-              </div>
-              <div className="bg-muted p-4 rounded-md">
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">마감 시간</h3>
-                <p className="text-xl font-semibold text-primary">{campaign.deadline}</p>
-              </div>
-            </div>
-            
-            {/* 캠페인 설명 */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">캠페인 설명</h3>
-              <div className="bg-muted p-4 rounded-md">
-                <p className="text-foreground whitespace-pre-line">
-                  {campaign.description || '설명이 없습니다.'}
-                </p>
-              </div>
-            </div>
-            
-            {/* 캠페인 상세 설명 */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">캠페인 상세 설명</h3>
-              <div className="bg-muted p-4 rounded-md">
-                <p className="text-foreground whitespace-pre-line">
-                  {campaign.detailedDescription || campaign.description || '상세 설명이 없습니다.'}
-                </p>
-              </div>
-            </div>
-            
-            {/* 가이드라인 정보 */}
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300 mb-6">
-              <div className="flex items-start">
-                <KeenIcon icon="information-circle" className="size-5 mr-2 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium">캠페인 가이드라인</p>
-                  <ul className="text-sm mt-1 list-disc list-inside space-y-1">
-                    <li>해당 캠페인 건당 단가는 {campaign.unitPrice || '1,000'}원입니다.</li>
-                    <li>캠페인 접수 시간은 {campaign.deadline}까지 입니다.</li>
-                    <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
-          
-          <div className="flex justify-end p-4 border-t bg-gray-100 dark:bg-gray-800 sticky bottom-0 shadow-lg">
-            <Button 
-              onClick={onClose}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              확인
-            </Button>
+        )}
+
+        {/* 헤더 정보 - 고정 위치로 변경 (모바일 대응) */}
+        <div className="sticky top-[57px] sm:top-[61px] z-10 bg-background border-b px-5 sm:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <img
+              src={campaign && (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http'))
+                ? campaign.logo
+                : toAbsoluteUrl(`/media/${campaign?.logo || 'animal/svg/lion.svg'}`)}
+              className="rounded-full size-12 sm:size-16 shrink-0 border border-gray-100 shadow-sm"
+              alt={campaign?.campaignName}
+              onError={(e) => {
+                // 이미지 로드 실패 시 기본 이미지 사용
+                (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+              }}
+            />
+            <div className="sm:block">
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground inline-flex items-center">
+                {campaign?.campaignName}
+                <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm ml-2 sm:hidden inline-flex`}>
+                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
+                  {campaign?.status.label}
+                </span>
+              </h2>
+              <div className="mt-1 hidden sm:block">
+                <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm`}>
+                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
+                  {campaign?.status.label}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <DialogBody className="p-5 sm:p-8 pt-4 max-h-[70vh] overflow-y-auto">
+          <div className="space-y-6 sm:space-y-8">
+            {/* 상단: 주요 정보 요약 카드 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <KeenIcon icon="wallet" className="text-primary size-5" />
+                  <div className="text-sm text-muted-foreground">건당 단가</div>
+                </div>
+                <div className="text-xl font-bold text-primary">
+                  {campaign?.unitPrice
+                    ? `${formatPriceWithCommas(campaign.unitPrice)}원`
+                    : '1,000원'}
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <KeenIcon icon="rocket" className="text-green-500 size-5" />
+                  <div className="text-sm text-muted-foreground">상승효율</div>
+                </div>
+                <div className="text-xl font-bold text-green-600">
+                  {campaign?.efficiency || '60%'}
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <KeenIcon icon="timer" className="text-blue-500 size-5" />
+                  <div className="text-sm text-muted-foreground">접수마감시간</div>
+                </div>
+                <div className="text-xl font-bold text-foreground">
+                  {campaign?.deadline || '18:00'}
+                </div>
+              </div>
+            </div>
+
+            {/* 중간: 캠페인 설명 */}
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-3 flex items-center gap-2">
+                <KeenIcon icon="document" className="text-primary size-5" />
+                캠페인 정보
+              </h3>
+              <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground shadow-sm">
+                <div className="flex items-center mb-2">
+                  <div className="bg-blue-50 rounded-full w-6 h-6 flex items-center justify-center mr-2">
+                    <KeenIcon icon="information-circle" className="text-primary size-4" />
+                  </div>
+                  <h4 className="font-medium text-primary/90">간략 설명</h4>
+                </div>
+                <div className="pl-8 mb-6">
+                  <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
+                    {campaign?.description || '설명이 없습니다.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center mb-2">
+                  <div className="bg-emerald-50 rounded-full w-6 h-6 flex items-center justify-center mr-2">
+                    <KeenIcon icon="text" className="text-emerald-600 size-4" />
+                  </div>
+                  <h4 className="font-medium text-emerald-700">상세 설명</h4>
+                </div>
+                <div className="pl-8">
+                  <div
+                    className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-emerald-50/30"
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#10b981 #f1f1f1'
+                    }}
+                  >
+                    <p className="whitespace-pre-line text-gray-700">
+                      {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ?
+                        campaign.detailedDescription :
+                        (campaign?.description || '상세 설명이 없습니다.')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 가이드라인 */}
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-3 flex items-center gap-2">
+                <KeenIcon icon="check-circle" className="text-green-500 size-5" />
+                캠페인 가이드라인
+              </h3>
+              <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border shadow-sm">
+                <ul className="list-disc list-inside space-y-1.5">
+                  <li>해당 캠페인 건당 단가는 {campaign?.unitPrice
+                    ? `${formatPriceWithCommas(campaign.unitPrice)}원`
+                    : '1,000원'}입니다.</li>
+                  <li>캠페인 접수 시간은 {campaign?.deadline || '18:00'}까지 입니다.</li>
+                  {campaign?.additionalLogic && campaign.additionalLogic !== '0' && campaign.additionalLogic !== '없음' && (
+                    <li>추가로직 필요 수량은 {campaign.additionalLogic}입니다.</li>
+                  )}
+                  <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* 순위 변화 추이 섹션 */}
+            <div>
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
+                <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                  <KeenIcon icon="chart-line" className="text-blue-500 size-5" />
+                  순위 변화 추이
+                </h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant={activePeriod === 7 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePeriodChange(7)}
+                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 7
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                  >
+                    7일
+                  </Button>
+                  <Button
+                    variant={activePeriod === 14 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePeriodChange(14)}
+                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 14
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                  >
+                    14일
+                  </Button>
+                  <Button
+                    variant={activePeriod === 30 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePeriodChange(30)}
+                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 30
+                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                  >
+                    30일
+                  </Button>
+                </div>
+              </div>
+
+              <div className="h-[250px] sm:h-[320px] w-full rounded-xl overflow-hidden bg-white p-3 pb-5 border border-border shadow-sm">
+                {hasRankingData ? (
+                  <ReactApexChart
+                    options={chartOptions}
+                    series={chartSeries}
+                    type="line"
+                    height={300}
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                      <KeenIcon icon="chart-line" className="mx-auto mb-3 size-12 sm:size-14 text-gray-300" />
+                      <h4 className="text-md font-medium">기간별 통계 데이터가 없습니다</h4>
+                      <p className="text-sm text-gray-400 mt-1">아직 통계 데이터가 수집되지 않았습니다.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {hasRankingData && (
+                <>
+                  <h3 className="text-lg font-medium text-foreground mb-2 mt-6 flex items-center gap-2">
+                    <KeenIcon icon="chart-pie" className="text-indigo-500 size-5" />
+                    추가 분석
+                  </h3>
+                  <div className="bg-white p-5 rounded-xl border border-border shadow-sm">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      최근 {activePeriod}일간의 랭킹 변화 추이를 분석한 결과, 전체적으로 상승세를 보이고 있습니다.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
+                          <li>30위 이상 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.upperRank.avg)}등</span></li>
+                          <li>30위 이하 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.lowerRank.avg)}등</span></li>
+                        </ul>
+                      </div>
+                      <div>
+                        <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
+                          <li>30등 이내 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.upperRank.bestImprovement)}등</span></li>
+                          <li>30등 이하 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.lowerRank.bestImprovement)}등</span></li>
+                          <li>추세 분석: <span className="text-foreground font-medium">{activePeriod === 7 ? '단기' : activePeriod === 14 ? '중기' : '장기'} 상승세 유지중</span></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter className="px-5 sm:px-8 py-4 sm:py-5 border-t flex justify-end sticky bottom-0 z-10 bg-background shadow-lg">
+          <Button
+            onClick={onClose}
+            className="px-6 sm:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300"
+          >
+            확인
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,4 @@
-import { KeywordGroup, Keyword, KeywordInput, KeywordResponse, KeywordFilter, PaginationParams, SortParams, KeywordGroupTreeData, CampaignTreeItem } from '../types';
-import { CAMPAIGNS, getCampaignByName } from '../../../config/campaign.config';
+import { KeywordGroup, Keyword, KeywordInput, KeywordResponse, KeywordFilter, PaginationParams, SortParams } from '../types';
 
 // Supabase 클라이언트 가져오기
 import { supabase } from '../../../supabase';
@@ -27,19 +26,7 @@ export const keywordGroupService = {
 
       if (error) throw error;
 
-      // 스네이크 케이스에서 카멜 케이스로 변환
-      const transformedData = data.map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        name: item.name,
-        campaignName: item.campaign_name,
-        campaignType: item.campaign_type,
-        isDefault: item.is_default,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at
-      }));
-
-      return { success: true, data: transformedData };
+      return { success: true, data };
     } catch (error) {
       
       return {
@@ -49,154 +36,8 @@ export const keywordGroupService = {
     }
   },
 
-  // 그룹의 키워드 수 조회
-  async getKeywordCountByGroup(groupId: number): Promise<KeywordResponse> {
-    try {
-      // 현재 로그인한 사용자 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        return {
-          success: false,
-          message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 그룹이 사용자의 것인지 확인
-      const { data: groupData, error: groupError } = await supabase
-        .from('keyword_groups')
-        .select('*')
-        .eq('id', groupId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (groupError) {
-        return {
-          success: false,
-          message: '해당 그룹에 접근할 권한이 없습니다.',
-        };
-      }
-
-      // 키워드 수 카운트
-      const { count, error } = await supabase
-        .from('keywords')
-        .select('*', { count: 'exact', head: true })
-        .eq('group_id', groupId);
-
-      if (error) throw error;
-
-      return {
-        success: true,
-        data: { count: count || 0 }
-      };
-    } catch (error) {
-
-      return {
-        success: false,
-        message: '키워드 수를 조회하는 중 오류가 발생했습니다.',
-      };
-    }
-  },
-
-  // 그룹 트리 데이터 조회 함수
-  async getKeywordGroupTree(): Promise<KeywordResponse> {
-    try {
-      // 현재 로그인한 사용자 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return {
-          success: false,
-          message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 사용자의 모든 그룹 조회
-      const { data: groups, error } = await supabase
-        .from('keyword_groups')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-
-      // 스네이크 케이스에서 카멜 케이스로 변환
-      const transformedGroups = groups.map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        name: item.name,
-        campaignName: item.campaign_name,
-        campaignType: item.campaign_type,
-        isDefault: item.is_default,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at
-      }));
-      
-      // 기본 그룹 별도 분리
-      const defaultGroup = transformedGroups.find(g => g.isDefault) || null;
-      
-      // 캠페인에 속하지 않은 일반 그룹들 (기본 그룹 제외)
-      const generalGroups = transformedGroups.filter(g => !g.campaignName && !g.isDefault);
-      
-      // 캠페인별 그룹 구성
-      const campaignGroups = transformedGroups.filter(g => g.campaignName && g.campaignType);
-      
-      // 캠페인 트리 구성
-      const campaignMap = new Map<string, CampaignTreeItem>();
-      
-      // Config에 정의된 모든 캠페인 먼저 초기화
-      CAMPAIGNS.forEach(campaign => {
-        campaignMap.set(campaign.name, {
-          name: campaign.name,
-          logo: campaign.logo,
-          types: campaign.types.map(type => ({
-            name: type.name,
-            code: type.code,
-            groups: []
-          }))
-        });
-      });
-      
-      // 각 그룹을 해당 캠페인/유형에 할당
-      campaignGroups.forEach(group => {
-        if (group.campaignName && group.campaignType) {
-          const campaignNode = campaignMap.get(group.campaignName);
-
-          if (campaignNode) {
-            const typeNode = campaignNode.types.find(t => t.code === group.campaignType);
-            if (typeNode) {
-              typeNode.groups.push(group);
-            }
-          }
-        }
-      });
-      
-      // 모든 캠페인/유형 포함 (빈 그룹도 표시)
-      const campaigns = Array.from(campaignMap.values());
-      
-      const result: KeywordGroupTreeData = {
-        campaigns,
-        defaultGroup,
-        generalGroups
-      };
-
-      return { success: true, data: result };
-    } catch (error) {
-      
-      return {
-        success: false,
-        message: '키워드 그룹 트리를 불러오는 중 오류가 발생했습니다.',
-      };
-    }
-  },
-
   // 새 키워드 그룹 생성
-  async createGroup(
-    name: string, 
-    campaignName: string | null = null, 
-    campaignType: string | null = null, 
-    isDefault: boolean = false
-  ): Promise<KeywordResponse> {
+  async createGroup(name: string, isDefault: boolean = false): Promise<KeywordResponse> {
     try {
       // 현재 로그인한 사용자 가져오기
       const { data: { user } } = await supabase.auth.getUser();
@@ -205,33 +46,6 @@ export const keywordGroupService = {
         return {
           success: false,
           message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 캠페인 정보 검증
-      if (campaignName && campaignType) {
-        // 캠페인이 config에 있는지 확인
-        const campaign = getCampaignByName(campaignName);
-        if (!campaign) {
-          return {
-            success: false,
-            message: '유효하지 않은 캠페인입니다.',
-          };
-        }
-
-        // 캠페인에 해당 유형이 있는지 확인
-        const hasType = campaign.types.some(t => t.code === campaignType);
-        if (!hasType) {
-          return {
-            success: false,
-            message: '유효하지 않은 캠페인 유형입니다.',
-          };
-        }
-      } else if (campaignName || campaignType) {
-        // 둘 중 하나만 있는 경우 오류
-        return {
-          success: false,
-          message: '캠페인 이름과 유형은 모두 입력하거나 모두 입력하지 않아야 합니다.',
         };
       }
 
@@ -247,17 +61,7 @@ export const keywordGroupService = {
 
         // 기본 그룹이 이미 있으면 그 그룹 반환
         if (existingDefaultGroups && existingDefaultGroups.length > 0) {
-          const defaultGroup = {
-            id: existingDefaultGroups[0].id,
-            userId: existingDefaultGroups[0].user_id,
-            name: existingDefaultGroups[0].name,
-            campaignName: existingDefaultGroups[0].campaign_name,
-            campaignType: existingDefaultGroups[0].campaign_type,
-            isDefault: existingDefaultGroups[0].is_default,
-            createdAt: existingDefaultGroups[0].created_at,
-            updatedAt: existingDefaultGroups[0].updated_at
-          };
-          return { success: true, data: defaultGroup };
+          return { success: true, data: existingDefaultGroups[0] };
         }
       }
 
@@ -267,9 +71,7 @@ export const keywordGroupService = {
         .insert([
           { 
             user_id: user.id, 
-            name,
-            campaign_name: campaignName,
-            campaign_type: campaignType, 
+            name, 
             is_default: isDefault 
           },
         ])
@@ -277,19 +79,7 @@ export const keywordGroupService = {
 
       if (error) throw error;
 
-      // 스네이크 케이스에서 카멜 케이스로 변환
-      const transformedData = {
-        id: data[0].id,
-        userId: data[0].user_id,
-        name: data[0].name,
-        campaignName: data[0].campaign_name,
-        campaignType: data[0].campaign_type,
-        isDefault: data[0].is_default,
-        createdAt: data[0].created_at,
-        updatedAt: data[0].updated_at
-      };
-
-      return { success: true, data: transformedData };
+      return { success: true, data: data[0] };
     } catch (error) {
       
       return {
@@ -299,62 +89,8 @@ export const keywordGroupService = {
     }
   },
 
-  // 기본 그룹 가져오기 또는 생성
-  async getOrCreateDefaultGroup(): Promise<KeywordResponse> {
-    try {
-      // 현재 로그인한 사용자 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return {
-          success: false,
-          message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 사용자의 기본 그룹 조회
-      const { data, error } = await supabase
-        .from('keyword_groups')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      // 기본 그룹이 이미 있으면 반환
-      if (data) {
-        const defaultGroup = {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          campaignName: data.campaign_name,
-          campaignType: data.campaign_type,
-          isDefault: data.is_default,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at
-        };
-        return { success: true, data: defaultGroup };
-      }
-      
-      // 기본 그룹이 없으면 생성
-      return this.createGroup('기본 그룹', null, null, true);
-    } catch (error) {
-      
-      return {
-        success: false,
-        message: '기본 그룹을 가져오는 중 오류가 발생했습니다.',
-      };
-    }
-  },
-
   // 키워드 그룹 업데이트
-  async updateGroup(
-    groupId: number, 
-    name: string, 
-    campaignName: string | null = null, 
-    campaignType: string | null = null
-  ): Promise<KeywordResponse> {
+  async updateGroup(groupId: number, name: string): Promise<KeywordResponse> {
     try {
       // 현재 로그인한 사용자 가져오기
       const { data: { user } } = await supabase.auth.getUser();
@@ -363,33 +99,6 @@ export const keywordGroupService = {
         return {
           success: false,
           message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 캠페인 정보 검증
-      if (campaignName && campaignType) {
-        // 캠페인이 config에 있는지 확인
-        const campaign = getCampaignByName(campaignName);
-        if (!campaign) {
-          return {
-            success: false,
-            message: '유효하지 않은 캠페인입니다.',
-          };
-        }
-
-        // 캠페인에 해당 유형이 있는지 확인
-        const hasType = campaign.types.some(t => t.code === campaignType);
-        if (!hasType) {
-          return {
-            success: false,
-            message: '유효하지 않은 캠페인 유형입니다.',
-          };
-        }
-      } else if (campaignName || campaignType) {
-        // 둘 중 하나만 있는 경우 오류
-        return {
-          success: false,
-          message: '캠페인 이름과 유형은 모두 입력하거나 모두 입력하지 않아야 합니다.',
         };
       }
 
@@ -411,31 +120,14 @@ export const keywordGroupService = {
       // 그룹 수정
       const { data, error } = await supabase
         .from('keyword_groups')
-        .update({ 
-          name, 
-          campaign_name: campaignName,
-          campaign_type: campaignType,
-          updated_at: new Date().toISOString() 
-        })
+        .update({ name, updated_at: new Date().toISOString() })
         .eq('id', groupId)
         .eq('user_id', user.id)
         .select();
 
       if (error) throw error;
 
-      // 스네이크 케이스에서 카멜 케이스로 변환
-      const transformedData = {
-        id: data[0].id,
-        userId: data[0].user_id,
-        name: data[0].name,
-        campaignName: data[0].campaign_name,
-        campaignType: data[0].campaign_type,
-        isDefault: data[0].is_default,
-        createdAt: data[0].created_at,
-        updatedAt: data[0].updated_at
-      };
-
-      return { success: true, data: transformedData };
+      return { success: true, data: data[0] };
     } catch (error) {
       
       return {

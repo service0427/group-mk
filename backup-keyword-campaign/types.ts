@@ -3,9 +3,7 @@ export interface KeywordGroup {
   id: number;
   userId: string;
   name: string;
-  campaignName: string | null;   // 캠페인 대분류 이름 (네이버, 쿠팡)
-  campaignType: string | null;   // 캠페인 중분류 이름 (N트래픽, C쇼핑)
-  isDefault: boolean;            // 기본 그룹 여부
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,24 +65,4 @@ export interface PaginationParams {
 export interface SortParams {
   field: string;
   direction: 'asc' | 'desc';
-}
-
-// 트리 구조를 위한 확장된 타입들
-
-// 캠페인 그룹 트리 항목 타입
-export interface CampaignTreeItem {
-  name: string;
-  logo?: string;
-  types: {
-    name: string;
-    code: string;
-    groups: KeywordGroup[];
-  }[];
-}
-
-// 그룹 트리 데이터 타입
-export interface KeywordGroupTreeData {
-  campaigns: CampaignTreeItem[];
-  defaultGroup: KeywordGroup | null;
-  generalGroups: KeywordGroup[];
 }

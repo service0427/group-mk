@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useKeywords } from './hooks/useKeywords';
 import { KeywordGroupTree, KeywordTable } from './components';
 import { KeywordInput } from './types';
@@ -29,7 +29,7 @@ const KeywordPage: React.FC = () => {
     handleSortChange,
     handleSearchChange,
   } = useKeywords();
-  
+
   // 현재 선택된 그룹 가져오기
   const selectedGroup = useMemo(() => {
     return groups.find((group) => group.id === selectedGroupId) || null;
@@ -50,9 +50,9 @@ const KeywordPage: React.FC = () => {
 
   // 그룹 생성 핸들러 (캠페인/유형 지원)
   const handleCreateGroup = async (
-    name: string, 
-    campaignName: string | null = null, 
-    campaignType: string | null = null, 
+    name: string,
+    campaignName: string | null = null,
+    campaignType: string | null = null,
     isDefault: boolean = false
   ) => {
     return await createGroup(name, isDefault, campaignName, campaignType);
@@ -60,9 +60,9 @@ const KeywordPage: React.FC = () => {
 
   // 그룹 업데이트 핸들러 (캠페인/유형 지원)
   const handleUpdateGroup = async (
-    groupId: number, 
-    name: string, 
-    campaignName: string | null = null, 
+    groupId: number,
+    name: string,
+    campaignName: string | null = null,
     campaignType: string | null = null
   ) => {
     return await updateGroup(groupId, name);
@@ -72,6 +72,7 @@ const KeywordPage: React.FC = () => {
     <CommonTemplate
       title="내 키워드"
       description="키워드를 그룹별로 관리할 수 있습니다."
+      showPageMenu={false}
     >
       {error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">

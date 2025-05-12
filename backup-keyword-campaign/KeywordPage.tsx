@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState} from 'react';
 import { useKeywords } from './hooks/useKeywords';
-import { KeywordGroupTree, KeywordTable } from './components';
+import { KeywordGroups, KeywordTable } from './components';
 import { KeywordInput } from './types';
-import { getTypeNameByCode } from '../../config/campaign.config';
 
 // 레이아웃 컴포넌트 임포트
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -30,6 +29,17 @@ const KeywordPage: React.FC = () => {
     handleSearchChange,
   } = useKeywords();
   
+  // 페이지 진입 시 기본 그룹 확인 및 생성
+  useEffect(() => {
+    const createDefaultGroupIfNeeded = async () => {
+      if (groups.length === 0 && !isLoading) {
+        await createGroup('기본 그룹', true);
+      }
+    };
+    
+    createDefaultGroupIfNeeded();
+  }, [groups.length, isLoading, createGroup]);
+
   // 현재 선택된 그룹 가져오기
   const selectedGroup = useMemo(() => {
     return groups.find((group) => group.id === selectedGroupId) || null;
@@ -48,26 +58,6 @@ const KeywordPage: React.FC = () => {
     return await createKeyword(keywordData);
   };
 
-  // 그룹 생성 핸들러 (캠페인/유형 지원)
-  const handleCreateGroup = async (
-    name: string, 
-    campaignName: string | null = null, 
-    campaignType: string | null = null, 
-    isDefault: boolean = false
-  ) => {
-    return await createGroup(name, isDefault, campaignName, campaignType);
-  };
-
-  // 그룹 업데이트 핸들러 (캠페인/유형 지원)
-  const handleUpdateGroup = async (
-    groupId: number, 
-    name: string, 
-    campaignName: string | null = null, 
-    campaignType: string | null = null
-  ) => {
-    return await updateGroup(groupId, name);
-  };
-
   return (
     <CommonTemplate
       title="내 키워드"
@@ -83,7 +73,7 @@ const KeywordPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* 왼쪽: 키워드 그룹 관리 (접을 수 있는 영역) */}
         {showGroupArea && (
-          <div className="transition-all duration-300 w-full lg:w-[350px] flex-shrink-0">
+          <div className="transition-all duration-300 w-full lg:w-[250px] flex-shrink-0">
             <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded-lg mb-2 flex justify-between items-center">
               <h2 className="text-base font-bold text-primary-600 dark:text-primary-400">그룹 관리 영역</h2>
               <button
@@ -97,11 +87,12 @@ const KeywordPage: React.FC = () => {
               </button>
             </div>
 
-            <KeywordGroupTree
+            <KeywordGroups
+              groups={groups}
               selectedGroupId={selectedGroupId}
               onGroupSelect={handleGroupChange}
-              onCreateGroup={handleCreateGroup}
-              onUpdateGroup={handleUpdateGroup}
+              onCreateGroup={createGroup}
+              onUpdateGroup={updateGroup}
               onDeleteGroup={deleteGroup}
               isLoading={isLoading}
             />
@@ -113,26 +104,20 @@ const KeywordPage: React.FC = () => {
           {!showGroupArea && (
             <button
               onClick={toggleGroupArea}
-              className="mb-2 px-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center shadow-sm h-10 w-full overflow-x-auto"
+              className="mb-2 px-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-between shadow-sm h-10 w-full md:w-auto"
               title="그룹 영역 펼치기"
             >
-              <div className="flex items-center">
+              <div className="flex items-center my-0">
                 <svg className="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                 </svg>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400 h-6 flex items-center">그룹 관리 표시</span>
-
-                {selectedGroup && (
-                  <span className="ml-3 px-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-bold text-sm border border-green-400 flex items-center h-6 whitespace-nowrap max-w-[350px] overflow-hidden">
-                    <span className="mr-2 flex-shrink-0">현재:</span>
-                    <span className="truncate">
-                      {selectedGroup.campaignName && selectedGroup.campaignType ?
-                        `${selectedGroup.campaignName} > ${getTypeNameByCode(selectedGroup.campaignName, selectedGroup.campaignType) || selectedGroup.campaignType} > ${selectedGroup.name}` :
-                        selectedGroup.name}
-                    </span>
-                  </span>
-                )}
+                <span className="mr-2 text-sm font-bold text-blue-600 dark:text-blue-400 h-6 flex items-center">그룹 관리 표시</span>
               </div>
+              {selectedGroup && (
+                <span className="px-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-bold text-sm border border-green-400 flex items-center h-6">
+                  현재: {selectedGroup.name}
+                </span>
+              )}
             </button>
           )}
           <KeywordTable

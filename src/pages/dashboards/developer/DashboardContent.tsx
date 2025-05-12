@@ -46,39 +46,39 @@ export const DashboardContent: React.FC = () => {
       const { count: totalUsers, error: countError } = await supabase
         .from('users')
         .select('id', { count: 'exact' });
-      
+
       if (countError) {
-        
+
         return;
       }
 
       // 지난 달 활성 사용자 수 (1개월 이내 생성된 계정)
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-      
+
       const { count: newUsers, error: newUsersError } = await supabase
         .from('users')
         .select('id', { count: 'exact' })
         .gte('created_at', oneMonthAgo.toISOString());
-      
+
       if (newUsersError) {
-        
+
         return;
       }
 
       // 증가율 계산: (신규 사용자 / 전체 사용자) * 100
       const trend = totalUsers ? ((newUsers || 0) / totalUsers) * 100 : 0;
-      
+
       // 상태 업데이트
       setStats(prevStats => ({
         ...prevStats,
-        systemUsers: { 
-          count: totalUsers || 0, 
+        systemUsers: {
+          count: totalUsers || 0,
           trend: parseFloat(trend.toFixed(1))
         }
       }));
     } catch (error: any) {
-      
+
     }
   };
 
@@ -98,9 +98,9 @@ export const DashboardContent: React.FC = () => {
     level: string;
     message: string;
   }
-  
+
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
-  
+
   // 시스템 로그 데이터 로드 - system_logs 테이블에서 로드 (관리자 권한 사용)
   const loadSystemLogs = async () => {
     try {
@@ -110,20 +110,20 @@ export const DashboardContent: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (error) {
-        
+
         setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
         return;
       }
-      
+
       // 로그 데이터가 있는 경우 형식 변환 후 상태 업데이트
       if (systemLogs && systemLogs.length > 0) {
         const formattedLogs = systemLogs.map(log => {
           // 날짜 형식 변환 - 더 간결하게 (MM-DD HH:MM 형식)
           const date = new Date(log.created_at);
           const formattedDate = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-          
+
           return {
             id: `LOG-${log.id}`,
             timestamp: formattedDate,
@@ -131,13 +131,13 @@ export const DashboardContent: React.FC = () => {
             message: log.message || '시스템 로그'
           };
         });
-        
+
         setSystemLogs(formattedLogs);
       } else {
         setSystemLogs([]); // 빈 배열로 설정하여 "최근 내역이 없습니다" 메시지 표시
       }
     } catch (error: any) {
-      
+
       setSystemLogs([]); // 오류 발생 시 빈 배열로 설정
     }
   };
@@ -174,18 +174,18 @@ export const DashboardContent: React.FC = () => {
     if (progress >= 25) return 'bg-yellow-500';
     return 'bg-red-500';
   };
-  
+
   // 데이터 로드
   useEffect(() => {
     loadUserStats();
     loadSystemLogs();
-    
+
     // 5분마다 데이터 자동 갱신
     const refreshInterval = setInterval(() => {
       loadUserStats();
       loadSystemLogs();
     }, 5 * 60 * 1000);
-    
+
     // 컴포넌트 언마운트 시 인터벌 클리어
     return () => clearInterval(refreshInterval);
   }, []);
@@ -194,26 +194,26 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="개발자 대시보드"
       description="시스템 모니터링, 프로젝트 진행 상황 및 API 상태를 확인할 수 있는 개발자 대시보드입니다."
-      headerBgClass="bg-purple-600"
+      // 역할 기반 테마 적용
       headerTextClass="text-white"
       toolbarActions={
         <>
           {/* 순위 변화 차트 테스트 버튼 */}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="ml-2 bg-primary-600 text-white hover:bg-primary-700"
             onClick={() => setIsChartModalOpen(true)}
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 mr-1.5" 
-              viewBox="0 0 20 20" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-1.5"
+              viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path 
-                fillRule="evenodd" 
-                d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3zm10-4a1 1 0 100 2h3a1 1 0 100-2h-3z" 
-                clipRule="evenodd" 
+              <path
+                fillRule="evenodd"
+                d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3zm10-4a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                clipRule="evenodd"
               />
             </svg>
             캠페인 순위 분석
@@ -303,8 +303,8 @@ export const DashboardContent: React.FC = () => {
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className={`h-2.5 rounded-full ${getProgressColor(project.progress)}`} 
+                        <div
+                          className={`h-2.5 rounded-full ${getProgressColor(project.progress)}`}
                           style={{ width: `${project.progress}%` }}
                         ></div>
                       </div>
@@ -406,7 +406,7 @@ export const DashboardContent: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="bg-gray-50 p-5 rounded-lg">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium text-base">API 요청량</h4>
@@ -422,14 +422,14 @@ export const DashboardContent: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex flex-col md:flex-row justify-between">
                 <div className="mb-4 md:mb-0 md:w-1/2 md:pr-4">
                   <div className="text-sm text-gray-500 mb-2">총 API 호출</div>
                   <div className="text-3xl font-bold text-gray-800">4,251,837</div>
                   <div className="text-sm text-green-600 mt-1">↑ 8.4% 증가 (지난 24시간)</div>
                 </div>
-                
+
                 <div className="md:w-1/2 md:pl-4 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0">
                   <div className="text-sm text-gray-500 mb-2">평균 응답 시간</div>
                   <div className="text-3xl font-bold text-gray-800">127ms</div>
@@ -442,7 +442,7 @@ export const DashboardContent: React.FC = () => {
       </div>
 
       {/* 순위 변화 분석 차트 모달 */}
-      <RankingChangeChart 
+      <RankingChangeChart
         open={isChartModalOpen}
         onClose={() => setIsChartModalOpen(false)}
       />

@@ -2,6 +2,8 @@ import React from 'react';
 import { CommonTemplate } from './CommonTemplate';
 import { Container } from '@/components/container';
 import { StyledToolbar } from '@/partials/toolbar';
+import { useAuthContext } from '@/auth/useAuthContext';
+import { getRoleThemeColors, USER_ROLES } from '@/config/roles.config';
 
 interface DashboardTemplateProps {
   title?: string;
@@ -36,46 +38,84 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   containerClassName = "",
   childrenClassName = "",
   children,
-  headerBgClass = "bg-info",
+  headerBgClass,
   headerTextClass = "text-white",
 }) => {
-  // 대시보드 컨텐츠 클래스
-  const contentClasses = `grid gap-5 pb-5 ${childrenClassName}`;
+  // 사용자 역할 가져오기
+  const { userRole } = useAuthContext();
 
-  // 그라데이션 클래스 생성
-  let gradientClass = headerBgClass;
+  // 페이지 템플릿에 적용할 클래스 (CommonTemplate과 일관성 유지)
+  const pageTemplateClass = `page-template-wrapper pt-0`;
 
-  // CSS 정의 색상 처리 맵
-  const colorMap: Record<string, string> = {
-    'bg-purple-600': 'bg-gradient-to-r from-primary to-primary',
-    'bg-blue-600': 'bg-gradient-to-r from-primary to-primary',
-    'bg-indigo-600': 'bg-gradient-to-r from-info to-info',
-    'bg-amber-600': 'bg-gradient-to-r from-warning to-warning',
-    'bg-red-600': 'bg-gradient-to-r from-danger to-danger'
-  };
+  // 대시보드 컨텐츠 클래스 (CommonTemplate과 일관성 유지)
+  const contentClasses = `template-content ${childrenClassName || "grid gap-4 lg:gap-5 pb-4"}`;
 
-  // 맵에 있는 색상인 경우 CSS 변수 사용
-  if (colorMap[headerBgClass]) {
-    gradientClass = colorMap[headerBgClass];
+  // 그라데이션 클래스 생성 - 역할 기반 테마 사용
+  let gradientClass;
+
+  // 1. 헤더 배경색이 지정되지 않았으면 현재 사용자 역할 기반 테마 사용
+  if (!headerBgClass && userRole) {
+    // 사용자 역할에 따른 테마 그라디언트 사용
+    gradientClass = getRoleThemeColors(userRole, 'gradient');
   }
-  // 맵에 없는 기존 Tailwind 색상 처리
-  else {
-    // 색상 클래스에서 'bg-' 접두사 제거 (존재하는 경우)
-    const colorClass = headerBgClass.replace(/^bg-/, '');
+  // 2. 직접 헤더 배경색이 지정된 경우
+  else if (headerBgClass) {
+    // 기존 컬러맵과의 호환성을 위한 색상 매핑
+    const colorMap: Record<string, string> = {
+      'bg-purple-600': getRoleThemeColors(USER_ROLES.DEVELOPER, 'gradient'),
+      'bg-indigo-600': getRoleThemeColors(USER_ROLES.OPERATOR, 'gradient'),
+      'bg-blue-600': getRoleThemeColors(USER_ROLES.ADVERTISER, 'gradient'),
+      'bg-amber-600': getRoleThemeColors(USER_ROLES.DISTRIBUTOR, 'gradient')
+    };
 
-    // 마지막 강도(숫자) 부분만 추출
-    const baseColorMatch = colorClass.match(/^(\w+(?:-\w+)?)-\d+$/);
-
-    if (baseColorMatch && baseColorMatch[1]) {
-      const baseColor = baseColorMatch[1]; // 예: 'blue', 'yellow'
-      gradientClass = `bg-gradient-to-r from-${baseColor}-500 to-${baseColor}-600`;
+    // 매핑된 색상이 있으면 해당 색상 사용
+    if (colorMap[headerBgClass]) {
+      gradientClass = colorMap[headerBgClass];
     }
+    // 일반 Tailwind 색상인 경우 자동 그라디언트 생성
+    else {
+      // 색상 클래스에서 'bg-' 접두사 제거
+      const colorClass = headerBgClass.replace(/^bg-/, '');
+
+      // 색상 이름과 강도 추출 (예: 'blue-600' -> 'blue', '600')
+      const baseColorMatch = colorClass.match(/^(\w+(?:-\w+)?)-(\d+)$/);
+
+      if (baseColorMatch && baseColorMatch[1]) {
+        const baseColor = baseColorMatch[1]; // 색상 이름 (예: 'blue')
+        const intensity = parseInt(baseColorMatch[2]); // 강도 (예: 600)
+
+        // 시작 색상은 약간 밝게, 끝 색상은 약간 어둡게 설정
+        const fromIntensity = Math.max(intensity - 100, 100);
+        const toIntensity = Math.min(intensity + 100, 900);
+
+        // 색상 이름에 따라 다른 대비 색상 사용
+        let toColor = baseColor;
+
+        // 특별한 색상 조합 (더 자연스러운 대비)
+        if (baseColor === 'blue') toColor = 'indigo';
+        else if (baseColor === 'indigo') toColor = 'violet';
+        else if (baseColor === 'purple') toColor = 'indigo';
+        else if (baseColor === 'red') toColor = 'rose';
+        else if (baseColor === 'amber') toColor = 'orange';
+        else if (baseColor === 'yellow') toColor = 'amber';
+        else if (baseColor === 'green') toColor = 'emerald';
+
+        gradientClass = `bg-gradient-to-r from-${baseColor}-${fromIntensity} to-${toColor}-${toIntensity}`;
+      } else {
+        // 매칭되지 않는 경우 원래 배경색 사용
+        gradientClass = headerBgClass;
+      }
+    }
+  }
+  // 3. 둘 다 지정되지 않은 경우 기본 테마 사용
+  else {
+    gradientClass = getRoleThemeColors(USER_ROLES.ADVERTISER, 'gradient');
   }
 
   return (
-    <div className="dashboard-template-wrapper">
+    <div className={pageTemplateClass}>
       {/* 헤더 영역 - 커스텀 배경색 */}
-      <Container fullWidth={fullWidth} className={`${containerClassName} mb-8 pt-5`}>
+      <Container fullWidth={fullWidth} className={containerClassName}>
         <StyledToolbar
           title={title}
           description={description}

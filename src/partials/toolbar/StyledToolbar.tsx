@@ -25,7 +25,7 @@ const StyledToolbar: React.FC<StyledToolbarProps> = ({
   children 
 }) => {
   return (
-    <div className={`${bgClass} ${textClass} rounded-lg shadow-md px-5 py-5 mb-8 dark:shadow-none`}>
+    <div className={`${bgClass} ${textClass} rounded-lg shadow-md px-5 py-5 mb-3 dark:shadow-none Toolbar`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between">
         <div>
           <h2 className="text-xl md:text-2xl font-semibold mb-1">{title}</h2>

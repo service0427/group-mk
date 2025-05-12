@@ -139,31 +139,31 @@ export const WithdrawApprovePage: React.FC = () => {
       description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
       showPageMenu={false}
     >
-      <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8">
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">출금 요청 목록</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">총 {totalItems}개의 요청이 있습니다</p>
+      <div className="card shadow-sm bg-card">
+        <div className="card-header p-6 pb-5 flex justify-between items-center">
+          <div>
+            <h3 className="card-title text-lg font-semibold">출금 요청 목록</h3>
+            <p className="mt-1 text-sm text-gray-500">총 {totalItems}개의 요청이 있습니다</p>
           </div>
-          
-          <div className="px-4 py-5 sm:p-6">
-            {/* 검색 영역 */}
-            <WithdrawRequestSearchBar 
-              onSearch={handleSearch} 
-              initialParams={searchParams}
-            />
-            
-            {/* 리스트 영역 */}
-            <WithdrawRequestList 
-              requests={requests}
-              loading={loading}
-              totalItems={totalItems}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onRequestUpdated={handleRequestUpdated}
-            />
-          </div>
+        </div>
+
+        <div className="card-body p-6">
+          {/* 검색 영역 */}
+          <WithdrawRequestSearchBar
+            onSearch={handleSearch}
+            initialParams={searchParams}
+          />
+
+          {/* 리스트 영역 */}
+          <WithdrawRequestList
+            requests={requests}
+            loading={loading}
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onRequestUpdated={handleRequestUpdated}
+          />
         </div>
       </div>
     </CommonTemplate>

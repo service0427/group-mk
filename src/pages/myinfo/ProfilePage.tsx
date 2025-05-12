@@ -4,7 +4,7 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { BusinessUpgradeModal } from '@/components/business';
-import { USER_ROLES, getRoleDisplayName, getRoleBadgeColor } from '@/config/roles.config';
+import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const ProfilePage = () => {
   const { currentUser, setCurrentUser } = useAuthContext();
@@ -76,8 +76,11 @@ const ProfilePage = () => {
     }
   }, [currentUser]);
 
-  const roleClass = currentUser?.role ? `badge-${getRoleBadgeColor(currentUser.role)}` : '';
+  const roleClass = currentUser?.role ? `bg-${getRoleBadgeColor(currentUser.role)}/10 text-${getRoleBadgeColor(currentUser.role)}` : '';
   const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
+
+  // 역할별 테마 색상 가져오기
+  const roleThemeColors = currentUser?.role ? USER_ROLE_THEME_COLORS[currentUser.role] || null : null;
 
   const statusClass = currentUser?.status === 'active' ? 'badge-success' :
     currentUser?.status === 'inactive' ? 'badge-secondary' :
@@ -462,7 +465,11 @@ const ProfilePage = () => {
               <h3 className="text-lg font-medium">
                 {currentUser?.full_name || '사용자'}
               </h3>
-              <span className={`badge ${roleClass} px-2 py-1 rounded text-xs`}>
+              <span className={`badge ${roleClass} px-2 py-1 rounded text-xs`}
+                style={roleThemeColors ? {
+                  backgroundColor: `${roleThemeColors.baseHex}15`, /* 10% 투명도 */
+                  color: roleThemeColors.baseHex
+                } : undefined}>
                 {roleText || '사용자'}
               </span>
             </div>

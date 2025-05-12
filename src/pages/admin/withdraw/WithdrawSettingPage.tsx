@@ -9,7 +9,7 @@ import { DefaultTooltip } from '@/components/tooltip';
 
 const WithdrawSettingPage: React.FC = () => {
     // 출금 설정 페이지 제목
-    const title = '출금 설정 관리';
+    const title = '관리자 출금 설정';
 
     // 기본 설정 상태값
     const [globalSettings, setGlobalSettings] = useState({

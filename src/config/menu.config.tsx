@@ -367,7 +367,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/admin/cash'
       },
       {
-        title: '설정 관리',
+        title: '캐시 설정',
         icon: 'dollar text-warning',
         path: '/admin/cash_setting'
       }

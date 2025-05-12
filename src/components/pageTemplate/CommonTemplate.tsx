@@ -6,6 +6,8 @@ import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, useMenuCurrentItem } from '@/components';
 import { Navbar } from '@/partials/navbar';
 import { PageMenu } from '@/partials/pagemenu';
+import { useAuthContext } from '@/auth/useAuthContext';
+import { getRoleThemeColors } from '@/config/roles.config';
 
 /**
  * 모든 페이지에서 사용할 수 있는 공통 템플릿
@@ -47,6 +49,9 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   const menuConfig = getMenuConfig('primary');
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
+
+  // 사용자 역할 가져오기
+  const { userRole } = useAuthContext();
 
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2]?.title : '';
@@ -104,7 +109,7 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
           description={!hideDescription ? pageDescription : undefined}
           hideDescription={hideDescription}
           toolbarActions={toolbarActions}
-          bgClass="bg-gradient-to-r from-blue-500 to-indigo-600"
+          bgClass={getRoleThemeColors(userRole, 'gradient')}
           textClass="text-white"
         />
       </Container>

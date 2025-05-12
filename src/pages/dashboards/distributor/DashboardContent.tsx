@@ -359,7 +359,7 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="총판 대시보드"
       description="판매 현황, 상품 분석 및 마케팅 성과를 한눈에 파악할 수 있는 총판용 대시보드입니다."
-      headerBgClass="bg-amber-600"
+      // 역할 기반 테마 적용
       headerTextClass="text-white"
       toolbarActions={
         <>

@@ -703,7 +703,7 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="대행사 대시보드"
       description="클라이언트 및 캠페인을 관리하고 마케팅 성과를 추적할 수 있는 관리 시스템입니다."
-      headerBgClass="bg-blue-600"
+      // 역할 기반 테마 적용
       headerTextClass="text-white"
       toolbarActions={
         loading && (

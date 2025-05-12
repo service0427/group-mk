@@ -717,7 +717,7 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="광고주 대시보드"
       description="광고 캠페인 관리, 성과 분석 및 타겟 그룹별 성과를 확인할 수 있는 종합 대시보드입니다."
-      headerBgClass="bg-blue-600"
+      // 역할 기반 테마 적용
       headerTextClass="text-white"
       toolbarActions={
         <>

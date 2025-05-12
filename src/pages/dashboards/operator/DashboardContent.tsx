@@ -708,7 +708,7 @@ export const DashboardContent: React.FC = () => {
     <DashboardTemplate
       title="운영자 대시보드"
       description="총판 및 개별을 관리하고 시스템 설정을 변경할 수 있는 중앙 관리 시스템입니다. 운영자 권한이 있는 사용자만 접근할 수 있습니다."
-      headerBgClass="bg-indigo-600"
+      // 역할 기반 테마 적용
       headerTextClass="text-white"
     >
       {/* 첫 번째 줄: 4개의 통계 카드 */}

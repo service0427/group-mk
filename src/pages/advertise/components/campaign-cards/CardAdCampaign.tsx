@@ -2,6 +2,7 @@ import { KeenIcon } from '@/components';
 import { useState } from 'react';
 import { CampaignDetailViewModal } from '@/pages/advertise/components';
 import { toAbsoluteUrl } from '@/utils/Assets';
+import { useNavigate } from 'react-router-dom';
 import {
   getStatusColorClass,
   formatCampaignDetailData,
@@ -42,6 +43,7 @@ const CardAdCampaign = ({
   url
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
   
   // 유틸리티 함수를 사용하여 모달 데이터 생성
   const campaignData = formatCampaignDetailData({
@@ -76,14 +78,24 @@ const CardAdCampaign = ({
               <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
               {status.label}
             </span>
-            
-            <button 
-              className="btn btn-sm btn-info"
-              onClick={() => setModalOpen(true)}
-            >
-              <KeenIcon icon="eye" className="me-1.5" />
-              상세보기
-            </button>
+
+            <div className="flex gap-2">
+              <button
+                className="btn btn-sm btn-info"
+                onClick={() => setModalOpen(true)}
+              >
+                <KeenIcon icon="eye" className="me-1.5" />
+                상세보기
+              </button>
+
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => navigate(url)}
+              >
+                <KeenIcon icon="purchase" className="me-1.5" />
+                구매하기
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col items-center mb-7">

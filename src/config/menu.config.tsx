@@ -326,6 +326,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         icon: 'setting-3 text-warning',
         authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
       },
+      {
+        title: 'NAVER 쇼핑',
+        icon: 'shop text-primary',
+        path: '/admin/campaigns/naver-shopping'
+      },
     ]
   },
   {

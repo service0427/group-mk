@@ -329,19 +329,15 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
       description: '💰건당단가'
     },
     {
-      total: addUnit(campaign.min_quantity, '개'),
-      description: '🧺최소수량'
-    },
-    {
       total: campaign.deadline || '22:00',
       description: '⏱️접수마감'
     }
   ];
-  
+
   // 추가로직이 0이 아닌 경우에만 통계 항목에 추가
-  if (campaign.additional_logic && 
-      Number(campaign.additional_logic) !== 0 && 
-      campaign.additional_logic !== '0' && 
+  if (campaign.additional_logic &&
+      Number(campaign.additional_logic) !== 0 &&
+      campaign.additional_logic !== '0' &&
       campaign.additional_logic !== '-') {
     statistics.splice(2, 0, {
       total: addUnit(campaign.additional_logic, '개'),
@@ -442,8 +438,12 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
     unitPrice: campaign.statistics.find(stat => stat.description.includes('건당단가'))?.total || '0원',
     // 추가로직이 있는 경우에만 값 설정
     additionalLogic: additionalLogic ? additionalLogic.total : '없음',
-    // 상세 설명 추가
-    detailedDescription: campaign.description,
+    // 상세 설명 추가 (원본 데이터의 detailed_description 필드 또는 add_info에서 가져오기)
+    detailedDescription: originalData?.detailed_description ||
+                        (typeof originalData?.add_info === 'string'
+                          ? JSON.parse(originalData?.add_info || '{}')?.detailed_description
+                          : originalData?.add_info?.detailed_description) ||
+                        campaign.description,
     // 배너 URL 추가
     bannerUrl: bannerUrl,
     // 원본 데이터 추가

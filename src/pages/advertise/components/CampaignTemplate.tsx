@@ -283,8 +283,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
             </div>
           </div>
         </div>
-
-        <AdMiscFaq />
       </div>
 
       {/* 슬롯 추가 모달 */}

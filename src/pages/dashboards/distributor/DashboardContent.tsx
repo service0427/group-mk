@@ -17,6 +17,9 @@ import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
+import { CampaignAddModal } from '@/pages/admin/campaigns/components/campaign-modals';
+import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
+import { useNavigate } from 'react-router-dom';
 
 // Supabase 테이블 인터페이스 정의
 interface User {
@@ -75,9 +78,14 @@ export const DashboardContent: React.FC = () => {
   // 모바일 화면 감지 (md 이하인지 여부)
   const isMobile = useResponsive('down', 'md');
   const { currentUser } = useAuthContext();
-  
+  const navigate = useNavigate(); // React Router navigate 훅 추가
+
   // 데이터 로딩 상태
   const [loading, setLoading] = useState(true);
+
+  // 캠페인 추가 모달 상태
+  const [addCampaignModalOpen, setAddCampaignModalOpen] = useState(false);
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('ntraffic'); // 기본값: 네이버 트래픽
 
   // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<DistributorStats>({
@@ -102,6 +110,12 @@ export const DashboardContent: React.FC = () => {
     { id: 'ORD-4918', product: '검색 광고 기본형', customer: '테크노베이션', amount: 450000, date: '2023-05-18', status: '완료' },
     { id: 'ORD-4917', product: '모바일 광고 패키지', customer: '스마트모바일', amount: 720000, date: '2023-05-18', status: '완료' },
   ]);
+
+  // 캠페인 추가 모달 열기 함수 - 선택된 서비스 타입으로 설정
+  const openAddCampaignModal = (serviceType: string) => {
+    setSelectedServiceType(serviceType);
+    setAddCampaignModalOpen(true);
+  };
 
   // 상품 판매 순위 데이터
   const [productRankings, setProductRankings] = useState<Array<{
@@ -396,63 +410,84 @@ export const DashboardContent: React.FC = () => {
 
       {/* 두 번째 줄: 최근 판매 & 상품 판매 순위 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        {/* 최근 판매 */}
+        {/* 신규 캠페인 신청 */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-amber-100 text-amber-600 mr-3">
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-100 text-blue-600 mr-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">최근 판매 (개발필요)</h3>
+              <h3 className="text-lg font-semibold text-gray-800">신규 캠페인 신청</h3>
             </div>
-            <Button variant="outline" size="sm" className="h-8 px-4">
-              전체 거래
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => openAddCampaignModal('ntraffic')}
+            >
+              새 캠페인 신청
             </Button>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="py-3 px-4 text-left">주문 정보</TableHead>
-                  <TableHead className="py-3 px-4 text-left">구매자</TableHead>
-                  <TableHead className="py-3 px-4 text-right">금액(원)</TableHead>
-                  <TableHead className="py-3 px-4 text-center">상태</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentSales.map((sale, index) => (
-                  <TableRow key={index} className="border-b border-gray-200">
-                    <TableCell className="py-3 px-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-amber-600">{sale.product}</span>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <span>{sale.id}</span>
-                          <span className="mx-1">•</span>
-                          <span>{sale.date}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <span>{sale.customer}</span>
-                    </TableCell>
-                    <TableCell className="py-3 px-4 text-right">
-                      <span className="font-medium">
-                        {isMobile 
-                          ? formatCurrencyInTenThousand(sale.amount)
-                          : formatCurrency(sale.amount)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-3 px-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(sale.status)}`}>
-                        {sale.status}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="p-5">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+              <div className="flex">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">신규 캠페인을 제안해 보세요</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">총판은 새로운 캠페인을 제안하고 승인 받을 수 있습니다. 아래 캠페인 유형 중 하나를 선택하여 시작하세요.</p>
+                </div>
+              </div>
+            </div>
+
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">캠페인 유형 선택</h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div
+                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
+                onClick={() => openAddCampaignModal('ntraffic')}
+              >
+                <div className="flex items-center mb-2">
+                  <img src="/media/ad-brand/naver.png" alt="네이버" className="w-5 h-5 mr-2" />
+                  <span className="font-medium">네이버 트래픽</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">네이버 검색을 통한 사이트 방문 증가</p>
+              </div>
+
+              <div
+                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
+                onClick={() => openAddCampaignModal('NaverShopTraffic')}
+              >
+                <div className="flex items-center mb-2">
+                  <img src="/media/ad-brand/naver-shopping.png" alt="네이버 쇼핑" className="w-5 h-5 mr-2" />
+                  <span className="font-medium">네이버 쇼핑</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">네이버 쇼핑 페이지 노출 및 트래픽</p>
+              </div>
+
+              <div
+                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
+                onClick={() => openAddCampaignModal('CoupangTraffic')}
+              >
+                <div className="flex items-center mb-2">
+                  <img src="/media/ad-brand/coupang-app.png" alt="쿠팡" className="w-5 h-5 mr-2" />
+                  <span className="font-medium">쿠팡 트래픽</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">쿠팡을 통한 사이트 방문자 유치</p>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <Button
+                className="w-full text-center py-2 mt-2 bg-primary text-white hover:bg-primary-dark"
+                onClick={() => navigate('/advertise/ntraffic/desc')}
+              >
+                전체 캠페인 유형 보기
+              </Button>
+            </div>
           </div>
         </Card>
 
@@ -602,6 +637,21 @@ export const DashboardContent: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* 캠페인 추가 모달 */}
+      {addCampaignModalOpen && (
+        <CampaignAddModal
+          open={addCampaignModalOpen}
+          onClose={() => setAddCampaignModalOpen(false)}
+          serviceType={selectedServiceType}
+          onSave={(newCampaign: ICampaign) => {
+            // 캠페인이 성공적으로 생성되면 모달 닫기
+            setAddCampaignModalOpen(false);
+            // 성공 메시지 표시
+            toast.success(`'${newCampaign.campaignName}' 캠페인 제안이 접수되었습니다.`);
+          }}
+        />
+      )}
     </DashboardTemplate>
   );
 };

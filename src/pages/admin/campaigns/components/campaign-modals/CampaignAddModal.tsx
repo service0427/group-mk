@@ -265,12 +265,12 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden overflow-y-auto max-h-[90vh]">
-          <DialogHeader className="bg-background py-4 px-6 border-b">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10">
             <DialogTitle className="text-lg font-medium text-foreground">새 캠페인 추가</DialogTitle>
           </DialogHeader>
-          
-          <div className="p-4 bg-background">
+
+          <div className="p-4 bg-background overflow-y-auto flex-1">
             <div className="space-y-4">
               {/* 오류 메시지 */}
               {error && (
@@ -584,9 +584,11 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
 
-              {/* 버튼 */}
-              <div className="flex justify-end items-center gap-3 mt-3 sticky bottom-0 pt-2 pb-1 bg-background border-t border-border">
+          {/* 버튼 - 푸터 영역 */}
+          <div className="flex justify-end items-center gap-3 py-3 px-4 bg-background border-t border-border sticky bottom-0 z-10">
                 {/* 미리보기 버튼 (캠페인 추가 버튼 왼쪽에 배치) */}
                 <Button 
                   onClick={() => setCampaignPreviewModalOpen(true)} 
@@ -621,8 +623,6 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
                   취소
                 </Button>
               </div>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 
@@ -666,15 +666,15 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
       {/* 캠페인 전체 미리보기 모달 */}
       {campaignPreviewModalOpen && (
         <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden overflow-y-auto max-h-[90vh] border-4 border-primary">
+          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] border-4 border-primary">
             <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-10 shadow-sm">
               <DialogTitle className="text-lg font-semibold text-foreground flex items-center">
                 <KeenIcon icon="eye" className="mr-2 text-primary" />
                 캠페인 미리보기
               </DialogTitle>
             </DialogHeader>
-            
-            <div className="bg-background">
+
+            <div className="bg-background overflow-y-auto flex-1">
               {/* 배너 이미지 (있을 경우) */}
               {bannerImagePreviewUrl && (
                 <div className="w-full">
@@ -758,15 +758,16 @@ const CampaignAddModal: React.FC<CampaignAddModalProps> = ({
                 </div>
               </div>
               
-              <div className="flex justify-end p-4 border-t bg-gray-100 dark:bg-gray-800 sticky bottom-0 shadow-lg">
-                <Button 
+            </div>
+
+            <div className="flex justify-end p-4 border-t bg-gray-100 dark:bg-gray-800 sticky bottom-0 shadow-lg z-10">
+                <Button
                   onClick={() => setCampaignPreviewModalOpen(false)}
                   className="bg-red-500 hover:bg-red-600 text-white"
                 >
                   <KeenIcon icon="cross" className="me-1 size-4" />
                   닫기
                 </Button>
-              </div>
             </div>
           </DialogContent>
         </Dialog>

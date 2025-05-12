@@ -401,8 +401,11 @@ export const keywordService = {
       // 해당 키워드가 사용자의 그룹에 속해 있는지 확인
       const { data: keywordData, error: keywordError } = await supabase
         .from('keywords')
-        .select('keywords.*, keyword_groups!inner(*)')
-        .eq('keywords.id', keywordId)
+        .select(`
+          *, 
+          keyword_groups!inner(*)
+        `)
+        .eq('id', keywordId)
         .eq('keyword_groups.user_id', user.id)
         .single();
 
@@ -477,8 +480,11 @@ export const keywordService = {
       // 해당 키워드가 사용자의 그룹에 속해 있는지 확인
       const { data: keywordData, error: keywordError } = await supabase
         .from('keywords')
-        .select('keywords.*, keyword_groups!inner(*)')
-        .eq('keywords.id', keywordId)
+        .select(`
+          *, 
+          keyword_groups!inner(*)
+        `)
+        .eq('id', keywordId)
         .eq('keyword_groups.user_id', user.id)
         .single();
 

@@ -254,7 +254,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '총판 출금 신청',
         icon: 'dollar text-danger',
         path: '/withdraw',
-        authCheck: (role) => role === USER_ROLES.DISTRIBUTOR
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
       },
     ]
   },

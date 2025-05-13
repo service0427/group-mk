@@ -693,7 +693,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 관리자인 경우 페이지 이동 준비
             if (isAdmin) {
                 setTimeout(() => {
-                    window.location.href = '/auth/login';
+                    // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
+                    // 해시 라우터와 호환되는 방식으로 경로 설정
+                    window.location.replace(window.location.origin);
+                    
+                    // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
+                    setTimeout(() => {
+                        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
+                        window.location.hash = '/auth/login';
+                    }, 50);
                 }, 100);
             }
             

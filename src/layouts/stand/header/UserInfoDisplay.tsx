@@ -120,7 +120,14 @@ const UserInfoDisplay = () => {
       
       // 오류 발생해도 로그인 페이지로 강제 이동
       const timestamp = new Date().getTime();
-      window.location.href = `/#/auth/login?t=${timestamp}`;
+      // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
+      window.location.replace(window.location.origin);
+      
+      // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
+      setTimeout(() => {
+        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
+        window.location.hash = `/auth/login?t=${timestamp}`;
+      }, 50);
     }
   };
 

@@ -195,7 +195,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
   const [isImportant, setIsImportant] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const editorRef = useRef<TiptapEditorHandle>(null);
-  
+
   // CreateNotice 컴포넌트 마운트 시 자동으로 초기화됨
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -517,7 +517,7 @@ const NoticePageComponent = () => {
       if (error) throw error;
       setNotices(data || []);
     } catch (err: any) {
-      
+
       setError('공지사항을 불러오는데 실패했습니다.');
       toast.error("공지사항 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -552,14 +552,13 @@ const NoticePageComponent = () => {
         .select('*')
         .eq('id', notice.id)
         .single();
-        
+
       if (error) throw error;
-      
+
       // 최신 데이터로 상태 업데이트
       setSelectedNotice(data || notice);
       setIsDetailOpen(true);
-      
-      console.log('공지사항 상세 데이터:', data);
+
     } catch (err) {
       console.error('공지사항 상세 조회 오류:', err);
       // 오류 발생 시 원본 데이터 사용
@@ -588,7 +587,7 @@ const NoticePageComponent = () => {
       await fetchNotices();
       return;
     } catch (err) {
-      
+
       throw err;
     }
   };
@@ -618,7 +617,7 @@ const NoticePageComponent = () => {
       // 추가 후 목록 새로고침
       await fetchNotices();
     } catch (err) {
-      
+
       throw err;
     }
   };
@@ -649,7 +648,7 @@ const NoticePageComponent = () => {
         setIsDeleteConfirmOpen(false);
         setNoticeToDelete(null);
       } catch (err) {
-        
+
         toast.error("공지사항 삭제 중 오류가 발생했습니다.");
       } finally {
         setIsDeleting(false);
@@ -675,7 +674,7 @@ const NoticePageComponent = () => {
 
       toast(`공지사항이 ${newValue ? '표시' : '숨김'} 상태로 변경되었습니다.`);
     } catch (err) {
-      
+
       toast.error("상태 변경 중 오류가 발생했습니다.");
     }
   };
@@ -854,7 +853,7 @@ const NoticePageComponent = () => {
                             <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
                               {(currentPage - 1) * itemsPerPage + index + 1}
                             </div>
-                            
+
                             {/* 오른쪽 내용 영역 */}
                             <div className="flex-1 min-w-0">
                               {/* 헤더 영역: 제목과 중요 표시 */}
@@ -866,7 +865,7 @@ const NoticePageComponent = () => {
                                   <span>{notice.title}</span>
                                 </h3>
                               </div>
-                              
+
                               {/* 등록일/수정일 정보 */}
                               <div className="flex flex-col gap-1 text-xs text-muted-foreground mb-3">
                                 <div className="flex items-center">
@@ -878,7 +877,7 @@ const NoticePageComponent = () => {
                                   <span>수정: {formatDate(notice.updated_at)}</span>
                                 </div>
                               </div>
-                              
+
                               {/* 액션 버튼 영역 */}
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
@@ -889,11 +888,10 @@ const NoticePageComponent = () => {
                                         checked={notice.is_active}
                                         onCheckedChange={(checked) => handleToggleActive(notice, checked)}
                                       />
-                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                                        notice.is_active
+                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${notice.is_active
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                                           : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
-                                      }`}>
+                                        }`}>
                                         {notice.is_active ? '표시' : '감춤'}
                                       </span>
                                     </div>
@@ -961,8 +959,8 @@ const NoticePageComponent = () => {
       </div>
 
       {/* 공지사항 상세 다이얼로그 */}
-      <Dialog 
-        open={isDetailOpen} 
+      <Dialog
+        open={isDetailOpen}
         onOpenChange={(open) => {
           // 다이얼로그가 닫힐 때 선택된 공지사항 초기화
           if (!open) {

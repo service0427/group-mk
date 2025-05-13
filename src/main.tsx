@@ -5,6 +5,10 @@ import './styles/layout-overrides.css'; // 새로운 레이아웃 오버라이�
 import './styles/auth-verification.css'; // 인증 검증 및 로딩 스타일
 import './scripts/dark-mode-debug.js'; // 다크모드 z-index 문제 디버그 스크립트
 
+// 리치 텍스트 에디터 관련 스타일
+import '@/components/rich-text-editor/tiptap-styles.css'; // TipTap 에디터 스타일
+import '@/components/rich-text-editor/image-fix.css'; // 이미지 표시 문제 특화 해결 CSS
+
 import axios from 'axios';
 import ReactDOM from 'react-dom/client';
 
@@ -12,6 +16,7 @@ import { App } from './App';
 import { setupAxios } from './auth';
 import { ProvidersWrapper } from './providers';
 import React from 'react';
+import { suppressReactWarnings } from './utils/reactWarningSuppress';
 
 /**
  * Inject interceptors for axios.
@@ -19,6 +24,9 @@ import React from 'react';
  * @see https://github.com/axios/axios#interceptors
  */
 setupAxios(axios);
+
+// React 경고 메시지 억제
+suppressReactWarnings();
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(

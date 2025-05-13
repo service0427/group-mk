@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
+import { TiptapViewer, TipTapEditor, TiptapEditorHandle } from '@/components/rich-text-editor';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 
@@ -62,9 +64,9 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full max-h-[80vh]">
       {/* 공지사항 제목 */}
-      <div className="border-b pb-4">
+      <div className="border-b pb-4 flex-shrink-0">
         <div className="flex items-center gap-2 mb-2">
           {notice.is_important && (
             <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/50 dark:text-red-300">
@@ -80,13 +82,13 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
         </div>
       </div>
 
-      {/* 공지사항 내용 */}
-      <div className="min-h-[200px] whitespace-pre-wrap">
-        {notice.content}
+      {/* 공지사항 내용 - 스크롤 가능 영역 */}
+      <div className="flex-grow overflow-y-auto py-4" style={{ minHeight: '200px', maxHeight: 'calc(80vh - 150px)' }}>
+        <TiptapViewer content={notice.content} />
       </div>
 
-      {/* 닫기 버튼 */}
-      <div className="flex justify-end pt-4 border-t">
+      {/* 닫기 버튼 - 고정 푸터 */}
+      <div className="flex justify-end pt-4 border-t mt-auto flex-shrink-0">
         <Button onClick={onClose}>
           닫기
         </Button>
@@ -247,6 +249,7 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
 };
 
 const NoticePageComponent = () => {
+  const navigate = useNavigate();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [importantNotices, setImportantNotices] = useState<Notice[]>([]);
   const [normalNotices, setNormalNotices] = useState<Notice[]>([]);
@@ -324,10 +327,16 @@ const NoticePageComponent = () => {
     setCurrentPage(1); // 페이지당 항목 수 변경 시 첫 페이지로 이동
   };
 
-  // 공지사항 상세 열기
-  const openDetail = (notice: Notice) => {
-    setSelectedNotice(notice);
-    setIsDetailOpen(true);
+  // 공지사항 상세 열기 - 모달 또는 페이지로 이동
+  const openDetail = (notice: Notice, useModal: boolean = false) => {
+    if (useModal) {
+      // 모달로 열기
+      setSelectedNotice(notice);
+      setIsDetailOpen(true);
+    } else {
+      // 상세 페이지로 이동
+      navigate(`/notice/${notice.id}`);
+    }
   };
 
   // 날짜 형식 변환 함수
@@ -529,11 +538,11 @@ const NoticePageComponent = () => {
 
       {/* 공지사항 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-          <div className="bg-background py-4 px-8 border-b">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden flex flex-col h-[80vh]">
+          <div className="bg-background py-4 px-8 border-b flex-shrink-0">
             <DialogTitle className="text-lg font-medium text-foreground">공지사항</DialogTitle>
           </div>
-          <div className="p-8 bg-background">
+          <div className="p-8 bg-background flex-grow overflow-hidden">
             <NoticeDetail
               notice={selectedNotice}
               onClose={() => setIsDetailOpen(false)}

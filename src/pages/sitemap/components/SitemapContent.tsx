@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMenus } from '@/providers';
 import { IMenuItemConfig, TMenuConfig } from '@/components/menu';
 import { KeenIcon } from '@/components/keenicons';
+import { Button } from '@/components/ui/button';
 
 const SitemapContent: React.FC = () => {
   const { getMenuConfig } = useMenus();
@@ -120,17 +121,15 @@ const SitemapContent: React.FC = () => {
     return (
       <div className="card rounded-lg shadow-sm p-5">
         <div className="flex flex-wrap gap-2">
-          {allCategories.map(category => (
-            <button
+          {allCategories.map((category) => (
+            <Button
               key={category}
+              variant={activeCategory === category ? "default" : "outline"}
               onClick={() => setActiveCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === category
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 dark:bg-coal-400 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-coal-300'
-                }`}
+              className={`${activeCategory === category ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}
             >
               {category}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

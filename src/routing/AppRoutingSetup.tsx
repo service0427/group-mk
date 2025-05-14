@@ -42,7 +42,7 @@ import {
 } from '@/pages/admin';
 
 // 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
-import { NoticePage, NoticeDetailPage } from '@/pages/notice';
+import { NoticePage, NoticeDetailPage, NoticeEditorPage } from '@/pages/notice';
 import FAQPage from '@/pages/faq';
 import SitemapPage from '@/pages/sitemap';
 import NotificationsPage from '@/pages/myinfo/notifications';
@@ -55,7 +55,6 @@ import { ErrorsRouting } from '@/errors';
 import { ManageSettingPage } from '@/pages/admin/cash';
 import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw';
 import { WithdrawRequestPage } from '@/pages/withdraw';
-import EditorTestPage from '@/pages/EditorTest';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -134,6 +133,8 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
+          <Route path="/admin/site/notice/new" element={<NoticeEditorPage />} />
+          <Route path="/admin/site/notice/edit/:id" element={<NoticeEditorPage />} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
           <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
           <Route path="/admin/site/chat" element={<ChatManagePage />} />
@@ -148,7 +149,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/withdraw_approve" element={<WithdrawApprovePage />} />
 
           {/* 에디터 테스트 페이지 */}
-          <Route path="/editor-test" element={<EditorTestPage />} />
+          {/* <Route path="/editor-test" element={<EditorTestPage />} /> */}
 
         </Route>
       </Route>

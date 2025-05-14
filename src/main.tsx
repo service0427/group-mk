@@ -16,7 +16,6 @@ import { App } from './App';
 import { setupAxios } from './auth';
 import { ProvidersWrapper } from './providers';
 import React from 'react';
-import { suppressReactWarnings } from './utils/reactWarningSuppress';
 
 /**
  * Inject interceptors for axios.
@@ -26,7 +25,7 @@ import { suppressReactWarnings } from './utils/reactWarningSuppress';
 setupAxios(axios);
 
 // React 경고 메시지 억제
-suppressReactWarnings();
+// suppressReactWarnings 기능은 CloudFlare 배포 시 오류 발생으로 임시 제거
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState} from 'react';
 import { useKeywords } from './hooks/useKeywords';
 import { KeywordGroups, KeywordTable } from './components';
 import { KeywordInput } from './types';
+import keywordPurchaseService from './services/keywordPurchaseService';
 
 // 레이아웃 컴포넌트 임포트
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -27,6 +28,7 @@ const KeywordPage: React.FC = () => {
     handleLimitChange,
     handleSortChange,
     handleSearchChange,
+    fetchKeywords, // 키워드 목록 다시 조회하기 위한 함수
   } = useKeywords();
   
   // 페이지 진입 시 기본 그룹 확인 및 생성
@@ -56,6 +58,12 @@ const KeywordPage: React.FC = () => {
   // 키워드 생성 핸들러
   const handleCreateKeyword = async (keywordData: KeywordInput) => {
     return await createKeyword(keywordData);
+  };
+  
+  // 키워드 구매 완료 후 핸들러 - 목록 새로고침
+  const handlePurchaseComplete = () => {
+    // 구매 처리가 완료되면 키워드 목록 다시 불러오기
+    fetchKeywords();
   };
 
   return (
@@ -133,6 +141,7 @@ const KeywordPage: React.FC = () => {
             onLimitChange={handleLimitChange}
             onSearch={handleSearchChange}
             onSort={handleSortChange}
+            onPurchaseComplete={handlePurchaseComplete}
           />
         </div>
       </div>

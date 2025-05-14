@@ -14,6 +14,7 @@ export interface CampaignData {
   unit_price?: string | number;
   additional_logic?: string | number;
   status: string;
+  service_type?: string;
   add_info?: {
     logo_url?: string;
     banner_url?: string;

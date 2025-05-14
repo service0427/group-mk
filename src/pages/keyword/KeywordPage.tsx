@@ -17,6 +17,7 @@ const KeywordPage: React.FC = () => {
     error,
     totalKeywords,
     pagination,
+    createDefaultGroup,
     createGroup,
     updateGroup,
     deleteGroup,
@@ -34,6 +35,15 @@ const KeywordPage: React.FC = () => {
   const selectedGroup = useMemo(() => {
     return groups.find((group) => group.id === selectedGroupId) || null;
   }, [groups, selectedGroupId]);
+
+  // 초기 로드 시 기본 그룹 확인 및 생성
+  useEffect(() => {
+    // 그룹이 없거나 선택된 그룹이 없을 때 기본 그룹 생성
+    if ((groups.length === 0 || !selectedGroupId) && !isLoading) {
+      console.log('기본 그룹 생성 시도');
+      createDefaultGroup();
+    }
+  }, [groups, selectedGroupId, isLoading, createDefaultGroup]);
 
   // 그룹 영역 표시 여부 상태 (기본적으로 접혀 있음)
   const [showGroupArea, setShowGroupArea] = useState<boolean>(false);

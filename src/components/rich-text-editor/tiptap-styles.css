@@ -1,0 +1,120 @@
+.tiptap-editor-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 300px;
+}
+
+.tiptap-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 40; /* 모달 내에서도 잘 작동하도록 z-index 조정 */
+  flex-wrap: wrap; /* 모바일에서 버튼이 여러 개일 때 줄바꿈 처리 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+}
+
+.toolbar-button {
+  padding: 0.25rem 0.75rem;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbar-button:hover {
+  background-color: #f1f5f9;
+}
+
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tiptap-editor {
+  padding: 1rem;
+  min-height: 12rem;
+  outline: none;
+  font-family: inherit;
+  font-weight: normal;
+  color: var(--tw-color-foreground, #1f2937);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  line-height: 1.5;
+  font-size: 1rem;
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: embed;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+/* 플레이스홀더 스타일 */
+.tiptap-placeholder {
+  color: #9ca3af; /* 회색 텍스트 */
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.tiptap-content-viewer {
+  overflow-wrap: break-word;
+}
+
+.tiptap-content-viewer img {
+  max-width: 100%;
+  height: auto;
+}
+
+.tiptap-content-viewer p {
+  margin-bottom: 1rem;
+}
+
+.tiptap-content-viewer h1,
+.tiptap-content-viewer h2,
+.tiptap-content-viewer h3,
+.tiptap-content-viewer h4,
+.tiptap-content-viewer h5,
+.tiptap-content-viewer h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.tiptap-content-viewer ul,
+.tiptap-content-viewer ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.tiptap-content-viewer blockquote {
+  border-left: 4px solid #e2e8f0;
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #4a5568;
+}
+
+.tiptap-content-viewer pre {
+  background-color: #f7fafc;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.tiptap-content-viewer a {
+  color: #4299e1;
+  text-decoration: underline;
+}

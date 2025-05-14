@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
 import { TipTapEditor } from '@/components/rich-text-editor';
@@ -84,20 +85,27 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
   if (!notice) return null;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-5">
-        <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1">제목</label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-background focus:ring-primary focus:border-primary"
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[80vh] w-full">
+      {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
+      <div className="flex-shrink-0 p-3 sm:p-6 w-full bg-background">
+        <div className="mb-5 w-full">
+          <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1">제목</label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full bg-background focus:ring-primary focus:border-primary"
+            required
+          />
+        </div>
 
-      <div className="mb-5">
-        <label htmlFor="content" className="block text-sm font-medium text-foreground mb-1">내용</label>
+        <div className="w-full">
+          <label htmlFor="content" className="block text-sm font-medium text-foreground mb-1">내용</label>
+        </div>
+      </div>
+      
+      {/* 스크롤 가능한 내용 영역 (에디터만) */}
+      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
         {notice && (
           <TipTapEditor
             key={`notice-${notice.id}`} // 공지사항 ID가 변경될 때마다 컴포넌트를 완전히 새로 생성
@@ -108,72 +116,77 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
         )}
       </div>
 
-      <div className="mb-5">
-        <div className="flex justify-between items-center">
-          <label className="block text-sm font-medium text-foreground">표시여부</label>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="isActive"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-            <label htmlFor="isActive" className="text-sm text-foreground">
-              {isActive ? '표시됨' : '감춰짐'}
-            </label>
+      {/* 고정된 하단 설정 및 버튼 영역 */}
+      <div className="flex-shrink-0 border-t bg-muted/30 p-3 sm:p-4 w-full overflow-hidden">
+        {/* 설정 옵션 */}
+        <div className="space-y-2 mb-4 w-full">
+          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
+            <div className="flex items-center justify-end gap-3 w-[200px]">
+              <Switch
+                id="isActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
+              />
+              <label htmlFor="isActive" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
+                {isActive ? '표시됨' : '감춰짐'}
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
+            <div className="flex items-center justify-end gap-3 w-[200px]">
+              <Switch
+                id="isImportant"
+                checked={isImportant}
+                onCheckedChange={setIsImportant}
+                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
+              />
+              <label htmlFor="isImportant" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
+                {isImportant ? '중요 공지' : '일반 공지'}
+              </label>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-5">
-        <div className="flex justify-between items-center">
-          <label className="block text-sm font-medium text-foreground">중요 공지</label>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="isImportant"
-              checked={isImportant}
-              onCheckedChange={setIsImportant}
-            />
-            <label htmlFor="isImportant" className="text-sm text-foreground">
-              {isImportant ? '중요 공지' : '일반 공지'}
-            </label>
+        {/* 버튼 영역 */}
+        <div className="flex justify-between space-x-3 pt-2">
+          <div>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (notice) {
+                  onDelete(notice);
+                }
+                onClose();
+              }}
+              className="px-4"
+              disabled={isLoading}
+            >
+              삭제하기
+            </Button>
           </div>
-        </div>
-      </div>
-
-      <div className="flex justify-between space-x-3 pt-2 border-t mt-6">
-        <div>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => {
-              if (notice) {
-                onDelete(notice);
-              }
-              onClose();
-            }}
-            className="px-4"
-            disabled={isLoading}
-          >
-            삭제하기
-          </Button>
-        </div>
-        <div className="flex space-x-3">
-          <Button
-            type="submit"
-            className="bg-primary hover:bg-primary/90 text-white px-4"
-            disabled={isLoading}
-          >
-            {isLoading ? '저장 중...' : '저장하기'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="px-4"
-            disabled={isLoading}
-          >
-            취소
-          </Button>
+          <div className="flex space-x-3">
+            <Button
+              type="submit"
+              className="bg-primary hover:bg-primary/90 text-white px-4"
+              disabled={isLoading}
+            >
+              {isLoading ? '저장 중...' : '저장하기'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="px-4"
+              disabled={isLoading}
+            >
+              취소
+            </Button>
+          </div>
         </div>
       </div>
     </form>
@@ -217,21 +230,28 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-5">
-        <label htmlFor="new-title" className="block text-sm font-medium text-foreground mb-1">제목</label>
-        <Input
-          id="new-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-background focus:ring-primary focus:border-primary"
-          placeholder="공지사항 제목을 입력하세요"
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[80vh] w-full">
+      {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
+      <div className="flex-shrink-0 p-3 sm:p-6 w-full bg-background">
+        <div className="mb-5 w-full">
+          <label htmlFor="new-title" className="block text-sm font-medium text-foreground mb-1">제목</label>
+          <Input
+            id="new-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full bg-background focus:ring-primary focus:border-primary"
+            placeholder="공지사항 제목을 입력하세요"
+            required
+          />
+        </div>
 
-      <div className="mb-5">
-        <label htmlFor="new-content" className="block text-sm font-medium text-foreground mb-1">내용</label>
+        <div className="w-full">
+          <label htmlFor="new-content" className="block text-sm font-medium text-foreground mb-1">내용</label>
+        </div>
+      </div>
+      
+      {/* 스크롤 가능한 내용 영역 (에디터만) */}
+      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
         <TipTapEditor
           key="new-notice"
           content={content}
@@ -240,55 +260,60 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
         />
       </div>
 
-      <div className="mb-5">
-        <div className="flex justify-between items-center">
-          <label className="block text-sm font-medium text-foreground">표시여부</label>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="new-isActive"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-            <label htmlFor="new-isActive" className="text-sm text-foreground">
-              {isActive ? '표시됨' : '감춰짐'}
-            </label>
+      {/* 고정된 하단 설정 및 버튼 영역 */}
+      <div className="flex-shrink-0 border-t bg-muted/30 p-3 sm:p-4 w-full overflow-hidden">
+        {/* 설정 옵션 */}
+        <div className="space-y-2 mb-4 w-full">
+          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
+            <div className="flex items-center justify-end gap-3 w-[200px]">
+              <Switch
+                id="new-isActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
+              />
+              <label htmlFor="new-isActive" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
+                {isActive ? '표시됨' : '감춰짐'}
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
+            <div className="flex items-center justify-end gap-3 w-[200px]">
+              <Switch
+                id="new-isImportant"
+                checked={isImportant}
+                onCheckedChange={setIsImportant}
+                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
+              />
+              <label htmlFor="new-isImportant" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
+                {isImportant ? '중요 공지' : '일반 공지'}
+              </label>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-5">
-        <div className="flex justify-between items-center">
-          <label className="block text-sm font-medium text-foreground">중요 공지</label>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="new-isImportant"
-              checked={isImportant}
-              onCheckedChange={setIsImportant}
-            />
-            <label htmlFor="new-isImportant" className="text-sm text-foreground">
-              {isImportant ? '중요 공지' : '일반 공지'}
-            </label>
-          </div>
+        {/* 버튼 영역 */}
+        <div className="flex justify-end space-x-3 pt-2">
+          <Button
+            type="submit"
+            className="bg-primary hover:bg-primary/90 text-white px-4"
+            disabled={isLoading}
+          >
+            {isLoading ? '등록 중...' : '등록하기'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="px-4"
+            disabled={isLoading}
+          >
+            취소
+          </Button>
         </div>
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-2 border-t mt-6">
-        <Button
-          type="submit"
-          className="bg-primary hover:bg-primary/90 text-white px-4"
-          disabled={isLoading}
-        >
-          {isLoading ? '등록 중...' : '등록하기'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          className="px-4"
-          disabled={isLoading}
-        >
-          취소
-        </Button>
       </div>
     </form>
   );
@@ -686,27 +711,25 @@ const NoticePageComponent = () => {
     }).replace(/\. /g, '-').replace(/\.$/, '');
   };
 
-  // 툴바 액션 버튼
+  // 페이지 이동 관련
+  const navigate = useNavigate();
+  
+  // 새 공지사항 페이지로 이동
+  const handleCreateNewNotice = () => {
+    navigate('/admin/site/notice/new');
+  };
+  
+  // 공지사항 편집 페이지로 이동
+  const handleEditNotice = (noticeId: string) => {
+    navigate(`/admin/site/notice/edit/${noticeId}`);
+  };
+  
+  // 툴바 액션 버튼 (새 페이지 이동 방식)
   const toolbarActions = (
-    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <KeenIcon icon="plus" className="md:me-2 flex-none" />
-          <span className="hidden md:inline">새 공지사항</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-        <div className="bg-background py-4 px-8 border-b">
-          <DialogTitle className="text-lg font-medium text-foreground">새 공지사항 작성</DialogTitle>
-        </div>
-        <div className="p-8 bg-background">
-          <CreateNotice
-            onClose={() => setIsCreateOpen(false)}
-            onSave={saveNewNotice}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Button onClick={handleCreateNewNotice}>
+      <KeenIcon icon="plus" className="md:me-2 flex-none" />
+      <span className="hidden md:inline">새 공지사항</span>
+    </Button>
   );
 
   return (
@@ -734,7 +757,7 @@ const NoticePageComponent = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-hidden w-full">
             {isLoading ? (
               <div className="p-8 flex justify-center items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -751,15 +774,15 @@ const NoticePageComponent = () => {
                 </Button>
               </div>
             ) : (
-              <div className="bg-card">
+              <div className="bg-card w-full">
                 {/* 데스크톱용 테이블 (md 이상 화면에서만 표시) */}
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-hidden w-full">
                   {notices.length === 0 ? (
                     <div className="text-center py-10 text-gray-500">
                       공지사항이 없습니다
                     </div>
                   ) : (
-                    <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+                    <table className="table align-middle text-sm w-full max-w-full text-left border-separate border-spacing-0">
                       <thead>
                         <tr className="bg-muted dark:bg-gray-800/60">
                           <th className="py-3 px-3 text-center font-medium w-[60px]">No</th>
@@ -810,7 +833,7 @@ const NoticePageComponent = () => {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  onClick={() => openDetail(notice)}
+                                  onClick={() => handleEditNotice(notice.id)}
                                   className="h-8 w-8"
                                   title="수정"
                                 >
@@ -835,13 +858,13 @@ const NoticePageComponent = () => {
                 </div>
 
                 {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
-                <div className="block md:hidden">
+                <div className="block md:hidden w-full overflow-x-hidden">
                   {notices.length === 0 ? (
                     <div className="text-center py-10 text-gray-500">
                       공지사항이 없습니다
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700 w-full max-w-full">
                       {notices.map((notice, index) => (
                         <div key={notice.id} className="p-4 hover:bg-muted/40">
                           <div className="flex gap-3">
@@ -851,14 +874,14 @@ const NoticePageComponent = () => {
                             </div>
 
                             {/* 오른쪽 내용 영역 */}
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 max-w-full">
                               {/* 헤더 영역: 제목과 중요 표시 */}
                               <div className="mb-2">
-                                <h3 className="font-medium text-foreground flex items-center gap-1 truncate" onClick={() => openDetail(notice)}>
+                                <h3 className="font-medium text-foreground flex items-center gap-1 truncate max-w-[95%]" onClick={() => openDetail(notice)}>
                                   {notice.is_important && (
-                                    <span className="inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300">중요</span>
+                                    <span className="inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300 flex-shrink-0">중요</span>
                                   )}
-                                  <span>{notice.title}</span>
+                                  <span className="truncate">{notice.title}</span>
                                 </h3>
                               </div>
 
@@ -877,7 +900,7 @@ const NoticePageComponent = () => {
                               {/* 액션 버튼 영역 */}
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <div className="flex flex-col xs:flex-row items-start xs:items-center gap-1 xs:gap-2">
+                                  <div className="flex flex-col items-start gap-1">
                                     <span className="text-xs text-muted-foreground">표시:</span>
                                     <div className="flex items-center gap-2">
                                       <Switch
@@ -893,13 +916,13 @@ const NoticePageComponent = () => {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col gap-2">
                                   <Button
                                     variant="outline"
                                     size="icon"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      openDetail(notice);
+                                      handleEditNotice(notice.id);
                                     }}
                                     className="h-9 w-9"
                                     title="수정"
@@ -965,11 +988,11 @@ const NoticePageComponent = () => {
           setIsDetailOpen(open);
         }}
       >
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-          <div className="bg-background py-4 px-8 border-b">
-            <DialogTitle className="text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
+        <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden">
+          <div className="bg-background py-2 sm:py-3 px-3 sm:px-5 border-b w-full">
+            <DialogTitle className="text-base sm:text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
           </div>
-          <div className="p-8 bg-background">
+          <div className="bg-background flex flex-col max-h-[80vh] w-full">
             <NoticeDetail
               notice={selectedNotice}
               onClose={() => setIsDetailOpen(false)}

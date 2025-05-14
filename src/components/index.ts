@@ -10,5 +10,5 @@ export * from './drawer';
 export * from './tooltip';
 export * from './alert';
 export * from './chat';
-export * from './rich-text-editor';
+export * from './rich-text-editor'; // 공지사항을 위해 필요한 컴포넌트
 export { default as ScrollToTop } from './ScrollToTop';

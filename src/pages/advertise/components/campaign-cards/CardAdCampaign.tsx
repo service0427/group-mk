@@ -1,6 +1,6 @@
 import { KeenIcon } from '@/components';
 import { useState } from 'react';
-import { CampaignDetailViewModal } from '@/pages/advertise/components';
+import { CampaignDetailViewModal, CampaignSlotWithKeywordModal } from '@/pages/advertise/components';
 import { toAbsoluteUrl } from '@/utils/Assets';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -43,6 +43,7 @@ const CardAdCampaign = ({
   url
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
   
   // 유틸리티 함수를 사용하여 모달 데이터 생성
@@ -90,7 +91,10 @@ const CardAdCampaign = ({
 
               <button
                 className="btn btn-sm btn-primary"
-                onClick={() => navigate(url)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSlotModalOpen(true);
+                }}
               >
                 <KeenIcon icon="purchase" className="me-1.5" />
                 구매하기
@@ -139,6 +143,20 @@ const CardAdCampaign = ({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         campaign={campaignData}
+      />
+      
+      {/* 슬롯 추가 모달 */}
+      <CampaignSlotWithKeywordModal
+        open={slotModalOpen}
+        onClose={() => setSlotModalOpen(false)}
+        category={title}
+        campaign={{
+          id: 1, // 실제 환경에서는 적절한 ID 필요
+          campaign_name: title,
+          status: status.label,
+          service_type: 'ntraffic' // 기본값으로 설정, 실제로는 URL에서 파싱 필요
+        }}
+        serviceCode={'NaverShopTraffic'} // 기본값으로 설정, 실제로는 URL에서 파싱 필요
       />
     </>
   );

@@ -1,0 +1,20 @@
+.tiptap-editor img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  margin: 0 auto;
+  width: auto !important; /* 이미지 고정 너비 방지 */
+}
+
+.tiptap-content-viewer img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  width: auto !important; /* 이미지 고정 너비 방지 */
+  object-fit: contain;
+}
+
+/* 이미지 크기 조절 핸들 숨김 */
+.tiptap-editor img::selection {
+  border: 2px solid #4299e1;
+}

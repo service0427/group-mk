@@ -338,5 +338,6 @@ export const useKeywords = () => {
     handleLimitChange,
     handleSortChange,
     handleSearchChange,
+    fetchKeywords, // 키워드 다시 조회를 위한 함수 추가
   };
 };

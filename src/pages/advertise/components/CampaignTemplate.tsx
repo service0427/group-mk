@@ -3,7 +3,7 @@ import { CampaignData } from '@/data/advertiseServices';
 import { useLocation } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { AdMiscFaq } from '@/partials/misc';
-import { CampaignSlotInsertModal } from './campaign-modals/CampaignSlotInsertModal';
+import { CampaignSlotInsertModal, CampaignSlotWithKeywordModal } from './campaign-modals';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import {
@@ -286,7 +286,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
       </div>
 
       {/* 슬롯 추가 모달 */}
-      <CampaignSlotInsertModal
+      <CampaignSlotWithKeywordModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         category={serviceCategory}
@@ -297,6 +297,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
           service_type: serviceType
         } as CampaignModalData}
         onSave={() => fetchSlots()} // 저장 후 데이터 다시 가져오기
+        serviceCode={SERVICE_TYPE_MAP[serviceCategory as keyof typeof SERVICE_TYPE_MAP] === 'ntraffic' ? 'NaverShopTraffic' : 'NaverBlogPosting'}
       />
 
       {/* 메모 관리 모달 */}

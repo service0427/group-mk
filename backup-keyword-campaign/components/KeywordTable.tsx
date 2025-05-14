@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types';
+import { Keyword, KeywordGroup, KeywordInput, PaginationParams, KeywordPurchaseInput } from '../types';
+import keywordPurchaseService from '../services/keywordPurchaseService';
 
 interface KeywordTableProps {
   keywords: Keyword[];
@@ -14,6 +15,7 @@ interface KeywordTableProps {
   onLimitChange: (limit: number) => void;
   onSearch: (search: string) => void;
   onSort?: (field: string, direction: 'asc' | 'desc') => void;
+  onPurchaseComplete?: () => void; // 구매 완료 후 콜백
 }
 
 const KeywordTable: React.FC<KeywordTableProps> = ({
@@ -29,12 +31,20 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   onLimitChange,
   onSearch,
   onSort,
+  onPurchaseComplete,
 }) => {
   // 상태 관리
   const [searchText, setSearchText] = useState('');
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // 구매 관련 상태
+  const [selectedKeywords, setSelectedKeywords] = useState<number[]>([]);
+  const [purchaseAmount, setPurchaseAmount] = useState<number>(1000); // 기본 금액
+  const [isPurchasing, setIsPurchasing] = useState<boolean>(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
   
   // 입력 상태 관리
   const [newKeywordData, setNewKeywordData] = useState<KeywordInput>({
@@ -205,6 +215,82 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       [field]: field === 'mid' ? (value ? parseInt(value) : undefined) : value,
     }));
   };
+  
+  // 키워드 체크박스 선택 핸들러
+  const handleKeywordSelection = (keywordId: number) => {
+    setSelectedKeywords(prev => {
+      if (prev.includes(keywordId)) {
+        // 이미 선택된 경우 제거
+        return prev.filter(id => id !== keywordId);
+      } else {
+        // 선택되지 않은 경우 추가
+        return [...prev, keywordId];
+      }
+    });
+    
+    // 성공/에러 메시지 초기화
+    setPurchaseError(null);
+    setPurchaseSuccess(null);
+  };
+  
+  // 전체 선택 핸들러
+  const handleSelectAll = () => {
+    if (selectedKeywords.length === keywords.length) {
+      // 이미 모두 선택된 경우 모두 해제
+      setSelectedKeywords([]);
+    } else {
+      // 모두 선택
+      setSelectedKeywords(keywords.map(keyword => keyword.id));
+    }
+    
+    // 성공/에러 메시지 초기화
+    setPurchaseError(null);
+    setPurchaseSuccess(null);
+  };
+  
+  // 구매 처리 핸들러
+  const handlePurchase = async () => {
+    if (selectedKeywords.length === 0) {
+      setPurchaseError('구매할 키워드를 선택해주세요.');
+      return;
+    }
+    
+    if (!purchaseAmount || purchaseAmount <= 0) {
+      setPurchaseError('유효한 금액을 입력해주세요.');
+      return;
+    }
+    
+    // 구매 진행
+    setIsPurchasing(true);
+    setPurchaseError(null);
+    setPurchaseSuccess(null);
+    
+    try {
+      const purchaseData: KeywordPurchaseInput = {
+        keywordIds: selectedKeywords,
+        amount: purchaseAmount
+      };
+      
+      const response = await keywordPurchaseService.purchaseKeywords(purchaseData);
+      
+      if (response.success) {
+        setPurchaseSuccess(response.message);
+        setSelectedKeywords([]); // 선택 항목 초기화
+        
+        // 구매 완료 후 콜백이 있으면 호출
+        if (onPurchaseComplete) {
+          onPurchaseComplete();
+        }
+      } else {
+        setPurchaseError(response.message);
+      }
+    } catch (error) {
+      setPurchaseError('구매 처리 중 오류가 발생했습니다.');
+      console.error('구매 처리 오류:', error);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   // 페이지네이션 계산
   const totalPages = Math.ceil(totalKeywords / pagination.limit);
@@ -358,6 +444,66 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             </button>
           </form>
         </div>
+        
+        {/* 구매 관련 UI */}
+        <div className="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-t border-blue-200 dark:border-blue-800 pt-2">
+          <div className="flex items-center">
+            <span className="text-sm text-blue-800 dark:text-blue-300 mr-2">
+              선택됨: {selectedKeywords.length}개
+            </span>
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              className="text-xs bg-blue-100 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-md border border-blue-300 dark:border-blue-700"
+            >
+              {selectedKeywords.length === keywords.length ? '전체 해제' : '전체 선택'}
+            </button>
+          </div>
+          
+          <div className="flex items-center">
+            <span className="text-sm text-blue-800 dark:text-blue-300 mr-2">
+              슬롯당 금액:
+            </span>
+            <input
+              type="number"
+              value={purchaseAmount}
+              onChange={(e) => setPurchaseAmount(Number(e.target.value))}
+              min="100"
+              step="100"
+              className="px-2 py-1 text-xs border border-blue-300 dark:border-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white w-24"
+              disabled={isPurchasing}
+            />
+            <span className="text-sm text-blue-800 dark:text-blue-300 mx-2">원</span>
+            <button
+              type="button"
+              onClick={handlePurchase}
+              disabled={selectedKeywords.length === 0 || isPurchasing}
+              className="ml-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded-md disabled:opacity-50 disabled:bg-gray-400 flex items-center"
+            >
+              {isPurchasing ? (
+                <>
+                  <svg className="animate-spin h-3 w-3 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  처리 중...
+                </>
+              ) : '구매하기'}
+            </button>
+          </div>
+        </div>
+        
+        {/* 구매 결과 메시지 */}
+        {purchaseError && (
+          <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-md text-xs">
+            {purchaseError}
+          </div>
+        )}
+        {purchaseSuccess && (
+          <div className="mt-2 p-2 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 rounded-md text-xs">
+            {purchaseSuccess}
+          </div>
+        )}
       </div>
 
       {/* 새 키워드 추가 폼 */}
@@ -506,6 +652,18 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             <tr>
               <th
                 scope="col"
+                className="px-2 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedKeywords.length === keywords.length && keywords.length > 0}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 accent-blue-600 dark:accent-blue-400 cursor-pointer"
+                  disabled={isLoading || keywords.length === 0}
+                />
+              </th>
+              <th
+                scope="col"
                 className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700"
                 onClick={() => handleSort('main_keyword')}
               >
@@ -561,7 +719,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
+                <td colSpan={9} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
                   <div className="flex justify-center">
                     <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -573,13 +731,23 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </tr>
             ) : keywords.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
+                <td colSpan={9} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
                   {searchText ? '검색 결과가 없습니다.' : '등록된 키워드가 없습니다.'}
                 </td>
               </tr>
             ) : (
               keywords.map((keyword) => (
                 <tr key={keyword.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 h-8">
+                  {/* 체크박스 */}
+                  <td className="px-2 py-2 text-center border-r border-gray-300 dark:border-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={selectedKeywords.includes(keyword.id)}
+                      onChange={() => handleKeywordSelection(keyword.id)}
+                      className="h-4 w-4 accent-blue-600 dark:accent-blue-400 cursor-pointer"
+                      disabled={isLoading || editingKeywordId === keyword.id || isPurchasing}
+                    />
+                  </td>
                   {/* 메인 키워드 */}
                   <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
                     {editingKeywordId === keyword.id ? (

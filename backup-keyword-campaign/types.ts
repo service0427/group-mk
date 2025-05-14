@@ -66,3 +66,42 @@ export interface SortParams {
   field: string;
   direction: 'asc' | 'desc';
 }
+
+// 키워드 구매 관련 타입
+export interface KeywordPurchaseInput {
+  keywordIds: number[];
+  amount: number; // 키워드당 금액
+}
+
+// 슬롯 상태 타입
+export enum SlotStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  COMPLETED = 'completed',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled'
+}
+
+// 슬롯 타입
+export interface Slot {
+  id: string;
+  matId: string;
+  productId: number;
+  userId: string;
+  status: SlotStatus;
+  submittedAt: string;
+  processedAt?: string;
+  rejectionReason?: string;
+  inputData?: any;
+  deadline?: string;
+  isAutoRefundCandidate: boolean;
+  isAutoContinue: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userReason?: string;
+  matReason?: string;
+  keywordId?: number;
+  quantity?: number;
+}

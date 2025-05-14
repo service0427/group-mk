@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { TiptapViewer, TipTapEditor, TiptapEditorHandle } from '@/components/rich-text-editor';
+import { TipTapViewer } from '@/components/rich-text-editor';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 
@@ -84,7 +84,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
 
       {/* 공지사항 내용 - 스크롤 가능 영역 */}
       <div className="flex-grow overflow-y-auto py-4" style={{ minHeight: '200px', maxHeight: 'calc(80vh - 150px)' }}>
-        <TiptapViewer content={notice.content} />
+        <TipTapViewer content={notice.content} />
       </div>
 
       {/* 닫기 버튼 - 고정 푸터 */}

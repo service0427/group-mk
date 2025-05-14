@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
-import { TipTapEditor, TiptapEditorHandle } from '@/components/rich-text-editor';
+import { TipTapEditor } from '@/components/rich-text-editor';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner'; // sonner 라이브러리의 toast 함수 사용
 
@@ -47,7 +47,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
   const [isActive, setIsActive] = useState(notice?.is_active || false);
   const [isImportant, setIsImportant] = useState(notice?.is_important || false);
   const [isLoading, setIsLoading] = useState(false);
-  const editorRef = useRef<TiptapEditorHandle>(null);
+  const editorRef = useRef<any>(null);
 
   // notice가 변경될 때 상태 업데이트
   useEffect(() => {
@@ -101,11 +101,9 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
         {notice && (
           <TipTapEditor
             key={`notice-${notice.id}`} // 공지사항 ID가 변경될 때마다 컴포넌트를 완전히 새로 생성
-            ref={editorRef}
-            value={content}
+            content={content}
             onChange={setContent}
             placeholder="공지사항 내용을 입력하세요..."
-            height="400px"
           />
         )}
       </div>
@@ -194,7 +192,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
   const [isActive, setIsActive] = useState(true);
   const [isImportant, setIsImportant] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const editorRef = useRef<TiptapEditorHandle>(null);
+  const editorRef = useRef<any>(null);
 
   // CreateNotice 컴포넌트 마운트 시 자동으로 초기화됨
 
@@ -236,11 +234,9 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
         <label htmlFor="new-content" className="block text-sm font-medium text-foreground mb-1">내용</label>
         <TipTapEditor
           key="new-notice"
-          ref={editorRef}
-          value={content}
+          content={content}
           onChange={setContent}
           placeholder="공지사항 내용을 입력하세요..."
-          height="400px"
         />
       </div>
 

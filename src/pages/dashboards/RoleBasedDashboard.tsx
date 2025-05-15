@@ -8,7 +8,7 @@ import { OperatorDashboardContent } from './operator';
 import { DistributorDashboardContent } from './distributor';
 import { AgencyDashboardContent } from './agency';
 import { AdvertiserDashboardContent } from './advertiser';
-import { DashboardContent as BeginnerDashboardContent } from './beginner/DashboardContent';
+import { BeginnerDashboardContent } from './beginner';
 
 /**
  * 사용자 역할 기반 대시보드 컴포넌트

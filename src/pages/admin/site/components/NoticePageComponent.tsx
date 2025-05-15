@@ -85,9 +85,9 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
   if (!notice) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[80vh] w-full">
+    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[90vh] w-full">
       {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
-      <div className="flex-shrink-0 p-3 sm:p-6 w-full bg-background">
+      <div className="flex-shrink-0 p-4 sm:p-8 w-full bg-background pb-0">
         <div className="mb-5 w-full">
           <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1">제목</label>
           <Input
@@ -105,22 +105,24 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
       </div>
       
       {/* 스크롤 가능한 내용 영역 (에디터만) */}
-      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
+      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full mb-5">
         {notice && (
-          <TipTapEditor
-            key={`notice-${notice.id}`} // 공지사항 ID가 변경될 때마다 컴포넌트를 완전히 새로 생성
-            content={content}
-            onChange={setContent}
-            placeholder="공지사항 내용을 입력하세요..."
-          />
+          <div style={{ height: '450px' }}>
+            <TipTapEditor
+              key={`notice-${notice.id}`} // 공지사항 ID가 변경될 때마다 컴포넌트를 완전히 새로 생성
+              content={content}
+              onChange={setContent}
+              placeholder="공지사항 내용을 입력하세요..."
+            />
+          </div>
         )}
       </div>
 
       {/* 고정된 하단 설정 및 버튼 영역 */}
-      <div className="flex-shrink-0 border-t bg-muted/30 p-3 sm:p-4 w-full overflow-hidden">
+      <div className="flex-shrink-0 border-t bg-muted/30 p-4 sm:p-6 w-full overflow-hidden">
         {/* 설정 옵션 */}
-        <div className="space-y-2 mb-4 w-full">
-          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+        <div className="space-y-3 mb-5 w-full">
+          <div className="flex justify-between items-center bg-background p-4 rounded-md">
             <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
             <div className="flex items-center justify-end gap-3 w-[200px]">
               <Switch
@@ -135,7 +137,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
             </div>
           </div>
 
-          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+          <div className="flex justify-between items-center bg-background p-4 rounded-md">
             <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
             <div className="flex items-center justify-end gap-3 w-[200px]">
               <Switch
@@ -152,7 +154,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
         </div>
 
         {/* 버튼 영역 */}
-        <div className="flex justify-between space-x-3 pt-2">
+        <div className="flex justify-between space-x-3 pt-5 border-t border-border">
           <div>
             <Button
               type="button"
@@ -230,9 +232,9 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[80vh] w-full">
+    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[90vh] w-full">
       {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
-      <div className="flex-shrink-0 p-3 sm:p-6 w-full bg-background">
+      <div className="flex-shrink-0 p-4 sm:p-8 w-full bg-background">
         <div className="mb-5 w-full">
           <label htmlFor="new-title" className="block text-sm font-medium text-foreground mb-1">제목</label>
           <Input
@@ -252,19 +254,21 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
       
       {/* 스크롤 가능한 내용 영역 (에디터만) */}
       <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
-        <TipTapEditor
-          key="new-notice"
-          content={content}
-          onChange={setContent}
-          placeholder="공지사항 내용을 입력하세요..."
-        />
+        <div style={{ height: '450px' }}>
+          <TipTapEditor
+            key="new-notice"
+            content={content}
+            onChange={setContent}
+            placeholder="공지사항 내용을 입력하세요..."
+          />
+        </div>
       </div>
 
       {/* 고정된 하단 설정 및 버튼 영역 */}
-      <div className="flex-shrink-0 border-t bg-muted/30 p-3 sm:p-4 w-full overflow-hidden">
+      <div className="flex-shrink-0 border-t bg-muted/30 p-4 sm:p-6 w-full overflow-hidden">
         {/* 설정 옵션 */}
-        <div className="space-y-2 mb-4 w-full">
-          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+        <div className="space-y-3 mb-5 w-full">
+          <div className="flex justify-between items-center bg-background p-4 rounded-md">
             <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
             <div className="flex items-center justify-end gap-3 w-[200px]">
               <Switch
@@ -279,7 +283,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
             </div>
           </div>
 
-          <div className="flex justify-between items-center bg-background p-3 rounded-md">
+          <div className="flex justify-between items-center bg-background p-4 rounded-md">
             <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
             <div className="flex items-center justify-end gap-3 w-[200px]">
               <Switch
@@ -296,7 +300,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
         </div>
 
         {/* 버튼 영역 */}
-        <div className="flex justify-end space-x-3 pt-2">
+        <div className="flex justify-end space-x-3 pt-5 border-t border-border">
           <Button
             type="submit"
             className="bg-primary hover:bg-primary/90 text-white px-4"
@@ -989,10 +993,10 @@ const NoticePageComponent = () => {
         }}
       >
         <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden">
-          <DialogHeader className="bg-background py-2 sm:py-3 px-3 sm:px-5 w-full">
+          <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 w-full border-b">
             <DialogTitle className="text-base sm:text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
           </DialogHeader>
-          <div className="bg-background flex flex-col max-h-[80vh] w-full">
+          <div className="bg-background flex flex-col max-h-[90vh] w-full">
             <NoticeDetail
               notice={selectedNotice}
               onClose={() => setIsDetailOpen(false)}

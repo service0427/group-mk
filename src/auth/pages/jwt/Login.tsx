@@ -33,11 +33,29 @@ const initialValues = {
 
 // 개발 환경에서만 사용할 테스트 계정 정보
 const testCredentials = {
+  beginner: {
+    email: 'test-beginner@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '비기너 (Beginner)'
+  },
   advertiser: {
     email: 'test-0315001652@test.com',
     password: 'Tech123!',
     remember: true,
     label: '광고주 (Advertiser)'
+  },
+  agency: {
+    email: 'test-0416195043@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '대행사 (Agency)'
+  },
+  distributor: {
+    email: 'test-0416153210@test.com',
+    password: 'Tech123!',
+    remember: true,
+    label: '총판 (Distributor)'
   },
   operator: {
     email: 'test-0314225613@test.com',
@@ -51,18 +69,6 @@ const testCredentials = {
     remember: true,
     label: '개발자 (Developer)'
   },
-  distributor: {
-    email: 'test-0416153210@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '총판 (Distributor)'
-  },
-  agency: {
-    email: 'test-0416195043@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '대행사 (Agency)'
-  }
 };
 
 const Login = () => {
@@ -70,7 +76,7 @@ const Login = () => {
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordEmail, setResetPasswordEmail] = useState('');
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('advertiser');
+  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('beginner');
   const [showPassword, setShowPassword] = useState(false);
   const { login, resetPassword } = useAuthContext();
   const { currentLayout } = useLayout();
@@ -216,7 +222,7 @@ const Login = () => {
                 {/* 역할 선택 버튼 그룹 */}
                 <div className="mt-3">
                   <p className="font-semibold mb-1">역할 선택:</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <div className="flex flex-wrap justify-center gap-2 mt-1">
                     {Object.entries(testCredentials).map(([role, data]) => (
                       <button
                         key={role}

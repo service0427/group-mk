@@ -58,7 +58,6 @@ export const DashboardContent: React.FC = () => {
   // 구매 가능한 캠페인 목록 상태
   const [availableCampaigns, setAvailableCampaigns] = useState<Array<{
     id: string;
-    campaign_id: string;
     campaign_name: string;
     service_type: string;
     unit_price: number;
@@ -99,7 +98,7 @@ export const DashboardContent: React.FC = () => {
       let userCash = 0;
       let cashTrend = 0.5;
       try {
-        const balance = await getUserCashBalance(currentUser.id || '');
+        const balance = await getUserCashBalance(currentUser.id || '', currentUser.role);
         userCash = balance || 0;
         
         // 트렌드 계산을 위해 최근 거래 내역 조회
@@ -388,44 +387,42 @@ export const DashboardContent: React.FC = () => {
     try {
       if (!currentUser) return;
       
-      // Supabase에서 캠페인 데이터 로드 시도
+      // Supabase에서 활성 상태인 캠페인만 로드 시도
       const { data, error } = await supabase
         .from('campaigns')
-        .select('id, campaign_id, campaign_name, service_type, unit_price, min_quantity')
+        .select('id, campaign_name, service_type, unit_price, min_quantity')
         .eq('status', 'active');
         
       if (error) {
+        console.error('캠페인 데이터 로드 중 오류:', error);
         
-        // 오류 발생 시 테스트 데이터 사용
-        const testData = [
-          { id: 'camp-1', campaign_id: 'C001', campaign_name: '여름 프로모션', service_type: '소셜미디어', unit_price: 50000, min_quantity: 2 },
-          { id: 'camp-2', campaign_id: 'C002', campaign_name: '가을 프로모션', service_type: '검색광고', unit_price: 75000, min_quantity: 1 },
-          { id: 'camp-3', campaign_id: 'C003', campaign_name: '특별 프로모션', service_type: '디스플레이', unit_price: 100000, min_quantity: 3 }
-        ];
-        setAvailableCampaigns(testData);
+        // status 필드 관련 오류인 경우 필터링 없이 다시 시도
+        if (error.message && error.message.includes("status")) {
+          console.log('status 필드 필터링 실패, 필터링 없이 재시도합니다.');
+          
+          // status 필터링 없이 다시 시도
+          const { data: allData, error: secondError } = await supabase
+            .from('campaigns')
+            .select('id, campaign_name, service_type, unit_price, min_quantity');
+            
+          if (!secondError && allData) {
+            setAvailableCampaigns(allData);
+            return;
+          }
+        }
+        
+        setAvailableCampaigns([]);
         return;
       }
       
       if (data && data.length > 0) {
         setAvailableCampaigns(data);
       } else {
-        // 데이터가 없을 경우 테스트 데이터 사용
-        const testData = [
-          { id: 'camp-1', campaign_id: 'C001', campaign_name: '여름 프로모션', service_type: '소셜미디어', unit_price: 50000, min_quantity: 2 },
-          { id: 'camp-2', campaign_id: 'C002', campaign_name: '가을 프로모션', service_type: '검색광고', unit_price: 75000, min_quantity: 1 },
-          { id: 'camp-3', campaign_id: 'C003', campaign_name: '특별 프로모션', service_type: '디스플레이', unit_price: 100000, min_quantity: 3 }
-        ];
-        setAvailableCampaigns(testData);
+        setAvailableCampaigns([]);
       }
     } catch (error) {
-      
-      // 예외 발생 시 테스트 데이터 사용
-      const testData = [
-        { id: 'camp-1', campaign_id: 'C001', campaign_name: '여름 프로모션', service_type: '소셜미디어', unit_price: 50000, min_quantity: 2 },
-        { id: 'camp-2', campaign_id: 'C002', campaign_name: '가을 프로모션', service_type: '검색광고', unit_price: 75000, min_quantity: 1 },
-        { id: 'camp-3', campaign_id: 'C003', campaign_name: '특별 프로모션', service_type: '디스플레이', unit_price: 100000, min_quantity: 3 }
-      ];
-      setAvailableCampaigns(testData);
+      console.error('캠페인 데이터 로드 중 예외 발생:', error);
+      setAvailableCampaigns([]);
     }
   };
   
@@ -784,7 +781,7 @@ export const DashboardContent: React.FC = () => {
                   <option value="">캠페인을 선택하세요</option>
                   {availableCampaigns.map(campaign => (
                     <option key={campaign.id} value={campaign.id}>
-                      {campaign.service_type}-{campaign.campaign_name} ({formatCurrency(campaign.unit_price)}/개)
+                      {campaign.service_type ? `${campaign.service_type}-` : ""}{campaign.campaign_name} ({formatCurrency(campaign.unit_price)}/개)
                     </option>
                   ))}
                 </select>

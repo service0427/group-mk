@@ -2,16 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
   DialogTitle,
-  DialogDescription,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
+  DialogHeader,
+  DialogHeaderSpacer
 } from '@/components/ui/dialog';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
@@ -22,33 +16,6 @@ import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
 import { registerSlot } from './services/slotService';
 
-// X 버튼이 없는 DialogContent 커스텀 컴포넌트
-const CustomDialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
-        className
-      )}
-      style={{ 
-        position: 'fixed', 
-        top: '50%', 
-        left: '50%', 
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1000
-      }}
-      {...props}
-    >
-      {children}
-      {/* X 버튼 제거 */}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
 
 
 interface CampaignSlotInsertModalProps {
@@ -182,6 +149,9 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   const [slotsLoading, setSlotsLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'form' | 'list'>('form');
   const [totalCount, setTotalCount] = useState(0);
+  
+  // 사용자의 캐시 잔액
+  const [userCashBalance, setUserCashBalance] = useState<number>(0);
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -360,6 +330,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   useEffect(() => {
     if (open) {
       fetchCampaigns();
+      fetchUserBalance(); // 사용자 잔액 가져오기
     }
   }, [open, serviceCode, category]); // serviceCode와 category 변경 시 캠페인 목록 갱신
   
@@ -370,6 +341,34 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
       fetchUserSlots();
     }
   }, [open, activeTab, currentPage, itemsPerPage, filters.status, serviceCode, campaigns]);
+
+  // 사용자의 캐시 잔액 가져오기
+  const fetchUserBalance = async () => {
+    if (!currentUser?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_balances')
+        .select('total_balance, paid_balance, free_balance')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (error) {
+        return;
+      }
+
+      if (data) {
+        // total_balance가 있으면 사용, 없으면 paid_balance와 free_balance 합계 사용
+        const totalBalance = data.total_balance !== null && data.total_balance !== undefined
+          ? parseFloat(String(data.total_balance))
+          : parseFloat(String(data.paid_balance || 0)) + parseFloat(String(data.free_balance || 0));
+
+        setUserCashBalance(totalBalance);
+      }
+    } catch (error) {
+      // 오류 발생해도 진행
+    }
+  };
 
   // 캠페인 배너 가져오기 함수
   const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
@@ -753,9 +752,9 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-5xl p-0 overflow-hidden w-[95vw] md:w-auto max-w-full">
-          <DialogHeader className="bg-background py-3 md:py-4 px-4 md:px-6 border-b">
-            <DialogTitle className="text-base md:text-lg font-medium text-foreground truncate">
+        <DialogContent className="sm:max-w-5xl p-0 overflow-hidden">
+          <DialogHeader className="bg-background py-4 px-6 flex-shrink-0">
+            <DialogTitle className="text-lg font-medium text-foreground">
               {serviceCode === 'NaverShopTraffic'
                 ? '네이버 쇼핑 트래픽 슬롯 관리'
                 : serviceCode === 'NaverBlogPosting'
@@ -768,10 +767,16 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
                         ? '인스타그램 슬롯 관리'
                         : '캠페인 슬롯 관리'}
             </DialogTitle>
-          <div className="flex mt-3 md:mt-4 border-b">
+            <DialogHeaderSpacer />
+            <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
+              <span className="font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
+              <span className="ml-1 font-extrabold text-primary dark:text-primary-foreground">{userCashBalance.toLocaleString()}원</span>
+            </div>
+          </DialogHeader>
+          <div className="flex mt-3 border-b">
             <button
               onClick={() => handleTabChange('form')}
-              className={`px-3 md:px-4 py-2 font-medium text-xs md:text-sm ${
+              className={`px-4 py-2 font-medium text-sm ${
                 activeTab === 'form'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-gray-500 hover:text-gray-700'
@@ -781,7 +786,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
             </button>
             <button
               onClick={() => handleTabChange('list')}
-              className={`px-3 md:px-4 py-2 font-medium text-xs md:text-sm ${
+              className={`px-4 py-2 font-medium text-sm ${
                 activeTab === 'list'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-gray-500 hover:text-gray-700'
@@ -790,8 +795,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
               내 슬롯 목록
             </button>
           </div>
-        </DialogHeader>
-        <DialogBody className="p-4 md:p-6 max-h-[65vh] md:max-h-[70vh] overflow-y-auto">
+          <div className="p-6 bg-background flex-grow overflow-auto max-h-[65vh]">
           {activeTab === 'form' ? (
             <>
               {/* 캠페인 선택 드롭박스 */}
@@ -1335,8 +1339,8 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
             </div>
           )}
           
-        </DialogBody>
-        <DialogFooter className="px-4 md:px-6 py-3 md:py-4 border-t flex justify-end">
+        </div>
+        <div className="px-6 py-4 border-t flex justify-end flex-shrink-0">
           <button
             onClick={handleSave}
             className="btn btn-sm md:btn-md btn-primary text-sm md:text-base px-4 md:px-6 h-9 md:h-10"
@@ -1349,38 +1353,38 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
               </>
             ) : '저장'}
           </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {/* 알림 다이얼로그 */}
-    <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-      <CustomDialogContent className="max-w-md w-[90vw] md:w-auto">
-        <div className="p-4 md:p-6">
-          <div className="mb-4 text-center">
-            {isSuccess ? (
-              <div className="size-10 md:size-12 mx-auto rounded-full bg-success/20 mb-3 md:mb-4 flex items-center justify-center">
-                <KeenIcon icon="Check" className="size-5 md:size-6 text-success" />
-              </div>
-            ) : (
-              <div className="size-10 md:size-12 mx-auto rounded-full bg-danger/20 mb-3 md:mb-4 flex items-center justify-center">
-                <KeenIcon icon="Information" className="size-5 md:size-6 text-danger" />
-              </div>
-            )}
-            <h3 className="text-base md:text-lg font-medium">{alertTitle}</h3>
-            <p className="text-muted-foreground mt-2 text-sm md:text-base">{alertDescription}</p>
-          </div>
-          <div className="flex justify-center mt-4">
-            <Button
-              onClick={() => setAlertDialogOpen(false)}
-              className={`text-sm md:text-base h-9 md:h-10 ${isSuccess ? "bg-success hover:bg-success/90 text-white" : "bg-danger hover:bg-danger/90 text-white"}`}
-            >
-              확인
-            </Button>
-          </div>
         </div>
-      </CustomDialogContent>
-    </Dialog>
+      </DialogContent>
+      </Dialog>
+
+      {/* 알림 다이얼로그 */}
+      <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
+          <div className={`px-4 sm:px-6 py-4 border-b ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+            <DialogTitle className="text-lg font-medium">
+              <div className="flex items-center gap-2">
+                {isSuccess ? (
+                  <KeenIcon icon="Check" className="size-5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <KeenIcon icon="Information" className="size-5 text-red-600 dark:text-red-400" />
+                )}
+                <span className={isSuccess ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}>{alertTitle}</span>
+              </div>
+            </DialogTitle>
+          </div>
+          <div className="p-6 bg-background">
+            <p className="text-foreground mb-6 whitespace-pre-line">{alertDescription}</p>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setAlertDialogOpen(false)}
+                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+              >
+                확인
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

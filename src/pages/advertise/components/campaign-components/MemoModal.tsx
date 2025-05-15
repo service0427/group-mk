@@ -2,10 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogHeader,
-  DialogBody,
-  DialogFooter,
-  DialogTitle
+  DialogHeaderSpacer
 } from '@/components/ui/dialog';
 
 interface MemoModalProps {
@@ -49,11 +48,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>메모 관리</DialogTitle>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-4 px-6 flex-shrink-0">
+          <DialogTitle className="text-lg font-medium">메모 관리</DialogTitle>
+          <DialogHeaderSpacer />
         </DialogHeader>
-        <DialogBody>
+        <div className="p-6 bg-background">
           <div className="space-y-2">
             <label htmlFor="memo-text" className="block text-sm font-medium">
               메모 내용
@@ -73,8 +73,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
               <span className="bg-muted px-1 py-0.5 rounded ml-1">Enter</span> : 저장
             </div>
           </div>
-        </DialogBody>
-        <DialogFooter className="flex justify-end gap-2">
+        </div>
+        <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
           <button 
             type="button" 
             className="btn btn-sm btn-secondary"
@@ -89,7 +89,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
           >
             저장
           </button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

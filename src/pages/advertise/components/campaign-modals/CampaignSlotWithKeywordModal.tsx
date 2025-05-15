@@ -6,10 +6,8 @@ import {
   DialogBody,
   DialogFooter,
   DialogTitle,
-  DialogDescription,
   DialogPortal,
   DialogOverlay,
-  DialogClose,
 } from '@/components/ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
@@ -147,7 +145,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     keyword1: '',
     keyword2: '',
     keyword3: '',
-    selectedKeywords: []
+    selectedKeywords: [],
+    keywordDetails: [] // 빈 배열로 초기화하여 undefined 가능성 제거
   });
 
   // 폼 유효성 검사 상태
@@ -166,6 +165,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 알림 다이얼로그 표시 함수
   const showAlert = (title: string, description: string, success: boolean = true) => {
+    console.log(`showAlert 호출: ${title} - ${description} (성공: ${success})`);
     setAlertTitle(title);
     setAlertDescription(description);
     setIsSuccess(success);
@@ -193,8 +193,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   const [keywordLoading, setKeywordLoading] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
 
-  // 탭 관련 상태
-  const [activeTab, setActiveTab] = useState<'form' | 'keywords'>('keywords');
 
   // 비동기 작업 오류 상태
   const [keywordError, setKeywordError] = useState<string | null>(null);
@@ -211,7 +209,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         .single();
 
       if (error) {
-        console.error("Error fetching user balance:", error);
         return;
       }
 
@@ -224,7 +221,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         setUserCashBalance(totalBalance);
       }
     } catch (error) {
-      console.error("Error in fetchUserBalance:", error);
+      // 오류 발생해도 진행
     }
   };
 
@@ -251,7 +248,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             const addInfo = JSON.parse(campaign.add_info);
             bannerUrl = addInfo.banner_url || null;
           } catch (e) {
-            console.error("banner_url parsing error", e);
+            // JSON 파싱 오류 무시
           }
         } else {
           bannerUrl = campaign.add_info.banner_url || null;
@@ -260,7 +257,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       setBannerUrl(bannerUrl);
     } catch (err) {
-      console.error("Error fetching banner:", err);
+      // 배너 불러오기 오류 무시
     }
   };
 
@@ -297,7 +294,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching campaigns:", error);
         throw error;
       }
 
@@ -316,12 +312,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           campaignId: data[0].id
         }));
       } else {
-        console.log("No campaigns available");
         // 사용자에게 캠페인이 없다는 메시지 표시
         showAlert('알림', '현재 사용 가능한 캠페인이 없습니다. 나중에 다시 시도해주세요.', false);
       }
     } catch (error) {
-      console.error("Error in fetchCampaigns:", error);
       // 오류 메시지 표시
       showAlert('오류 발생', '캠페인 목록을 불러오는 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
     } finally {
@@ -351,7 +345,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         .order('name');
 
       if (error) {
-        console.error("Error fetching keyword groups:", error);
         setKeywordError("키워드 그룹을 불러오지 못했습니다");
         return;
       }
@@ -377,7 +370,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         setSelectedGroupId(defaultGroup?.id || transformedData[0].id);
       }
     } catch (error) {
-      console.error("Error in fetchKeywordGroups:", error);
       setKeywordError("키워드 그룹을 불러오는 중 오류가 발생했습니다");
     }
   };
@@ -387,36 +379,54 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     if (!campaignId || !currentUser?.id) return [];
 
     try {
+      console.log(`이미 등록된 키워드 조회 시작 - 캠페인 ID: ${campaignId}, 사용자 ID: ${currentUser.id}`);
+      
       // 현재 사용자가 같은 캠페인에 이미 등록한 키워드 슬롯 조회
-      const { data, error } = await supabase
+      // 1. slots 테이블에서 keyword_id 직접 조회
+      const { data: slotData, error: slotError } = await supabase
         .from('slots')
-        .select('input_data')
+        .select('keyword_id, input_data')
         .eq('user_id', currentUser.id)
         .eq('product_id', campaignId)
         .neq('status', 'rejected') // 반려된 슬롯은 제외
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching registered slots:", error);
+      if (slotError) {
+        console.error('슬롯 조회 오류:', slotError);
         return [];
       }
 
-      // 모든 슬롯의 input_data에서 keywordDetails 추출하여 키워드 ID 목록 생성
+      // 등록된 키워드 ID 목록 생성 (Set으로 중복 제거)
       const registeredKeywordIds = new Set<number>();
 
-      data.forEach(slot => {
-        if (slot.input_data && slot.input_data.keywordDetails) {
-          slot.input_data.keywordDetails.forEach((detail: any) => {
-            if (detail.id) {
-              registeredKeywordIds.add(detail.id);
-            }
-          });
+      // slots.keyword_id에서 추출 (테이블 컬럼에 직접 저장된 ID)
+      slotData.forEach(slot => {
+        if (slot.keyword_id) {
+          registeredKeywordIds.add(Number(slot.keyword_id));
         }
       });
 
-      return Array.from(registeredKeywordIds);
+      // input_data.keywordDetails에서 추출 (기존 방식 유지)
+      slotData.forEach(slot => {
+        if (slot.input_data && slot.input_data.keywordDetails) {
+          slot.input_data.keywordDetails.forEach((detail: any) => {
+            if (detail.id) {
+              registeredKeywordIds.add(Number(detail.id));
+            }
+          });
+        }
+        
+        // input_data.keyword_id도 확인 (단일 키워드 ID)
+        if (slot.input_data && slot.input_data.keyword_id) {
+          registeredKeywordIds.add(Number(slot.input_data.keyword_id));
+        }
+      });
+
+      const result = Array.from(registeredKeywordIds);
+      console.log(`이미 등록된 키워드 ID ${result.length}개 발견:`, result);
+      return result;
     } catch (error) {
-      console.error("Error in fetchAlreadyRegisteredKeywords:", error);
+      console.error('등록된 키워드 조회 오류:', error);
       return [];
     }
   };
@@ -426,6 +436,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     if (!groupId) return;
 
     setKeywordLoading(true);
+    console.log(`키워드 목록 조회 시작 - 그룹 ID: ${groupId}`);
 
     try {
       // 현재 로그인한 사용자 가져오기
@@ -449,10 +460,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         return;
       }
 
-      // 이미 등록된 키워드 ID 목록 가져오기
+      // 이미 등록된 키워드 ID 목록 가져오기 - 최신 상태 확인
+      console.log('이미 등록된 키워드 목록 조회 시작 - 캠페인 ID:', selectedCampaignId);
       const registeredKeywordIds = selectedCampaignId ?
         await fetchAlreadyRegisteredKeywords(selectedCampaignId) : [];
+      console.log('등록된 키워드 수:', registeredKeywordIds.length);
 
+      // 키워드 조회
+      console.log('그룹 내 키워드 조회 시작');
       let query = supabase
         .from('keywords')
         .select('*', { count: 'exact' })
@@ -460,6 +475,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 검색어 필터링
       if (searchKeyword) {
+        console.log('검색어 필터 적용:', searchKeyword);
         query = query.or(
           `main_keyword.ilike.%${searchKeyword}%,keyword1.ilike.%${searchKeyword}%,keyword2.ilike.%${searchKeyword}%,keyword3.ilike.%${searchKeyword}%`
         );
@@ -474,15 +490,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const { data, error, count } = await query;
 
       if (error) {
-        console.error("Error fetching keywords:", error);
+        console.error('키워드 조회 오류:', error);
         setKeywordError("키워드를 불러오지 못했습니다");
         return;
       }
 
+      console.log(`그룹에서 총 ${data.length}개 키워드 조회됨`);
+
+      // 등록된 키워드 번호 배열 만들기 (숫자 타입으로 변환)
+      const registeredIds = registeredKeywordIds.map(id => Number(id));
+      
       // 스네이크 케이스에서 카멜 케이스로 데이터 변환
       const transformedData = data
-        // 이미 등록된 키워드 필터링
-        .filter(item => !registeredKeywordIds.includes(item.id))
+        // 이미 등록된 키워드 필터링 (숫자 타입으로 비교)
+        .filter(item => !registeredIds.includes(Number(item.id)))
         .map(item => ({
           id: item.id,
           groupId: item.group_id,
@@ -499,6 +520,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           workCount: undefined,
           dueDate: undefined
         }));
+        
+      console.log(`필터링 후 ${transformedData.length}개 키워드 유효함 (${data.length - transformedData.length}개 제외됨)`);
+      
+      // 제외된 키워드들 로깅
+      if (data.length > transformedData.length) {
+        const excludedKeywords = data
+          .filter(item => registeredIds.includes(Number(item.id)))
+          .map(item => ({ id: item.id, mainKeyword: item.main_keyword }));
+        console.log('제외된 키워드 목록:', excludedKeywords);
+      }
 
       // 선택된 캠페인의 min_quantity 가져와서 각 키워드에 자동 추가
       if (selectedCampaign) {
@@ -513,22 +544,40 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity = 1; // 기본값
         }
 
-        console.log(`캠페인 최소 수량: ${minQuantity}`, typeof minQuantity);
+        console.log(`캠페인 최소 타수 설정: ${minQuantity}`);
 
         // 키워드 목록에 기본 작업타수 설정 및 내일 날짜로 마감일 설정
         transformedData.forEach(keyword => {
           keyword.workCount = minQuantity as unknown as undefined;
           keyword.dueDate = getTomorrowDate() as unknown as undefined;
-          console.log(`키워드 ${keyword.mainKeyword}의 작업타수 설정: ${keyword.workCount}`);
         });
       }
 
       setKeywords(transformedData);
+      
+      // 선택된 키워드들 중 유효하지 않은 항목(이미 등록된 키워드)이 있는지 확인
+      if (selectedKeywords.length > 0) {
+        console.log('선택된 키워드 ID 유효성 검사 시작');
+        const validSelectedKeywords = selectedKeywords.filter(keywordId =>
+          transformedData.some(k => k.id === keywordId)
+        );
+        
+        // 유효하지 않은 키워드가 있으면 선택 목록에서 제거
+        if (validSelectedKeywords.length !== selectedKeywords.length) {
+          console.log('유효하지 않은 키워드가 선택 목록에서 제거됨:',
+            selectedKeywords.filter(id => !validSelectedKeywords.includes(id)));
+          setSelectedKeywords(validSelectedKeywords);
+          
+          // 금액 재계산
+          setTimeout(() => calculateTotalPayment(validSelectedKeywords), 0);
+        }
+      }
     } catch (error) {
-      console.error("Error in fetchKeywords:", error);
+      console.error('키워드 로딩 오류:', error);
       setKeywordError("키워드를 불러오는 중 오류가 발생했습니다");
     } finally {
       setKeywordLoading(false);
+      console.log('키워드 로딩 완료');
     }
   };
 
@@ -576,10 +625,27 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
+  // 마감일에 따른 일수 계산 함수
+  const calculateDaysUntilDueDate = (dueDate: string): number => {
+    if (!dueDate) return 1; // 마감일이 없으면 기본값 1일
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 오늘 날짜의 시작 시간으로 설정
+    
+    const dueDateObj = new Date(dueDate);
+    dueDateObj.setHours(0, 0, 0, 0); // 마감일의 시작 시간으로 설정
+    
+    // 일수 차이 계산 (밀리초 단위를 일 단위로 변환)
+    const differenceInTime = dueDateObj.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    
+    // 최소 1일 보장 (마감일이 오늘이거나 이미 지났더라도)
+    return Math.max(1, differenceInDays);
+  };
+
   // 총 결제 금액 계산
   const calculateTotalPayment = (selection: number[] = selectedKeywords) => {
     if (!selectedCampaign) {
-      console.log("선택된 캠페인이 없어 금액 계산 불가");
       return;
     }
 
@@ -594,16 +660,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       unitPrice = 0;
     }
 
-    console.log(`캠페인 단가: ${unitPrice}원`, typeof unitPrice);
-
     if (unitPrice <= 0) {
-      console.log("유효하지 않은 단가: 0원 이하");
       setTotalPaymentAmount(0);
       return;
     }
 
     let total = 0;
-    console.log(`===== 결제 금액 계산 시작 (선택 키워드: ${selection.length}개) =====`);
 
     selection.forEach(keywordId => {
       const keyword = keywords.find(k => k.id === keywordId);
@@ -623,22 +685,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity :
           Math.max(keyword.workCount, minQuantity);
 
-        const keywordTotal = unitPrice * workCount;
+        // 마감일에 따른 추가 계산
+        const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
+        
+        // 기존 공식 * 진행일자 (daysUntilDue)
+        const keywordTotal = unitPrice * workCount * daysUntilDue;
         total += keywordTotal;
-
-        console.log(`- 키워드: ${keyword.mainKeyword}, 작업타수: ${workCount}, 금액: ${keywordTotal.toLocaleString()}원`);
-      } else {
-        console.log(`- 키워드 ID ${keywordId}를 찾을 수 없음`);
       }
     });
 
     // 부가세 10% 추가
     const totalWithTax = Math.round(total * 1.1);
-
-    console.log(`합계: ${total.toLocaleString()}원`);
-    console.log(`부가세(10%): ${(totalWithTax - total).toLocaleString()}원`);
-    console.log(`총 결제 금액: ${totalWithTax.toLocaleString()}원`);
-    console.log(`===== 결제 금액 계산 완료 =====`);
 
     setTotalPaymentAmount(totalWithTax);
   };
@@ -704,9 +761,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     // yyyy-mm-dd 형식으로 반환
     const result = `${year}-${month}-${day}`;
 
-    // 로그로 확인 (개발 중 디버깅용, 실제 배포 시 제거)
-    console.log(`내일 날짜 계산: ${result} (오늘: ${today.toISOString().split('T')[0]})`);
-
     return result;
   };
 
@@ -719,58 +773,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     );
   };
 
-  // 선택된 키워드 적용 핸들러
-  const applySelectedKeywords = () => {
-    // 선택된 키워드 객체 가져오기
-    const selectedKeywordObjects = selectedKeywords
-      .map(id => keywords.find(k => k.id === id))
-      .filter(k => k) as Keyword[];
-
-    // 메인 키워드가 비어있으면 첫 번째 선택된 키워드의 메인 키워드를 사용
-    let newSlotData = { ...slotData };
-
-    if (selectedKeywordObjects.length > 0 && (!newSlotData.productName || newSlotData.productName.trim() === '')) {
-      newSlotData.productName = selectedKeywordObjects[0].mainKeyword;
-    }
-
-    // MID와 URL도 첫 번째 선택된 키워드의 값을 사용 (비어있는 경우에만)
-    if (selectedKeywordObjects.length > 0 && selectedKeywordObjects[0].mid && (!newSlotData.mid || newSlotData.mid.trim() === '')) {
-      newSlotData.mid = String(selectedKeywordObjects[0].mid);
-    }
-
-    if (selectedKeywordObjects.length > 0 && selectedKeywordObjects[0].url && (!newSlotData.url || newSlotData.url.trim() === '')) {
-      newSlotData.url = selectedKeywordObjects[0].url;
-    }
-
-    // 키워드1, 키워드2, 키워드3에 선택된 키워드의 메인 키워드 할당
-    if (selectedKeywordObjects.length > 0) {
-      newSlotData.keyword1 = selectedKeywordObjects[0].mainKeyword;
-    }
-
-    if (selectedKeywordObjects.length > 1) {
-      newSlotData.keyword2 = selectedKeywordObjects[1].mainKeyword;
-    }
-
-    if (selectedKeywordObjects.length > 2) {
-      newSlotData.keyword3 = selectedKeywordObjects[2].mainKeyword;
-    }
-
-    // 선택된 키워드 ID 목록 저장
-    newSlotData.selectedKeywords = selectedKeywords;
-
-    // 작업타수와 마감일 정보도 포함 (inputData에 포함시키기 위해)
-    newSlotData.keywordDetails = selectedKeywordObjects.map(keyword => ({
-      id: keyword.id,
-      mainKeyword: keyword.mainKeyword,
-      workCount: keyword.workCount || 0,
-      dueDate: keyword.dueDate || new Date().toISOString().split('T')[0]
-    }));
-
-    setSlotData(newSlotData);
-
-    // 폼 탭으로 전환
-    setActiveTab('form');
-  };
 
   // 입력 필드 변경 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -796,6 +798,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     const value = parseInt(e.target.value, 10);
 
     setSelectedCampaignId(value);
+    
+    // 캠페인이 변경되면 모든 키워드 선택 해제
+    setSelectedKeywords([]);
 
     // 선택된 캠페인의 배너 정보 가져오기
     const selectedCampaign = campaigns.find(c => c.id === value);
@@ -813,8 +818,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         minQuantity = 1; // 기본값
       }
 
-      console.log(`캠페인 변경: ${selectedCampaign.campaign_name}, 최소 수량: ${minQuantity}`);
-
+  
       // 모든 키워드의 작업타수를 해당 캠페인의 min_quantity로 업데이트
       setKeywords(prev =>
         prev.map(k => ({
@@ -863,92 +867,91 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 폼 유효성 검사 함수
   const validateForm = (): boolean => {
-    const newErrors: {
-      productName?: string;
-      mid?: string;
-      url?: string;
-      keyword1?: string;
-    } = {};
-
-    if (!slotData.productName.trim()) {
-      newErrors.productName = '상품명을 입력해주세요';
+    console.log('validateForm 함수 내부 - 선택된 키워드:', selectedKeywords);
+    
+    // 체크박스로 선택한 키워드만 확인 (이제 input 필드 검증은 하지 않음)
+    if (selectedKeywords.length === 0) {
+      console.log('validateForm - 선택된 키워드 없음');
+      showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
+      return false;
     }
-
-    if (!slotData.mid.trim()) {
-      newErrors.mid = 'MID를 입력해주세요';
-    }
-
-    if (!slotData.url.trim()) {
-      newErrors.url = 'URL을 입력해주세요';
-    } else if (!slotData.url.startsWith('http://') && !slotData.url.startsWith('https://')) {
-      newErrors.url = 'URL은 http:// 또는 https://로 시작해야 합니다';
-    }
-
-    if (!slotData.keyword1.trim()) {
-      newErrors.keyword1 = '최소 1개의 키워드를 입력해주세요';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    console.log('validateForm - 검증 통과');
+    return true;
   };
 
   // 저장 버튼 핸들러
   const handleSave = async () => {
+    console.log('handleSave 함수 호출됨');
     // 이미 저장 중이면 중복 실행 방지
-    if (saving) return;
+    if (saving) {
+      console.log('이미 저장 중');
+      return;
+    }
 
     try {
       // 저장 중 상태로 변경
+      console.log('저장 중 상태로 변경');
       setSaving(true);
 
       // 선택된 캠페인이 없으면 저장 불가
       if (!selectedCampaignId) {
+        console.log('선택된 캠페인 없음');
         showAlert('알림', '캠페인을 선택해주세요.', false);
         return;
       }
 
-      // 선택된 키워드가 없으면 저장 불가
-      if (selectedKeywords.length === 0) {
-        showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
+      // 폼 유효성 검사 (선택된 키워드 확인)
+      console.log('폼 유효성 검사 시작');
+      if (!validateForm()) {
+        console.log('폼 유효성 검사 실패');
         return;
       }
-
-      // 폼 유효성 검사 - 백업 키워드 캠페인에서 체크된 키워드를 구매할 때는 우회
-      // 현재 경로가 백업 키워드 캠페인인지 확인
-      const isBackupKeywordCampaign = window.location.pathname.includes('/backup-keyword-campaign');
-
-      if (!isBackupKeywordCampaign && !validateForm()) {
-        console.log("Form validation failed", errors);
-        return;
-      }
+      console.log('폼 유효성 검사 통과');
 
       // AuthContext의 currentUser 사용
       if (!currentUser || !currentUser.id) {
+        console.log('로그인 상태 아님');
         throw new Error('로그인이 필요합니다.');
       }
 
       const userId = currentUser.id;
+      console.log('사용자 ID:', userId);
 
       // 선택된 캠페인 정보 가져오기
       const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId);
       if (!selectedCampaign) {
+        console.log('선택된 캠페인 정보를 찾을 수 없음');
         throw new Error('선택된 캠페인 정보를 찾을 수 없습니다.');
       }
+      console.log('선택된 캠페인:', selectedCampaign.campaign_name);
 
       // 캠페인의 mat_id 가져오기 (이미 campaigns 배열에 있는 정보 사용)
       let matId = selectedCampaign.mat_id;
-
+      console.log('매트 ID (원본):', matId, '타입:', typeof matId);
+      
+      // mat_id 유효성 체크 (UUID 형식인지 확인)
+      const isValidUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(String(matId));
+      console.log('UUID 유효성 체크:', isValidUUID);
+      
       if (!matId) {
-        console.error("Campaign mat_id not found");
+        console.log('매트 ID 없음');
         throw new Error('캠페인의 mat_id를 찾을 수 없습니다. 이 캠페인은 슬롯을 등록할 수 없습니다.');
+      }
+      
+      // UUID 형식이 아니면 일단 경고 로그
+      if (!isValidUUID) {
+        console.warn('매트 ID가 UUID 형식이 아닙니다. 데이터베이스 에러가 발생할 수 있습니다:', matId);
       }
 
       // 단가 확인
       const unitPrice = selectedCampaign.unit_price ?
         (typeof selectedCampaign.unit_price === 'string' ?
           parseInt(selectedCampaign.unit_price) : selectedCampaign.unit_price) : 0;
+      console.log('단가:', unitPrice);
 
       if (unitPrice <= 0) {
+        console.log('유효하지 않은 단가');
         throw new Error('유효하지 않은 캠페인 단가입니다.');
       }
 
@@ -956,106 +959,246 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const selectedKeywordObjects = selectedKeywords
         .map(id => keywords.find(k => k.id === id))
         .filter(k => k) as Keyword[];
+      console.log('선택된 키워드 수:', selectedKeywordObjects.length);
+
+      // 마감일에 따른 가격 계산을 포함한 총 결제 금액 계산
+      let calculatedTotalAmount = 0;
+      const keywordPayments = selectedKeywordObjects.map(keyword => {
+        const workCount = keyword.workCount || 1;
+        const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
+        const amount = Math.round(unitPrice * workCount * daysUntilDue * 1.1); // 부가세 10% 추가
+        calculatedTotalAmount += amount;
+        
+        console.log(`키워드: ${keyword.mainKeyword}, 작업타수: ${workCount}, 진행일수: ${daysUntilDue}, 금액: ${amount}`);
+        
+        return {
+          keywordId: keyword.id,
+          amount: amount,
+          daysUntilDue: daysUntilDue,
+          workCount: workCount
+        };
+      });
+      console.log('계산된 총 금액:', calculatedTotalAmount);
 
       // 사용자의 캐시 잔액이 충분한지 확인
-      if (userCashBalance < totalPaymentAmount) {
-        throw new Error(`잔액이 부족합니다. 현재 잔액: ${userCashBalance.toLocaleString()}원, 필요 금액: ${totalPaymentAmount.toLocaleString()}원`);
+      console.log('사용자 잔액:', userCashBalance);
+      console.log('계산된 필요 금액:', calculatedTotalAmount);
+      
+      if (userCashBalance < calculatedTotalAmount) {
+        console.log('잔액 부족');
+        showAlert('잔액 부족', 
+          `현재 잔액이 부족합니다.\n현재 잔액: ${userCashBalance.toLocaleString()}원\n필요 금액: ${calculatedTotalAmount.toLocaleString()}원`, 
+          false);
+        return; // 함수 종료
       }
 
-      // 저장 성공 메시지용 변수
-      let successMessage = '';
-      let totalProcessed = 0;
-      let processedSlots = [];
+      // 타임아웃 설정 (30초)
+      console.log('타임아웃 설정');
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('서버 응답 지연으로 요청을 완료할 수 없습니다.')), 30000)
+      );
 
-      // 각 키워드마다 개별 슬롯 생성
-      for (const keyword of selectedKeywordObjects) {
-        // 키워드에 대한 슬롯별 input_data 생성
-        const keywordInputData = {
-          productName: slotData.productName || keyword.mainKeyword,
-          mid: slotData.mid || String(keyword.mid || ''),
-          url: slotData.url || keyword.url || '',
-          keywords: [keyword.mainKeyword].filter(k => k.trim() !== ''), // 단일 키워드
-          keywordDetails: [{
-            id: keyword.id,
-            mainKeyword: keyword.mainKeyword,
-            workCount: keyword.workCount || 1,
-            dueDate: keyword.dueDate || getTomorrowDate()
-          }]
-        };
-
-        // 단일 키워드에 대한 결제 금액 계산
-        const workCount = keyword.workCount || 1;
-        const keywordPayment = Math.round(unitPrice * workCount * 1.1); // 부가세 10% 추가
-
-        console.log(`Registering slot for keyword ${keyword.mainKeyword} with:`, {
-          userId,
-          selectedCampaignId,
-          matId,
-          keywordInputData,
-          payment: keywordPayment
-        });
-
-        // 슬롯 등록 요청
-        const result = await registerSlot(
-          userId,
-          selectedCampaignId,
-          matId,
-          keywordInputData
-        );
-
-        if (result.success) {
-          totalProcessed++;
-          processedSlots.push({
-            keyword: keyword.mainKeyword,
-            workCount: workCount,
-            payment: keywordPayment,
-            slotId: result.data?.id
+      // 병렬로 슬롯 등록 요청 처리 (Promise.all 사용)
+      console.log('슬롯 등록 요청 준비');
+      const registrationPromises = selectedKeywordObjects.map(async (keyword, index) => {
+        try {
+          console.log(`키워드 "${keyword.mainKeyword}" 등록 시작`, {
+            keywordId: keyword.id,
+            workCount: keyword.workCount,
+            dueDate: keyword.dueDate
           });
-        } else {
-          console.error(`Error registering slot for keyword ${keyword.mainKeyword}:`, result.message);
-        }
-      }
+          
+          // 진행일수 계산
+          const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
+          console.log(`키워드 "${keyword.mainKeyword}" 계산된 진행일수:`, daysUntilDue);
+          
+          // 키워드에 대한 슬롯별 input_data 생성
+          const keywordInputData = {
+            productName: slotData.productName || keyword.mainKeyword,
+            mid: slotData.mid || String(keyword.mid || ''),
+            url: slotData.url || keyword.url || '',
+            keywords: [keyword.mainKeyword].filter(k => k.trim() !== ''), // 단일 키워드
+            keyword_id: keyword.id, // slots 테이블의 keyword_id 필드를 위해 추가
+            quantity: keyword.workCount || 1, // slots 테이블의 quantity 필드를 위해 추가
+            days_until_due: daysUntilDue, // 계산용으로 필드로 추가
+            due_date: keyword.dueDate || getTomorrowDate(), // 마감일 (deadline 필드에 사용됨)
+            keywordDetails: [{
+              id: keyword.id,
+              mainKeyword: keyword.mainKeyword,
+              workCount: keyword.workCount || 1,
+              dueDate: keyword.dueDate || getTomorrowDate(),
+              daysUntilDue: daysUntilDue // 진행일수 추가
+            }],
+            payment: keywordPayments[index], // 결제 정보 추가
+            calculated_price: keywordPayments[index].amount // 정확한 계산된 가격 추가 (slot_pending_balances에 반영될 금액)
+          };
+          console.log(`키워드 "${keyword.mainKeyword}" input_data 정리 완료:`, JSON.stringify(keywordInputData));
 
-      // 사용자의 캐시 잔액 업데이트 (UI 표시용)
-      setUserCashBalance(prev => prev - totalPaymentAmount);
+          // 슬롯 등록 요청
+          console.log(`키워드 "${keyword.mainKeyword}" registerSlot 호출 직전 - 매개변수:`, {
+            userId,
+            campaignId: selectedCampaignId,
+            matId: matId,
+            calculatedPrice: keywordPayments[index].amount,
+            keyword_id: keyword.id,
+            dueDate: keyword.dueDate || getTomorrowDate(),
+            days_until_due: daysUntilDue
+          });
+          
+          const result = await registerSlot(
+            userId,
+            selectedCampaignId,
+            matId,
+            keywordInputData
+          );
+          
+          console.log(`키워드 "${keyword.mainKeyword}" registerSlot 결과:`, JSON.stringify(result));
+
+          if (!result.success) {
+            console.error(`키워드 "${keyword.mainKeyword}" 등록 실패:`, result.message);
+          }
+
+          return { 
+            keyword, 
+            result, 
+            success: result.success, 
+            workCount: keyword.workCount || 1,
+            payment: keywordPayments[index].amount,
+            daysUntilDue: daysUntilDue,
+            slotId: result.data?.id 
+          };
+        } catch (error) {
+          console.error(`키워드 "${keyword.mainKeyword}" 등록 중 예외 발생:`, error);
+          if (error instanceof Error) {
+            console.error('스택:', error.stack);
+          }
+          return { 
+            keyword, 
+            error, 
+            success: false,
+            workCount: keyword.workCount || 1,
+            daysUntilDue: calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate()),
+            payment: 0 
+          };
+        }
+      });
+
+      // 타임아웃과 함께 모든 등록 요청 처리
+      console.log('Promise.race 시작');
+      const results = await Promise.race([
+        Promise.all(registrationPromises),
+        timeoutPromise
+      ]) as Array<{
+        keyword: Keyword;
+        result?: any;
+        error?: any;
+        success: boolean;
+        workCount: number;
+        daysUntilDue: number;
+        payment: number;
+        slotId?: string | number;
+      }>;
+      console.log('Promise.race 완료, 결과:', results);
+
+      // 성공 및 실패 케이스 분리 및 상세 로깅
+      const succeeded = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+      console.log('성공 개수:', succeeded.length, '실패 개수:', failed.length);
+      
+      // 각 실패 케이스 상세 정보 로그
+      if (failed.length > 0) {
+        console.error('=== 실패한 키워드 목록 ===');
+        failed.forEach((f, i) => {
+          console.error(`[${i+1}/${failed.length}] 키워드: ${f.keyword.mainKeyword}`, {
+            message: f.result?.message || '메시지 없음',
+            result: f.result || 'result 없음',
+            error: f.error || 'error 없음'
+          });
+        });
+      }
+      
+      // 실제 처리된 결제 금액 계산 (성공한 항목만)
+      const actualPaymentAmount = succeeded.reduce((total, s) => total + s.payment, 0);
+      console.log('실제 결제 금액:', actualPaymentAmount);
+      
+      // 사용자의 캐시 잔액 업데이트 (UI 표시용, 실제 성공한 항목의 금액만 차감)
+      setUserCashBalance(prev => prev - actualPaymentAmount);
 
       // 성공 메시지 구성
-      if (totalProcessed === selectedKeywordObjects.length) {
-        successMessage = `${totalProcessed}개의 키워드 슬롯이 성공적으로 등록되었습니다. 총 ${totalPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
+      let successMessage = '';
+      if (succeeded.length === results.length) {
+        // 모두 성공한 경우
+        successMessage = `${succeeded.length}개의 키워드 슬롯이 성공적으로 등록되었습니다. 총 ${actualPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
+      } else if (succeeded.length > 0 && failed.length > 0) {
+        // 일부만 성공한 경우
+        const failedKeywords = failed.map(f => f.keyword.mainKeyword).join(', ');
+        successMessage = `${succeeded.length}/${results.length}개의 키워드 슬롯이 등록되었습니다. (실패: ${failedKeywords})\n총 ${actualPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
       } else {
-        successMessage = `${totalProcessed}/${selectedKeywordObjects.length}개의 키워드 슬롯이 등록되었습니다. 총 ${totalPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
+        // 모두 실패한 경우
+        throw new Error('모든 키워드 슬롯 등록에 실패했습니다.');
       }
+      console.log('성공 메시지:', successMessage);
 
       // 성공 메시지 표시
-      showAlert('성공', successMessage, true);
+      console.log('알림 표시 직전');
+      showAlert('성공', successMessage, succeeded.length === results.length);
+      console.log('알림 표시 완료');
 
       // 부모 컴포넌트의 onSave 함수 호출 (있다면)
-      if (onSave) {
+      if (onSave && succeeded.length > 0) {
+        console.log('onSave 호출');
         onSave(slotData);
       }
 
-      // 입력 폼 즉시 초기화 (UX 개선)
-      setSlotData({
-        productName: '',
-        mid: '',
-        url: '',
-        keyword1: '',
-        keyword2: '',
-        keyword3: '',
-        selectedKeywords: []
-      });
-      setErrors({});
-      setSelectedKeywords([]);
-      setTotalPaymentAmount(0);
+      // 모두 성공했거나 일부 성공한 경우 입력 폼 초기화 및 목록 새로고침
+      if (succeeded.length > 0) {
+        console.log('입력 폼 초기화 및 키워드 목록 새로고침');
+        
+        // 입력 폼 즉시 초기화 (UX 개선)
+        setSlotData({
+          productName: '',
+          mid: '',
+          url: '',
+          keyword1: '',
+          keyword2: '',
+          keyword3: '',
+          selectedKeywords: [],
+          keywordDetails: []
+        });
+        setErrors({});
+        setSelectedKeywords([]);
+        setTotalPaymentAmount(0);
+        
+        // 성공한 키워드 ID 목록
+        const succeededKeywordIds = succeeded.map(s => s.keyword.id);
+        console.log('성공한 키워드 IDs:', succeededKeywordIds);
+        
+        // 키워드 목록 새로고침 - 현재 선택된 그룹의 키워드만 다시 불러옴
+        if (selectedGroupId) {
+          console.log('키워드 목록 새로고침 시작 - 그룹 ID:', selectedGroupId);
+          fetchKeywords(selectedGroupId);
+        }
+        
+        // 캠페인 정보 새로고침 (선택적)
+        fetchCampaigns();
+        
+        // 사용자 잔액 정보 새로고침
+        fetchUserBalance();
+        
+      } else if (failed.length > 0) {
+        // 모두 실패한 경우, 실패한 키워드만 유지
+        console.log('실패한 키워드만 유지');
+        const failedKeywordIds = failed.map(f => f.keyword.id);
+        setSelectedKeywords(failedKeywordIds);
+      }
 
     } catch (error) {
-      console.error("Error in handleSave:", error);
-
+      console.error('handleSave 에러:', error);
       // 오류 메시지 처리 개선
       let errorMsg = '슬롯 저장 중 오류가 발생했습니다';
 
       if (error instanceof Error) {
-        // 잔액 부족 오류 특별 처리
+        // 오류 유형별 처리
         if (error.message.includes('잔액이 부족합니다')) {
           errorMsg = `잔액이 부족합니다. 캐시를 충전해주세요.`;
         } else if (error.message.includes('타임아웃') || error.message.includes('서버 응답 지연')) {
@@ -1065,9 +1208,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         }
       }
 
+      console.log('오류 알림 표시 직전:', errorMsg);
       showAlert('오류 발생', errorMsg, false);
+      console.log('오류 알림 표시 완료');
     } finally {
       // 저장 중 상태 해제
+      console.log('저장 중 상태 해제');
       setSaving(false);
     }
   };
@@ -1532,7 +1678,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               )}
             </div>
             <Button
-              onClick={handleSave}
+              onClick={() => {
+                console.log("=== 구매하기 버튼 클릭 ===");
+                console.log("선택된 키워드 수:", selectedKeywords.length);
+                console.log("선택된 캠페인:", selectedCampaignId);
+                console.log("저장 상태:", saving);
+                console.log("로딩 상태:", loading);
+                if (selectedKeywords.length === 0) {
+                  console.log("선택된 키워드가 없어 버튼이 비활성화되어야 함");
+                }
+                handleSave();
+              }}
+              type="button"
               className="px-4 sm:px-6 md:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300 h-9 sm:h-10 rounded-lg shadow-sm w-full sm:w-auto"
               disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}
             >

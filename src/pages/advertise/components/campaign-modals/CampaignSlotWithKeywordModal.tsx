@@ -134,7 +134,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 알림 다이얼로그 표시 함수
   const showAlert = (title: string, description: string, success: boolean = true) => {
-    console.log(`showAlert 호출: ${title} - ${description} (성공: ${success})`);
     setAlertTitle(title);
     setAlertDescription(description);
     setIsSuccess(success);
@@ -1649,17 +1648,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               )}
             </div>
             <Button
-              onClick={() => {
-                console.log("=== 구매하기 버튼 클릭 ===");
-                console.log("선택된 키워드 수:", selectedKeywords.length);
-                console.log("선택된 캠페인:", selectedCampaignId);
-                console.log("저장 상태:", saving);
-                console.log("로딩 상태:", loading);
-                if (selectedKeywords.length === 0) {
-                  console.log("선택된 키워드가 없어 버튼이 비활성화되어야 함");
-                }
-                handleSave();
-              }}
+              onClick={handleSave}
               type="button"
               className="px-4 sm:px-6 md:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300 h-9 sm:h-10 rounded-lg shadow-sm w-full sm:w-auto"
               disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}

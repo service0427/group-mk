@@ -10,7 +10,8 @@ export const USER_ROLES = {
   OPERATOR: import.meta.env.VITE_USER_ROLE_OPERATOR || 'operator',
   DISTRIBUTOR: import.meta.env.VITE_USER_ROLE_DISTRIBUTOR || 'distributor',
   AGENCY: import.meta.env.VITE_USER_ROLE_AGENCY || 'agency',
-  ADVERTISER: import.meta.env.VITE_USER_ROLE_ADVERTISER || 'advertiser'
+  ADVERTISER: import.meta.env.VITE_USER_ROLE_ADVERTISER || 'advertiser',
+  BEGINNER: import.meta.env.VITE_USER_ROLE_BEGINNER || 'beginner'
 };
 
 /**
@@ -24,7 +25,8 @@ export const ROLE_LEVELS = {
   [USER_ROLES.OPERATOR]: 90,      // 운영자
   [USER_ROLES.DISTRIBUTOR]: 50,   // 총판
   [USER_ROLES.AGENCY]: 30,        // 대행사
-  [USER_ROLES.ADVERTISER]: 10     // 광고주
+  [USER_ROLES.ADVERTISER]: 10,    // 광고주
+  [USER_ROLES.BEGINNER]: 5        // 초보자
 };
 
 /**
@@ -40,6 +42,7 @@ export const PERMISSION_GROUPS = {
   DISTRIBUTOR: 50,      // 총판 기능
   REPORTING: 30,        // 보고서 기능 (대행사 이상)
   CAMPAIGN: 10,         // 캠페인 관리 (모든 인증된 사용자)
+  ADVERTISEMENT: 10,    // 광고주 이상
   PUBLIC: 0             // 공개 기능 (로그인 불필요)
 };
 
@@ -57,7 +60,8 @@ export const USER_ROLE_DISPLAY_NAMES = {
   [USER_ROLES.OPERATOR]: '관리자',
   [USER_ROLES.DISTRIBUTOR]: '총판',
   [USER_ROLES.AGENCY]: '대행사',
-  [USER_ROLES.ADVERTISER]: '광고주'
+  [USER_ROLES.ADVERTISER]: '광고주',
+  [USER_ROLES.BEGINNER]: '초보자'
 };
 
 /**
@@ -71,7 +75,8 @@ export const USER_ROLE_BADGE_COLORS = {
   [USER_ROLES.OPERATOR]: 'primary',     // 관리자
   [USER_ROLES.DISTRIBUTOR]: 'success',  // 총판
   [USER_ROLES.AGENCY]: 'info',          // 대행사
-  [USER_ROLES.ADVERTISER]: 'danger'     // 광고주
+  [USER_ROLES.ADVERTISER]: 'danger',    // 광고주
+  [USER_ROLES.BEGINNER]: 'secondary'    // 초보자
 };
 
 /**
@@ -138,6 +143,16 @@ export const USER_ROLE_THEME_COLORS: Record<string, RoleThemeColors> = {
     baseHex: '#2563eb',
     hoverHex: '#1d4ed8',
     transparent: 'bg-blue-50'
+  },
+
+  // 초보자 테마 색상 (회색 계열)
+  [USER_ROLES.BEGINNER]: {
+    base: 'bg-gray-500',
+    gradient: 'bg-gradient-to-r from-gray-400 to-gray-600',
+    textClass: 'text-gray-600',
+    baseHex: '#6b7280',
+    hoverHex: '#4b5563',
+    transparent: 'bg-gray-50'
   }
 };
 

@@ -11,6 +11,7 @@ import { OperatorDashboardPage } from '@/pages/dashboards/operator';
 import { DistributorDashboardPage } from '@/pages/dashboards/distributor';
 import { AgencyDashboardPage } from '@/pages/dashboards/agency';
 import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
+import { DashboardPage as BeginnerDashboardPage } from '@/pages/dashboards/beginner/DashboardPage';
 
 import {
   ServiceDescPage,
@@ -71,6 +72,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
           <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
           <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
+          <Route path="/dashboard/beginner" element={<BeginnerDashboardPage />} />
 
           {/* 리디렉션 경로 설정 */}
           <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/desc" />} />

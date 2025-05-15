@@ -149,9 +149,15 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
 /**
  * 사용자의 캐시 잔액을 조회합니다.
  * @param userId 사용자 ID
+ * @param userRole 사용자 역할 (선택적)
  * @returns 캐시 잔액
  */
-export const getUserCashBalance = async (userId: string): Promise<number> => {
+export const getUserCashBalance = async (userId: string, userRole?: string): Promise<number> => {
+  // 초보자(beginner) 역할의 경우 항상 0 반환
+  if (userRole === 'beginner') {
+    return 0;
+  }
+  
   try {
     // 사용자 캐시 잔액 조회 API 호출
     const { data, error } = await supabase
@@ -164,7 +170,8 @@ export const getUserCashBalance = async (userId: string): Promise<number> => {
     
     return data?.paid_balance || 0;
   } catch (err) {
-    
+    // 에러 메시지 로그 (디버깅용)
+    console.error('캐시 잔액 조회 오류:', err);
     return 0;
   }
 };
@@ -216,6 +223,7 @@ export const getLastWithdrawAccount = async (userId: string): Promise<LastWithdr
  * @param accountNumber 계좌번호
  * @param accountHolder 예금주
  * @param feeAmount 수수료 금액
+ * @param userRole 사용자 역할 (선택적)
  * @returns 성공 여부와 결과 메시지를 담은 객체
  */
 export const createWithdrawRequest = async (
@@ -224,9 +232,14 @@ export const createWithdrawRequest = async (
   bankName: string,
   accountNumber: string,
   accountHolder: string,
-  feeAmount: number
+  feeAmount: number,
+  userRole?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
+    // 초보자(beginner) 역할은 출금 불가
+    if (userRole === 'beginner') {
+      throw new Error('초보자 계정은 출금 기능을 사용할 수 없습니다. 계정 업그레이드 후 이용해주세요.');
+    }
 
     // 1. user_balances 테이블에서 현재 잔액 확인
     const { data: balance, error: balanceError } = await supabase

@@ -71,10 +71,10 @@ const FAQDetail: React.FC<FAQDetailProps> = ({ faq, onClose, onUpdate, onDelete 
     if (faq) {
       setIsLoading(true);
       try {
-        await onUpdate(faq.id, { 
-          question, 
-          answer, 
-          category, 
+        await onUpdate(faq.id, {
+          question,
+          answer,
+          category,
           is_active: isActive
         });
         toast("FAQ가 업데이트 되었습니다.");
@@ -97,7 +97,7 @@ const FAQDetail: React.FC<FAQDetailProps> = ({ faq, onClose, onUpdate, onDelete 
           id="category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+          className="select w-full p-2 border border-border bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
           required
         >
           {faqCategories.slice(1).map((cat) => (
@@ -132,7 +132,7 @@ const FAQDetail: React.FC<FAQDetailProps> = ({ faq, onClose, onUpdate, onDelete 
         <div className="flex justify-between items-center">
           <label className="block text-sm font-medium text-foreground">표시여부</label>
           <div className="flex items-center gap-2">
-            <Switch 
+            <Switch
               id="isActive"
               checked={isActive}
               onCheckedChange={setIsActive}
@@ -146,7 +146,7 @@ const FAQDetail: React.FC<FAQDetailProps> = ({ faq, onClose, onUpdate, onDelete 
 
       <div className="flex justify-between space-x-3 pt-2 border-t mt-6">
         <div>
-          <Button 
+          <Button
             type="button"
             variant="destructive"
             onClick={() => {
@@ -162,16 +162,16 @@ const FAQDetail: React.FC<FAQDetailProps> = ({ faq, onClose, onUpdate, onDelete 
           </Button>
         </div>
         <div className="flex space-x-3">
-          <Button 
+          <Button
             type="submit"
             className="bg-primary hover:bg-primary/90 text-white px-4"
             disabled={isLoading}
           >
             {isLoading ? '저장 중...' : '저장하기'}
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={onClose}
             className="px-4"
             disabled={isLoading}
@@ -201,11 +201,11 @@ const CreateFAQ: React.FC<CreateFAQProps> = ({ onClose, onSave }) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onSave({ 
-        question, 
-        answer, 
-        category, 
-        is_active: isActive 
+      await onSave({
+        question,
+        answer,
+        category,
+        is_active: isActive
       });
       toast("FAQ가 등록되었습니다.");
       onClose();
@@ -232,7 +232,7 @@ const CreateFAQ: React.FC<CreateFAQProps> = ({ onClose, onSave }) => {
           ))}
         </select>
       </div>
-      
+
       <div className="mb-5">
         <label htmlFor="new-question" className="block text-sm font-medium text-foreground mb-1">질문</label>
         <Input
@@ -261,7 +261,7 @@ const CreateFAQ: React.FC<CreateFAQProps> = ({ onClose, onSave }) => {
         <div className="flex justify-between items-center">
           <label className="block text-sm font-medium text-foreground">표시여부</label>
           <div className="flex items-center gap-2">
-            <Switch 
+            <Switch
               id="new-isActive"
               checked={isActive}
               onCheckedChange={setIsActive}
@@ -274,16 +274,16 @@ const CreateFAQ: React.FC<CreateFAQProps> = ({ onClose, onSave }) => {
       </div>
 
       <div className="flex justify-end space-x-3 pt-2 border-t mt-6">
-        <Button 
+        <Button
           type="submit"
           className="bg-primary hover:bg-primary/90 text-white px-4"
           disabled={isLoading}
         >
           {isLoading ? '등록 중...' : '등록하기'}
         </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
+        <Button
+          type="button"
+          variant="outline"
           onClick={onClose}
           className="px-4"
           disabled={isLoading}
@@ -304,19 +304,19 @@ interface DeleteConfirmDialogProps {
   isLoading: boolean;
 }
 
-const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
   question,
   isLoading
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
-        <div className="bg-background py-3 px-6 border-b">
+        <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">삭제 확인</DialogTitle>
-        </div>
+        </DialogHeader>
         <div className="p-6 bg-background">
           <div className="mb-5">
             <p className="text-foreground">
@@ -497,16 +497,16 @@ const FAQPageComponent = () => {
       let countQuery = supabase
         .from('faq')
         .select('id', { count: 'exact', head: true });
-      
+
       // 카테고리 필터링 적용
       if (activeCategory !== '전체') {
         countQuery = countQuery.eq('category', activeCategory);
       }
-      
+
       const countResponse = await countQuery;
-      
+
       if (countResponse.error) throw countResponse.error;
-      
+
       // 전체 개수 설정 및 페이지 계산
       const count = countResponse.count || 0;
       setTotalCount(count);
@@ -517,21 +517,21 @@ const FAQPageComponent = () => {
         .from('faq')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       // 카테고리 필터링 적용
       if (activeCategory !== '전체') {
         dataQuery = dataQuery.eq('category', activeCategory);
       }
-      
+
       // 페이지네이션 적용
       dataQuery = dataQuery.range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
-      
+
       const { data, error } = await dataQuery;
 
       if (error) throw error;
       setFAQs(data || []);
     } catch (err: any) {
-      
+
       setError('FAQ를 불러오는데 실패했습니다.');
       toast.error("FAQ 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -578,12 +578,12 @@ const FAQPageComponent = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       // 업데이트 후 목록 새로고침
       await fetchFAQs();
       return;
     } catch (err) {
-      
+
       throw err;
     }
   };
@@ -603,10 +603,10 @@ const FAQPageComponent = () => {
 
       // 업데이트 후 목록 새로고침
       await fetchFAQs();
-      
+
       toast(`FAQ가 ${newValue ? '표시' : '숨김'} 상태로 변경되었습니다.`);
     } catch (err) {
-      
+
       toast.error("상태 변경 중 오류가 발생했습니다.");
     }
   };
@@ -619,7 +619,7 @@ const FAQPageComponent = () => {
       if (userError) throw userError;
 
       const userId = userData.user?.id;
-      
+
       const { error } = await supabase
         .from('faq')
         .insert({
@@ -631,11 +631,11 @@ const FAQPageComponent = () => {
         });
 
       if (error) throw error;
-      
+
       // 추가 후 목록 새로고침
       await fetchFAQs();
     } catch (err) {
-      
+
       throw err;
     }
   };
@@ -657,16 +657,16 @@ const FAQPageComponent = () => {
           .eq('id', faqToDelete.id);
 
         if (error) throw error;
-        
+
         // 삭제 후 목록 새로고침
         await fetchFAQs();
-        
+
         toast("FAQ가 삭제되었습니다.");
-        
+
         setIsDeleteConfirmOpen(false);
         setFAQToDelete(null);
       } catch (err) {
-        
+
         toast.error("FAQ 삭제 중 오류가 발생했습니다.");
       } finally {
         setIsDeleting(false);
@@ -695,9 +695,9 @@ const FAQPageComponent = () => {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-        <div className="bg-background py-4 px-8 border-b">
+        <DialogHeader className="bg-background py-4 px-8">
           <DialogTitle className="text-lg font-medium text-foreground">새 FAQ 작성</DialogTitle>
-        </div>
+        </DialogHeader>
         <div className="p-8 bg-background">
           <CreateFAQ
             onClose={() => setIsCreateOpen(false)}
@@ -760,8 +760,8 @@ const FAQPageComponent = () => {
             ) : error ? (
               <div className="p-8 text-center text-red-500">
                 <p>{error}</p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={fetchFAQs}
                   className="mt-4"
                 >
@@ -810,15 +810,15 @@ const FAQPageComponent = () => {
                             </td>
                             <td className="py-3 px-3 text-center hidden md:table-cell">
                               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${faq.is_active
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
                                 }`}>
                                 {faq.is_active ? '표시' : '감춤'}
                               </span>
                             </td>
                             <td className="py-3 px-3 text-center hidden md:table-cell">
                               <div className="flex justify-center">
-                                <Switch 
+                                <Switch
                                   checked={faq.is_active}
                                   onCheckedChange={(checked) => handleToggleActive(faq, checked)}
                                 />
@@ -870,7 +870,7 @@ const FAQPageComponent = () => {
                             <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
                               {(currentPage - 1) * itemsPerPage + index + 1}
                             </div>
-                            
+
                             {/* 오른쪽 내용 영역 */}
                             <div className="flex-1 min-w-0">
                               {/* 헤더 영역: 제목만 표시 */}
@@ -879,14 +879,14 @@ const FAQPageComponent = () => {
                                   {faq.question}
                                 </h3>
                               </div>
-                              
+
                               {/* 카테고리 정보 */}
                               <div className="mb-2">
                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(faq.category)}`}>
                                   {faq.category}
                                 </span>
                               </div>
-                              
+
                               {/* 등록일/수정일 정보 */}
                               <div className="flex flex-col gap-1 text-xs text-muted-foreground mb-3">
                                 <div className="flex items-center">
@@ -898,7 +898,7 @@ const FAQPageComponent = () => {
                                   <span>수정: {formatDate(faq.updated_at)}</span>
                                 </div>
                               </div>
-                              
+
                               {/* 액션 버튼 영역 */}
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
@@ -909,11 +909,10 @@ const FAQPageComponent = () => {
                                         checked={faq.is_active}
                                         onCheckedChange={(checked) => handleToggleActive(faq, checked)}
                                       />
-                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                                        faq.is_active
+                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${faq.is_active
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                                           : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
-                                      }`}>
+                                        }`}>
                                         {faq.is_active ? '표시' : '감춤'}
                                       </span>
                                     </div>
@@ -982,9 +981,9 @@ const FAQPageComponent = () => {
       {/* FAQ 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-          <div className="bg-background py-4 px-8 border-b">
+          <DialogHeader className="bg-background py-4 px-8">
             <DialogTitle className="text-lg font-medium text-foreground">FAQ 상세</DialogTitle>
-          </div>
+          </DialogHeader>
           <div className="p-8 bg-background">
             <FAQDetail
               faq={selectedFAQ}

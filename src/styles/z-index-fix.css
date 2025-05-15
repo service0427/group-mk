@@ -35,11 +35,12 @@ body.dark {
 .dropdown-menu,
 .modal,
 .tooltip,
-[role="dialog"],
 [role="tooltip"],
 [role="menu"] {
-  z-index: 50;
+  z-index: 40;
 }
+
+/* 다이얼로그 요소의 z-index는 dialog.css에서 처리 (z-index: 50~52) */
 
 /* 로더는 최상위에 표시 */
 .loader,
@@ -48,5 +49,5 @@ body.dark {
 [class*="loader"],
 [class*="progress"],
 [class*="circular"] {
-  z-index: 100 !important;
+  z-index: 10001 !important; /* 다이얼로그의 close 버튼 (10000)보다 높게 설정 */
 }

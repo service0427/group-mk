@@ -5,7 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogBody,
-  DialogFooter
+  DialogFooter,
+  DialogHeaderSpacer
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
@@ -573,297 +574,270 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[880px] md:max-w-[880px] p-0 overflow-hidden flex flex-col max-h-[90vh] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-300">
-        <DialogHeader className="bg-background py-4 sm:py-5 px-5 sm:px-8 border-b sticky top-0 z-10">
+      <DialogContent className="max-w-[900px] p-0 overflow-hidden">
+        <DialogHeader className="bg-background py-3 px-5">
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
+          <DialogHeaderSpacer />
         </DialogHeader>
-
-        {/* 배너 이미지 영역 - 블러 효과 추가 */}
-        {loading ? (
-          <div className="w-full h-[150px] sm:h-[180px] bg-gray-100 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : bannerUrl ? (
-          <div className="w-full relative">
-            <div className="absolute inset-0 overflow-hidden">
-              {/* 배경 이미지(블러용) */}
-              <img
-                src={bannerUrl}
-                alt=""
-                className="w-full h-full object-cover"
-                style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
-              />
-              {/* 배경 오버레이 */}
-              <div className="absolute inset-0 bg-black/20"></div>
-            </div>
-            {/* 실제 이미지 (블러 없음) */}
-            <div className="relative z-10 flex justify-center items-center py-6">
-              <img
-                src={bannerUrl}
-                alt="캠페인 배너"
-                className="object-contain max-h-[160px] sm:max-h-[200px] max-w-[90%] shadow-lg rounded-md transition-all duration-300"
-                onError={(e) => {
-                  // 이미지 로드 실패 시 기본 배경으로 대체
-                  e.currentTarget.style.display = 'none';
-                  const parentDiv = e.currentTarget.parentElement;
-                  if (parentDiv) {
-                    parentDiv.innerHTML = `
-                      <div class="size-20 rounded-full bg-white/30 flex items-center justify-center">
-                        <img
-                          src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}"
-                          alt="캠페인 로고"
-                          class="h-14 w-auto"
-                        />
-                      </div>
-                    `;
-                  }
-                }}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="w-full">
-            <div className="w-full h-[140px] sm:h-[180px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
-              <div className="size-20 rounded-full bg-white/30 flex items-center justify-center">
-                <img
-                  src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
-                  alt="캠페인 배너"
-                  className="h-14 w-auto"
-                />
+        <div className="bg-background flex flex-col max-h-[80vh] w-full">
+          <div className="flex-shrink-0">
+            {/* 배너 이미지 영역 */}
+            {loading ? (
+              <div className="w-full h-[150px] bg-gray-100 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* 헤더 정보 - 고정 위치로 변경 (모바일 대응) */}
-        <div className="sticky top-[57px] sm:top-[61px] z-10 bg-background border-b px-5 sm:px-8 py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <img
-              src={campaign && (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http'))
-                ? campaign.logo
-                : toAbsoluteUrl(`/media/${campaign?.logo || 'animal/svg/lion.svg'}`)}
-              className="rounded-full size-12 sm:size-16 shrink-0 border border-gray-100 shadow-sm"
-              alt={campaign?.campaignName}
-              onError={(e) => {
-                // 이미지 로드 실패 시 기본 이미지 사용
-                (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-              }}
-            />
-            <div className="sm:block">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground inline-flex items-center">
-                {campaign?.campaignName}
-                <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm ml-2 sm:hidden inline-flex`}>
-                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
-                  {campaign?.status.label}
-                </span>
-              </h2>
-              <div className="mt-1 hidden sm:block">
-                <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 sm:py-1 text-xs sm:text-sm`}>
-                  <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
-                  {campaign?.status.label}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DialogBody className="p-5 sm:p-8 pt-4 max-h-[70vh] overflow-y-auto">
-          <div className="space-y-6 sm:space-y-8">
-            {/* 상단: 주요 정보 요약 카드 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <KeenIcon icon="wallet" className="text-primary size-5" />
-                  <div className="text-sm text-muted-foreground">건당 단가</div>
+            ) : bannerUrl ? (
+              <div className="w-full relative">
+                <div className="absolute inset-0 overflow-hidden">
+                  {/* 배경 이미지(블러용) */}
+                  <img
+                    src={bannerUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
+                  />
+                  {/* 배경 오버레이 */}
+                  <div className="absolute inset-0 bg-black/20"></div>
                 </div>
-                <div className="text-xl font-bold text-primary">
-                  {campaign?.unitPrice
-                    ? `${formatPriceWithCommas(campaign.unitPrice)}원`
-                    : '1,000원'}
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <KeenIcon icon="rocket" className="text-green-500 size-5" />
-                  <div className="text-sm text-muted-foreground">상승효율</div>
-                </div>
-                <div className="text-xl font-bold text-green-600">
-                  {campaign?.efficiency || '60%'}
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <KeenIcon icon="timer" className="text-blue-500 size-5" />
-                  <div className="text-sm text-muted-foreground">접수마감시간</div>
-                </div>
-                <div className="text-xl font-bold text-foreground">
-                  {campaign?.deadline || '18:00'}
-                </div>
-              </div>
-            </div>
-
-            {/* 중간: 캠페인 설명 */}
-            <div>
-              <h3 className="text-lg font-medium text-foreground mb-3 flex items-center gap-2">
-                <KeenIcon icon="document" className="text-primary size-5" />
-                캠페인 정보
-              </h3>
-              <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground shadow-sm">
-                <div className="flex items-center mb-2">
-                  <div className="bg-blue-50 rounded-full w-6 h-6 flex items-center justify-center mr-2">
-                    <KeenIcon icon="information-circle" className="text-primary size-4" />
-                  </div>
-                  <h4 className="font-medium text-primary/90">간략 설명</h4>
-                </div>
-                <div className="pl-8 mb-6">
-                  <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
-                    {campaign?.description || '설명이 없습니다.'}
-                  </p>
-                </div>
-
-                <div className="flex items-center mb-2">
-                  <div className="bg-emerald-50 rounded-full w-6 h-6 flex items-center justify-center mr-2">
-                    <KeenIcon icon="text" className="text-emerald-600 size-4" />
-                  </div>
-                  <h4 className="font-medium text-emerald-700">상세 설명</h4>
-                </div>
-                <div className="pl-8">
-                  <div
-                    className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-emerald-50/30"
-                    style={{
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#10b981 #f1f1f1'
+                {/* 실제 이미지 (블러 없음) */}
+                <div className="relative z-10 flex justify-center items-center py-6">
+                  <img
+                    src={bannerUrl}
+                    alt="캠페인 배너"
+                    className="object-contain max-h-[160px] max-w-[90%] shadow-lg rounded-md"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 기본 배경으로 대체
+                      e.currentTarget.style.display = 'none';
+                      const parentDiv = e.currentTarget.parentElement;
+                      if (parentDiv) {
+                        parentDiv.innerHTML = `
+                          <div class="size-20 rounded-full bg-white/30 flex items-center justify-center">
+                            <img
+                              src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}"
+                              alt="캠페인 로고"
+                              class="h-14 w-auto"
+                            />
+                          </div>
+                        `;
+                      }
                     }}
-                  >
-                    <p className="whitespace-pre-line text-gray-700">
-                      {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ?
-                        campaign.detailedDescription :
-                        (campaign?.description || '상세 설명이 없습니다.')}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="w-full">
+                <div className="w-full h-[140px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
+                  <div className="size-20 rounded-full bg-white/30 flex items-center justify-center">
+                    <img
+                      src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
+                      alt="캠페인 배너"
+                      className="h-14 w-auto"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 캠페인 헤더 정보 */}
+            <div className="bg-background border-b px-5 py-3">
+              <div className="flex items-center gap-4">
+                <img
+                  src={campaign && (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http'))
+                    ? campaign.logo
+                    : toAbsoluteUrl(`/media/${campaign?.logo || 'animal/svg/lion.svg'}`)}
+                  className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
+                  alt={campaign?.campaignName}
+                  onError={(e) => {
+                    // 이미지 로드 실패 시 기본 이미지 사용
+                    (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                  }}
+                />
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground flex items-center">
+                    {campaign?.campaignName}
+                    <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
+                      <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
+                      {campaign?.status.label}
+                    </span>
+                  </h2>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 스크롤 가능한 콘텐츠 영역 */}
+          <div className="flex-grow overflow-y-auto p-6">
+            <div className="space-y-6">
+              {/* 상단: 주요 정보 요약 카드 */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <KeenIcon icon="wallet" className="text-primary size-5" />
+                    <div className="text-sm text-muted-foreground">건당 단가</div>
+                  </div>
+                  <div className="text-xl font-bold text-primary">
+                    {campaign?.unitPrice
+                      ? `${formatPriceWithCommas(campaign.unitPrice)}원`
+                      : '1,000원'}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <KeenIcon icon="rocket" className="text-green-500 size-5" />
+                    <div className="text-sm text-muted-foreground">상승효율</div>
+                  </div>
+                  <div className="text-xl font-bold text-green-600">
+                    {campaign?.efficiency || '60%'}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <KeenIcon icon="timer" className="text-blue-500 size-5" />
+                    <div className="text-sm text-muted-foreground">접수마감시간</div>
+                  </div>
+                  <div className="text-xl font-bold text-foreground">
+                    {campaign?.deadline || '18:00'}
+                  </div>
+                </div>
+              </div>
+
+              {/* 중간: 캠페인 설명 */}
+              <div>
+                <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
+                <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
+                  <div className="mb-4">
+                    <h4 className="font-medium text-primary mb-2">간략 설명</h4>
+                    <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
+                      {campaign?.description || '설명이 없습니다.'}
                     </p>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* 가이드라인 */}
-            <div>
-              <h3 className="text-lg font-medium text-foreground mb-3 flex items-center gap-2">
-                <KeenIcon icon="check-circle" className="text-green-500 size-5" />
-                캠페인 가이드라인
-              </h3>
-              <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border shadow-sm">
-                <ul className="list-disc list-inside space-y-1.5">
-                  <li>해당 캠페인 건당 단가는 {campaign?.unitPrice
-                    ? `${formatPriceWithCommas(campaign.unitPrice)}원`
-                    : '1,000원'}입니다.</li>
-                  <li>캠페인 접수 시간은 {campaign?.deadline || '18:00'}까지 입니다.</li>
-                  {campaign?.additionalLogic && campaign.additionalLogic !== '0' && campaign.additionalLogic !== '없음' && (
-                    <li>추가로직 필요 수량은 {campaign.additionalLogic}입니다.</li>
-                  )}
-                  <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* 순위 변화 추이 섹션 */}
-            <div>
-              <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
-                <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
-                  <KeenIcon icon="chart-line" className="text-blue-500 size-5" />
-                  순위 변화 추이
-                </h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant={activePeriod === 7 ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePeriodChange(7)}
-                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 7
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
-                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
-                  >
-                    7일
-                  </Button>
-                  <Button
-                    variant={activePeriod === 14 ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePeriodChange(14)}
-                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 14
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
-                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
-                  >
-                    14일
-                  </Button>
-                  <Button
-                    variant={activePeriod === 30 ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePeriodChange(30)}
-                    className={`h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm ${activePeriod === 30
-                      ? 'bg-blue-600 hover:bg-blue-800 text-white'
-                      : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
-                  >
-                    30일
-                  </Button>
-                </div>
-              </div>
-
-              <div className="h-[250px] sm:h-[320px] w-full rounded-xl overflow-hidden bg-white p-3 pb-5 border border-border shadow-sm">
-                {hasRankingData ? (
-                  <ReactApexChart
-                    options={chartOptions}
-                    series={chartSeries}
-                    type="line"
-                    height={300}
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <KeenIcon icon="chart-line" className="mx-auto mb-3 size-12 sm:size-14 text-gray-300" />
-                      <h4 className="text-md font-medium">기간별 통계 데이터가 없습니다</h4>
-                      <p className="text-sm text-gray-400 mt-1">아직 통계 데이터가 수집되지 않았습니다.</p>
+                  <div>
+                    <h4 className="font-medium text-primary mb-2">상세 설명</h4>
+                    <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
+                      <p className="whitespace-pre-line text-gray-700">
+                        {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ?
+                          campaign.detailedDescription :
+                          (campaign?.description || '상세 설명이 없습니다.')}
+                      </p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* 가이드라인 */}
+              <div>
+                <h3 className="text-lg font-medium text-foreground mb-3">캠페인 가이드라인</h3>
+                <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border">
+                  <ul className="list-disc list-inside space-y-1.5">
+                    <li>해당 캠페인 건당 단가는 {campaign?.unitPrice
+                      ? `${formatPriceWithCommas(campaign.unitPrice)}원`
+                      : '1,000원'}입니다.</li>
+                    <li>캠페인 접수 시간은 {campaign?.deadline || '18:00'}까지 입니다.</li>
+                    {campaign?.additionalLogic && campaign.additionalLogic !== '0' && campaign.additionalLogic !== '없음' && (
+                      <li>추가로직 필요 수량은 {campaign.additionalLogic}입니다.</li>
+                    )}
+                    <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* 순위 변화 추이 섹션 */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-foreground">순위 변화 추이</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={activePeriod === 7 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePeriodChange(7)}
+                      className={`h-8 px-3 ${activePeriod === 7
+                        ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                        : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                    >
+                      7일
+                    </Button>
+                    <Button
+                      variant={activePeriod === 14 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePeriodChange(14)}
+                      className={`h-8 px-3 ${activePeriod === 14
+                        ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                        : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                    >
+                      14일
+                    </Button>
+                    <Button
+                      variant={activePeriod === 30 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePeriodChange(30)}
+                      className={`h-8 px-3 ${activePeriod === 30
+                        ? 'bg-blue-600 hover:bg-blue-800 text-white'
+                        : 'hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-600'}`}
+                    >
+                      30일
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="h-[300px] w-full rounded-xl overflow-hidden bg-white p-3 pb-5 border border-border">
+                  {hasRankingData ? (
+                    <ReactApexChart
+                      options={chartOptions}
+                      series={chartSeries}
+                      type="line"
+                      height={280}
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <KeenIcon icon="chart-line" className="mx-auto mb-3 size-12 text-gray-300" />
+                        <h4 className="text-md font-medium">기간별 통계 데이터가 없습니다</h4>
+                        <p className="text-sm text-gray-400 mt-1">아직 통계 데이터가 수집되지 않았습니다.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {hasRankingData && (
+                  <>
+                    <h3 className="text-lg font-medium text-foreground mb-2 mt-6">추가 분석</h3>
+                    <div className="bg-white p-5 rounded-xl border border-border">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        최근 {activePeriod}일간의 랭킹 변화 추이를 분석한 결과, 전체적으로 상승세를 보이고 있습니다.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
+                            <li>30위 이상 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.upperRank.avg)}등</span></li>
+                            <li>30위 이하 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.lowerRank.avg)}등</span></li>
+                          </ul>
+                        </div>
+                        <div>
+                          <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
+                            <li>30등 이내 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.upperRank.bestImprovement)}등</span></li>
+                            <li>30등 이하 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.lowerRank.bestImprovement)}등</span></li>
+                            <li>추세 분석: <span className="text-foreground font-medium">{activePeriod === 7 ? '단기' : activePeriod === 14 ? '중기' : '장기'} 상승세 유지중</span></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-
-              {hasRankingData && (
-                <>
-                  <h3 className="text-lg font-medium text-foreground mb-2 mt-6 flex items-center gap-2">
-                    <KeenIcon icon="chart-pie" className="text-indigo-500 size-5" />
-                    추가 분석
-                  </h3>
-                  <div className="bg-white p-5 rounded-xl border border-border shadow-sm">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      최근 {activePeriod}일간의 랭킹 변화 추이를 분석한 결과, 전체적으로 상승세를 보이고 있습니다.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
-                          <li>30위 이상 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.upperRank.avg)}등</span></li>
-                          <li>30위 이하 평균 순위: <span className="text-foreground font-medium">{Math.round(stats.lowerRank.avg)}등</span></li>
-                        </ul>
-                      </div>
-                      <div>
-                        <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
-                          <li>30등 이내 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.upperRank.bestImprovement)}등</span></li>
-                          <li>30등 이하 최고 상승폭: <span className="text-foreground font-medium text-blue-600">+{Math.round(stats.lowerRank.bestImprovement)}등</span></li>
-                          <li>추세 분석: <span className="text-foreground font-medium">{activePeriod === 7 ? '단기' : activePeriod === 14 ? '중기' : '장기'} 상승세 유지중</span></li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
-        </DialogBody>
-        <DialogFooter className="px-5 sm:px-8 py-4 sm:py-5 border-t flex justify-end sticky bottom-0 z-10 bg-background shadow-lg">
-          <Button
-            onClick={onClose}
-            className="px-6 sm:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300"
-          >
-            확인
-          </Button>
-        </DialogFooter>
+
+          {/* 하단 버튼 영역 */}
+          <div className="flex-shrink-0 border-t p-4 flex justify-end">
+            <Button
+              onClick={onClose}
+              className="px-6 bg-blue-600 hover:bg-blue-800 text-white"
+            >
+              확인
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

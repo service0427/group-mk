@@ -44,8 +44,61 @@ async function getCampaignInfo(productId: number) {
 
 // 슬롯 승인 처리 함수
 export const approveSlot = async (
+  slotId: string | string[],
+  adminUserId: string,
+  actionType?: string
+): Promise<{ success: boolean; message: string; data?: any }> => {
+  // 배열인 경우 (다중 승인)
+  if (Array.isArray(slotId)) {
+    // 빈 배열 체크
+    if (slotId.length === 0) {
+      return {
+        success: false,
+        message: '선택된 슬롯이 없습니다.'
+      };
+    }
+    
+    // 다중 승인 처리 결과
+    const results = [];
+    const errors = [];
+    
+    // 슬롯 ID별로 순차적으로 승인 처리
+    for (const id of slotId) {
+      try {
+        const result = await approveSingleSlot(id, adminUserId, actionType);
+        results.push({
+          id,
+          success: result.success,
+          message: result.message
+        });
+        
+        if (!result.success) {
+          errors.push(`슬롯 ID ${id}: ${result.message}`);
+        }
+      } catch (err: any) {
+        errors.push(`슬롯 ID ${id}: ${err.message || '알 수 없는 오류'}`);
+      }
+    }
+    
+    // 처리 결과 반환
+    return {
+      success: errors.length === 0,
+      message: errors.length === 0 
+        ? `${slotId.length}개의 슬롯이 성공적으로 승인되었습니다.` 
+        : `${slotId.length - errors.length}/${slotId.length}개의 슬롯이 승인되었습니다. 오류: ${errors.join(', ')}`,
+      data: results
+    };
+  }
+  
+  // 단일 슬롯 처리
+  return await approveSingleSlot(slotId, adminUserId, actionType);
+};
+
+// 단일 슬롯 승인 처리 함수 (내부 구현)
+const approveSingleSlot = async (
   slotId: string,
-  adminUserId: string
+  adminUserId: string,
+  actionType?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
     // 1. 슬롯 정보 조회
@@ -94,104 +147,146 @@ export const approveSlot = async (
       throw new Error('유효하지 않은 캠페인 단가입니다. 단가: ' + (campaignData.unit_price || '0'));
     }
 
-    // 2. 중간테이블에서 관리자(승일)에게 금액 이체
+    // 관리자/총판 계정에 금액 이체는 더 이상 여기서 하지 않음
+    // 이 작업은 사용자가 거래 완료를 눌렀을 때 수행됨
     
-    // 관리자(승일) 잔액 조회
-    const { data: adminBalanceData, error: adminBalanceError } = await supabase
-      .from('user_balances')
-      .select('paid_balance, free_balance, total_balance')
-      .eq('user_id', adminUserId)
-      .maybeSingle();
-
-    if (adminBalanceError && adminBalanceError.code !== 'PGRST116') {
-      
-      throw new Error('관리자 잔액 조회 실패');
-    }
-
+    // 현재 시간 가져오기
     const now = new Date().toISOString();
 
-    // 관리자 계정이 없으면 새로 생성
-    if (!adminBalanceData) {
-      const { error: createBalanceError } = await supabase
-        .from('user_balances')
-        .insert({
-          user_id: adminUserId,
-          paid_balance: unitPrice, // 승인된 금액을 paid_balance에 추가
-          free_balance: 0,
-          total_balance: unitPrice,
-          created_at: now,
-          updated_at: now
-        });
-
-      if (createBalanceError) {
-        
-        throw new Error('관리자 잔액 생성 실패');
+    // 3. 슬롯 상태 업데이트 (actionType에 따라 다른 상태로 업데이트)
+    let newStatus = 'approved';
+    let userRefund = false; // 사용자에게 환불 플래그
+    
+    // actionType이 있으면 기존 슬롯 상태 확인
+    if (actionType) {
+      // 이미 승인된 상태인지 확인 (승인 이후 추가 작업)
+      if (slotData.status !== 'approved') {
+        throw new Error(`상태 변경을 위해서는 먼저 슬롯이 승인되어야 합니다. (현재 상태: ${slotData.status})`);
       }
-    } else {
-      // 기존 관리자 계정 잔액 업데이트
-      const newPaidBalance = parseFloat(String(adminBalanceData.paid_balance || 0)) + unitPrice;
-      const newTotalBalance = newPaidBalance + parseFloat(String(adminBalanceData.free_balance || 0));
-
-      const { error: updateBalanceError } = await supabase
-        .from('user_balances')
-        .update({
-          paid_balance: newPaidBalance,
-          total_balance: newTotalBalance,
-          updated_at: now
-        })
-        .eq('user_id', adminUserId);
-
-      if (updateBalanceError) {
-        
-        throw new Error('관리자 잔액 업데이트 실패');
-      }
-    }
-
-    // 캐시 이체 내역 기록 (user_cash_history 테이블 사용)
-    const { error: transferError } = await supabase
-      .from('user_cash_history')
-      .insert({
-        user_id: adminUserId,
-        amount: unitPrice, // 양수로 표시하여 입금 표시
-        transaction_type: 'work', // work 타입으로 관리자에게 정산
-        reference_id: slotId,
-        description: `슬롯 승인 수익: [${slotData.input_data?.productName || '상품'}] (사용자ID: ${slotData.user_id}, 단가: ${unitPrice}원)`,
-        transaction_at: now,
-        balance_type: null // 관리자 수익은 캐시 타입 구분 필요 없음
-      });
-
-    if (transferError) {
       
-      // 비치명적 오류로 처리
+      // actionType에 따라 새 상태 설정
+      switch (actionType) {
+        case 'success':
+          newStatus = 'success';
+          // success 상태는 총판이 작업 완료했음을 의미함
+          // 사용자가 나중에 complete로 바꿔야 총판에게 캐시 지급
+          break;
+        case 'refund':
+          newStatus = 'refund';
+          // 환불 시에는 사용자에게 환불 처리
+          userRefund = true;
+          break;
+        default:
+          // 기본값 유지
+          break;
+      }
     }
-
-    // 3. 슬롯 상태 업데이트 (processor_id 필드 제거 - slots 테이블에 없음)
+    
+    // 환불(refund) 상태일 때 사용자에게 환불 처리
+    if (newStatus === 'refund' && userRefund) {
+      // 환불 로직 - rejectSlot 함수의 환불 코드와 유사
+      try {
+        // 사용자의 잔액 조회
+        const { data: userBalance } = await supabase
+          .from('user_balances')
+          .select('paid_balance, free_balance, total_balance')
+          .eq('user_id', slotData.user_id)
+          .single();
+        
+        if (userBalance) {
+          // 잔액 업데이트 (환불 처리)
+          // 이 부분은 간략화 버전입니다. 실제로는 더 복잡한 로직이 필요할 수 있습니다.
+          const newPaidBalance = parseFloat(String(userBalance.paid_balance || 0)) + unitPrice;
+          const newTotalBalance = newPaidBalance + parseFloat(String(userBalance.free_balance || 0));
+          
+          await supabase
+            .from('user_balances')
+            .update({
+              paid_balance: newPaidBalance,
+              total_balance: newTotalBalance,
+              updated_at: now
+            })
+            .eq('user_id', slotData.user_id);
+            
+          // 환불 내역 기록
+          await supabase
+            .from('user_cash_history')
+            .insert({
+              user_id: slotData.user_id,
+              amount: unitPrice, // 양수로 표시하여 환불 표시
+              transaction_type: 'refund', // refund 타입으로 사용자에게 환불
+              reference_id: slotId,
+              description: `슬롯 환불: [${slotData.input_data?.productName || '상품'}]`,
+              transaction_at: now,
+              balance_type: null // 환불이지만 타입 구분이 필요 없는 경우 null
+            });
+        }
+      } catch (refundError) {
+        console.error('환불 처리 중 오류:', refundError);
+        // 환불 실패는 치명적이므로 예외 발생
+        throw new Error('사용자에게 환불 처리 중 오류가 발생했습니다.');
+      }
+    }
+    
+    // 슬롯 상태 업데이트
     const { data: updatedSlot, error: updateError } = await supabase
       .from('slots')
       .update({
-        status: 'approved',
+        status: newStatus,
         processed_at: now
       })
       .eq('id', slotId)
       .select();
 
     if (updateError) {
-      
       throw updateError;
+    }
+    
+    // slot_pending_balances 테이블 상태 업데이트
+    try {
+      const { data: pendingBalanceData, error: pendingError } = await supabase
+        .from('slot_pending_balances')
+        .select('id, status')
+        .eq('slot_id', slotId)
+        .maybeSingle();
+        
+      if (!pendingError && pendingBalanceData) {
+        // pending_balances 테이블의 상태도 업데이트
+        await supabase
+          .from('slot_pending_balances')
+          .update({
+            status: newStatus,
+            processed_at: now
+          })
+          .eq('slot_id', slotId);
+          
+        console.log(`Slot pending balance updated for slot ID: ${slotId}`);
+      }
+    } catch (pendingUpdateError) {
+      console.error('Error updating slot_pending_balances:', pendingUpdateError);
+      // 이 오류는 전체 프로세스 실패로 취급하지 않음
     }
 
     // 4. 승인 기록 저장 (필요한 경우)
     try {
+      // actionType에 따라 다른 action_type 사용
+      let actionTypeForLog = 'slot_approval';
+      if (actionType === 'success') {
+        actionTypeForLog = 'slot_success';
+      } else if (actionType === 'refund') {
+        actionTypeForLog = 'slot_refund';
+      }
+      
       await supabase
         .from('admin_action_logs')
         .insert({
           admin_id: adminUserId,
-          action_type: 'slot_approval',
+          action_type: actionTypeForLog,
           target_id: slotId,
           details: {
             previous_status: slotData.status,
-            new_status: 'approved',
-            amount_transferred: unitPrice
+            new_status: newStatus,
+            amount_transferred: newStatus === 'success' ? unitPrice : 0
           },
           created_at: now
         });
@@ -200,7 +295,7 @@ export const approveSlot = async (
       // 로그 저장 실패는 전체 프로세스 실패로 취급하지 않음
     }
     
-    // 슬롯 이력 로그에 approve 액션 추가
+    // 슬롯 이력 로그에 액션 추가
     try {
       // 결제 정보 확인 (slot_pending_balances 테이블에서)
       let paymentDetails = null;
@@ -228,18 +323,26 @@ export const approveSlot = async (
         // 이 오류는 전체 프로세스에 영향을 주지 않게 처리
       }
       
+      // actionType에 따라 다른 액션 사용
+      let actionForLog = 'approve';
+      if (actionType === 'success') {
+        actionForLog = 'success';
+      } else if (actionType === 'refund') {
+        actionForLog = 'refund';
+      }
+      
       // 이력 로그 저장
       await supabase
         .from('slot_history_logs')
         .insert({
           slot_id: slotId,
-          action: 'approve',
+          action: actionForLog,
           old_status: slotData.status,
-          new_status: 'approved',
+          new_status: newStatus,
           user_id: adminUserId,
           details: {
             processed_at: now,
-            amount: unitPrice,
+            amount: newStatus === 'success' ? unitPrice : 0,
             user_id: slotData.user_id,
             product_id: slotData.product_id,
             product_name: slotData.input_data?.productName || '상품',
@@ -254,13 +357,28 @@ export const approveSlot = async (
 
     // 5. 알림 생성
     try {
+      // actionType에 따라 다른 알림 내용 사용
+      let notificationType = 'slot_approved';
+      let notificationTitle = '슬롯 승인 완료';
+      let notificationMessage = `귀하의 슬롯이 승인되었습니다.`;
+      
+      if (actionType === 'success') {
+        notificationType = 'slot_success';
+        notificationTitle = '슬롯 작업 완료';
+        notificationMessage = `귀하의 슬롯 작업이 완료되었습니다.`;
+      } else if (actionType === 'refund') {
+        notificationType = 'slot_refund';
+        notificationTitle = '슬롯 환불 처리';
+        notificationMessage = `귀하의 슬롯이 환불 처리되었습니다.`;
+      }
+      
       await supabase
         .from('notifications')
         .insert({
           user_id: slotData.user_id,
-          type: 'slot_approved',
-          title: '슬롯 승인 완료',
-          message: `귀하의 슬롯이 승인되었습니다.`,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage,
           link: `/myinfo/services`,
           reference_id: slotId,
           status: 'unread',
@@ -270,10 +388,18 @@ export const approveSlot = async (
       
       // 알림 생성 실패는 전체 프로세스 실패로 취급하지 않음
     }
+    
+    // 응답 메시지도 상태에 따라 다르게 설정
+    let successMessage = '슬롯이 성공적으로 승인되었습니다.';
+    if (actionType === 'success') {
+      successMessage = '슬롯이 성공적으로 완료 처리되었습니다.';
+    } else if (actionType === 'refund') {
+      successMessage = '슬롯이 성공적으로 환불 처리되었습니다.';
+    }
 
     return {
       success: true,
-      message: '슬롯이 성공적으로 승인되었습니다.',
+      message: successMessage,
       data: updatedSlot
     };
   } catch (err: any) {
@@ -287,6 +413,66 @@ export const approveSlot = async (
 
 // 슬롯 반려 처리 함수
 export const rejectSlot = async (
+  slotId: string | string[],
+  adminUserId: string,
+  rejectionReason: string
+): Promise<{ success: boolean; message: string; data?: any }> => {
+  // 반려 사유 확인
+  if (!rejectionReason.trim()) {
+    return {
+      success: false,
+      message: '반려 사유를 입력해주세요.'
+    };
+  }
+  
+  // 배열인 경우 (다중 반려)
+  if (Array.isArray(slotId)) {
+    // 빈 배열 체크
+    if (slotId.length === 0) {
+      return {
+        success: false,
+        message: '선택된 슬롯이 없습니다.'
+      };
+    }
+    
+    // 다중 반려 처리 결과
+    const results = [];
+    const errors = [];
+    
+    // 슬롯 ID별로 순차적으로 반려 처리
+    for (const id of slotId) {
+      try {
+        const result = await rejectSingleSlot(id, adminUserId, rejectionReason);
+        results.push({
+          id,
+          success: result.success,
+          message: result.message
+        });
+        
+        if (!result.success) {
+          errors.push(`슬롯 ID ${id}: ${result.message}`);
+        }
+      } catch (err: any) {
+        errors.push(`슬롯 ID ${id}: ${err.message || '알 수 없는 오류'}`);
+      }
+    }
+    
+    // 처리 결과 반환
+    return {
+      success: errors.length === 0,
+      message: errors.length === 0 
+        ? `${slotId.length}개의 슬롯이 성공적으로 반려되었습니다.` 
+        : `${slotId.length - errors.length}/${slotId.length}개의 슬롯이 반려되었습니다. 오류: ${errors.join(', ')}`,
+      data: results
+    };
+  }
+  
+  // 단일 슬롯 처리
+  return await rejectSingleSlot(slotId, adminUserId, rejectionReason);
+};
+
+// 단일 슬롯 반려 처리 함수 (내부 구현)
+const rejectSingleSlot = async (
   slotId: string,
   adminUserId: string,
   rejectionReason: string
@@ -478,8 +664,32 @@ export const rejectSlot = async (
       .select();
 
     if (updateError) {
-      
       throw updateError;
+    }
+    
+    // slot_pending_balances 테이블 상태도 업데이트
+    try {
+      const { data: pendingBalanceData, error: pendingError } = await supabase
+        .from('slot_pending_balances')
+        .select('id, status')
+        .eq('slot_id', slotId)
+        .maybeSingle();
+        
+      if (!pendingError && pendingBalanceData) {
+        // pending_balances 테이블의 상태도 rejected로 업데이트
+        await supabase
+          .from('slot_pending_balances')
+          .update({
+            status: 'rejected',
+            processed_at: now
+          })
+          .eq('slot_id', slotId);
+          
+        console.log(`Slot pending balance updated for rejected slot ID: ${slotId}`);
+      }
+    } catch (pendingUpdateError) {
+      console.error('Error updating slot_pending_balances for rejected slot:', pendingUpdateError);
+      // 이 오류는 전체 프로세스 실패로 취급하지 않음
     }
 
     // 4. 반려 기록 저장 (필요한 경우)

@@ -18,17 +18,22 @@ export interface Slot {
   id: string;
   mat_id: string;
   user_id: string;
-  product_id?: number; // 캠페인 ID 추가
-  campaign_name?: string; // 캠페인 이름 추가
+  product_id?: number; // 캠페인 ID
+  campaign_name?: string; // 캠페인 이름 (UI 표시용)
   status: string;
   created_at: string;
   submitted_at: string | null;
   processed_at?: string;
-  input_data: any;
-  rejection_reason?: string;
-  mat_reason?: string; // 관리자 메모 정보를 저장할 필드 추가
-  user_reason?: string; // 사용자 메모 정보를 저장할 필드 추가
-  user?: User; // 사용자 정보를 저장할 필드 추가
+  input_data: any; // 캠페인 입력 데이터 (JSON)
+  keyword_id?: number; // 키워드 ID 필드 추가
+  quantity?: number; // 작업 타수 필드 추가
+  deadline?: string; // 마감일 필드 추가
+  is_auto_refund_candidate?: boolean; // 자동 환불 대상 여부
+  is_auto_continue?: boolean; // 자동 연장 여부
+  rejection_reason?: string; // 반려 사유
+  mat_reason?: string; // 관리자 메모
+  user_reason?: string; // 사용자 메모
+  user?: User; // 사용자 정보 (조인된 데이터)
 }
 
 export interface SearchParams {

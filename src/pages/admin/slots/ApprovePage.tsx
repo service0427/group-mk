@@ -3,6 +3,8 @@ import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useLocation } from 'react-router-dom';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { Toaster } from 'sonner';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
@@ -10,6 +12,10 @@ import { SERVICE_TYPE_TO_CATEGORY } from './components/constants';
 
 // 슬롯 서비스 import
 import { approveSlot, rejectSlot, updateSlotMemo } from './services/slotService';
+
+// 모달 컴포넌트 import
+import ApproveModal from './components/ApproveModal';
+import RejectModal from './components/RejectModal';
 
 // 컴포넌트 가져오기
 import SearchForm from './components/SearchForm';
@@ -34,6 +40,7 @@ enum ViewState {
 const ApprovePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const location = useLocation();
+  const { showSuccess, showError } = useCustomToast();
 
   // URL에서 쿼리 파라미터 추출
   const queryParams = new URLSearchParams(location.search);
@@ -64,6 +71,14 @@ const ApprovePage: React.FC = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [initialMemo, setInitialMemo] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  
+  // 승인/반려 모달 상태
+  const [approveModalOpen, setApproveModalOpen] = useState<boolean>(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
+  const [actionSlotId, setActionSlotId] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<string | undefined>(undefined);
+  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState<boolean>(false);
 
   // 현재 화면 상태를 저장하는 상태 변수 (특정 순간의 여러 상태를 종합해 하나의 명확한 상태로 관리)
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOADING);
@@ -439,79 +454,72 @@ const ApprovePage: React.FC = () => {
   };
 
 
-  // 승인 처리 함수
-  const handleApproveSlot = async (slotId: string) => {
+  // 승인 처리 함수 (actionType 매개변수 추가)
+  const handleApproveSlot = (slotId: string | string[], actionType?: string) => {
+    // 배열인 경우 (다중 승인)
+    if (Array.isArray(slotId)) {
+      if (slotId.length === 0) {
+        return; // 선택된 슬롯이 없으면 처리하지 않음
+      }
+      
+      // 선택된 슬롯 배열을 직접 사용 (이미 상태에 있음)
+      setApproveModalOpen(true);
+      setActionType(actionType);
+      console.log('다중 승인 모달 열기, 선택된 슬롯:', selectedSlots);
+      return;
+    }
+    
+    // 단일 슬롯 처리
     if (!currentUser?.id) {
       setError('사용자 정보를 찾을 수 없습니다.');
       return;
     }
-
-    // 승인 전 확인 다이얼로그
-    if (!window.confirm('이 슬롯을 승인하시겠습니까? 승인 시 총판에게 정산이 이뤄집니다.')) {
-      return; // 취소된 경우
-    }
-
-    // 로딩 상태 표시
-    setLoading(true);
-
-    try {
-      const result = await approveSlot(slotId, currentUser.id);
-
-      if (result.success) {
-        // 성공 시 UI 상태 업데이트
-        const updateSlotStatus = (slots: Slot[]) =>
-          slots.map(slot =>
-            slot.id === slotId
-              ? {
-                ...slot,
-                status: 'approved',
-                processed_at: new Date().toISOString()
-              }
-              : slot
-          );
-
-        setSlots(updateSlotStatus);
-        setFilteredSlots(updateSlotStatus);
-
-        // 성공 메시지 표시
-        alert('슬롯이 성공적으로 승인되었습니다.');
-      } else {
-        // 실패 시 에러 메시지 표시
-        setError(result.message);
-        alert('슬롯 승인 중 오류 발생: ' + result.message);
-      }
-    } catch (err: any) {
-      
-      setError(err.message || '슬롯 승인 처리 중 오류가 발생했습니다.');
-      alert('슬롯 승인 처리 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    
+    // 단일 슬롯 처리는 해당 슬롯만 선택하도록 설정
+    setSelectedSlots([slotId]);
+    setActionType(actionType);
+    setApproveModalOpen(true);
+    console.log('단일 승인 모달 열기, 선택된 슬롯:', [slotId]);
   };
 
   // 반려 처리 함수
-  const handleRejectSlot = async (slotId: string) => {
+  const handleRejectSlot = (slotId: string | string[], reason?: string) => {
+    // 이미 reason이 제공된 경우 (모달에서 호출)
+    if (reason) {
+      processRejectSlot(slotId, reason);
+      return;
+    }
+    
+    // 배열인 경우 (다중 반려)
+    if (Array.isArray(slotId)) {
+      if (slotId.length === 0) {
+        return; // 선택된 슬롯이 없으면 처리하지 않음
+      }
+      
+      // 모달로 대체
+      setActionSlotId(null); // null로 설정하여 배열 처리임을 표시
+      setRejectModalOpen(true);
+      return;
+    }
+    
+    // 단일 슬롯 처리
     if (!currentUser?.id) {
       setError('사용자 정보를 찾을 수 없습니다.');
       return;
     }
 
-    // 반려 전 확인 다이얼로그
-    if (!window.confirm('이 슬롯을 반려하시겠습니까? 반려 시 사용자에게 캐시가 환불됩니다.')) {
-      return; // 취소된 경우
+    // 모달 열기
+    setActionSlotId(slotId);
+    setRejectModalOpen(true);
+  };
+  
+  // 실제 반려 처리 로직
+  const processRejectSlot = async (slotId: string | string[], reason: string) => {
+    if (!currentUser?.id) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return false;
     }
-
-    const reason = prompt('반려 사유를 입력하세요 (사용자에게 표시됩니다):');
-    if (reason === null) {
-      // 취소 버튼 클릭
-      return;
-    }
-
-    if (reason.trim() === '') {
-      alert('반려 사유를 입력해주세요. 반려 사유는 사용자에게 표시됩니다.');
-      return;
-    }
-
+    
     // 로딩 상태 표시
     setLoading(true);
 
@@ -520,32 +528,66 @@ const ApprovePage: React.FC = () => {
 
       if (result.success) {
         // 성공 시 UI 상태 업데이트
-        const updateSlotStatus = (slots: Slot[]) =>
-          slots.map(slot =>
-            slot.id === slotId
-              ? {
-                ...slot,
-                status: 'rejected',
-                processed_at: new Date().toISOString(),
-                rejection_reason: reason
+        if (Array.isArray(slotId)) {
+          // 배열인 경우 (다중 반려)
+          setSlots(prevSlots => {
+            return prevSlots.map(slot => {
+              if (slotId.includes(slot.id)) {
+                return {
+                  ...slot,
+                  status: 'rejected',
+                  processed_at: new Date().toISOString(),
+                  rejection_reason: reason
+                };
               }
-              : slot
-          );
+              return slot;
+            });
+          });
+          
+          setFilteredSlots(prevSlots => {
+            return prevSlots.map(slot => {
+              if (slotId.includes(slot.id)) {
+                return {
+                  ...slot,
+                  status: 'rejected',
+                  processed_at: new Date().toISOString(),
+                  rejection_reason: reason
+                };
+              }
+              return slot;
+            });
+          });
+        } else {
+          // 단일 슬롯인 경우
+          const updateSlotStatus = (slots: Slot[]) =>
+            slots.map(slot =>
+              slot.id === slotId
+                ? {
+                  ...slot,
+                  status: 'rejected',
+                  processed_at: new Date().toISOString(),
+                  rejection_reason: reason
+                }
+                : slot
+            );
 
-        setSlots(updateSlotStatus);
-        setFilteredSlots(updateSlotStatus);
+          setSlots(updateSlotStatus);
+          setFilteredSlots(updateSlotStatus);
+        }
 
         // 성공 메시지 표시
-        alert('슬롯이 성공적으로 반려되었습니다.');
+        showSuccess(result.message);
+        return true;
       } else {
-        // 실패 시 에러 메시지 표시
+        // 실패 시 오류 메시지 표시
         setError(result.message);
-        alert('슬롯 반려 중 오류 발생: ' + result.message);
+        showError('슬롯 반려 중 오류 발생: ' + result.message);
+        return false;
       }
     } catch (err: any) {
-      
       setError(err.message || '슬롯 반려 처리 중 오류가 발생했습니다.');
-      alert('슬롯 반려 처리 중 오류가 발생했습니다.');
+      showError('슬롯 반려 처리 중 오류가 발생했습니다.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -602,11 +644,14 @@ const ApprovePage: React.FC = () => {
       const result = await updateSlotMemo(slotId, memo, currentUser.id);
 
       if (!result.success) {
-        
         setError(result.message);
+        showError('메모 저장 중 오류가 발생했습니다: ' + result.message);
         return false;
       }
 
+      // 성공 메시지 표시
+      showSuccess('메모가 성공적으로 저장되었습니다.');
+      
       // 슬롯 목록 업데이트 (로컬 상태)
       const updateSlotMemoState = (slots: Slot[]) =>
         slots.map(slot =>
@@ -621,8 +666,9 @@ const ApprovePage: React.FC = () => {
       
       return true;
     } catch (err: any) {
-      
-      setError(err.message || '메모 저장 중 오류가 발생했습니다.');
+      const errorMsg = err.message || '메모 저장 중 오류가 발생했습니다.';
+      setError(errorMsg);
+      showError(errorMsg);
       return false;
     }
   };
@@ -710,6 +756,7 @@ const ApprovePage: React.FC = () => {
       description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
       showPageMenu={false}
     >
+      <Toaster position="top-right" richColors closeButton />
       <div className="card mb-0 bg-card" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
         <div className="card-header px-5">
           <div className="card-title">
@@ -769,6 +816,8 @@ const ApprovePage: React.FC = () => {
                 onApprove={handleApproveSlot}
                 onReject={handleRejectSlot}
                 onMemo={handleOpenMemoModal}
+                selectedSlots={selectedSlots}
+                onSelectedSlotsChange={setSelectedSlots}
               />
               <SlotCard
                 slots={filteredSlots}
@@ -776,6 +825,8 @@ const ApprovePage: React.FC = () => {
                 onApprove={handleApproveSlot}
                 onReject={handleRejectSlot}
                 onMemo={handleOpenMemoModal}
+                selectedSlots={selectedSlots}
+                onSelectedSlotsChange={setSelectedSlots}
               />
 
               {/* 메모 모달 */}
@@ -786,6 +837,124 @@ const ApprovePage: React.FC = () => {
                 initialMemo={initialMemo}
                 onSave={handleSaveMemo}
                 slot={selectedSlot}
+              />
+              
+              {/* 승인 모달 */}
+              <ApproveModal
+                isOpen={approveModalOpen}
+                onClose={() => setApproveModalOpen(false)}
+                onConfirm={async () => {
+                  setApproveModalOpen(false);
+                  // 로딩 상태 표시
+                  setLoading(true);
+                  
+                  try {
+                    // 사용자 정보가 없으면 처리 중단
+                    if (!currentUser?.id) {
+                      setError('사용자 정보를 찾을 수 없습니다.');
+                      setLoading(false);
+                      return;
+                    }
+                    
+                    // 명시적으로 selectedSlots를 사용하여 처리
+                    const slotIdToProcess = selectedSlots;
+                    console.log('일괄 승인 처리할 슬롯 ID:', slotIdToProcess);
+                    const result = await approveSlot(slotIdToProcess, currentUser.id, actionType);
+
+                    if (result.success) {
+                      // 성공 시 UI 상태 업데이트
+                      const newStatus = actionType === 'success' ? 'success' : 
+                                      actionType === 'refund' ? 'refund' : 'approved';
+                      
+                      if (Array.isArray(slotIdToProcess)) {
+                        // 배열인 경우 (다중 승인)
+                        setSlots(prevSlots => {
+                          return prevSlots.map(slot => {
+                            if (slotIdToProcess.includes(slot.id)) {
+                              return {
+                                ...slot,
+                                status: newStatus,
+                                processed_at: new Date().toISOString()
+                              };
+                            }
+                            return slot;
+                          });
+                        });
+                        
+                        setFilteredSlots(prevSlots => {
+                          return prevSlots.map(slot => {
+                            if (slotIdToProcess.includes(slot.id)) {
+                              return {
+                                ...slot,
+                                status: newStatus,
+                                processed_at: new Date().toISOString()
+                              };
+                            }
+                            return slot;
+                          });
+                        });
+                        
+                        // 선택 초기화
+                        // 성공 후 선택 상태 초기화
+                        console.log('승인 성공 후 선택 초기화');
+                        setSelectedSlots([]);
+                      } else {
+                        // 단일 슬롯인 경우
+                        const updateSlotStatus = (slots: Slot[]) =>
+                          slots.map(slot =>
+                            slot.id === slotIdToProcess
+                              ? {
+                                ...slot,
+                                status: newStatus,
+                                processed_at: new Date().toISOString()
+                              }
+                              : slot
+                          );
+
+                        setSlots(updateSlotStatus);
+                        setFilteredSlots(updateSlotStatus);
+                      }
+
+                      // 성공 메시지 표시
+                      showSuccess(result.message);
+                    } else {
+                      // 실패 시 오류 메시지 표시
+                      setError(result.message);
+                      showError('처리 중 오류 발생: ' + result.message);
+                    }
+                  } catch (err: any) {
+                    setError(err.message || '처리 중 오류가 발생했습니다.');
+                    showError('처리 중 오류가 발생했습니다.');
+                  } finally {
+                    setLoading(false);
+                    setActionSlotId(null);
+                    setActionType(undefined);
+                  }
+                }}
+                count={selectedSlots.length}
+                title={actionType === 'success' ? '슬롯 완료 처리' : 
+                       actionType === 'refund' ? '슬롯 환불 처리' : '슬롯 승인'}
+                description={actionType === 'success' ? '이 슬롯을 완료 처리하시겠습니까? 작업이 완료됨을 의미합니다.' : 
+                           actionType === 'refund' ? '이 슬롯을 환불 처리하시겠습니까? 환불 처리는 되돌릴 수 없습니다.' : 
+                           '이 슬롯을 승인하시겠습니까? 승인 후에는 완료 또는 환불 처리가 필요합니다.'}
+                confirmText={actionType === 'success' ? '완료 처리' : 
+                           actionType === 'refund' ? '환불 처리' : '승인하기'}
+              />
+              
+              {/* 반려 모달 */}
+              <RejectModal
+                isOpen={rejectModalOpen}
+                onClose={() => setRejectModalOpen(false)}
+                onConfirm={(reason) => {
+                  // actionSlotId가 null이면 배열 처리(선택된 슬롯들), 아니면 단일 슬롯 처리
+                  const slotIdToProcess = actionSlotId === null ? selectedSlots : actionSlotId;
+                  processRejectSlot(slotIdToProcess, reason);
+                  
+                  // 모달 상태 초기화
+                  setRejectModalOpen(false);
+                  setActionSlotId(null);
+                }}
+                count={selectedSlots.length}
               />
             </>
           )}

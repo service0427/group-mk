@@ -8,7 +8,7 @@ import { OperatorDashboardContent } from './operator';
 import { DistributorDashboardContent } from './distributor';
 import { AgencyDashboardContent } from './agency';
 import { AdvertiserDashboardContent } from './advertiser';
-import { DashboardContent as BeginnerDashboardContent } from '@/pages/dashboards/beginner/DashboardContent';
+import { BeginnerDashboardContent } from './beginner';
 
 /**
  * 사용자 역할 기반 대시보드 컴포넌트
@@ -55,8 +55,8 @@ const RoleBasedDashboard: React.FC = () => {
     case USER_ROLES.BEGINNER:
       return <BeginnerDashboardContent />;
     default:
-      // 기본값도 beginner로 변경
-      return <BeginnerDashboardContent />;
+      // 기본값도 advertiser로 변경
+      return <AdvertiserDashboardContent />;
   }
 };
 

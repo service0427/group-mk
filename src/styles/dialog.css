@@ -1,0 +1,165 @@
+/**
+ * Dialog Component Styles
+ * 다이얼로그 컴포넌트를 위한 핵심 스타일 (z-index 및 위치 문제 해결)
+ */
+
+/* 기본 설정 */
+:root {
+  --dialog-overlay-bg: rgba(0, 0, 0, 0.5);
+  --dialog-content-bg: white;
+  --dialog-border-color: #e2e8f0;
+  --dialog-close-bg: #f1f5f9;
+  --dialog-close-hover-bg: #e2e8f0;
+  --dialog-close-text: #64748b;
+  --dialog-close-hover-text: #0f172a;
+  --dialog-header-border: #e2e8f0;
+  --dialog-footer-border: #e2e8f0;
+  /* 닫기 버튼 위치 일관성 */
+  --dialog-close-right: 1rem;
+}
+
+.dark {
+  --dialog-overlay-bg: rgba(0, 0, 0, 0.7);
+  --dialog-content-bg: #1e293b;
+  --dialog-border-color: #334155;
+  --dialog-close-bg: #334155;
+  --dialog-close-hover-bg: #475569;
+  --dialog-close-text: #f8fafc;
+  --dialog-close-hover-text: white;
+  --dialog-header-border: #334155;
+  --dialog-footer-border: #334155;
+  /* 닫기 버튼 위치 일관성 */
+  --dialog-close-right: 1rem;
+}
+
+/* 다이얼로그 오버레이 */
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+  background-color: var(--dialog-overlay-bg) !important;
+}
+
+/* 다이얼로그 콘텐츠 */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 51 !important;
+  width: 90% !important;
+  max-width: 32rem !important;
+  min-width: 300px !important;
+  min-height: 100px !important;
+  max-height: 90vh !important;
+  background-color: var(--dialog-content-bg) !important;
+  border: 1px solid var(--dialog-border-color) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 640px) {
+  [data-radix-dialog-content] {
+    width: 95% !important;
+    min-width: 250px !important;
+  }
+}
+
+/* 닫기 버튼 */
+[data-radix-dialog-close] {
+  z-index: 52 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 9999px !important;
+  background-color: var(--dialog-close-bg) !important;
+  color: var(--dialog-close-text) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.15s ease !important;
+  font-size: 1.25rem !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: var(--dialog-close-right) !important;
+  transform: translateY(-50%) !important;
+}
+
+/* 헤더 내 닫기 버튼 - 다크 모드에서의 위치 문제 해결 */
+.dialog-close {
+  position: absolute !important;
+  right: var(--dialog-close-right) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+[data-radix-dialog-close]:hover {
+  background-color: var(--dialog-close-hover-bg) !important;
+  color: var(--dialog-close-hover-text) !important;
+}
+
+/* 다이얼로그 내부 레이아웃 */
+.flex-row {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+/* 헤더 스타일 */
+[data-radix-dialog-content] > div:first-of-type:not([class*="modal-body"]):not([class*="modal-footer"]) {
+  border-bottom: 1px solid var(--dialog-header-border) !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  min-height: 4rem !important;
+}
+
+/* 푸터 스타일 */
+[data-radix-dialog-content] > div:last-of-type:not([class*="modal-body"]):not([class*="modal-header"]) {
+  border-top: 1px solid var(--dialog-footer-border) !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-end !important;
+  gap: 0.5rem !important;
+}
+
+/* 본문 스타일 */
+[data-radix-dialog-content] > div:not(:first-of-type):not(:last-of-type) {
+  padding: 1.5rem !important;
+  padding-top: 1rem !important;
+  overflow-y: auto !important;
+  max-height: calc(90vh - 10rem) !important;
+}
+
+/* 모달 헤더 내부 타이틀 */
+[data-radix-dialog-title] {
+  flex: 1 1 auto !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding-right: 2.5rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 헤더 스페이서 스타일 */
+.flex-1 {
+  flex: 1 1 auto !important;
+}
+
+.min-w-\[24px\] {
+  min-width: 24px !important;
+}
+
+.ml-auto {
+  margin-left: auto !important;
+}
+
+/* 다이얼로그 오픈 시 스크롤 방지 */
+body:has([role="dialog"][data-state="open"]) {
+  overflow: hidden !important;
+}

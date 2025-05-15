@@ -6,9 +6,11 @@ import { formatDate } from './constants';
 interface SlotCardProps {
   slots: Slot[];
   selectedServiceType: string;
-  onApprove: (slotId: string) => void;
-  onReject: (slotId: string) => void;
+  onApprove: (slotId: string | string[], actionType?: string) => void;
+  onReject: (slotId: string | string[], reason?: string) => void;
   onMemo: (slotId: string) => void;
+  selectedSlots?: string[];
+  onSelectedSlotsChange?: (selectedSlots: string[]) => void;
 }
 
 const SlotCard: React.FC<SlotCardProps> = ({ 
@@ -16,13 +18,34 @@ const SlotCard: React.FC<SlotCardProps> = ({
   selectedServiceType, 
   onApprove, 
   onReject,
-  onMemo
+  onMemo,
+  selectedSlots,
+  onSelectedSlotsChange
 }) => {
   return (
     <div className="block md:hidden px-4">
       <div className="divide-y divide-gray-200">
         {slots.map((slot) => (
           <div key={slot.id} className="py-4 px-2 bg-white mb-4 rounded shadow-sm">
+            {/* 체크박스 (선택 가능한 슬롯인 경우) */}
+            {(slot.status === 'pending' || slot.status === 'submitted') && (
+              <div className="flex justify-end mb-2">
+                <input 
+                  type="checkbox" 
+                  className="form-check-input" 
+                  checked={selectedSlots?.includes(slot.id) || false}
+                  onChange={() => {
+                    if (onSelectedSlotsChange) {
+                      if (selectedSlots?.includes(slot.id)) {
+                        onSelectedSlotsChange(selectedSlots.filter(id => id !== slot.id));
+                      } else {
+                        onSelectedSlotsChange([...(selectedSlots || []), slot.id]);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            )}
             {/* 헤더 영역 (사용자, 상태) */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div>

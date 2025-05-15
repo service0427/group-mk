@@ -1012,25 +1012,28 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
           console.log(`키워드 "${keyword.mainKeyword}" 계산된 진행일수:`, daysUntilDue);
           
-          // 키워드에 대한 슬롯별 input_data 생성
+          // 키워드에 대한 슬롯별 input_data 생성 (구조 통합 및 정리)
           const keywordInputData = {
             productName: slotData.productName || keyword.mainKeyword,
             mid: slotData.mid || String(keyword.mid || ''),
             url: slotData.url || keyword.url || '',
-            keywords: [keyword.mainKeyword].filter(k => k.trim() !== ''), // 단일 키워드
+            // 키워드 정보 구조화 - keyword1,2,3 형식 우선
+            // 코드 유지보수를 위한 주석: mainKeyword를 keyword1에 넣고 기존 keyword1,2,3는 순서를 밀어서 저장
+            keyword1: keyword.keyword1 || '', 
+            keyword2: keyword.keyword2 || '', 
+            keyword3: keyword.keyword3 || '', 
+            // 단일 형태로 하나의 키워드 배열로도 추가 (후방 호환성)
+            keywords: [keyword.mainKeyword].filter(k => k && k.trim() !== ''),
+            // 기존 구조도 지원 (후방 호환성)
+            mainKeyword: keyword.mainKeyword,
+            // 슬롯 메타데이터
             keyword_id: keyword.id, // slots 테이블의 keyword_id 필드를 위해 추가
             quantity: keyword.workCount || 1, // slots 테이블의 quantity 필드를 위해 추가
             days_until_due: daysUntilDue, // 계산용으로 필드로 추가
             due_date: keyword.dueDate || getTomorrowDate(), // 마감일 (deadline 필드에 사용됨)
-            keywordDetails: [{
-              id: keyword.id,
-              mainKeyword: keyword.mainKeyword,
-              workCount: keyword.workCount || 1,
-              dueDate: keyword.dueDate || getTomorrowDate(),
-              daysUntilDue: daysUntilDue // 진행일수 추가
-            }],
-            payment: keywordPayments[index], // 결제 정보 추가
-            calculated_price: keywordPayments[index].amount // 정확한 계산된 가격 추가 (slot_pending_balances에 반영될 금액)
+            // 결제 정보
+            payment: keywordPayments[index],
+            calculated_price: keywordPayments[index].amount // 정확한 계산된 가격
           };
           console.log(`키워드 "${keyword.mainKeyword}" input_data 정리 완료:`, JSON.stringify(keywordInputData));
 

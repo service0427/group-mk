@@ -1,5 +1,7 @@
 import React from 'react';
 import { Slot } from './types';
+import { supabase } from '@/supabase';
+import { useEffect, useState } from 'react';
 
 interface SlotDetailsProps {
   slot: Slot;
@@ -7,55 +9,59 @@ interface SlotDetailsProps {
 }
 
 const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) => {
+  const [campaignData, setCampaignData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const inputData = slot.input_data;
+  
+  // 캠페인 정보 로드
+  useEffect(() => {
+    const loadCampaignData = async () => {
+      if (!slot.product_id) return;
+      
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', slot.product_id)
+          .maybeSingle();
+          
+        if (!error && data) {
+          setCampaignData(data);
+        }
+      } catch (err) {
+        console.error('캠페인 정보 로드 중 오류:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCampaignData();
+  }, [slot.product_id]);
+  
   if (!inputData) return <div className="mb-2">데이터 없음</div>;
   
-  // 키워드 정보 가져오기 함수
-  const getKeywordInfo = (inputData: any) => {
-    if (!inputData) return [];
-    
-    // keywords 배열이 있는지 확인
-    if (inputData.keywords && Array.isArray(inputData.keywords)) {
-      return inputData.keywords;
-    }
-    
-    // 서비스 타입에 따라 다른 필드에서 키워드 가져오기
-    let keyword = null;
-    switch (selectedServiceType) {
-      case 'NaverTraffic':
-      case 'NaverShopTraffic':
-      case 'NaverAuto':
-        keyword = inputData.keyword;
-        break;
-      case 'CoupangTraffic':
-        keyword = inputData.search_term;
-        break;
-      case 'NaverPlaceSave':
-      case 'NaverPlaceShare':
-      case 'NaverPlaceTraffic':
-        keyword = inputData.place_name;
-        break;
-      case 'OhouseTraffic':
-        keyword = '오늘의집'; // 특정 키워드가 없는 경우
-        break;
-      default:
-        keyword = inputData.keyword;
-        break;
-    }
-    
-    return keyword ? [keyword] : [];
-  };
-  
-  // 키워드 렌더링 함수
+  // 간단한 키워드 렌더링 함수 - keyword1, keyword2, keyword3만 표시
   const renderKeywords = () => {
-    const keywords = getKeywordInfo(inputData);
-    if (keywords.length > 0) {
+    const keywordsList = [];
+    
+    // 키워드1, 키워드2, 키워드3 구조 사용 (가장 우선)
+    if (inputData.keyword1) keywordsList.push(inputData.keyword1);
+    if (inputData.keyword2) keywordsList.push(inputData.keyword2);
+    if (inputData.keyword3) keywordsList.push(inputData.keyword3);
+    
+    // mainKeyword도 키워드가 없는 경우에만 백업으로 사용
+    if (keywordsList.length === 0 && inputData.mainKeyword) {
+      keywordsList.push(inputData.mainKeyword);
+    }
+    
+    if (keywordsList.length > 0) {
       return (
         <div className="mb-3">
           <strong>키워드:</strong>
           <div className="flex flex-wrap gap-1 mt-1">
-            {keywords.map((keyword: string, index: number) => (
-              <span key={index} className="badge badge-light">
+            {keywordsList.map((keyword, index) => (
+              <span key={index} className="badge badge-light-primary">
                 {keyword}
               </span>
             ))}
@@ -66,88 +72,17 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
     return null;
   };
   
-  // 서비스 타입에 따라 다른 필드를 렌더링
-  let details = null;
-  switch (selectedServiceType) {
-    case 'NaverTraffic':
-    case 'NaverShopTraffic':
-      details = (
-        <div className="mb-2">
-          <strong>네이버 URL:</strong> {inputData.url || '-'}
-        </div>
-      );
-      break;
-    case 'NaverPlaceSave':
-    case 'NaverPlaceShare':
-    case 'NaverPlaceTraffic':
-      details = (
-        <>
-          <div className="mb-2">
-            <strong>장소명:</strong> {inputData.place_name || '-'}
-          </div>
-          <div className="mb-2">
-            <strong>장소 ID:</strong> {inputData.place_id || '-'}
-          </div>
-        </>
-      );
-      break;
-    case 'CoupangTraffic':
-      details = (
-        <>
-          <div className="mb-2">
-            <strong>상품 URL:</strong> {inputData.product_url || '-'}
-          </div>
-          <div className="mb-2">
-            <strong>검색어:</strong> {inputData.search_term || '-'}
-          </div>
-        </>
-      );
-      break;
-    case 'OhouseTraffic':
-      details = (
-        <div className="mb-2">
-          <strong>오늘의집 URL:</strong> {inputData.ohouse_url || '-'}
-        </div>
-      );
-      break;
-    case 'NaverAuto':
-      details = (
-        <div className="mb-2">
-          <strong>네이버 ID:</strong> {inputData.naver_id || '-'}
-        </div>
-      );
-      break;
-    default:
-      details = null;
-  }
+  // 단가 렌더링 - 사용자 요청에 따라 제거됨
+  const renderPrice = () => {
+    return null;
+  };
   
+  // URL만 표시하는 뷰
   return (
     <>
-      {details}
-      {renderKeywords()}
-      {!details && (
-        <>
-          <div className="mb-2">
-            <strong>URL:</strong> {inputData.url || '-'}
-          </div>
-          {/* 키워드만 표시하고 전체 JSON 오브젝트는 표시하지 않음 */}
-          <div className="mb-2">
-            <strong>키워드:</strong>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {(inputData.keywords && Array.isArray(inputData.keywords)
-                ? inputData.keywords
-                : inputData.keyword
-                  ? [inputData.keyword]
-                  : []
-              ).map((keyword: string, index: number) => (
-                <span key={index} className="badge badge-light">
-                  {keyword}
-                </span>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+      <div className="mb-2">
+        <strong>URL:</strong> {inputData.url || inputData.product_url || '-'}
+      </div>
     </>
   );
 };

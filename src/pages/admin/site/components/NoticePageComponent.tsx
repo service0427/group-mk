@@ -338,9 +338,9 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
-        <div className="bg-background py-3 px-6 border-b">
+        <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">삭제 확인</DialogTitle>
-        </div>
+        </DialogHeader>
         <div className="p-6 bg-background">
           <div className="mb-5">
             <p className="text-foreground">
@@ -989,9 +989,9 @@ const NoticePageComponent = () => {
         }}
       >
         <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden">
-          <div className="bg-background py-2 sm:py-3 px-3 sm:px-5 border-b w-full">
+          <DialogHeader className="bg-background py-2 sm:py-3 px-3 sm:px-5 w-full">
             <DialogTitle className="text-base sm:text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
-          </div>
+          </DialogHeader>
           <div className="bg-background flex flex-col max-h-[80vh] w-full">
             <NoticeDetail
               notice={selectedNotice}

@@ -121,7 +121,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }, [auth, decodeToken, refreshToken]);
 
-    // 사용자 정보를 가져오는 함수 - 중복 API 호출 최적화
+    // 사용자 정보를 가져오는 함수 - 중복 API 호출 최적화 및 초보자 역할 특별 처리
     const getUser = useCallback(async (): Promise<CustomUser | null> => {
         try {
             // 세션과 사용자 정보를 병렬로 요청
@@ -140,7 +140,25 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             
             const user = userResponse.data.user;
             
-            // 사용자 프로필 정보 병합
+            // 사용자 메타데이터에서 역할 확인
+            const metadataRole = user.user_metadata?.role;
+            
+            // 초보자 역할 확인 - 초보자인 경우 users 테이블 조회 스킵
+            if (metadataRole === USER_ROLES.BEGINNER) {
+                // 초보자는 메타데이터만 사용하여 기본 사용자 정보 생성
+                const beginnerUserData: CustomUser = {
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.full_name || '',
+                    phone_number: '',
+                    role: USER_ROLES.BEGINNER,
+                    status: 'active',
+                    raw_user_meta_data: user.user_metadata
+                };
+                return beginnerUserData;
+            }
+            
+            // 사용자 프로필 정보 병합 (초보자가 아닌 경우에만 실행)
             try {
                 const { data: userData, error: userError } = await supabase
                     .from('users')
@@ -150,14 +168,12 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 
                 if (userError) {
                     // 기본 사용자 정보 반환 - 메타데이터 역할 유지
-                    const metadataRole = user.user_metadata?.role;
-                    
                     const basicUserData: CustomUser = {
                         id: user.id,
                         email: user.email || '',
                         full_name: user.user_metadata?.full_name || '',
                         phone_number: '',
-                        role: metadataRole || USER_ROLES.ADVERTISER, // 기본 역할로 광고주 사용
+                        role: metadataRole || USER_ROLES.BEGINNER, // 기본 역할로 초보자 사용
                         status: 'active',
                         raw_user_meta_data: user.user_metadata
                     };
@@ -172,7 +188,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: user.email || '',
                     full_name: user.user_metadata?.full_name || '',
                     phone_number: '',
-                    role: user.user_metadata?.role || USER_ROLES.ADVERTISER, // 기본 역할로 광고주 사용
+                    role: metadataRole || USER_ROLES.BEGINNER, // 기본 역할로 초보자 사용
                     status: 'active',
                     raw_user_meta_data: user.user_metadata
                 };
@@ -503,7 +519,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 options: {
                     data: {
                         full_name: full_name,
-                        role: USER_ROLES.ADVERTISER // 기본 역할 설정
+                        role: USER_ROLES.BEGINNER // 초보자로 기본 역할 설정
                     }
                 }
             });
@@ -523,7 +539,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: email,
                     full_name: full_name,
                     status: 'active',
-                    role: USER_ROLES.ADVERTISER // 기본 역할
+                    role: USER_ROLES.BEGINNER // 초보자로 기본 역할 설정
                 };
 
                 // 비밀번호 해시 생성
@@ -685,25 +701,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     // 통합된 로그아웃 함수
     const logout = useCallback(async () => {
         try {
+            // 로그아웃 플래그 설정
             setIsLoggingOut(true);
+            
+            // 세션 스토리지에 리다이렉트 플래그 설정
+            sessionStorage.setItem('logout_redirect', 'true');
+            sessionStorage.setItem('logout_timestamp', Date.now().toString());
             
             // 관리자 여부 확인
             const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-            
-            // 관리자인 경우 페이지 이동 준비
-            if (isAdmin) {
-                setTimeout(() => {
-                    // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
-                    // 해시 라우터와 호환되는 방식으로 경로 설정
-                    window.location.replace(window.location.origin);
-                    
-                    // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
-                    setTimeout(() => {
-                        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
-                        window.location.hash = '/auth/login';
-                    }, 50);
-                }, 100);
-            }
             
             // 모든 상태 먼저 정리
             setAuth(undefined);
@@ -720,12 +726,36 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 스토리지 정리
             clearAuthStorage();
             
+            // 관리자인 경우 페이지 이동 - 마지막 단계로 이동
+            if (isAdmin) {
+                // React 컴포넌트 언마운트와 상태 정리를 위해 충분한 시간을 두고
+                // 새로고침 전에 컴포넌트가 로그아웃 상태를 완전히 처리할 수 있도록 함
+                setTimeout(() => {
+                    // isLoggingOut 플래그가 false로 설정되기 전에 페이지 리디렉션 수행
+                    // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
+                    window.location.replace(window.location.origin);
+                    
+                    // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
+                    setTimeout(() => {
+                        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
+                        window.location.hash = '/auth/login';
+                    }, 50);
+                }, 300); // 시간을 300ms로 늘려 컴포넌트 정리 시간 확보
+            }
+            
             return true;
         } catch (error) {
             console.error('로그아웃 실패:', error);
             return false;
         } finally {
-            setIsLoggingOut(false);
+            // 관리자인 경우 타임아웃 후 리다이렉션이 일어날 것이므로
+            // 마지막에 로그아웃 플래그를 해제하지 않음
+            const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
+            if (!isAdmin) {
+                setIsLoggingOut(false);
+            }
+            // 관리자인 경우 로그아웃 플래그가 계속 true로 남아있게 됨
+            // 이는 페이지 리디렉션이 발생하기 전까지 컴포넌트가 올바르게 처리되도록 보장함
         }
     }, [currentUser, clearAuthStorage]);
 

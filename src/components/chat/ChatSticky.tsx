@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useChat } from '@/hooks/useChat';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
+import { useLogoutContext } from '@/contexts/LogoutContext';
 
 // 데이터베이스 진단 결과 인터페이스
 interface DiagnosticResult {
@@ -113,11 +114,11 @@ const diagnoseDatabaseConnection = async (): Promise<DiagnosticResult> => {
 const ChatSticky: React.FC = () => {
   // 먼저 인증 정보를 확인하여 렌더링 여부를 결정
   const { isAuthenticated, currentUser } = useAuthContext();
+  const { isLoggingOut } = useLogoutContext();
   
-  // 운영자나 관리자는 이 컴포넌트를 렌더링하지 않음
-  // 이렇게 하면 불필요한 훅 호출과 상태 업데이트 방지
-  if (isAuthenticated && currentUser?.role &&
-      hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
+  // 로그아웃 중이거나 운영자/관리자는 이 컴포넌트를 렌더링하지 않음
+  if (isLoggingOut || (isAuthenticated && currentUser?.role &&
+      hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN))) {
     return null;
   }
   
@@ -128,12 +129,23 @@ const ChatSticky: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 컴포넌트가 마운트된 상태인지 추적하는 ref
+  const isMountedRef = useRef<boolean>(true);
   // 모바일 미디어 쿼리 사용
   const isMobile = useMediaQuery('(max-width: 768px)');
   
   // 직접 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  
+  // 컴포넌트 마운트/언마운트 처리
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   // useChat 훅 사용 - 항상 호출해야 함 (조건부로 사용하면 안됨)
   // React 훅 규칙: 항상 동일한 순서로 호출되어야 함
@@ -286,7 +298,7 @@ const ChatSticky: React.FC = () => {
   
   // 채팅방 초기화
   const initializeChat = async () => {
-    if (!currentUser?.id) {
+    if (!currentUser?.id || isLoggingOut) {
       setError('로그인이 필요합니다.');
       return null;
     }
@@ -296,12 +308,22 @@ const ChatSticky: React.FC = () => {
     try {
       // 인증 토큰 확인
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session || isLoggingOut) {
         throw new Error('인증 세션이 없습니다. 다시 로그인해 주세요.');
+      }
+      
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+      if (isLoggingOut || !isMountedRef.current) {
+        return null;
       }
       
       // 채팅방 목록 가져오기
       await fetchChatRooms();
+      
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+      if (isLoggingOut || !isMountedRef.current) {
+        return null;
+      }
       
       // 현재 사용자가 관리자인지 확인
       if (currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
@@ -328,12 +350,27 @@ const ChatSticky: React.FC = () => {
       // 메시지를 보낼 때 생성할 예정
       return null;
     } catch (err: any) {
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 에러 메시지 표시하지 않음
+      if (isLoggingOut || !isMountedRef.current) {
+        return null;
+      }
       
       setError(err.message || '채팅 초기화 중 오류가 발생했습니다.');
       
       // 데이터베이스 진단 실행
       try {
+        // 로그아웃 중이면 진단하지 않음
+        if (isLoggingOut || !isMountedRef.current) {
+          return null;
+        }
+        
         const diagnostics = await diagnoseDatabaseConnection();
+        
+        // 컴포넌트가 언마운트되었는지 다시 확인
+        if (!isMountedRef.current) {
+          return null;
+        }
+        
         setDiagnosticResult(diagnostics);
         
         if (!diagnostics.success) {
@@ -347,17 +384,23 @@ const ChatSticky: React.FC = () => {
           }
         }
       } catch (diagError) {
-        
+        // 진단 실패 시 무시
       }
       
       return null;
     } finally {
-      setIsLoading(false);
+      // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
   
   // 채팅창 열기/닫기
   const handleToggleChat = async () => {
+    // 로그아웃 중이면 채팅창 열지 않음
+    if (isLoggingOut) return;
+    
     if (!isOpen) {
       // 열 때 채팅방 초기화
       if (isAuthenticated && currentUser) {
@@ -369,26 +412,41 @@ const ChatSticky: React.FC = () => {
       setCurrentRoomId(null);
     }
     
-    setIsOpen(!isOpen);
+    // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+    if (isMountedRef.current) {
+      setIsOpen(!isOpen);
+    }
   };
   
   // 메시지 보내기
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || !currentUser) return;
+    // 로그아웃 중이거나 입력이 없거나 사용자가 없으면 중단
+    if (isLoggingOut || !inputValue.trim() || !currentUser) return;
     
     try {
       if (!currentRoomId) {
         const newRoomId = await createChatRoom([], '운영자와의 대화');
+        
+        // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+        if (isLoggingOut || !isMountedRef.current) return;
+        
         if (newRoomId) {
           await openChatRoom(newRoomId);
           await sendChatMessage(newRoomId, inputValue.trim());
-          setInputValue('');
+          
+          // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+          if (isMountedRef.current) {
+            setInputValue('');
+          }
         }
         return;
       }
       
       // 채팅방 상태 확인을 위해 최신 데이터 가져오기
       await fetchChatRooms();
+      
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+      if (isLoggingOut || !isMountedRef.current) return;
       
       // 채팅방 상태 확인
       const currentRoom = rooms.find(room => room.id === currentRoomId);
@@ -397,33 +455,61 @@ const ChatSticky: React.FC = () => {
         // 일반 사용자만 새 채팅방 생성
         if (currentUser?.role && !hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
+          
+          // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+          if (isLoggingOut || !isMountedRef.current) return;
+          
           if (newRoomId) {
             await openChatRoom(newRoomId);
             await sendChatMessage(newRoomId, inputValue.trim());
-            setInputValue('');
+            
+            // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+            if (isMountedRef.current) {
+              setInputValue('');
+            }
           }
         } else {
-          setError('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다.');
+          // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+          if (isMountedRef.current) {
+            setError('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다.');
+          }
         }
         return;
       }
       
       // 활성 상태 채팅방에 메시지 전송
       const result = await sendChatMessage(currentRoomId, inputValue.trim());
+      
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+      if (isLoggingOut || !isMountedRef.current) return;
+      
       if (result) {
-        setInputValue('');
+        // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+        if (isMountedRef.current) {
+          setInputValue('');
+        }
       } else {
         // 메시지 전송 실패 시 새 채팅방 생성 시도
         if (currentUser?.role && !hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
           const newRoomId = await createChatRoom([], '운영자와의 대화');
+          
+          // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+          if (isLoggingOut || !isMountedRef.current) return;
+          
           if (newRoomId) {
             await openChatRoom(newRoomId);
             await sendChatMessage(newRoomId, inputValue.trim());
-            setInputValue('');
+            
+            // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+            if (isMountedRef.current) {
+              setInputValue('');
+            }
           }
         }
       }
     } catch (err: any) {
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 에러 메시지 표시하지 않음
+      if (isLoggingOut || !isMountedRef.current) return;
       
       setError(err.message || '메시지 전송 중 오류가 발생했습니다.');
     }
@@ -431,23 +517,44 @@ const ChatSticky: React.FC = () => {
   
   // 수동으로 진단 실행 함수
   const runDiagnostics = async () => {
-    setIsLoading(true);
-    setShowDiagnostic(true);
+    // 로그아웃 중이면 진단하지 않음
+    if (isLoggingOut) return;
+    
+    // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+    if (isMountedRef.current) {
+      setIsLoading(true);
+      setShowDiagnostic(true);
+    }
     
     try {
       const result = await diagnoseDatabaseConnection();
-      setDiagnosticResult(result);
       
-      if (result.success) {
-        setError('진단 결과: 데이터베이스 연결 및 테이블이 정상입니다.');
-      } else {
-        setError(result.errorMessage || '알 수 없는 오류');
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 중단
+      if (isLoggingOut || !isMountedRef.current) return;
+      
+      // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+      if (isMountedRef.current) {
+        setDiagnosticResult(result);
+        
+        if (result.success) {
+          setError('진단 결과: 데이터베이스 연결 및 테이블이 정상입니다.');
+        } else {
+          setError(result.errorMessage || '알 수 없는 오류');
+        }
       }
     } catch (err: any) {
+      // 로그아웃 중이거나 컴포넌트가 언마운트되었으면 에러 메시지 표시하지 않음
+      if (isLoggingOut || !isMountedRef.current) return;
       
-      setError('진단 오류: ' + err.message);
+      // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+      if (isMountedRef.current) {
+        setError('진단 오류: ' + err.message);
+      }
     } finally {
-      setIsLoading(false);
+      // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
   

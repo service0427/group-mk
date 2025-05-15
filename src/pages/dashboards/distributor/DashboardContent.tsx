@@ -160,8 +160,8 @@ export const DashboardContent: React.FC = () => {
       let cashTrend = 0.5; // 기본 트렌드를 약간 양수로 설정하여 표시되도록 함
       
       try {
-        // getUserCashBalance 함수를 활용하여 사용자 캐시 잔액 가져오기
-        const balance = await getUserCashBalance(currentUser.id || '');
+        // getUserCashBalance 함수를 활용하여 사용자 캐시 잔액 가져오기 (사용자 역할 포함)
+        const balance = await getUserCashBalance(currentUser.id || '', currentUser.role);
         userCash = balance || 0;
         
         // 트렌드 계산을 위해 최근 거래 내역 조회

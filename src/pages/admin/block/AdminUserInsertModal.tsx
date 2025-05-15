@@ -157,9 +157,9 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
     return (
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-                <div className="bg-background py-4 px-6 border-b">
+                <DialogHeader className="bg-background py-4 px-6">
                     <DialogTitle className="text-xl font-bold text-foreground">신규 회원 추가</DialogTitle>
-                </div>
+                </DialogHeader>
                 <div className="p-6 bg-background">
                     <div className="space-y-6">
                         {/* 이름 입력 */}

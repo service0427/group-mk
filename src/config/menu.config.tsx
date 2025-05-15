@@ -34,6 +34,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
     title: '캠페인 소개',
     icon: 'document text-primary',
     path: '/advertise/ntraffic/desc',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),  // beginner 등급은 볼 수 없음
     children: [
       {
         title: '네이버',
@@ -144,6 +145,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: '내 서비스 관리',
         icon: 'setting-4 text-info',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),  // beginner 등급은 볼 수 없음
         children: [
           {
             title: '네이버',
@@ -319,12 +321,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
     children: [
       {
         title: '캠페인 통합 관리',
         path: '/admin/campaigns/all',
         icon: 'setting-3 text-warning',
-        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADMIN),
       },
       {
         title: 'NAVER 쇼핑',
@@ -376,6 +378,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '개발자 메뉴',
     icon: 'code text-info',
+    authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
       {
         title: '역할별 대시보드',
@@ -406,10 +409,14 @@ export const MENU_SIDEBAR: TMenuConfig = [
             icon: 'presentation-chart text-warning',
             path: '/dashboard/advertiser'
           },
+          {
+            title: '비기너 대시보드',
+            icon: 'user-square text-gray-500',
+            path: '/dashboard/beginner'
+          },
         ]
       }
     ],
-    authCheck: (role) => role === USER_ROLES.DEVELOPER  // 개발자 역할만 볼 수 있도록 제한
   }
 ];
 
@@ -452,6 +459,7 @@ export const MENU_MEGA: TMenuConfig = [
   },
   {
     title: '서비스',
+    authCheck: (role) => role !== USER_ROLES.BEGINNER, // beginner 등급은 볼 수 없음
     children: [
       {
         heading: '캠페인 소개',
@@ -577,6 +585,7 @@ export const MENU_MEGA: TMenuConfig = [
       },
       {
         heading: '내 서비스 관리',
+        authCheck: (role) => role !== USER_ROLES.BEGINNER, // beginner 등급은 볼 수 없음
         children: [
           {
             title: '이용 중 서비스 관리',

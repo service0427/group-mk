@@ -537,7 +537,9 @@ export const useChat = () => {
   // 실시간 구독 설정 - 운영자/관리자가 아닌 경우에만 실행
   useEffect(() => {
     // 로그아웃 중이거나 사용자 정보가 없는 경우 중단
-    if (isLoggingOut || !currentUser?.id) return;
+    if (isLoggingOut || !currentUser?.id) {
+      return;
+    }
     
     // 운영자나 관리자인 경우 채팅 구독을 설정하지 않음
     if (currentUser.role && (currentUser.role === 'admin' || currentUser.role === 'operator')) {
@@ -566,6 +568,9 @@ export const useChat = () => {
             table: 'chat_messages',
           },
           async (payload) => {
+            // 로그아웃 중이면 메시지 처리 중단
+            if (isLoggingOut) return;
+            
             const newMessage = payload.new as any;
             
             // 현재 참여 중인 채팅방의 메시지만 수신 (ref 사용)
@@ -651,6 +656,9 @@ export const useChat = () => {
             table: 'chat_messages',
           },
           (payload) => {
+            // 로그아웃 중이면 메시지 처리 중단
+            if (isLoggingOut) return;
+            
             const updatedMessage = payload.new as any;
             
             // 메시지 상태 업데이트
@@ -692,7 +700,7 @@ export const useChat = () => {
           if (status === 'SUBSCRIBED') {
             retryCount = 0;
           } else if (status === 'CHANNEL_ERROR') {            
-            if (retryCount < maxRetries) {
+            if (retryCount < maxRetries && !isLoggingOut) {
               retryCount++;
               setTimeout(() => {
                 setupSubscription();
@@ -713,6 +721,9 @@ export const useChat = () => {
             filter: `user_id=eq.${currentUser.id}`
           },
           async () => {
+            // 로그아웃 중이면 처리 중단
+            if (isLoggingOut) return;
+            
             // 새로운 채팅방 추가되면 목록 새로고침
             await fetchChatRooms();
           }
@@ -726,6 +737,9 @@ export const useChat = () => {
             filter: `user_id=eq.${currentUser.id}`
           },
           () => {
+            // 로그아웃 중이면 처리 중단
+            if (isLoggingOut) return;
+            
             // 참가자에서 제거되면 목록 새로고침
             fetchChatRooms();
           }
@@ -734,6 +748,7 @@ export const useChat = () => {
       
       // 구독 해제 함수 반환
       return () => {
+        // 각 채널 구독 제거
         supabase.removeChannel(messageChannel);
         supabase.removeChannel(roomChannel);
       };
@@ -744,8 +759,8 @@ export const useChat = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  // 안전한 의존성 배열 - 로그아웃 시 rooms가 정의되지 않는 문제 방지
-  }, [currentUser?.id, fetchChatRooms, isLoggingOut]);
+  // 의존성 배열에 isLoggingOut 추가
+  }, [currentUser?.id, fetchChatRooms, rooms, isLoggingOut]);
 
   return {
     rooms,

@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
   DialogTitle,
-  DialogPortal,
-  DialogOverlay,
+  DialogHeader,
+  DialogHeaderSpacer
 } from '@/components/ui/dialog';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
@@ -20,33 +16,6 @@ import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
 import { registerSlot } from './services/slotService';
 
-// X 버튼이 없는 DialogContent 커스텀 컴포넌트
-const CustomDialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
-        className
-      )}
-      style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1000
-      }}
-      {...props}
-    >
-      {children}
-      {/* X 버튼 제거 */}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -1303,9 +1272,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="!max-w-[95vw] sm:!max-w-[1000px] md:!max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-300">
-          <DialogHeader className="bg-background py-3 sm:py-5 px-4 sm:px-8 border-b sticky top-0 z-10">
-            <DialogTitle className="text-sm md:text-lg font-bold text-foreground truncate">
+        <DialogContent className="sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]">
+          <DialogHeader className="bg-background py-4 px-6 flex-shrink-0">
+            <DialogTitle className="text-lg font-medium text-foreground">
               {serviceCode === 'NaverShopTraffic'
                 ? '네이버 쇼핑 트래픽 슬롯 관리'
                 : serviceCode === 'NaverBlogPosting'
@@ -1318,14 +1287,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         ? '인스타그램 슬롯 관리'
                         : '캠페인 슬롯 관리'}
             </DialogTitle>
-            <div className="flex mt-3 md:mt-4 justify-end items-center">
-              <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
-                <span className="font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
-                <span className="ml-1 font-extrabold text-primary dark:text-primary-foreground">{userCashBalance.toLocaleString()}원</span>
-              </div>
+            <DialogHeaderSpacer />
+            <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
+              <span className="font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
+              <span className="ml-1 font-extrabold text-primary dark:text-primary-foreground">{userCashBalance.toLocaleString()}원</span>
             </div>
           </DialogHeader>
-          <DialogBody className="p-3 sm:p-5 md:p-8 overflow-hidden">
+          <div className="p-6 bg-background flex-grow overflow-auto">
             {/* 수직 레이아웃: 캠페인 선택이 위에, 키워드 관리가 아래에 */}
             <div className="flex flex-col gap-6">
               {/* 캠페인 상세 정보 - 더 컴팩트하게 */}
@@ -1666,8 +1634,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 </div>
               </div>
             </div>
-          </DialogBody>
-          <DialogFooter className="px-3 sm:px-5 md:px-8 py-3 sm:py-4 md:py-5 border-t flex flex-col sm:flex-row justify-between items-center gap-3 sticky bottom-0 z-10 bg-background shadow-lg">
+          </div>
+          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
             <div className="flex items-center">
               {selectedKeywords.length > 0 && (
                 <div className="flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-100 dark:border-blue-900 shadow-sm w-full sm:w-auto">
@@ -1710,46 +1678,37 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* 알림 다이얼로그 */}
       <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-        <CustomDialogContent className="max-w-md w-[92vw] md:w-auto overflow-hidden bg-white dark:bg-slate-900 rounded-xl shadow-xl">
-          <div className="p-0">
-            {/* 헤더 영역 */}
-            <div className={`px-4 sm:px-6 py-3 sm:py-4 ${isSuccess ? "bg-gradient-to-r from-green-500 to-emerald-600" : "bg-gradient-to-r from-red-500 to-rose-600"} text-white`}>
-              <div className="flex items-center gap-2 sm:gap-3">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
+          <div className={`px-4 sm:px-6 py-4 border-b ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+            <DialogTitle className="text-lg font-medium">
+              <div className="flex items-center gap-2">
                 {isSuccess ? (
-                  <div className="size-8 sm:size-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <KeenIcon icon="Check" className="size-4 sm:size-5 text-white" />
-                  </div>
+                  <KeenIcon icon="Check" className="size-5 text-green-600 dark:text-green-400" />
                 ) : (
-                  <div className="size-8 sm:size-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <KeenIcon icon="Information" className="size-4 sm:size-5 text-white" />
-                  </div>
+                  <KeenIcon icon="Information" className="size-5 text-red-600 dark:text-red-400" />
                 )}
-                <h3 className="text-base sm:text-lg font-semibold">{alertTitle}</h3>
+                <span className={isSuccess ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}>{alertTitle}</span>
               </div>
-            </div>
-            
-            {/* 내용 영역 */}
-            <div className="p-4 sm:p-6">
-              <p className="text-foreground mb-4 sm:mb-6 text-sm md:text-base whitespace-pre-line">{alertDescription}</p>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setAlertDialogOpen(false)}
-                  className={`text-sm md:text-base px-4 sm:px-5 py-1.5 sm:py-2 h-8 sm:h-10 rounded-lg shadow-sm ${isSuccess 
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
-                    : "bg-rose-600 hover:bg-rose-700 text-white"}`}
-                >
-                  확인
-                </Button>
-              </div>
+            </DialogTitle>
+          </div>
+          <div className="p-6 bg-background">
+            <p className="text-foreground mb-6 whitespace-pre-line">{alertDescription}</p>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setAlertDialogOpen(false)}
+                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+              >
+                확인
+              </Button>
             </div>
           </div>
-        </CustomDialogContent>
+        </DialogContent>
       </Dialog>
     </>
   );

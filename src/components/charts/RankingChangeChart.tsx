@@ -5,7 +5,8 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
-  DialogTitle
+  DialogTitle,
+  DialogHeaderSpacer
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
@@ -459,8 +460,10 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[1280px] p-0 overflow-hidden">
-        <DialogHeader className="bg-background py-5 px-8 border-b sticky top-0 z-10">
-          <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
+        <DialogHeader className="bg-background sticky top-0 z-10">
+          <DialogTitle>캠페인 상세 정보</DialogTitle>
+          {/* 버튼/라벨이 없을 때 오른쪽 공간 확보 */}
+          <DialogHeaderSpacer />
         </DialogHeader>
 
         {/* 헤더 정보 - 고정 위치로 변경 (모바일 대응) */}

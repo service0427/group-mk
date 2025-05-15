@@ -139,9 +139,9 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
-                <div className="bg-background py-4 px-6 border-b">
+                <DialogHeader className="bg-background py-4 px-6">
                     <DialogTitle className="text-xl font-bold text-foreground">회원 정보</DialogTitle>
-                </div>
+                </DialogHeader>
                 <div className="p-6 bg-background">
                     {loading ? (
                         <div className="flex justify-center items-center py-8">

@@ -37,17 +37,29 @@ const UserInfoDisplay = () => {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isTablet = useMediaQuery('(max-width: 1023px)');
 
-  // 사용자의 캐시 잔액 조회
+  // 사용자의 캐시 잔액 조회 (초보자 역할 특별 처리 추가)
   useEffect(() => {
     const fetchCashBalance = async () => {
       if (!currentUser?.id) return;
       
       setIsLoading(true);
       try {
-        const balance = await getUserCashBalance(currentUser.id);
-        setCashBalance(balance);
+        // 초보자 사용자는 기본값 0으로 처리
+        if (currentUser.role === 'beginner') {
+          setCashBalance(0);
+        } else {
+          // 다른 역할은 실제 잔액 조회
+          try {
+            const balance = await getUserCashBalance(currentUser.id);
+            setCashBalance(balance);
+          } catch (error) {
+            console.error("캐시 잔액 조회 오류:", error);
+            setCashBalance(0); // 오류 시 기본값
+          }
+        }
       } catch (error) {
-        
+        console.error("캐시 잔액 처리 중 예외:", error);
+        setCashBalance(0); // 오류 시 기본값
       } finally {
         setIsLoading(false);
       }
@@ -55,26 +67,37 @@ const UserInfoDisplay = () => {
 
     fetchCashBalance();
 
-    // 실시간 잔액 업데이트를 위한 구독 설정
-    const subscription = supabase
-      .channel('user_balances_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'user_balances',
-          filter: `user_id=eq.${currentUser?.id}` 
-        }, 
-        () => {
-          fetchCashBalance();
-        }
-      )
-      .subscribe();
+    // 초보자 역할이 아닌 경우에만 실시간 구독 설정
+    let subscription: any = null;
+    
+    if (currentUser?.role !== 'beginner') {
+      // 실시간 잔액 업데이트를 위한 구독 설정
+      try {
+        subscription = supabase
+          .channel('user_balances_changes')
+          .on('postgres_changes', 
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'user_balances',
+              filter: `user_id=eq.${currentUser?.id}` 
+            }, 
+            () => {
+              fetchCashBalance();
+            }
+          )
+          .subscribe();
+      } catch (subError) {
+        console.error("구독 설정 중 오류:", subError);
+      }
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.role]);
 
   // 다크 모드 토글 핸들러
   const handleThemeMode = (event: React.ChangeEvent<HTMLInputElement>) => {

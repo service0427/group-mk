@@ -11,7 +11,7 @@ import { OperatorDashboardPage } from '@/pages/dashboards/operator';
 import { DistributorDashboardPage } from '@/pages/dashboards/distributor';
 import { AgencyDashboardPage } from '@/pages/dashboards/agency';
 import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
-import { BeginnerDashboardPage } from '@/pages/dashboards/beginner';
+import { DashboardPage as BeginnerDashboardPage } from '@/pages/dashboards/beginner/DashboardPage';
 
 import {
   ServiceDescPage,

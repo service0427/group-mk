@@ -14,6 +14,13 @@ export const registerSlot = async (
   inputData: any
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
+    console.log('registerSlot 시작 - 입력 데이터:', {
+      userId,
+      campaignId,
+      matId,
+      inputData: JSON.stringify(inputData)
+    });
+    
     // 1. 캠페인 정보 확인 (유효성 및 상태 체크)
     const { data: campaignData, error: campaignError } = await supabase
       .from('campaigns')
@@ -22,7 +29,7 @@ export const registerSlot = async (
       .single();
 
     if (campaignError) {
-      
+      console.error('캠페인 정보 조회 오류:', campaignError);
       throw new Error('캠페인 정보를 찾을 수 없습니다.');
     }
 
@@ -56,35 +63,86 @@ export const registerSlot = async (
     const freeBalance = parseFloat(String(balanceData.free_balance || 0));
     const totalBalance = paidBalance + freeBalance;
 
-    // 잔액 부족 체크
-    if (totalBalance < unitPrice) {
-      throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${unitPrice.toLocaleString()}원`);
+    // 입력 데이터에서 계산된 가격 가져오기 (기본값은 단가)
+    const calculatedPrice = inputData.calculated_price || unitPrice;
+    
+    // 잔액 부족 체크 (계산된 금액 사용)
+    if (totalBalance < calculatedPrice) {
+      throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${calculatedPrice.toLocaleString()}원`);
     }
 
     // 3. 슬롯 생성 트랜잭션 시작
     const now = new Date().toISOString();
 
-    // 슬롯 생성
+    // 입력 데이터에서 필요한 필드 추출
+    const keyword_id = inputData.keyword_id || null;
+    const quantity = inputData.quantity || null;
+    
+    // deadline 계산 - 테이블에 맞춤 (due_date가 있으면 그대로 사용)
+    let deadline = null;
+    if (inputData.due_date) {
+      // ISO 형식의 문자열을 Date 객체로 변환 후 다시 ISO 형식으로 변환
+      const dueDate = new Date(inputData.due_date);
+      deadline = dueDate.toISOString();
+    }
+
+    // 슬롯 생성 - 테이블 구조에 맞게 필드 추가
+    console.log('슬롯 생성 시도 - 데이터:', {
+      mat_id: matId,
+      product_id: campaignId,
+      user_id: userId,
+      status: 'pending',
+      keyword_id,
+      quantity,
+      deadline
+    });
+    
+    // UUID 유효성 체크
+    const isValidUUID = typeof matId === 'string' && 
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(matId);
+    
+    console.log('서비스에서 UUID 체크:', {
+      matId, 
+      isValidUUID,
+      type: typeof matId
+    });
+    
+    // mat_id가 유효한 UUID가 아니면 오류 처리
+    if (!isValidUUID) {
+      console.error('유효하지 않은 mat_id 형식:', matId);
+      throw new Error(`유효하지 않은 mat_id 형식: ${matId}`);
+    }
+    
+    // 테이블 구조에 맞게 필드 정의
+    const slotInsertData = {
+      mat_id: matId, // 총판 ID
+      product_id: campaignId,
+      user_id: userId,
+      status: 'pending', // 보류 상태로 생성
+      input_data: inputData,
+      keyword_id: keyword_id ? Number(keyword_id) : null, // 반드시 숫자 타입으로 변환
+      quantity: quantity ? Number(quantity) : null, // 반드시 숫자 타입으로 변환
+      deadline: deadline, // 마감일 필드 (테이블 구조에 맞게 수정)
+      created_at: now,
+      updated_at: now
+    };
+    
     const { data: slotData, error: slotError } = await supabase
       .from('slots')
-      .insert({
-        mat_id: matId, // 총판 ID
-        product_id: campaignId,
-        user_id: userId,
-        status: 'pending', // 보류 상태로 생성
-        input_data: inputData,
-        created_at: now,
-        updated_at: now
-      })
+      .insert(slotInsertData)
       .select();
 
     if (slotError) {
-      
-      throw new Error('슬롯 생성에 실패했습니다.');
+      console.error('슬롯 생성 오류:', slotError);
+      console.error('삽입하려던 데이터:', slotInsertData);
+      throw new Error(`슬롯 생성에 실패했습니다: ${slotError.message}`);
     }
 
     // 5. 잔액 차감 (free_balance부터 차감)
-    let remainingAmount = unitPrice;
+    // 계산된 가격 사용 - 이미 앞에서 선언했으므로 재선언 필요 없음
+    // const calculatedPrice = inputData.calculated_price || unitPrice;
+    
+    let remainingAmount = calculatedPrice;
     let updatedFreeBalance = freeBalance;
     let updatedPaidBalance = paidBalance;
     let freeBalanceUsed = 0; // 무료 캐시 사용 금액
@@ -122,24 +180,32 @@ export const registerSlot = async (
     }
 
     // 4. 보류 잔액 관리 (slot_pending_balances) - 결제 내역 정보 포함
+    // 이미 calculatedPrice 변수가 선언되어 있으므로 재선언 필요 없음
+    
     const { error: pendingBalanceError } = await supabase
       .from('slot_pending_balances')
       .insert({
         slot_id: slotData[0].id,
         user_id: userId,
         product_id: campaignId,
-        amount: unitPrice,
+        amount: calculatedPrice, // 계산된 가격 사용
         status: 'pending',
         created_at: now,
         notes: JSON.stringify({
           payment_details: {
             free_balance_used: freeBalanceUsed,
             paid_balance_used: paidBalanceUsed,
-            total_amount: unitPrice,
+            total_amount: calculatedPrice, // 계산된 가격 사용
             old_free_balance: freeBalance,
             new_free_balance: updatedFreeBalance,
             old_paid_balance: paidBalance,
-            new_paid_balance: updatedPaidBalance
+            new_paid_balance: updatedPaidBalance,
+            quantity: quantity,
+            days_until_due_calc: inputData.days_until_due, // 필드명 변경하여 계산값만 저장
+            deadline: deadline,
+            keyword_id: keyword_id,
+            unit_price: unitPrice,
+            calculated_price: calculatedPrice
           }
         })
       });
@@ -166,6 +232,13 @@ export const registerSlot = async (
     }
 
     // 6. 거래 내역 기록 (user_cash_history 테이블 사용)
+    // 키워드와 작업타수 정보 추가하여 상세내역 구성
+    // quantity 변수는 이미 선언되어 있으므로 재사용
+    const mainKeyword = inputData.keywords?.[0] || (inputData.keywordDetails?.[0]?.mainKeyword || '키워드');
+    // days_until_due_calc 추출 (inputData에서 가져옴)
+    const days_until_due_calc = inputData.days_until_due || 1;
+    const detailText = `${mainKeyword}(${quantity}타수, ${days_until_due_calc}일)`;
+    
     // 무료 캐시와 유료 캐시를 모두 사용한 경우, 각각 별도의 거래 내역으로 기록
     if (freeBalanceUsed > 0 && paidBalanceUsed > 0) {
       // 무료 캐시 사용 내역 기록
@@ -176,7 +249,7 @@ export const registerSlot = async (
           amount: -freeBalanceUsed, // 무료 캐시 사용 금액만 기록
           transaction_type: 'purchase',
           reference_id: slotData[0].id,
-          description: `슬롯 구매(무료 캐시): ${inputData.productName || '상품'} (캠페인ID: ${campaignId})`,
+          description: `슬롯 구매(무료 캐시): ${inputData.productName || '상품'} - ${detailText} (캠페인ID: ${campaignId})`,
           transaction_at: now,
           mat_id: matId,
           balance_type: 'free' // 무료 캐시 사용
@@ -194,7 +267,7 @@ export const registerSlot = async (
           amount: -paidBalanceUsed, // 유료 캐시 사용 금액만 기록
           transaction_type: 'purchase',
           reference_id: slotData[0].id,
-          description: `슬롯 구매(유료 캐시): ${inputData.productName || '상품'} (캠페인ID: ${campaignId})`,
+          description: `슬롯 구매(유료 캐시): ${inputData.productName || '상품'} - ${detailText} (캠페인ID: ${campaignId})`,
           transaction_at: now,
           mat_id: matId,
           balance_type: 'paid' // 유료 캐시 사용
@@ -210,10 +283,10 @@ export const registerSlot = async (
         .from('user_cash_history')
         .insert({
           user_id: userId,
-          amount: -unitPrice, // 음수로 입력하여 차감 표시
+          amount: -calculatedPrice, // 계산된 가격으로 차감
           transaction_type: 'purchase', // purchase 타입으로 차감
           reference_id: slotData[0].id,
-          description: `슬롯 구매(${freeBalanceUsed > 0 ? '무료' : '유료'} 캐시): ${inputData.productName || '상품'} (캠페인ID: ${campaignId})`,
+          description: `슬롯 구매(${freeBalanceUsed > 0 ? '무료' : '유료'} 캐시): ${inputData.productName || '상품'} - ${detailText} (캠페인ID: ${campaignId})`,
           transaction_at: now,
           mat_id: matId, // 총판 ID 저장
           balance_type: freeBalanceUsed > 0 ? 'free' : 'paid' // 무료 또는 유료 캐시 사용
@@ -235,15 +308,21 @@ export const registerSlot = async (
         new_paid_balance: updatedPaidBalance,
         old_free_balance: freeBalance,
         new_free_balance: updatedFreeBalance,
-        change_amount: -unitPrice,
+        change_amount: -calculatedPrice, // 계산된 금액 사용
         details: {
           operation: 'slot_purchase',
           slot_id: slotData[0].id,
           product_id: campaignId,
           product_name: inputData.productName || '상품',
           unit_price: unitPrice,
+          calculated_price: calculatedPrice,
           free_balance_used: freeBalanceUsed,
-          paid_balance_used: paidBalanceUsed
+          paid_balance_used: paidBalanceUsed,
+          keyword_id: keyword_id,
+          quantity: quantity,
+          days_until_due_calc: inputData.days_until_due, // 필드명 변경
+          deadline_date: deadline, // 필드명 변경
+          main_keyword: mainKeyword
         },
         created_at: now
       });
@@ -266,13 +345,20 @@ export const registerSlot = async (
           product_id: campaignId,
           product_name: inputData.productName || '상품',
           unit_price: unitPrice,
+          calculated_price: calculatedPrice, // 계산된 가격 추가
+          keyword_id: keyword_id,
+          main_keyword: mainKeyword,
+          quantity: quantity,
+          days_until_due_calc: inputData.days_until_due, // days_until_due 필드명 변경
+          deadline_date: deadline, // due_date → deadline_date
           payment_details: {
             free_balance_used: freeBalanceUsed,
             paid_balance_used: paidBalanceUsed,
             old_free_balance: freeBalance,
             new_free_balance: updatedFreeBalance,
             old_paid_balance: paidBalance,
-            new_paid_balance: updatedPaidBalance
+            new_paid_balance: updatedPaidBalance,
+            total_calculated_price: calculatedPrice
           },
           input_data: inputData
         },
@@ -290,6 +376,10 @@ export const registerSlot = async (
       data: slotData[0]
     };
   } catch (err: any) {
+    console.error('registerSlot 전체 오류:', err);
+    if (err.stack) {
+      console.error('스택 트레이스:', err.stack);
+    }
     
     return {
       success: false,

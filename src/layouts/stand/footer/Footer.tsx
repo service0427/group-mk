@@ -68,14 +68,6 @@ const Footer = () => {
           >
             FAQ
           </a>
-          
-          {/* 사이트맵 링크 추가 */}
-          <Link 
-            to="/sitemap" 
-            className="hover:text-primary"
-          >
-            사이트맵
-          </Link>
         </nav>
       </div>
       

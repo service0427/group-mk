@@ -45,7 +45,6 @@ import {
 // 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
 import { NoticePage, NoticeDetailPage, NoticeEditorPage } from '@/pages/notice';
 import FAQPage from '@/pages/faq';
-import SitemapPage from '@/pages/sitemap';
 import NotificationsPage from '@/pages/myinfo/notifications';
 import KeywordPage from '@/pages/keyword';
 
@@ -56,6 +55,8 @@ import { ErrorsRouting } from '@/errors';
 import { ManageSettingPage } from '@/pages/admin/cash';
 import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw';
 import { WithdrawRequestPage } from '@/pages/withdraw';
+import { CampaignRequestPage } from '@/pages/distributor/campaign-request';
+import { CampaignAddPage } from '@/pages/distributor/campaign-request/add';
 import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
 
 const AppRoutingSetup = (): ReactElement => {
@@ -71,7 +72,6 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:id" element={<NoticeDetailPage />} />
           <Route path="/faq" element={<FAQPage />} />
-          <Route path="/sitemap" element={<SitemapPage />} />
           
           {/* 기본 사용자 정보 */}
           <Route path="/myinfo/profile" element={<ProfilePage />} />
@@ -130,8 +130,16 @@ const AppRoutingSetup = (): ReactElement => {
       {/* 총판 전용 페이지 */}
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.DISTRIBUTOR} />}>
         <Route element={<StandLayout />}>
-          {/* 출금 관리 라우트 */}
+          {/* 총판 출금 신청 라우트 */}
           <Route path="/withdraw" element={<WithdrawRequestPage />} />
+          
+          {/* 총판 캠페인 신청 라우트 */}
+          <Route path="/campaign-request" element={<CampaignRequestPage />} />
+          <Route path="/campaign-request/add" element={<CampaignAddPage />} />
+
+          {/* 슬롯 관리 라우트 */}
+          <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
+          <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
         </Route>
       </Route>
 
@@ -153,10 +161,6 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/campaigns/naver-traffic" element={<Navigate to="/admin/campaigns/ntraffic" />} />
           <Route path="/admin/campaigns/coupang" element={<Campaigns.CoupangPage />} />
           <Route path="/admin/campaigns/ohouse" element={<Campaigns.OhousePage />} />
-
-          {/* 슬롯 관리 라우트 */}
-          <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
-          <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
 
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />

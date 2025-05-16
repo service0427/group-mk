@@ -249,3 +249,26 @@ export const canShowMenu = (
   // 둘 다 지정되지 않았으면 모든 사용자에게 표시
   return true;
 };
+
+/**
+ * 사용자가 특정 권한 레벨 이상이면서 특정 역할을 제외한 모든 사용자인지 확인하는 함수
+ *
+ * @param roleId 사용자 역할 ID
+ * @param minLevel 최소 필요 권한 레벨
+ * @param excludedRoles 제외할 역할 배열
+ * @returns 접근 가능 여부
+ */
+export const hasPermissionExcluding = (
+  roleId: string | undefined,
+  minLevel: number,
+  excludedRoles: string[]
+): boolean => {
+  if (!roleId) return false;
+  
+  // 제외 역할에 해당하면 false 반환
+  if (excludedRoles.includes(roleId)) return false;
+  
+  // 최소 레벨 이상인지 확인
+  const userLevel = getRoleLevel(roleId);
+  return userLevel >= minLevel;
+};

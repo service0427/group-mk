@@ -83,23 +83,19 @@ export const LogoutTransition: React.FC = () => {
     return null;
   }
   
-  // 배경색 감지
-  const isDarkMode = document.documentElement.classList.contains('dark');
-  const overlayStyle = {
-    backgroundColor: isDarkMode ? '#191919' : '#ffffff',
-    position: 'fixed', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0,
-    zIndex: 9999,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  };
+  // 브라우저 환경에서 안전하게 테마 감지
+  const isDarkMode = typeof document !== 'undefined' ? 
+    document.documentElement.classList.contains('dark') : 
+    false;
   
   return (
-    <div style={overlayStyle} aria-hidden="true">
+    <div 
+      className="logout-overlay"
+      style={{
+        backgroundColor: isDarkMode ? '#191919' : '#ffffff'
+      }} 
+      aria-hidden="true"
+    >
       {/* 아무것도 표시하지 않음 - 순수한 배경 오버레이 */}
     </div>
   );

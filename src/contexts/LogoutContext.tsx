@@ -20,11 +20,16 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
   useEffect(() => {
     // 로그아웃 상태 확인 및 로그인 페이지 초기화
     const handleLogoutState = () => {
-      const redirectTarget = localStorage.getItem('auth_redirect');
-      const logoutTimestamp = localStorage.getItem('logout_timestamp');
+      // 브라우저 환경에서만 localStorage 접근
+      const redirectTarget = typeof localStorage !== 'undefined' ? 
+        localStorage.getItem('auth_redirect') : null;
+      const logoutTimestamp = typeof localStorage !== 'undefined' ? 
+        localStorage.getItem('logout_timestamp') : null;
       
-      // 로그인 페이지 감지
-      const isLoginPage = window.location.hash.includes('/auth/login');
+      // 브라우저 환경에서 안전하게 로그인 페이지 감지
+      const isLoginPage = typeof window !== 'undefined' ? 
+        window.location.hash.includes('/auth/login') : 
+        false;
       
       if (redirectTarget === 'login' && logoutTimestamp) {
         // 로그아웃 시점과 현재 시간 차이 계산 (5초 이내면 상태 유지)
@@ -40,17 +45,21 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           if (isLoginPage) {
             setTimeout(() => {
               setIsLoggingOut(false);
-              localStorage.removeItem('auth_redirect');
-              localStorage.removeItem('logout_timestamp');
+              if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('auth_redirect');
+                localStorage.removeItem('logout_timestamp');
+              }
             }, 100); // 화면이 안정화되는 데 충분한 시간
           }
         } else {
           // 시간이 지나면 로그아웃 관련 상태 정리
-          localStorage.removeItem('auth_redirect');
-          localStorage.removeItem('logout_timestamp');
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('auth_redirect');
+            localStorage.removeItem('logout_timestamp');
+          }
         }
-      } else if (isLoginPage) {
-        // 로그인 페이지에 직접 접근한 경우
+      } else if (isLoginPage && typeof document !== 'undefined') {
+        // 로그인 페이지에 직접 접근한 경우 (브라우저 환경에서만)
         document.body.classList.add('auth-page');
       }
     };
@@ -58,21 +67,26 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     // 초기 실행
     handleLogoutState();
     
-    // 해시 변경 이벤트 리스너 추가
-    const handleHashChange = () => {
-      // URL 해시가 변경될 때도 상태 확인
-      handleLogoutState();
-    };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
+    // 브라우저 환경에서만 해시 변경 이벤트 리스너 추가
+    if (typeof window !== 'undefined') {
+      const handleHashChange = () => {
+        // URL 해시가 변경될 때도 상태 확인
+        handleLogoutState();
+      };
+      
+      window.addEventListener('hashchange', handleHashChange);
+      
+      return () => {
+        window.removeEventListener('hashchange', handleHashChange);
+      };
+    }
   }, [setIsLoggingOut]);
 
-  // 로그아웃 상태일 때 트랜지션 비활성화 및 부드러운 화면 전환
+  // 로그아웃 상태일 때 트랜지션 비활성화 및 부드러운 화면 전환 (브라우저 환경에서만)
   useEffect(() => {
+    // 브라우저 환경에서만 DOM 조작 수행
+    if (typeof document === 'undefined') return;
+    
     if (isLoggingOut) {
       // 로그아웃 중 트랜지션 및 애니메이션 비활성화
       const styleEl = document.createElement('style');

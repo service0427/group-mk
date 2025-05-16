@@ -656,8 +656,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }
 
-    // 스토리지 정리 함수 통합
+    // 스토리지 정리 함수 통합 (브라우저 환경 안전 처리)
     const clearAuthStorage = useCallback(() => {
+        // 브라우저 환경이 아니면 실행하지 않음
+        if (typeof localStorage === 'undefined' || typeof sessionStorage === 'undefined') {
+            return;
+        }
+        
         // 모든 관련 항목 지우기
         const authKeys = [
             'auth',
@@ -677,25 +682,30 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         // Supabase 관련 항목 정리
         const supabaseKeyPattern = /^(sb-|supabase|auth)/;
         
-        Object.keys(localStorage)
-            .filter(key => supabaseKeyPattern.test(key))
-            .forEach(key => {
-                try {
-                    localStorage.removeItem(key);
-                } catch (e) {
-                    // 무시
-                }
-            });
-        
-        Object.keys(sessionStorage)
-            .filter(key => supabaseKeyPattern.test(key))
-            .forEach(key => {
-                try {
-                    sessionStorage.removeItem(key);
-                } catch (e) {
-                    // 무시
-                }
-            });
+        try {
+            Object.keys(localStorage)
+                .filter(key => supabaseKeyPattern.test(key))
+                .forEach(key => {
+                    try {
+                        localStorage.removeItem(key);
+                    } catch (e) {
+                        // 무시
+                    }
+                });
+            
+            Object.keys(sessionStorage)
+                .filter(key => supabaseKeyPattern.test(key))
+                .forEach(key => {
+                    try {
+                        sessionStorage.removeItem(key);
+                    } catch (e) {
+                        // 무시
+                    }
+                });
+        } catch (err) {
+            // localStorage/sessionStorage에 접근할 수 없는 경우 오류 무시
+            console.log('스토리지 접근 불가: 서버 환경');
+        }
     }, []);
     
     // 완전히 새로운 접근: 로그아웃과 페이지 전환 분리하여 단일 새로고침으로 처리
@@ -704,8 +714,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 1. 즉시 로그아웃 플래그 설정 - 사용자에게 작업 진행 중임을 표시
             setIsLoggingOut(true);
             
-            // 2. 애니메이션 차단 클래스 추가
-            document.body.classList.add('is-logging-out');
+            // 2. 애니메이션 차단 클래스 추가 (브라우저 환경에서만)
+            if (typeof document !== 'undefined') {
+                document.body.classList.add('is-logging-out');
+            }
             
             // 3. 인증 데이터 먼저 제거 (백그라운드 작업 전 필수 단계)
             authHelper.removeAuth();
@@ -721,23 +733,30 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 // Supabase 로그아웃 (비동기이지만 페이지 전환 전에 시작)
                 supabase.auth.signOut().catch(() => {});
                 
-                // 페이지 전환을 위한 상태 저장
-                localStorage.setItem('auth_redirect', 'login');
-                localStorage.setItem('logout_timestamp', Date.now().toString());
+                // 페이지 전환을 위한 상태 저장 (브라우저 환경에서만)
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('auth_redirect', 'login');
+                    localStorage.setItem('logout_timestamp', Date.now().toString());
+                }
                 
-                // 이전 로그인 세션 데이터 완전 제거
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
-                        localStorage.removeItem(key);
-                    }
-                });
+                // 이전 로그인 세션 데이터 완전 제거 (브라우저 환경에서만)
+                if (typeof localStorage !== 'undefined') {
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
                 
                 // 항상 새로운 페이지를 로드하도록 타임스탬프 추가
                 const timestamp = Date.now();
                 
                 // 이 시점에서는 기존 화면이 로그아웃 상태로 완전히 전환됨
                 // 그 후 로그인 페이지로 한 번에 이동 (새로고침 효과 없음)
-                window.location.replace(`/#/auth/login?_=${timestamp}`);
+                // 브라우저 환경에서만 페이지 이동
+                if (typeof window !== 'undefined') {
+                    window.location.replace(`/#/auth/login?_=${timestamp}`);
+                }
             }, 50);  // 50ms는 충분히 짧지만 상태 변경이 적용될 시간은 됨
             
             return true;
@@ -745,15 +764,19 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 오류 발생 시 안전하게 처리
             console.error('로그아웃 실패:', error);
             
-            // 필수 정리 작업 수행
-            document.body.classList.add('is-logging-out');
+            // 필수 정리 작업 수행 (브라우저 환경에서만)
+            if (typeof document !== 'undefined') {
+                document.body.classList.add('is-logging-out');
+            }
             clearAuthStorage();
             authHelper.removeAuth();
             
-            // 약간의 지연 후 로그인 페이지로 이동
+            // 약간의 지연 후 로그인 페이지로 이동 (브라우저 환경에서만)
             setTimeout(() => {
                 const timestamp = Date.now();
-                window.location.replace(`/#/auth/login?_=${timestamp}`);
+                if (typeof window !== 'undefined') {
+                    window.location.replace(`/#/auth/login?_=${timestamp}`);
+                }
             }, 50);
             
             return false;

@@ -128,7 +128,7 @@ const SitemapContent: React.FC = () => {
       });
       
       // 자식 항목이 권한 필터링 후 없어졌으면 현재 아이템도 표시 안함
-      if (filteredChildren.length === 0 && item.children.length > 0) {
+      if (filteredChildren && filteredChildren.length === 0 && item.children && item.children.length > 0) {
         return null;
       }
     }

@@ -54,7 +54,8 @@ const RequireAuth = ({ allowedRoles = [], minRoleLevel }: RequireAuthProps = {})
   // 접근 거부 처리
   if (!hasAccess) {
     // 존재하지 않는 페이지처럼 보이도록 404 에러 페이지로 리다이렉션
-    return <Navigate to="/error/404" state={{ from: location }} replace />;
+    // 이전 상태 정보를 포함하지 않도록 최소한의 필요 정보만 전달
+    return <Navigate to="/error/404" replace />;
   }
   
   // 인증 및 역할 검증을 통과한 경우 자식 라우트 렌더링

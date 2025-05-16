@@ -43,6 +43,7 @@ export const PERMISSION_GROUPS = {
   REPORTING: 30,        // 보고서 기능 (대행사 이상)
   CAMPAIGN: 10,         // 캠페인 관리 (모든 인증된 사용자)
   ADVERTISEMENT: 10,    // 광고주 이상
+  BEGINNER: 5,          // 비기너 이상
   PUBLIC: 0             // 공개 기능 (로그인 불필요)
 };
 

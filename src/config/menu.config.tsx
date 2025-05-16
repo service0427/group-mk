@@ -15,6 +15,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     heading: '서비스',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
   },
   {
     title: '캠페인 소개',
@@ -122,13 +123,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     heading: '내 정보 관리',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
   },
   {
     title: '내 키워드',
     icon: 'pencil text-success',
     path: '/keyword',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
   },
   {
     title: '내 서비스 관리',
@@ -212,7 +213,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캐쉬/포인트 관리',
     icon: 'dollar text-warning',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
     children: [
       {
         title: '캐쉬/포인트 이용안내',

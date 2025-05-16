@@ -656,8 +656,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }
 
-    // 스토리지 정리 함수 통합
+    // 스토리지 정리 함수 통합 (브라우저 환경 안전 처리)
     const clearAuthStorage = useCallback(() => {
+        // 브라우저 환경이 아니면 실행하지 않음
+        if (typeof localStorage === 'undefined' || typeof sessionStorage === 'undefined') {
+            return;
+        }
+        
         // 모든 관련 항목 지우기
         const authKeys = [
             'auth',
@@ -677,87 +682,158 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         // Supabase 관련 항목 정리
         const supabaseKeyPattern = /^(sb-|supabase|auth)/;
         
-        Object.keys(localStorage)
-            .filter(key => supabaseKeyPattern.test(key))
-            .forEach(key => {
-                try {
-                    localStorage.removeItem(key);
-                } catch (e) {
-                    // 무시
-                }
-            });
-        
-        Object.keys(sessionStorage)
-            .filter(key => supabaseKeyPattern.test(key))
-            .forEach(key => {
-                try {
-                    sessionStorage.removeItem(key);
-                } catch (e) {
-                    // 무시
-                }
-            });
+        try {
+            Object.keys(localStorage)
+                .filter(key => supabaseKeyPattern.test(key))
+                .forEach(key => {
+                    try {
+                        localStorage.removeItem(key);
+                    } catch (e) {
+                        // 무시
+                    }
+                });
+            
+            Object.keys(sessionStorage)
+                .filter(key => supabaseKeyPattern.test(key))
+                .forEach(key => {
+                    try {
+                        sessionStorage.removeItem(key);
+                    } catch (e) {
+                        // 무시
+                    }
+                });
+        } catch (err) {
+            // localStorage/sessionStorage에 접근할 수 없는 경우 오류 무시
+            console.log('스토리지 접근 불가: 서버 환경');
+        }
     }, []);
     
-    // 통합된 로그아웃 함수
+    // 완전히 새로운 접근: 로그아웃과 페이지 전환 분리하여 단일 새로고침으로 처리
     const logout = useCallback(async () => {
         try {
-            // 로그아웃 플래그 설정
+            // 1. 즉시 로그아웃 플래그 설정 - 사용자에게 작업 진행 중임을 표시
             setIsLoggingOut(true);
             
-            // 세션 스토리지에 리다이렉트 플래그 설정
-            sessionStorage.setItem('logout_redirect', 'true');
-            sessionStorage.setItem('logout_timestamp', Date.now().toString());
+            // 2. 애니메이션 차단 및 로그아웃 상태 명확히 표시 (브라우저 환경에서만)
+            if (typeof document !== 'undefined') {
+                document.body.classList.add('is-logging-out');
+                
+                // 로그아웃 중임을 DOM에 명확하게 표시 (애플리케이션 다시 로드 시 감지 용이)
+                const logoutMeta = document.createElement('meta');
+                logoutMeta.name = 'app-logout-state';
+                logoutMeta.content = 'in-progress';
+                document.head.appendChild(logoutMeta);
+            }
             
-            // 관리자 여부 확인
-            const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-            
-            // 모든 상태 먼저 정리
+            // 3. 인증 데이터 먼저 제거 (백그라운드 작업 전 필수 단계)
+            authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
-            setAuthVerified(false);
             
-            // 서버 로그아웃 시도
-            try {
-                await supabase.auth.signOut();
-            } catch (signOutError) {
-                // 서버 로그아웃 실패해도 계속 진행
-            }
-            
-            // 스토리지 정리
-            clearAuthStorage();
-            
-            // 관리자인 경우 페이지 이동 - 마지막 단계로 이동
-            if (isAdmin) {
-                // React 컴포넌트 언마운트와 상태 정리를 위해 충분한 시간을 두고
-                // 새로고침 전에 컴포넌트가 로그아웃 상태를 완전히 처리할 수 있도록 함
-                setTimeout(() => {
-                    // isLoggingOut 플래그가 false로 설정되기 전에 페이지 리디렉션 수행
-                    // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
-                    window.location.replace(window.location.origin);
+            // 4. 로그인 페이지로 즉시 이동하지 않고 약간의 지연을 줌
+            // 이렇게 하면 애플리케이션이 현재 로그아웃 상태를 완전히 처리한 후 이동
+            setTimeout(() => {
+                console.log('[Logout] 로그아웃 프로세스 시작');
+                
+                // 인증 관련 스토리지 정리
+                clearAuthStorage();
+                console.log('[Logout] 스토리지 정리 완료');
+                
+                // Supabase 로그아웃 (비동기이지만 페이지 전환 전에 시작)
+                supabase.auth.signOut()
+                    .then(() => console.log('[Logout] Supabase 세션 종료 완료'))
+                    .catch(() => console.log('[Logout] Supabase 세션 종료 중 오류'));
+                
+                // 페이지 전환을 위한 상태 저장 (브라우저 환경에서만)
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('auth_redirect', 'login');
+                    localStorage.setItem('logout_timestamp', Date.now().toString());
+                }
+                
+                // 이전 로그인 세션 데이터 완전 제거 (브라우저 환경에서만)
+                if (typeof localStorage !== 'undefined') {
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
+                
+                // 항상 새로운 페이지를 로드하도록 타임스탬프 추가
+                const timestamp = Date.now();
+                
+                // 로그인 페이지로 이동 (완전한 새로고침 포함)
+                console.log('[Logout] 리디렉션 준비 완료');
+                
+                // 페이지 초기화 및 새로고침 적용
+                try {
+                    // 중요한 supabase 쿠키 제거 (직접 document.cookie 접근)
+                    if (typeof document !== 'undefined') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.startsWith('sb-') || cookie.includes('supabase')) {
+                                const name = cookie.split('=')[0];
+                                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('[Logout] 쿠키 정리 중 오류', e);
+                }
+                
+                // 브라우저 환경에서만 페이지 이동
+                if (typeof window !== 'undefined') {
+                    console.log('[Logout] 페이지 전환 시작');
                     
-                    // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
-                    setTimeout(() => {
-                        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
-                        window.location.hash = '/auth/login';
-                    }, 50);
-                }, 300); // 시간을 300ms로 늘려 컴포넌트 정리 시간 확보
-            }
+                    // 1. 세션 스토리지 완전히 비우기
+                    try { sessionStorage.clear(); } catch (e) {}
+                    
+                    // 2. URL 변경하여 새로고침 (프래그먼트 제거)
+                    const baseUrl = window.location.origin;
+                    const logoutUrl = `${baseUrl}/#/auth/login?_=${timestamp}&force=true`;
+                    
+                    // 3. 강제 페이지 새로고침 실행
+                    console.log('[Logout] 페이지 리로드');
+                    window.location.href = logoutUrl;
+                }
+            }, 50);  // 50ms는 충분히 짧지만 상태 변경이 적용될 시간은 됨
             
             return true;
         } catch (error) {
+            // 오류 발생 시 안전하게 처리
             console.error('로그아웃 실패:', error);
-            return false;
-        } finally {
-            // 관리자인 경우 타임아웃 후 리다이렉션이 일어날 것이므로
-            // 마지막에 로그아웃 플래그를 해제하지 않음
-            const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-            if (!isAdmin) {
-                setIsLoggingOut(false);
+            
+            // 필수 정리 작업 수행 (브라우저 환경에서만)
+            if (typeof document !== 'undefined') {
+                document.body.classList.add('is-logging-out');
             }
-            // 관리자인 경우 로그아웃 플래그가 계속 true로 남아있게 됨
-            // 이는 페이지 리디렉션이 발생하기 전까지 컴포넌트가 올바르게 처리되도록 보장함
+            clearAuthStorage();
+            authHelper.removeAuth();
+            
+            // 약간의 지연 후 로그인 페이지로 이동 (브라우저 환경에서만)
+            setTimeout(() => {
+                const timestamp = Date.now();
+                
+                console.log('[Logout] 오류 발생 후 강제 로그아웃');
+                
+                // 세션 스토리지 초기화
+                try { 
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.clear(); 
+                    }
+                } catch (e) {}
+                
+                if (typeof window !== 'undefined') {
+                    const baseUrl = window.location.origin;
+                    // 강제 새로고침 플래그 추가
+                    window.location.href = `${baseUrl}/#/auth/login?_=${timestamp}&force=true&error=1`;
+                }
+            }, 50);
+            
+            return false;
         }
-    }, [currentUser, clearAuthStorage]);
+    }, [clearAuthStorage]);
 
     // 계산된 값들
     const isAuthenticated = !!auth && !!currentUser;

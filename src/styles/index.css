@@ -9,6 +9,9 @@
 /* 다이얼로그 컴포넌트 수정 - 통합 스타일 */
 @import "dialog.css";
 
+/* 로그아웃 전환 처리 스타일 */
+@import "logout-transition.css";
+
 /* 폰트 크기 전역 조정 - 기본 폰트 크기를 10% 증가 */
 html {
     font-size: 110%;

@@ -114,3 +114,20 @@ main.content::-webkit-scrollbar-thumb:hover {
   height: 0 !important;
   background: transparent !important;
 }
+
+/* 로그아웃 시 페이지 전환 부드럽게 처리 */
+body.is-logging-out {
+  overflow: hidden !important;
+}
+
+body.is-logging-out #root {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+/* 로그아웃 중에는 애니메이션 및 전환 효과 비활성화 */
+.no-transition,
+.no-transition * {
+  transition: none !important;
+  animation: none !important;
+}

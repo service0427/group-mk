@@ -68,12 +68,17 @@ const SidebarMenu = () => {
   };
 
   const buildMenuItemRoot = (item: IMenuItemConfig, index: number) => {
+    // 캠페인 소개 메뉴인지 확인
+    const isCampaignIntroMenu = item.title === '캠페인 소개';
+    
     if (item.children) {
       return (
         <MenuItem
           key={index}
           {...(item.toggle && { toggle: item.toggle })}
           {...(item.trigger && { trigger: item.trigger })}
+          // 캠페인 소개 메뉴는 항상 열린 상태로 표시
+          open={isCampaignIntroMenu}
         >
           <MenuLink
             className={clsx(
@@ -102,8 +107,10 @@ const SidebarMenu = () => {
               itemsGap,
               accordionPl[0]
             )}
+            // 캠페인 소개 메뉴의 하위 항목은 항상 표시
+            show={isCampaignIntroMenu}
           >
-            {buildMenuItemChildren(item.children, index, 1)}
+            {buildMenuItemChildren(item.children, index, 1, isCampaignIntroMenu)}
           </MenuSub>
         </MenuItem>
       );
@@ -162,17 +169,23 @@ const SidebarMenu = () => {
     );
   };
 
-  const buildMenuItemChildren = (items: TMenuConfig, index: number, level: number = 0) => {
-    return items.map((item, index) => {
+  const buildMenuItemChildren = (items: TMenuConfig, index: number, level: number = 0, isParentCampaignIntro: boolean = false) => {
+    return items.map((item, idx) => {
+      // 상위 메뉴가 캠페인 소개 메뉴인 경우 표시
+      const shouldAlwaysShow = isParentCampaignIntro;
+      
       if (item.disabled) {
-        return buildMenuItemChildDisabled(item, index, level);
+        return buildMenuItemChildDisabled(item, idx, level);
       } else {
-        return buildMenuItemChild(item, index, level);
+        return buildMenuItemChild(item, idx, level, shouldAlwaysShow);
       }
     });
   };
 
-  const buildMenuItemChild = (item: IMenuItemConfig, index: number, level: number = 0) => {
+  const buildMenuItemChild = (item: IMenuItemConfig, index: number, level: number = 0, alwaysShow: boolean = false) => {
+    // 네이버 메뉴인지 확인 (캠페인 소개 > 네이버)
+    const isNaverMenu = item.title === '네이버';
+    
     if (item.children) {
       return (
         <MenuItem
@@ -180,6 +193,8 @@ const SidebarMenu = () => {
           {...(item.toggle && { toggle: item.toggle })}
           {...(item.trigger && { trigger: item.trigger })}
           className={clsx(item.collapse && 'flex-col-reverse')}
+          // 상위 메뉴가 캠페인 소개이거나 네이버 메뉴인 경우 항상 열림
+          open={alwaysShow || isNaverMenu}
         >
           <MenuLink
             className={clsx(
@@ -222,8 +237,10 @@ const SidebarMenu = () => {
               !item.collapse && accordionPl[level],
               isMobile && 'mobile-submenu' // 모바일용 클래스 추가
             )}
+            // 상위 메뉴가 캠페인 소개이거나 네이버 메뉴인 경우 항상 표시
+            show={alwaysShow || isNaverMenu}
           >
-            {buildMenuItemChildren(item.children, index, item.collapse ? level : level + 1)}
+            {buildMenuItemChildren(item.children, index, item.collapse ? level : level + 1, alwaysShow || isNaverMenu)}
           </MenuSub>
         </MenuItem>
       );

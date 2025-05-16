@@ -92,6 +92,7 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
 
     const [here, setHere] = useState(open);
 
+    
     const accordionShow = isOpenAccordion(finalParentId, finalId);
 
     const [show, setShow] = useState(open);

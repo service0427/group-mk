@@ -4,9 +4,12 @@ import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
+import { LogoutTransition } from '@/components/loaders';
+import { useLogoutContext } from '@/contexts/LogoutContext';
 
 const App = () => {
   const { settings } = useSettings();
+  const { isLoggingOut } = useLogoutContext();
 
   useEffect(() => {
     document.documentElement.classList.remove('dark');
@@ -55,6 +58,8 @@ const App = () => {
     >
       <PathnameProvider>
         <ScrollToTop />
+        {/* 로그아웃 전환 컴포넌트 - 화면 깜박임 방지 */}
+        <LogoutTransition />
         <AppRouting />
       </PathnameProvider>
     </HashRouter>

@@ -698,66 +698,67 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             });
     }, []);
     
-    // 통합된 로그아웃 함수
+    // 완전히 새로운 접근: 로그아웃과 페이지 전환 분리하여 단일 새로고침으로 처리
     const logout = useCallback(async () => {
         try {
-            // 로그아웃 플래그 설정
+            // 1. 즉시 로그아웃 플래그 설정 - 사용자에게 작업 진행 중임을 표시
             setIsLoggingOut(true);
             
-            // 세션 스토리지에 리다이렉트 플래그 설정
-            sessionStorage.setItem('logout_redirect', 'true');
-            sessionStorage.setItem('logout_timestamp', Date.now().toString());
+            // 2. 애니메이션 차단 클래스 추가
+            document.body.classList.add('is-logging-out');
             
-            // 관리자 여부 확인
-            const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-            
-            // 모든 상태 먼저 정리
+            // 3. 인증 데이터 먼저 제거 (백그라운드 작업 전 필수 단계)
+            authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
-            setAuthVerified(false);
             
-            // 서버 로그아웃 시도
-            try {
-                await supabase.auth.signOut();
-            } catch (signOutError) {
-                // 서버 로그아웃 실패해도 계속 진행
-            }
-            
-            // 스토리지 정리
-            clearAuthStorage();
-            
-            // 관리자인 경우 페이지 이동 - 마지막 단계로 이동
-            if (isAdmin) {
-                // React 컴포넌트 언마운트와 상태 정리를 위해 충분한 시간을 두고
-                // 새로고침 전에 컴포넌트가 로그아웃 상태를 완전히 처리할 수 있도록 함
-                setTimeout(() => {
-                    // isLoggingOut 플래그가 false로 설정되기 전에 페이지 리디렉션 수행
-                    // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
-                    window.location.replace(window.location.origin);
-                    
-                    // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
-                    setTimeout(() => {
-                        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
-                        window.location.hash = '/auth/login';
-                    }, 50);
-                }, 300); // 시간을 300ms로 늘려 컴포넌트 정리 시간 확보
-            }
+            // 4. 로그인 페이지로 즉시 이동하지 않고 약간의 지연을 줌
+            // 이렇게 하면 애플리케이션이 현재 로그아웃 상태를 완전히 처리한 후 이동
+            setTimeout(() => {
+                // 인증 관련 스토리지 정리
+                clearAuthStorage();
+                
+                // Supabase 로그아웃 (비동기이지만 페이지 전환 전에 시작)
+                supabase.auth.signOut().catch(() => {});
+                
+                // 페이지 전환을 위한 상태 저장
+                localStorage.setItem('auth_redirect', 'login');
+                localStorage.setItem('logout_timestamp', Date.now().toString());
+                
+                // 이전 로그인 세션 데이터 완전 제거
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                
+                // 항상 새로운 페이지를 로드하도록 타임스탬프 추가
+                const timestamp = Date.now();
+                
+                // 이 시점에서는 기존 화면이 로그아웃 상태로 완전히 전환됨
+                // 그 후 로그인 페이지로 한 번에 이동 (새로고침 효과 없음)
+                window.location.replace(`/#/auth/login?_=${timestamp}`);
+            }, 50);  // 50ms는 충분히 짧지만 상태 변경이 적용될 시간은 됨
             
             return true;
         } catch (error) {
+            // 오류 발생 시 안전하게 처리
             console.error('로그아웃 실패:', error);
+            
+            // 필수 정리 작업 수행
+            document.body.classList.add('is-logging-out');
+            clearAuthStorage();
+            authHelper.removeAuth();
+            
+            // 약간의 지연 후 로그인 페이지로 이동
+            setTimeout(() => {
+                const timestamp = Date.now();
+                window.location.replace(`/#/auth/login?_=${timestamp}`);
+            }, 50);
+            
             return false;
-        } finally {
-            // 관리자인 경우 타임아웃 후 리다이렉션이 일어날 것이므로
-            // 마지막에 로그아웃 플래그를 해제하지 않음
-            const isAdmin = currentUser?.role && hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-            if (!isAdmin) {
-                setIsLoggingOut(false);
-            }
-            // 관리자인 경우 로그아웃 플래그가 계속 true로 남아있게 됨
-            // 이는 페이지 리디렉션이 발생하기 전까지 컴포넌트가 올바르게 처리되도록 보장함
         }
-    }, [currentUser, clearAuthStorage]);
+    }, [clearAuthStorage]);
 
     // 계산된 값들
     const isAuthenticated = !!auth && !!currentUser;

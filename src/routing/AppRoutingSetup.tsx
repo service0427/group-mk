@@ -67,16 +67,16 @@ const AppRoutingSetup = (): ReactElement => {
         <Route element={<StandLayout />}>
           {/* 기본 대시보드 라우트 - 역할 기반 라우팅 적용 */}
           <Route path="/" element={<RoleBasedDashboard />} />
-          
+
           {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:id" element={<NoticeDetailPage />} />
           <Route path="/faq" element={<FAQPage />} />
-          
+
           {/* 기본 사용자 정보 */}
           <Route path="/myinfo/profile" element={<ProfilePage />} />
           <Route path="/myinfo/notifications" element={<NotificationsPage />} />
-          
+
           {/* 캐쉬/포인트 가이드(정보) 페이지 */}
           <Route path="/cash/guide" element={<GuidePage />} />
         </Route>
@@ -87,6 +87,21 @@ const AppRoutingSetup = (): ReactElement => {
         <Route element={<StandLayout />}>
           {/* 개발용 테스트 페이지 */}
           <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.BEGINNER} />}>
+        <Route element={<StandLayout />}>
+          {/* 내 키워드 */}
+          <Route path="/keyword" element={<KeywordPage />} />
+
+          {/* 캐쉬 관련 라우트 */}
+          <Route path="/cash/charge" element={<ChargePage />} />
+          <Route path="/cash/history" element={<CashHistoryPage />} />
+
+          {/* 포인트 관련 라우트 */}
+          <Route path="/point/history" element={<PointHistoryPage />} />
+          <Route path="/myinfo/cash-requests" element={<CashRequestsPage />} />
         </Route>
       </Route>
 
@@ -106,24 +121,13 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 2단계 경로 */}
           <Route path="/advertise/:platform/:type/desc" element={<ServiceDescPage />} />
           <Route path="/advertise/:platform/:type/campaign" element={<ServiceCampaignPage />} />
-          
+
           {/* 3단계 경로 */}
           <Route path="/advertise/:platform/:subservice/:type/desc" element={<ServiceDescPage />} />
           <Route path="/advertise/:platform/:subservice/:type/campaign" element={<ServiceCampaignPage />} />
 
           {/* 내 서비스 관리 라우트 */}
           <Route path="/myinfo/services" element={<ServicesPage />} />
-          <Route path="/myinfo/cash-requests" element={<CashRequestsPage />} />
-
-          {/* 캐쉬 관련 라우트 */}
-          <Route path="/cash/charge" element={<ChargePage />} />
-          <Route path="/cash/history" element={<CashHistoryPage />} />
-
-          {/* 포인트 관련 라우트 */}
-          <Route path="/point/history" element={<PointHistoryPage />} />
-          
-          {/* 키워드 관리 */}
-          <Route path="/keyword" element={<KeywordPage />} />
         </Route>
       </Route>
 
@@ -132,7 +136,7 @@ const AppRoutingSetup = (): ReactElement => {
         <Route element={<StandLayout />}>
           {/* 총판 출금 신청 라우트 */}
           <Route path="/withdraw" element={<WithdrawRequestPage />} />
-          
+
           {/* 총판 캠페인 신청 라우트 */}
           <Route path="/campaign-request" element={<CampaignRequestPage />} />
           <Route path="/campaign-request/add" element={<CampaignAddPage />} />
@@ -149,7 +153,7 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 사용자 관리 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />
           <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
-          
+
           {/* 캠페인 관리 라우트 */}
           <Route path="/admin/campaigns/all" element={<Campaigns.AllCampaignsPage />} />
           <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
@@ -177,7 +181,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/withdraw_approve" element={<WithdrawApprovePage />} />
         </Route>
       </Route>
-      
+
       {/* 역할별 대시보드 - 개발자 전용 */}
       <Route element={<RequireAuth allowedRoles={[USER_ROLES.DEVELOPER]} />}>
         <Route element={<StandLayout />}>

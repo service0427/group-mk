@@ -56,24 +56,43 @@ import { ErrorsRouting } from '@/errors';
 import { ManageSettingPage } from '@/pages/admin/cash';
 import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw';
 import { WithdrawRequestPage } from '@/pages/withdraw';
+import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
 
 const AppRoutingSetup = (): ReactElement => {
   return (
     <Routes>
+      {/* 모든 인증된 사용자가 접근 가능한 기본 페이지 (인증만 필요) */}
       <Route element={<RequireAuth />}>
         <Route element={<StandLayout />}>
           {/* 기본 대시보드 라우트 - 역할 기반 라우팅 적용 */}
           <Route path="/" element={<RoleBasedDashboard />} />
-          <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
           
-          {/* 역할별 대시보드 라우트 */}
-          <Route path="/dashboard/developer" element={<DeveloperDashboardPage />} />
-          <Route path="/dashboard/operator" element={<OperatorDashboardPage />} />
-          <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
-          <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
-          <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
-          <Route path="/dashboard/beginner" element={<BeginnerDashboardPage />} />
+          {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
+          <Route path="/notice" element={<NoticePage />} />
+          <Route path="/notice/:id" element={<NoticeDetailPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/sitemap" element={<SitemapPage />} />
+          
+          {/* 기본 사용자 정보 */}
+          <Route path="/myinfo/profile" element={<ProfilePage />} />
+          <Route path="/myinfo/notifications" element={<NotificationsPage />} />
+          
+          {/* 캐쉬/포인트 가이드(정보) 페이지 */}
+          <Route path="/cash/guide" element={<GuidePage />} />
+        </Route>
+      </Route>
 
+      {/* 개발자 전용 페이지 */}
+      <Route element={<RequireAuth allowedRoles={[USER_ROLES.DEVELOPER]} />}>
+        <Route element={<StandLayout />}>
+          {/* 개발용 테스트 페이지 */}
+          <Route path="/dark-sidebar" element={<StandDarkSidebarPage />} />
+        </Route>
+      </Route>
+
+      {/* 광고주 이상만 접근 가능한 페이지 */}
+      <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADVERTISEMENT} />}>
+        <Route element={<StandLayout />}>
           {/* 리디렉션 경로 설정 */}
           <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/desc" />} />
           <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/ntraffic/desc" />} />
@@ -92,28 +111,34 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/advertise/:platform/:subservice/:type/desc" element={<ServiceDescPage />} />
           <Route path="/advertise/:platform/:subservice/:type/campaign" element={<ServiceCampaignPage />} />
 
-          {/* 내 정보 관리 라우트 */}
-          <Route path="/myinfo/profile" element={<ProfilePage />} />
+          {/* 내 서비스 관리 라우트 */}
           <Route path="/myinfo/services" element={<ServicesPage />} />
           <Route path="/myinfo/cash-requests" element={<CashRequestsPage />} />
 
           {/* 캐쉬 관련 라우트 */}
-          <Route path="/cash/guide" element={<GuidePage />} />
           <Route path="/cash/charge" element={<ChargePage />} />
           <Route path="/cash/history" element={<CashHistoryPage />} />
 
           {/* 포인트 관련 라우트 */}
           <Route path="/point/history" element={<PointHistoryPage />} />
-
-          {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
-          <Route path="/notice" element={<NoticePage />} />
-          <Route path="/notice/:id" element={<NoticeDetailPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/sitemap" element={<SitemapPage />} />
-          <Route path="/myinfo/notifications" element={<NotificationsPage />} />
+          
+          {/* 키워드 관리 */}
           <Route path="/keyword" element={<KeywordPage />} />
+        </Route>
+      </Route>
 
-          {/* 관리자 메뉴 라우트 */}
+      {/* 총판 전용 페이지 */}
+      <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.DISTRIBUTOR} />}>
+        <Route element={<StandLayout />}>
+          {/* 출금 관리 라우트 */}
+          <Route path="/withdraw" element={<WithdrawRequestPage />} />
+        </Route>
+      </Route>
+
+      {/* 관리자 전용 페이지 */}
+      <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADMIN} />}>
+        <Route element={<StandLayout />}>
+          {/* 사용자 관리 라우트 */}
           <Route path="/admin/users" element={<UsersPage />} />
           <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
           
@@ -144,17 +169,24 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<ManageCashPage />} />
           <Route path="/admin/cash_setting" element={<ManageSettingPage />} />
-
-          {/* 출금 관리 라우트 */}
           <Route path="/admin/withdraw_setting" element={<WithdrawSettingPage />} />
-          <Route path="/withdraw" element={<WithdrawRequestPage />} />
           <Route path="/admin/withdraw_approve" element={<WithdrawApprovePage />} />
-
-          {/* 에디터 테스트 페이지 */}
-          {/* <Route path="/editor-test" element={<EditorTestPage />} /> */}
-
         </Route>
       </Route>
+      
+      {/* 역할별 대시보드 - 개발자 전용 */}
+      <Route element={<RequireAuth allowedRoles={[USER_ROLES.DEVELOPER]} />}>
+        <Route element={<StandLayout />}>
+          <Route path="/dashboard/developer" element={<DeveloperDashboardPage />} />
+          <Route path="/dashboard/operator" element={<OperatorDashboardPage />} />
+          <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
+          <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
+          <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
+          <Route path="/dashboard/beginner" element={<BeginnerDashboardPage />} />
+        </Route>
+      </Route>
+
+      {/* 인증 및 에러 페이지 */}
       <Route path="error/*" element={<ErrorsRouting />} />
       <Route path="auth/*" element={<AuthPage />} />
       <Route path="*" element={<Navigate to="/error/404" />} />

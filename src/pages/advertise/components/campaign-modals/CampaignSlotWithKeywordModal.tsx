@@ -15,6 +15,7 @@ import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
 import { registerSlot } from './services/slotService';
+import { Link } from 'react-router-dom';
 
 
 // 사용자 키워드 인터페이스
@@ -1484,9 +1485,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         </p>
                         {!searchKeyword && (
                           <p className="mt-2 text-sm">
-                            <a href="/keyword" target="_blank" className="text-primary hover:underline">
+                            <Link to="/keyword" className="text-primary hover:underline">
                               키워드 관리 페이지에서 키워드를 추가해주세요.
-                            </a>
+                            </Link>
                           </p>
                         )}
                       </div>

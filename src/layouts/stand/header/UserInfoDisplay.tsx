@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { useMediaQuery } from '@/hooks';
+import { ChargeModal } from '@/components/cash';
 
 const UserInfoDisplay = () => {
   const { currentUser, logout } = useAuthContext();
@@ -34,6 +35,7 @@ const UserInfoDisplay = () => {
   const [isLogoutLoading, setIsLogoutLoading] = useState<boolean>(false);
   const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [chargeModalOpen, setChargeModalOpen] = useState<boolean>(false);
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isTablet = useMediaQuery('(max-width: 1023px)');
 
@@ -302,14 +304,19 @@ const UserInfoDisplay = () => {
                   <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 mr-3" />
                   캐시 내역
                 </Link>
-                <Link
-                  to="/cash/charge"
+                <button
                   className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setChargeModalOpen(true);
+                    if (userMenuRef.current?.hide) {
+                      userMenuRef.current.hide();
+                    }
+                  }}
                 >
                   <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 mr-3" />
                   캐시 충전
-                </Link>
+                </button>
                 <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600">
                   <div className="flex items-center">
                     <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 mr-3" />
@@ -448,12 +455,20 @@ const UserInfoDisplay = () => {
                 </div>
 
                 <div className="menu-item">
-                  <Link to="/cash/charge" className="menu-link dark:hover:bg-coal-600">
+                  <button
+                    onClick={() => {
+                      setChargeModalOpen(true);
+                      if (userMenuRef.current?.hide) {
+                        userMenuRef.current.hide();
+                      }
+                    }}
+                    className="menu-link dark:hover:bg-coal-600 w-full text-left"
+                  >
                     <span className="menu-icon">
                       <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 !text-green-500 dark:!text-green-400" />
                     </span>
                     <span className="menu-title dark:text-white font-medium">캐시 충전</span>
-                  </Link>
+                  </button>
                 </div>
 
                 <div className="menu-item">
@@ -523,6 +538,12 @@ const UserInfoDisplay = () => {
           )}
         </div>
       )}
+      
+      {/* 캐시 충전 모달 */}
+      <ChargeModal
+        open={chargeModalOpen}
+        onClose={() => setChargeModalOpen(false)}
+      />
     </div>
   );
 };

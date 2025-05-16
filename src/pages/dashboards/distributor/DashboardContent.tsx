@@ -410,7 +410,7 @@ export const DashboardContent: React.FC = () => {
 
       {/* 두 번째 줄: 최근 판매 & 상품 판매 순위 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        {/* 신규 캠페인 신청 */}
+        {/* 내 캠페인 신청 목록 */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <div className="flex items-center">
@@ -419,15 +419,15 @@ export const DashboardContent: React.FC = () => {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">신규 캠페인 신청</h3>
+              <h3 className="text-lg font-semibold text-gray-800">내 캠페인 신청 목록 (개발필요)</h3>
             </div>
             <Button
               variant="outline"
               size="sm"
               className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => openAddCampaignModal('ntraffic')}
+              onClick={() => navigate('/campaign-request')}
             >
-              새 캠페인 신청
+              신규 캠페인 신청
             </Button>
           </div>
           <div className="p-5">
@@ -437,55 +437,82 @@ export const DashboardContent: React.FC = () => {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <div>
-                  <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">신규 캠페인을 제안해 보세요</p>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">총판은 새로운 캠페인을 제안하고 승인 받을 수 있습니다. 아래 캠페인 유형 중 하나를 선택하여 시작하세요.</p>
+                  <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">신청한 캠페인 현황</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">캠페인 신청 현황과 승인 상태를 확인할 수 있습니다. 신규 캠페인을 신청하려면 상단의 버튼을 클릭하세요.</p>
                 </div>
               </div>
             </div>
 
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">캠페인 유형 선택</h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div
-                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
-                onClick={() => openAddCampaignModal('ntraffic')}
-              >
-                <div className="flex items-center mb-2">
-                  <img src="/media/ad-brand/naver.png" alt="네이버" className="w-5 h-5 mr-2" />
-                  <span className="font-medium">네이버 트래픽</span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">네이버 검색을 통한 사이트 방문 증가</p>
-              </div>
-
-              <div
-                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
-                onClick={() => openAddCampaignModal('NaverShopTraffic')}
-              >
-                <div className="flex items-center mb-2">
-                  <img src="/media/ad-brand/naver-shopping.png" alt="네이버 쇼핑" className="w-5 h-5 mr-2" />
-                  <span className="font-medium">네이버 쇼핑</span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">네이버 쇼핑 페이지 노출 및 트래픽</p>
-              </div>
-
-              <div
-                className="border dark:border-gray-700 rounded-lg p-3 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
-                onClick={() => openAddCampaignModal('CoupangTraffic')}
-              >
-                <div className="flex items-center mb-2">
-                  <img src="/media/ad-brand/coupang-app.png" alt="쿠팡" className="w-5 h-5 mr-2" />
-                  <span className="font-medium">쿠팡 트래픽</span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">쿠팡을 통한 사이트 방문자 유치</p>
-              </div>
+            {/* 신청 목록 테이블 */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">캠페인 유형</th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">신청일</th>
+                    <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                    <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {/* 실제 데이터는 API 연동 후 표시 예정 - 현재는 예시 데이터 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img src="/media/ad-brand/naver.png" alt="네이버" className="w-5 h-5 mr-2" />
+                        <span className="text-sm font-medium">네이버 트래픽</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-05-15</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">승인됨</span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                      <a href="#" className="text-blue-600 hover:text-blue-900">상세보기</a>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img src="/media/ad-brand/naver-shopping.png" alt="네이버 쇼핑" className="w-5 h-5 mr-2" />
+                        <span className="text-sm font-medium">네이버 쇼핑</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-05-10</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">검토중</span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                      <a href="#" className="text-blue-600 hover:text-blue-900">상세보기</a>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img src="/media/ad-brand/coupang-app.png" alt="쿠팡" className="w-5 h-5 mr-2" />
+                        <span className="text-sm font-medium">쿠팡 트래픽</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-05-01</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">거부됨</span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                      <a href="#" className="text-blue-600 hover:text-blue-900">상세보기</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-
-            <div className="mt-3">
+            
+            <div className="flex justify-center mt-4">
               <Button
-                className="w-full text-center py-2 mt-2 bg-primary text-white hover:bg-primary-dark"
-                onClick={() => navigate('/advertise/ntraffic/desc')}
+                variant="outline"
+                size="sm"
+                className="text-blue-600"
+                onClick={() => navigate('/campaign-request')}
               >
-                전체 캠페인 유형 보기
+                전체 목록 보기
               </Button>
             </div>
           </div>

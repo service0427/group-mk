@@ -714,9 +714,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 1. 즉시 로그아웃 플래그 설정 - 사용자에게 작업 진행 중임을 표시
             setIsLoggingOut(true);
             
-            // 2. 애니메이션 차단 클래스 추가 (브라우저 환경에서만)
+            // 2. 애니메이션 차단 및 로그아웃 상태 명확히 표시 (브라우저 환경에서만)
             if (typeof document !== 'undefined') {
                 document.body.classList.add('is-logging-out');
+                
+                // 로그아웃 중임을 DOM에 명확하게 표시 (애플리케이션 다시 로드 시 감지 용이)
+                const logoutMeta = document.createElement('meta');
+                logoutMeta.name = 'app-logout-state';
+                logoutMeta.content = 'in-progress';
+                document.head.appendChild(logoutMeta);
             }
             
             // 3. 인증 데이터 먼저 제거 (백그라운드 작업 전 필수 단계)
@@ -727,11 +733,16 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 4. 로그인 페이지로 즉시 이동하지 않고 약간의 지연을 줌
             // 이렇게 하면 애플리케이션이 현재 로그아웃 상태를 완전히 처리한 후 이동
             setTimeout(() => {
+                console.log('[Logout] 로그아웃 프로세스 시작');
+                
                 // 인증 관련 스토리지 정리
                 clearAuthStorage();
+                console.log('[Logout] 스토리지 정리 완료');
                 
                 // Supabase 로그아웃 (비동기이지만 페이지 전환 전에 시작)
-                supabase.auth.signOut().catch(() => {});
+                supabase.auth.signOut()
+                    .then(() => console.log('[Logout] Supabase 세션 종료 완료'))
+                    .catch(() => console.log('[Logout] Supabase 세션 종료 중 오류'));
                 
                 // 페이지 전환을 위한 상태 저장 (브라우저 환경에서만)
                 if (typeof localStorage !== 'undefined') {
@@ -751,11 +762,40 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 // 항상 새로운 페이지를 로드하도록 타임스탬프 추가
                 const timestamp = Date.now();
                 
-                // 이 시점에서는 기존 화면이 로그아웃 상태로 완전히 전환됨
-                // 그 후 로그인 페이지로 한 번에 이동 (새로고침 효과 없음)
+                // 로그인 페이지로 이동 (완전한 새로고침 포함)
+                console.log('[Logout] 리디렉션 준비 완료');
+                
+                // 페이지 초기화 및 새로고침 적용
+                try {
+                    // 중요한 supabase 쿠키 제거 (직접 document.cookie 접근)
+                    if (typeof document !== 'undefined') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.startsWith('sb-') || cookie.includes('supabase')) {
+                                const name = cookie.split('=')[0];
+                                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('[Logout] 쿠키 정리 중 오류', e);
+                }
+                
                 // 브라우저 환경에서만 페이지 이동
                 if (typeof window !== 'undefined') {
-                    window.location.replace(`/#/auth/login?_=${timestamp}`);
+                    console.log('[Logout] 페이지 전환 시작');
+                    
+                    // 1. 세션 스토리지 완전히 비우기
+                    try { sessionStorage.clear(); } catch (e) {}
+                    
+                    // 2. URL 변경하여 새로고침 (프래그먼트 제거)
+                    const baseUrl = window.location.origin;
+                    const logoutUrl = `${baseUrl}/#/auth/login?_=${timestamp}&force=true`;
+                    
+                    // 3. 강제 페이지 새로고침 실행
+                    console.log('[Logout] 페이지 리로드');
+                    window.location.href = logoutUrl;
                 }
             }, 50);  // 50ms는 충분히 짧지만 상태 변경이 적용될 시간은 됨
             
@@ -774,8 +814,20 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 약간의 지연 후 로그인 페이지로 이동 (브라우저 환경에서만)
             setTimeout(() => {
                 const timestamp = Date.now();
+                
+                console.log('[Logout] 오류 발생 후 강제 로그아웃');
+                
+                // 세션 스토리지 초기화
+                try { 
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.clear(); 
+                    }
+                } catch (e) {}
+                
                 if (typeof window !== 'undefined') {
-                    window.location.replace(`/#/auth/login?_=${timestamp}`);
+                    const baseUrl = window.location.origin;
+                    // 강제 새로고침 플래그 추가
+                    window.location.href = `${baseUrl}/#/auth/login?_=${timestamp}&force=true&error=1`;
                 }
             }, 50);
             

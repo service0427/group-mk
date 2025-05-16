@@ -406,7 +406,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
           },
           {
             title: '광고주 대시보드',
-            icon: 'presentation-chart text-warning',
+            icon: 'chart-line text-warning',
             path: '/dashboard/advertiser'
           },
           {

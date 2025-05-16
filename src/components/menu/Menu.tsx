@@ -42,15 +42,17 @@ const MenuComponent = ({
   multipleExpand = false
 }: IMenuProps) => {
   // 로컬 스토리지에서 저장된 열린 아코디언 상태 불러오기
-  const initialAccordions = (getData('menu_accordions') as { [key: string]: string | null }) || {};
-  const [openAccordions, setOpenAccordions] = useState<{ [key: string]: string | null }>(initialAccordions);
+  const storedAccordions = (getData('menu_accordions') as { [key: string]: string | null }) || {};
+  
+  const [openAccordions, setOpenAccordions] = useState<{ [key: string]: string | null }>(storedAccordions);
 
-  // Function to handle the accordion toggle
+  // 아코디언 메뉴 토글 함수
   const setOpenAccordion = (parentId: string, id: string) => {
     setOpenAccordions((prevState) => {
+      // 일반적인 토글 동작
       const newState = {
         ...prevState,
-        [parentId]: prevState[parentId] === id ? null : id // Toggle the current item and collapse others at the same level
+        [parentId]: prevState[parentId] === id ? null : id
       };
       
       // 로컬 스토리지에 상태 저장
@@ -59,6 +61,7 @@ const MenuComponent = ({
     });
   };
 
+  // 아코디언 메뉴가 열려있는지 확인하는 함수
   const isOpenAccordion = (parentId: string, id: string) => {
     return openAccordions[parentId] === id;
   };

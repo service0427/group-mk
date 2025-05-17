@@ -176,24 +176,6 @@ export const serviceData: Record<string, any> = {
       ]
     }
   },
-  ohouse: {
-    traffic: {
-      name: "오늘의집 트래픽",
-      description: "오늘의집을 통한 사이트 트래픽 증가 마케팅",
-      features: [
-        {
-          title: "인테리어 콘텐츠 연계",
-          description: "인테리어 컨텐츠와 연계해 자연스럽게 제품 노출",
-          icon: "home"
-        },
-        {
-          title: "특정 고객 접근",
-          description: "인테리어와 쇼퍼홀릭에 관심있는 고객층에게 직접 접근",
-          icon: "users"
-        }
-      ]
-    }
-  }
 };
 
 // 서비스 데이터 조회 함수
@@ -244,8 +226,6 @@ export const getServiceTypeFromPath = (
     return 'ntraffic';
   } else if (platform === 'coupang' && type === 'traffic') {
     return 'CoupangTraffic';
-  } else if (platform === 'ohouse' && type === 'traffic') {
-    return 'OhouseTraffic';
   }
 
   // 일치하는 서비스 타입이 없는 경우

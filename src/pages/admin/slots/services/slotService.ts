@@ -1126,6 +1126,9 @@ export const getSlotList = async (
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
+    
+    // service_type을 직접 필터링하지 않음
+    // 필요한 경우 추가 로직으로 서비스 타입에 해당하는 product_id 필터링 구현 필요
 
     // 날짜 필터
     if (filters.dateFrom) {

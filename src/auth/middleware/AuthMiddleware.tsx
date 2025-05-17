@@ -27,8 +27,15 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   const navigate = useNavigate();
   
   // 현재 경로가 공개 경로인지 확인
-  const isPublicPath = PUBLIC_PATHS.some(path => 
-    location.pathname === path || location.pathname.startsWith(path)
+  // 해시 기반 라우팅에서는 pathname 대신 hash의 경로 부분 확인 
+  const path = location.pathname;
+  const hashPath = location.hash.startsWith('#') ? location.hash.substring(1) : location.hash;
+  
+  const isPublicPath = PUBLIC_PATHS.some(publicPath => 
+    path === publicPath || 
+    path.startsWith(publicPath) || 
+    hashPath === publicPath || 
+    hashPath.startsWith(publicPath)
   );
   
   // 현재 인증 상태 계산
@@ -86,8 +93,9 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 정보가 전혀 없는 경우 로그인 페이지로 이동
       if (!hasAuth && !hasCachedUser) {
-        navigate('/auth/login', { 
-          state: { from: location.pathname },
+        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
+        navigate('auth/login', { 
+          state: { from: location.pathname + location.hash },
           replace: true 
         });
       }
@@ -122,13 +130,16 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     // 초기 확인 및 세부 검증이 끝난 후에만 리다이렉션 결정
     if (!initialCheck && !deepChecking && !loading && !isPublicPath) {
-      // 이미 로그인 페이지로 가고 있는 상태인지 확인
-      const isAlreadyNavigatingToLogin = location.pathname === '/auth/login';
+      // 이미 로그인 페이지로 가고 있는 상태인지 확인 (다양한 URL 패턴 지원)
+      const isAlreadyNavigatingToLogin = 
+        location.pathname === '/auth/login' || 
+        location.hash.includes('auth/login');
       
       // 인증 상태가 완전히 확인된 후 auth는 있지만 currentUser가 없는 경우 (검증 실패)
       if (auth && !currentUser && !isAlreadyNavigatingToLogin) {
-        navigate('/auth/login', { 
-          state: { from: location.pathname },
+        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
+        navigate('auth/login', { 
+          state: { from: location.pathname + location.hash },
           replace: true 
         });
       }
@@ -137,10 +148,13 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   
   // 인증된 상태에서 인증 페이지 접근 시 리다이렉션
   useEffect(() => {
-    if (!initialCheck && !loading && isAuthenticated && location.pathname.startsWith('/auth')) {
+    const isAuthPage = location.pathname.startsWith('/auth') || 
+                       (location.hash && location.hash.includes('auth/'));
+                       
+    if (!initialCheck && !loading && isAuthenticated && isAuthPage) {
       navigate('/', { replace: true });
     }
-  }, [initialCheck, loading, isAuthenticated, location.pathname, navigate]);
+  }, [initialCheck, loading, isAuthenticated, location.pathname, location.hash, navigate]);
   
   // 로딩 상태 계산 및 스크린 로더 제어
   const isLoading = initialCheck || deepChecking || (loading && !isPublicPath);

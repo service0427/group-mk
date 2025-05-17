@@ -33,15 +33,6 @@ export const CAMPAIGNS: CampaignConfig[] = [
       { name: 'C브랜드', code: 'c_brand' }
     ]
   },
-  {
-    name: '오늘의집',
-    serviceType: '인테리어/쇼핑',
-    logo: '/media/ad-brand/ohouse.png',
-    types: [
-      { name: 'O인테리어', code: 'o_interior' },
-      { name: 'O쇼핑', code: 'o_shopping' }
-    ]
-  }
 ];
 
 // 모든 캠페인 이름 목록

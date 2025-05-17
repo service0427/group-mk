@@ -11,10 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
-import { getStatusColorClass, CampaignDetailData as ICampaignDetailData } from '@/utils/CampaignFormat';
 import { supabase } from '@/supabase';
 import ReactApexChart from 'react-apexcharts';
 import { getFilteredRankingData, calculateDataStats } from '@/utils/ChartSampleData';
+import { ICampaign } from './types';
 
 // 가격에 콤마 추가하는 함수
 const formatPriceWithCommas = (price: string | number): string => {
@@ -36,12 +36,10 @@ const formatPriceWithCommas = (price: string | number): string => {
   return priceStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// 기존 인터페이스를 유틸리티에서 가져온 인터페이스로 대체
-
 interface CampaignDetailViewModalProps {
   open: boolean;
   onClose: () => void;
-  campaign: ICampaignDetailData | null;
+  campaign: ICampaign | null;
 }
 
 const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
@@ -60,8 +58,8 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     dates: [] as string[]
   });
   const [stats, setStats] = useState({
-    upperRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 },
-    lowerRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 }
+    upperRank: { min: -1, max: -1, avg: -1, bestImprovement: -1 },
+    lowerRank: { min: -1, max: -1, avg: -1, bestImprovement: -1 }
   });
   const [hasRankingData, setHasRankingData] = useState<boolean>(false);
   
@@ -251,8 +249,8 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         dates: []
       });
       setStats({
-        upperRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 },
-        lowerRank: { min: 0, max: 0, avg: 0, bestImprovement: 0 }
+        upperRank: { min: -1, max: -1, avg: -1, bestImprovement: -1 },
+        lowerRank: { min: -1, max: -1, avg: -1, bestImprovement: -1 }
       });
       setChartSeries([
         { name: '30등 이내', data: [] },
@@ -511,7 +509,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
             .order('id', { ascending: false });
             
           if (allError) {
-            
             return;
           }
           
@@ -536,7 +533,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           }
           
           if (matchedCampaign) {
-            
             // add_info에서 배너 URL 가져오기
             let bannerUrl = null;
             if (matchedCampaign.add_info) {
@@ -546,7 +542,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                   const addInfo = JSON.parse(matchedCampaign.add_info);
                   bannerUrl = addInfo.banner_url || null;
                 } catch (e) {
-                  
+                  // JSON 파싱 오류 무시
                 }
               } else {
                 bannerUrl = matchedCampaign.add_info.banner_url || null;
@@ -557,7 +553,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           }
           
         } catch (err) {
-          
+          // 오류 처리
         } finally {
           setLoading(false);
         }
@@ -571,6 +567,15 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
 
   // 캠페인 ID는 업데이트 조건으로만 사용
   const campaignId = campaign.id;
+  
+  // 상태가 문자열 또는 객체일 수 있음을 처리
+  const statusColor = typeof campaign.status === 'string' ? 
+    campaign.status : 
+    (campaign.status as any)?.color || 'info';
+    
+  const statusLabel = typeof campaign.status === 'string' ? 
+    campaign.status : 
+    (campaign.status as any)?.label || '준비중';
   
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -655,9 +660,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 <div>
                   <h2 className="text-lg font-semibold text-foreground flex items-center">
                     {campaign?.campaignName}
-                    <span className={`badge ${campaign?.status.color} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
-                      <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaign?.status.color || 'badge-info')} me-1.5`}></span>
-                      {campaign?.status.label}
+                    <span className={`badge badge-${statusColor} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
+                      <span className={`size-1.5 rounded-full me-1.5`}></span>
+                      {statusLabel}
                     </span>
                   </h2>
                 </div>

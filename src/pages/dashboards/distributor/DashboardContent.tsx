@@ -17,7 +17,7 @@ import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
-import { CampaignAddModal } from '@/pages/admin/campaigns/components/campaign-modals';
+import { CampaignAddModal } from '@/components/campaign-modals';
 import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
 import { useNavigate } from 'react-router-dom';
 
@@ -671,7 +671,7 @@ export const DashboardContent: React.FC = () => {
           open={addCampaignModalOpen}
           onClose={() => setAddCampaignModalOpen(false)}
           serviceType={selectedServiceType}
-          onSave={(newCampaign: ICampaign) => {
+          onSave={(newCampaign: any) => {
             // 캠페인이 성공적으로 생성되면 모달 닫기
             setAddCampaignModalOpen(false);
             // 성공 메시지 표시

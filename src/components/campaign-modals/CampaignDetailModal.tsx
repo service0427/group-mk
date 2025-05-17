@@ -1,44 +1,19 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { KeenIcon } from '@/components';
-import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
+import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor } from './types';
 import { toAbsoluteUrl } from '@/utils';
-import { updateCampaign, formatTimeHHMM, updateCampaignStatus } from '../../services/campaignService';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogBody, 
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-// 상태값에 따른 라벨 반환
-const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case 'active': return '진행중';
-    case 'pending': return '준비중';
-    case 'pause': return '표시안함';
-    case 'waiting_approval': return '승인 대기중';
-    case 'rejected': return '반려됨';
-    default: return '준비중';
-  }
-};
-
-// 상태값에 따른 색상 반환
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'active': return 'success';
-    case 'pause': return 'warning';
-    case 'pending': return 'info';
-    case 'completed': return 'primary';
-    case 'rejected': return 'danger';
-    case 'waiting_approval': return 'primary';
-    default: return 'info';
-  }
-};
-
-// 확장된 캠페인 인터페이스
-interface ExtendedCampaign extends ICampaign {
-  additionalLogic?: string;
-  detailedDescription?: string;
-  unitPrice?: string;
-  bannerImage?: string;
-  rejectionReason?: string; // 반려 사유 필드 추가
-}
+// 서비스별 API import는 해당 모달을 사용하는 컴포넌트에서 제공
+// 필요 시 props를 통해 함수를 전달받도록 설계
 
 interface CampaignDetailModalProps {
   open: boolean;
@@ -46,6 +21,7 @@ interface CampaignDetailModalProps {
   campaign: ICampaign | null;
   onSave?: (updatedCampaign: ExtendedCampaign) => void;
   isOperator?: boolean; // 운영자 모드 여부
+  updateCampaign?: (id: number, data: any) => Promise<boolean>; // 업데이트 함수
 }
 
 const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
@@ -53,7 +29,8 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   onClose,
   campaign,
   onSave,
-  isOperator = false
+  isOperator = false,
+  updateCampaign
 }) => {
   const [editedCampaign, setEditedCampaign] = useState<ExtendedCampaign | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,8 +58,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   
   useEffect(() => {
     if (campaign) {
-      
-      
       // 캠페인 데이터 포맷 처리
       const minQuantity = campaign.minQuantity ? campaign.minQuantity.replace('개', '') : '0';
       const efficiency = campaign.efficiency ? campaign.efficiency.replace('%', '') : '0';
@@ -116,7 +91,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       } else if (addInfo.rejection_reason) {
         // 이전 방식(add_info)에서 가져오기 (하위 호환성)
         rejectionReasonValue = addInfo.rejection_reason;
-        
       }
 
       // 항상 최신 데이터 사용
@@ -130,7 +104,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         
       } else {
         initialStatus = campaign.originalData?.status || 'pending';
-        
       }
 
       // originalData에 status가 있으면 그 값을 우선 사용 (서버 데이터 우선)
@@ -158,7 +131,35 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   
   if (!campaign || !editedCampaign) return null;
 
-  
+  // 시간 포맷팅 함수 
+  function formatTimeHHMM(timeStr: string): string {
+    // 입력이 없거나 이미 HH:MM 형식인 경우 그대로 반환
+    if (!timeStr) return '';
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr;
+    
+    try {
+      // 문자열이 날짜 포맷인 경우 변환
+      if (timeStr.includes('T') || timeStr.includes('-')) {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+      }
+      
+      // 단순 시간 문자열인 경우
+      // "1800" -> "18:00", "930" -> "09:30" 등으로 변환
+      if (/^\d{1,4}$/.test(timeStr)) {
+        const paddedTime = timeStr.padStart(4, '0');
+        return `${paddedTime.slice(0, 2)}:${paddedTime.slice(2, 4)}`;
+      }
+      
+      // 기타 형식은 그대로 반환
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
+  }
+
   const handleChange = (field: keyof ExtendedCampaign, value: string) => {
     setEditedCampaign(prev => prev ? { ...prev, [field]: value } : null);
   };
@@ -241,14 +242,15 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   
   const handleSave = async () => {
     if (!editedCampaign) return;
+    if (!updateCampaign) {
+      setError('업데이트 함수가 제공되지 않았습니다.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      // 상태 값 확인 및 디버깅
-      
-
       let statusValue;
       if (typeof editedCampaign.status === 'string') {
         statusValue = editedCampaign.status;
@@ -270,13 +272,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         return;
       }
 
-      // 반려 상태 처리를 위한 추가 디버깅 로그
-      if (statusValue === 'rejected') {
-        
-        
-        
-      }
-
       // 원본 캠페인 상태 확인
       const originalStatus = campaign.originalData?.status || 'pending';
       const isStatusChanged = statusValue !== originalStatus;
@@ -284,25 +279,21 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       // 운영자 모드가 아닌 경우(총판) 상태 처리 로직
       let finalStatus = statusValue;
       if (!isOperator) {
-        // 1. 승인 요청중 또는 반려됨 상태인 경우 - 무조건 waiting_approval로 변경
-        if (originalStatus === 'rejected' || originalStatus === 'waiting_approval') {
+        // 1. 승인 요청중 상태인 경우 - 무조건 waiting_approval로 유지
+        if (originalStatus === 'waiting_approval') {
           finalStatus = 'waiting_approval';
-          
         }
-        // 2. 준비중, 진행중, 표시안함 상태인 경우 - 사용자가 선택한 상태로 변경
-        else if (['pending', 'active', 'pause'].includes(originalStatus)) {
-          finalStatus = statusValue; // 사용자가 선택한 상태 사용
-          
-        }
-        // 3. 반려 상태에서 저장할 경우, 승인 대기중으로 변경
+        // 2. 반려됨 상태인 경우 - 무조건 waiting_approval로 변경 (재승인 요청)
         else if (originalStatus === 'rejected') {
           finalStatus = 'waiting_approval';
-          
+        }
+        // 3. 준비중, 진행중, 표시안함 상태인 경우 - 사용자가 선택한 상태로 변경
+        else if (['pending', 'active', 'pause'].includes(originalStatus)) {
+          finalStatus = statusValue; // 사용자가 선택한 상태 사용
         }
         // 4. 그 외의 경우는 원래 상태 유지
         else {
           finalStatus = originalStatus;
-          
         }
       }
 
@@ -321,44 +312,22 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         rejectionReason: finalStatus === 'rejected' ? editedCampaign.rejectionReason : undefined
       };
 
-      console.log('최종 상태 결정:', {
-        originalStatus,
-        selectedStatus: statusValue,
-        isChanged: isStatusChanged,
-        finalStatus
-      });
-
-      
-
-      // 반려 상태일 때 반려 사유가 포함되었는지 한번 더 확인
-      if (statusValue === 'rejected' && finalStatus === 'rejected') {
-        
-
-        if (!updateData.rejectionReason) {
-          
-        }
-      }
-
-      // 1. DB 업데이트 - 기본 정보
+      // DB 업데이트
       const success = await updateCampaign(parseInt(editedCampaign.id), updateData);
 
       if (!success) {
         throw new Error('캠페인 업데이트에 실패했습니다.');
       }
 
-      // 2. UI 업데이트를 위해 형식 변환 및 originalData 업데이트
+      // UI 업데이트를 위해 형식 변환 및 originalData 업데이트
       let addInfo = editedCampaign.originalData?.add_info || {};
       if (typeof addInfo === 'string') {
         try {
           addInfo = JSON.parse(addInfo);
         } catch (e) {
-          
           addInfo = {};
         }
       }
-
-      // 반려 사유는 더 이상 add_info에 저장하지 않음 (rejected_reason 필드에 직접 저장)
-      // DB 저장은 campaignService.ts에서 처리함
 
       // 상태 객체 생성
       const statusObject = {
@@ -366,8 +335,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         color: getStatusColor(finalStatus),
         status: finalStatus
       };
-
-      
 
       const updatedCampaign: ExtendedCampaign = {
         ...editedCampaign,
@@ -381,7 +348,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
           deadline: formatTimeHHMM(editedCampaign.deadline || ''),
           description: editedCampaign.description,
           detailed_description: editedCampaign.detailedDescription,
-          status: finalStatus, // 최종 상태값 저장
+          status: finalStatus,
           logo: previewUrl ? 'updated-logo.png' : editedCampaign.logo,
           uploaded_logo_data: previewUrl,
           banner_image: bannerImagePreviewUrl ? 'banner-image.png' : editedCampaign.bannerImage,
@@ -392,39 +359,13 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
         }
       };
 
-      // 3. 부모 컴포넌트에 업데이트 알림
+      // 부모 컴포넌트에 업데이트 알림
       if (onSave) {
         onSave(updatedCampaign);
       }
 
-      // 4. 성공 메시지 표시 (상태가 변경된 경우)
-      if (campaign.originalData?.status !== statusValue) {
-        let message = '';
-        switch (statusValue) {
-          case 'active':
-            message = '캠페인이 활성화되어 게시되었습니다.';
-            break;
-          case 'rejected':
-            message = '캠페인이 반려되었습니다.';
-            break;
-          case 'pending':
-            message = '캠페인이 승인되어 준비 상태로 변경되었습니다.';
-            break;
-          case 'pause':
-            message = '캠페인이 표시 중지 상태로 변경되었습니다.';
-            break;
-          case 'waiting_approval':
-            message = '캠페인이 승인 대기 상태로 변경되었습니다.';
-            break;
-          default:
-            message = '캠페인 상태가 변경되었습니다.';
-        }
-        
-      }
-
       onClose();
     } catch (err) {
-      
       setError('캠페인 정보 저장에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -434,36 +375,35 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[800px] p-0 overflow-hidden overflow-y-auto max-h-[90vh]">
-          <DialogHeader className="bg-background py-4 px-6 border-b">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[800px] p-0 overflow-hidden max-h-[90vh] flex flex-col">
+          <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm">
             <DialogTitle className="text-lg font-medium text-foreground">
               {isOperator ? '캠페인 상세 정보 (운영자 모드)' : '캠페인 내용 수정'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="p-4 bg-background">
-            <div className="space-y-4">
-              {/* 운영자 모드 표시 */}
-              {isOperator && (
-                <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 p-4 rounded-md flex items-start mb-4">
-                  <KeenIcon icon="information-circle" className="size-5 mr-2 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">운영자 모드</p>
-                    <p className="text-sm mt-1">이 모드에서는 캠페인 정보를 보기만 할 수 있으며, 하단의 상태 변경 버튼을 통해 캠페인 상태만 변경할 수 있습니다. 모든 필드는 읽기 전용입니다.</p>
-                  </div>
+          <DialogBody className="p-4 bg-background space-y-4 overflow-y-auto">
+            {/* 운영자 모드 표시 */}
+            {isOperator && (
+              <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 p-4 rounded-md flex items-start mb-4">
+                <KeenIcon icon="information-circle" className="size-5 mr-2 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">운영자 모드</p>
+                  <p className="text-sm mt-1">이 모드에서는 캠페인 정보를 보기만 할 수 있으며, 하단의 상태 변경 버튼을 통해 캠페인 상태만 변경할 수 있습니다. 모든 필드는 읽기 전용입니다.</p>
                 </div>
-              )}
-              
-              {/* 오류 메시지 */}
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 rounded-md flex items-center mb-4">
-                  <KeenIcon icon="warning-triangle" className="size-5 mr-2" />
-                  {error}
-                </div>
-              )}
+              </div>
+            )}
             
-              {/* 헤더 정보 */}
-              <div className="flex items-center gap-4">
+            {/* 오류 메시지 */}
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 rounded-md flex items-center mb-4">
+                <KeenIcon icon="warning-triangle" className="size-5 mr-2" />
+                {error}
+              </div>
+            )}
+          
+            {/* 헤더 정보 */}
+            <div className="flex items-center gap-4">
                 <div className="relative">
                   {previewUrl || editedCampaign.logo ? (
                     <img
@@ -510,7 +450,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                           // 추출된 동물 이름이 있고 유효한 동물 아이콘인 경우
                           if (animalName && animalIcons.includes(animalName)) {
-                            
                             return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                           }
 
@@ -519,7 +458,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         // 동물 이름이 있는 경우
                         if (editedCampaign.logo && animalIcons.includes(editedCampaign.logo)) {
-                          
                           return toAbsoluteUrl(`/media/animal/svg/${editedCampaign.logo}.svg`);
                         }
 
@@ -533,7 +471,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                           for (const [animalName, iconName] of sortedEntries) {
                             if (name.includes(animalName.toLowerCase())) {
-                              
                               return toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
                             }
                           }
@@ -545,8 +482,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       className="rounded-full size-16 shrink-0 object-cover"
                       alt="캠페인 로고"
                       onError={(e) => {
-                        
-
                         // 동물 아이콘 및 이름 매핑 정의
                         const animalIcons = [
                           'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
@@ -556,11 +491,8 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         // logo 필드 체크
                         if (editedCampaign.logo) {
-                          
-
                           // logo가 동물 이름인 경우
                           if (animalIcons.includes(editedCampaign.logo)) {
-                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${editedCampaign.logo}.svg`);
                             return;
                           }
@@ -572,7 +504,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                               if (segments[i] === 'svg' && i + 1 < segments.length) {
                                 const animalName = segments[i + 1].split('.')[0];
                                 if (animalIcons.includes(animalName)) {
-                                  
                                   (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
                                   return;
                                 }
@@ -601,7 +532,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
 
                         for (const [animalName, iconName] of sortedEntries) {
                           if (name.includes(animalName.toLowerCase())) {
-                            
                             (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${iconName}.svg`);
                             animalFound = true;
                             break;
@@ -611,7 +541,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         // 이름에서 동물을 찾지 못하면 랜덤 아이콘 사용
                         if (!animalFound) {
                           const randomAnimal = animalIcons[Math.floor(Math.random() * animalIcons.length)];
-                          
                           (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                         }
                       }}
@@ -650,20 +579,28 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                     readOnly={isOperator}
                   />
                   <div className="mt-1">
-                    <span className={`badge badge-${editedCampaign.status.color} badge-outline rounded-[30px]`}>
-                      <span className={`size-1.5 rounded-full bg-${editedCampaign.status.color} me-1.5`}></span>
-                      {editedCampaign.status.label}
-                    </span>
+                    {typeof editedCampaign.status === 'string' ? (
+                      <span className={`badge badge-${getStatusColor(editedCampaign.status)} badge-outline rounded-[30px]`}>
+                        <span className={`size-1.5 rounded-full bg-${getStatusColor(editedCampaign.status)} me-1.5`}></span>
+                        {getStatusLabel(editedCampaign.status)}
+                      </span>
+                    ) : (
+                      <span className={`badge badge-${editedCampaign.status.color} badge-outline rounded-[30px]`}>
+                        <span className={`size-1.5 rounded-full bg-${editedCampaign.status.color} me-1.5`}></span>
+                        {editedCampaign.status.label}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* 캠페인 정보 테이블 */}
               <div className="overflow-hidden border border-border rounded-lg mb-4">
+                {/* 캠페인 ID는 히든 값으로 저장 */}
+                <input type="hidden" value={editedCampaign.id || '-'} />
+                
                 <table className="min-w-full divide-y divide-border">
                   <tbody className="divide-y divide-border">
-                    {/* 캠페인 ID는 히든 값으로 저장 */}
-                    <input type="hidden" value={editedCampaign.id || '-'} />
                     
                     <tr>
                       <th className="px-3 py-2 bg-muted text-left text-md font-medium text-muted-foreground uppercase tracking-wider w-1/3">
@@ -704,18 +641,9 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                                 // 선택된 동물 로고 파일 경로에서 동물 이름 추출
                                 const animalName = e.target.value.split('/').pop()?.split('.')[0];
                                 
-
                                 // 동물 이름만 저장 (경로 없이)
                                 // 예: 'animal/svg/cat.svg' -> 'cat', 'giraffe.svg' -> 'giraffe'
                                 handleChange('logo', animalName || e.target.value);
-
-                                // 디버깅 로그
-                                console.log('로고 선택 완료', {
-                                  path: e.target.value,
-                                  extractedName: animalName,
-                                  storedValue: animalName || e.target.value,
-                                  willOverrideNameSearch: true
-                                });
                               }
                             }}
                             className="w-full h-10 px-3 py-2 border border-border bg-background text-foreground rounded-md text-md"
@@ -1019,6 +947,15 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                                     <p className="text-red-600 dark:text-red-300 whitespace-pre-line">
                                       {editedCampaign.rejectionReason || '반려 사유가 없습니다.'}
                                     </p>
+                                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs">
+                                      <div className="flex items-start">
+                                        <KeenIcon icon="information-circle" className="size-4 mr-1.5 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <p className="font-medium">수정 후 재승인 요청 안내</p>
+                                          <p className="mt-1">위 사유에 맞게 캠페인 정보를 수정한 후 저장하시면 자동으로 재승인 요청이 진행됩니다. 캠페인 상태는 '승인 대기중'으로 변경되며, 운영자 승인 후 제공됩니다.</p>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1030,115 +967,31 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                   </tbody>
                 </table>
               </div>
-
+              </DialogBody>
+              
               {/* 버튼 */}
-              <div className="flex justify-end items-center gap-3 mt-3 sticky bottom-0 pt-2 pb-1 bg-background border-t border-border">
+              <DialogFooter className="sticky bottom-0 pt-2 pb-1 bg-background border-t border-border px-6 py-4 z-10 shadow-sm">
                 {/* 미리보기 버튼 */}
-                <Button
-                  onClick={() => setCampaignPreviewModalOpen(true)}
-                  variant="default"
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                  disabled={loading}
-                >
-                  <KeenIcon icon="eye" className="me-1.5" />
-                  미리보기
-                </Button>
-
-                {/* 운영자 모드일 때 상태 변경 버튼들 */}
-                {isOperator && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="default"
-                      onClick={() => {
-                        const statusValue = 'pending';  // 승인 시 준비중 상태로 변경
-                        setEditedCampaign(prev => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            status: {
-                              label: getStatusLabel(statusValue),
-                              color: getStatusColor(statusValue),
-                              status: statusValue
-                            }
-                          };
-                        });
-                        setTimeout(() => handleSave(), 100);
-                      }}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                      disabled={loading}
-                    >
-                      <span className="hidden sm:inline">준비상태로 </span>승인
-                    </Button>
-
-                    <Button
-                      variant="default"
-                      onClick={() => {
-                        const statusValue = 'pending';
-                        setEditedCampaign(prev => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            status: {
-                              label: getStatusLabel(statusValue),
-                              color: getStatusColor(statusValue),
-                              status: statusValue
-                            }
-                          };
-                        });
-                        setTimeout(() => handleSave(), 100);
-                      }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
-                      disabled={loading}
-                    >
-                      준비중
-                    </Button>
-
-                    <Button
-                      variant="default"
-                      onClick={() => {
-                        const statusValue = 'pause';
-                        setEditedCampaign(prev => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            status: {
-                              label: getStatusLabel(statusValue),
-                              color: getStatusColor(statusValue),
-                              status: statusValue
-                            }
-                          };
-                        });
-                        setTimeout(() => handleSave(), 100);
-                      }}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                      disabled={loading}
-                    >
-                      <span className="hidden sm:inline">표시</span>안함
-                    </Button>
-
-                    <Button
-                      variant="default"
-                      onClick={() => {
-                        // 운영자 모드에서는 반려 사유 입력 모달 열기
-                        if (isOperator) {
-                          setRejectionReason(''); // 반려 사유 초기화
-                          setRejectionModalOpen(true); // 모달 열기
-                        } else {
-                          // 일반 모드에서는 기존 동작 유지
-                          const statusValue = 'rejected';
+                <div className="flex justify-end items-center gap-3 w-full">
+                  <Button
+                    onClick={() => setCampaignPreviewModalOpen(true)}
+                    variant="default"
+                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    disabled={loading}
+                  >
+                    <KeenIcon icon="eye" className="me-1.5" />
+                    미리보기
+                  </Button>
+  
+                  {/* 운영자 모드일 때 상태 변경 버튼들 */}
+                  {isOperator && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          const statusValue = 'pending';  // 승인 시 준비중 상태로 변경
                           setEditedCampaign(prev => {
                             if (!prev) return null;
-
-                            // 반려 상태로 변경하고 반려 사유 스크롤을 위해 약간의 딜레이를 줌
-                            setTimeout(() => {
-                              // 반려 사유 필드로 스크롤
-                              const reasonField = document.querySelector('textarea[placeholder*="반려 사유"]');
-                              if (reasonField) {
-                                reasonField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                (reasonField as HTMLTextAreaElement).focus();
-                              }
-                            }, 100);
-
                             return {
                               ...prev,
                               status: {
@@ -1148,55 +1001,130 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                               }
                             };
                           });
-                        }
-                      }}
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                          setTimeout(() => handleSave(), 100);
+                        }}
+                        className="bg-green-500 hover:bg-green-600 text-white"
+                        disabled={loading}
+                      >
+                        <span className="hidden sm:inline">준비상태로 </span>승인
+                      </Button>
+  
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          const statusValue = 'pending';
+                          setEditedCampaign(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              status: {
+                                label: getStatusLabel(statusValue),
+                                color: getStatusColor(statusValue),
+                                status: statusValue
+                              }
+                            };
+                          });
+                          setTimeout(() => handleSave(), 100);
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        disabled={loading}
+                      >
+                        준비중
+                      </Button>
+  
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          const statusValue = 'pause';
+                          setEditedCampaign(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              status: {
+                                label: getStatusLabel(statusValue),
+                                color: getStatusColor(statusValue),
+                                status: statusValue
+                              }
+                            };
+                          });
+                          setTimeout(() => handleSave(), 100);
+                        }}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                        disabled={loading}
+                      >
+                        <span className="hidden sm:inline">표시</span>안함
+                      </Button>
+  
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          // 운영자 모드에서는 반려 사유 입력 모달 열기
+                          if (isOperator) {
+                            setRejectionReason(''); // 반려 사유 초기화
+                            setRejectionModalOpen(true); // 모달 열기
+                          } else {
+                            // 일반 모드에서는 기존 동작 유지
+                            const statusValue = 'rejected';
+                            setEditedCampaign(prev => {
+                              if (!prev) return null;
+  
+                              return {
+                                ...prev,
+                                status: {
+                                  label: getStatusLabel(statusValue),
+                                  color: getStatusColor(statusValue),
+                                  status: statusValue
+                                }
+                              };
+                            });
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                        disabled={loading}
+                      >
+                        반려
+                      </Button>
+                    </div>
+                  )}
+  
+                  {/* 저장 버튼 (운영자 모드가 아닐 때만) */}
+                  {!isOperator && (
+                    <Button
+                      onClick={handleSave}
+                      className="bg-primary hover:bg-primary/90 text-white"
                       disabled={loading}
                     >
-                      반려
+                      {loading ? (
+                        <span className="flex items-center">
+                          <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                          저장 중...
+                        </span>
+                      ) : '저장'}
                     </Button>
-                  </div>
-                )}
-
-                {/* 저장 버튼 (운영자 모드가 아닐 때만) */}
-                {!isOperator && (
+                  )}
+  
+                  {/* 취소 버튼 */}
                   <Button
-                    onClick={handleSave}
-                    className="bg-primary hover:bg-primary/90 text-white"
+                    onClick={onClose}
+                    variant="outline"
                     disabled={loading}
                   >
-                    {loading ? (
-                      <span className="flex items-center">
-                        <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                        저장 중...
-                      </span>
-                    ) : '저장'}
+                    취소
                   </Button>
-                )}
-
-                {/* 취소 버튼 */}
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  disabled={loading}
-                >
-                  취소
-                </Button>
-              </div>
-            </div>
-          </div>
+                </div>
+              </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* 배너 이미지 미리보기 모달 */}
       {bannerPreviewModalOpen && (
         <Dialog open={bannerPreviewModalOpen} onOpenChange={setBannerPreviewModalOpen}>
-          <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
-            <DialogHeader className="bg-background py-3 px-4 border-b">
+          <DialogContent className="sm:max-w-xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+            <DialogHeader className="bg-background py-3 px-4 border-b sticky top-0 z-10 shadow-sm">
               <DialogTitle className="text-lg font-medium text-foreground">배너 이미지 미리보기</DialogTitle>
             </DialogHeader>
             
-            <div className="p-4 bg-background flex flex-col">
+            <DialogBody className="p-4 bg-background flex flex-col overflow-y-auto">
               {bannerImagePreviewUrl ? (
                 <div className="flex justify-center items-center">
                   <img 
@@ -1211,16 +1139,16 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                   <p>이미지를 찾을 수 없습니다.</p>
                 </div>
               )}
-              
-              <div className="flex justify-end mt-4">
-                <Button 
-                  onClick={() => setBannerPreviewModalOpen(false)}
-                  variant="outline"
-                >
-                  닫기
-                </Button>
-              </div>
-            </div>
+            </DialogBody>
+            
+            <DialogFooter className="p-4 border-t sticky bottom-0 z-10 shadow-sm bg-background">
+              <Button 
+                onClick={() => setBannerPreviewModalOpen(false)}
+                variant="outline"
+              >
+                닫기
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
@@ -1228,15 +1156,15 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       {/* 반려 사유 입력 모달 */}
       {rejectionModalOpen && (
         <Dialog open={rejectionModalOpen} onOpenChange={setRejectionModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md p-0 overflow-hidden">
-            <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 border-b">
+          <DialogContent className="w-[95vw] sm:max-w-md p-0 overflow-hidden flex flex-col max-h-[90vh]">
+            <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
               <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
                 <KeenIcon icon="warning-circle" className="mr-2 text-red-500" />
                 캠페인 반려 사유 입력
               </DialogTitle>
             </DialogHeader>
 
-            <div className="p-4 sm:p-6 bg-background">
+            <DialogBody className="p-4 sm:p-6 bg-background overflow-y-auto">
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-3 rounded-md flex items-center mb-4">
                   <KeenIcon icon="warning-triangle" className="size-4 mr-2 flex-shrink-0" />
@@ -1262,8 +1190,10 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                   </p>
                 )}
               </div>
+            </DialogBody>
 
-              <div className="flex justify-end gap-2 mt-4">
+            <DialogFooter className="p-4 sm:p-6 pt-0 sm:pt-0 flex justify-end sticky bottom-0 z-10 shadow-sm bg-background border-t">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1285,9 +1215,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                     // 로딩 상태 설정
                     setLoading(true);
 
-                    // 상태를 반려로 변경하고 반려 사유 설정
-                    
-
                     setEditedCampaign(prev => {
                       if (!prev) return null;
 
@@ -1302,21 +1229,18 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         rejectionReason: rejectionReason // 입력받은 반려 사유 설정
                       };
 
-                      console.log('반려 상태로 업데이트된 캠페인:', {
-                        status: updatedCampaign.status,
-                        rejectionReason: updatedCampaign.rejectionReason
-                      });
-
                       return updatedCampaign;
                     });
 
                     // 모달 닫기
                     setRejectionModalOpen(false);
 
-                    // 반려 특수 처리 - setEditedCampaign 상태 변경이 적용되기 전에 직접 DB에 업데이트
+                    // 반려 처리 직접 DB에 업데이트
                     setTimeout(async () => {
                       try {
-                        
+                        if (!updateCampaign) {
+                          throw new Error('업데이트 함수가 제공되지 않았습니다.');
+                        }
 
                         // 캠페인 ID 가져오기
                         const campaignId = editedCampaign?.id;
@@ -1333,8 +1257,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         if (!success) {
                           throw new Error('반려 처리 중 오류가 발생했습니다.');
                         }
-
-                        
 
                         // 성공 시 부모 컴포넌트에 알림
                         if (onSave && editedCampaign) {
@@ -1360,7 +1282,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                         // 모달 창 닫기
                         onClose();
                       } catch (err) {
-                        
                         setError('반려 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
                         setLoading(false);
                         setRejectionModalOpen(true); // 모달 다시 열기
@@ -1376,7 +1297,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                   ) : '반려하기'}
                 </Button>
               </div>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
@@ -1384,7 +1305,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
       {/* 캠페인 전체 미리보기 모달 */}
       {campaignPreviewModalOpen && (
         <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden overflow-y-auto max-h-[90vh] border-4 border-primary">
+          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] border-4 border-primary">
             <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-10 shadow-sm">
               <DialogTitle className="text-lg font-semibold text-foreground flex items-center">
                 <KeenIcon icon="eye" className="mr-2 text-primary" />
@@ -1392,7 +1313,7 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
               </DialogTitle>
             </DialogHeader>
             
-            <div className="bg-background">
+            <DialogBody className="bg-background p-0 overflow-y-auto">
               {/* 배너 이미지 (있을 경우) */}
               {bannerImagePreviewUrl && (
                 <div className="w-full">
@@ -1425,10 +1346,17 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                       {editedCampaign.campaignName}
                     </h2>
                     <div className="mt-1 flex gap-2">
-                      <span className={`badge badge-${editedCampaign.status.color} badge-outline rounded-[30px]`}>
-                        <span className={`size-1.5 rounded-full bg-${editedCampaign.status.color} me-1.5`}></span>
-                        {editedCampaign.status.label}
-                      </span>
+                      {typeof editedCampaign.status === 'string' ? (
+                        <span className={`badge badge-${getStatusColor(editedCampaign.status)} badge-outline rounded-[30px]`}>
+                          <span className={`size-1.5 rounded-full bg-${getStatusColor(editedCampaign.status)} me-1.5`}></span>
+                          {getStatusLabel(editedCampaign.status)}
+                        </span>
+                      ) : (
+                        <span className={`badge badge-${editedCampaign.status.color} badge-outline rounded-[30px]`}>
+                          <span className={`size-1.5 rounded-full bg-${editedCampaign.status.color} me-1.5`}></span>
+                          {editedCampaign.status.label}
+                        </span>
+                      )}
                       <span className="text-sm text-muted-foreground">
                         마감시간: {editedCampaign.deadline}
                       </span>
@@ -1479,17 +1407,17 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({
                   </div>
                 </div>
               </div>
-              
-              <div className="flex justify-end p-4 border-t bg-gray-100 dark:bg-gray-800 sticky bottom-0 shadow-lg">
-                <Button 
-                  onClick={() => setCampaignPreviewModalOpen(false)}
-                  className="bg-red-500 hover:bg-red-600 text-white"
-                >
-                  <KeenIcon icon="cross" className="me-1 size-4" />
-                  닫기
-                </Button>
-              </div>
-            </div>
+            </DialogBody>
+            
+            <DialogFooter className="p-4 border-t bg-gray-100 dark:bg-gray-800 sticky bottom-0 z-10 shadow-lg">
+              <Button 
+                onClick={() => setCampaignPreviewModalOpen(false)}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                <KeenIcon icon="cross" className="me-1 size-4" />
+                닫기
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

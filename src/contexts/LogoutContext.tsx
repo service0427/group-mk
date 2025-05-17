@@ -28,8 +28,9 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       
       // 브라우저 환경에서 안전하게 로그인 페이지 감지
       // URL에 강제 로딩 플래그가 있는지 확인
+      // 해시 경로가 'auth/login'(슬래시 사용) 또는 '#/auth/login'(#/ 사용) 둘 다 지원
       const isLoginPage = typeof window !== 'undefined' ? 
-        window.location.hash.includes('/auth/login') : 
+        (window.location.hash.includes('auth/login') || window.location.hash.includes('/auth/login')) : 
         false;
       
       // 강제 리로드 요청 확인 (로그아웃으로 인한 리로드인지)

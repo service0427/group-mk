@@ -4,7 +4,6 @@ import { naverPlaceData } from './naverPlaceData';
 import { naverTrafficData } from './naverTrafficData';
 import { naverAutoData } from './naverAutoData';
 import { coupangData } from './coupangData';
-import { ohouseData } from './ohouseData';
 
 // 기본 캠페인 데이터 (모든 데이터가 합쳐진 형태)
 export const campaignData: ICampaign[] = [
@@ -12,8 +11,7 @@ export const campaignData: ICampaign[] = [
   ...naverPlaceData,
   ...naverTrafficData,
   ...naverAutoData,
-  ...coupangData,
-  ...ohouseData
+  ...coupangData
 ];
 
 // 서비스 코드에 따라 데이터를 반환하는 함수 (모든 가능한 코드 변형 처리)
@@ -49,10 +47,6 @@ export const getCampaignsByService = (serviceCode: string): ICampaign[] => {
     return coupangData;
   }
   
-  // 오늘의집 트래픽
-  if (code.includes('ohouse')) {
-    return ohouseData;
-  }
   
   // 일치하는 코드가 없으면 전체 데이터 반환
   return campaignData;
@@ -63,6 +57,5 @@ export {
   naverPlaceData,
   naverTrafficData,
   naverAutoData,
-  coupangData,
-  ohouseData
+  coupangData
 };

@@ -4,7 +4,7 @@ import { ICampaign } from './CampaignContent';
 import { updateCampaignStatus } from '../services/campaignService';
 import { formatImageUrl } from '@/utils/CampaignFormat';
 import { toAbsoluteUrl } from '@/utils';
-import { CampaignDetailModal } from './campaign-modals/CampaignDetailModal';
+import { CampaignDetailModal } from '@/components/campaign-modals';
 import {
   Select,
   SelectContent,

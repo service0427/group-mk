@@ -116,39 +116,24 @@ const ChatSticky: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuthContext();
   const { isLoggingOut } = useLogoutContext();
   
-  // 로그아웃 중이거나 운영자/관리자는 이 컴포넌트를 렌더링하지 않음
-  if (isLoggingOut || (isAuthenticated && currentUser?.role &&
-      hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN))) {
-    return null;
-  }
-  
+  // 모든 상태 및 refs 정의
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  // 컴포넌트가 마운트된 상태인지 추적하는 ref
-  const isMountedRef = useRef<boolean>(true);
-  // 모바일 미디어 쿼리 사용
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  
-  // 직접 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(true);
+  
+  // Refs
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef<boolean>(true);
   const lastScrollYRef = useRef(0);
   
-  // 컴포넌트 마운트/언마운트 처리
-  useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  // Custom hooks
+  const isMobile = useMediaQuery('(max-width: 768px)');
   
-  // useChat 훅 사용 - 항상 호출해야 함 (조건부로 사용하면 안됨)
-  // React 훅 규칙: 항상 동일한 순서로 호출되어야 함
+  // useChat hook
   const {
     rooms,
     messages,
@@ -163,7 +148,15 @@ const ChatSticky: React.FC = () => {
     openChatRoom,
     setCurrentRoomId
   } = useChat();
-  // 대상 사용자 체크는 이미 상단에서 완료했으므로 여기서는 제거
+  
+  // 컴포넌트 마운트/언마운트 관리
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   // 스크롤 위치에 따라 버튼 표시 여부 결정
   useEffect(() => {
@@ -233,37 +226,6 @@ const ChatSticky: React.FC = () => {
     };
   }, [isMobile]);
   
-  // 스타일 값을 직접 지정
-  // 모바일 여부에 따라 동적으로 스타일을 적용
-  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
-  const rightPosition = isVisible ? '24px' : '-100px';
-  const opacityValue = isVisible ? 1 : 0;
-  
-  const buttonStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
-    right: rightPosition,
-    zIndex: 999, // 모달보다 낮은 z-index
-    width: '64px',
-    height: '64px',
-    borderRadius: '50%',
-    backgroundColor: '#4285F4',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    border: 'none',
-    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
-    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
-    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
-    // 투명도 직접 제어
-    opacity: opacityValue,
-    // 숨김 상태에서 마우스 이벤트 차단
-    pointerEvents: !isVisible ? 'none' : 'auto',
-  };
-  
   // CSS 키프레임을 JS에서 생성하여 삽입
   useEffect(() => {
     // 기존 스타일이 있으면 제거
@@ -295,6 +257,37 @@ const ChatSticky: React.FC = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, currentRoomId]);
+  
+  // 스타일 값을 직접 지정
+  // 모바일 여부에 따라 동적으로 스타일을 적용
+  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
+  const rightPosition = isVisible ? '24px' : '-100px';
+  const opacityValue = isVisible ? 1 : 0;
+  
+  const buttonStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
+    right: rightPosition,
+    zIndex: 999, // 모달보다 낮은 z-index
+    width: '64px',
+    height: '64px',
+    borderRadius: '50%',
+    backgroundColor: '#4285F4',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    border: 'none',
+    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
+    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
+    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
+    // 투명도 직접 제어
+    opacity: opacityValue,
+    // 숨김 상태에서 마우스 이벤트 차단
+    pointerEvents: !isVisible ? 'none' : 'auto',
+  };
   
   // 채팅방 초기화
   const initializeChat = async () => {
@@ -564,6 +557,12 @@ const ChatSticky: React.FC = () => {
   // 현재 채팅방 정보 가져오기
   const currentRoom = currentRoomId ? rooms.find(room => room.id === currentRoomId) : null;
   
+  // 로그아웃 중이거나 운영자/관리자인 경우 컴포넌트를 렌더링하지 않음
+  if (isLoggingOut || (isAuthenticated && currentUser?.role &&
+      hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN))) {
+    return null;
+  }
+
   return (
     <>
       <button 
@@ -576,7 +575,6 @@ const ChatSticky: React.FC = () => {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#ffffff" />
           <path d="M8 10h8M8 14h4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-{/* 안 읽은 메시지 카운트 표시 제거 */}
       </button>
       
       {isOpen && isAuthenticated && (

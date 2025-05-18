@@ -4,6 +4,7 @@ import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components/keenicons';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
 import { supabase } from '@/supabase';
+import { useLogoutContext } from '@/contexts/LogoutContext';
 import { NotificationDropdown } from '@/components/notifications';
 import { useLanguage } from '@/i18n';
 import { toAbsoluteUrl } from '@/utils';
@@ -27,6 +28,7 @@ const UserInfoDisplay = () => {
   const { currentUser, logout } = useAuthContext();
   const { isRTL } = useLanguage();
   const { settings, storeSettings } = useSettings();
+  const { isLoggingOut, safeApiCall, setIsLoggingOut } = useLogoutContext();
   const navigate = useNavigate();
   const userMenuRef = useRef<any>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -41,8 +43,14 @@ const UserInfoDisplay = () => {
 
   // 사용자의 캐시 잔액 조회 (초보자 역할 특별 처리 추가)
   useEffect(() => {
+    // 로그아웃 중이면 실행하지 않음
+    if (isLoggingOut) return;
+    
     const fetchCashBalance = async () => {
       if (!currentUser?.id) return;
+      
+      // 로그아웃 중이면 요청하지 않음
+      if (isLoggingOut) return;
       
       setIsLoading(true);
       try {
@@ -50,29 +58,40 @@ const UserInfoDisplay = () => {
         if (currentUser.role === 'beginner') {
           setCashBalance(0);
         } else {
-          // 다른 역할은 실제 잔액 조회
-          try {
-            const balance = await getUserCashBalance(currentUser.id);
-            setCashBalance(balance);
-          } catch (error) {
-            console.error("캐시 잔액 조회 오류:", error);
-            setCashBalance(0); // 오류 시 기본값
-          }
+          // 다른 역할은 실제 잔액 조회 (로그아웃 중이면 무시)
+          await safeApiCall(
+            async () => {
+              try {
+                const balance = await getUserCashBalance(currentUser.id || '');
+                setCashBalance(balance);
+              } catch (error) {
+                console.error("캐시 잔액 조회 오류:", error);
+                setCashBalance(0); // 오류 시 기본값
+              }
+            },
+            undefined // 반환값 없음 (side effect)
+          );
         }
       } catch (error) {
-        console.error("캐시 잔액 처리 중 예외:", error);
-        setCashBalance(0); // 오류 시 기본값
+        // 로그아웃 중이 아닐 때만 오류 처리
+        if (!isLoggingOut) {
+          console.error("캐시 잔액 처리 중 예외:", error);
+          setCashBalance(0); // 오류 시 기본값
+        }
       } finally {
-        setIsLoading(false);
+        // 로그아웃 중이 아닐 때만 상태 업데이트
+        if (!isLoggingOut) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchCashBalance();
 
-    // 초보자 역할이 아닌 경우에만 실시간 구독 설정
+    // 초보자 역할이 아닌 경우이고 로그아웃 중이 아닌 경우에만 실시간 구독 설정
     let subscription: any = null;
     
-    if (currentUser?.role !== 'beginner') {
+    if (currentUser?.role !== 'beginner' && !isLoggingOut) {
       // 실시간 잔액 업데이트를 위한 구독 설정
       try {
         subscription = supabase
@@ -85,12 +104,18 @@ const UserInfoDisplay = () => {
               filter: `user_id=eq.${currentUser?.id}` 
             }, 
             () => {
-              fetchCashBalance();
+              // 로그아웃 중이 아닐 때만 호출
+              if (!isLoggingOut) {
+                fetchCashBalance();
+              }
             }
           )
           .subscribe();
       } catch (subError) {
-        console.error("구독 설정 중 오류:", subError);
+        // 로그아웃 중이 아닐 때만 오류 처리
+        if (!isLoggingOut) {
+          console.error("구독 설정 중 오류:", subError);
+        }
       }
     }
 
@@ -99,7 +124,7 @@ const UserInfoDisplay = () => {
         subscription.unsubscribe();
       }
     };
-  }, [currentUser?.id, currentUser?.role]);
+  }, [currentUser?.id, currentUser?.role, isLoggingOut, safeApiCall]);
 
   // 다크 모드 토글 핸들러
   const handleThemeMode = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +135,9 @@ const UserInfoDisplay = () => {
   };
 
   // 로그아웃 버튼 클릭 핸들러
-  const handleLogoutClick = () => {
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // 기본 이벤트 방지 - 링크 클릭 동작 중단
+    
     // 모바일에서는 즉시 로그아웃, 데스크톱에서는 확인 모달 표시
     if (window.innerWidth < 768) {
       performLogout();
@@ -120,7 +147,7 @@ const UserInfoDisplay = () => {
     }
   };
   
-  // 실제 로그아웃 처리 함수
+  // 실제 로그아웃 처리 함수 - AuthProvider의 logout 함수를 직접 사용
   const performLogout = async () => {
     if (isLogoutLoading) return;
     
@@ -128,31 +155,20 @@ const UserInfoDisplay = () => {
     setShowLogoutModal(false); // 모달 즉시 닫기
     
     try {
-      // 서버 로그아웃 처리
+      // 즉시 로그아웃 상태로 설정 - 백그라운드 API 호출을 방지
+      setIsLoggingOut(true);
+      
+      // AuthProvider의 logout 함수 사용 - 내부에서 모든 정리 작업 및 리다이렉션 수행
       await logout();
-      
-      // 추가 정리 작업
-      localStorage.removeItem('auth');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('currentUser');
-      sessionStorage.removeItem('lastAuthCheck');
-      
-      // navigate, window.location.href 대신 페이지 새로고침으로 권한 재확인하도록
-      window.location.reload();
     } catch (error) {
-      
       setIsLogoutLoading(false);
+      console.error("로그아웃 중 오류 발생:", error);
       
-      // 오류 발생해도 로그인 페이지로 강제 이동
+      // 로그아웃에 실패한 경우 페이지 리디렉션
       const timestamp = new Date().getTime();
-      // 브라우저 내비게이션 히스토리를 리셋하고 로그인 페이지로 이동
-      window.location.replace(window.location.origin);
-      
-      // 짧은 지연 후 실행 (브라우저가 첫 번째 replace를 처리할 시간을 줌)
-      setTimeout(() => {
-        // HashRouter와 함께 사용하기 위한 올바른 URL 형식
-        window.location.hash = `/auth/login?t=${timestamp}`;
-      }, 50);
+      window.location.hash = `#/auth/login?t=${timestamp}`;
+    } finally {
+      setIsLogoutLoading(false);
     }
   };
 
@@ -333,9 +349,9 @@ const UserInfoDisplay = () => {
                 </div>
                 <button
                   className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => {
+                  onClick={(e) => {
                     setMobileMenuOpen(false);
-                    handleLogoutClick();
+                    handleLogoutClick(e);
                   }}
                 >
                   <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 mr-3" />

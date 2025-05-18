@@ -45,28 +45,33 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
       try {
         setLoading(true);
         
-        // URL 경로에서 서비스 타입 추출
+        // 새로운 URL 형식 처리 (/advertise/campaigns/info/:serviceType)
         const pathSegments = pathname.split('/').filter(Boolean);
         
+        // serviceType 추출 (naver-traffic, naver-shopping-traffic 등)
+        const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
         
+        if (!serviceType) {
+          setLoading(false);
+          return;
+        }
         
-        // /advertise/platform/type/intro 와 /advertise/platform/subservice/type/intro 구분
+        // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
+        const parts = serviceType.split('-');
+        
         let platform = '';
         let type = '';
         let subservice = '';
         
-        if (pathSegments.length >= 4) {
-          platform = pathSegments[1]; // advertise가 0번 인덱스
-          
-          if (pathSegments.length === 4) {
-            // /advertise/naver/auto/intro 형태
-            type = pathSegments[2];
-            subservice = '';
-          } else if (pathSegments.length === 5) {
-            // /advertise/naver/place/save/intro 형태
-            subservice = pathSegments[2];
-            type = pathSegments[3];
-          }
+        if (parts.length === 3) {
+          // naver-shopping-traffic 같은 형식
+          platform = parts[0];
+          subservice = parts[1];
+          type = parts[2];
+        } else if (parts.length === 2) {
+          // naver-auto, coupang-traffic 같은 형식
+          platform = parts[0];
+          type = parts[1];
         }
         
         
@@ -119,41 +124,44 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   
   // 서비스 카테고리 생성 - NS 트래픽, NP 저장 등의 형식으로 표시
   let serviceCategory = '';
-  if (pathname.includes('naver/shopping/traffic')) {
+  // 새로운 URL 형식 분석 (/advertise/campaigns/info/:serviceType)
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
+  
+  if (serviceType === 'naver-shopping-traffic') {
     serviceCategory = 'NS 트래픽';
-  } else if (pathname.includes('naver/place/save')) {
+  } else if (serviceType === 'naver-place-save') {
     serviceCategory = 'NP 저장';
-  } else if (pathname.includes('naver/place/share')) {
+  } else if (serviceType === 'naver-place-share') {
     serviceCategory = 'NP 공유';
-  } else if (pathname.includes('naver/place/traffic')) {
+  } else if (serviceType === 'naver-place-traffic') {
     serviceCategory = 'NP 트래픽';
-  } else if (pathname.includes('naver/auto')) {
+  } else if (serviceType === 'naver-auto') {
     serviceCategory = 'N 자동완성';
-  } else if (pathname.includes('naver/traffic')) {
+  } else if (serviceType === 'naver-traffic') {
     serviceCategory = 'N 트래픽';
-  } else if (pathname.includes('coupang/traffic')) {
-    serviceCategory = 'C 트래픽';
-  } else if (pathname.includes('ohouse/traffic')) {
+  } else if (serviceType === 'coupang-traffic') {
+    serviceCategory = 'CP 트래픽';
+  } else if (serviceType === 'ohouse-traffic') {
     serviceCategory = 'OH 트래픽';
   } else {
-    // URL에서 기본 서비스 정보 추출 (fallback)
-    const pathSegments = pathname.split('/').filter(Boolean);
-    serviceCategory = pathSegments.length >= 3 ? `${pathSegments[1]} > ${pathSegments[2]}` : '';
+    // 알 수 없는 형식인 경우 그대로 표시
+    serviceCategory = serviceType ? serviceType.replaceAll('-', ' ') : '';
   }
 
   // 서비스 로고 이미지 결정
   let logoPath = '';
-  if (pathname.includes('naver/shopping')) {
+  if (serviceType === 'naver-shopping-traffic') {
     logoPath = '/media/ad-brand/naver-shopping.png';
-  } else if (pathname.includes('naver/place')) {
+  } else if (serviceType.startsWith('naver-place')) {
     logoPath = '/media/ad-brand/naver-place.png';
-  } else if (pathname.includes('naver/auto')) {
+  } else if (serviceType === 'naver-auto') {
     logoPath = '/media/ad-brand/naver.png';
-  } else if (pathname.includes('naver/traffic')) {
+  } else if (serviceType === 'naver-traffic') {
     logoPath = '/media/ad-brand/naver.png';
-  } else if (pathname.includes('coupang')) {
+  } else if (serviceType.startsWith('coupang')) {
     logoPath = '/media/ad-brand/coupang-app.png';
-  } else if (pathname.includes('ohouse')) {
+  } else if (serviceType.startsWith('ohouse')) {
     logoPath = '/media/ad-brand/ohouse.png';
   } else {
     // 기본 이미지 설정

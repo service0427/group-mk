@@ -14,7 +14,8 @@ import { toAbsoluteUrl } from '@/utils';
 import { supabase } from '@/supabase';
 import ReactApexChart from 'react-apexcharts';
 import { getFilteredRankingData, calculateDataStats } from '@/utils/ChartSampleData';
-import { ICampaign } from './types';
+import { getStatusColorClass } from '@/utils/CampaignFormat';
+import { ICampaign, getStatusColor, getStatusLabel } from './types';
 
 // 가격에 콤마 추가하는 함수
 const formatPriceWithCommas = (price: string | number): string => {
@@ -49,7 +50,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
 }) => {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   // 차트 관련 상태
   const [activePeriod, setActivePeriod] = useState<number>(7);
   const [chartData, setChartData] = useState({
@@ -62,7 +63,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     lowerRank: { min: -1, max: -1, avg: -1, bestImprovement: -1 }
   });
   const [hasRankingData, setHasRankingData] = useState<boolean>(false);
-  
+
   // 다크 모드 감지
   const isDarkMode = () => {
     if (typeof window !== 'undefined') {
@@ -70,7 +71,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     }
     return false;
   };
-  
+
   // 차트 옵션 상태
   const [chartOptions, setChartOptions] = useState<ApexCharts.ApexOptions>({
     chart: {
@@ -168,22 +169,22 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         show: true,
         formatter: (value, opts) => {
           let dateStr;
-          
+
           // 직접 날짜 형식 생성
           if (opts && opts.dataPointIndex !== undefined) {
             const today = new Date();
             const daysFromToday = activePeriod - opts.dataPointIndex - 1;
             const targetDate = new Date(today);
             targetDate.setDate(today.getDate() - daysFromToday);
-            
+
             const month = targetDate.getMonth() + 1;
             const day = targetDate.getDate();
             dateStr = `${month}월 ${day}일`;
           } else {
             dateStr = value;
           }
-          
-          return isDarkMode() 
+
+          return isDarkMode()
             ? `<div class="font-semibold bg-blue-700 px-3 py-1.5 rounded text-white">${dateStr}</div>`
             : `<div class="font-semibold bg-blue-100 px-3 py-1.5 rounded text-blue-800">${dateStr}</div>`;
         }
@@ -216,7 +217,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
       }
     }
   });
-  
+
   // 차트 시리즈 상태
   const [chartSeries, setChartSeries] = useState<ApexCharts.ApexOptions['series']>([
     {
@@ -234,13 +235,13 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     setActivePeriod(period);
     loadChartData(period);
   };
-  
+
   // 차트 데이터 로드 함수
   const loadChartData = (period: number) => {
     // 항상 데이터가 없는 것처럼 표시
     const hasData = false;
     setHasRankingData(hasData);
-    
+
     if (!hasData) {
       // 데이터가 없는 경우 빈 배열로 설정
       setChartData({
@@ -258,15 +259,15 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
       ]);
       return;
     }
-    
+
     const data = getFilteredRankingData(period);
     setChartData(data);
-    
+
     setStats({
       upperRank: calculateDataStats(data.upperRank),
       lowerRank: calculateDataStats(data.lowerRank)
     });
-    
+
     // 차트 시리즈 및 옵션 업데이트
     setChartSeries([
       {
@@ -278,10 +279,10 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         data: data.lowerRank
       }
     ]);
-    
+
     // 기간에 따라 X축 표시 간격 조정
     const tickAmount = period <= 7 ? 6 : period <= 14 ? 7 : 10;
-    
+
     setChartOptions(prevOptions => ({
       ...prevOptions,
       chart: {
@@ -318,22 +319,22 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           ...prevOptions.tooltip?.x,
           formatter: (value, opts) => {
             let dateStr;
-            
+
             // 직접 날짜 형식 생성
             if (opts && opts.dataPointIndex !== undefined) {
               const today = new Date();
               const daysFromToday = period - opts.dataPointIndex - 1;
               const targetDate = new Date(today);
               targetDate.setDate(today.getDate() - daysFromToday);
-              
+
               const month = targetDate.getMonth() + 1;
               const day = targetDate.getDate();
               dateStr = `${month}월 ${day}일`;
             } else {
               dateStr = value;
             }
-            
-            return isDarkMode() 
+
+            return isDarkMode()
               ? `<div class="font-semibold bg-blue-700 px-3 py-1.5 rounded text-white">${dateStr}</div>`
               : `<div class="font-semibold bg-blue-100 px-3 py-1.5 rounded text-blue-800">${dateStr}</div>`;
           }
@@ -341,14 +342,14 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
       }
     }));
   };
-  
+
   // 컴포넌트 마운트 시 차트 데이터 생성
   useEffect(() => {
     if (open) {
       loadChartData(activePeriod);
     }
   }, [open]);
-  
+
   // 다크 모드 변경 감지 및 차트 테마 업데이트
   useEffect(() => {
     const updateChartTheme = () => {
@@ -494,49 +495,49 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
       return () => observer.disconnect();
     }
   }, [chartData]);
-  
+
   // 캠페인 이름으로 Supabase에서 배너 이미지 URL 가져오기
   useEffect(() => {
     if (open && campaign && campaign.campaignName) {
       const fetchCampaignBanner = async () => {
         setLoading(true);
         try {
-          
+
           // Supabase에서 모든 캠페인 목록 가져오기
           const { data: allCampaigns, error: allError } = await supabase
             .from('campaigns')
             .select('id, campaign_name, add_info')
             .order('id', { ascending: false });
-            
+
           if (allError) {
             return;
           }
-          
+
           // 이름이 완전히 일치하는 캠페인 찾기
-          let matchedCampaign = allCampaigns?.find(c => 
+          let matchedCampaign = allCampaigns?.find(c =>
             c.campaign_name === campaign.campaignName
           );
-          
+
           // 일치하는 캠페인이 없으면 대소문자 무시하고 검색
           if (!matchedCampaign) {
-            matchedCampaign = allCampaigns?.find(c => 
+            matchedCampaign = allCampaigns?.find(c =>
               c.campaign_name.toLowerCase() === campaign.campaignName.toLowerCase()
             );
           }
-          
+
           // 아직도 없으면 이름에 포함되는지 검색
           if (!matchedCampaign) {
-            matchedCampaign = allCampaigns?.find(c => 
+            matchedCampaign = allCampaigns?.find(c =>
               c.campaign_name.toLowerCase().includes(campaign.campaignName.toLowerCase()) ||
               campaign.campaignName.toLowerCase().includes(c.campaign_name.toLowerCase())
             );
           }
-          
+
           if (matchedCampaign) {
             // add_info에서 배너 URL 가져오기
             let bannerUrl = null;
             if (matchedCampaign.add_info) {
-              
+
               if (typeof matchedCampaign.add_info === 'string') {
                 try {
                   const addInfo = JSON.parse(matchedCampaign.add_info);
@@ -548,10 +549,10 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 bannerUrl = matchedCampaign.add_info.banner_url || null;
               }
             }
-            
+
             setBannerUrl(bannerUrl);
           }
-          
+
         } catch (err) {
           // 오류 처리
         } finally {
@@ -567,16 +568,40 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
 
   // 캠페인 ID는 업데이트 조건으로만 사용
   const campaignId = campaign.id;
-  
+
   // 상태가 문자열 또는 객체일 수 있음을 처리
-  const statusColor = typeof campaign.status === 'string' ? 
-    campaign.status : 
-    (campaign.status as any)?.color || 'info';
-    
-  const statusLabel = typeof campaign.status === 'string' ? 
-    campaign.status : 
+  // 1. 상태 원시값 (active, pause 등) 가져오기
+  let statusRaw = 'active'; // 기본값
+
+  if (typeof campaign.status === 'string') {
+    statusRaw = campaign.status;
+  } else if (campaign.status && typeof campaign.status === 'object') {
+    // 객체의 경우 status 필드 먼저 확인 (원시 상태값)
+    if ((campaign.status as any).status) {
+      statusRaw = (campaign.status as any).status;
+    }
+    // color 필드에서 상태 추출 시도 (badge-success 형태에서 success 추출)
+    else if ((campaign.status as any).color && (campaign.status as any).color.startsWith('badge-')) {
+      statusRaw = (campaign.status as any).color.replace('badge-', '');
+    }
+    // 그 외의 경우 color 필드 사용
+    else if ((campaign.status as any).color) {
+      statusRaw = (campaign.status as any).color;
+    }
+  }
+
+  // 2. 배지 색상 클래스 (badge-success 등)
+  const statusBadge = statusRaw.startsWith('badge-') ? statusRaw : `badge-${statusRaw}`;
+
+  // 3. 점 색상 클래스 (success, primary 등)
+  const statusDotColor = statusRaw.startsWith('badge-') ?
+    statusRaw.replace('badge-', '') : statusRaw;
+
+  // 4. 상태 라벨 텍스트
+  const statusLabel = typeof campaign.status === 'string' ?
+    getStatusLabel(campaign.status) :
     (campaign.status as any)?.label || '준비중';
-  
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[900px] p-0 overflow-hidden" aria-describedby={undefined}>
@@ -586,7 +611,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         </DialogHeader>
         <div className="bg-background flex flex-col max-h-[80vh] w-full">
           <div className="flex-shrink-0">
-            {/* 배너 이미지 영역 */}
+            {/* 배너 이미지 영역 - 배너 URL이 없으면 배너 영역 숨김 */}
             {loading ? (
               <div className="w-full h-[150px] bg-gray-100 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -629,39 +654,60 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                   />
                 </div>
               </div>
-            ) : (
-              <div className="w-full">
-                <div className="w-full h-[140px] bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
-                  <div className="size-20 rounded-full bg-white/30 flex items-center justify-center">
-                    <img
-                      src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
-                      alt="캠페인 배너"
-                      className="h-14 w-auto"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            ) : null /* 배너가 없으면 아무것도 표시하지 않음 */}
 
             {/* 캠페인 헤더 정보 */}
             <div className="bg-background border-b px-5 py-3">
               <div className="flex items-center gap-4">
                 <img
-                  src={campaign && (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http'))
-                    ? campaign.logo
-                    : toAbsoluteUrl(`/media/${campaign?.logo || 'animal/svg/lion.svg'}`)}
+                  src={(() => {
+                    // 로고가 없으면 기본 이미지 사용
+                    if (!campaign.logo) {
+                      return toAbsoluteUrl('/media/animal/svg/lion.svg');
+                    }
+
+                    // 로고에 경로가 이미 포함된 경우 그대로 사용
+                    if (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http')) {
+                      return campaign.logo;
+                    }
+
+                    // 로고가 파일명(확장자 포함)인 경우 경로 추가
+                    if (campaign.logo.includes('.svg') || campaign.logo.includes('.png')) {
+                      return toAbsoluteUrl(`/media/${campaign.logo}`);
+                    }
+
+                    // 플라밍고-89740과 같은 형식인 경우 플라밍고만 추출 시도
+                    const dashIndex = campaign.logo.indexOf('-');
+                    if (dashIndex > 0) {
+                      const animalName = campaign.logo.substring(0, dashIndex).toLowerCase().trim();
+                      // 알려진 동물 이름인지 확인 (플라밍고, 라이언 등)
+                      if (['플라밍고', 'flamingo'].includes(animalName)) {
+                        return toAbsoluteUrl('/media/animal/svg/flamingo.svg');
+                      }
+                      if (['라이언', '사자', 'lion'].includes(animalName)) {
+                        return toAbsoluteUrl('/media/animal/svg/lion.svg');
+                      }
+                      if (['고양이', 'cat'].includes(animalName)) {
+                        return toAbsoluteUrl('/media/animal/svg/cat.svg');
+                      }
+                      // 다른 동물 이름 추가 필요시 확장
+                    }
+
+                    // 동물 이름으로 간주하고 SVG 경로 생성
+                    return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                  })()}
                   className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
                   alt={campaign?.campaignName}
                   onError={(e) => {
-                    // 이미지 로드 실패 시 기본 이미지 사용
+                    // 이미지 로드 실패 시 조용히 기본 이미지 사용
                     (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
                   }}
                 />
                 <div>
                   <h2 className="text-lg font-semibold text-foreground flex items-center">
                     {campaign?.campaignName}
-                    <span className={`badge badge-${statusColor} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
-                      <span className={`size-1.5 rounded-full me-1.5`}></span>
+                    <span className={`badge ${statusBadge} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
+                      <span className={`size-1.5 rounded-full bg-${statusDotColor} me-1.5`}></span>
                       {statusLabel}
                     </span>
                   </h2>
@@ -711,7 +757,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
                 <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
                   <div className="mb-4">
-                    <h4 className="font-medium text-primary mb-2">간략 설명</h4>
+                    <h4 className="font-medium text-primary mb-2">설명</h4>
                     <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
                       {campaign?.description || '설명이 없습니다.'}
                     </p>

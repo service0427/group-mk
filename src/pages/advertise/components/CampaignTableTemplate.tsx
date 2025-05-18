@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { CampaignModal } from '@/components/campaign-modals';
+import { getServiceTypeFromPath } from '@/components/campaign-modals/types';
 
 interface ICampaignData {
   id: string;
@@ -347,15 +348,7 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         <CampaignModal
           open={detailModalOpen}
           onClose={() => setDetailModalOpen(false)}
-          serviceType={
-            pathname.includes('naver/shopping') ? 'NaverShopTraffic' :
-            pathname.includes('naver/place/save') ? 'NaverPlaceSave' :
-            pathname.includes('naver/place/share') ? 'NaverPlaceShare' :
-            pathname.includes('naver/place') ? 'NaverPlaceTraffic' :
-            pathname.includes('naver/auto') ? 'NaverAuto' :
-            pathname.includes('naver/traffic') ? 'ntraffic' :
-            pathname.includes('coupang') ? 'CoupangTraffic' : 'ntraffic'
-          }
+          serviceType={getServiceTypeFromPath(pathname)}
           onSave={(newCampaign) => {
             // 캠페인이 성공적으로 생성되면 모달 닫기
             setDetailModalOpen(false);

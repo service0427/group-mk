@@ -201,39 +201,54 @@ export const getServiceData = (
   }
 };
 
-// URL 경로를 Supabase의 serviceTypeCode로 변환하는 함수
+import { CampaignServiceType } from '@/components/campaign-modals/types';
+
+// URL 경로를 CampaignServiceType으로 변환하는 함수
+// 참고: 이 함수는 원래 types.ts에 정의된 것을 재사용합니다.
+// 하지만 여기서는 호환성을 위해 간단한 정의를 유지합니다.
 export const getServiceTypeFromPath = (
   platform: string,
   type: string,
   subservice?: string
-): string => {
-
-  if (platform === 'naver' && subservice === 'shopping' && type === 'traffic') {
-    return 'NaverShopTraffic';
-  } else if (platform === 'naver' && subservice === 'place' && type === 'traffic') {
-    return 'NaverPlaceTraffic';
-  } else if (platform === 'naver' && subservice === 'place' && type === 'save') {
-    return 'NaverPlaceSave';
-  } else if (platform === 'naver' && subservice === 'place' && type === 'share') {
-    return 'NaverPlaceShare';
-  } else if (platform === 'naver' && type === 'auto') {
-    return 'NaverAuto';
-  } else if (platform === 'naver' && type === 'traffic') {
-    return 'ntraffic';
-  } else if (platform === 'naver' && type === 'ntraffic') {
-    return 'ntraffic';
-  } else if (platform === 'ntraffic') {
-    return 'ntraffic';
-  } else if (platform === 'coupang' && type === 'traffic') {
-    return 'CoupangTraffic';
+): CampaignServiceType => {
+  // 새로운 URL 패턴 처리 (naver-shopping-traffic 같은 단일 문자열 형식)
+  if (type && type.includes('-')) {
+    const parts = type.split('-');
+    if (parts.length === 2) {
+      // platform-type 형식 (naver-traffic)
+      return getServiceTypeFromPath(platform, parts[1]);
+    } else if (parts.length === 3) {
+      // platform-subservice-type 형식 (naver-shopping-traffic)
+      return getServiceTypeFromPath(parts[0], parts[2], parts[1]);
+    }
   }
 
-  // 일치하는 서비스 타입이 없는 경우
-  
-  return '';
+  // 기존 패턴 처리
+  if (platform === 'naver' && subservice === 'shopping' && type === 'traffic') {
+    return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+  } else if (platform === 'naver' && subservice === 'shopping' && type === 'fakesale') {
+    return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
+  } else if (platform === 'naver' && subservice === 'place' && type === 'traffic') {
+    return CampaignServiceType.NAVER_PLACE_TRAFFIC;
+  } else if (platform === 'naver' && subservice === 'place' && type === 'save') {
+    return CampaignServiceType.NAVER_PLACE_SAVE;
+  } else if (platform === 'naver' && subservice === 'place' && type === 'share') {
+    return CampaignServiceType.NAVER_PLACE_SHARE;
+  } else if (platform === 'naver' && type === 'auto') {
+    return CampaignServiceType.NAVER_AUTO;
+  } else if (platform === 'naver' && type === 'traffic') {
+    return CampaignServiceType.NAVER_TRAFFIC;
+  } else if (platform === 'coupang' && type === 'traffic') {
+    return CampaignServiceType.COUPANG_TRAFFIC;
+  } else if (platform === 'coupang' && type === 'fakesale') {
+    return CampaignServiceType.COUPANG_FAKESALE;
+  }
+
+  // 일치하는 서비스 타입이 없는 경우 기본값 반환
+  return CampaignServiceType.NAVER_TRAFFIC;
 };
 
-// 기존 하드코딩 캠페인 데이터 조회 함수 (호환성 유지)
+// 캠페인 데이터 조회 함수
 export const getCampaignData = (
   platform: string,
   type: string,
@@ -246,14 +261,13 @@ export const getCampaignData = (
       return null;
     }
 
-    // 빈 캠페인 배열 반환 (백업 데이터 사용 안함)
+    // 여기서는 서비스 데이터만 반환하고 캠페인 정보는 컴포넌트에서 직접 가져오게 함
+    // 이렇게 하면 데이터베이스 조회 실패 시 컴포넌트에서 오류 처리 가능
     return {
       serviceData: serviceInfo,
       campaigns: []
     };
   } catch (error) {
-    
-    
     return null;
   }
 };
@@ -272,19 +286,14 @@ export const fetchRealCampaignData = async (
       return null;
     }
 
-    // supabase 서비스 타입 코드 매핑
-    const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
-
-    if (!serviceTypeCode) {
-      
-      return null;
-    }
+    // URL 경로에서 서비스 타입 코드 가져오기
+    const serviceType = getServiceTypeFromPath(platform, type, subservice);
 
     // supabase에서 해당 서비스 타입의 캠페인 가져오기
     const { data, error } = await supabase
       .from('campaigns')
       .select('*')
-      .eq('service_type', serviceTypeCode)
+      .eq('service_type', serviceType)
       .order('id', { ascending: true });
 
     if (error) {

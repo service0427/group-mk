@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
-import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor } from './types';
+import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor, CampaignServiceType } from './types';
 import {
   Dialog,
   DialogContent,
@@ -11,13 +11,14 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { createCampaign as defaultCreateCampaign } from '@/pages/admin/campaigns/services/campaignService';
 
 interface CampaignModalProps {
   open: boolean;
   onClose: () => void;
   onSave?: (newCampaign: ExtendedCampaign) => void;
   createCampaign?: (data: any) => Promise<{ success: boolean, error?: string }>;
-  serviceType?: string;
+  serviceType?: string | CampaignServiceType;
   campaign?: ICampaign | null; // 추가: 편집 모드일 때 캠페인 데이터
   isDetailMode?: boolean; // 추가: 상세 설정 모드 여부
   isOperator?: boolean; // 추가: 운영자 모드 여부
@@ -29,7 +30,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   onClose,
   onSave,
   createCampaign,
-  serviceType = 'ntraffic',
+  serviceType = CampaignServiceType.NAVER_TRAFFIC,
   campaign = null, // 편집 모드일 때 캠페인 데이터
   isDetailMode = false, // 상세 설정 모드 
   isOperator = false, // 운영자 모드 여부
@@ -292,17 +293,19 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     additionalFields: { [key: string]: { label: string; type: string; defaultValue: string; placeholder?: string; required?: boolean; options?: Array<{ value: string, label: string }> } };
   }
 
-  // 서비스 유형별 정보 정의
+  // 서비스 유형별 정보 정의 
+  // 새로운 타입과 레거시 타입을 분리해 TypeScript 중복 오류 방지
   const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
-    'ntraffic': {
-      name: '네이버 트래픽',
+    // 새로운 타입 (Enum 값)
+    [CampaignServiceType.NAVER_TRAFFIC]: {
+      name: 'N 트래픽',
       additionalFields: {
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
         targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://example.com', required: true },
       }
     },
-    'NaverShopTraffic': {
-      name: '네이버 쇼핑',
+    [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
+      name: 'NS 트래픽',
       additionalFields: {
         productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
@@ -319,30 +322,38 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         }
       }
     },
-    'NaverPlaceTraffic': {
-      name: '네이버 플레이스 트래픽',
+    [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: {
+      name: 'NS 가구매',
+      additionalFields: {
+        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
+        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
+        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
+      }
+    },
+    [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
+      name: 'NP 트래픽',
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
       }
     },
-    'NaverPlaceSave': {
-      name: '네이버 플레이스 저장',
+    [CampaignServiceType.NAVER_PLACE_SAVE]: {
+      name: 'NP 저장하기',
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         saveTarget: { label: '저장 목표 수', type: 'number', defaultValue: '10', required: true },
       }
     },
-    'NaverPlaceShare': {
-      name: '네이버 플레이스 공유',
+    [CampaignServiceType.NAVER_PLACE_SHARE]: {
+      name: 'NP 블로그공유',
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         shareTarget: { label: '공유 목표 수', type: 'number', defaultValue: '10', required: true },
         targetBlog: { label: '타겟 블로그 정보', type: 'text', defaultValue: '', placeholder: '블로그 정보를 입력하세요 (선택사항)' },
       }
     },
-    'NaverAuto': {
-      name: '네이버 자동완성',
+    [CampaignServiceType.NAVER_AUTO]: {
+      name: 'N 자동완성',
       additionalFields: {
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
         searchFrequency: {
@@ -356,18 +367,50 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         },
       }
     },
-    'CoupangTraffic': {
-      name: '쿠팡 트래픽',
+    [CampaignServiceType.COUPANG_TRAFFIC]: {
+      name: 'CP 트래픽',
       additionalFields: {
         productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
         targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
       }
     },
+    [CampaignServiceType.COUPANG_FAKESALE]: {
+      name: 'CP 가구매',
+      additionalFields: {
+        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
+        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
+        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
+      }
+    },
+  };
+  
+  // 레거시 문자열 서비스 타입 정보는 getServiceFieldInfo 함수로 이동
+  const getServiceFieldInfo = (serviceType: string | CampaignServiceType): ServiceTypeInfo => {
+    // CampaignServiceType 타입이면 직접 사용
+    if (Object.values(CampaignServiceType).includes(serviceType as CampaignServiceType)) {
+      return serviceTypeInfoMap[serviceType as CampaignServiceType];
+    }
+    
+    // 문자열 타입이 serviceTypeInfoMap에 있는 경우 사용
+    if (typeof serviceType === 'string' && serviceTypeInfoMap[serviceType as any]) {
+      return serviceTypeInfoMap[serviceType as any];
+    }
+    
+    // 레거시 문자열 지원 (필요한 경우만 남김)
+    if (typeof serviceType === 'string') {
+      // 레거시 문자열을 표준화된 타입으로 변환
+      if (serviceType === 'NaverShopTraffic') {
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
+      } 
+    }
+    
+    // 해당하는 서비스 타입이 없으면 기본 타입 반환
+    return serviceTypeInfoMap[CampaignServiceType.NAVER_TRAFFIC];
   };
 
   // 서비스 유형에 따른 이름 반환
   const getServiceTypeName = (type: string): string => {
-    return serviceTypeInfoMap[type]?.name || '네이버 트래픽';
+    return getServiceFieldInfo(type)?.name || '네이버 트래픽';
   };
 
   // 서비스 유형에 따른 추가 필드 초기화
@@ -448,8 +491,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           }
         }
 
-        // 업데이트할 데이터 준비
-        const updateData = {
+        // 업데이트할 데이터 준비 (let으로 변경하여 나중에 수정 가능하게 함)
+        let updateData = {
           campaignName: newCampaign.campaignName,
           description: newCampaign.description,
           detailedDescription: newCampaign.detailedDescription,
@@ -460,9 +503,27 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
           uploadedBannerImage: bannerImagePreviewUrl,
           status: finalStatus,
-          rejectionReason: finalStatus === 'rejected' ? newCampaign.rejectionReason : undefined,
           additionalFields: additionalFields, // 서비스 유형별 추가 필드
         };
+        
+        // 반려 사유가 있으면 항상 전달 (상태와 무관하게)
+        if ('rejectionReason' in newCampaign && newCampaign.rejectionReason) {
+          // TypeScript 안전을 위한 타입 단언
+          const campaign = newCampaign as any; // 타입 오류를 우회하기 위해 any 사용
+          
+          if (campaign.rejectionReason) {
+            // 추가적인 속성들을 가진 객체로 변환
+            const updatedData: any = {
+              ...updateData
+            };
+            
+            // 반려 사유 필드 추가
+            updatedData.rejectionReason = campaign.rejectionReason;
+            updatedData.rejected_reason = campaign.rejectionReason;
+            
+            updateData = updatedData;
+          }
+        }
 
         // DB 업데이트
         const success = await updateCampaign(parseInt(newCampaign.id), updateData);
@@ -527,9 +588,12 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       }
     } else {
       // 신규 캠페인 생성 모드
+      // 제공된 createCampaign 함수가 없으면 기본 함수 사용
+      const campaignCreator = createCampaign || defaultCreateCampaign;
+      
+      // 개발 모드에서 로그 표시
       if (!createCampaign) {
-        setError('캠페인 생성 함수가 제공되지 않았습니다.');
-        return;
+        //
       }
 
       // 필수 필드 검증
@@ -555,7 +619,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       try {
         // 1. DB에 새 캠페인 생성
-        const result = await createCampaign({
+        const result = await campaignCreator({
           campaignName: newCampaign.campaignName,
           description: newCampaign.description,
           detailedDescription: newCampaign.detailedDescription,
@@ -617,7 +681,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-4 px-5 border-b sticky top-0 z-10 shadow-sm">
             <DialogTitle className="text-lg font-semibold text-foreground">
-              {campaign ? "캠페인 수정" : "캠페인 추가"}
+              {campaign ? (isOperator ? "캠페인 수정 (운영자 모드)" : "캠페인 수정") : "캠페인 추가"}
             </DialogTitle>
           </DialogHeader>
 
@@ -907,6 +971,39 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     </td>
                   </tr>
 
+                  {/* 반려 상태일 때 반려 사유 표시 */}
+                  {newCampaign.status && 
+                   (typeof newCampaign.status === 'string' 
+                    ? newCampaign.status === 'rejected' 
+                    : newCampaign.status.status === 'rejected') && (
+                    <tr>
+                      <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider w-1/4">
+                        반려 사유
+                      </th>
+                      <td className="px-6 py-4 bg-red-50 dark:bg-red-900/20">
+                        <div className="flex flex-col gap-2">
+                          <div className="text-red-600 dark:text-red-400 whitespace-pre-line">
+                            {newCampaign.rejectionReason || '(반려 사유가 입력되지 않았습니다)'}
+                          </div>
+                          {isOperator && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="self-start bg-red-500 hover:bg-red-600 text-white"
+                              onClick={() => {
+                                setRejectionReason(newCampaign.rejectionReason || '');
+                                setRejectionModalOpen(true);
+                              }}
+                            >
+                              <KeenIcon icon="pencil" className="me-1.5 size-4" />
+                              반려 사유 수정
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+
                   {/* 서비스 유형별 추가 필드 */}
                   {serviceType && serviceTypeInfoMap[serviceType] &&
                     Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
@@ -973,100 +1070,73 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   <KeenIcon icon="eye" className="me-1.5 size-4" />
                   미리보기
                 </Button>
+                
+                {/* 캠페인 내용 수정 저장 버튼 */}
+                <Button
+                  onClick={handleSave}
+                  variant="default"
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                      저장 중...
+                    </span>
+                  ) : (
+                    <>
+                      <KeenIcon icon="disk" className="me-1.5 size-4" />
+                      내용 저장
+                    </>
+                  )}
+                </Button>
 
-                {/* 운영자 모드일 때 상태 변경 버튼들 */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      const statusValue = 'pending';  // 승인 시 준비중 상태로 변경
-                      setNewCampaign(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          status: {
-                            label: getStatusLabel(statusValue),
-                            color: getStatusColor(statusValue),
-                            status: statusValue
-                          }
-                        };
-                      });
-                      setTimeout(() => handleSave(), 100);
-                    }}
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                    disabled={loading}
-                  >
-                    <KeenIcon icon="check" className="me-1.5 size-4" />
-                    <span className="hidden sm:inline">준비상태로 </span>승인
-                  </Button>
+                {/* 운영자 모드 상태 변경 버튼 (단순화) */}
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    // 승인 시 준비중 상태로 변경
+                    const statusValue = 'pending';
+                    setNewCampaign(prev => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        status: {
+                          label: getStatusLabel(statusValue),
+                          color: getStatusColor(statusValue),
+                          status: statusValue
+                        }
+                      };
+                    });
+                    setTimeout(() => handleSave(), 100);
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  disabled={loading}
+                >
+                  <KeenIcon icon="check" className="me-1.5 size-4" />
+                  승인
+                </Button>
 
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      const statusValue = 'pending';
-                      setNewCampaign(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          status: {
-                            label: getStatusLabel(statusValue),
-                            color: getStatusColor(statusValue),
-                            status: statusValue
-                          }
-                        };
-                      });
-                      setTimeout(() => handleSave(), 100);
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                    disabled={loading}
-                  >
-                    <KeenIcon icon="layers" className="me-1.5 size-4" />
-                    준비중
-                  </Button>
-
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      const statusValue = 'pause';
-                      setNewCampaign(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          status: {
-                            label: getStatusLabel(statusValue),
-                            color: getStatusColor(statusValue),
-                            status: statusValue
-                          }
-                        };
-                      });
-                      setTimeout(() => handleSave(), 100);
-                    }}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                    disabled={loading}
-                  >
-                    <KeenIcon icon="hide" className="me-1.5 size-4" />
-                    <span className="hidden sm:inline">표시</span>안함
-                  </Button>
-
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      // 운영자 모드에서는 반려 사유 입력 모달 열기
-                      setRejectionReason(''); // 반려 사유 초기화
-                      setRejectionModalOpen(true); // 모달 열기
-                    }}
-                    className="bg-red-500 hover:bg-red-600 text-white"
-                    disabled={loading}
-                  >
-                    <KeenIcon icon="cross-circle" className="me-1.5 size-4" />
-                    반려
-                  </Button>
-                </div>
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    // 운영자 모드에서는 반려 사유 입력 모달 열기
+                    // 기존 반려 사유가 있으면 불러오기
+                    setRejectionReason(newCampaign.rejectionReason || '');
+                    setRejectionModalOpen(true); // 모달 열기
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  disabled={loading}
+                >
+                  <KeenIcon icon="cross-circle" className="me-1.5 size-4" />
+                  반려
+                </Button>
 
                 {/* 취소 버튼 */}
                 <Button
+                  variant="default"
                   onClick={onClose}
-                  variant="outline"
+                  className="bg-gray-500 hover:bg-gray-600 text-white"
                   disabled={loading}
                 >
                   취소
@@ -1287,7 +1357,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
                     <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
                       <div className="mb-4">
-                        <h4 className="font-medium text-primary mb-2">간략 설명</h4>
+                        <h4 className="font-medium text-primary mb-2">설명</h4>
                         <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
                           {newCampaign.description || '(캠페인 설명을 입력해주세요)'}
                         </p>
@@ -1408,18 +1478,10 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             <DialogFooter className="p-6 pt-0 flex justify-end sticky bottom-0 z-10 shadow-sm bg-background border-t">
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 px-3 sm:h-10 sm:px-4"
-                  onClick={() => setRejectionModalOpen(false)}
-                >
-                  취소
-                </Button>
-                <Button
                   size="sm"
                   className="h-9 px-3 sm:h-10 sm:px-4 bg-red-500 hover:bg-red-600 text-white"
                   disabled={rejectionReason.trim().length === 0 || loading}
-                  onClick={() => {
+                  onClick={async () => {
                     // 반려 사유가 비어있는지 확인
                     if (!rejectionReason.trim()) {
                       return; // 비어있으면 저장하지 않음
@@ -1428,60 +1490,115 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     // 로딩 상태 설정
                     setLoading(true);
 
-                    setNewCampaign(prev => {
-                      if (!prev) {
-                        // 이전 상태가 없는 경우 기본 상태 반환
-                        return {
-                          id: '',
-                          campaignName: '',
-                          description: '',
-                          detailedDescription: '',
-                          logo: '',
-                          unitPrice: '100',
-                          deadline: '18:00',
-                          status: {
-                            label: getStatusLabel('rejected'),
-                            color: getStatusColor('rejected'),
-                            status: 'rejected'
-                          },
-                          rejectionReason: rejectionReason,
-                          efficiency: '0',
-                          minQuantity: '10'
-                        };
+                    try {
+                      // 모달 닫기
+                      setRejectionModalOpen(false);
+                      
+                      // 상태 업데이트 대신 직접 handleSave 호출 시 반려 사유 전달
+                      // 직접 업데이트 객체 생성 및 저장 요청
+                      if (campaign && updateCampaign) {
+                        try {
+                          // 이전 newCampaign 상태를 업데이트하지 않고 직접 업데이트 객체 생성
+                          const updateData = {
+                            campaignName: newCampaign.campaignName,
+                            description: newCampaign.description,
+                            detailedDescription: newCampaign.detailedDescription,
+                            unitPrice: newCampaign.unitPrice,
+                            deadline: newCampaign.deadline,
+                            logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
+                            uploadedLogo: previewUrl,
+                            bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
+                            uploadedBannerImage: bannerImagePreviewUrl,
+                            status: 'rejected',
+                            additionalFields: additionalFields,
+                            // 중요: 새로 입력한 반려 사유 사용
+                            rejectionReason: rejectionReason,
+                            rejected_reason: rejectionReason
+                          };
+                          
+                          // DB 직접 업데이트
+                          const success = await updateCampaign(parseInt(newCampaign.id), updateData);
+                          
+                          if (success) {
+                            // 성공 시 상태 업데이트 (UI 반영용)
+                            setNewCampaign(prev => {
+                              if (!prev) return prev;
+                              
+                              return {
+                                ...prev,
+                                status: {
+                                  label: getStatusLabel('rejected'),
+                                  color: getStatusColor('rejected'),
+                                  status: 'rejected'
+                                },
+                                rejectionReason: rejectionReason,
+                                originalData: {
+                                  ...prev.originalData,
+                                  rejected_reason: rejectionReason,
+                                  status: 'rejected'
+                                }
+                              };
+                            });
+                            
+                            // 부모 컴포넌트에 업데이트 알림
+                            if (onSave) {
+                              const updatedCampaign = {
+                                ...newCampaign,
+                                status: {
+                                  label: getStatusLabel('rejected'),
+                                  color: getStatusColor('rejected'),
+                                  status: 'rejected'
+                                },
+                                rejectionReason: rejectionReason
+                              };
+                              onSave(updatedCampaign as ExtendedCampaign);
+                            }
+                            
+                            onClose();
+                          } else {
+                            setError('반려 사유 저장에 실패했습니다.');
+                            setLoading(false);
+                          }
+                        } catch (error) {
+                          console.error('반려 처리 직접 업데이트 중 오류:', error);
+                          setError('반려 처리 중 오류가 발생했습니다.');
+                          setLoading(false);
+                        }
+                      } else {
+                        setLoading(false);
+                        setError('캠페인 업데이트 함수가 제공되지 않았습니다.');
                       }
-
-                      // 반려 상태로 변경 및 사유 설정
-                      const updatedCampaign = {
-                        ...prev,
-                        status: {
-                          label: getStatusLabel('rejected'),
-                          color: getStatusColor('rejected'),
-                          status: 'rejected'
-                        },
-                        rejectionReason: rejectionReason // 입력받은 반려 사유 설정
-                      };
-
-                      return updatedCampaign;
-                    });
-
-                    // 모달 닫기
-                    setRejectionModalOpen(false);
-
-                    // 반려 처리 직접 DB에 업데이트
-                    setTimeout(() => handleSave(), 100);
+                    } catch (error) {
+                      console.error('반려 처리 중 오류:', error);
+                      setError('반려 처리 중 오류가 발생했습니다.');
+                      setLoading(false);
+                    }
                   }}
                 >
                   {loading ? (
                     <span className="flex items-center">
                       <span className="animate-spin mr-1.5 h-3 w-3 border-t-2 border-b-2 border-current rounded-full"></span>
-                      처리중...
+                      저장중...
                     </span>
+                  ) : newCampaign.rejectionReason ? (
+                    <>
+                      <KeenIcon icon="pencil" className="me-1.5 size-3" />
+                      반려 사유 수정하기
+                    </>
                   ) : (
                     <>
                       <KeenIcon icon="cross" className="me-1.5 size-3" />
                       반려하기
                     </>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 sm:h-10 sm:px-4"
+                  onClick={() => setRejectionModalOpen(false)}
+                >
+                  취소
                 </Button>
               </div>
             </DialogFooter>

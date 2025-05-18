@@ -29,9 +29,16 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
   // 현재 경로가 공개 경로인지 확인
   // 해시 기반 라우팅에서는 pathname 대신 hash의 경로 부분 확인 
   const path = location.pathname;
-  const hashPath = location.hash.startsWith('#') ? location.hash.substring(1) : location.hash;
+  // 해시 경로 정규화 - '#/', '#' 등의 접두사 통일
+  const hashPath = location.hash.replace(/^#\/?/, '/');
   
-  const isPublicPath = PUBLIC_PATHS.some(publicPath => 
+  // 로그아웃 중인지 확인 (URL 파라미터 또는 localStorage 플래그)
+  const isLoggingOut = 
+    (typeof window !== 'undefined' && window.location.href.includes('force=true')) ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('auth_redirect') === 'login');
+  
+  // 공개 경로 확인 (로그아웃 중이면 항상 true)
+  const isPublicPath = isLoggingOut || PUBLIC_PATHS.some(publicPath => 
     path === publicPath || 
     path.startsWith(publicPath) || 
     hashPath === publicPath || 
@@ -93,11 +100,18 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 정보가 전혀 없는 경우 로그인 페이지로 이동
       if (!hasAuth && !hasCachedUser) {
-        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
-        navigate('auth/login', { 
-          state: { from: location.pathname + location.hash },
-          replace: true 
-        });
+        // 이미 로그인 페이지로 가고 있는 상태인지 확인 (다양한 URL 패턴 지원)
+        const isAlreadyNavigatingToLogin = 
+          location.pathname === '/auth/login' || 
+          location.hash.includes('auth/login');
+          
+        if (!isAlreadyNavigatingToLogin) {
+          // 해시 라우팅에 맞게 /auth/login 경로 사용 (앞에 슬래시 포함)
+          navigate('/auth/login', { 
+            state: { from: location.pathname + location.hash },
+            replace: true 
+          });
+        }
       }
       
       setInitialCheck(false);
@@ -137,8 +151,8 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 상태가 완전히 확인된 후 auth는 있지만 currentUser가 없는 경우 (검증 실패)
       if (auth && !currentUser && !isAlreadyNavigatingToLogin) {
-        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
-        navigate('auth/login', { 
+        // 해시 라우팅에 맞게 /auth/login 경로 사용 (앞에 슬래시 포함)
+        navigate('/auth/login', { 
           state: { from: location.pathname + location.hash },
           replace: true 
         });

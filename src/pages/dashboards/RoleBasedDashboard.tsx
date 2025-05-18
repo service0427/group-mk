@@ -40,6 +40,8 @@ const RoleBasedDashboard: React.FC = () => {
     );
   }
 
+  console.log(userRole);
+
   // 역할에 따른 대시보드 콘텐츠 렌더링
   switch (userRole) {
     case USER_ROLES.DEVELOPER:

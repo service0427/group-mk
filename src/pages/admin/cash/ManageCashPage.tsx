@@ -393,6 +393,11 @@ const ManageCashPage = () => {
                               <span className="font-medium text-foreground">충전 금액</span>
                             </div>
                           </th>
+                          <th className="py-4 px-5 text-start min-w-[120px]">
+                            <div className="flex items-center">
+                              <span className="font-medium text-foreground">입금자명</span>
+                            </div>
+                          </th>
                           <th className="py-4 px-5 text-start min-w-[140px]">
                             <div className="flex items-center">
                               <span className="font-medium text-foreground">무료캐시</span>
@@ -437,19 +442,26 @@ const ManageCashPage = () => {
                                 <span className="text-foreground font-medium">₩{request.amount.toLocaleString()}</span>
                               </td>
                               <td className="py-4 px-5">
-                                {request.isEligibleForFreeCash ? (
-                                  <div>
-                                    <span className="text-green-600 font-medium">+₩{request.freeCashAmount.toLocaleString()}</span>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      ({request.freeCashPercentage}%, {request.freeCashExpiryMonths > 0 ? `${request.freeCashExpiryMonths}개월 후 만료` : '무기한'})
+                                <span className="text-foreground">{request.account_holder || '-'}</span>
+                              </td>
+                              <td className="py-4 px-5">
+                                {request.freeCashPercentage > 1 ? (
+                                  request.isEligibleForFreeCash ? (
+                                    <div>
+                                      <span className="text-green-600 font-medium">+₩{request.freeCashAmount.toLocaleString()}</span>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        ({request.freeCashPercentage}%, {request.freeCashExpiryMonths > 0 ? `${request.freeCashExpiryMonths}개월 후 만료` : '무기한'})
+                                      </div>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <span className="text-gray-500 text-xs">
+                                      {request.status === 'pending' ? 
+                                        `${request.minRequestAmount.toLocaleString()}원 이상 충전 시 무료캐시 제공` : 
+                                        '혜택 없음'}
+                                    </span>
+                                  )
                                 ) : (
-                                  <span className="text-gray-500 text-xs">
-                                    {request.status === 'pending' ? 
-                                      `${request.minRequestAmount.toLocaleString()}원 이상 충전 시 무료캐시 제공` : 
-                                      '혜택 없음'}
-                                  </span>
+                                  <span className="text-gray-500">-</span>
                                 )}
                               </td>
                               <td className="py-4 px-5">
@@ -516,6 +528,10 @@ const ManageCashPage = () => {
                             <div>
                               <p className="text-muted-foreground">충전 금액</p>
                               <p className="font-medium">₩{request.amount.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">입금자명</p>
+                              <p className="font-medium">{request.account_holder || '-'}</p>
                             </div>
                             <div>
                               <p className="text-muted-foreground">무료캐시</p>

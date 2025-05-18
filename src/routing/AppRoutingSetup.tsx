@@ -14,8 +14,8 @@ import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
 import { BeginnerDashboardPage } from '@/pages/dashboards/beginner';
 
 import {
-  ServiceDescPage,
-  ServiceCampaignPage
+  InfoPage,
+  CampaignPage
 } from '@/pages/advertise';
 
 // 새로 추가한 페이지 임포트
@@ -108,23 +108,46 @@ const AppRoutingSetup = (): ReactElement => {
       {/* 광고주 이상만 접근 가능한 페이지 */}
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADVERTISEMENT} />}>
         <Route element={<StandLayout />}>
-          {/* 리디렉션 경로 설정 */}
-          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/naver/shopping/traffic/desc" />} />
-          <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/ntraffic/desc" />} />
-          <Route path="/advertise/ntraffic" element={<Navigate to="/advertise/ntraffic/desc" />} />
+          {/* 캠페인 관련 경로는 URL 파라미터 방식으로 통일 */}
 
-          {/* ntraffic 직접 경로 설정 */}
-          <Route path="/advertise/ntraffic/desc" element={<ServiceDescPage />} />
-          <Route path="/advertise/ntraffic/campaign" element={<ServiceCampaignPage />} />
+          {/* 캠페인 소개 페이지 - URL 파라미터 사용 */}
+          <Route path="/advertise/campaigns/info/:serviceType" element={<InfoPage />} />
 
-          {/* 동적 광고 페이지 라우트 */}
-          {/* 2단계 경로 */}
-          <Route path="/advertise/:platform/:type/desc" element={<ServiceDescPage />} />
-          <Route path="/advertise/:platform/:type/campaign" element={<ServiceCampaignPage />} />
+          {/* 캠페인 관리 페이지 - URL 파라미터 사용 */}
+          <Route path="/advertise/campaigns/my/:serviceType" element={<CampaignPage />} />
 
-          {/* 3단계 경로 */}
-          <Route path="/advertise/:platform/:subservice/:type/desc" element={<ServiceDescPage />} />
-          <Route path="/advertise/:platform/:subservice/:type/campaign" element={<ServiceCampaignPage />} />
+          {/* 구형 URL 패턴에서 새로운 URL 패턴으로 리다이렉트 처리 */}
+          {/* 네이버 쇼핑 트래픽 */}
+          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/campaigns/info/naver-shopping-traffic" replace />} />
+          <Route path="/advertise/naver/shopping/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-shopping-traffic" replace />} />
+          
+          {/* 네이버 플레이스 저장 */}
+          <Route path="/advertise/naver/place/save" element={<Navigate to="/advertise/campaigns/info/naver-place-save" replace />} />
+          <Route path="/advertise/naver/place/save/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-save" replace />} />
+          
+          {/* 네이버 플레이스 공유 */}
+          <Route path="/advertise/naver/place/share" element={<Navigate to="/advertise/campaigns/info/naver-place-share" replace />} />
+          <Route path="/advertise/naver/place/share/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-share" replace />} />
+          
+          {/* 네이버 플레이스 트래픽 */}
+          <Route path="/advertise/naver/place/traffic" element={<Navigate to="/advertise/campaigns/info/naver-place-traffic" replace />} />
+          <Route path="/advertise/naver/place/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-traffic" replace />} />
+          
+          {/* 네이버 자동완성 */}
+          <Route path="/advertise/naver/auto" element={<Navigate to="/advertise/campaigns/info/naver-auto" replace />} />
+          <Route path="/advertise/naver/auto/campaign" element={<Navigate to="/advertise/campaigns/my/naver-auto" replace />} />
+          
+          {/* 네이버 트래픽 */}
+          <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/campaigns/info/naver-traffic" replace />} />
+          <Route path="/advertise/naver/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-traffic" replace />} />
+          
+          {/* 쿠팡 트래픽 */}
+          <Route path="/advertise/coupang/traffic" element={<Navigate to="/advertise/campaigns/info/coupang-traffic" replace />} />
+          <Route path="/advertise/coupang/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/coupang-traffic" replace />} />
+          
+          {/* 오늘의집 트래픽 */}
+          <Route path="/advertise/ohouse/traffic" element={<Navigate to="/advertise/campaigns/info/ohouse-traffic" replace />} />
+          <Route path="/advertise/ohouse/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/ohouse-traffic" replace />} />
 
           {/* 내 서비스 관리 라우트 */}
           <Route path="/myinfo/services" element={<ServicesPage />} />
@@ -142,9 +165,6 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/campaign-request/add" element={<CampaignAddPage />} />
 
           {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
-
-          {/* 기존 경로는 그대로 사용 (더 이상 리다이렉트 불필요) */}
-          {/* 모든 경로는 :serviceType 패턴 매칭을 통해 CampaignPage 컴포넌트로 라우팅됨 */}
 
           {/* 서비스 타입별 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/admin/campaigns/:serviceType" element={<Campaigns.CampaignPage />} />

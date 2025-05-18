@@ -1,4 +1,5 @@
 import { toAbsoluteUrl } from './Assets';
+import { CampaignServiceType } from '@/components/campaign-modals/types';
 
 /**
  * 캠페인 데이터 인터페이스
@@ -14,7 +15,7 @@ export interface CampaignData {
   unit_price?: string | number;
   additional_logic?: string | number;
   status: string;
-  service_type?: string;
+  service_type?: string | CampaignServiceType;
   add_info?: {
     logo_url?: string;
     banner_url?: string;
@@ -26,6 +27,7 @@ export interface CampaignData {
  * 포맷된 캠페인 데이터 인터페이스
  */
 export interface FormattedCampaignData {
+  id?: string | number; // 캠페인 ID 추가 (옵셔널)
   logo: string;
   logoSize?: string; // 옵셔널로 변경
   title: string;
@@ -318,7 +320,16 @@ export const getProgressVariant = (status: string, index: number): string => {
 /**
  * 캠페인 데이터를 화면에 표시할 형식으로 변환
  */
-export const formatCampaignData = (campaign: CampaignData, index: number = 0): FormattedCampaignData => {
+export const formatCampaignData = (campaign: CampaignData, index: number = 0, serviceTypeCode?: string): FormattedCampaignData & { id?: string | number } => {
+  // ID가 없거나 undefined인 경우 기본값 설정
+  if (campaign.id === undefined || campaign.id === null) {
+    campaign.id = 1; // 기본 ID 값
+  }
+  
+  // 원본 데이터에 service_type 필드가 없으면 serviceTypeCode 파라미터 사용
+  if (serviceTypeCode && !campaign.service_type) {
+    campaign.service_type = serviceTypeCode;
+  }
   // 기본 통계 항목 배열 생성
   const statistics = [
     {
@@ -402,6 +413,7 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0): F
   }
 
   return {
+    id: campaign.id, // 캠페인 ID 추가
     logo: logoPath,
     logoSize: '50px',
     title: campaign.campaign_name,
@@ -428,8 +440,11 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
   // 배너 URL 추출
   const bannerUrl = originalData?.add_info?.banner_url || null;
   
+  // 원본 데이터에 누락된 ID가 있을 경우 기본값은 설정하지 않음
+  // 실제 DB의 캠페인 ID로 매칭되어야 하기 때문에 임의의 값을 설정하지 않음
+  
   return {
-    id: originalData?.id || "",
+    id: originalData?.id || "", // 값이 없으면 빈 문자열로 설정
     campaignName: campaign.title,
     description: campaign.description,
     logo: campaign.logo,

@@ -1,4 +1,4 @@
-export { DescTemplate } from './DescTemplate';
+export { CampaignInfoTemplate } from './CampaignInfoTemplate';
 export { IntroTemplate } from './IntroTemplate';
 export { default as CampaignTableTemplate } from './CampaignTableTemplate';
 export { CampaignDetailViewModal, CampaignSlotWithKeywordModal } from '@/components/campaign-modals';

@@ -35,24 +35,34 @@ const CampaignPage: React.FC = () => {
       'naver-traffic': 'ntraffic',
 
       // N 자동완성 관련
-      'nauto': 'nfakesale',
-      'naver-auto': 'nfakesale',
+      'nauto': 'nauto',
+      'naver-auto': 'nauto',
 
       // N 쇼핑 관련
       'nshopping': 'nshopping',
       'navershopping': 'nshopping',
       'naver-shopping': 'nshopping',
+      'naver-shopping-traffic': 'nshopping',
 
       // N 가구매 관련
       'nfakesale': 'nfakesale',
       'naverfakesale': 'nfakesale',
       'naver-fakesale': 'nfakesale',
+      'naver-shopping-fakesale': 'nfakesale',
+
+      // N 블로그 관련
+      'nblog': 'nblog',
+      'naver-blog': 'nblog',
+
+      // N 카페 관련
+      'ncafe': 'ncafe',
+      'naver-cafe': 'ncafe',
 
       // N 플레이스 관련
       'nplace': 'nplace',
       'naverplace': 'nplace',
       'naver-place': 'nplace',
-      'naver-place-traffic': 'nplace',
+      'naver-place-traffic': 'nplace-traffic', // 수정: 별도 항목으로 구분
 
       // N 플레이스 저장 관련
       'nplacesave': 'nplace-save',
@@ -65,9 +75,9 @@ const CampaignPage: React.FC = () => {
       'naver-place-share': 'nplace-share',
 
       // 쿠팡 관련
-      'coupang': 'CoupangTraffic',
-      'coupangtraffic': 'CoupangTraffic',
-      'coupang-traffic': 'CoupangTraffic',
+      'coupang': 'coupangtraffic', // 소문자로 통일
+      'coupangtraffic': 'coupangtraffic',
+      'coupang-traffic': 'coupangtraffic',
 
     };
 
@@ -91,8 +101,8 @@ const CampaignPage: React.FC = () => {
       'navertraffic': 'N 트래픽 캠페인 관리',
 
       // 네이버 자동완성
-      'naver-auto': 'N 자동완성 캠페인 관리',
       'nauto': 'N 자동완성 캠페인 관리',
+      'naver-auto': 'N 자동완성 캠페인 관리',
 
       // 네이버 블로그
       'nblog': 'N 블로그 캠페인 관리',
@@ -100,32 +110,41 @@ const CampaignPage: React.FC = () => {
 
       // 네이버 쇼핑
       'nshopping': 'N 쇼핑 트래픽 캠페인 관리',
+      'navershopping': 'N 쇼핑 트래픽 캠페인 관리',
       'naver-shopping': 'N 쇼핑 트래픽 캠페인 관리',
       'naver-shopping-traffic': 'N 쇼핑 트래픽 캠페인 관리',
 
+      // 네이버 쇼핑 가구매
+      'nfakesale': 'NS 가구매 캠페인 관리',
+      'naverfakesale': 'NS 가구매 캠페인 관리',
+      'naver-fakesale': 'NS 가구매 캠페인 관리',
+      'naver-shopping-fakesale': 'NS 가구매 캠페인 관리',
+
       // 네이버 플레이스
       'nplace': 'N 플레이스 캠페인 관리',
+      'naverplace': 'N 플레이스 캠페인 관리',
       'naver-place': 'N 플레이스 캠페인 관리',
+      'nplace-traffic': 'N 플레이스 트래픽 캠페인 관리',
       'naver-place-traffic': 'N 플레이스 트래픽 캠페인 관리',
-      'naver-place-save': 'N 플레이스 저장하기 캠페인 관리',
+      
+      // 네이버 플레이스 저장
+      'nplacesave': 'N 플레이스 저장하기 캠페인 관리',
       'nplace-save': 'N 플레이스 저장하기 캠페인 관리',
-      'naver-place-share': 'N 플레이스 블로그공유 캠페인 관리',
+      'naver-place-save': 'N 플레이스 저장하기 캠페인 관리',
+      
+      // 네이버 플레이스 공유
+      'nplaceshare': 'N 플레이스 블로그공유 캠페인 관리',
       'nplace-share': 'N 플레이스 블로그공유 캠페인 관리',
+      'naver-place-share': 'N 플레이스 블로그공유 캠페인 관리',
+
+      // 네이버 카페
+      'ncafe': 'N 카페 캠페인 관리',
+      'naver-cafe': 'N 카페 캠페인 관리',
 
       // 쿠팡
       'coupangtraffic': '쿠팡 트래픽 캠페인 관리',
       'coupang': '쿠팡 트래픽 캠페인 관리',
       'coupang-traffic': '쿠팡 트래픽 캠페인 관리',
-
-      // 미사용 영역역
-
-      // 네이버 쇼핑 가구매
-      'nfakesale': 'NS 가구매 캠페인 관리',
-      'naver-shopping-fakesale': 'NS 가구매 캠페인 관리',
-
-      // 네이버 카페
-      'ncafe': 'N 카페 캠페인 관리',
-      'naver-cafe': 'N 카페 캠페인 관리',
     };
 
     // 매핑된 제목이 있으면 반환, 없으면 기본 제목 반환

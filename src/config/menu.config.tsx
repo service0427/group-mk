@@ -29,37 +29,37 @@ export const MENU_SIDEBAR: TMenuConfig = [
         children: [
           {
             title: 'N 트래픽',
-            path: '/advertise/ntraffic/desc',
+            path: '/advertise/campaigns/info/naver-traffic',
             iconImage: '/media/ad-brand/naver.png',
           },
           {
             title: 'N 자동완성',
-            path: '/advertise/naver/auto/desc',
+            path: '/advertise/campaigns/info/naver-auto',
             iconImage: '/media/ad-brand/naver.png'
           },
           {
             title: 'NS 트래픽',
-            path: '/advertise/naver/shopping/traffic/desc',
+            path: '/advertise/campaigns/info/naver-shopping-traffic',
             iconImage: '/media/ad-brand/naver-shopping.png'
           },
           {
             title: 'NP 트래픽',
-            path: '/advertise/naver/place/traffic/desc',
+            path: '/advertise/campaigns/info/naver-place-traffic',
             iconImage: '/media/ad-brand/naver-place.png'
           },
           {
             title: 'NP 저장하기',
-            path: '/advertise/naver/place/save/desc',
+            path: '/advertise/campaigns/info/naver-place-save',
             iconImage: '/media/ad-brand/naver-place.png'
           },
           {
             title: 'NP 블로그공유',
-            path: '/advertise/naver/place/share/desc',
+            path: '/advertise/campaigns/info/naver-place-share',
             iconImage: '/media/ad-brand/naver-blog.png'
           },
           {
             title: 'NS 가구매',
-            path: '/advertise/naver/shopping/traffic/desc',
+            path: '/advertise/campaigns/info/naver-shopping-fakesale',
             iconImage: '/media/ad-brand/naver-shopping.png',
             disabled: true
           },
@@ -71,12 +71,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
         children: [
           {
             title: 'CP 트래픽',
-            path: '/advertise/coupang/traffic/desc',
+            path: '/advertise/campaigns/info/coupang-traffic',
             iconImage: '/media/ad-brand/coupang-app.png'
           },
           {
             title: 'CP 가구매',
-            path: '/advertise/coupang/traffic/desc',
+            path: '/advertise/campaigns/info/coupang-fakesale',
             iconImage: '/media/ad-brand/coupang-app.png',
             disabled: true
           },
@@ -142,36 +142,38 @@ export const MENU_SIDEBAR: TMenuConfig = [
         children: [
           {
             title: 'N 트래픽',
-            path: '/advertise/ntraffic/campaign',
+            path: '/advertise/campaigns/my/naver-traffic',
             iconImage: '/media/ad-brand/naver.png'
           },
           {
             title: 'N 자동완성',
-            path: '/advertise/naver/auto/campaign',
+            path: '/advertise/campaigns/my/naver-auto',
             iconImage: '/media/ad-brand/naver.png'
           },
           {
             title: 'NS 트래픽',
-            path: '/advertise/naver/shopping/traffic/campaign',
+            path: '/advertise/campaigns/my/naver-shopping-traffic',
             iconImage: '/media/ad-brand/naver-shopping.png'
           },
           {
             title: 'NP 트래픽',
-            path: '/advertise/naver/place/traffic/campaign',
+            path: '/advertise/campaigns/my/naver-place-traffic',
             iconImage: '/media/ad-brand/naver-place.png'
           },
           {
             title: 'NP 저장하기',
-            path: '/advertise/naver/place/save/campaign',
+            path: '/advertise/campaigns/my/naver-place-save',
             iconImage: '/media/ad-brand/naver-place.png'
           },
           {
             title: 'NP 블로그공유',
-            path: '/advertise/naver/place/share/campaign',
+            path: '/advertise/campaigns/my/naver-place-share',
             iconImage: '/media/ad-brand/naver-blog.png'
           },
           {
             title: 'NS 가구매',
+            path: '/advertise/campaigns/my/naver-shopping-fakesale',
+            iconImage: '/media/ad-brand/naver-shopping.png',
             disabled: true
           },
         ]
@@ -182,12 +184,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
         children: [
           {
             title: 'CP 트래픽',
-            path: '/advertise/coupang/traffic/campaign',
+            path: '/advertise/campaigns/my/coupang-traffic',
             iconImage: '/media/ad-brand/coupang-app.png'
           },
           {
             title: 'CP 가구매',
-            path: '/advertise/coupang/traffic/desc',
+            path: '/advertise/campaigns/my/coupang-fakesale',
             iconImage: '/media/ad-brand/coupang-app.png',
             disabled: true
           },
@@ -348,7 +350,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
           },
           {
             title: 'NS 트래픽',
-            path: '/admin/campaigns/naver-shopping',
+            path: '/admin/campaigns/naver-shopping-traffic',
             iconImage: '/media/ad-brand/naver-shopping.png'
           },
           {
@@ -522,37 +524,37 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: 'N 트래픽',
             icon: 'chart-line text-success',
-            path: '/advertise/ntraffic/desc'
+            path: '/advertise/campaigns/info/naver-traffic'
           },
           {
             title: 'N 자동완성',
             icon: 'filter-search text-info',
-            path: '/advertise/naver/auto/desc'
+            path: '/advertise/campaigns/info/naver-auto'
           },
           {
             title: 'NS 트래픽',
             icon: 'shop text-primary',
-            path: '/advertise/naver/shopping/traffic/desc'
+            path: '/advertise/campaigns/info/naver-shopping-traffic'
           },
           {
             title: 'NP 트래픽',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/traffic/desc'
+            path: '/advertise/campaigns/info/naver-place-traffic'
           },
           {
             title: 'NP 저장하기',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/save/desc'
+            path: '/advertise/campaigns/info/naver-place-save'
           },
           {
             title: 'NP 블로그공유',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/share/desc'
+            path: '/advertise/campaigns/info/naver-place-share'
           },
           {
             title: 'CP 트래픽',
             icon: 'handcart text-warning',
-            path: '/advertise/coupang/traffic/desc'
+            path: '/advertise/campaigns/info/coupang-traffic'
           },
         ]
       },
@@ -562,37 +564,37 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: 'N 트래픽',
             icon: 'chart-line text-success',
-            path: '/advertise/ntraffic/campaign'
+            path: '/advertise/campaigns/my/naver-traffic'
           },
           {
             title: 'N 자동완성',
             icon: 'filter-search text-info',
-            path: '/advertise/naver/auto/campaign'
+            path: '/advertise/campaigns/my/naver-auto'
           },
           {
             title: 'NS 트래픽',
             icon: 'shop text-primary',
-            path: '/advertise/naver/shopping/traffic/campaign'
+            path: '/advertise/campaigns/my/naver-shopping-traffic'
           },
           {
             title: 'NP 트래픽',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/traffic/campaign'
+            path: '/advertise/campaigns/my/naver-place-traffic'
           },
           {
             title: 'NP 저장하기',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/save/campaign'
+            path: '/advertise/campaigns/my/naver-place-save'
           },
           {
             title: 'NP 블로그공유',
             icon: 'geolocation text-danger',
-            path: '/advertise/naver/place/share/campaign'
+            path: '/advertise/campaigns/my/naver-place-share'
           },
           {
             title: 'CP 트래픽',
             icon: 'handcart text-warning',
-            path: '/advertise/coupang/traffic/campaign'
+            path: '/advertise/campaigns/my/coupang-traffic'
           },
         ]
       },
@@ -736,7 +738,7 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: 'NAVER 쇼핑',
             icon: 'shop text-primary',
-            path: '/admin/campaigns/naver-shopping'
+            path: '/admin/campaigns/naver-shopping-traffic'
           },
           {
             title: 'NAVER 플레이스',

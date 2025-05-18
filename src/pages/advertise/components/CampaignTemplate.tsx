@@ -149,40 +149,10 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
   // 인라인 편집 스타일 적용
   useEditableCellStyles();
 
-  // 툴바 액션 버튼
-  const toolbarActions = (
-    <>
-      <button className="btn btn-sm btn-light"
-        onClick={() => setModalOpen(true)}
-      >
-        <span className="hidden md:inline">추가</span>
-        <span className="md:hidden"><KeenIcon icon="plus" /></span>
-      </button>
-      <div className="dropdown">
-        <button className="btn btn-sm btn-light dropdown-toggle md:hidden" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-          <KeenIcon icon="document" />
-        </button>
-        <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <li><a className="dropdown-item" href="#">양식 엑셀 다운로드</a></li>
-          <li><a className="dropdown-item" href="#">엑셀 업로드</a></li>
-        </ul>
-      </div>
-      <a href="#" className="hidden md:inline-flex btn btn-sm btn-light">
-        양식 엑셀 다운로드
-      </a>
-      <a href="#" className="hidden md:inline-flex btn btn-sm btn-primary">
-        엑셀 업로드
-      </a>
-    </>
-  );
+  // 액션 버튼은 부모 컴포넌트에서 처리하므로 여기서는 제거
 
   return (
-    <CommonTemplate
-      title="캠페인 리스트"
-      description={`캠페인 관리 > ${serviceCategory}`}
-      toolbarActions={toolbarActions}
-      showPageMenu={false}
-    >
+    <>
       <div className="grid gap-5 lg:gap-7.5">
         {/* 검색 영역 */}
         <SearchForm
@@ -308,7 +278,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
         setMemoText={setMemoText}
         onSave={handleSaveMemo}
       />
-    </CommonTemplate>
+    </>
   );
 };
 

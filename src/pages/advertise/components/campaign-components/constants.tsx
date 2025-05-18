@@ -2,25 +2,43 @@ import React from 'react';
 
 // 서비스 카테고리와 서비스 타입 코드 매핑
 export const SERVICE_TYPE_MAP = {
-  'NS 트래픽': 'ntraffic',
-  'NP 저장': 'NaverPlaceSave',
-  'NP 공유': 'NaverPlaceShare',
+  'NS 트래픽': 'NaverShoppingTraffic',   // 기존 ntraffic에서 정확한 타입 코드로 변경
+  'NP 저장하기': 'NaverPlaceSave',
+  'NP 저장': 'NaverPlaceSave',           // 약식 명칭 지원
+  'NP 블로그공유': 'NaverPlaceShare',
+  'NP 공유': 'NaverPlaceShare',          // 약식 명칭 지원
   'NP 트래픽': 'NaverPlaceTraffic',
   'N 자동완성': 'NaverAuto',
-  'N 트래픽': 'ntraffic',
-  'C 트래픽': 'CoupangTraffic',
+  'N 트래픽': 'NaverTraffic',            // 기존 ntraffic에서 정확한 타입 코드로 변경
+  'CP 트래픽': 'CoupangTraffic',
+  'C 트래픽': 'CoupangTraffic',          // 약식 명칭 지원
   'OH 트래픽': 'OhouseTraffic'
 };
 
 // 서비스 타입 코드와 카테고리 매핑 (역방향)
 export const SERVICE_TYPE_TO_CATEGORY = {
-  'ntraffic': 'NS/N 트래픽', // 네이버 트래픽 서비스 통합
-  'NaverPlaceSave': 'NP 저장',
-  'NaverPlaceShare': 'NP 공유',
+  // 기존 코드 매핑 (하위 호환성)
+  'ntraffic': 'NS/N 트래픽', // 네이버 트래픽 서비스 통합 (구 코드)
+  
+  // 새 코드 매핑
+  'NaverTraffic': 'N 트래픽',
+  'NaverShoppingTraffic': 'NS 트래픽',
+  'NaverPlaceSave': 'NP 저장하기',
+  'NaverPlaceShare': 'NP 블로그공유',
   'NaverPlaceTraffic': 'NP 트래픽',
   'NaverAuto': 'N 자동완성',
-  'CoupangTraffic': 'C 트래픽',
-  'OhouseTraffic': 'OH 트래픽'
+  'CoupangTraffic': 'CP 트래픽',
+  'OhouseTraffic': 'OH 트래픽',
+  
+  // URL 매핑 (새 URL 구조 지원)
+  'naver-traffic': 'N 트래픽',
+  'naver-shopping-traffic': 'NS 트래픽',
+  'naver-place-save': 'NP 저장하기',
+  'naver-place-share': 'NP 블로그공유',
+  'naver-place-traffic': 'NP 트래픽',
+  'naver-auto': 'N 자동완성',
+  'coupang-traffic': 'CP 트래픽',
+  'ohouse-traffic': 'OH 트래픽'
 };
 
 // 상태 옵션

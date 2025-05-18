@@ -25,20 +25,107 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
         localStorage.getItem('auth_redirect') : null;
       const logoutTimestamp = typeof localStorage !== 'undefined' ? 
         localStorage.getItem('logout_timestamp') : null;
+      const forceLogoutTimestamp = typeof localStorage !== 'undefined' ? 
+        localStorage.getItem('force_logout_timestamp') : null;
       
       // 브라우저 환경에서 안전하게 로그인 페이지 감지
       // URL에 강제 로딩 플래그가 있는지 확인
       // 해시 경로가 'auth/login'(슬래시 사용) 또는 '#/auth/login'(#/ 사용) 둘 다 지원
       const isLoginPage = typeof window !== 'undefined' ? 
-        (window.location.hash.includes('auth/login') || window.location.hash.includes('/auth/login')) : 
+        (window.location.hash.includes('auth/login') || 
+         window.location.hash.includes('/auth/login') || 
+         window.location.pathname.includes('/auth/login')) : 
         false;
       
       // 강제 리로드 요청 확인 (로그아웃으로 인한 리로드인지)
       const isForceReload = typeof window !== 'undefined' ? 
-        window.location.href.includes('force=true') : 
+        (window.location.href.includes('force=true') || 
+         localStorage.getItem('force_logout') === 'true') : 
         false;
+        
+      // fallback 쿠키 체크 - 로그아웃 실패 시 복구 메커니즘
+      const hasFallbackLogoutCookie = typeof document !== 'undefined' ? 
+        document.cookie.includes('fallback_logout=') : false;
       
-      if (redirectTarget === 'login' && logoutTimestamp) {
+      // fallback 쿠키가 있으면 로그아웃 상태로 처리 (가장 높은 우선순위)
+      if (hasFallbackLogoutCookie) {
+        setIsLoggingOut(true);
+        
+        // 로그인 페이지에서만 처리
+        if (isLoginPage) {
+          // 상태 완전 초기화
+          setIsLoggingOut(false);
+          
+          // 로컬 스토리지 및 세션 스토리지 정리
+          if (typeof localStorage !== 'undefined') {
+            // 모든 로그아웃 관련 플래그 제거
+            localStorage.removeItem('auth_redirect');
+            localStorage.removeItem('logout_timestamp');
+            localStorage.removeItem('force_logout');
+            localStorage.removeItem('force_logout_timestamp');
+            localStorage.removeItem('force_logout_error');
+            
+            // Supabase 관련 항목 제거
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                localStorage.removeItem(key);
+              }
+            });
+          }
+          
+          // 세션 스토리지 정리
+          if (typeof sessionStorage !== 'undefined') {
+            try { 
+              sessionStorage.clear(); 
+            } catch (e) { 
+              // 무시
+            }
+          }
+          
+          // fallback 쿠키 제거
+          if (typeof document !== 'undefined') {
+            document.cookie = "fallback_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "force_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
+            // 메타 태그 제거
+            const logoutMeta = document.querySelector('meta[name="app-logout-state"]');
+            if (logoutMeta) {
+              logoutMeta.remove();
+            }
+          }
+        }
+      }
+      // force_logout_timestamp가 있으면 (새로운 강제 로그아웃 메커니즘)
+      else if (forceLogoutTimestamp && isLoginPage) {
+        const timestamp = parseInt(forceLogoutTimestamp, 10);
+        const now = Date.now();
+        const elapsed = now - timestamp;
+        
+        // 10초 이내면 로그아웃 플래그 유지
+        if (elapsed < 10000) {
+          setIsLoggingOut(true);
+          
+          // 약간의 지연 후 정리
+          setTimeout(() => {
+            setIsLoggingOut(false);
+            
+            if (typeof localStorage !== 'undefined') {
+              localStorage.removeItem('force_logout');
+              localStorage.removeItem('force_logout_timestamp');
+              localStorage.removeItem('force_logout_error');
+            }
+          }, 500);
+        } else {
+          // 시간이 지나면 강제 로그아웃 관련 상태 정리
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('force_logout');
+            localStorage.removeItem('force_logout_timestamp');
+            localStorage.removeItem('force_logout_error');
+          }
+        }
+      }
+      // 기존 로그아웃 메커니즘 
+      else if (redirectTarget === 'login' && logoutTimestamp) {
         // 로그아웃 시점과 현재 시간 차이 계산 (5초 이내면 상태 유지)
         const timestamp = parseInt(logoutTimestamp, 10);
         const now = Date.now();
@@ -90,11 +177,13 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
         
         // 강제 로그아웃 상태에서 온 것이 맞는지 확인
         if (isForceReload) {
-          
           // 로그아웃 관련 저장소 정리
           if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('auth_redirect');
             localStorage.removeItem('logout_timestamp');
+            localStorage.removeItem('force_logout');
+            localStorage.removeItem('force_logout_timestamp');
+            localStorage.removeItem('force_logout_error');
           }
           
           // 메타 태그 확인 및 제거
@@ -102,6 +191,10 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           if (logoutMeta) {
             logoutMeta.remove();
           }
+          
+          // fallback 쿠키 제거
+          document.cookie = "fallback_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          document.cookie = "force_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         }
       }
     };

@@ -206,7 +206,7 @@ export const useServiceCategory = (pathname: string) => {
             break;
           default:
             // 기본 형식으로 변환 (하이픈을 공백으로)
-            setServiceCategory(serviceType.replaceAll('-', ' '));
+            setServiceCategory(serviceType.replace(/-/g, ' '));
         }
         return;
       }

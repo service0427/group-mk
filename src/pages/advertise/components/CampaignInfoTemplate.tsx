@@ -135,7 +135,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
     serviceCategory = 'OH 트래픽';
   } else {
     // 알 수 없는 형식인 경우 그대로 표시
-    serviceCategory = serviceType ? serviceType.replaceAll('-', ' ') : '';
+    serviceCategory = serviceType ? serviceType.replace(/-/g, ' ') : '';
   }
 
   // 카드/목록 형식 모두 지원

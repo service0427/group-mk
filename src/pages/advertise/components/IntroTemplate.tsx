@@ -146,7 +146,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
     serviceCategory = 'OH 트래픽';
   } else {
     // 알 수 없는 형식인 경우 그대로 표시
-    serviceCategory = serviceType ? serviceType.replaceAll('-', ' ') : '';
+    serviceCategory = serviceType ? serviceType.replace(/-/g, ' ') : '';
   }
 
   // 서비스 로고 이미지 결정

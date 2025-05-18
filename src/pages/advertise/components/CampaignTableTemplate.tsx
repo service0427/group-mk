@@ -348,7 +348,7 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         <CampaignModal
           open={detailModalOpen}
           onClose={() => setDetailModalOpen(false)}
-          serviceType={getServiceTypeFromPath(pathname)}
+          serviceType={serviceCategory}
           onSave={(newCampaign) => {
             // 캠페인이 성공적으로 생성되면 모달 닫기
             setDetailModalOpen(false);

@@ -43,7 +43,7 @@ export const useNotifications = () => {
             // 로그아웃 중이 아닐 때만 처리
             if (!isLoggingOut) {
               // 오류 발생 시 모킹 데이터 사용 (개발 중에만 활성화)
-              const mockData = generateMockNotifications(currentUser.id);
+              const mockData = generateMockNotifications(currentUser.id || '');
               setNotifications(mockData);
               
               // 읽지 않은 알림 카운트 계산

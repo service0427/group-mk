@@ -62,7 +62,7 @@ const UserInfoDisplay = () => {
           await safeApiCall(
             async () => {
               try {
-                const balance = await getUserCashBalance(currentUser.id);
+                const balance = await getUserCashBalance(currentUser.id || '');
                 setCashBalance(balance);
               } catch (error) {
                 console.error("캐시 잔액 조회 오류:", error);
@@ -349,9 +349,9 @@ const UserInfoDisplay = () => {
                 </div>
                 <button
                   className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => {
+                  onClick={(e) => {
                     setMobileMenuOpen(false);
-                    handleLogoutClick();
+                    handleLogoutClick(e);
                   }}
                 >
                   <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 mr-3" />

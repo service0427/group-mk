@@ -579,7 +579,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[900px] p-0 overflow-hidden">
+      <DialogContent className="max-w-[900px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-5">
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
           <DialogHeaderSpacer />

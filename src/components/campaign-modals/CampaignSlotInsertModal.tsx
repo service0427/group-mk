@@ -151,7 +151,7 @@ const CampaignSlotInsertModal: React.FC<CampaignSlotInsertModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden">
+      <DialogContent className="max-w-md p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 슬롯 등록</DialogTitle>
         </DialogHeader>

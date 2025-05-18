@@ -260,7 +260,7 @@ const approveSingleSlot = async (
           })
           .eq('slot_id', slotId);
           
-        console.log(`Slot pending balance updated for slot ID: ${slotId}`);
+        // Slot pending balance updated for slot ID: ${slotId}
       }
     } catch (pendingUpdateError) {
       console.error('Error updating slot_pending_balances:', pendingUpdateError);
@@ -685,7 +685,7 @@ const rejectSingleSlot = async (
           })
           .eq('slot_id', slotId);
           
-        console.log(`Slot pending balance updated for rejected slot ID: ${slotId}`);
+        // Slot pending balance updated for rejected slot ID: ${slotId}
       }
     } catch (pendingUpdateError) {
       console.error('Error updating slot_pending_balances for rejected slot:', pendingUpdateError);

@@ -52,7 +52,6 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           if (isLoginPage) {
             // 강제 리로드인 경우 즉시 로그아웃 완료 처리
             if (isForceReload) {
-              console.log('[LogoutContext] 강제 리로드 감지, 로그아웃 상태 초기화');
               // 지연 없이 즉시 처리
               setIsLoggingOut(false);
               if (typeof localStorage !== 'undefined') {
@@ -91,7 +90,6 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
         
         // 강제 로그아웃 상태에서 온 것이 맞는지 확인
         if (isForceReload) {
-          console.log('[LogoutContext] 로그인 페이지 직접 접근 - 강제 로드 감지');
           
           // 로그아웃 관련 저장소 정리
           if (typeof localStorage !== 'undefined') {
@@ -126,41 +124,9 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     }
   }, [setIsLoggingOut]);
 
-  // 로그아웃 상태일 때 트랜지션 비활성화 및 부드러운 화면 전환 (브라우저 환경에서만)
+  // 로그아웃 상태에 대한 효과는 제거하고 상태만 유지
   useEffect(() => {
-    // 브라우저 환경에서만 DOM 조작 수행
-    if (typeof document === 'undefined') return;
-    
-    if (isLoggingOut) {
-      // 로그아웃 중 트랜지션 및 애니메이션 비활성화
-      const styleEl = document.createElement('style');
-      styleEl.id = 'logout-style';
-      styleEl.innerHTML = `
-        body, #root, .app, main, * {
-          transition: none !important;
-          animation: none !important;
-          opacity: 1 !important;
-        }
-        
-        /* 로그인 페이지가 깜빡거림 없이 즉시 표시되도록 처리 */
-        body.auth-page #root {
-          opacity: 1 !important;
-          animation: none !important;
-        }
-      `;
-      document.head.appendChild(styleEl);
-      
-      // 페이지 내용이 완전히 로드될 때까지 스크롤 차단
-      document.body.style.overflow = 'hidden';
-      
-      return () => {
-        const existingStyle = document.getElementById('logout-style');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-        document.body.style.overflow = '';
-      };
-    }
+    // 아무 효과 없음 - 전환 효과 제거됨
   }, [isLoggingOut]);
 
   return (

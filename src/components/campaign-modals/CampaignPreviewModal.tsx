@@ -96,18 +96,18 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] border-4 border-primary">
-        <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-10 shadow-sm">
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] border-4 border-primary" aria-describedby={undefined}>
+        <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-20 shadow-sm">
           <DialogTitle className="text-lg font-semibold text-foreground flex items-center">
             <KeenIcon icon="eye" className="mr-2 text-primary" />
             캠페인 미리보기
           </DialogTitle>
         </DialogHeader>
         
-        <DialogBody className="bg-background p-0 overflow-y-auto">
+        <DialogBody className="bg-background p-0 overflow-y-auto flex flex-col">
           {/* 배너 이미지 (있을 경우) */}
           {bannerImageUrl && (
-            <div className="w-full">
+            <div className="w-full flex-shrink-0">
               <img 
                 src={bannerImageUrl} 
                 alt="캠페인 배너" 
@@ -120,8 +120,8 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
             </div>
           )}
           
-          <div className="p-6">
-            {/* 캠페인 헤더 정보 */}
+          {/* 캠페인 헤더 정보 - 스크롤 시 고정 */}
+          <div className="bg-background p-4 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <div className="flex items-center gap-4 mb-6">
               <img
                 src={logoUrl}
@@ -146,7 +146,10 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                 </div>
               </div>
             </div>
-            
+          </div>
+          
+          {/* 스크롤 가능한 본문 내용 */}
+          <div className="p-6 flex-grow overflow-y-auto">
             {/* 캠페인 주요 정보 */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-muted p-4 rounded-md">

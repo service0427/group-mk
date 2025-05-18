@@ -17,7 +17,7 @@ import { supabase } from '@/supabase';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
-import { CampaignAddModal } from '@/components/campaign-modals';
+import { CampaignModal } from '@/components/campaign-modals';
 import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
 import { useNavigate } from 'react-router-dom';
 
@@ -667,7 +667,7 @@ export const DashboardContent: React.FC = () => {
 
       {/* 캠페인 추가 모달 */}
       {addCampaignModalOpen && (
-        <CampaignAddModal
+        <CampaignModal
           open={addCampaignModalOpen}
           onClose={() => setAddCampaignModalOpen(false)}
           serviceType={selectedServiceType}

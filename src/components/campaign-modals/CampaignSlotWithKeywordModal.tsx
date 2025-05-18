@@ -733,9 +733,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]">
-          <DialogHeader className="bg-background py-4 px-6 flex-shrink-0">
-            <DialogTitle className="text-lg font-medium text-foreground">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]" aria-describedby={undefined}>
+          <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               {serviceCode === 'NaverShopTraffic'
                 ? '네이버 쇼핑 트래픽 슬롯 관리'
                 : serviceCode === 'NaverBlogPosting'
@@ -1093,7 +1093,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               </div>
             </div>
           </div>
-          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
+          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background sticky bottom-0 z-10 shadow-sm">
             <div className="flex items-center">
               {selectedKeywords.length > 0 && (
                 <div className="flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-100 dark:border-blue-900 shadow-sm w-full sm:w-auto">
@@ -1109,7 +1109,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             <Button
               onClick={handleSave}
               type="button"
-              className="px-4 sm:px-6 md:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300 h-9 sm:h-10 rounded-lg shadow-sm w-full sm:w-auto"
+              className="px-4 sm:px-6 md:px-8 bg-primary hover:bg-primary/90 text-white transition-all duration-300 h-9 sm:h-10 rounded-md shadow-sm w-full sm:w-auto"
               disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}
             >
               {saving ? (
@@ -1132,9 +1132,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       {/* 알림 다이얼로그 */}
       <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-          <div className={`px-4 sm:px-6 py-4 border-b ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
-            <DialogTitle className="text-lg font-medium">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[500px] p-0 overflow-hidden" aria-describedby={undefined}>
+          <DialogHeader className={`py-4 px-6 border-b sticky top-0 z-10 shadow-sm ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+            <DialogTitle className="text-lg font-semibold text-foreground">
               <div className="flex items-center gap-2">
                 {isSuccess ? (
                   <KeenIcon icon="Check" className="size-5 text-green-600 dark:text-green-400" />
@@ -1144,13 +1144,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 <span className={isSuccess ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}>{alertTitle}</span>
               </div>
             </DialogTitle>
-          </div>
+          </DialogHeader>
           <div className="p-6 bg-background">
             <p className="text-foreground mb-6 whitespace-pre-line">{alertDescription}</p>
             <div className="flex justify-end">
               <Button
                 onClick={() => setAlertDialogOpen(false)}
-                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-primary hover:bg-primary/90 text-white"}
               >
                 확인
               </Button>

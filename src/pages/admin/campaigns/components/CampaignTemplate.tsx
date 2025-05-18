@@ -8,7 +8,7 @@ import { CampaignContent } from './CampaignContent';
 import { fetchCampaigns, getServiceTypeCode } from '../services/campaignService';
 import { ICampaign } from './CampaignContent';
 import { getCampaignsByService } from '../data'; // 백업 데이터용
-import { CampaignAddModal } from '@/components/campaign-modals';
+import { CampaignModal } from '@/components/campaign-modals';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 
@@ -58,17 +58,16 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
   // URL에서 서비스 타입 추출 (라우트 경로 또는 쿼리 파라미터)
   const pathSegments = pathname.split('/');
   const pathServiceType = pathSegments[pathSegments.length - 1];
-  
+
   // URL 쿼리 파라미터 확인
   const queryParams = new URLSearchParams(location.search);
   const queryServiceType = queryParams.get('service_type');
-  
+
   // serviceCode prop이 있으면 우선 사용, 없으면 URL에서 추출
   const serviceTypeFromSource = serviceCode || queryServiceType || pathServiceType;
-  
+
   // 실제 사용할 서비스 타입 (UI에 표시용)
   const serviceType = serviceTypeFromSource;
-  
 
   // 캠페인 데이터 로드 함수 - 컴포넌트 외부에서도 호출할 수 있도록 분리
   const loadCampaigns = async () => {
@@ -76,7 +75,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
     try {
       // 서비스 코드를 DB 형식으로 변환
       const dbServiceType = getServiceTypeCode(serviceType);
-      
+
 
       let data: ICampaign[] = [];
       let useBackupData = false;
@@ -92,7 +91,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         console.error('캠페인 데이터 조회 오류:', dbError);
         useBackupData = true;
       }
-      
+
 
       // DB에 데이터가 없을 경우 빈 배열 유지, 백업 데이터 사용하지 않음
       if (useBackupData) {
@@ -159,7 +158,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
 
       {/* 캠페인 추가 모달 - 광고주나 대행사는 접근 불가 */}
       {addCampaignModalOpen && !isAdvertiserOrAgency && (
-        <CampaignAddModal
+        <CampaignModal
           open={addCampaignModalOpen}
           onClose={() => setAddCampaignModalOpen(false)}
           serviceType={serviceType}

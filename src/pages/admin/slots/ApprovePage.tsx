@@ -493,7 +493,7 @@ const ApprovePage: React.FC = () => {
       // 선택된 슬롯 배열을 직접 사용 (이미 상태에 있음)
       setApproveModalOpen(true);
       setActionType(actionType);
-      console.log('다중 승인 모달 열기, 선택된 슬롯:', selectedSlots);
+      // 다중 승인 모달 열기
       return;
     }
     
@@ -507,7 +507,7 @@ const ApprovePage: React.FC = () => {
     setSelectedSlots([slotId]);
     setActionType(actionType);
     setApproveModalOpen(true);
-    console.log('단일 승인 모달 열기, 선택된 슬롯:', [slotId]);
+    // 단일 승인 모달 열기
   };
 
   // 반려 처리 함수
@@ -886,7 +886,7 @@ const ApprovePage: React.FC = () => {
                     
                     // 명시적으로 selectedSlots를 사용하여 처리
                     const slotIdToProcess = selectedSlots;
-                    console.log('일괄 승인 처리할 슬롯 ID:', slotIdToProcess);
+                    // 일괄 승인 처리할 슬롯 ID 처리
                     const result = await approveSlot(slotIdToProcess, currentUser.id, actionType);
 
                     if (result.success) {
@@ -924,7 +924,7 @@ const ApprovePage: React.FC = () => {
                         
                         // 선택 초기화
                         // 성공 후 선택 상태 초기화
-                        console.log('승인 성공 후 선택 초기화');
+                        // 승인 성공 후 선택 초기화
                         setSelectedSlots([]);
                       } else {
                         // 단일 슬롯인 경우

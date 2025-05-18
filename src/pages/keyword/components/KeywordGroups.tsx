@@ -78,11 +78,10 @@ const KeywordGroups: React.FC<KeywordGroupsProps> = ({
         <h2 className="text-lg font-medium">그룹 관리</h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className={`flex items-center px-3 py-1 rounded text-sm font-medium ${
-            showAddForm
+          className={`flex items-center px-3 py-1 rounded text-sm font-medium ${showAddForm
               ? "bg-orange-500 hover:bg-orange-600 text-white"
               : "bg-green-500 hover:bg-green-600 text-white"
-          }`}
+            }`}
         >
           <span className="mr-1">{showAddForm ? '취소' : '새 그룹'}</span>
           {!showAddForm && (
@@ -141,14 +140,13 @@ const KeywordGroups: React.FC<KeywordGroupsProps> = ({
           groups.map((group) => (
             <div
               key={group.id}
-              className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
-                selectedGroupId === group.id
+              className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedGroupId === group.id
                   ? 'bg-green-100 dark:bg-green-800 border-l-4 border-green-500 shadow-md scale-105 transform transition-all'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               {/* 그룹 선택 영역 */}
-              <div 
+              <div
                 className="flex-1 flex items-center"
                 onClick={() => onGroupSelect(group.id)}
               >
@@ -167,11 +165,10 @@ const KeywordGroups: React.FC<KeywordGroupsProps> = ({
                       {group.name}
                     </span>
                     {group.isDefault && (
-                      <span className={`ml-2 text-xs px-2 py-0.5 rounded ${
-                        selectedGroupId === group.id
+                      <span className={`ml-2 text-xs px-2 py-0.5 rounded ${selectedGroupId === group.id
                           ? 'bg-green-200 dark:bg-green-700 text-green-800 dark:text-green-300'
                           : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                      }`}>
+                        }`}>
                         기본
                       </span>
                     )}

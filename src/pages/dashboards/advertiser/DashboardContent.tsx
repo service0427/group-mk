@@ -412,7 +412,7 @@ export const DashboardContent: React.FC = () => {
         
         // status 필드 관련 오류인 경우 필터링 없이 다시 시도
         if (error.message && error.message.includes("status")) {
-          console.log('status 필드 필터링 실패, 필터링 없이 재시도합니다.');
+          // status 필드 필터링 실패, 필터링 없이 재시도
           
           // status 필터링 없이 다시 시도
           const { data: allData, error: secondError } = await supabase

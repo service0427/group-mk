@@ -4,7 +4,8 @@ import { ICampaign } from './CampaignContent';
 import { updateCampaignStatus } from '../services/campaignService';
 import { formatImageUrl } from '@/utils/CampaignFormat';
 import { toAbsoluteUrl } from '@/utils';
-import { CampaignDetailModal } from '@/components/campaign-modals';
+import { CampaignModal } from '@/components/campaign-modals';
+import { updateCampaign } from '../services/campaignService';
 import {
   Select,
   SelectContent,
@@ -408,7 +409,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <span className={`badge badge-${campaign.status.color} badge-outline rounded-[30px]`}>
+                          <span className={`badge badge-${campaign.status.color} badge-outline rounded-[30px] h-[28px] py-1 inline-flex items-center justify-center`}>
                             <span className={`size-1.5 rounded-full bg-${campaign.status.color} me-1.5`}></span>
                             {campaign.status.label}
                           </span>
@@ -476,14 +477,17 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
         </div>
       </Card>
       
-      {/* 캠페인 상세 모달 - 운영자 모드로 열기 */}
+      {/* 캠페인 상세 모달 - 운영자 모드로 열기 (통합된 CampaignModal 사용) */}
       {selectedCampaign && (
-        <CampaignDetailModal
+        <CampaignModal
           open={detailModalOpen}
           onClose={handleCloseDetail}
           campaign={selectedCampaign}
           onSave={handleCampaignUpdated}
+          isDetailMode={true}
           isOperator={true} // 운영자 모드 활성화
+          updateCampaign={updateCampaign}
+          serviceType={selectedCampaign?.serviceType}
         />
       )}
     </>

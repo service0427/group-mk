@@ -96,25 +96,25 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     // 토큰 유효성 확인 함수 - refreshToken 선언 후 정의
     const checkTokenValidity = useCallback(async (): Promise<boolean> => {
         if (!auth?.access_token) return false;
-        
+
         try {
             // 토큰 디코딩
             const decoded = decodeToken(auth.access_token);
             if (!decoded || !decoded.exp) return false;
-            
+
             const expiryTime = decoded.exp * 1000; // 밀리초로 변환
             const currentTime = Date.now();
-            
+
             // 만료 시간까지 여유가 충분하면 유효성 검사 스킵
             if (expiryTime - currentTime > 15 * 60 * 1000) {
                 return true; // 15분 이상 남았다면 갱신하지 않음
             }
-            
+
             // 이미 만료되었거나 10분 이내에 만료 예정이면 갱신
             if (currentTime >= expiryTime || expiryTime - currentTime < 10 * 60 * 1000) {
                 return await refreshToken();
             }
-            
+
             return true;
         } catch (error) {
             return false;
@@ -129,20 +129,20 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 supabase.auth.getSession(),
                 supabase.auth.getUser()
             ]);
-            
+
             if (sessionResponse.error || !sessionResponse.data.session) {
                 return null;
             }
-            
+
             if (userResponse.error || !userResponse.data.user) {
                 return null;
             }
-            
+
             const user = userResponse.data.user;
-            
+
             // 사용자 메타데이터에서 역할 확인
             const metadataRole = user.user_metadata?.role;
-            
+
             // 초보자 역할 확인 - 초보자인 경우 users 테이블 조회 스킵
             if (metadataRole === USER_ROLES.BEGINNER) {
                 // 초보자는 메타데이터만 사용하여 기본 사용자 정보 생성
@@ -157,7 +157,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 };
                 return beginnerUserData;
             }
-            
+
             // 사용자 프로필 정보 병합 (초보자가 아닌 경우에만 실행)
             try {
                 const { data: userData, error: userError } = await supabase
@@ -165,7 +165,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     .select("*")
                     .eq('id', user.id)
                     .single();
-                
+
                 if (userError) {
                     // 기본 사용자 정보 반환 - 메타데이터 역할 유지
                     const basicUserData: CustomUser = {
@@ -179,7 +179,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     };
                     return basicUserData;
                 }
-                
+
                 return userData as CustomUser;
             } catch (error: any) {
                 // 오류 시 기본 사용자 정보 반환
@@ -194,39 +194,39 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 };
                 return basicUserData;
             }
-            
+
         } catch (error: any) {
             return null;
         }
     }, []);
-    
+
     // 캐싱을 활용한 사용자 정보 조회 함수
     const getUserWithCache = useCallback(async (): Promise<CustomUser | null> => {
         try {
             // 캐시에서 사용자 정보 확인
             const cachedUserStr = sessionStorage.getItem('currentUser');
             const cachedTimeStr = sessionStorage.getItem('lastAuthCheck');
-            
+
             // 캐시가 유효한지 확인 (10분 이내)
             if (cachedUserStr && cachedTimeStr) {
                 const cachedTime = parseInt(cachedTimeStr);
                 const now = Date.now();
-                
+
                 // 10분 이내에 캐시된 데이터라면 바로 반환
                 if (now - cachedTime < 10 * 60 * 1000) {
                     return JSON.parse(cachedUserStr);
                 }
             }
-            
+
             // 캐시가 없거나 유효하지 않으면 새로 요청
             const user = await getUser();
-            
+
             // 새 데이터 캐싱
             if (user) {
                 sessionStorage.setItem('currentUser', JSON.stringify(user));
                 sessionStorage.setItem('lastAuthCheck', Date.now().toString());
             }
-            
+
             return user;
         } catch (error) {
             return getUser(); // 캐싱 로직에 문제가 있으면 기본 요청 수행
@@ -318,31 +318,31 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     // 주기적인 토큰 유효성 검사 및 갱신 - 최적화된 버전
     useEffect(() => {
         if (!auth) return;
-        
+
         // 토큰 만료 시간을 계산하여 타이머 설정
         try {
             const decoded = decodeToken(auth.access_token);
             if (!decoded || !decoded.exp) return;
-            
+
             const expiryTime = decoded.exp * 1000;
             const currentTime = Date.now();
             const timeUntilExpiry = expiryTime - currentTime;
-            
+
             // 만료 10분 전이나 절반 시점 중 더 적은 시간으로 갱신 타이머 설정
             const refreshTime = Math.min(timeUntilExpiry - 10 * 60 * 1000, timeUntilExpiry / 2);
             const refreshInterval = Math.max(refreshTime, 60 * 1000); // 최소 1분
-            
+
             const timerId = setTimeout(() => {
                 checkTokenValidity();
             }, refreshInterval);
-            
+
             return () => clearTimeout(timerId);
         } catch (error) {
             // 오류 발생 시 5분마다 검사 (기존 로직)
             const intervalId = setInterval(() => {
                 checkTokenValidity();
             }, 5 * 60 * 1000);
-            
+
             return () => clearInterval(intervalId);
         }
     }, [auth, checkTokenValidity, decodeToken]);
@@ -662,14 +662,14 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         if (typeof localStorage === 'undefined' || typeof sessionStorage === 'undefined') {
             return;
         }
-        
+
         // 모든 관련 항목 지우기
         const authKeys = [
             'auth',
-            'currentUser', 
+            'currentUser',
             'lastAuthCheck'
         ];
-        
+
         authKeys.forEach(key => {
             try {
                 localStorage.removeItem(key);
@@ -678,10 +678,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 // 무시
             }
         });
-        
+
         // Supabase 관련 항목 정리
         const supabaseKeyPattern = /^(sb-|supabase|auth)/;
-        
+
         try {
             Object.keys(localStorage)
                 .filter(key => supabaseKeyPattern.test(key))
@@ -692,7 +692,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         // 무시
                     }
                 });
-            
+
             Object.keys(sessionStorage)
                 .filter(key => supabaseKeyPattern.test(key))
                 .forEach(key => {
@@ -704,54 +704,58 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 });
         } catch (err) {
             // localStorage/sessionStorage에 접근할 수 없는 경우 오류 무시
-            console.log('스토리지 접근 불가: 서버 환경');
+            // 스토리지 접근 불가: 서버 환경
         }
     }, []);
-    
-    // 개선된 로그아웃 함수: 로그아웃과 페이지 전환 통합
+
+    // 개선된 로그아웃 함수: 로그아웃과 페이지 전환 통합 (404 방지 버전)
     const logout = useCallback(async () => {
         try {
             // 1. 즉시 로그아웃 플래그 설정 - 사용자에게 작업 진행 중임을 표시
             setIsLoggingOut(true);
-            
-            // 2. 애니메이션 차단 및 로그아웃 상태 명확히 표시 (브라우저 환경에서만)
+
+            // 로그아웃 플래그 미리 저장 (중요: 스토리지 정리 전에 먼저 설정)
+            try {
+                localStorage.setItem('auth_redirect', 'login');
+                localStorage.setItem('logout_timestamp', Date.now().toString());
+                sessionStorage.setItem('direct_to_login', 'true');
+                sessionStorage.setItem('logout_complete', 'true');
+            } catch (e) {
+                // 플래그 저장 실패
+            }
+
+            // 2. 로그아웃 상태 설정 (전환 효과 제거 버전)
             if (typeof document !== 'undefined') {
-                document.body.classList.add('is-logging-out');
-                
-                // 로그아웃 중임을 DOM에 명확하게 표시 (애플리케이션 다시 로드 시 감지 용이)
+                // 로그아웃 상태를 확인하기 위한 메타 태그만 추가
                 const logoutMeta = document.createElement('meta');
                 logoutMeta.name = 'app-logout-state';
                 logoutMeta.content = 'in-progress';
                 document.head.appendChild(logoutMeta);
             }
-            
+
             // 3. 인증 데이터 먼저 제거 (백그라운드 작업 전 필수 단계)
             authHelper.removeAuth();
             setAuth(undefined);
             setCurrentUser(null);
-            
+
             // 4. 모든 로그아웃 작업을 한 번에 처리
             setTimeout(async () => {
-                console.log('[Logout] 로그아웃 프로세스 시작');
-                
+
                 // 인증 관련 스토리지 정리
                 clearAuthStorage();
-                console.log('[Logout] 스토리지 정리 완료');
-                
+
                 // Supabase 로그아웃 (실제 로그아웃을 완료하기 위해 await 사용)
                 try {
                     await supabase.auth.signOut();
-                    console.log('[Logout] Supabase 세션 종료 완료');
                 } catch (e) {
-                    console.log('[Logout] Supabase 세션 종료 중 오류');
                 }
-                
+
                 // 페이지 전환을 위한 상태 저장 (브라우저 환경에서만)
                 if (typeof localStorage !== 'undefined') {
                     localStorage.setItem('auth_redirect', 'login');
                     localStorage.setItem('logout_timestamp', Date.now().toString());
                 }
-                
+
                 // 이전 로그인 세션 데이터 완전 제거 (브라우저 환경에서만)
                 if (typeof localStorage !== 'undefined') {
                     Object.keys(localStorage).forEach(key => {
@@ -760,10 +764,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         }
                     });
                 }
-                
+
                 // 항상 새로운 페이지를 로드하도록 타임스탬프 추가
                 const timestamp = Date.now();
-                
+
                 // 쿠키 정리 (브라우저 환경에서만)
                 if (typeof document !== 'undefined') {
                     try {
@@ -778,66 +782,62 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                             }
                         }
                     } catch (e) {
-                        console.log('[Logout] 쿠키 정리 중 오류', e);
+                        // 쿠키 정리 중 오류
                     }
                 }
-                
+
                 // 브라우저 환경에서만 페이지 이동
                 if (typeof window !== 'undefined') {
-                    console.log('[Logout] 페이지 전환 시작');
-                    
+
                     // 세션 스토리지 완전히 비우기
-                    try { sessionStorage.clear(); } catch (e) {}
-                    
-                    // 로그인 페이지 URL 생성 (해시 라우팅 사용)
+                    try { sessionStorage.clear(); } catch (e) { }
+
+                    // 로그인 페이지 URL 생성 - URL 수정 (로그인 페이지 직접 접근)
+                    // 해시 기반 라우팅에서는 #/auth/login 형식이 올바름
                     const baseUrl = window.location.origin;
-                    // 올바른 형식: #auth/login (앞에 슬래시 없음)
-                    const logoutUrl = `${baseUrl}/#auth/login?_=${timestamp}&force=true`;
-                    
-                    // 페이지 새로고침 실행
-                    console.log('[Logout] 페이지 리디렉션: ', logoutUrl);
-                    
+                    const logoutUrl = `${baseUrl}/#/auth/login?_=${timestamp}&force=true`;
+
                     // 새로운 상태를 즉시 반영하기 위해 location.href 대신 replace 사용
                     window.location.replace(logoutUrl);
                 }
             }, 100);  // 지연 시간 축소: 100ms
-            
+
             return true;
         } catch (error) {
             // 오류 발생 시 안전하게 처리
             console.error('로그아웃 실패:', error);
-            
+
             // 필수 정리 작업 수행
             if (typeof document !== 'undefined') {
                 document.body.classList.add('is-logging-out');
             }
-            
+
             clearAuthStorage();
             authHelper.removeAuth();
-            
+
             // 오류 발생 시에도 로그인 페이지로 강제 이동
             setTimeout(() => {
                 const timestamp = Date.now();
-                
-                console.log('[Logout] 오류 발생 후 강제 로그아웃');
-                
+
+                // 오류 발생 후 강제 로그아웃
+
                 // 세션 스토리지 초기화
-                try { 
+                try {
                     if (typeof sessionStorage !== 'undefined') {
-                        sessionStorage.clear(); 
+                        sessionStorage.clear();
                     }
-                } catch (e) {}
-                
+                } catch (e) { }
+
                 if (typeof window !== 'undefined') {
                     const baseUrl = window.location.origin;
-                    // 올바른 형식: #auth/login (앞에 슬래시 없음)
-                    const logoutUrl = `${baseUrl}/#auth/login?_=${timestamp}&force=true&error=1`;
-                    
+                    // 올바른 형식: #/auth/login (앞에 슬래시 포함)
+                    const logoutUrl = `${baseUrl}/#/auth/login?_=${timestamp}&force=true&error=1`;
+
                     // 페이지 새로고침
                     window.location.replace(logoutUrl);
                 }
             }, 100); // 지연 시간 축소: 100ms
-            
+
             return false;
         }
     }, [clearAuthStorage]);
@@ -848,32 +848,32 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const userRole = currentUser?.role ||
         (currentUser?.raw_user_meta_data?.role) ||
         'guest';
-        
+
     // 비활성 시간 기반 자동 로그아웃
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30분 (밀리초)
-    
+
     useEffect(() => {
         if (!isAuthenticated) return;
-        
+
         let inactivityTimer: number;
-        
+
         const resetInactivityTimer = () => {
             if (inactivityTimer) clearTimeout(inactivityTimer);
-            
+
             inactivityTimer = window.setTimeout(() => {
                 logout();
             }, INACTIVITY_TIMEOUT);
         };
-        
+
         // 초기 타이머 설정
         resetInactivityTimer();
-        
+
         // 사용자 활동 이벤트 리스너
         const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
         events.forEach(event => {
             window.addEventListener(event, resetInactivityTimer);
         });
-        
+
         return () => {
             if (inactivityTimer) clearTimeout(inactivityTimer);
             events.forEach(event => {
@@ -881,7 +881,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             });
         };
     }, [isAuthenticated, logout]);
-    
+
     // 역할 정보 관리
     useEffect(() => {
         // currentUser나 userRole이 변경될 때 역할 정보가 자동으로 업데이트됨

@@ -94,7 +94,7 @@ const Login = () => {
     
     // 개발 환경에서는 로그 출력
     if (import.meta.env.MODE === 'development') {
-      console.log('로그인 페이지 진입: localStorage 및 sessionStorage 초기화 완료');
+      // 로그인 페이지 진입: localStorage 및 sessionStorage 초기화 완료
     }
   }, []);
   

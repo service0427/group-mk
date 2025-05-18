@@ -9,8 +9,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { toAbsoluteUrl } from '@/utils';
-import { CampaignDetailModal } from '@/components/campaign-modals';
-import { updateCampaignStatus } from '../services/campaignService';
+import { CampaignModal } from '@/components/campaign-modals';
+import { updateCampaignStatus, updateCampaign } from '../services/campaignService';
 
 // 캠페인 데이터 인터페이스 정의
 export interface ICampaign {
@@ -174,7 +174,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       case 'pending': return 'info';
       case 'completed': return 'primary';
       case 'rejected': return 'danger';
-      case 'waiting_approval': return 'primary'; // 승인 대기중은 primary 색상
+      case 'waiting_approval': return 'warning'; // 승인 대기중은 warning 색상으로 변경
       default: return 'info';
     }
   };
@@ -593,14 +593,11 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
                   <div>
                     <label className="text-xs text-muted-foreground block mb-1">상태</label>
-                    {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 */}
+                    {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
                     {!canChangeStatus(campaign) ? (
-                      <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
+                      <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
                         <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
                         <span>{campaign.status.label}</span>
-                        {campaign.status.label === '승인 대기중' && !isAdmin && (
-                          <span className="ml-1 text-xs text-muted-foreground">(운영자 승인 필요)</span>
-                        )}
                         {campaign.status.label === '반려됨' && !isAdmin && (
                           <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
                         )}
@@ -779,14 +776,11 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
                     <div className="flex flex-col items-center gap-1">
-                      {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 */}
+                      {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
                       {!canChangeStatus(campaign) ? (
-                        <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
+                        <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
                           <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
                           <span>{campaign.status.label}</span>
-                          {campaign.status.label === '승인 대기중' && !isAdmin && (
-                            <span className="ml-1 text-xs text-muted-foreground">(운영자 승인 필요)</span>
-                          )}
                           {campaign.status.label === '반려됨' && !isAdmin && (
                             <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
                           )}
@@ -874,13 +868,16 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     </div>
     
 
-    {/* 캠페인 상세 정보 모달 */}
-    <CampaignDetailModal
+    {/* 캠페인 상세 정보 모달 (통합된 CampaignModal 사용) */}
+    <CampaignModal
       open={detailModalOpen}
       onClose={() => setDetailModalOpen(false)}
       campaign={selectedCampaign}
       onSave={handleSaveCampaign}
+      isDetailMode={true}
       isOperator={isOperator} // 부모 컴포넌트에서 전달받은 운영자 모드 여부 전달
+      updateCampaign={updateCampaign} // 캠페인 업데이트 서비스 함수 전달
+      serviceType={selectedCampaign?.serviceType || (selectedCampaign?.originalData?.service_type || '')}
     />
     </>
   );

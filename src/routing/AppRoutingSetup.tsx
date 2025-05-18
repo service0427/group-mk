@@ -142,13 +142,13 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/campaign-request/add" element={<CampaignAddPage />} />
 
           {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
-          
+
           {/* 기존 경로는 그대로 사용 (더 이상 리다이렉트 불필요) */}
           {/* 모든 경로는 :serviceType 패턴 매칭을 통해 CampaignPage 컴포넌트로 라우팅됨 */}
-          
+
           {/* 서비스 타입별 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/admin/campaigns/:serviceType" element={<Campaigns.CampaignPage />} />
-          
+
           {/* 캠페인 페이지 기본 경로 - 쿼리 파라미터 사용 (예: ?service_type=ntraffic) */}
           <Route path="/admin/campaigns" element={<Campaigns.CampaignPage />} />
 

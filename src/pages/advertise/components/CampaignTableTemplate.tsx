@@ -19,6 +19,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { CampaignModal } from '@/components/campaign-modals';
 
 interface ICampaignData {
   id: string;
@@ -68,6 +69,8 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
   const menuItem = useMenuCurrentItem(pathname, menuConfig);
   const breadcrumbs = useMenuBreadcrumbs(pathname, menuConfig);
   const [searchInput, setSearchInput] = useState('');
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<ICampaignData | null>(null);
 
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
@@ -245,7 +248,13 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
         cell: ({ row }) => {
           return (
             <div className="flex justify-center gap-2">
-              <button className="btn btn-sm btn-primary">
+              <button 
+                className="btn btn-sm btn-primary"
+                onClick={() => {
+                  setSelectedCampaign(row.original);
+                  setDetailModalOpen(true);
+                }}
+              >
                 신청하기
               </button>
             </div>
@@ -332,6 +341,29 @@ const CampaignTableTemplate: React.FC<CampaignTableTemplateProps> = ({
           <AdMiscFaq />
         </div>
       </Container>
+
+      {/* 캠페인 상세 모달 */}
+      {selectedCampaign && (
+        <CampaignModal
+          open={detailModalOpen}
+          onClose={() => setDetailModalOpen(false)}
+          serviceType={
+            pathname.includes('naver/shopping') ? 'NaverShopTraffic' :
+            pathname.includes('naver/place/save') ? 'NaverPlaceSave' :
+            pathname.includes('naver/place/share') ? 'NaverPlaceShare' :
+            pathname.includes('naver/place') ? 'NaverPlaceTraffic' :
+            pathname.includes('naver/auto') ? 'NaverAuto' :
+            pathname.includes('naver/traffic') ? 'ntraffic' :
+            pathname.includes('coupang') ? 'CoupangTraffic' : 'ntraffic'
+          }
+          onSave={(newCampaign) => {
+            // 캠페인이 성공적으로 생성되면 모달 닫기
+            setDetailModalOpen(false);
+            // 성공 메시지
+            alert(`${newCampaign.campaignName} 캠페인이 신청되었습니다.`);
+          }}
+        />
+      )}
     </Fragment>
   );
 };

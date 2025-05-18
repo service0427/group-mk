@@ -56,10 +56,12 @@ const CampaignPage: React.FC = () => {
 
       // N 플레이스 저장 관련
       'nplacesave': 'nplace-save',
+      'nplace-save': 'nplace-save',
       'naver-place-save': 'nplace-save',
 
       // N 플레이스 공유 관련
       'nplaceshare': 'nplace-share',
+      'nplace-share': 'nplace-share',
       'naver-place-share': 'nplace-share',
 
       // 쿠팡 관련
@@ -83,25 +85,47 @@ const CampaignPage: React.FC = () => {
 
     // 서비스 타입별 제목 매핑
     const titleMap: Record<string, string> = {
+      // 네이버 트래픽
       'ntraffic': 'N 트래픽 캠페인 관리',
       'naver-traffic': 'N 트래픽 캠페인 관리',
       'navertraffic': 'N 트래픽 캠페인 관리',
-      'nfakesale': 'N 자동완성 캠페인 관리',
-      'naver-fakesale': 'N 자동완성 캠페인 관리',
+
+      // 네이버 자동완성
       'naver-auto': 'N 자동완성 캠페인 관리',
+      'nauto': 'N 자동완성 캠페인 관리',
+
+      // 네이버 블로그
       'nblog': 'N 블로그 캠페인 관리',
       'naver-blog': 'N 블로그 캠페인 관리',
-      'nweb': 'N 웹 캠페인 관리',
-      'naver-web': 'N 웹 캠페인 관리',
+
+      // 네이버 쇼핑
+      'nshopping': 'N 쇼핑 트래픽 캠페인 관리',
+      'naver-shopping': 'N 쇼핑 트래픽 캠페인 관리',
+      'naver-shopping-traffic': 'N 쇼핑 트래픽 캠페인 관리',
+
+      // 네이버 플레이스
       'nplace': 'N 플레이스 캠페인 관리',
       'naver-place': 'N 플레이스 캠페인 관리',
       'naver-place-traffic': 'N 플레이스 트래픽 캠페인 관리',
-      'naver-place-save': 'N 플레이스 저장 캠페인 관리',
-      'naver-place-share': 'N 플레이스 공유 캠페인 관리',
-      'ncafe': 'N 카페 캠페인 관리',
-      'naver-cafe': 'N 카페 캠페인 관리',
+      'naver-place-save': 'N 플레이스 저장하기 캠페인 관리',
+      'nplace-save': 'N 플레이스 저장하기 캠페인 관리',
+      'naver-place-share': 'N 플레이스 블로그공유 캠페인 관리',
+      'nplace-share': 'N 플레이스 블로그공유 캠페인 관리',
+
+      // 쿠팡
       'coupangtraffic': '쿠팡 트래픽 캠페인 관리',
       'coupang': '쿠팡 트래픽 캠페인 관리',
+      'coupang-traffic': '쿠팡 트래픽 캠페인 관리',
+
+      // 미사용 영역역
+
+      // 네이버 쇼핑 가구매
+      'nfakesale': 'NS 가구매 캠페인 관리',
+      'naver-shopping-fakesale': 'NS 가구매 캠페인 관리',
+
+      // 네이버 카페
+      'ncafe': 'N 카페 캠페인 관리',
+      'naver-cafe': 'N 카페 캠페인 관리',
     };
 
     // 매핑된 제목이 있으면 반환, 없으면 기본 제목 반환

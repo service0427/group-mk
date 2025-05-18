@@ -243,6 +243,7 @@ export const getStatusColor = (status: string): string => {
     case 'pending': return 'info';
     case 'completed': return 'primary';
     case 'rejected': return 'danger';
+    case 'waiting_approval': return 'warning'; // 승인 대기중은 warning 색상으로 변경
     default: return 'info';
   }
 };
@@ -431,24 +432,58 @@ export const getServiceTypeCode = (uiCode: string): string => {
   
   // UI 코드와 DB 코드 매핑 객체
   const codeMap: Record<string, string> = {
+    // 네이버 트래픽
     'ntraffic': 'ntraffic',
     'naver-traffic': 'ntraffic',
     'navertraffic': 'ntraffic',
+    
+    // 네이버 자동완성
+    'naver-auto': 'nfakesale',
+    'nauto': 'nfakesale',
     'naver-fakesale': 'nfakesale',
     'naverfakesale': 'nfakesale',
+    'nfakesale': 'nfakesale',
+    
+    // 네이버 블로그
+    'nblog': 'nblog',
     'naver-blog': 'nblog',
     'naverblog': 'nblog',
+    
+    // 네이버 웹
+    'nweb': 'nweb',
     'naver-web': 'nweb',
     'naverweb': 'nweb',
+    
+    // 네이버 쇼핑
+    'nshopping': 'nshopping',
+    'naver-shopping': 'nshopping',
+    'naver-shopping-traffic': 'nshopping',
+    
+    // 네이버 플레이스
+    'nplace': 'nplace',
     'naver-place': 'nplace',
     'naverplace': 'nplace',
-    'naver-place-traffic': 'nplace',
+    'naver-place-traffic': 'nplace-traffic',
+    
+    // 네이버 플레이스 저장
+    'nplace-save': 'nplace-save',
     'naver-place-save': 'nplace-save',
+    'nplacesave': 'nplace-save',
+    
+    // 네이버 플레이스 공유
+    'nplace-share': 'nplace-share',
     'naver-place-share': 'nplace-share',
+    'nplaceshare': 'nplace-share',
+    
+    // 네이버 카페
+    'ncafe': 'ncafe',
     'naver-cafe': 'ncafe',
     'navercafe': 'ncafe',
+    
+    // 쿠팡
     'coupang': 'CoupangTraffic',
     'coupang-traffic': 'CoupangTraffic',
+    'coupangtraffic': 'CoupangTraffic',
   };
   
   // 매핑된 값 확인

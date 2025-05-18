@@ -24,6 +24,38 @@
   ],
   "routes": [
     {
+      "src": "/auth/login",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/auth/signup",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/auth/reset-password",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/auth/verification",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/auth/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/error/404",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/error/500",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/error/*",
+      "dest": "/index.html"
+    },
+    {
       "src": "/advertise/ntraffic/desc",
       "dest": "/index.html"
     },
@@ -33,6 +65,54 @@
     },
     {
       "src": "/admin/campaigns/ntraffic",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/advertise/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/admin/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/keyword*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/myinfo/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/cash/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/point/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/notice/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/faq*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/withdraw*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/campaign-request*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/dashboard/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/",
       "dest": "/index.html"
     },
     {

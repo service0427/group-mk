@@ -1,8 +1,10 @@
 import clsx from 'clsx';
 import { useFormik } from 'formik';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
+// lodash의 debounce 함수만 import
+import debounce from 'lodash/debounce';
 
 import { useAuthContext } from '../../useAuthContext';
 import { toAbsoluteUrl } from '@/utils';
@@ -35,13 +37,16 @@ const signupSchema = Yup.object().shape({
 
 const Signup = () => {
   const [loading, setLoading] = useState(false);
-  const { register } = useAuthContext();
+  const { register, checkEmailExists } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { currentLayout } = useLayout();
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isEmailTaken, setIsEmailTaken] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState(false);
 
   const formik = useFormik({
     initialValues,
@@ -51,6 +56,15 @@ const Signup = () => {
       try {
         if (!register) {
           throw new Error('인증 제공자가 초기화되지 않았습니다.');
+        }
+
+        // 데이터베이스 함수를 통한 이메일 중복 체크
+        const emailExists = await checkEmailExists(values.email);
+        if (emailExists) {
+          setStatus('이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.');
+          setSubmitting(false);
+          setLoading(false);
+          return;
         }
 
         // 이메일 주소에서 앞부분(사용자 이름)을 추출
@@ -66,7 +80,6 @@ const Signup = () => {
           state: { registeredEmail: values.email }
         });
       } catch (error) {
-        
         setStatus('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');
         setSubmitting(false);
         setLoading(false);
@@ -83,6 +96,40 @@ const Signup = () => {
     event.preventDefault();
     setShowConfirmPassword(!showConfirmPassword);
   };
+  
+  // 이메일 중복 체크 함수
+  const checkEmail = useCallback(
+    debounce(async (email: string) => {
+      // 빈 이메일이거나 유효하지 않은 형식이면 체크하지 않음
+      if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        setIsEmailValid(false);
+        setIsEmailTaken(false);
+        return;
+      }
+      setIsEmailValid(true);
+      
+      try {
+        setIsCheckingEmail(true);
+        const exists = await checkEmailExists(email);
+        setIsEmailTaken(exists);
+      } catch (error) {
+        console.error('이메일 중복 체크 중 오류 발생:', error);
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    }, 500),
+    [checkEmailExists]
+  );
+
+  // 이메일 입력 값이 변경될 때마다 중복 체크 실행
+  useEffect(() => {
+    if (formik.values.email) {
+      checkEmail(formik.values.email);
+    } else {
+      setIsEmailValid(false);
+      setIsEmailTaken(false);
+    }
+  }, [formik.values.email, checkEmail]);
 
   return (
     <div className="card max-w-[450px] w-full">
@@ -110,18 +157,46 @@ const Signup = () => {
 
         <div className="flex flex-col gap-2">
           <label className="form-label font-normal text-gray-900">이메일</label>
-          <input
-            className={clsx('input py-3', {
-              'is-invalid': formik.touched.email && formik.errors.email
-            })}
-            placeholder="example@email.com"
-            type="email"
-            autoComplete="off"
-            {...formik.getFieldProps('email')}
-          />
+          <div className="relative">
+            <input
+              className={clsx('input py-3 pr-10', {
+                'is-invalid': (formik.touched.email && formik.errors.email) || isEmailTaken,
+                'is-valid': isEmailValid && !isEmailTaken && formik.values.email && !formik.errors.email
+              })}
+              placeholder="example@email.com"
+              type="email"
+              autoComplete="off"
+              {...formik.getFieldProps('email')}
+            />
+            {isCheckingEmail && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+              </div>
+            )}
+            {!isCheckingEmail && isEmailValid && !isEmailTaken && formik.values.email && !formik.errors.email && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-success">
+                <KeenIcon icon="check" className="w-5 h-5" />
+              </div>
+            )}
+            {!isCheckingEmail && isEmailTaken && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-danger">
+                <KeenIcon icon="cross" className="w-5 h-5" />
+              </div>
+            )}
+          </div>
           {formik.touched.email && formik.errors.email && (
             <span role="alert" className="text-danger text-xs mt-1">
               {String(formik.errors.email)}
+            </span>
+          )}
+          {isEmailTaken && !formik.errors.email && (
+            <span role="alert" className="text-danger text-xs mt-1">
+              이미 사용 중인 이메일입니다.
+            </span>
+          )}
+          {isEmailValid && !isEmailTaken && formik.values.email && !formik.errors.email && (
+            <span role="alert" className="text-success text-xs mt-1">
+              사용 가능한 이메일입니다.
             </span>
           )}
         </div>
@@ -186,7 +261,7 @@ const Signup = () => {
         <button
           type="submit"
           className="btn btn-primary flex justify-center grow py-3 text-base"
-          disabled={loading || formik.isSubmitting}
+          disabled={loading || formik.isSubmitting || isEmailTaken || isCheckingEmail || !formik.isValid}
         >
           {loading ? '처리 중...' : '회원가입'}
         </button>

@@ -40,8 +40,6 @@ const RoleBasedDashboard: React.FC = () => {
     );
   }
 
-  console.log(userRole);
-
   // 역할에 따른 대시보드 콘텐츠 렌더링
   switch (userRole) {
     case USER_ROLES.DEVELOPER:
@@ -57,8 +55,7 @@ const RoleBasedDashboard: React.FC = () => {
     case USER_ROLES.BEGINNER:
       return <BeginnerDashboardContent />;
     default:
-      // 기본값도 advertiser로 변경
-      return <AdvertiserDashboardContent />;
+      return <BeginnerDashboardContent />;
   }
 };
 

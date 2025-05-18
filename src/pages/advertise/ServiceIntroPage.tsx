@@ -14,6 +14,21 @@ const ServiceIntroPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 첫 번째 useEffect는 구형 URL에서 신규 URL로 리다이렉트
+  useEffect(() => {
+    // 구형 URL 구조에서 신규 URL 구조로 리다이렉트
+    if (platform && type) {
+      // 새로운 URL 구조로 리다이렉트
+      const newPath = subservice 
+        ? `/advertise/campaigns/info/${platform}-${subservice}-${type}`
+        : `/advertise/campaigns/info/${platform}-${type}`;
+      
+      navigate(newPath, { replace: true });
+      return;
+    }
+  }, [platform, subservice, type, navigate]);
+
+  // 두 번째 useEffect는 데이터 로딩 처리
   useEffect(() => {
     if (!platform || !type) {
       setError('필수 파라미터가 없습니다.');
@@ -33,19 +48,18 @@ const ServiceIntroPage: React.FC = () => {
       setServiceData(data);
       setLoading(false);
     } catch (err) {
-      // TODO: 오류시 경우 파라미터를 직접하여 변경할 것      
-
       setError('서비스 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }
   }, [platform, subservice, type]);
 
-  // 캠페인 페이지 경로 생성
+  // 캠페인 페이지 경로 생성 - 새로운 URL 구조 적용
   const getCampaignPath = (): string => {
+    // 새로운 URL 구조로 변환
     if (subservice) {
-      return `/advertise/${platform}/${subservice}/${type}/campaign`;
+      return `/advertise/campaigns/my/${platform}-${subservice}-${type}`;
     }
-    return `/advertise/${platform}/${type}/campaign`;
+    return `/advertise/campaigns/my/${platform}-${type}`;
   };
 
   if (loading) {

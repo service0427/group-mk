@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,10 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
-import { getStatusLabel, getStatusColor } from './types';
+import { Link, useLocation } from 'react-router-dom';
+import { getStatusLabel, getStatusColor, CampaignServiceType, SERVICE_TYPE_LABELS } from './types';
+import { getStatusColorClass } from '@/utils/CampaignFormat';
+import { resolveServiceType } from '@/utils/serviceTypeResolver';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -53,7 +55,12 @@ interface CampaignSlotWithKeywordModalProps {
   category: string | null;
   campaign?: any | null;
   onSave?: (data: CampaignSlotData) => void;
-  serviceCode?: string; // 서비스 코드 (NaverShopTraffic, BlogPosting 등)
+  serviceCode?: string | CampaignServiceType; // 서비스 코드 (NAVER_SHOPPING_TRAFFIC, NAVER_AUTO 등)
+  initialCampaignId?: number; // 구매하기 버튼을 통해 특정 캠페인을 선택한 경우 해당 ID
+  sourcePageInfo?: {
+    page: string;     // 어떤 페이지에서 열렸는지 (예: 'campaignInfo', 'myService' 등)
+    buttonType: string; // 어떤 버튼으로 열렸는지 (예: 'buy', 'add', 'manage' 등)
+  };
 }
 
 // 키워드 상세 정보 인터페이스
@@ -104,7 +111,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   category,
   campaign,
   onSave,
-  serviceCode = 'NaverShopTraffic' // 기본값 설정
+  serviceCode = CampaignServiceType.NAVER_SHOPPING_TRAFFIC, // 기본값 설정
+  initialCampaignId,
+  sourcePageInfo
 }) => {
   const [slotData, setSlotData] = useState<CampaignSlotData>({
     productName: '',
@@ -191,38 +200,74 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
-  // 모달이 열릴 때 캠페인 목록 가져오기
+  // 현재 위치 정보 가져오기
+  const location = useLocation();
+
+  // 서비스 타입 값을 다양한 소스에서 체계적으로 추출 - 최적화를 위해 의존성을 명확히 함
+  const finalServiceCode = useMemo(() => {
+    try {
+      // URL 내에 naver-shopping-traffic이 포함되어 있으면 직접 반환 (최적화)
+      if (location.pathname.includes('naver-shopping-traffic')) {
+        return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+      }
+      
+      return resolveServiceType({
+        campaign,
+        serviceCode,
+        pathname: location.pathname,
+        category
+      });
+    } catch (e) {
+      // 오류 발생 시 기본값 사용
+      return CampaignServiceType.NAVER_TRAFFIC;
+    }
+  }, [campaign, serviceCode, location.pathname, category]);
+
+  // 모달이 열릴 때만 한 번 데이터 로드 (모든 데이터를 한 번에 로드)
   useEffect(() => {
     if (open) {
-      fetchCampaigns();
-      fetchKeywordGroups();
+      fetchCampaigns(); // 캠페인 목록 조회
+      fetchKeywordGroups(); // 키워드 그룹 조회
       fetchUserBalance(); // 사용자 잔액 가져오기
     }
-  }, [open, serviceCode, category]); // serviceCode와 category 변경 시 캠페인 목록 갱신
+  }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
-  // 캠페인 배너 가져오기 함수
+  // 캠페인 로고 또는 아이콘 가져오기 함수
   const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
     if (!campaign) return;
 
     try {
-      // add_info에서 배너 URL 가져오기
-      let bannerUrl = null;
+      // add_info에서 로고 URL 또는 배너 URL 가져오기
+      let logoUrl = null;
       if (campaign.add_info) {
         if (typeof campaign.add_info === 'string') {
           try {
             const addInfo = JSON.parse(campaign.add_info);
-            bannerUrl = addInfo.banner_url || null;
+            // 로고 URL을 우선으로, 없으면 배너 URL 사용
+            logoUrl = addInfo.logo_url || addInfo.banner_url || null;
           } catch (e) {
             // JSON 파싱 오류 무시
           }
         } else {
-          bannerUrl = campaign.add_info.banner_url || null;
+          // 로고 URL을 우선으로, 없으면 배너 URL 사용
+          logoUrl = campaign.add_info.logo_url || campaign.add_info.banner_url || null;
         }
       }
 
-      setBannerUrl(bannerUrl);
+      // 로고 URL이 없으면 campaign.logo 필드 확인
+      if (!logoUrl && campaign.logo) {
+        // campaign.logo가 animal 이름인 경우
+        if (!campaign.logo.includes('/')) {
+          logoUrl = `/media/animal/svg/${campaign.logo}.svg`;
+        } else {
+          logoUrl = campaign.logo;
+        }
+      }
+
+      setBannerUrl(logoUrl);
     } catch (err) {
-      // 배너 불러오기 오류 무시
+      // 로고 불러오기 오류 무시
+      setBannerUrl(null);
     }
   };
 
@@ -230,30 +275,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     try {
       setLoading(true);
 
-      // 서비스 코드 맵핑
-      const serviceTypeMap: Record<string, string> = {
-        'NaverShopTraffic': 'ntraffic',
-        'NaverBlogPosting': 'nblog',
-        'NaverCafePosting': 'ncafe',
-        'KakaoStory': 'kstory',
-        'Instagram': 'instagram',
-        // 추가 서비스 코드 매핑 필요 시 여기에 추가
-      };
-
-      // 서비스 코드를 DB service_type으로 변환 (없으면 기본값 ntraffic 사용)
-      const serviceType = serviceTypeMap[serviceCode] || 'ntraffic';
+      // DB 쿼리를 위한 서비스 타입 변환 - finalServiceCode 기반
+      const dbServiceType = finalServiceCode;
 
       // Supabase 쿼리 준비
       let query = supabase
         .from('campaigns')
         .select('*, mat_id, add_info') // mat_id와 add_info 필드도 가져오기
-        .neq('status', 'pause')
+        .eq('status', 'active') // 항상 active 상태인 캠페인만 가져오기
         .order('id', { ascending: true });
 
-      // 카테고리나 서비스 타입이 있을 경우 필터 추가
-      if (serviceType) {
-        query = query.eq('service_type', serviceType);
-      }
+      // 서비스 타입으로 필터 추가 - 문자열로 변환하여 저장
+      query = query.eq('service_type', String(dbServiceType));
 
       // 쿼리 실행
       const { data, error } = await query;
@@ -265,16 +298,48 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       if (data && data.length > 0) {
         setCampaigns(data);
 
-        // 첫 번째 캠페인을 기본값으로 설정하고 배너 정보 가져오기
-        setSelectedCampaignId(data[0].id);
+        // initialCampaignId가 있으면 해당 캠페인을 찾아 선택
+        let selectedCampaign = null;
+
+        if (initialCampaignId || campaign?.campaign_name) {
+          // 1. ID로 먼저 매칭 시도
+          if (initialCampaignId !== undefined && initialCampaignId !== null && initialCampaignId !== 0) {
+            // ID 비교 시 Number 형변환으로 안전하게 비교
+            selectedCampaign = data.find(c => Number(c.id) === Number(initialCampaignId));
+          }
+
+          // 2. ID로 매칭 실패 시 캠페인 이름으로 매칭 시도
+          if (!selectedCampaign && campaign?.campaign_name) {
+            // 캠페인 이름이 정확히 일치하는 케이스 먼저 찾기
+            selectedCampaign = data.find(c =>
+              c.campaign_name.toLowerCase() === campaign.campaign_name.toLowerCase()
+            );
+
+            // 여전히 찾지 못했을 경우, 부분 매칭 시도 (이름에 포함된 경우)
+            if (!selectedCampaign) {
+              selectedCampaign = data.find(c =>
+                c.campaign_name.toLowerCase().includes(campaign.campaign_name.toLowerCase()) ||
+                campaign.campaign_name.toLowerCase().includes(c.campaign_name.toLowerCase())
+              );
+            }
+          }
+        }
+
+        // 특정 캠페인이 지정되지 않았거나 찾지 못한 경우 첫 번째 캠페인 선택
+        if (!selectedCampaign) {
+          selectedCampaign = data[0];
+        }
+
+        // 선택된 캠페인 ID 설정
+        setSelectedCampaignId(selectedCampaign.id);
 
         // 배너 정보 가져오기
-        fetchCampaignBanner(data[0]);
+        fetchCampaignBanner(selectedCampaign);
 
         // 슬롯 데이터에도 캠페인 ID 추가
         setSlotData(prev => ({
           ...prev,
-          campaignId: data[0].id
+          campaignId: selectedCampaign.id
         }));
       } else {
         // 사용자에게 캠페인이 없다는 메시지 표시
@@ -377,7 +442,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             }
           });
         }
-        
+
         // input_data.keyword_id도 확인 (단일 키워드 ID)
         if (slot.input_data && slot.input_data.keyword_id) {
           registeredKeywordIds.add(Number(slot.input_data.keyword_id));
@@ -451,7 +516,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 등록된 키워드 번호 배열 만들기 (숫자 타입으로 변환)
       const registeredIds = registeredKeywordIds.map(id => Number(id));
-      
+
       // 스네이크 케이스에서 카멜 케이스로 데이터 변환
       const transformedData = data
         // 이미 등록된 키워드 필터링 (숫자 타입으로 비교)
@@ -494,17 +559,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       setKeywords(transformedData);
-      
+
       // 선택된 키워드들 중 유효하지 않은 항목(이미 등록된 키워드)이 있는지 확인
       if (selectedKeywords.length > 0) {
         const validSelectedKeywords = selectedKeywords.filter(keywordId =>
           transformedData.some(k => k.id === keywordId)
         );
-        
+
         // 유효하지 않은 키워드가 있으면 선택 목록에서 제거
         if (validSelectedKeywords.length !== selectedKeywords.length) {
           setSelectedKeywords(validSelectedKeywords);
-          
+
           // 금액 재계산
           setTimeout(() => calculateTotalPayment(validSelectedKeywords), 0);
         }
@@ -561,17 +626,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 마감일에 따른 일수 계산 함수
   const calculateDaysUntilDueDate = (dueDate: string): number => {
     if (!dueDate) return 1; // 마감일이 없으면 기본값 1일
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0); // 오늘 날짜의 시작 시간으로 설정
-    
+
     const dueDateObj = new Date(dueDate);
     dueDateObj.setHours(0, 0, 0, 0); // 마감일의 시작 시간으로 설정
-    
+
     // 일수 차이 계산 (밀리초 단위를 일 단위로 변환)
     const differenceInTime = dueDateObj.getTime() - today.getTime();
     const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
-    
+
     // 최소 1일 보장 (마감일이 오늘이거나 이미 지났더라도)
     return Math.max(1, differenceInDays);
   };
@@ -620,7 +685,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
         // 마감일에 따른 추가 계산
         const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
-        
+
         // 기존 공식 * 진행일자 (daysUntilDue)
         const keywordTotal = unitPrice * workCount * daysUntilDue;
         total += keywordTotal;
@@ -711,7 +776,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
       return false;
     }
-    
+
     return true;
   };
 
@@ -736,17 +801,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         <DialogContent className="w-[95vw] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <DialogTitle className="text-lg font-semibold text-foreground">
-              {serviceCode === 'NaverShopTraffic'
-                ? '네이버 쇼핑 트래픽 슬롯 관리'
-                : serviceCode === 'NaverBlogPosting'
-                  ? '네이버 블로그 포스팅 슬롯 관리'
-                  : serviceCode === 'NaverCafePosting'
-                    ? '네이버 카페 포스팅 슬롯 관리'
-                    : serviceCode === 'KakaoStory'
-                      ? '카카오스토리 슬롯 관리'
-                      : serviceCode === 'Instagram'
-                        ? '인스타그램 슬롯 관리'
-                        : '캠페인 슬롯 관리'}
+              {typeof serviceCode === 'string'
+                ? '캠페인 슬롯 관리' // 문자열이면 기본 타이틀 표시
+                : SERVICE_TYPE_LABELS[serviceCode] + ' 슬롯 관리' // enum 값 사용
+              }
             </DialogTitle>
             <DialogHeaderSpacer />
             <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
@@ -772,6 +830,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       <select
                         id="campaign-select"
                         value={selectedCampaignId || ''}
+                        onChange={(e) => {
+                          const campId = Number(e.target.value);
+                          setSelectedCampaignId(campId);
+                          // 캠페인 변경 시 슬롯 데이터 업데이트
+                          setSlotData(prev => ({
+                            ...prev,
+                            campaignId: campId
+                          }));
+                          // 배너 정보 가져오기
+                          const selected = campaigns.find(c => c.id === campId);
+                          if (selected) {
+                            fetchCampaignBanner(selected);
+                          }
+                        }}
                         className="select flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 px-3 py-2"
                       >
                         {campaigns.map((camp) => (
@@ -784,67 +856,69 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       <div className="text-sm text-muted-foreground">사용 가능한 캠페인이 없습니다.</div>
                     )}
                   </div>
-                  
+
                   {/* 선택된 캠페인 정보 - 고정 높이 유지 */}
                   <div className="w-full md:w-2/3 min-h-[110px] sm:min-h-[130px] bg-white rounded-lg border border-border shadow-sm p-2 sm:p-3">
                     {selectedCampaign ? (
                       <div className="flex gap-4">
-                        <div className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] shrink-0 relative rounded-md overflow-hidden">
-                          {bannerUrl ? (
-                            <>
-                              <div className="absolute inset-0">
-                                <img
-                                  src={bannerUrl}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                  style={{ filter: 'blur(4px) brightness(0.9)', transform: 'scale(1.1)' }}
-                                />
-                                <div className="absolute inset-0 bg-black/20"></div>
-                              </div>
-                              <div className="relative z-10 flex justify-center items-center h-full">
-                                <img
-                                  src={bannerUrl}
-                                  alt="캠페인 배너"
-                                  className="object-contain max-h-[60px] max-w-[60px] sm:max-h-[80px] sm:max-w-[80px] shadow-sm rounded"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    const parentDiv = e.currentTarget.parentElement;
-                                    if (parentDiv) {
-                                      parentDiv.innerHTML = `
-                                        <div class="size-10 rounded-full bg-white/30 flex items-center justify-center">
-                                          <img src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}" 
-                                          alt="캠페인 로고" class="h-8 w-auto" />
-                                        </div>
-                                      `;
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-blue-500/20 flex items-center justify-center">
-                              <div className="size-10 rounded-full bg-white/30 flex items-center justify-center">
-                                <img
-                                  src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
-                                  alt="캠페인 로고"
-                                  className="h-8 w-auto"
-                                />
-                              </div>
-                            </div>
+                        <div className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] shrink-0 rounded-md overflow-hidden flex items-center justify-center bg-gray-50">
+                          {/* 동물 아이콘 사용 */}
+                          {selectedCampaign.campaign_name && (
+                            <img
+                              src={bannerUrl ? toAbsoluteUrl(bannerUrl) : toAbsoluteUrl('/media/animal/svg/lion.svg')}
+                              alt="캠페인 로고"
+                              className="size-[60px] sm:size-[70px] object-contain"
+                              onError={(e) => {
+                                // 로고 로드 실패 시 기본 동물 아이콘으로 대체
+                                // 캠페인 이름에서 동물 이름 추출 시도
+                                const name = selectedCampaign.campaign_name.toLowerCase();
+                                let animalIcon = 'lion';
+
+                                const animals = [
+                                  'bear', 'cat', 'cow', 'dog', 'dolphin', 'elephant', 'flamingo',
+                                  'giraffe', 'horse', 'kangaroo', 'koala', 'lion', 'owl', 'penguin'
+                                ];
+
+                                for (const animal of animals) {
+                                  if (name.includes(animal)) {
+                                    animalIcon = animal;
+                                    break;
+                                  }
+                                }
+
+                                // 한글 동물 이름 체크
+                                if (name.includes('곰')) animalIcon = 'bear';
+                                if (name.includes('고양이')) animalIcon = 'cat';
+                                if (name.includes('소')) animalIcon = 'cow';
+                                if (name.includes('개')) animalIcon = 'dog';
+                                if (name.includes('돌고래')) animalIcon = 'dolphin';
+                                if (name.includes('코끼리')) animalIcon = 'elephant';
+                                if (name.includes('플라밍고')) animalIcon = 'flamingo';
+                                if (name.includes('기린')) animalIcon = 'giraffe';
+                                if (name.includes('말')) animalIcon = 'horse';
+                                if (name.includes('캥거루')) animalIcon = 'kangaroo';
+                                if (name.includes('코알라')) animalIcon = 'koala';
+                                if (name.includes('사자')) animalIcon = 'lion';
+                                if (name.includes('올빼미')) animalIcon = 'owl';
+                                if (name.includes('펭귄')) animalIcon = 'penguin';
+
+                                (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalIcon}.svg`);
+                              }}
+                            />
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline justify-between mb-2">
+                          <div className="flex items-center justify-between mb-2">
                             <h2 className="text-lg font-bold text-foreground truncate">
                               {selectedCampaign.campaign_name}
                             </h2>
-                            <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-sm`}>
-                              <span className={`size-1.5 rounded-full me-1`}></span>
+                            <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-1`}>
+                              <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1.5`}></span>
                               {getStatusLabel(selectedCampaign.status)}
                             </span>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
                             <div className="flex items-center gap-1.5 text-sm">
                               <KeenIcon icon="wallet" className="text-primary size-4" />
@@ -853,14 +927,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                 {selectedCampaign.unit_price ? `${selectedCampaign.unit_price}원` : '1,000원'}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center gap-1.5 text-sm">
                               <KeenIcon icon="timer" className="text-blue-500 size-4" />
                               <span className="text-muted-foreground">마감:</span>
                               <span className="font-bold">{selectedCampaign.deadline}</span>
                             </div>
                           </div>
-                          
+
                           <div className="text-sm">
                             <div className="bg-blue-50/50 p-2 rounded border border-blue-100/50 text-gray-700 line-clamp-2">
                               {selectedCampaign.description || '설명이 없습니다.'}
@@ -887,7 +961,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       <KeenIcon icon="search" className="text-blue-600 size-5" />
                       <h3 className="text-base font-medium text-foreground">키워드 관리</h3>
                     </div>
-                    
+
                     {/* 그룹 선택 */}
                     <div className="flex-1 min-w-[180px]">
                       <div className="flex items-center gap-2">
@@ -1069,7 +1143,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       type="date"
                                       value={keyword.dueDate || getTomorrowDate()}
                                       onChange={(e) => handleDueDateChange(keyword.id, e.target.value)}
-                                      className="w-full px-0 sm:px-2 py-0.5 sm:py-1.5 text-[9px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium" 
+                                      className="w-full px-0 sm:px-2 py-0.5 sm:py-1.5 text-[9px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
                                       style={{ minWidth: '60px' }}
                                       onClick={e => e.stopPropagation()}
                                     />

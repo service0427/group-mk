@@ -172,7 +172,47 @@ export const useServiceCategory = (pathname: string) => {
   const [serviceCategory, setServiceCategory] = useState<string>('');
   
   useEffect(() => {
-    // URL 기반으로 서비스 카테고리 결정
+    // 새로운 URL 형식 처리 (/advertise/campaigns/info/:serviceType 또는 /advertise/campaigns/my/:serviceType)
+    if (pathname.includes('/advertise/campaigns/') && (pathname.includes('/info/') || pathname.includes('/my/'))) {
+      const pathSegments = pathname.split('/').filter(Boolean);
+      // 서비스 타입은 마지막 세그먼트 (예: naver-shopping-traffic)
+      const serviceType = pathSegments.length >= 4 ? pathSegments[3] : '';
+      
+      if (serviceType) {
+        switch (serviceType) {
+          case 'naver-traffic':
+            setServiceCategory('N 트래픽');
+            break;
+          case 'naver-auto':
+            setServiceCategory('N 자동완성');
+            break;
+          case 'naver-shopping-traffic':
+            setServiceCategory('NS 트래픽');
+            break;
+          case 'naver-place-save':
+            setServiceCategory('NP 저장하기');
+            break;
+          case 'naver-place-share':
+            setServiceCategory('NP 블로그공유');
+            break;
+          case 'naver-place-traffic':
+            setServiceCategory('NP 트래픽');
+            break;
+          case 'coupang-traffic':
+            setServiceCategory('CP 트래픽');
+            break;
+          case 'ohouse-traffic':
+            setServiceCategory('OH 트래픽');
+            break;
+          default:
+            // 기본 형식으로 변환 (하이픈을 공백으로)
+            setServiceCategory(serviceType.replace(/-/g, ' '));
+        }
+        return;
+      }
+    }
+    
+    // 구 URL 형식에 대한 backward compatibility 유지
     if (pathname.includes('/ntraffic')) {
       setServiceCategory('N 트래픽');
     } else if (pathname.includes('naver/traffic')) {

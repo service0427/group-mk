@@ -367,20 +367,31 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       
     }
 
-    // 반려 사유가 있으면 rejected_reason 필드에 저장 (상태 설정 후 처리)
-    if (data.status === 'rejected' && data.rejectionReason) {
-      updateData = {
-        ...updateData,
-        rejected_reason: data.rejectionReason
-      };
-      
-    } else if (data.status === 'rejected') {
-      // 반려 상태인데 사유가 없는 경우 경고
-      
-    }
-
-    // 디버깅: 업데이트에 사용되는 최종 데이터 로깅
+    // 반려 사유 처리 (data.rejectionReason 또는 data.rejected_reason 사용)
+    const rejectionReason = data.rejectionReason || data.rejected_reason;
     
+    if (rejectionReason) {
+      
+      // 1. 메인 필드 업데이트: rejected_reason
+      updateData.rejected_reason = rejectionReason;
+      
+      // 2. add_info JSON 내부에도 저장 (하위 호환성)
+      if (typeof additionalInfo === 'object') {
+        additionalInfo.rejection_reason = rejectionReason;
+        updateData.add_info = additionalInfo;
+      } else {
+        // add_info가 객체가 아닌 경우 새로 생성
+        updateData.add_info = {
+          ...additionalInfo,
+          rejection_reason: rejectionReason
+        };
+      }
+    }
+    
+    // 상태는 rejected이지만 사유가 없는 경우 경고
+    if (data.status === 'rejected' && !rejectionReason) {
+      // 
+    }
 
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
     if (userId && !existingCampaign?.mat_id) {
@@ -392,13 +403,15 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       updateData = updatedData;
     }
 
-    const { error } = await supabase
+    // 반려 상태일 때는 supabaseAdmin(RLS 우회)을 사용하여 저장
+    const client = (data.status === 'rejected') ? supabaseAdmin : supabase;
+    
+    const { error } = await client
       .from('campaigns')
       .update(updateData)
       .eq('id', campaignId);
 
     if (error) {
-      
       return false;
     }
 
@@ -419,6 +432,8 @@ export const formatTimeHHMM = (timeStr: string): string => {
   return timeStr;
 };
 
+import { CampaignServiceType } from '@/components/campaign-modals/types';
+
 // 서비스 타입 코드 변환 (UI 코드 -> DB 코드)
 export const getServiceTypeCode = (uiCode: string): string => {
   // 빈 값 체크
@@ -427,63 +442,73 @@ export const getServiceTypeCode = (uiCode: string): string => {
     return '';
   }
   
+  // CampaignServiceType enum 값인 경우 그대로 사용
+  if (Object.values(CampaignServiceType).includes(uiCode as CampaignServiceType)) {
+    return uiCode;
+  }
+  
   // 소문자로 통일하여 처리 (대소문자 차이로 인한 오류 방지)
   const normalizedCode = uiCode.toLowerCase().trim();
   
   // UI 코드와 DB 코드 매핑 객체
   const codeMap: Record<string, string> = {
     // 네이버 트래픽
-    'ntraffic': 'ntraffic',
-    'naver-traffic': 'ntraffic',
-    'navertraffic': 'ntraffic',
+    'ntraffic': CampaignServiceType.NAVER_TRAFFIC,
+    'naver-traffic': CampaignServiceType.NAVER_TRAFFIC,
+    'navertraffic': CampaignServiceType.NAVER_TRAFFIC,
     
     // 네이버 자동완성
-    'naver-auto': 'nfakesale',
-    'nauto': 'nfakesale',
-    'naver-fakesale': 'nfakesale',
-    'naverfakesale': 'nfakesale',
-    'nfakesale': 'nfakesale',
+    'naver-auto': CampaignServiceType.NAVER_AUTO,
+    'nauto': CampaignServiceType.NAVER_AUTO, 
+    'naver-fakesale': CampaignServiceType.NAVER_AUTO,
+    'naverfakesale': CampaignServiceType.NAVER_AUTO,
+    'nfakesale': CampaignServiceType.NAVER_AUTO,
     
-    // 네이버 블로그
+    // 네이버 쇼핑
+    'nshopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'naver-shopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'naver-shopping-traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    
+    // 네이버 쇼핑 가구매
+    'nshoppingfakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+    'naver-shopping-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+    
+    // 네이버 플레이스 트래픽
+    'nplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'naver-place': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'naverplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'nplace-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'naver-place-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    
+    // 네이버 플레이스 저장
+    'nplace-save': CampaignServiceType.NAVER_PLACE_SAVE,
+    'naver-place-save': CampaignServiceType.NAVER_PLACE_SAVE,
+    'nplacesave': CampaignServiceType.NAVER_PLACE_SAVE,
+    
+    // 네이버 플레이스 공유
+    'nplace-share': CampaignServiceType.NAVER_PLACE_SHARE,
+    'naver-place-share': CampaignServiceType.NAVER_PLACE_SHARE,
+    'nplaceshare': CampaignServiceType.NAVER_PLACE_SHARE,
+    
+    // 쿠팡 트래픽
+    'coupang': CampaignServiceType.COUPANG_TRAFFIC,
+    'coupang-traffic': CampaignServiceType.COUPANG_TRAFFIC,
+    'coupangtraffic': CampaignServiceType.COUPANG_TRAFFIC,
+    
+    // 쿠팡 가구매
+    'coupang-fakesale': CampaignServiceType.COUPANG_FAKESALE,
+    'coupangfakesale': CampaignServiceType.COUPANG_FAKESALE,
+    
+    // 기존 레거시 코드 호환성 유지
     'nblog': 'nblog',
     'naver-blog': 'nblog',
     'naverblog': 'nblog',
-    
-    // 네이버 웹
     'nweb': 'nweb',
     'naver-web': 'nweb',
     'naverweb': 'nweb',
-    
-    // 네이버 쇼핑
-    'nshopping': 'nshopping',
-    'naver-shopping': 'nshopping',
-    'naver-shopping-traffic': 'nshopping',
-    
-    // 네이버 플레이스
-    'nplace': 'nplace',
-    'naver-place': 'nplace',
-    'naverplace': 'nplace',
-    'naver-place-traffic': 'nplace-traffic',
-    
-    // 네이버 플레이스 저장
-    'nplace-save': 'nplace-save',
-    'naver-place-save': 'nplace-save',
-    'nplacesave': 'nplace-save',
-    
-    // 네이버 플레이스 공유
-    'nplace-share': 'nplace-share',
-    'naver-place-share': 'nplace-share',
-    'nplaceshare': 'nplace-share',
-    
-    // 네이버 카페
     'ncafe': 'ncafe',
     'naver-cafe': 'ncafe',
     'navercafe': 'ncafe',
-    
-    // 쿠팡
-    'coupang': 'CoupangTraffic',
-    'coupang-traffic': 'CoupangTraffic',
-    'coupangtraffic': 'CoupangTraffic',
   };
   
   // 매핑된 값 확인

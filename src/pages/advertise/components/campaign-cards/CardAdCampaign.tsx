@@ -72,8 +72,8 @@ const CardAdCampaign = ({
 
   return (
     <>
-      <div className="card overflow-hidden grow justify-between">
-        <div className="p-5 mb-5">
+      <div className="card overflow-hidden grow flex flex-col justify-between">
+        <div className="p-5 mb-5 flex flex-col">
           <div className="flex items-center justify-between mb-5">
             <span className={`badge ${status.variant} badge-outline rounded-[30px] h-auto py-1`}>
               <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
@@ -123,10 +123,34 @@ const CardAdCampaign = ({
                 {title}
               </a>
             </div>
-            <div className="text-sm text-gray-700 w-full text-center" style={{ whiteSpace: 'pre-wrap' }}>{description}</div>
+            <div className="text-sm text-gray-700 w-full text-center flex flex-col justify-center" style={{ height: '4.5rem', position: 'relative' }}>
+              {/* 3줄 이상인 경우와 2줄 이하인 경우 다르게 처리 */}
+              {(description.split('\n').length > 2 || description.length > 120) ? (
+                /* 3줄 이상인 경우: 2줄만 표시 + ... */
+                <>
+                  <div className="h-[3rem] overflow-hidden" style={{ 
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '1.5rem'
+                  }}>
+                    {description}
+                  </div>
+                  <div className="h-[1.5rem] flex items-center justify-center">
+                    ...
+                  </div>
+                </>
+              ) : (
+                /* 2줄 이하인 경우: 세로 중앙 정렬 */
+                <div className="flex items-center justify-center h-full" style={{ 
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.5rem'
+                }}>
+                  {description}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-center flex-wrap gap-2 lg:gap-5">
+          <div className="flex items-center justify-center flex-wrap gap-2 lg:gap-5 mt-auto">
             {statistics.map((statistic, index) => {
               return renderItem(statistic, index);
             })}

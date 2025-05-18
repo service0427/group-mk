@@ -235,7 +235,7 @@ const ProfilePage = () => {
         }
       }
     } catch (err) {
-      // 오류 발생 시 처리 (콘솔 로그 제거)
+      // 
     }
   };
   

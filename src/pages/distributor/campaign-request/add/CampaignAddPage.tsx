@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
 import { toAbsoluteUrl } from '@/utils';
 import { createCampaign, formatTimeHHMM } from '@/pages/admin/campaigns/services/campaignService';
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 새 캠페인 인터페이스
 interface NewCampaign {
@@ -259,16 +260,17 @@ const CampaignAddPage: React.FC = () => {
   }
 
   // 서비스 유형별 정보 정의
-  const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
-    'ntraffic': {
-      name: '네이버 트래픽',
+  const serviceTypeInfoMap: Record<string, ServiceTypeInfo> = {
+    // 새로운 표준화된 서비스 타입 (Enum 기반)
+    [CampaignServiceType.NAVER_TRAFFIC]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC],
       additionalFields: {
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
         targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://example.com', required: true },
       }
     },
-    'NaverShopTraffic': {
-      name: '네이버 쇼핑',
+    [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC],
       additionalFields: {
         productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
@@ -285,30 +287,30 @@ const CampaignAddPage: React.FC = () => {
         }
       }
     },
-    'NaverPlaceTraffic': {
-      name: '네이버 플레이스 트래픽',
+    [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
       }
     },
-    'NaverPlaceSave': {
-      name: '네이버 플레이스 저장',
+    [CampaignServiceType.NAVER_PLACE_SAVE]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         saveTarget: { label: '저장 목표 수', type: 'number', defaultValue: '10', required: true },
       }
     },
-    'NaverPlaceShare': {
-      name: '네이버 플레이스 공유',
+    [CampaignServiceType.NAVER_PLACE_SHARE]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
       additionalFields: {
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         shareTarget: { label: '공유 목표 수', type: 'number', defaultValue: '10', required: true },
         targetBlog: { label: '타겟 블로그 정보', type: 'text', defaultValue: '', placeholder: '블로그 정보를 입력하세요 (선택사항)' },
       }
     },
-    'NaverAuto': {
-      name: '네이버 자동완성',
+    [CampaignServiceType.NAVER_AUTO]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],
       additionalFields: {
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
         searchFrequency: {
@@ -322,18 +324,61 @@ const CampaignAddPage: React.FC = () => {
         },
       }
     },
-    'CoupangTraffic': {
-      name: '쿠팡 트래픽',
+    [CampaignServiceType.COUPANG_TRAFFIC]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
       additionalFields: {
         productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
         targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
       }
     },
+    [CampaignServiceType.COUPANG_FAKESALE]: {
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_FAKESALE],
+      additionalFields: {
+        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
+        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
+        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
+      }
+    }
+  };
+  
+  // 레거시 타입에 대한 매핑 함수
+  const getLegacyServiceInfo = (type: string): ServiceTypeInfo | null => {
+    // 레거시 타입 매핑
+    switch (type) {
+      case 'ntraffic':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_TRAFFIC];
+      case 'NaverShopTraffic':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
+      case 'NaverPlaceTraffic':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_TRAFFIC];
+      case 'NaverPlaceSave':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_SAVE];
+      case 'NaverPlaceShare':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_SHARE];
+      case 'NaverAuto':
+        return serviceTypeInfoMap[CampaignServiceType.NAVER_AUTO];
+      case 'CoupangTraffic':
+        return serviceTypeInfoMap[CampaignServiceType.COUPANG_TRAFFIC];
+      default:
+        return null;
+    }
   };
 
   // 서비스 유형에 따른 이름 반환
   const getServiceTypeName = (type: string): string => {
-    return serviceTypeInfoMap[type]?.name || '네이버 트래픽';
+    // 먼저 표준화된 서비스 타입에서 확인
+    if (serviceTypeInfoMap[type]) {
+      return serviceTypeInfoMap[type].name;
+    }
+    
+    // 레거시 타입인 경우 매핑 함수 사용
+    const legacyInfo = getLegacyServiceInfo(type);
+    if (legacyInfo) {
+      return legacyInfo.name;
+    }
+    
+    // 기본값 반환
+    return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
   };
 
   // 서비스 유형에 따른 추가 필드 초기화
@@ -971,7 +1016,7 @@ const CampaignAddPage: React.FC = () => {
                   <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
                   <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
                     <div className="mb-4">
-                      <h4 className="font-medium text-primary mb-2">간략 설명</h4>
+                      <h4 className="font-medium text-primary mb-2">설명</h4>
                       <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
                         {newCampaign.description || '(캠페인 설명을 입력해주세요)'}
                       </p>

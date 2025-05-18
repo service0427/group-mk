@@ -4,58 +4,71 @@ import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 const CampaignRequestPage: React.FC = () => {
   const navigate = useNavigate();
 
   // 페이지로 이동
-  const navigateToCampaignAddPage = (serviceType: string) => {
+  const navigateToCampaignAddPage = (serviceType: CampaignServiceType) => {
     navigate(`/campaign-request/add?type=${serviceType}`);
   };
 
   // 서비스 유형 목록
   const serviceTypes = [
     {
-      id: 'ntraffic',
-      name: '네이버 트래픽',
+      id: CampaignServiceType.NAVER_TRAFFIC,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC],
       icon: '/media/ad-brand/naver.png',
       description: '네이버 검색을 통한 사이트 방문 증가'
     },
     {
-      id: 'NaverShopTraffic',
-      name: '네이버 쇼핑',
-      icon: '/media/ad-brand/naver-shopping.png',
-      description: '네이버 쇼핑 페이지 노출 및 트래픽'
-    },
-    {
-      id: 'NaverPlaceTraffic',
-      name: '네이버 플레이스 트래픽',
-      icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 지도/플레이스 트래픽 증가'
-    },
-    {
-      id: 'NaverPlaceSave',
-      name: '네이버 플레이스 저장',
-      icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 장소 저장하기 증가'
-    },
-    {
-      id: 'NaverPlaceShare',
-      name: '네이버 플레이스 공유',
-      icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 장소 블로그 공유 증가'
-    },
-    {
-      id: 'NaverAuto',
-      name: '네이버 자동완성',
+      id: CampaignServiceType.NAVER_AUTO,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],
       icon: '/media/ad-brand/naver.png',
       description: '네이버 검색어 자동완성 노출'
     },
     {
-      id: 'CoupangTraffic',
-      name: '쿠팡 트래픽',
+      id: CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC],
+      icon: '/media/ad-brand/naver-shopping.png',
+      description: '네이버 쇼핑 페이지 노출 및 트래픽'
+    },
+    {
+      id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
+      icon: '/media/ad-brand/naver-shopping.png',
+      description: '네이버 쇼핑 가구매 증가'
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
+      icon: '/media/ad-brand/naver-place.png',
+      description: '네이버 지도/플레이스 트래픽 증가'
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_SAVE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
+      icon: '/media/ad-brand/naver-place.png',
+      description: '네이버 장소 저장하기 증가'
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_SHARE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
+      icon: '/media/ad-brand/naver-place.png',
+      description: '네이버 장소 블로그 공유 증가'
+    },
+    {
+      id: CampaignServiceType.COUPANG_TRAFFIC,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
       icon: '/media/ad-brand/coupang-app.png',
       description: '쿠팡을 통한 사이트 방문자 유치'
+    },
+    {
+      id: CampaignServiceType.COUPANG_FAKESALE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_FAKESALE],
+      icon: '/media/ad-brand/coupang-app.png',
+      description: '쿠팡 가구매 증가'
     }
   ];
 

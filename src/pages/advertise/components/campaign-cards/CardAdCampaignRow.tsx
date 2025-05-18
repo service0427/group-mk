@@ -71,7 +71,29 @@ const CardAdCampaignRow = ({
                 </span>
               </div>
 
-              <div className="flex items-center text-sm text-gray-700" style={{ whiteSpace: 'pre-wrap' }}>{description}</div>
+              <div className="flex text-sm text-gray-700 items-center" style={{ height: '3rem' }}>
+                {/* 3줄 이상인 경우와 2줄 이하인 경우 다르게 처리 */}
+                {(description.split('\n').length > 2 || description.length > 80) ? (
+                  /* 3줄 이상인 경우: 2줄만 표시 + ... */
+                  <div className="h-[3rem] relative w-full">
+                    <div className="h-[3rem] overflow-hidden" style={{ 
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: '1.5rem'
+                    }}>
+                      {description}
+                    </div>
+                    <div className="absolute bottom-0 left-0">...</div>
+                  </div>
+                ) : (
+                  /* 2줄 이하인 경우: 세로 중앙 정렬 */
+                  <div className="flex items-center h-full w-full" style={{ 
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '1.5rem'
+                  }}>
+                    {description}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

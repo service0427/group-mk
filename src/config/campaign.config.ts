@@ -1,5 +1,6 @@
 // 캠페인 설정 구성 파일
 // 프로젝트 내에서 캠페인 정보를 중앙 관리하기 위한 설정 파일입니다.
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 캠페인 설정 타입
 export interface CampaignConfig {
@@ -12,16 +13,20 @@ export interface CampaignConfig {
   logo?: string;          // 캠페인 로고 URL (선택적)
 }
 
-// 캠페인 목록 정의
+// 캠페인 목록 정의 - 표준화된 서비스 타입을 사용
 export const CAMPAIGNS: CampaignConfig[] = [
   {
     name: '네이버',
     serviceType: '검색엔진',
     logo: '/media/ad-brand/naver.png',
     types: [
-      { name: 'N트래픽', code: 'ntraffic' },  // 임시로 메뉴로 만듬 , 나중에 트래픽으로 변경 예정 { name: '트래픽', code: 'traffic' }, 
-      { name: 'N자동완성', code: 'nautocomplete' }, // 나중에 가구매으로 변경 예정 { name: '가구매', code: 'fakesale' }, 
-      { name: 'N쇼핑', code: 'nshopping' } // 나중에 플레이스로 변경 예정 { name: '플레이스', code: 'place' }, 
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC], code: CampaignServiceType.NAVER_TRAFFIC },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO], code: CampaignServiceType.NAVER_AUTO },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC], code: CampaignServiceType.NAVER_SHOPPING_TRAFFIC },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE], code: CampaignServiceType.NAVER_SHOPPING_FAKESALE },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC], code: CampaignServiceType.NAVER_PLACE_TRAFFIC },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE], code: CampaignServiceType.NAVER_PLACE_SAVE },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE], code: CampaignServiceType.NAVER_PLACE_SHARE }
     ]
   },
   {
@@ -29,8 +34,8 @@ export const CAMPAIGNS: CampaignConfig[] = [
     serviceType: '쇼핑몰',
     logo: '/media/ad-brand/coupang-app.png',
     types: [
-      { name: 'C쇼핑', code: 'c_shopping' },
-      { name: 'C브랜드', code: 'c_brand' }
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC], code: CampaignServiceType.COUPANG_TRAFFIC },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_FAKESALE], code: CampaignServiceType.COUPANG_FAKESALE }
     ]
   },
 ];

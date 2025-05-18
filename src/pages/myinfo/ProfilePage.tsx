@@ -21,20 +21,81 @@ const ProfilePage = () => {
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   
   // 사업자 정보와 등업 신청 현황 체크
   // 초기 상태 설정을 위한 useEffect
   useEffect(() => {
+    console.log("프로필 페이지 useEffect 실행");
+    
+    // currentUser 구조 자세히 확인
+    if (currentUser) {
+      console.log("currentUser 전체 구조:", JSON.stringify(currentUser, null, 2));
+      console.log("currentUser 키:", Object.keys(currentUser));
+      console.log("currentUser.business 존재 여부:", currentUser.hasOwnProperty('business'));
+      console.log("currentUser.business 타입:", typeof currentUser.business);
+      console.log("currentUser.business 값:", currentUser.business);
+    } else {
+      console.log("currentUser가 null이거나 undefined입니다.");
+    }
+    
+    // 직접 사용자 데이터 가져오기 - business가 없는 경우를 대비
+    const fetchUserWithBusiness = async () => {
+      if (currentUser?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select("*, business")
+            .eq('id', currentUser.id)
+            .single();
+            
+          if (error) {
+            console.error("직접 사용자 데이터 조회 오류:", error);
+            return;
+          }
+          
+          console.log("직접 조회한 사용자 데이터:", data);
+          
+          // business 필드가 있고 currentUser에 없는 경우 업데이트
+          if (data && data.business && !currentUser.business) {
+            console.log("business 필드 업데이트:", data.business);
+            const updatedUser = {
+              ...currentUser,
+              business: data.business
+            };
+            setCurrentUser(updatedUser);
+          }
+        } catch (err) {
+          console.error("사용자 데이터 직접 조회 중 오류:", err);
+        }
+      }
+    };
+    
+    // business 필드가 없는 경우에만 직접 조회
+    if (currentUser && !currentUser.business) {
+      fetchUserWithBusiness();
+    }
+    
     const checkBusinessStatus = async () => {
       try {
+        // 초기화
+        setLoading(true);
+        
         // 사용자 정보 설정
         if (currentUser?.full_name) {
           setFullName(currentUser.full_name);
         }
 
         // 사용자의 business 정보 체크
-        if (currentUser?.business) {
+        // 다양한 방식으로 business 접근 시도
+        const business = currentUser?.business || currentUser?.["business"] || null;
+        
+        if (business) {
+          console.log("사업자 정보 존재:", business);
           setHasBusinessInfo(true);
+        } else {
+          console.log("사업자 정보 없음");
+          setHasBusinessInfo(false);
         }
         
         // 대기 중인 등업 신청이 있는지 체크
@@ -45,8 +106,15 @@ const ProfilePage = () => {
           .eq('status', 'pending')
           .limit(1);
           
-        if (pendingError) throw pendingError;
-        setHasPendingRequest(pendingData && pendingData.length > 0);
+        if (pendingError) {
+          console.error('등업 신청 조회 오류:', pendingError);
+          throw pendingError;
+        }
+        
+        console.log('대기 중인 등업 신청 데이터:', pendingData);
+        const isPending = pendingData && pendingData.length > 0;
+        console.log('hasPendingRequest 값:', isPending);
+        setHasPendingRequest(isPending);
         
         // 거부된 등업 신청이 있는지 체크
         const { data: rejectedData, error: rejectedError } = await supabase
@@ -57,24 +125,53 @@ const ProfilePage = () => {
           .order('updated_at', { ascending: false })
           .limit(1);
           
-        if (rejectedError) throw rejectedError;
+        if (rejectedError) {
+          console.error('거부된 등업 신청 조회 오류:', rejectedError);
+          throw rejectedError;
+        }
+        
+        console.log('거부된 등업 신청 데이터:', rejectedData);
         
         if (rejectedData && rejectedData.length > 0) {
+          console.log('거부 사유:', rejectedData[0].rejection_reason);
           setHasRejectedRequest(true);
           setRejectionReason(rejectedData[0].rejection_reason || '');
         } else {
           setHasRejectedRequest(false);
           setRejectionReason('');
         }
-      } catch (err) {
         
+        // 최종 상태 로깅
+        console.log('상태 요약:', {
+          hasBusinessInfo: currentUser?.business ? true : false,
+          hasPendingRequest: pendingData && pendingData.length > 0,
+          hasRejectedRequest: rejectedData && rejectedData.length > 0,
+          currentUser: currentUser
+        });
+        
+      } catch (err) {
+        console.error("프로필 페이지 데이터 로드 오류:", err);
+      } finally {
+        setLoading(false);
       }
     };
     
     if (currentUser?.id) {
       checkBusinessStatus();
+    } else {
+      console.log("currentUser 또는 ID가 없어 데이터를 불러오지 않습니다.");
     }
   }, [currentUser]);
+  
+  // 렌더링 확인을 위한 useEffect
+  useEffect(() => {
+    console.log("렌더링 상태:", {
+      hasBusinessInfo,
+      hasPendingRequest, 
+      hasRejectedRequest,
+      isUpgradeModalOpen
+    });
+  }, [hasBusinessInfo, hasPendingRequest, hasRejectedRequest, isUpgradeModalOpen]);
 
   const roleClass = currentUser?.role ? `bg-${getRoleBadgeColor(currentUser.role)}/10 text-${getRoleBadgeColor(currentUser.role)}` : '';
   const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
@@ -544,8 +641,8 @@ const ProfilePage = () => {
                       <td className="py-2 text-gray-600 font-normal">사업자 등록번호</td>
                       <td className="py-2 text-gray-800 font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && currentUser.business ? 
-                            currentUser.business.business_number || '-' : 
+                          {currentUser && (currentUser.business || currentUser["business"]) ? 
+                            (currentUser.business || currentUser["business"]).business_number || '-' : 
                             '-'}
                         </div>
                       </td>
@@ -554,8 +651,8 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">상호명</td>
                       <td className="py-3 text-gray-800 font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && currentUser.business ? 
-                            currentUser.business.business_name || '-' : 
+                          {currentUser && (currentUser.business || currentUser["business"]) ? 
+                            (currentUser.business || currentUser["business"]).business_name || '-' : 
                             '-'}
                         </div>
                       </td>
@@ -564,8 +661,8 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">대표자명</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && currentUser.business ? 
-                            currentUser.business.representative_name || '-' : 
+                          {currentUser && (currentUser.business || currentUser["business"]) ? 
+                            (currentUser.business || currentUser["business"]).representative_name || '-' : 
                             '-'}
                         </div>
                       </td>
@@ -575,8 +672,8 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-600 font-normal">사업자용 이메일</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && currentUser.business ? 
-                            ((currentUser.business as any).business_email || '-') : 
+                          {currentUser && (currentUser.business || currentUser["business"]) ? 
+                            ((currentUser.business || currentUser["business"]) as any).business_email || '-' : 
                             '-'}
                         </div>
                       </td>
@@ -587,7 +684,7 @@ const ProfilePage = () => {
                       <td className="py-3 text-gray-700 text-sm font-normal">
                         {(() => {
                           // currentUser와 business 객체가 존재하는지 확인
-                          if (!currentUser || !currentUser.business) {
+                          if (!currentUser || !(currentUser.business || currentUser["business"])) {
                             return (
                               <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
                                 <span className="text-gray-500">등록된 이미지가 없습니다</span>
@@ -596,7 +693,7 @@ const ProfilePage = () => {
                           }
                           
                           // business 객체를 안전하게 처리
-                          const business = currentUser.business as any;
+                          const business = (currentUser.business || currentUser["business"]) as any;
                           const imageUrl = business.business_image_url;
                           
                           if (!imageUrl) {
@@ -666,15 +763,59 @@ const ProfilePage = () => {
                         )}
                       </td>
                     </tr>
+                    
+                    {/* 은행 정보 표시 */}
+                    <tr>
+                      <td className="py-3 text-gray-600 font-normal">입금 계좌 정보</td>
+                      <td className="py-3 text-gray-700 text-sm font-normal">
+                        {currentUser && (currentUser.business || currentUser["business"]) && ((currentUser.business || currentUser["business"]) as any).bank_account ? (
+                          <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="text-sm">
+                                <span className="font-medium text-gray-600">은행명:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.bank_name || '-'}
+                              </div>
+                              <div className="text-sm">
+                                <span className="font-medium text-gray-600">예금주:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.account_holder || '-'}
+                              </div>
+                              <div className="text-sm col-span-2">
+                                <span className="font-medium text-gray-600">계좌번호:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.account_number || '-'}
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-info bg-info/10 p-2 rounded">
+                              입금 계좌 정보는 최초 등록 후 수정이 불가능합니다.
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
+                            <span className="text-gray-500">등록된 계좌 정보가 없습니다</span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    
                     <tr>
                       <td className="py-3 text-gray-600 font-normal">인증 상태</td>
                       <td className="py-3 text-gray-700 text-sm font-normal">
-                        {hasPendingRequest ? (
-                          <span className="badge badge-sm badge-warning">승인 대기중</span>
-                        ) : (currentUser && currentUser.business && currentUser.business.verified) ? (
-                          <span className="badge badge-sm badge-success">인증됨</span>
+                        {loading ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-gray-500">확인 중...</span>
+                          </div>
+                        ) : hasPendingRequest ? (
+                          <div className="flex items-center">
+                            <span className="badge badge-sm badge-warning mr-2">승인 대기중</span>
+                            <span className="text-xs text-gray-500">관리자 승인 대기 중입니다</span>
+                          </div>
+                        ) : (currentUser && (currentUser.business || currentUser["business"]) && (currentUser.business || currentUser["business"]).verified) ? (
+                          <div className="flex items-center">
+                            <span className="badge badge-sm badge-success mr-2">인증됨</span>
+                            <span className="text-xs text-gray-500">사업자 인증이 완료되었습니다</span>
+                          </div>
                         ) : (
-                          <span className="badge badge-sm badge-error">미인증</span>
+                          <div className="flex items-center">
+                            <span className="badge badge-sm badge-error mr-2">미인증</span>
+                            <span className="text-xs text-gray-500">등업 신청이 필요합니다</span>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -683,22 +824,56 @@ const ProfilePage = () => {
               </div>
             )}
             
-            {!hasPendingRequest && (
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="ml-3 text-gray-500">정보를 불러오는 중입니다...</p>
+              </div>
+            ) : (
               <>
-                {!hasBusinessInfo && (
-                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <p className="text-gray-600 mb-2">
-                      사업자 등록 정보가 없습니다. 등업 신청을 위해 사업자 정보를 등록해주세요.
+                {hasPendingRequest && (
+                  <div className="bg-warning/10 p-4 rounded-lg mb-4 border border-warning/20">
+                    <h5 className="text-warning font-semibold mb-2 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      등업 신청이 대기 중입니다
+                    </h5>
+                    <p className="text-gray-600">
+                      관리자 승인 후 총판 권한으로 변경됩니다. 승인까지 일정 시간이 소요될 수 있습니다.
                     </p>
                   </div>
                 )}
                 
-                {hasRejectedRequest && (
+                {!hasPendingRequest && !hasBusinessInfo && (
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <p className="text-gray-600 mb-2">
+                          사업자 등록 정보가 없습니다. 등업 신청을 위해 사업자 정보를 등록해주세요.
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          아래 '사업자 등록 및 등업 신청' 버튼을 클릭하여 등록을 진행해주세요.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {!hasPendingRequest && hasRejectedRequest && (
                   <div className="bg-danger/10 p-4 rounded-lg mb-4 border border-danger/20">
-                    <h5 className="text-danger font-semibold mb-2">이전 등업 신청이 거부되었습니다</h5>
+                    <h5 className="text-danger font-semibold mb-2 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      이전 등업 신청이 거부되었습니다
+                    </h5>
                     <div className="mb-3">
                       <p className="text-gray-700 font-medium">거부 사유:</p>
-                      <p className="text-gray-600 mt-1 p-2 bg-white rounded border border-gray-200">
+                      <p className="text-gray-600 mt-1 p-3 bg-white rounded border border-gray-200">
                         {rejectionReason || '관리자가 등업 신청을 거부했습니다.'}
                       </p>
                     </div>
@@ -716,11 +891,33 @@ const ProfilePage = () => {
             <button
               className="btn btn-primary"
               onClick={handleSaveProfile}
+              disabled={loading}
             >
-              저장하기
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  저장 중...
+                </span>
+              ) : '저장하기'}
             </button>
             
-            {hasPendingRequest ? (
+            {loading ? (
+              <button
+                className="btn btn-secondary"
+                disabled
+              >
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  로딩 중...
+                </span>
+              </button>
+            ) : hasPendingRequest ? (
               <button
                 className="btn btn-secondary"
                 onClick={handleOpenUpgradeModal}

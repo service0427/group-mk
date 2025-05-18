@@ -157,6 +157,8 @@ const LevelUpRequestsPage = () => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
+
+      console.log('등업 신청 목록:', data);
       
       setRequests(data as RequestWithUser[] || []);
     } catch (err: any) {
@@ -183,7 +185,7 @@ const LevelUpRequestsPage = () => {
         .from('users')
         .update({
           business: {
-            ...request.users.business,
+            ...(request.users?.business || {}),
             verified: true,
             verification_date: new Date().toISOString()
           },
@@ -218,7 +220,7 @@ const LevelUpRequestsPage = () => {
       // 성공 모달 표시
       showStatusModal(
         "승인 완료", 
-        `${request.users.full_name}님의 등업 신청이 승인되었습니다.\n사용자 등급이 총판(distributor)으로 변경되었습니다.`, 
+        `${request.users?.full_name || '사용자'}님의 등업 신청이 승인되었습니다.\n사용자 등급이 총판(distributor)으로 변경되었습니다.`, 
         "success"
       );
       
@@ -272,7 +274,7 @@ const LevelUpRequestsPage = () => {
       // 성공 모달 표시
       showStatusModal(
         "거부 완료", 
-        `${selectedRequest.users.full_name}님의 등업 신청이 거부되었습니다.`,
+        `${selectedRequest.users?.full_name || '사용자'}님의 등업 신청이 거부되었습니다.`,
         "info"
       );
       
@@ -356,6 +358,7 @@ const LevelUpRequestsPage = () => {
                     <th className="py-4 px-5 text-start font-medium text-gray-700">상호명</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">대표자명</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">사업자 이메일</th>
+                    <th className="py-4 px-5 text-start font-medium text-gray-700">은행 정보</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">사업자등록증</th>
                     <th className="py-4 px-5 text-start font-medium text-gray-700">신청일시</th>
                     <th className="py-4 px-5 text-end font-medium text-gray-700">처리</th>
@@ -367,35 +370,46 @@ const LevelUpRequestsPage = () => {
                       <td className="py-4 px-5">
                         <div className="flex items-center">
                           <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                            {request.users.full_name?.charAt(0) || '?'}
+                            {request.users?.full_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <div className="text-gray-800 font-medium">{request.users.full_name}</div>
-                            <div className="text-xs text-gray-500">{request.users.email}</div>
+                            <div className="text-gray-800 font-medium">{request.users?.full_name || '사용자 정보 없음'}</div>
+                            <div className="text-xs text-gray-500">{request.users?.email || '이메일 정보 없음'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-5">
-                        <span className="text-gray-800">{request.users.business?.business_number || '-'}</span>
+                        <span className="text-gray-800">{request.users?.business?.business_number || '-'}</span>
                       </td>
                       <td className="py-4 px-5">
-                        <span className="text-gray-800">{request.users.business?.business_name || '-'}</span>
+                        <span className="text-gray-800">{request.users?.business?.business_name || '-'}</span>
                       </td>
                       <td className="py-4 px-5">
-                        <span className="text-gray-800">{request.users.business?.representative_name || '-'}</span>
+                        <span className="text-gray-800">{request.users?.business?.representative_name || '-'}</span>
                       </td>
                       <td className="py-4 px-5">
-                        <span className="text-gray-800">{request.users.business?.business_email || '-'}</span>
+                        <span className="text-gray-800">{request.users?.business?.business_email || '-'}</span>
                       </td>
                       <td className="py-4 px-5">
-                        {request.users.business?.business_image_url ? (
+                        {request.users?.business?.bank_account ? (
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-800">{request.users?.business?.bank_account.bank_name || '-'}</div>
+                            <div className="text-gray-600">{request.users?.business?.bank_account.account_number || '-'}</div>
+                            <div className="text-gray-600 text-xs">예금주: {request.users?.business?.bank_account.account_holder || '-'}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs italic">정보 없음</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-5">
+                        {request.users?.business?.business_image_url ? (
                           <div className="relative">
                             <div 
                               className="cursor-pointer"
-                              onClick={() => openImageModal(request.users.business?.business_image_url)}
+                              onClick={() => openImageModal(request.users?.business?.business_image_url || '')}
                             >
                               <img 
-                                src={request.users.business.business_image_url} 
+                                src={request.users?.business?.business_image_url || ''} 
                                 alt="사업자등록증" 
                                 className="object-cover w-16 h-16 border rounded hover:opacity-80 transition-opacity"
                                 onError={(e) => {

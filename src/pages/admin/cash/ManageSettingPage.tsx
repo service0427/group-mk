@@ -11,6 +11,9 @@ const ManageSettingPage = () => {
     expiry_months: 1, // 만료기간 개월 수
     min_usage_amount: 10000, // 무료캐시 최소 사용 금액
     min_usage_percentage: 5, // 무료캐시 최소 사용 비율(%)
+    bank_name: '', // 입금 계좌 은행명
+    account_number: '', // 입금 계좌번호
+    account_holder: '', // 입금 계좌 예금주
   });
 
   // 개별 사용자 설정 상태값
@@ -57,7 +60,10 @@ const ManageSettingPage = () => {
           free_cash_percentage: data.free_cash_percentage,
           expiry_months: data.expiry_months,
           min_usage_amount: data.min_usage_amount || 10000,
-          min_usage_percentage: data.min_usage_percentage || 5
+          min_usage_percentage: data.min_usage_percentage || 5,
+          bank_name: data.bank_name || '',
+          account_number: data.account_number || '',
+          account_holder: data.account_holder || ''
         });
       }
     } catch (error: any) {
@@ -114,6 +120,9 @@ const ManageSettingPage = () => {
             expiry_months: globalSettings.expiry_months,
             min_usage_amount: globalSettings.min_usage_amount,
             min_usage_percentage: globalSettings.min_usage_percentage,
+            bank_name: globalSettings.bank_name,
+            account_number: globalSettings.account_number,
+            account_holder: globalSettings.account_holder,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingData[0].id);
@@ -126,7 +135,10 @@ const ManageSettingPage = () => {
             free_cash_percentage: globalSettings.free_cash_percentage,
             expiry_months: globalSettings.expiry_months,
             min_usage_amount: globalSettings.min_usage_amount,
-            min_usage_percentage: globalSettings.min_usage_percentage
+            min_usage_percentage: globalSettings.min_usage_percentage,
+            bank_name: globalSettings.bank_name,
+            account_number: globalSettings.account_number,
+            account_holder: globalSettings.account_holder
           });
       }
 
@@ -558,6 +570,70 @@ const ManageSettingPage = () => {
                     </div>
                   </div>
                   {/* 설명은 툴팁으로 이동했습니다 */}
+                </div>
+              </div>
+              
+              {/* 입금 계좌 정보 섹션 */}
+              <div className="border-t border-border pt-6 mt-6">
+                <h4 className="text-base font-medium text-card-foreground mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8.5H22M6 16.5H8M10.5 16.5H16.5M2 11.5V19.5C2 20.05 2.45 20.5 3 20.5H21C21.55 20.5 22 20.05 22 19.5V11.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 8.5V7.7C22 7.2 21.8 6.8 21.4 6.4L19.1 4.1C18.7 3.7 18.2 3.5 17.7 3.5H6.3C5.8 3.5 5.3 3.7 4.9 4.1L2.6 6.4C2.2 6.8 2 7.2 2 7.7V8.5H22Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  입금 계좌 정보
+                  <DefaultTooltip title="캐시 신청 시 표시될 입금 계좌 정보를 설정합니다." arrow placement="top">
+                    <div className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/10 text-primary cursor-help">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                      </svg>
+                    </div>
+                  </DefaultTooltip>
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  {/* 은행명 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-card-foreground mb-1">
+                      은행명
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="예: 국민은행"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                      value={globalSettings.bank_name}
+                      onChange={(e) => setGlobalSettings({ ...globalSettings, bank_name: e.target.value })}
+                    />
+                  </div>
+
+                  {/* 계좌번호 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-card-foreground mb-1">
+                      계좌번호
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="예: 000-00-000000"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                      value={globalSettings.account_number}
+                      onChange={(e) => setGlobalSettings({ ...globalSettings, account_number: e.target.value })}
+                    />
+                  </div>
+
+                  {/* 예금주 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-card-foreground mb-1">
+                      예금주
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="예: (주)회사명"
+                      className="input block w-full p-2 border border-border dark:border-gray-600 bg-background text-foreground rounded-md focus:ring-primary focus:border-primary"
+                      value={globalSettings.account_holder}
+                      onChange={(e) => setGlobalSettings({ ...globalSettings, account_holder: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
 

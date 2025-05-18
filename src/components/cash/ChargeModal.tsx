@@ -20,6 +20,7 @@ interface ChargeRequest {
   status: string;
   requested_at: string;
   free_cash_percentage: number;
+  account_holder?: string;
 }
 
 // 캐시 설정 타입 정의
@@ -29,6 +30,9 @@ interface CashSetting {
   expiry_months: number;
   min_usage_amount: number;
   min_usage_percentage: number;
+  bank_name?: string;
+  account_number?: string;
+  account_holder?: string;
 }
 
 interface ChargeModalProps {
@@ -46,6 +50,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
   const [customAmount, setCustomAmount] = useState<string>('0');
   const [selectedAmount, setSelectedAmount] = useState<string>('');
   const [koreanAmount, setKoreanAmount] = useState<string>('0');
+  const [depositorName, setDepositorName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [recentRequests, setRecentRequests] = useState<ChargeRequest[]>([]);
@@ -170,7 +175,13 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
       const result = await CashService.getChargeRequestHistory(currentUser.id || '', 5);
 
       if (result.success) {
-        setRecentRequests(result.data || []);
+        const requests = result.data || [];
+        setRecentRequests(requests);
+        
+        // 가장 최근 요청의 입금자명이 있다면 자동으로 채우기
+        if (requests.length > 0 && requests[0].account_holder) {
+          setDepositorName(requests[0].account_holder);
+        }
       } else {
         setRecentRequests([]);
       }
@@ -261,6 +272,8 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
     setDialogTitle(title);
     setDialogDescription(description);
     setIsSuccess(success);
+    // 충전 모달은 닫고 결과 모달 표시
+    onClose(); // 충전 모달 닫기
     setResultDialogOpen(true);
   };
 
@@ -280,10 +293,16 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
 
     setIsLoading(true);
 
+    if (!depositorName.trim()) {
+      setError('입금자명을 입력해주세요.');
+      return;
+    }
+
     try {
       const result = await CashService.createChargeRequest(
         currentUser.id || '',
-        Number(customAmount)
+        Number(customAmount),
+        depositorName.trim()
       );
 
       if (result.success) {
@@ -320,6 +339,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
     setSelectedAmount('');
     setKoreanAmount('0');
     setError(null);
+    // 입금자명은 초기화하지 않음 (다음 사용 시 편의를 위해)
     onClose();
   };
 
@@ -456,6 +476,64 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
               </button>
             </div>
 
+            {/* 입금 계좌 정보 */}
+            {cashSetting && (cashSetting.bank_name || cashSetting.account_number || cashSetting.account_holder) && (
+              <div className="mb-6 p-4 border border-blue-100 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8.5H22M6 16.5H8M10.5 16.5H16.5M2 11.5V19.5C2 20.05 2.45 20.5 3 20.5H21C21.55 20.5 22 20.05 22 19.5V11.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 8.5V7.7C22 7.2 21.8 6.8 21.4 6.4L19.1 4.1C18.7 3.7 18.2 3.5 17.7 3.5H6.3C5.8 3.5 5.3 3.7 4.9 4.1L2.6 6.4C2.2 6.8 2 7.2 2 7.7V8.5H22Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400">입금 계좌 정보</h4>
+                </div>
+                
+                <div className="space-y-1 text-sm">
+                  {cashSetting.bank_name && (
+                    <div className="flex justify-between py-1 border-b border-blue-100 dark:border-blue-800">
+                      <span className="text-blue-800 dark:text-blue-300">은행명</span>
+                      <span className="font-medium text-blue-900 dark:text-blue-50">{cashSetting.bank_name}</span>
+                    </div>
+                  )}
+                  
+                  {cashSetting.account_number && (
+                    <div className="flex justify-between py-1 border-b border-blue-100 dark:border-blue-800">
+                      <span className="text-blue-800 dark:text-blue-300">계좌번호</span>
+                      <span className="font-medium text-blue-900 dark:text-blue-50">{cashSetting.account_number}</span>
+                    </div>
+                  )}
+                  
+                  {cashSetting.account_holder && (
+                    <div className="flex justify-between py-1">
+                      <span className="text-blue-800 dark:text-blue-300">예금주</span>
+                      <span className="font-medium text-blue-900 dark:text-blue-50">{cashSetting.account_holder}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
+                  충전 요청 이후 위 계좌로 입금을 진행해 주세요.
+                </div>
+
+                {/* 입금자명 입력 필드 */}
+                <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800">
+                  <label htmlFor="depositor-name" className="block text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">
+                    입금자명
+                  </label>
+                  <input
+                    id="depositor-name"
+                    type="text"
+                    value={depositorName}
+                    onChange={(e) => setDepositorName(e.target.value)}
+                    placeholder="입금자명을 입력해주세요"
+                    className="w-full p-2 border border-blue-200 dark:border-blue-700 bg-white dark:bg-blue-900/30 text-blue-900 dark:text-blue-50 rounded-md focus:ring-primary focus:border-primary text-sm"
+                  />
+                  <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                    실제 입금 시 사용할 입금자명을 정확히 입력해주세요.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* 최근 충전 요청 내역 */}
             <div className="mb-4">
               <div className="mb-3 flex justify-between items-center">
@@ -553,9 +631,23 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
       </Dialog>
 
       {/* 결과 알림 다이얼로그 */}
-      <Dialog open={resultDialogOpen} onOpenChange={setResultDialogOpen}>
+      <Dialog 
+        open={resultDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setResultDialogOpen(false);
+            // 결과 모달이 닫힐 때 폼 초기화
+            setCustomAmount('0');
+            setSelectedAmount('');
+            setKoreanAmount('0');
+            setError(null);
+            // 입금자명은 유지
+          }
+        }}
+      >
         <DialogContent
           className="max-w-md mx-auto text-center bg-card p-0"
+          style={{ zIndex: 10000 }} // 충전 요청 모달(9999)보다 높은 z-index 설정
           onPointerDownOutside={() => setResultDialogOpen(false)} // 모달 외부 클릭 시 닫기
         >
           <div className={`rounded-t-lg p-6 ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
@@ -573,7 +665,15 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
 
             <DialogFooter className="flex justify-center mt-4 sm:justify-center">
               <Button
-                onClick={() => setResultDialogOpen(false)}
+                onClick={() => {
+                  setResultDialogOpen(false);
+                  // 결과 모달이 닫힐 때 폼 초기화
+                  setCustomAmount('0');
+                  setSelectedAmount('');
+                  setKoreanAmount('0');
+                  setError(null);
+                  // 입금자명은 유지
+                }}
                 className={`min-w-[100px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}`}
               >
                 확인

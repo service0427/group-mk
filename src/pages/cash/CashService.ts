@@ -14,7 +14,8 @@ export class CashService {
    */
   public static async createChargeRequest(
     userId: string,
-    amount: number
+    amount: number,
+    depositorName?: string
   ): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       if (!userId) {
@@ -61,7 +62,8 @@ export class CashService {
           amount: amount,
           status: 'pending',
           free_cash_percentage: freeCashPercentage,
-          requested_at: new Date().toISOString()
+          requested_at: new Date().toISOString(),
+          account_holder: depositorName || null
         })
         .select();
 
@@ -101,7 +103,7 @@ export class CashService {
       // 캐시 충전 요청 내역 조회
       const { data, error } = await supabase
         .from('cash_charge_requests')
-        .select('id, amount, status, requested_at, free_cash_percentage')
+        .select('id, amount, status, requested_at, free_cash_percentage, account_holder')
         .eq('user_id', userId)
         .order('requested_at', { ascending: false })
         .limit(limit);

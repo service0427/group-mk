@@ -26,6 +26,7 @@ interface AuthContextProps {
     resetPassword: (email: string) => Promise<void>; // 비밀번호 재설정 함수 추가
     requestPasswordResetLink: (email: string) => Promise<void>; // 비밀번호 재설정 링크 요청
     changePassword: (email: string, token: string, newPassword: string, confirmPassword: string) => Promise<void>; // 비밀번호 변경
+    checkEmailExists: (email: string) => Promise<boolean>; // 이메일 중복 체크 함수 추가
 }
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -145,6 +146,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const metadataRole = user.user_metadata?.role;
 
             // 초보자 역할 확인 - 초보자인 경우 users 테이블 조회 스킵
+            /*
             if (metadataRole === USER_ROLES.BEGINNER) {
                 // 초보자는 메타데이터만 사용하여 기본 사용자 정보 생성
                 const beginnerUserData: CustomUser = {
@@ -158,6 +160,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 };
                 return beginnerUserData;
             }
+            */
 
             // 사용자 프로필 정보 병합 (초보자가 아닌 경우에만 실행)
             try {
@@ -503,16 +506,46 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             setLoading(false);
         }
     }
+    
+    // 이메일 중복 체크 함수 - 데이터베이스 함수 사용
+    const checkEmailExists = async (email: string) => {
+        try {
+            // 이메일 형식 유효성 체크
+            if (!email || !/\S+@\S+\.\S+/.test(email)) {
+                return false;
+            }
+            
+            // 데이터베이스 함수 호출하여 이메일 중복 체크
+            const { data, error } = await supabase
+                .rpc('check_email_exists', { 
+                    email_to_check: email 
+                });
+            
+            if (error) {
+                console.error('이메일 중복 체크 오류:', error.message);
+                return false;
+            }
+            
+            // 함수가 true를 반환하면 이메일이 이미 존재함
+            return !!data;
+        } catch (error) {
+            console.error('이메일 중복 체크 중 예외 발생:', error);
+            return false;
+        }
+    }
 
     const register = async (email: string, full_name: string, password: string, password_confirmation: string) => {
         setLoading(true);
+        console.log('회원가입 시작:', { email, full_name });
 
         try {
             // 비밀번호 유효성 검사
             if (password !== password_confirmation) {
+                console.log('비밀번호 불일치');
                 throw new Error('비밀번호가 일치하지 않습니다.');
             }
 
+            console.log('Supabase Auth API 호출 전');
             // Supabase Auth에 사용자 등록
             const { data, error } = await supabase.auth.signUp({
                 email,
@@ -526,10 +559,14 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             });
 
             if (error) {
+                console.error('Auth API 오류:', error);
                 throw new Error(error.message);
             }
 
+            console.log('Auth API 성공:', { userId: data?.user?.id });
+
             if (!data.user) {
+                console.error('사용자 데이터 없음');
                 throw new Error('사용자 데이터가 없습니다');
             }
 
@@ -542,27 +579,47 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     status: 'active',
                     role: USER_ROLES.BEGINNER // 초보자로 기본 역할 설정
                 };
+                console.log('사용자 객체 준비:', newUser);
 
                 // 비밀번호 해시 생성
+                console.log('hash_password RPC 함수 호출 전');
                 const hashPassword = await supabase.rpc('hash_password', {
                     password: password
                 });
+                console.log('hash_password 결과:', { 
+                    success: !hashPassword.error, 
+                    dataType: typeof hashPassword.data,
+                    dataLength: hashPassword.data ? hashPassword.data.length : 0 
+                });
 
                 if (hashPassword.error) {
+                    console.error('비밀번호 해시 생성 오류:', hashPassword.error);
                     throw new Error(hashPassword.error.message);
                 }
 
                 // public.users 테이블에 사용자 정보 삽입
-                const { error: insertError } = await supabase.from('users').insert([{
+                console.log('users 테이블 Insert 시도 전');
+                const insertData = {
                     ...newUser,
                     password_hash: hashPassword.data
-                }]);
+                };
+                console.log('삽입 데이터 구조:', Object.keys(insertData));
+                
+                const { error: insertError } = await supabase.from('users').insert([insertData]);
 
                 if (insertError) {
+                    console.error('Users 테이블 삽입 오류:', {
+                        code: insertError.code,
+                        message: insertError.message,
+                        details: insertError.details,
+                        hint: insertError.hint
+                    });
                     throw new Error(insertError.message);
                 }
+                console.log('Users 테이블 삽입 성공');
 
                 // user_balances 테이블에 초기 잔액 정보 추가
+                console.log('user_balances 테이블 Insert 시도 전');
                 const { error: balanceError } = await supabase.from('user_balances').insert([{
                     user_id: data.user.id,
                     paid_balance: 0,
@@ -570,34 +627,58 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     total_balance: 0
                 }]);
 
+                if (balanceError) {
+                    console.warn('잔액 정보 추가 실패:', balanceError);
+                } else {
+                    console.log('잔액 정보 추가 성공');
+                }
                 // 잔액 정보 추가 실패는 회원가입 과정을 중단시키지 않음
 
                 // 클라이언트측 인증 상태 초기화
+                console.log('회원가입 성공 후 인증 상태 초기화');
                 setAuth(undefined);
                 setCurrentUser(null);
                 authHelper.removeAuth();
 
                 // Supabase 세션 로그아웃 처리
+                console.log('Supabase 세션 로그아웃 시도');
                 try {
                     await supabase.auth.signOut();
+                    console.log('로그아웃 성공');
                 } catch (logoutError) {
+                    console.warn('로그아웃 실패:', logoutError);
                     // 로그아웃 실패 시 무시
                 }
 
                 // 로컬 스토리지에서 Supabase 관련 항목 제거
+                console.log('로컬 스토리지 정리');
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith('sb-') || key.includes('supabase')) {
                         localStorage.removeItem(key);
                     }
                 });
+                console.log('회원가입 과정 완료');
             } catch (dbError: any) {
+                console.error('회원가입 DB 오류:', dbError);
+                console.error('DB 오류 스택:', dbError.stack || '스택 없음');
+                // auth 테이블에 사용자가 추가되었을 수 있으니 정리 시도
+                try {
+                    console.log('DB 오류 발생 후 로그아웃 시도');
+                    await supabase.auth.signOut();
+                } catch (e) {
+                    console.warn('오류 후 로그아웃 실패:', e);
+                }
                 throw new Error(dbError.message);
             }
 
+            console.log('회원가입 전체 과정 완료, 데이터 반환');
             return data;
         } catch (error: any) {
+            console.error('회원가입 최상위 오류:', error);
+            console.error('오류 스택:', error.stack || '스택 없음');
             throw new Error(error.message);
         } finally {
+            console.log('회원가입 함수 종료, 로딩 상태 해제');
             setLoading(false);
         }
     }
@@ -847,7 +928,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         refreshToken,
         resetPassword,
         requestPasswordResetLink,
-        changePassword
+        changePassword,
+        checkEmailExists
     }), [
         loading, auth, currentUser, saveAuth,
         logout, verify, isAuthenticated, userRole,

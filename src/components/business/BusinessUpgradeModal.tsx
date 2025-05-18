@@ -5,6 +5,7 @@ import { supabase } from '@/supabase';
 import { BusinessFormData } from '@/types/business';
 import { useAuthContext } from '@/auth';
 import { ImageInput } from '@/components/image-input';
+import { USER_ROLES } from '@/config/roles.config';
 
 interface BusinessUpgradeModalProps {
   isOpen: boolean;
@@ -28,11 +29,18 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     business_name: '',
     representative_name: '',
     business_email: '',
-    business_image_url: ''
+    business_image_url: '',
+    bank_account: {
+      bank_name: '',
+      account_number: '',
+      account_holder: '',
+      is_editable: true
+    }
   });
   
   const [businessImage, setBusinessImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [hasExistingBankAccount, setHasExistingBankAccount] = useState<boolean>(false);
   
   // 초기값 설정
   useEffect(() => {
@@ -42,14 +50,28 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         business_name: initialData.business_name || '',
         representative_name: initialData.representative_name || '',
         business_email: initialData.business_email || '',
-        business_image_url: initialData.business_image_url || ''
+        business_image_url: initialData.business_image_url || '',
+        bank_account: initialData.bank_account || {
+          bank_name: '',
+          account_number: '',
+          account_holder: '',
+          is_editable: true
+        }
       });
       
       if (initialData.business_image_url) {
         setImagePreview(initialData.business_image_url);
       }
+      
+      // 이미 계좌 정보가 있는지 체크
+      if (initialData.bank_account && 
+          initialData.bank_account.bank_name && 
+          initialData.bank_account.account_number) {
+        setHasExistingBankAccount(true);
+      }
     }
   }, [initialData, isOpen]);
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
@@ -58,10 +80,24 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // 은행 계좌 관련 필드인지 확인
+    if (name.startsWith('bank_')) {
+      const fieldName = name.replace('bank_', '');
+      setFormData(prev => ({
+        ...prev,
+        bank_account: {
+          ...prev.bank_account!,
+          [fieldName]: value
+        }
+      }));
+    } else {
+      // 일반 필드 업데이트
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
   
   const handleImageChange = async (file: File | null) => {
@@ -260,6 +296,25 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
       
       // 파일 업로드 실패해도 계속 진행 (스토리지 문제 때문에 임시 조치)
       
+      // 현재 사용자의 계좌 정보 상태 확인
+      let userHasExistingAccount = false;
+      
+      try {
+        // 현재 사용자의 정보 조회
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('business')
+          .eq('id', currentUser?.id)
+          .single();
+        
+        if (!userError && userData && userData.business && userData.business.bank_account) {
+          userHasExistingAccount = true;
+        }
+      } catch (e) {
+        // 조회 실패 시 사용자에게 계좌 정보가 없다고 가정
+        userHasExistingAccount = false;
+      }
+      
       // 사업자 정보를 users 테이블의 business JSONB 필드에 업데이트
       const businessData: any = {
         business_number: formData.business_number,
@@ -268,6 +323,27 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         business_email: formData.business_email || null,
         verified: false
       };
+      
+      // 계좌 정보 처리
+      if (formData.bank_account && 
+          formData.bank_account.bank_name && 
+          formData.bank_account.account_number && 
+          formData.bank_account.account_holder) {
+        
+        // 기존 계좌 정보가 있는 경우 (수정 불가능)
+        if (userHasExistingAccount) {
+          console.log('기존 계좌 정보가 있어 변경할 수 없습니다.');
+          // 기존 계좌 정보를 유지합니다 (수정하지 않음)
+        } else {
+          // 새 계좌 정보 저장 (1회만 수정 가능하도록 설정)
+          businessData.bank_account = {
+            bank_name: formData.bank_account.bank_name,
+            account_number: formData.bank_account.account_number,
+            account_holder: formData.bank_account.account_holder,
+            is_editable: false // 한번 입력 후 수정 불가능하게 설정
+          };
+        }
+      }
       
       // 이미지 URL 저장
       if (business_image_url) {
@@ -404,6 +480,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                     관리자 승인 후 등급이 변경됩니다.</>
                   )}
                 </p>
+                
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -465,6 +542,80 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                       placeholder="사업자용 이메일을 입력하세요"
                       className="input input-bordered w-full focus:ring-2 focus:ring-primary"
                     />
+                  </div>
+                  
+                  {/* 출금 계좌 정보 섹션 */}
+                  <div className="mt-6 mb-4">
+                    <h4 className="font-medium text-base mb-2">출금 계좌 정보</h4>
+                    <p className="text-sm text-gray-500 mb-4">정확한 입금을 위해 출금 계좌 정보를 입력해 주세요. (1회 입력 후 수정 불가)</p>
+                    
+                    {hasExistingBankAccount ? (
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="text-sm text-gray-700 mb-1">
+                          <span className="font-medium">은행명:</span> {formData.bank_account?.bank_name}
+                        </div>
+                        <div className="text-sm text-gray-700 mb-1">
+                          <span className="font-medium">계좌번호:</span> {formData.bank_account?.account_number}
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <span className="font-medium">예금주:</span> {formData.bank_account?.account_holder}
+                        </div>
+                        <div className="mt-3 text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
+                          ⚠️ 출금 계좌 정보는 1회만 입력 가능하며, 이후 수정할 수 없습니다.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">은행명</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bank_bank_name"
+                            value={formData.bank_account?.bank_name || ''}
+                            onChange={handleChange}
+                            placeholder="은행명을 입력하세요"
+                            className="input input-bordered w-full focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">계좌번호</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bank_account_number"
+                            value={formData.bank_account?.account_number || ''}
+                            onChange={handleChange}
+                            placeholder="'-' 없이 숫자만 입력하세요"
+                            className="input input-bordered w-full focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">예금주</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bank_account_holder"
+                            value={formData.bank_account?.account_holder || ''}
+                            onChange={handleChange}
+                            placeholder="예금주명을 입력하세요"
+                            className="input input-bordered w-full focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="mt-2 text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
+                          ⚠️ 출금 계좌 정보는 1회만 입력 가능하며, 이후 수정할 수 없습니다.
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="form-control">
@@ -540,6 +691,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                       </div>
                     </div>
                   </div>
+
 
                   {error && (
                     <div className="alert alert-error p-3 text-sm">{error}</div>

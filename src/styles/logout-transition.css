@@ -1,2 +1,42 @@
-/* 로그아웃 전환 스타일 - 전환 효과 제거 버전 */
-/* 모든 전환 효과 제거 - 비어 있는 파일 */
+/* 로그아웃 전환 스타일 */
+
+/* 로그아웃 중 본문 스타일 - 스크롤 방지 */
+body.logout-transition-active {
+  overflow: hidden !important;
+  position: relative;
+}
+
+/* 로그아웃 전환 오버레이 - 전체 화면을 덮는 오버레이 */
+.logout-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff;
+  z-index: 9999;
+  opacity: 0;
+  animation: fadeIn 0.2s ease-out forwards;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 다크 모드에서는 어두운 배경 사용 */
+[data-theme="dark"] .logout-transition-overlay,
+.dark .logout-transition-overlay,
+html.dark .logout-transition-overlay {
+  background-color: #1a1a1a;
+}
+
+/* 페이드 인 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

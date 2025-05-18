@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { cleanupLogoutState } from '@/utils/logoutSafety';
 
 // API 콜 관리를 위한 확장된 LogoutContext 타입
 interface LogoutContextType {
@@ -43,62 +44,8 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     }
   };
 
-  // 페이지 로드 시 로그아웃 상태 확인 - 전환 효과 제거하고 바로 이동
+  // 페이지 로드 시 로그아웃 상태 확인 및 업데이트 - 전환 효과 제어
   useEffect(() => {
-    // 로그아웃 상태 확인 및 쿠키/스토리지 정리 함수
-    const cleanupLogoutState = () => {
-      try {
-        // 1. localStorage 정리
-        if (typeof localStorage !== 'undefined') {
-          // 모든 로그아웃 관련 플래그 제거
-          const keysToRemove = [
-            'auth_redirect', 'logout_timestamp', 'force_logout',
-            'force_logout_timestamp', 'force_logout_error'
-          ];
-
-          keysToRemove.forEach(key => {
-            try { localStorage.removeItem(key); } catch { }
-          });
-
-          // Supabase 관련 항목 제거 (로그인 페이지에서만)
-          if (typeof window !== 'undefined' &&
-            (window.location.hash.includes('auth/login') || window.location.hash.includes('/auth/login'))) {
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
-                try { localStorage.removeItem(key); } catch { }
-              }
-            });
-          }
-        }
-
-        // 2. sessionStorage 정리
-        if (typeof sessionStorage !== 'undefined') {
-          const sessionKeysToRemove = [
-            'direct_to_login', 'logout_complete', 'logout_redirect',
-            'logout_timestamp', 'logout_error'
-          ];
-
-          sessionKeysToRemove.forEach(key => {
-            try { sessionStorage.removeItem(key); } catch { }
-          });
-        }
-
-        // 3. fallback 쿠키 제거
-        if (typeof document !== 'undefined') {
-          document.cookie = "fallback_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          document.cookie = "force_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-          // 메타 태그 제거
-          const logoutMeta = document.querySelector('meta[name="app-logout-state"]');
-          if (logoutMeta) {
-            logoutMeta.remove();
-          }
-        }
-      } catch (e) {
-        console.error("로그아웃 상태 정리 중 오류", e);
-      }
-    };
-
     // URL 파라미터 정리 함수
     const cleanupUrlParams = () => {
       if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
@@ -108,7 +55,8 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           const hasLogoutParams = urlParams.get('force') === 'true' ||
             urlParams.has('error') ||
             urlParams.has('safety') ||
-            urlParams.has('emergency');
+            urlParams.has('emergency') ||
+            urlParams.has('t');  // 추가: timestamp 파라미터
 
           if (hasLogoutParams) {
             // 현재 URL에서 파라미터만 제거
@@ -152,14 +100,20 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
         if (hashParts.length > 1) {
           const params = new URLSearchParams(hashParts[1]);
           // 로그아웃 관련 파라미터가 있는 경우에만 정리 (첫 로드 시에만)
-          if (params.has('_') || params.has('force') || params.has('error')) {
+          if (params.has('t') || params.has('force') || params.has('error')) {
             cleanupLogoutState();
             cleanupUrlParams();
+
+            // 매번 isLoggingOut 상태가 false로 설정되도록 함
+            setIsLoggingOut(false);
 
             // 이벤트 리스너 제거하여 한 번만 실행되도록 함
             window.removeEventListener('hashchange', handleHashChange);
           }
         }
+      } else {
+        // 로그인 페이지가 아니면 isLoggingOut이 false 상태로 유지되도록
+        setIsLoggingOut(false);
       }
     };
 

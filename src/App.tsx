@@ -66,7 +66,7 @@ const App = () => {
     >
       <PathnameProvider>
         <ScrollToTop />
-        {/* 로그아웃 전환 컴포넌트 - 화면 깜박임 방지 */}
+        {/* 로그아웃 전환 컴포넌트 - isLoggingOut 상태에 따라 화면 깜박임 방지 */}
         <LogoutTransition />
         <AppRouting />
       </PathnameProvider>

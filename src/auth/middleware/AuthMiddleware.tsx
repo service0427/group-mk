@@ -93,8 +93,8 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 정보가 전혀 없는 경우 로그인 페이지로 이동
       if (!hasAuth && !hasCachedUser) {
-        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
-        navigate('auth/login', { 
+        // 해시 라우팅에 맞게 /auth/login 경로 사용 (앞에 슬래시 포함)
+        navigate('/auth/login', { 
           state: { from: location.pathname + location.hash },
           replace: true 
         });
@@ -137,8 +137,8 @@ const AuthMiddleware: React.FC<React.PropsWithChildren> = ({ children }) => {
       
       // 인증 상태가 완전히 확인된 후 auth는 있지만 currentUser가 없는 경우 (검증 실패)
       if (auth && !currentUser && !isAlreadyNavigatingToLogin) {
-        // 해시 라우팅에 맞게 auth/login 경로 사용 (앞에 슬래시 없음)
-        navigate('auth/login', { 
+        // 해시 라우팅에 맞게 /auth/login 경로 사용 (앞에 슬래시 포함)
+        navigate('/auth/login', { 
           state: { from: location.pathname + location.hash },
           replace: true 
         });

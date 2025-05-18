@@ -738,17 +738,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             setAuth(undefined);
             setCurrentUser(null);
 
-            // 4. 모든 로그아웃 작업을 한 번에 처리
-            setTimeout(async () => {
-
+            // 4. 모든 로그아웃 작업을 즉시 처리하고 백그라운드에서 서버 세션 종료
+            setTimeout(() => {
                 // 인증 관련 스토리지 정리
                 clearAuthStorage();
-
-                // Supabase 로그아웃 (실제 로그아웃을 완료하기 위해 await 사용)
-                try {
-                    await supabase.auth.signOut();
-                } catch (e) {
-                }
 
                 // 페이지 전환을 위한 상태 저장 (브라우저 환경에서만)
                 if (typeof localStorage !== 'undefined') {
@@ -786,9 +779,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     }
                 }
 
-                // 브라우저 환경에서만 페이지 이동
+                // 브라우저 환경에서만 페이지 이동 (먼저 실행)
                 if (typeof window !== 'undefined') {
-
                     // 세션 스토리지 완전히 비우기
                     try { sessionStorage.clear(); } catch (e) { }
 
@@ -800,7 +792,12 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     // 새로운 상태를 즉시 반영하기 위해 location.href 대신 replace 사용
                     window.location.replace(logoutUrl);
                 }
-            }, 100);  // 지연 시간 축소: 100ms
+
+                // Supabase 로그아웃 (백그라운드에서 처리 - await 사용하지 않음)
+                supabase.auth.signOut().catch(e => {
+                    // 오류가 발생해도 사용자 경험에 영향을 주지 않도록 조용히 처리
+                });
+            }, 0);  // 지연 없이 바로 실행
 
             return true;
         } catch (error) {
@@ -819,8 +816,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             setTimeout(() => {
                 const timestamp = Date.now();
 
-                // 오류 발생 후 강제 로그아웃
-
                 // 세션 스토리지 초기화
                 try {
                     if (typeof sessionStorage !== 'undefined') {
@@ -835,8 +830,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
                     // 페이지 새로고침
                     window.location.replace(logoutUrl);
+                    
+                    // 백그라운드에서 서버 세션 종료 시도
+                    supabase.auth.signOut().catch(() => {
+                        // 실패해도 무시 (이미 UI에서는 로그아웃 처리됨)
+                    });
                 }
-            }, 100); // 지연 시간 축소: 100ms
+            }, 0); // 지연 없이 즉시 실행
 
             return false;
         }

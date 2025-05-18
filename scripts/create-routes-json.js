@@ -24,6 +24,20 @@ const routesContent = {
     "/*.woff2",
     "/*.ttf",
     "/*.eot"
+  ],
+  routes: [
+    {
+      "src": "/auth/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/error/*",
+      "dest": "/index.html"
+    },
+    {
+      "src": ".*",
+      "dest": "/index.html"
+    }
   ]
 };
 

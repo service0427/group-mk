@@ -303,7 +303,11 @@ export class CashManageService {
 
       // 4. 페이지네이션 계산
       const offset = (page - 1) * limit;
+      console.log('page', page);
+      console.log('limit', limit);
+      console.log('offset', offset);
       const end = offset + parseInt(limit.toString()) - 1;
+      console.log('end', end);
 
       // 5. 데이터 쿼리 구성
       let dataQuery = supabase
@@ -318,7 +322,8 @@ export class CashManageService {
           requested_at,
           processed_at,
           processor_id,
-          rejection_reason
+          rejection_reason,
+          account_holder
         `);
 
       // 기본 필터 적용
@@ -420,6 +425,7 @@ export class CashManageService {
           processed_at: request.processed_at,
           processor_id: request.processor_id,
           rejection_reason: request.rejection_reason,
+          account_holder: request.account_holder || '',
           user_id: request.user_id,
           email: user?.email || '정보 없음',
           full_name: user?.full_name || '정보 없음',

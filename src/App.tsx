@@ -64,11 +64,19 @@ const App = () => {
         v7_startTransition: true
       }}
     >
+      {/* 가장 먼저 로그아웃 전환 컴포넌트 렌더링 - 최상위 우선순위 */}
+      <LogoutTransition />
+      
       <PathnameProvider>
         <ScrollToTop />
-        {/* 로그아웃 전환 컴포넌트 - isLoggingOut 상태에 따라 화면 깜박임 방지 */}
-        <LogoutTransition />
-        <AppRouting />
+        {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
+        {!isLoggingOut && <AppRouting />}
+        {/* 로그아웃 중이면 라우팅 렌더링 방지 */}
+        {isLoggingOut && (
+          <div style={{ display: 'none' }}>
+            {/* 의도적으로 비워둠 - 로그아웃 중 다른 컨텐츠 차단 */}
+          </div>
+        )}
       </PathnameProvider>
     </HashRouter>
   );

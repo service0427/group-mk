@@ -53,41 +53,61 @@ export const cleanupLogoutState = (): void => {
 
 /**
  * 로그아웃 프로세스를 실행하는 함수
- * - 상태를 먼저 변경하고 그 다음 URL 변경을 실행
- * - 깜빡임 방지를 위해 조정된 동작 순서
+ * - 하드 리디렉션 사용 (React 라우터 우회)
+ * - 깜빡임 방지를 위해 오버레이 즉시 표시 후 리디렉션
  */
 export const syncedLogout = async (
   clearAuthFn: () => void,
-  navigate: (path: string) => void,
+  navigate: (path: string) => void, // 이 함수는 사용하지 않고 하드 리디렉션 사용
   setLogoutState: (state: boolean) => void
 ): Promise<void> => {
-  // 1. 로그아웃 중 상태 설정 (화면 렌더링 차단용)
+  // 1. 로그아웃 중 상태 즉시 설정 (오버레이 활성화)
   setLogoutState(true);
   
-  // 2. 짧은 대기 - 로그아웃 상태가 React 렌더링 사이클에 적용되도록 함
-  await new Promise(resolve => setTimeout(resolve, 10));
+  // 2. 매우 짧은 대기 - 오버레이가 렌더링될 시간 확보
+  await new Promise(resolve => setTimeout(resolve, 5));
   
   try {
-    // 3. 인증 상태 초기화 (동기 작업)
+    // 3. 인증 상태 정리 (동기 작업)
     clearAuthFn();
-    
-    // 4. 스토리지 정리 (동기 작업)
     cleanupLogoutState();
     
-    // 5. 짧은 대기 - 모든 클리어 작업이 완료될 때까지 대기
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // 6. 로그인 페이지로 이동
+    // 4. 주요 함수: 하드 리디렉션 사용 - React 라우터 완전히 우회
     const timestamp = new Date().getTime();
-    navigate(`/auth/login?t=${timestamp}`);
+    const loginPath = `/#/auth/login?t=${timestamp}`;
     
-    // 7. DOM 업데이트를 위한 짧은 대기
-    await new Promise(resolve => setTimeout(resolve, 100));
-  } finally {
-    // 8. 로그아웃 중 상태 종료 (100ms 후)
+    // window.location.href 사용 - React Router 우회하여 즉시 URL 변경
+    window.location.href = window.location.origin + loginPath;
+    
+    // 5. 백그라운드에서 추가 정리 작업 (필요한 경우)
+    // 이 시점에서는 이미 페이지 전환이 시작됨
+    
+    // 6. 하드 리디렉션 후에도 오버레이 유지 - 다른 페이지가 잠깐 보이는 것 방지
+    // 일정 시간 후 로그아웃 상태 해제 (300ms 정도 충분히 기다림)
+    setTimeout(() => {
+      try {
+        setLogoutState(false);
+      } catch (e) {
+        // 페이지가 이미 이동했을 수 있으므로 오류 무시
+      }
+    }, 300);
+  } catch (error) {
+    // 오류 발생 시 Fallback - 기존 방식 사용
+    console.error('하드 리디렉션 실패, 일반 방식 사용:', error);
+    
+    try {
+      // 일반 방식으로 리디렉션 시도
+      const timestamp = new Date().getTime();
+      navigate(`/auth/login?t=${timestamp}`);
+    } catch (e) {
+      // 모든 방법 실패 시 마지막 수단
+      window.location.reload();
+    }
+    
+    // 로그아웃 상태 종료
     setTimeout(() => {
       setLogoutState(false);
-    }, 100);
+    }, 200);
   }
 };
 

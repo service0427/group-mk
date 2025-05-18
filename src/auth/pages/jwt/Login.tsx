@@ -84,12 +84,18 @@ const Login = () => {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
 
-  // 페이지 진입 시 필요한 localStorage 항목만 초기화
+  // 페이지 진입 시 localStorage 및 sessionStorage 완전 초기화
   useEffect(() => {
-    localStorage.removeItem('auth');
-    localStorage.removeItem('user');
-    localStorage.removeItem('metronic-tailwind-react-auth-v1=9.1.1');
-    localStorage.removeItem('sb-iiyzaaboinfezycblwnb-auth-token');
+    // localStorage 완전 초기화
+    localStorage.clear();
+    
+    // sessionStorage 완전 초기화
+    sessionStorage.clear();
+    
+    // 개발 환경에서는 로그 출력
+    if (import.meta.env.MODE === 'development') {
+      // 로그인 페이지 진입: localStorage 및 sessionStorage 초기화 완료
+    }
   }, []);
   
   // 회원가입 완료 메시지 표시

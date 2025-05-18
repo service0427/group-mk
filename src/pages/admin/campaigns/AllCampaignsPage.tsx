@@ -13,18 +13,18 @@ const AllCampaignsPage: React.FC = () => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
-  
+
   // 인증 컨텍스트
   const { userRole } = useAuthContext();
-  
+
   // 캠페인 데이터 상태
   const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 운영자 권한 확인
   const isOperator = userRole === USER_ROLES.OPERATOR || userRole === USER_ROLES.DEVELOPER;
-  
+
   // 데이터 로드 함수
   const loadAllCampaigns = async () => {
     if (!isOperator) {
@@ -32,34 +32,34 @@ const AllCampaignsPage: React.FC = () => {
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // 모든 캠페인 데이터 가져오기
       const { data, error: fetchError } = await supabase
         .from('campaigns')
         .select('*')
         .order('updated_at', { ascending: false });
-      
+
       if (fetchError) {
-        
+
         setError('캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
         setCampaigns([]);
         return;
       }
-      
+
       // 데이터 변환
       const formattedCampaigns = data.map((item, index) => {
         // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
         let parsedItem = { ...item };
-        
+
         // add_info 필드 처리
         if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
           try {
             parsedItem.add_info = JSON.parse(parsedItem.add_info);
           } catch (error) {
-            
+
             // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
             const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
             if (logoUrlMatch && logoUrlMatch[1]) {
@@ -67,7 +67,7 @@ const AllCampaignsPage: React.FC = () => {
             }
           }
         }
-        
+
         // 상태 값에 따른 라벨과 색상
         const getStatusLabel = (status: string): string => {
           switch (status) {
@@ -79,7 +79,7 @@ const AllCampaignsPage: React.FC = () => {
             default: return '준비중';
           }
         };
-        
+
         const getStatusColor = (status: string): string => {
           switch (status) {
             case 'active': return 'success';
@@ -91,7 +91,7 @@ const AllCampaignsPage: React.FC = () => {
             default: return 'info';
           }
         };
-        
+
         // 서비스 타입에 따른 서비스 이름
         const getServiceName = (serviceType: string): string => {
           switch (serviceType) {
@@ -106,7 +106,7 @@ const AllCampaignsPage: React.FC = () => {
             default: return serviceType;
           }
         };
-        
+
         return {
           id: parsedItem.id.toString(),
           campaignName: parsedItem.campaign_name,
@@ -131,23 +131,23 @@ const AllCampaignsPage: React.FC = () => {
           originalData: parsedItem
         };
       });
-      
+
       setCampaigns(formattedCampaigns);
       setError(null);
     } catch (err) {
-      
+
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       setCampaigns([]);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // 페이지 로드시 데이터 가져오기
   useEffect(() => {
     loadAllCampaigns();
   }, []);
-  
+
   return (
     <CommonTemplate
       title="모든 캠페인 통합 관리"
@@ -167,8 +167,8 @@ const AllCampaignsPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <AllCampaignsContent 
-            campaigns={campaigns} 
+          <AllCampaignsContent
+            campaigns={campaigns}
             onCampaignUpdated={loadAllCampaigns}
           />
         )}

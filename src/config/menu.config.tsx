@@ -321,21 +321,89 @@ export const MENU_SIDEBAR: TMenuConfig = [
         ]
       },
       {
-        title: '캠페인 관리',
+        title: '캠페인 통합 관리',
+        path: '/admin/campaigns/all',
         icon: 'setting-3 text-warning',
+      },
+    ]
+  },
+  {
+    title: '캠페인 관리',
+    icon: 'setting-3 text-warning',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
+    children: [
+      {
+        title: '네이버',
+        iconImage: '/media/ad-brand/naver.png',
         children: [
           {
-            title: '캠페인 통합 관리',
-            path: '/admin/campaigns/all',
-            icon: 'setting-3 text-warning',
+            title: 'N 트래픽',
+            path: '/admin/campaigns/naver-traffic',
+            iconImage: '/media/ad-brand/naver.png'
           },
           {
-            title: 'NAVER 쇼핑',
-            icon: 'shop text-primary',
-            path: '/admin/campaigns/naver-shopping'
+            title: 'N 자동완성',
+            path: '/admin/campaigns/naver-auto',
+            iconImage: '/media/ad-brand/naver.png'
+          },
+          {
+            title: 'NS 트래픽',
+            path: '/admin/campaigns/naver-shopping',
+            iconImage: '/media/ad-brand/naver-shopping.png'
+          },
+          {
+            title: 'NP 트래픽',
+            path: '/admin/campaigns/naver-place-traffic',
+            iconImage: '/media/ad-brand/naver-place.png'
+          },
+          {
+            title: 'NP 저장하기',
+            path: '/admin/campaigns/naver-place-save',
+            iconImage: '/media/ad-brand/naver-place.png'
+          },
+          {
+            title: 'NP 블로그공유',
+            path: '/admin/campaigns/naver-place-share',
+            iconImage: '/media/ad-brand/naver-blog.png'
+          },
+          {
+            title: 'NS 가구매',
+            iconImage: '/media/ad-brand/naver-shopping.png',
+            disabled: true
+          },
+        ],
+      },
+      {
+        title: '쿠팡',
+        iconImage: '/media/ad-brand/coupang-app.png',
+        children: [
+          {
+            title: 'CP 트래픽',
+            path: '/admin/campaigns/coupang-traffic',
+            iconImage: '/media/ad-brand/coupang-app.png'
+          },
+          {
+            title: 'CP 가구매',
+            iconImage: '/media/ad-brand/coupang-app.png',
+            disabled: true
           },
         ]
       },
+      {
+        title: '인스타그램',
+        iconImage: '/media/ad-brand/instagram.png',
+        disabled: true
+      },
+      {
+        title: '포토&영상 제작',
+        iconImage: '/media/brand-logos/vimeo.svg',
+        disabled: true
+      },
+      {
+        title: '라이브방송',
+        iconImage: '/media/ad-brand/youtube.png',
+        disabled: true
+      }
     ]
   },
   {
@@ -486,11 +554,6 @@ export const MENU_MEGA: TMenuConfig = [
             icon: 'handcart text-warning',
             path: '/advertise/coupang/traffic/desc'
           },
-          {
-            title: 'OH 트래픽',
-            icon: 'home-3 text-success',
-            path: '/advertise/ohouse/traffic/desc'
-          }
         ]
       },
       {
@@ -531,11 +594,6 @@ export const MENU_MEGA: TMenuConfig = [
             icon: 'handcart text-warning',
             path: '/advertise/coupang/traffic/campaign'
           },
-          {
-            title: 'OH 트래픽',
-            icon: 'home-3 text-success',
-            path: '/advertise/ohouse/traffic/campaign'
-          }
         ]
       },
       {
@@ -700,11 +758,6 @@ export const MENU_MEGA: TMenuConfig = [
             icon: 'handcart text-warning',
             path: '/admin/campaigns/coupang'
           },
-          {
-            title: '오늘의집',
-            icon: 'home-3 text-success',
-            path: '/admin/campaigns/ohouse'
-          }
         ]
       },
       {

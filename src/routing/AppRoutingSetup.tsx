@@ -141,6 +141,17 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/campaign-request" element={<CampaignRequestPage />} />
           <Route path="/campaign-request/add" element={<CampaignAddPage />} />
 
+          {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
+
+          {/* 기존 경로는 그대로 사용 (더 이상 리다이렉트 불필요) */}
+          {/* 모든 경로는 :serviceType 패턴 매칭을 통해 CampaignPage 컴포넌트로 라우팅됨 */}
+
+          {/* 서비스 타입별 캠페인 관리 페이지 - URL 파라미터 사용 */}
+          <Route path="/admin/campaigns/:serviceType" element={<Campaigns.CampaignPage />} />
+
+          {/* 캠페인 페이지 기본 경로 - 쿼리 파라미터 사용 (예: ?service_type=ntraffic) */}
+          <Route path="/admin/campaigns" element={<Campaigns.CampaignPage />} />
+
           {/* 슬롯 관리 라우트 */}
           <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
           <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
@@ -156,15 +167,6 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 캠페인 관리 라우트 */}
           <Route path="/admin/campaigns/all" element={<Campaigns.AllCampaignsPage />} />
-          <Route path="/admin/campaigns/naver-shopping" element={<Campaigns.NaverShoppingPage />} />
-          <Route path="/admin/campaigns/naver-place-traffic" element={<Campaigns.NaverPlaceTrafficPage />} />
-          <Route path="/admin/campaigns/naver-place-save" element={<Campaigns.NaverPlaceSavePage />} />
-          <Route path="/admin/campaigns/naver-place-share" element={<Campaigns.NaverPlaceSharePage />} />
-          <Route path="/admin/campaigns/naver-auto" element={<Campaigns.NaverAutoPage />} />
-          <Route path="/admin/campaigns/ntraffic" element={<Campaigns.NaverTrafficPage />} />
-          <Route path="/admin/campaigns/naver-traffic" element={<Navigate to="/admin/campaigns/ntraffic" />} />
-          <Route path="/admin/campaigns/coupang" element={<Campaigns.CoupangPage />} />
-          <Route path="/admin/campaigns/ohouse" element={<Campaigns.OhousePage />} />
 
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />

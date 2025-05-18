@@ -57,65 +57,65 @@ const CampaignAddPage: React.FC = () => {
     status: 'active', // 기본 상태는 '진행중'
     bannerImage: '',
   });
-  
+
   // 서비스 유형별 추가 필드
-  const [additionalFields, setAdditionalFields] = useState<{[key: string]: string}>({});
-  
+  const [additionalFields, setAdditionalFields] = useState<{ [key: string]: string }>({});
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 로고 업로드 관련 상태
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // 배너 이미지 업로드 관련 상태
   const [uploadedBannerImage, setUploadedBannerImage] = useState<string | null>(null);
   const [bannerImagePreviewUrl, setBannerImagePreviewUrl] = useState<string | null>(null);
   const bannerImageFileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // 배너 이미지 미리보기 모달 상태
   const [bannerPreviewModalOpen, setBannerPreviewModalOpen] = useState<boolean>(false);
-  
+
   // 캠페인 전체 미리보기 모달 상태
   const [campaignPreviewModalOpen, setCampaignPreviewModalOpen] = useState<boolean>(false);
-  
+
   const handleChange = (field: keyof NewCampaign, value: string) => {
     setNewCampaign(prev => ({ ...prev, [field]: value }));
   };
-  
+
   // 숫자만 입력받는 핸들러
   const handleNumberChange = (field: keyof NewCampaign, value: string) => {
     // 숫자와 소수점만 허용
     const numericValue = value.replace(/[^0-9.]/g, '');
-    
+
     // 소수점이 두 개 이상 있는 경우 첫 번째 소수점만 유지
     const parts = numericValue.split('.');
     const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-    
+
     // unitPrice만 처리 (다른 숫자 필드들은 제거됨)
     if (field === 'unitPrice') {
       setNewCampaign(prev => ({ ...prev, [field]: formattedValue }));
     }
   };
-  
+
   // 로고 파일 업로드 처리
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // 파일 크기 체크 (5MB 이하로 제한)
     if (file.size > 5 * 1024 * 1024) {
       setError('파일 크기는 5MB 이하만 가능합니다.');
       return;
     }
-    
+
     // 이미지 파일 체크
     if (!file.type.startsWith('image/')) {
       setError('이미지 파일만 업로드 가능합니다.');
       return;
     }
-    
+
     // 파일 데이터를 Base64로 변환하여 저장
     const reader = new FileReader();
     reader.onload = () => {
@@ -123,7 +123,7 @@ const CampaignAddPage: React.FC = () => {
       // 항상 새 이미지로 업데이트
       setPreviewUrl(result);
       setUploadedLogo(file.name);
-      
+
       // 명시적으로 기본 선택을 지우고 업로드 이미지를 사용하도록 설정
       setNewCampaign(prev => ({
         ...prev,
@@ -132,29 +132,29 @@ const CampaignAddPage: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
-  
+
   // 파일 선택 클릭 핸들러
   const handleFileSelectClick = () => {
     fileInputRef.current?.click();
   };
-  
+
   // 배너 이미지 업로드 처리
   const handleBannerImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // 파일 크기 체크 (10MB 이하로 제한)
     if (file.size > 10 * 1024 * 1024) {
       setError('파일 크기는 10MB 이하만 가능합니다.');
       return;
     }
-    
+
     // 이미지 파일 체크
     if (!file.type.startsWith('image/')) {
       setError('이미지 파일만 업로드 가능합니다.');
       return;
     }
-    
+
     // 파일 데이터를 Base64로 변환하여 저장
     const reader = new FileReader();
     reader.onload = () => {
@@ -164,23 +164,23 @@ const CampaignAddPage: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
-  
+
   // 배너 이미지 파일 선택 클릭 핸들러
   const handleBannerImageSelectClick = () => {
     bannerImageFileInputRef.current?.click();
   };
-  
+
   const handleSave = async () => {
     // 필수 필드 검증
     if (!newCampaign.campaignName.trim()) {
       setError('캠페인 이름은 필수입니다.');
       return;
     }
-    
+
     // 서비스 유형별 필수 필드 검증
     if (serviceType && serviceTypeInfoMap[serviceType]) {
       const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-      
+
       for (const [fieldKey, info] of Object.entries(fieldInfo)) {
         if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
           setError(`${info.label}은(는) 필수 입력 항목입니다.`);
@@ -188,10 +188,10 @@ const CampaignAddPage: React.FC = () => {
         }
       }
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       // 1. DB에 새 캠페인 생성
       const result = await createCampaign({
@@ -213,14 +213,14 @@ const CampaignAddPage: React.FC = () => {
         minQuantity: '10',
         additionalLogic: '0'
       });
-      
+
       if (!result.success) {
         throw new Error(result.error || '캠페인 생성에 실패했습니다.');
       }
-      
+
       // 성공 메시지 표시
       toast.success(`'${newCampaign.campaignName}' 캠페인 제안이 접수되었습니다.`);
-      
+
       // 캠페인 목록 페이지로 이동
       navigate('/campaign-request');
     } catch (err) {
@@ -229,7 +229,7 @@ const CampaignAddPage: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   // 상태값에 따른 라벨 반환
   const getStatusLabel = (status: string): string => {
     switch (status) {
@@ -239,7 +239,7 @@ const CampaignAddPage: React.FC = () => {
       default: return '준비중';
     }
   };
-  
+
   // 상태값에 따른 색상 반환
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -255,7 +255,7 @@ const CampaignAddPage: React.FC = () => {
   // 서비스 유형에 따른 이름 및 필드 정보
   interface ServiceTypeInfo {
     name: string;
-    additionalFields: { [key: string]: { label: string; type: string; defaultValue: string; placeholder?: string; required?: boolean; options?: Array<{value: string, label: string}> } };
+    additionalFields: { [key: string]: { label: string; type: string; defaultValue: string; placeholder?: string; required?: boolean; options?: Array<{ value: string, label: string }> } };
   }
 
   // 서비스 유형별 정보 정의
@@ -272,7 +272,8 @@ const CampaignAddPage: React.FC = () => {
       additionalFields: {
         productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        productCategory: { label: '상품 카테고리', type: 'select', defaultValue: '', required: true, 
+        productCategory: {
+          label: '상품 카테고리', type: 'select', defaultValue: '', required: true,
           options: [
             { value: 'fashion', label: '패션의류/잡화' },
             { value: 'beauty', label: '화장품/미용' },
@@ -310,7 +311,8 @@ const CampaignAddPage: React.FC = () => {
       name: '네이버 자동완성',
       additionalFields: {
         targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        searchFrequency: { label: '검색 빈도 (일)', type: 'select', defaultValue: '7', required: true,
+        searchFrequency: {
+          label: '검색 빈도 (일)', type: 'select', defaultValue: '7', required: true,
           options: [
             { value: '3', label: '3일' },
             { value: '7', label: '7일' },
@@ -333,22 +335,22 @@ const CampaignAddPage: React.FC = () => {
   const getServiceTypeName = (type: string): string => {
     return serviceTypeInfoMap[type]?.name || '네이버 트래픽';
   };
-  
+
   // 서비스 유형에 따른 추가 필드 초기화
   useEffect(() => {
     if (serviceType && serviceTypeInfoMap[serviceType]) {
       const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-      const initialValues: {[key: string]: string} = {};
-      
+      const initialValues: { [key: string]: string } = {};
+
       // 각 필드의 기본값으로 초기화
       Object.keys(fieldInfo).forEach(key => {
         initialValues[key] = fieldInfo[key].defaultValue;
       });
-      
+
       setAdditionalFields(initialValues);
     }
   }, [serviceType]);
-  
+
   // 추가 필드 값 변경 핸들러
   const handleAdditionalFieldChange = (field: string, value: string) => {
     setAdditionalFields(prev => ({
@@ -413,9 +415,9 @@ const CampaignAddPage: React.FC = () => {
                       <KeenIcon icon="picture" className="me-1.5 size-4" />
                       로고 이미지 업로드
                     </Button>
-                    
+
                     <span className="text-sm font-medium text-gray-500 mx-2">또는</span>
-                    
+
                     <div className="w-64">
                       <Select
                         value={previewUrl ? 'none' : (newCampaign.logo || 'none')}
@@ -423,19 +425,19 @@ const CampaignAddPage: React.FC = () => {
                           // 업로드된 이미지를 모두 제거하고 드롭다운 선택으로 전환
                           setPreviewUrl(null);
                           setUploadedLogo(null);
-                          
+
                           // 'none'을 선택한 경우 로고를 빈 문자열로 설정
                           if (value === 'none') {
                             handleChange('logo', '');
                             return;
                           }
-                          
+
                           if (value) {
                             // 선택된 동물 로고 값
                             const selectedAnimal = value;
-                            
+
                             // 동물명 추출 및 한글로 변환
-                            const animalNameMap: {[key: string]: string} = {
+                            const animalNameMap: { [key: string]: string } = {
                               'bear': '곰',
                               'cat': '고양이',
                               'cow': '소',
@@ -457,20 +459,20 @@ const CampaignAddPage: React.FC = () => {
                               'teddy-bear': '테디베어',
                               'turtle': '거북이'
                             };
-                            
+
                             // 동물명 추출 (마지막 / 이후, .svg 이전 텍스트)
                             const animalNameWithPath = selectedAnimal.split('/').pop() || '';
                             const englishAnimalName = animalNameWithPath.replace('.svg', '');
-                            
+
                             // 영어 동물명을 한글로 변환
                             const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
-                            
+
                             // 5자리 랜덤 숫자 생성 (10000~99999)
                             const randomNum = Math.floor(10000 + Math.random() * 90000);
-                            
+
                             // "[한글 동물명]-[랜덤숫자]" 형식으로 자동 설정 (기존 이름 덮어쓰기)
                             handleChange('campaignName', `${koreanAnimalName}-${randomNum}`);
-                            
+
                             // logo 필드를 선택된 값으로 설정
                             handleChange('logo', value);
                           }
@@ -587,17 +589,17 @@ const CampaignAddPage: React.FC = () => {
                             className="hidden"
                           />
                         </div>
-                        
+
                         {bannerImagePreviewUrl && (
                           <div className="mt-2 relative flex items-start gap-2">
                             <div className="relative">
-                              <img 
-                                src={bannerImagePreviewUrl} 
-                                alt="배너 이미지 미리보기" 
+                              <img
+                                src={bannerImagePreviewUrl}
+                                alt="배너 이미지 미리보기"
                                 className="w-40 h-auto rounded-md border border-border object-cover"
                                 style={{ maxHeight: '60px' }}
                               />
-                              <button 
+                              <button
                                 type="button"
                                 onClick={() => {
                                   setBannerImagePreviewUrl(null);
@@ -654,9 +656,9 @@ const CampaignAddPage: React.FC = () => {
                       />
                     </td>
                   </tr>
-                  
+
                   {/* 서비스 유형별 추가 필드 */}
-                  {serviceType && serviceTypeInfoMap[serviceType] && 
+                  {serviceType && serviceTypeInfoMap[serviceType] &&
                     Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
                       <tr key={fieldKey}>
                         <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
@@ -715,19 +717,19 @@ const CampaignAddPage: React.FC = () => {
         {/* 버튼 - 푸터 영역 */}
         <div className="flex justify-end items-center gap-3 py-5 px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
           {/* 미리보기 버튼 */}
-          <Button 
-            onClick={() => setCampaignPreviewModalOpen(true)} 
-            variant="outline" 
+          <Button
+            onClick={() => setCampaignPreviewModalOpen(true)}
+            variant="outline"
             className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
             disabled={loading}
           >
             <KeenIcon icon="eye" className="me-1.5 size-4" />
             미리보기
           </Button>
-          
+
           {/* 캠페인 등록 신청 버튼 */}
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             className="bg-success hover:bg-success/90 text-white"
             disabled={loading}
           >
@@ -738,10 +740,10 @@ const CampaignAddPage: React.FC = () => {
               </span>
             ) : '캠페인 등록 신청'}
           </Button>
-          
+
           {/* 취소 버튼 */}
-          <Button 
-            onClick={() => navigate('/campaign-request')} 
+          <Button
+            onClick={() => navigate('/campaign-request')}
             variant="outline"
             className="border-gray-300 text-gray-700 hover:bg-gray-50"
             disabled={loading}
@@ -772,7 +774,7 @@ const CampaignAddPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             {/* 상단 닫기 텍스트 배너 */}
             <div className="bg-gray-800/90 text-white py-2 px-4 text-center mb-2">
               <button
@@ -836,9 +838,12 @@ const CampaignAddPage: React.FC = () => {
 
       {/* 캠페인 미리보기 다이얼로그 */}
       <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-        <DialogContent className="max-w-[900px] p-0 overflow-hidden">
-          <DialogHeader className="bg-background py-3 px-5">
-            <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-4 border-primary">
+          <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-4 px-6 border-b sticky top-0 z-10 shadow-sm">
+            <DialogTitle className="text-lg font-medium text-foreground flex items-center">
+              <KeenIcon icon="eye" className="mr-2 text-primary size-5" />
+              캠페인 상세정보(미리보기)
+            </DialogTitle>
             <div className="ml-auto"></div>
           </DialogHeader>
           <div className="bg-background flex flex-col max-h-[80vh] w-full">
@@ -892,17 +897,17 @@ const CampaignAddPage: React.FC = () => {
                     src={(() => {
                       // 업로드된 이미지가 있으면 그것을 사용
                       if (previewUrl) return previewUrl;
-                      
+
                       // 기본 제공 로고 중 선택된 것이 있으면 그것을 사용
                       if (newCampaign.logo && newCampaign.logo !== 'none') {
                         return toAbsoluteUrl(`/media/${newCampaign.logo}`);
                       }
-                      
+
                       // 아무것도 선택되지 않았으면 랜덤 동물 SVG 사용
                       const animalLogos = [
-                        'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 
-                        'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala', 
-                        'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin', 
+                        'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+                        'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+                        'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
                         'sheep', 'teddy-bear', 'turtle'
                       ];
                       const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
@@ -998,27 +1003,27 @@ const CampaignAddPage: React.FC = () => {
                 </div>
 
                 {/* 서비스 유형별 추가 정보 */}
-                {serviceType && serviceTypeInfoMap[serviceType] && 
+                {serviceType && serviceTypeInfoMap[serviceType] &&
                   Object.keys(serviceTypeInfoMap[serviceType].additionalFields).length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
-                    <div className="bg-white p-5 rounded-xl border border-border">
-                      <div className="grid gap-4">
-                        {Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
-                          <div key={fieldKey} className="flex flex-col">
-                            <span className="font-medium text-muted-foreground text-sm mb-1">{fieldInfo.label}</span>
-                            <span className="text-foreground">
-                              {fieldInfo.type === 'select' && fieldInfo.options 
-                                ? fieldInfo.options.find(opt => opt.value === additionalFields[fieldKey])?.label || additionalFields[fieldKey] || '-'
-                                : additionalFields[fieldKey] || '-'}
-                            </span>
-                          </div>
-                        ))}
+                    <div>
+                      <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
+                      <div className="bg-white p-5 rounded-xl border border-border">
+                        <div className="grid gap-4">
+                          {Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
+                            <div key={fieldKey} className="flex flex-col">
+                              <span className="font-medium text-muted-foreground text-sm mb-1">{fieldInfo.label}</span>
+                              <span className="text-foreground">
+                                {fieldInfo.type === 'select' && fieldInfo.options
+                                  ? fieldInfo.options.find(opt => opt.value === additionalFields[fieldKey])?.label || additionalFields[fieldKey] || '-'
+                                  : additionalFields[fieldKey] || '-'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                
+                  )}
+
                 {/* 미리보기 알림 */}
                 <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300">
                   <div className="flex items-start">
@@ -1036,7 +1041,7 @@ const CampaignAddPage: React.FC = () => {
             <div className="flex-shrink-0 border-t p-4 flex justify-end">
               <Button
                 onClick={() => setCampaignPreviewModalOpen(false)}
-                className="px-6 bg-blue-600 hover:bg-blue-800 text-white"
+                className="bg-primary hover:bg-primary/90 text-white"
               >
                 확인
               </Button>
@@ -1044,7 +1049,7 @@ const CampaignAddPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
+
     </DashboardTemplate>
   );
 };

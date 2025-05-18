@@ -40,7 +40,6 @@ const KeywordPage: React.FC = () => {
   useEffect(() => {
     // 그룹이 없거나 선택된 그룹이 없을 때 기본 그룹 생성
     if ((groups.length === 0 || !selectedGroupId) && !isLoading) {
-      console.log('기본 그룹 생성 시도');
       createDefaultGroup();
     }
   }, [groups, selectedGroupId, isLoading, createDefaultGroup]);
@@ -75,6 +74,7 @@ const KeywordPage: React.FC = () => {
     campaignName: string | null = null,
     campaignType: string | null = null
   ) => {
+    // updateGroup은 groupId와 name만 받으므로 다른 인자는 전달하지 않음
     return await updateGroup(groupId, name);
   };
 

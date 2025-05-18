@@ -128,23 +128,33 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
 
 // Supabase에서 캠페인 데이터 가져오기
 export const fetchCampaigns = async (serviceType: string, userId?: string): Promise<ICampaign[]> => {
+  // 서비스 타입 검증
+  if (!serviceType) {
+    console.warn('fetchCampaigns: 서비스 타입이 비어있습니다. 필터링이 적용되지 않을 수 있습니다.');
+  }
+
   // 기본 쿼리 생성
-  let query = supabase
-    .from('campaigns')
-    .select('*')
-    .eq('service_type', serviceType);
+  let query = supabase.from('campaigns').select('*');
+  
+  // 서비스 타입이 있을 때만 필터링 추가
+  if (serviceType && serviceType.trim() !== '') {
+    query = query.eq('service_type', serviceType);
+  }
 
   // 사용자 ID가 있으면 본인 캠페인만 필터링
   if (userId) {
     query = query.eq('mat_id', userId);
-    
   }
 
   // 정렬 적용
   const { data, error } = await query.order('id', { ascending: true });
 
+  // 결과 로깅
+  if (data) {
+  }
+
   if (error) {
-    
+    console.error('fetchCampaigns 오류:', error);
     return [];
   }
 
@@ -233,6 +243,7 @@ export const getStatusColor = (status: string): string => {
     case 'pending': return 'info';
     case 'completed': return 'primary';
     case 'rejected': return 'danger';
+    case 'waiting_approval': return 'warning'; // 승인 대기중은 warning 색상으로 변경
     default: return 'info';
   }
 };
@@ -410,17 +421,81 @@ export const formatTimeHHMM = (timeStr: string): string => {
 
 // 서비스 타입 코드 변환 (UI 코드 -> DB 코드)
 export const getServiceTypeCode = (uiCode: string): string => {
-  switch (uiCode) {
-    case 'ntraffic': return 'ntraffic'; // 변경: naver-traffic -> ntraffic
-    case 'naver-fakesale': return 'nfakesale';
-    case 'naver-blog': return 'nblog';
-    case 'naver-web': return 'nweb';
-    case 'naver-place': return 'nplace';
-    case 'naver-cafe': return 'ncafe';
-    case 'coupang': return 'CoupangTraffic';
-    case 'ohouse': return 'OhouseTraffic';
-    default: return 'ntraffic'; // 기본값도 ntraffic으로 설정
+  // 빈 값 체크
+  if (!uiCode || uiCode.trim() === '') {
+    console.warn('getServiceTypeCode: 빈 UI 코드가 전달되었습니다.');
+    return '';
   }
+  
+  // 소문자로 통일하여 처리 (대소문자 차이로 인한 오류 방지)
+  const normalizedCode = uiCode.toLowerCase().trim();
+  
+  // UI 코드와 DB 코드 매핑 객체
+  const codeMap: Record<string, string> = {
+    // 네이버 트래픽
+    'ntraffic': 'ntraffic',
+    'naver-traffic': 'ntraffic',
+    'navertraffic': 'ntraffic',
+    
+    // 네이버 자동완성
+    'naver-auto': 'nfakesale',
+    'nauto': 'nfakesale',
+    'naver-fakesale': 'nfakesale',
+    'naverfakesale': 'nfakesale',
+    'nfakesale': 'nfakesale',
+    
+    // 네이버 블로그
+    'nblog': 'nblog',
+    'naver-blog': 'nblog',
+    'naverblog': 'nblog',
+    
+    // 네이버 웹
+    'nweb': 'nweb',
+    'naver-web': 'nweb',
+    'naverweb': 'nweb',
+    
+    // 네이버 쇼핑
+    'nshopping': 'nshopping',
+    'naver-shopping': 'nshopping',
+    'naver-shopping-traffic': 'nshopping',
+    
+    // 네이버 플레이스
+    'nplace': 'nplace',
+    'naver-place': 'nplace',
+    'naverplace': 'nplace',
+    'naver-place-traffic': 'nplace-traffic',
+    
+    // 네이버 플레이스 저장
+    'nplace-save': 'nplace-save',
+    'naver-place-save': 'nplace-save',
+    'nplacesave': 'nplace-save',
+    
+    // 네이버 플레이스 공유
+    'nplace-share': 'nplace-share',
+    'naver-place-share': 'nplace-share',
+    'nplaceshare': 'nplace-share',
+    
+    // 네이버 카페
+    'ncafe': 'ncafe',
+    'naver-cafe': 'ncafe',
+    'navercafe': 'ncafe',
+    
+    // 쿠팡
+    'coupang': 'CoupangTraffic',
+    'coupang-traffic': 'CoupangTraffic',
+    'coupangtraffic': 'CoupangTraffic',
+  };
+  
+  // 매핑된 값 확인
+  const dbCode = codeMap[normalizedCode];
+  
+  if (dbCode) {
+    return dbCode;
+  }
+  
+  // 매핑되지 않은 코드 로깅 후 원래 코드 반환
+  console.warn(`getServiceTypeCode: 알 수 없는 서비스 타입 코드 '${uiCode}'`);
+  return normalizedCode; // 기본값은 원래 입력한 값 그대로 반환
 };
 
 // 캠페인 생성

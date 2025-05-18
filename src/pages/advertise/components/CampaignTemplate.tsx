@@ -3,7 +3,7 @@ import { CampaignData } from '@/data/advertiseServices';
 import { useLocation } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { AdMiscFaq } from '@/partials/misc';
-import { CampaignSlotInsertModal, CampaignSlotWithKeywordModal } from './campaign-modals';
+import { CampaignSlotInsertModal, CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import {

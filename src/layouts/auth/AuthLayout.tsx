@@ -36,6 +36,7 @@ const Layout = () => {
     }
   }, [isLoggingOut, setIsLoggingOut]);
 
+
   return (
     <Fragment>
       <style>
@@ -45,6 +46,20 @@ const Layout = () => {
           }
           .dark .page-bg {
             background-image: url('${toAbsoluteUrl('/media/images/2600x1200/bg-10-dark.png')}');
+          }
+          
+          /* 로그인 페이지에서 UI 요소를 확실히 표시 */
+          body.login-page, body.auth-page {
+            overflow: auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+          
+          body.login-page .auth-layout, 
+          body.auth-page .auth-layout {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
           }
         `}
       </style>

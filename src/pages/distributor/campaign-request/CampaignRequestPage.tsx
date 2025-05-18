@@ -8,8 +8,8 @@ import { KeenIcon } from '@/components';
 const CampaignRequestPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // 캠페인 추가 페이지로 이동하는 함수
-  const navigateToAddCampaign = (serviceType: string) => {
+  // 페이지로 이동
+  const navigateToCampaignAddPage = (serviceType: string) => {
     navigate(`/campaign-request/add?type=${serviceType}`);
   };
 
@@ -81,24 +81,24 @@ const CampaignRequestPage: React.FC = () => {
           </div>
 
           <h3 className="text-lg font-semibold mb-4">캠페인 유형 선택</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {serviceTypes.map((service) => (
               <div
                 key={service.id}
                 className="border dark:border-gray-700 rounded-lg p-5 flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
-                onClick={() => navigateToAddCampaign(service.id)}
+                onClick={() => navigateToCampaignAddPage(service.id)}
               >
                 <div className="flex items-center mb-3">
                   <img src={service.icon} alt={service.name} className="w-6 h-6 mr-3" />
                   <span className="font-medium text-lg">{service.name}</span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{service.description}</p>
-                <Button 
+                <Button
                   className="mt-auto bg-primary text-white hover:bg-primary/90"
                   onClick={(e) => {
                     e.stopPropagation(); // 부모 div의 onClick 이벤트 전파 방지
-                    navigateToAddCampaign(service.id);
+                    navigateToCampaignAddPage(service.id);
                   }}
                 >
                   신규 캠페인 등록
@@ -108,7 +108,6 @@ const CampaignRequestPage: React.FC = () => {
           </div>
         </div>
       </Card>
-
     </DashboardTemplate>
   );
 };

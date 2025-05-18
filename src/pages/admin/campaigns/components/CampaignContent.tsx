@@ -9,8 +9,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { toAbsoluteUrl } from '@/utils';
-import { CampaignDetailModal } from './campaign-modals';
-import { updateCampaignStatus } from '../services/campaignService';
+import { CampaignModal } from '@/components/campaign-modals';
+import { updateCampaignStatus, updateCampaign } from '../services/campaignService';
 
 // 캠페인 데이터 인터페이스 정의
 export interface ICampaign {
@@ -42,6 +42,7 @@ interface CampaignContentProps {
   onCampaignUpdated?: () => void; // 캠페인 업데이트 시 호출할 콜백 함수
   onAddCampaign?: () => void; // 캠페인 추가 버튼 클릭 시 호출할 콜백 함수
   isOperator?: boolean; // 운영자 모드 여부
+  isAdmin?: boolean; // 관리자 권한 여부 (ADMIN: 운영자/개발자)
 }
 
 const CampaignContent: React.FC<CampaignContentProps> = ({
@@ -49,7 +50,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   serviceType,
   onCampaignUpdated,
   onAddCampaign,
-  isOperator = false // 기본값은 총판 모드
+  isOperator = false, // 기본값은 총판 모드
+  isAdmin = false // 기본값은 관리자 권한 없음
 }) => {
   const location = useLocation();
   const [searchInput, setSearchInput] = useState('');
@@ -59,30 +61,42 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   const [campaigns, setCampaigns] = useState<ICampaign[]>(initialCampaigns);
   const [loadingStatus, setLoadingStatus] = useState<{[key: string]: boolean}>({});
 
-  // 컴포넌트 마운트 시 이미지 경로 로깅 (디버깅용)
+  // 컴포넌트 마운트 시 초기화
   useEffect(() => {
-    if (initialCampaigns.length > 0) {
-      console.log('캠페인 이미지 경로 정보:', initialCampaigns.map(campaign => ({
-        id: campaign.id,
-        name: campaign.campaignName,
-        logo: campaign.logo,
-        add_info: typeof campaign.originalData?.add_info === 'object'
-          ? campaign.originalData.add_info?.logo_url
-          : 'not an object',
-        add_info_type: typeof campaign.originalData?.add_info,
-        fallback: toAbsoluteUrl(`/media/animal/svg/${campaign.logo || 'animal-default.svg'}`)
-      })));
-    }
+    // 초기 캠페인 데이터 설정
   }, [initialCampaigns]);
   
   // 캠페인 상태 변경 처리 함수
   const handleStatusChange = async (campaignId: string, newStatus: string) => {
+    // 현재 캠페인 찾기
+    const campaign = campaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+      alert('캠페인을 찾을 수 없습니다.');
+      return;
+    }
+    
+    // 현재 상태 확인
+    const currentStatus = campaign.originalData?.status || '';
+    
+    // 승인/미승인 상태인 경우 관리자만 변경 가능
+    if ((currentStatus === 'waiting_approval' || currentStatus === 'rejected') && !isAdmin) {
+      alert('승인 대기 중이거나 반려된 캠페인의 상태는 관리자만 변경할 수 있습니다.');
+      return;
+    }
+    
     // 로딩 상태 설정
     setLoadingStatus(prev => ({ ...prev, [campaignId]: true }));
     
+    // 최종 상태 결정
+    // 1. 총판이 반려된 캠페인을 변경하려고 하는 경우, 상태를 자동으로 승인 대기중으로 설정
+    let finalStatus = newStatus;
+    if (!isAdmin && currentStatus === 'rejected') {
+      finalStatus = 'waiting_approval';
+    }
+    
     try {
       // DB 상태 업데이트
-      const success = await updateCampaignStatus(parseInt(campaignId), newStatus);
+      const success = await updateCampaignStatus(parseInt(campaignId), finalStatus);
       
       if (success) {
         // UI 상태 업데이트
@@ -92,21 +106,30 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
               ? { 
                   ...campaign, 
                   status: { 
-                    label: getStatusLabel(newStatus), 
-                    color: getStatusColor(newStatus) 
-                  } 
+                    label: getStatusLabel(finalStatus), 
+                    color: getStatusColor(finalStatus),
+                    status: finalStatus
+                  },
+                  originalData: {
+                    ...campaign.originalData,
+                    status: finalStatus
+                  }
                 } 
               : campaign
           )
         );
         
         
+        // 반려된 캠페인이 재승인 요청으로 변경된 경우 알림
+        if (currentStatus === 'rejected' && finalStatus === 'waiting_approval' && !isAdmin) {
+          alert('반려된 캠페인이 승인 요청 상태로 변경되었습니다. 운영자 승인 후 처리됩니다.');
+        }
       } else {
-        
+        console.error('상태 변경 실패');
         alert('상태 변경 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      
+      console.error('상태 변경 오류:', error);
       alert('상태 변경 중 오류가 발생했습니다.');
     } finally {
       // 로딩 상태 해제
@@ -120,8 +143,27 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       case 'active': return '진행중';
       case 'pending': return '준비중';
       case 'pause': return '표시안함';
+      case 'waiting_approval': return '승인 대기중';
+      case 'rejected': return '반려됨';
       default: return '준비중';
     }
+  };
+  
+  // 상태 변경 가능 여부 확인 (권한 및 상태 체크)
+  const canChangeStatus = (campaign: ICampaign): boolean => {
+    // 관리자는 모든 상태 변경 가능
+    if (isAdmin) return true;
+    
+    // 현재 상태 체크
+    const currentStatus = campaign.originalData?.status || '';
+    
+    // 승인 대기 중이거나 반려된 캠페인은 관리자만 상태 변경 가능
+    if (currentStatus === 'waiting_approval' || currentStatus === 'rejected') {
+      return false;
+    }
+    
+    // 기타 상태는 변경 가능
+    return true;
   };
   
   // 상태값에 따른 색상 반환
@@ -132,6 +174,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       case 'pending': return 'info';
       case 'completed': return 'primary';
       case 'rejected': return 'danger';
+      case 'waiting_approval': return 'warning'; // 승인 대기중은 warning 색상으로 변경
       default: return 'info';
     }
   };
@@ -159,7 +202,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   };
   
   // 캠페인 정보 저장 핸들러
-  const handleSaveCampaign = (updatedCampaign: ICampaign) => {
+  const handleSaveCampaign = (updatedCampaign: any) => {
     // 로컬 상태 업데이트 - 수정된 캠페인 정보 반영
     setCampaigns(prevCampaigns => 
       prevCampaigns.map(campaign => 
@@ -188,6 +231,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       case '진행중': return 'active';
       case '준비중': return 'pending';
       case '표시안함': return 'pause';
+      case '승인 대기중': return 'waiting_approval';
+      case '반려됨': return 'rejected';
       default: return 'pending';
     }
   };
@@ -369,17 +414,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   const filteredData = useMemo(() => {
     
 
-    // 디버깅을 위해 캠페인 데이터 형식 로깅
+    // 캠페인 데이터 확인
     if (campaigns.length > 0) {
-      console.log('첫 번째 캠페인 데이터 샘플:', {
-        id: campaigns[0].id,
-        name: campaigns[0].campaignName,
-        logo: campaigns[0].logo,
-        logoPath: getLogoPath(campaigns[0]),
-        originalData: campaigns[0].originalData,
-        add_info: campaigns[0].originalData?.add_info,
-        type: typeof campaigns[0].originalData?.add_info
-      });
+      // 필터링 전 캠페인 데이터 확인
     }
 
     return campaigns.filter(campaign => {
@@ -556,36 +593,60 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
                   <div>
                     <label className="text-xs text-muted-foreground block mb-1">상태</label>
-                    <Select
-                      value={getStatusValue(campaign.status.label)}
-                      onValueChange={(value) => handleStatusChange(campaign.id, value)}
-                      disabled={loadingStatus[campaign.id]}
-                    >
-                      <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
-                        {loadingStatus[campaign.id] ? (
-                          <span className="flex items-center">
-                            <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                            처리중...
-                          </span>
-                        ) : (
-                          <>
-                            <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                            <SelectValue>{campaign.status.label}</SelectValue>
-                          </>
+                    {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
+                    {!canChangeStatus(campaign) ? (
+                      <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
+                        <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                        <span>{campaign.status.label}</span>
+                        {campaign.status.label === '반려됨' && !isAdmin && (
+                          <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
                         )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">진행중</SelectItem>
-                        <SelectItem value="pending">준비중</SelectItem>
-                        <SelectItem value="pause">표시안함</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    ) : (
+                      /* 그 외에는 상태 변경 가능 Select 표시 */
+                      <Select
+                        value={getStatusValue(campaign.status.label)}
+                        onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                        disabled={loadingStatus[campaign.id]}
+                      >
+                        <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
+                          {loadingStatus[campaign.id] ? (
+                            <span className="flex items-center">
+                              <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                              처리중...
+                            </span>
+                          ) : (
+                            <>
+                              <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                              <SelectValue>{campaign.status.label}</SelectValue>
+                            </>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">진행중</SelectItem>
+                          <SelectItem value="pending">준비중</SelectItem>
+                          <SelectItem value="pause">표시안함</SelectItem>
+                          {isAdmin && (
+                            <>
+                              <SelectItem value="waiting_approval">승인 대기중</SelectItem>
+                              <SelectItem value="rejected">반려됨</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
 
                     {/* 반려된 캠페인인 경우 반려 사유 표시 */}
                     {campaign.status.label === '반려됨' && (
                       <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-md">
                         <div className="font-medium mb-0.5">반려 사유:</div>
                         <div>{campaign.originalData?.rejected_reason || '반려 사유 없음'}</div>
+                        {!isAdmin && (
+                          <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                            <KeenIcon icon="information-circle" className="mr-1 inline-block size-3" />
+                            수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다.
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -715,35 +776,63 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
                     <div className="flex flex-col items-center gap-1">
-                      <Select
-                        value={getStatusValue(campaign.status.label)}
-                        onValueChange={(value) => handleStatusChange(campaign.id, value)}
-                        disabled={loadingStatus[campaign.id]}
-                      >
-                        <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
-                          {loadingStatus[campaign.id] ? (
-                            <span className="flex items-center">
-                              <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                              처리중...
-                            </span>
-                          ) : (
-                            <>
-                              <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                              <SelectValue>{campaign.status.label}</SelectValue>
-                            </>
+                      {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
+                      {!canChangeStatus(campaign) ? (
+                        <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
+                          <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                          <span>{campaign.status.label}</span>
+                          {campaign.status.label === '반려됨' && !isAdmin && (
+                            <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
                           )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">진행중</SelectItem>
-                          <SelectItem value="pending">준비중</SelectItem>
-                          <SelectItem value="pause">표시안함</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        </div>
+                      ) : (
+                        /* 그 외에는 상태 변경 가능 Select 표시 */
+                        <Select
+                          value={getStatusValue(campaign.status.label)}
+                          onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                          disabled={loadingStatus[campaign.id]}
+                        >
+                          <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
+                            {loadingStatus[campaign.id] ? (
+                              <span className="flex items-center">
+                                <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                                처리중...
+                              </span>
+                            ) : (
+                              <>
+                                <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                                <SelectValue>{campaign.status.label}</SelectValue>
+                              </>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">진행중</SelectItem>
+                            <SelectItem value="pending">준비중</SelectItem>
+                            <SelectItem value="pause">표시안함</SelectItem>
+                            {isAdmin && (
+                              <>
+                                <SelectItem value="waiting_approval">승인 대기중</SelectItem>
+                                <SelectItem value="rejected">반려됨</SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
 
                       {/* 반려된 캠페인인 경우 반려 사유 표시 */}
                       {campaign.status.label === '반려됨' && (
-                        <div className="mt-1 text-xs text-red-500 max-w-[200px] truncate" title={campaign.originalData?.rejected_reason || '반려 사유 없음'}>
-                          <span className="font-medium">반려 사유:</span> {campaign.originalData?.rejected_reason || '반려 사유 없음'}
+                        <div className="flex flex-col">
+                          <div className="mt-1 text-xs text-red-500 max-w-[200px] truncate" title={campaign.originalData?.rejected_reason || '반려 사유 없음'}>
+                            <span className="font-medium">반려 사유:</span> {campaign.originalData?.rejected_reason || '반려 사유 없음'}
+                          </div>
+                          {!isAdmin && (
+                            <div className="mt-0.5 text-xs text-blue-500">
+                              <span className="font-medium" title="수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다">
+                                <KeenIcon icon="information-circle" className="mr-0.5 inline-block size-3" />
+                                수정하여 재승인 요청
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -779,13 +868,16 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     </div>
     
 
-    {/* 캠페인 상세 정보 모달 */}
-    <CampaignDetailModal
+    {/* 캠페인 상세 정보 모달 (통합된 CampaignModal 사용) */}
+    <CampaignModal
       open={detailModalOpen}
       onClose={() => setDetailModalOpen(false)}
       campaign={selectedCampaign}
       onSave={handleSaveCampaign}
+      isDetailMode={true}
       isOperator={isOperator} // 부모 컴포넌트에서 전달받은 운영자 모드 여부 전달
+      updateCampaign={updateCampaign} // 캠페인 업데이트 서비스 함수 전달
+      serviceType={selectedCampaign?.serviceType || (selectedCampaign?.originalData?.service_type || '')}
     />
     </>
   );

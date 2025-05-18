@@ -6,8 +6,7 @@ export const SERVICE_TYPE_MAP = {
   'NP 트래픽': 'NaverPlaceTraffic',
   'N 자동완성': 'NaverAuto',
   'N 트래픽': 'ntraffic',
-  'C 트래픽': 'CoupangTraffic',
-  'OH 트래픽': 'OhouseTraffic'
+  'C 트래픽': 'CoupangTraffic'
 };
 
 // 서비스 타입 코드와 카테고리 매핑 (역방향)

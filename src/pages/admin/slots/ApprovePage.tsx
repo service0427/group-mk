@@ -5,6 +5,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { useLocation } from 'react-router-dom';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { Toaster } from 'sonner';
+import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
@@ -138,11 +139,16 @@ const ApprovePage: React.FC = () => {
 
         
 
-        // 현재 사용자 ID로 캠페인 정보 가져오기
-        const { data, error } = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('mat_id', currentUser.id);
+        // 사용자 역할 확인
+        const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
+
+        // ADMIN 그룹은 모든 캠페인을, 다른 사용자는 자신의 캠페인만 조회
+        let campaignsQuery = supabase.from('campaigns').select('*');
+        if (!isAdmin) {
+          campaignsQuery = campaignsQuery.eq('mat_id', currentUser.id);
+        }
+        
+        const { data, error } = await campaignsQuery;
 
         if (error) {
           
@@ -260,6 +266,9 @@ const ApprovePage: React.FC = () => {
 
         
 
+        // 사용자 역할 확인
+        const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
+
         // 서비스 타입 필터링 추가
         // 먼저 해당 서비스 타입을 가진 모든 캠페인 가져오기
         const serviceTypeCampaigns = campaigns.filter(campaign =>
@@ -271,13 +280,32 @@ const ApprovePage: React.FC = () => {
 
         
 
-        // 서비스 타입에 해당하는 캠페인 ID들을 항상 쿼리에 포함
-        if (serviceTypeCampaignIds.length > 0) {
-          query = query.in('mat_id', serviceTypeCampaignIds);
+        // ADMIN 그룹은 서비스 타입으로만 필터링하고, 총판 등은 자신의 mat_id로도 필터링
+        if (!isAdmin) {
+          // 총판 등 일반 사용자: 서비스 타입 + 자신의 캠페인만 필터링
+          if (serviceTypeCampaignIds.length > 0) {
+            query = query.in('mat_id', serviceTypeCampaignIds);
+          } else {
+            // 해당하는 캠페인이 없으면 빈 결과 반환하도록 - 불가능한 조건 추가
+            query = query.eq('id', currentUser.id);
+          }
         } else {
-          
-          // 해당하는 캠페인이 없으면 빈 결과 반환하도록 - 불가능한 조건 추가
-          query = query.eq('id', currentUser.id);
+          // ADMIN 그룹: 서비스 타입 기준으로 캠페인 ID를 찾아서 필터링
+          if (selectedServiceType) {
+            // 서비스 타입이 선택된 경우, 해당 타입의 캠페인들의 ID 목록을 사용
+            const serviceTypeCampaignIds = campaigns
+              .filter(campaign => campaign.service_type === selectedServiceType)
+              .map(campaign => campaign.id);
+            
+            if (serviceTypeCampaignIds.length > 0) {
+              // 찾은 캠페인 ID로 product_id 필터링
+              query = query.in('product_id', serviceTypeCampaignIds);
+            } else {
+              console.warn(`해당 서비스 타입(${selectedServiceType})의 캠페인이 없습니다.`);
+              // 결과가 없도록 불가능한 조건 추가
+              query = query.eq('id', 'no-matching-id');
+            }
+          }
         }
 
         // 특정 캠페인이 선택된 경우 추가 필터링
@@ -465,7 +493,7 @@ const ApprovePage: React.FC = () => {
       // 선택된 슬롯 배열을 직접 사용 (이미 상태에 있음)
       setApproveModalOpen(true);
       setActionType(actionType);
-      console.log('다중 승인 모달 열기, 선택된 슬롯:', selectedSlots);
+      // 다중 승인 모달 열기
       return;
     }
     
@@ -479,7 +507,7 @@ const ApprovePage: React.FC = () => {
     setSelectedSlots([slotId]);
     setActionType(actionType);
     setApproveModalOpen(true);
-    console.log('단일 승인 모달 열기, 선택된 슬롯:', [slotId]);
+    // 단일 승인 모달 열기
   };
 
   // 반려 처리 함수
@@ -858,7 +886,7 @@ const ApprovePage: React.FC = () => {
                     
                     // 명시적으로 selectedSlots를 사용하여 처리
                     const slotIdToProcess = selectedSlots;
-                    console.log('일괄 승인 처리할 슬롯 ID:', slotIdToProcess);
+                    // 일괄 승인 처리할 슬롯 ID 처리
                     const result = await approveSlot(slotIdToProcess, currentUser.id, actionType);
 
                     if (result.success) {
@@ -896,7 +924,7 @@ const ApprovePage: React.FC = () => {
                         
                         // 선택 초기화
                         // 성공 후 선택 상태 초기화
-                        console.log('승인 성공 후 선택 초기화');
+                        // 승인 성공 후 선택 초기화
                         setSelectedSlots([]);
                       } else {
                         // 단일 슬롯인 경우

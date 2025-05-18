@@ -9,14 +9,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
-import { getStatusColorClass, CampaignDetailData as ICampaignDetailData, CampaignData } from '@/utils/CampaignFormat';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
-import { registerSlot } from './services/slotService';
 import { Link } from 'react-router-dom';
-
+import { getStatusLabel, getStatusColor } from './types';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -53,7 +51,7 @@ interface CampaignSlotWithKeywordModalProps {
   open: boolean;
   onClose: () => void;
   category: string | null;
-  campaign?: CampaignData | null;
+  campaign?: any | null;
   onSave?: (data: CampaignSlotData) => void;
   serviceCode?: string; // 서비스 코드 (NaverShopTraffic, BlogPosting 등)
 }
@@ -162,7 +160,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   const [keywordLoading, setKeywordLoading] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
 
-
   // 비동기 작업 오류 상태
   const [keywordError, setKeywordError] = useState<string | null>(null);
 
@@ -194,7 +191,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
-  // 캠페인 목록 가져오기
   // 모달이 열릴 때 캠페인 목록 가져오기
   useEffect(() => {
     if (open) {
@@ -348,8 +344,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     if (!campaignId || !currentUser?.id) return [];
 
     try {
-      console.log(`이미 등록된 키워드 조회 시작 - 캠페인 ID: ${campaignId}, 사용자 ID: ${currentUser.id}`);
-      
       // 현재 사용자가 같은 캠페인에 이미 등록한 키워드 슬롯 조회
       // 1. slots 테이블에서 keyword_id 직접 조회
       const { data: slotData, error: slotError } = await supabase
@@ -361,7 +355,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         .order('created_at', { ascending: false });
 
       if (slotError) {
-        console.error('슬롯 조회 오류:', slotError);
         return [];
       }
 
@@ -392,10 +385,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       });
 
       const result = Array.from(registeredKeywordIds);
-      console.log(`이미 등록된 키워드 ID ${result.length}개 발견:`, result);
       return result;
     } catch (error) {
-      console.error('등록된 키워드 조회 오류:', error);
       return [];
     }
   };
@@ -405,7 +396,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     if (!groupId) return;
 
     setKeywordLoading(true);
-    console.log(`키워드 목록 조회 시작 - 그룹 ID: ${groupId}`);
 
     try {
       // 현재 로그인한 사용자 가져오기
@@ -430,13 +420,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       // 이미 등록된 키워드 ID 목록 가져오기 - 최신 상태 확인
-      console.log('이미 등록된 키워드 목록 조회 시작 - 캠페인 ID:', selectedCampaignId);
       const registeredKeywordIds = selectedCampaignId ?
         await fetchAlreadyRegisteredKeywords(selectedCampaignId) : [];
-      console.log('등록된 키워드 수:', registeredKeywordIds.length);
 
       // 키워드 조회
-      console.log('그룹 내 키워드 조회 시작');
       let query = supabase
         .from('keywords')
         .select('*', { count: 'exact' })
@@ -444,7 +431,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 검색어 필터링
       if (searchKeyword) {
-        console.log('검색어 필터 적용:', searchKeyword);
         query = query.or(
           `main_keyword.ilike.%${searchKeyword}%,keyword1.ilike.%${searchKeyword}%,keyword2.ilike.%${searchKeyword}%,keyword3.ilike.%${searchKeyword}%`
         );
@@ -459,12 +445,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('키워드 조회 오류:', error);
         setKeywordError("키워드를 불러오지 못했습니다");
         return;
       }
-
-      console.log(`그룹에서 총 ${data.length}개 키워드 조회됨`);
 
       // 등록된 키워드 번호 배열 만들기 (숫자 타입으로 변환)
       const registeredIds = registeredKeywordIds.map(id => Number(id));
@@ -489,16 +472,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           workCount: undefined,
           dueDate: undefined
         }));
-        
-      console.log(`필터링 후 ${transformedData.length}개 키워드 유효함 (${data.length - transformedData.length}개 제외됨)`);
-      
-      // 제외된 키워드들 로깅
-      if (data.length > transformedData.length) {
-        const excludedKeywords = data
-          .filter(item => registeredIds.includes(Number(item.id)))
-          .map(item => ({ id: item.id, mainKeyword: item.main_keyword }));
-        console.log('제외된 키워드 목록:', excludedKeywords);
-      }
 
       // 선택된 캠페인의 min_quantity 가져와서 각 키워드에 자동 추가
       if (selectedCampaign) {
@@ -513,8 +486,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity = 1; // 기본값
         }
 
-        console.log(`캠페인 최소 타수 설정: ${minQuantity}`);
-
         // 키워드 목록에 기본 작업타수 설정 및 내일 날짜로 마감일 설정
         transformedData.forEach(keyword => {
           keyword.workCount = minQuantity as unknown as undefined;
@@ -526,15 +497,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       
       // 선택된 키워드들 중 유효하지 않은 항목(이미 등록된 키워드)이 있는지 확인
       if (selectedKeywords.length > 0) {
-        console.log('선택된 키워드 ID 유효성 검사 시작');
         const validSelectedKeywords = selectedKeywords.filter(keywordId =>
           transformedData.some(k => k.id === keywordId)
         );
         
         // 유효하지 않은 키워드가 있으면 선택 목록에서 제거
         if (validSelectedKeywords.length !== selectedKeywords.length) {
-          console.log('유효하지 않은 키워드가 선택 목록에서 제거됨:',
-            selectedKeywords.filter(id => !validSelectedKeywords.includes(id)));
           setSelectedKeywords(validSelectedKeywords);
           
           // 금액 재계산
@@ -542,11 +510,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         }
       }
     } catch (error) {
-      console.error('키워드 로딩 오류:', error);
       setKeywordError("키워드를 불러오는 중 오류가 발생했습니다");
     } finally {
       setKeywordLoading(false);
-      console.log('키워드 로딩 완료');
     }
   };
 
@@ -556,8 +522,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       fetchKeywords(selectedGroupId);
     }
   }, [selectedGroupId, searchKeyword, selectedCampaignId]);
-
-  // 키워드 검색은 useEffect에서 searchKeyword가 변경될 때마다 자동으로 실행됨
 
   // 키워드 그룹 선택 핸들러
   const handleGroupSelect = (groupId: number) => {
@@ -678,8 +642,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       );
       return newKeywords;
     });
-
-    // 입력 중에는 결제 금액 계산하지 않음 (blur 이벤트에서만 계산)
   };
 
   // 작업타수 입력 완료(blur) 핸들러
@@ -742,539 +704,38 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     );
   };
 
-
-  // 입력 필드 변경 핸들러
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    // 슬롯 데이터 업데이트
-    setSlotData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // 해당 필드의 오류 메시지 지우기
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
-    }
-  };
-
-  // 캠페인 선택 변경 핸들러
-  const handleCampaignChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = parseInt(e.target.value, 10);
-
-    setSelectedCampaignId(value);
-    
-    // 캠페인이 변경되면 모든 키워드 선택 해제
-    setSelectedKeywords([]);
-
-    // 선택된 캠페인의 배너 정보 가져오기
-    const selectedCampaign = campaigns.find(c => c.id === value);
-    if (selectedCampaign) {
-      fetchCampaignBanner(selectedCampaign);
-
-      // 캠페인의 min_quantity 값 추출 (문자열 또는 숫자)
-      let minQuantity: number;
-
-      if (typeof selectedCampaign.min_quantity === 'string') {
-        minQuantity = parseInt(selectedCampaign.min_quantity) || 1;
-      } else if (typeof selectedCampaign.min_quantity === 'number') {
-        minQuantity = selectedCampaign.min_quantity;
-      } else {
-        minQuantity = 1; // 기본값
-      }
-
-  
-      // 모든 키워드의 작업타수를 해당 캠페인의 min_quantity로 업데이트
-      setKeywords(prev =>
-        prev.map(k => ({
-          ...k,
-          workCount: minQuantity,
-          dueDate: k.dueDate || getTomorrowDate()
-        }))
-      );
-
-      // 총 결제 금액 즉시 재계산
-      calculateTotalPayment();
-    }
-
-    // 슬롯 데이터에도 캠페인 ID 업데이트
-    setSlotData(prev => ({
-      ...prev,
-      campaignId: value
-    }));
-
-    // 캠페인에 맞는 키워드 그룹 필터링 (serviceCode와 일치하는 그룹만 표시)
-    filterKeywordGroups(value);
-  };
-
-  // 캠페인에 맞는 키워드 그룹 필터링
-  const filterKeywordGroups = (campaignId: number) => {
-    const selectedCampaign = campaigns.find(c => c.id === campaignId);
-    if (!selectedCampaign) return;
-
-    // 서비스 코드 맵핑
-    const serviceTypeMap: Record<string, string> = {
-      'ntraffic': 'NaverShopTraffic',
-      'nblog': 'NaverBlogPosting',
-      'ncafe': 'NaverCafePosting',
-      'kstory': 'KakaoStory',
-      'instagram': 'Instagram',
-    };
-
-    const campaignType = serviceTypeMap[selectedCampaign.service_type] || 'NaverShopTraffic';
-
-    // 캠페인 타입과 일치하는 그룹이 있으면 해당 그룹을 우선 선택
-    const matchingGroup = keywordGroups.find(g => g.campaignType === campaignType);
-    if (matchingGroup) {
-      setSelectedGroupId(matchingGroup.id);
-    }
-  };
-
   // 폼 유효성 검사 함수
   const validateForm = (): boolean => {
-    console.log('validateForm 함수 내부 - 선택된 키워드:', selectedKeywords);
-    
     // 체크박스로 선택한 키워드만 확인 (이제 input 필드 검증은 하지 않음)
     if (selectedKeywords.length === 0) {
-      console.log('validateForm - 선택된 키워드 없음');
       showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
       return false;
     }
     
-    console.log('validateForm - 검증 통과');
     return true;
   };
 
   // 저장 버튼 핸들러
   const handleSave = async () => {
-    console.log('handleSave 함수 호출됨');
     // 이미 저장 중이면 중복 실행 방지
-    if (saving) {
-      console.log('이미 저장 중');
-      return;
-    }
+    if (saving) return;
 
-    try {
-      // 저장 중 상태로 변경
-      console.log('저장 중 상태로 변경');
-      setSaving(true);
-
-      // 선택된 캠페인이 없으면 저장 불가
-      if (!selectedCampaignId) {
-        console.log('선택된 캠페인 없음');
-        showAlert('알림', '캠페인을 선택해주세요.', false);
-        return;
-      }
-
-      // 폼 유효성 검사 (선택된 키워드 확인)
-      console.log('폼 유효성 검사 시작');
-      if (!validateForm()) {
-        console.log('폼 유효성 검사 실패');
-        return;
-      }
-      console.log('폼 유효성 검사 통과');
-
-      // AuthContext의 currentUser 사용
-      if (!currentUser || !currentUser.id) {
-        console.log('로그인 상태 아님');
-        throw new Error('로그인이 필요합니다.');
-      }
-
-      const userId = currentUser.id;
-      console.log('사용자 ID:', userId);
-
-      // 선택된 캠페인 정보 가져오기
-      const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId);
-      if (!selectedCampaign) {
-        console.log('선택된 캠페인 정보를 찾을 수 없음');
-        throw new Error('선택된 캠페인 정보를 찾을 수 없습니다.');
-      }
-      console.log('선택된 캠페인:', selectedCampaign.campaign_name);
-
-      // 캠페인의 mat_id 가져오기 (이미 campaigns 배열에 있는 정보 사용)
-      let matId = selectedCampaign.mat_id;
-      console.log('매트 ID (원본):', matId, '타입:', typeof matId);
-      
-      // mat_id 유효성 체크 (UUID 형식인지 확인)
-      const isValidUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(String(matId));
-      console.log('UUID 유효성 체크:', isValidUUID);
-      
-      if (!matId) {
-        console.log('매트 ID 없음');
-        throw new Error('캠페인의 mat_id를 찾을 수 없습니다. 이 캠페인은 슬롯을 등록할 수 없습니다.');
-      }
-      
-      // UUID 형식이 아니면 일단 경고 로그
-      if (!isValidUUID) {
-        console.warn('매트 ID가 UUID 형식이 아닙니다. 데이터베이스 에러가 발생할 수 있습니다:', matId);
-      }
-
-      // 단가 확인
-      const unitPrice = selectedCampaign.unit_price ?
-        (typeof selectedCampaign.unit_price === 'string' ?
-          parseInt(selectedCampaign.unit_price) : selectedCampaign.unit_price) : 0;
-      console.log('단가:', unitPrice);
-
-      if (unitPrice <= 0) {
-        console.log('유효하지 않은 단가');
-        throw new Error('유효하지 않은 캠페인 단가입니다.');
-      }
-
-      // 선택된 키워드 불러오기
-      const selectedKeywordObjects = selectedKeywords
-        .map(id => keywords.find(k => k.id === id))
-        .filter(k => k) as Keyword[];
-      console.log('선택된 키워드 수:', selectedKeywordObjects.length);
-
-      // 마감일에 따른 가격 계산을 포함한 총 결제 금액 계산
-      let calculatedTotalAmount = 0;
-      const keywordPayments = selectedKeywordObjects.map(keyword => {
-        const workCount = keyword.workCount || 1;
-        const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
-        const amount = Math.round(unitPrice * workCount * daysUntilDue * 1.1); // 부가세 10% 추가
-        calculatedTotalAmount += amount;
-        
-        console.log(`키워드: ${keyword.mainKeyword}, 작업타수: ${workCount}, 진행일수: ${daysUntilDue}, 금액: ${amount}`);
-        
-        return {
-          keywordId: keyword.id,
-          amount: amount,
-          daysUntilDue: daysUntilDue,
-          workCount: workCount
-        };
-      });
-      console.log('계산된 총 금액:', calculatedTotalAmount);
-
-      // 사용자의 캐시 잔액이 충분한지 확인
-      console.log('사용자 잔액:', userCashBalance);
-      console.log('계산된 필요 금액:', calculatedTotalAmount);
-      
-      if (userCashBalance < calculatedTotalAmount) {
-        console.log('잔액 부족');
-        showAlert('잔액 부족', 
-          `현재 잔액이 부족합니다.\n현재 잔액: ${userCashBalance.toLocaleString()}원\n필요 금액: ${calculatedTotalAmount.toLocaleString()}원`, 
-          false);
-        return; // 함수 종료
-      }
-
-      // 타임아웃 설정 (30초)
-      console.log('타임아웃 설정');
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('서버 응답 지연으로 요청을 완료할 수 없습니다.')), 30000)
-      );
-
-      // 병렬로 슬롯 등록 요청 처리 (Promise.all 사용)
-      console.log('슬롯 등록 요청 준비');
-      const registrationPromises = selectedKeywordObjects.map(async (keyword, index) => {
-        try {
-          console.log(`키워드 "${keyword.mainKeyword}" 등록 시작`, {
-            keywordId: keyword.id,
-            workCount: keyword.workCount,
-            dueDate: keyword.dueDate
-          });
-          
-          // 진행일수 계산
-          const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
-          console.log(`키워드 "${keyword.mainKeyword}" 계산된 진행일수:`, daysUntilDue);
-          
-          // 키워드에 대한 슬롯별 input_data 생성 (구조 통합 및 정리)
-          const keywordInputData = {
-            productName: slotData.productName || keyword.mainKeyword,
-            mid: slotData.mid || String(keyword.mid || ''),
-            url: slotData.url || keyword.url || '',
-            // 키워드 정보 구조화 - keyword1,2,3 형식 우선
-            // 코드 유지보수를 위한 주석: mainKeyword를 keyword1에 넣고 기존 keyword1,2,3는 순서를 밀어서 저장
-            keyword1: keyword.keyword1 || '', 
-            keyword2: keyword.keyword2 || '', 
-            keyword3: keyword.keyword3 || '', 
-            // 단일 형태로 하나의 키워드 배열로도 추가 (후방 호환성)
-            keywords: [keyword.mainKeyword].filter(k => k && k.trim() !== ''),
-            // 기존 구조도 지원 (후방 호환성)
-            mainKeyword: keyword.mainKeyword,
-            // 슬롯 메타데이터
-            keyword_id: keyword.id, // slots 테이블의 keyword_id 필드를 위해 추가
-            quantity: keyword.workCount || 1, // slots 테이블의 quantity 필드를 위해 추가
-            days_until_due: daysUntilDue, // 계산용으로 필드로 추가
-            due_date: keyword.dueDate || getTomorrowDate(), // 마감일 (deadline 필드에 사용됨)
-            // 결제 정보
-            payment: keywordPayments[index],
-            calculated_price: keywordPayments[index].amount // 정확한 계산된 가격
-          };
-          console.log(`키워드 "${keyword.mainKeyword}" input_data 정리 완료:`, JSON.stringify(keywordInputData));
-
-          // 슬롯 등록 요청
-          console.log(`키워드 "${keyword.mainKeyword}" registerSlot 호출 직전 - 매개변수:`, {
-            userId,
-            campaignId: selectedCampaignId,
-            matId: matId,
-            calculatedPrice: keywordPayments[index].amount,
-            keyword_id: keyword.id,
-            dueDate: keyword.dueDate || getTomorrowDate(),
-            days_until_due: daysUntilDue
-          });
-          
-          const result = await registerSlot(
-            userId,
-            selectedCampaignId,
-            matId,
-            keywordInputData
-          );
-          
-          console.log(`키워드 "${keyword.mainKeyword}" registerSlot 결과:`, JSON.stringify(result));
-
-          if (!result.success) {
-            console.error(`키워드 "${keyword.mainKeyword}" 등록 실패:`, result.message);
-          }
-
-          return { 
-            keyword, 
-            result, 
-            success: result.success, 
-            workCount: keyword.workCount || 1,
-            payment: keywordPayments[index].amount,
-            daysUntilDue: daysUntilDue,
-            slotId: result.data?.id 
-          };
-        } catch (error) {
-          console.error(`키워드 "${keyword.mainKeyword}" 등록 중 예외 발생:`, error);
-          if (error instanceof Error) {
-            console.error('스택:', error.stack);
-          }
-          return { 
-            keyword, 
-            error, 
-            success: false,
-            workCount: keyword.workCount || 1,
-            daysUntilDue: calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate()),
-            payment: 0 
-          };
-        }
-      });
-
-      // 타임아웃과 함께 모든 등록 요청 처리
-      console.log('Promise.race 시작');
-      const results = await Promise.race([
-        Promise.all(registrationPromises),
-        timeoutPromise
-      ]) as Array<{
-        keyword: Keyword;
-        result?: any;
-        error?: any;
-        success: boolean;
-        workCount: number;
-        daysUntilDue: number;
-        payment: number;
-        slotId?: string | number;
-      }>;
-      console.log('Promise.race 완료, 결과:', results);
-
-      // 성공 및 실패 케이스 분리 및 상세 로깅
-      const succeeded = results.filter(r => r.success);
-      const failed = results.filter(r => !r.success);
-      console.log('성공 개수:', succeeded.length, '실패 개수:', failed.length);
-      
-      // 각 실패 케이스 상세 정보 로그
-      if (failed.length > 0) {
-        console.error('=== 실패한 키워드 목록 ===');
-        failed.forEach((f, i) => {
-          console.error(`[${i+1}/${failed.length}] 키워드: ${f.keyword.mainKeyword}`, {
-            message: f.result?.message || '메시지 없음',
-            result: f.result || 'result 없음',
-            error: f.error || 'error 없음'
-          });
-        });
-      }
-      
-      // 실제 처리된 결제 금액 계산 (성공한 항목만)
-      const actualPaymentAmount = succeeded.reduce((total, s) => total + s.payment, 0);
-      console.log('실제 결제 금액:', actualPaymentAmount);
-      
-      // 사용자의 캐시 잔액 업데이트 (UI 표시용, 실제 성공한 항목의 금액만 차감)
-      setUserCashBalance(prev => prev - actualPaymentAmount);
-
-      // 성공 메시지 구성
-      let successMessage = '';
-      if (succeeded.length === results.length) {
-        // 모두 성공한 경우
-        successMessage = `${succeeded.length}개의 키워드 슬롯이 성공적으로 등록되었습니다. 총 ${actualPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
-      } else if (succeeded.length > 0 && failed.length > 0) {
-        // 일부만 성공한 경우
-        const failedKeywords = failed.map(f => f.keyword.mainKeyword).join(', ');
-        successMessage = `${succeeded.length}/${results.length}개의 키워드 슬롯이 등록되었습니다. (실패: ${failedKeywords})\n총 ${actualPaymentAmount.toLocaleString()}원이 차감되었습니다.`;
-      } else {
-        // 모두 실패한 경우
-        throw new Error('모든 키워드 슬롯 등록에 실패했습니다.');
-      }
-      console.log('성공 메시지:', successMessage);
-
-      // 성공 메시지 표시
-      console.log('알림 표시 직전');
-      showAlert('성공', successMessage, succeeded.length === results.length);
-      console.log('알림 표시 완료');
-
-      // 부모 컴포넌트의 onSave 함수 호출 (있다면)
-      if (onSave && succeeded.length > 0) {
-        console.log('onSave 호출');
-        onSave(slotData);
-      }
-
-      // 모두 성공했거나 일부 성공한 경우 입력 폼 초기화 및 목록 새로고침
-      if (succeeded.length > 0) {
-        console.log('입력 폼 초기화 및 키워드 목록 새로고침');
-        
-        // 입력 폼 즉시 초기화 (UX 개선)
-        setSlotData({
-          productName: '',
-          mid: '',
-          url: '',
-          keyword1: '',
-          keyword2: '',
-          keyword3: '',
-          selectedKeywords: [],
-          keywordDetails: []
-        });
-        setErrors({});
-        setSelectedKeywords([]);
-        setTotalPaymentAmount(0);
-        
-        // 성공한 키워드 ID 목록
-        const succeededKeywordIds = succeeded.map(s => s.keyword.id);
-        console.log('성공한 키워드 IDs:', succeededKeywordIds);
-        
-        // 키워드 목록 새로고침 - 현재 선택된 그룹의 키워드만 다시 불러옴
-        if (selectedGroupId) {
-          console.log('키워드 목록 새로고침 시작 - 그룹 ID:', selectedGroupId);
-          fetchKeywords(selectedGroupId);
-        }
-        
-        // 캠페인 정보 새로고침 (선택적)
-        fetchCampaigns();
-        
-        // 사용자 잔액 정보 새로고침
-        fetchUserBalance();
-        
-      } else if (failed.length > 0) {
-        // 모두 실패한 경우, 실패한 키워드만 유지
-        console.log('실패한 키워드만 유지');
-        const failedKeywordIds = failed.map(f => f.keyword.id);
-        setSelectedKeywords(failedKeywordIds);
-      }
-
-    } catch (error) {
-      console.error('handleSave 에러:', error);
-      // 오류 메시지 처리 개선
-      let errorMsg = '슬롯 저장 중 오류가 발생했습니다';
-
-      if (error instanceof Error) {
-        // 오류 유형별 처리
-        if (error.message.includes('잔액이 부족합니다')) {
-          errorMsg = `잔액이 부족합니다. 캐시를 충전해주세요.`;
-        } else if (error.message.includes('타임아웃') || error.message.includes('서버 응답 지연')) {
-          errorMsg = '서버 응답 지연으로 요청을 완료할 수 없습니다. 잠시 후 다시 시도해주세요.';
-        } else {
-          errorMsg = `${errorMsg}: ${error.message}`;
-        }
-      }
-
-      console.log('오류 알림 표시 직전:', errorMsg);
-      showAlert('오류 발생', errorMsg, false);
-      console.log('오류 알림 표시 완료');
-    } finally {
-      // 저장 중 상태 해제
-      console.log('저장 중 상태 해제');
-      setSaving(false);
-    }
+    // 저장 미구현 메시지 표시
+    showAlert('개발 중', '이 기능은 아직 구현 중입니다.', false);
+    return;
   };
 
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
-
-  // Supabase 캠페인을 CampaignDetailData 형식으로 변환
-  const formatCampaignToDetailData = (campaign: SupabaseCampaign): ICampaignDetailData => {
-    // 로고 URL 처리
-    let logoUrl = '';
-
-    // add_info에서 로고 URL을 우선적으로 사용
-    if (campaign.add_info) {
-      if (typeof campaign.add_info === 'string') {
-        try {
-          const addInfo = JSON.parse(campaign.add_info);
-          if (addInfo.logo_url) {
-            logoUrl = addInfo.logo_url;
-          }
-        } catch (e) {
-          console.error("Error parsing add_info for logo_url", e);
-        }
-      } else if (campaign.add_info.logo_url) {
-        logoUrl = campaign.add_info.logo_url;
-      }
-    }
-
-    // add_info에 로고가 없으면 campaign.logo 사용
-    if (!logoUrl && campaign.logo) {
-      logoUrl = campaign.logo;
-    }
-
-    // 절대 경로 처리
-    if (logoUrl && !logoUrl.startsWith('/media') && !logoUrl.startsWith('http')) {
-      logoUrl = `/media/${logoUrl}`;
-    }
-
-    return {
-      id: String(campaign.id || ''),
-      campaignName: campaign.campaign_name || '',
-      description: campaign.description || '',
-      logo: logoUrl,
-      efficiency: String(campaign.efficiency || '0%'),
-      minQuantity: String(campaign.min_quantity || '0개'),
-      deadline: String(campaign.deadline || ''),
-      unitPrice: String(campaign.unit_price || '0원'),
-      additionalLogic: String(campaign.additional_logic || '없음'),
-      status: {
-        label: getStatusLabel(campaign.status),
-        color: getStatusBadgeClass(campaign.status)
-      }
-    };
-  };
-
-  // 상태값에 따른 표시 텍스트 반환
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'active': return '진행중';
-      case 'pause': return '표시안함';
-      case 'pending': return '준비중';
-      case 'completed': return '완료됨';
-      case 'rejected': return '반려됨';
-      default: return '준비중';
-    }
-  };
-
-  // 상태값에 따른 배지 클래스 반환
-  const getStatusBadgeClass = (status: string): string => {
-    switch (status) {
-      case 'active': return 'badge-success';
-      case 'pause': return 'badge-warning';
-      case 'pending': return 'badge-info';
-      case 'completed': return 'badge-primary';
-      case 'rejected': return 'badge-danger';
-      default: return 'badge-gray-300';
-    }
-  };
-
-  const campaignData = selectedCampaign ? formatCampaignToDetailData(selectedCampaign) : null;
 
   if (!open || !category) return null;
 
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]">
-          <DialogHeader className="bg-background py-4 px-6 flex-shrink-0">
-            <DialogTitle className="text-lg font-medium text-foreground">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]" aria-describedby={undefined}>
+          <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               {serviceCode === 'NaverShopTraffic'
                 ? '네이버 쇼핑 트래픽 슬롯 관리'
                 : serviceCode === 'NaverBlogPosting'
@@ -1311,7 +772,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       <select
                         id="campaign-select"
                         value={selectedCampaignId || ''}
-                        onChange={handleCampaignChange}
                         className="select flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 px-3 py-2"
                       >
                         {campaigns.map((camp) => (
@@ -1327,7 +787,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                   
                   {/* 선택된 캠페인 정보 - 고정 높이 유지 */}
                   <div className="w-full md:w-2/3 min-h-[110px] sm:min-h-[130px] bg-white rounded-lg border border-border shadow-sm p-2 sm:p-3">
-                    {campaignData ? (
+                    {selectedCampaign ? (
                       <div className="flex gap-4">
                         <div className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] shrink-0 relative rounded-md overflow-hidden">
                           {bannerUrl ? (
@@ -1377,14 +837,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between mb-2">
                             <h2 className="text-lg font-bold text-foreground truncate">
-                              {campaignData.campaignName}
+                              {selectedCampaign.campaign_name}
                             </h2>
-                            {campaignData.status && (
-                              <span className={`badge ${campaignData.status.color} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-sm`}>
-                                <span className={`size-1.5 rounded-full bg-${getStatusColorClass(campaignData.status.color)} me-1`}></span>
-                                {campaignData.status.label}
-                              </span>
-                            )}
+                            <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-sm`}>
+                              <span className={`size-1.5 rounded-full me-1`}></span>
+                              {getStatusLabel(selectedCampaign.status)}
+                            </span>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -1392,20 +850,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                               <KeenIcon icon="wallet" className="text-primary size-4" />
                               <span className="text-muted-foreground">단가:</span>
                               <span className="font-bold text-primary">
-                                {campaignData.unitPrice ? (campaignData.unitPrice.endsWith('원') ? campaignData.unitPrice : `${campaignData.unitPrice}원`) : '1,000원'}
+                                {selectedCampaign.unit_price ? `${selectedCampaign.unit_price}원` : '1,000원'}
                               </span>
                             </div>
                             
                             <div className="flex items-center gap-1.5 text-sm">
                               <KeenIcon icon="timer" className="text-blue-500 size-4" />
                               <span className="text-muted-foreground">마감:</span>
-                              <span className="font-bold">{campaignData.deadline}</span>
+                              <span className="font-bold">{selectedCampaign.deadline}</span>
                             </div>
                           </div>
                           
                           <div className="text-sm">
                             <div className="bg-blue-50/50 p-2 rounded border border-blue-100/50 text-gray-700 line-clamp-2">
-                              {campaignData.description || '설명이 없습니다.'}
+                              {selectedCampaign.description || '설명이 없습니다.'}
                             </div>
                           </div>
                         </div>
@@ -1635,7 +1093,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               </div>
             </div>
           </div>
-          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
+          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background sticky bottom-0 z-10 shadow-sm">
             <div className="flex items-center">
               {selectedKeywords.length > 0 && (
                 <div className="flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-100 dark:border-blue-900 shadow-sm w-full sm:w-auto">
@@ -1651,7 +1109,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             <Button
               onClick={handleSave}
               type="button"
-              className="px-4 sm:px-6 md:px-8 bg-blue-600 hover:bg-blue-800 text-white transition-all duration-300 h-9 sm:h-10 rounded-lg shadow-sm w-full sm:w-auto"
+              className="px-4 sm:px-6 md:px-8 bg-primary hover:bg-primary/90 text-white transition-all duration-300 h-9 sm:h-10 rounded-md shadow-sm w-full sm:w-auto"
               disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}
             >
               {saving ? (
@@ -1674,9 +1132,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       {/* 알림 다이얼로그 */}
       <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-          <div className={`px-4 sm:px-6 py-4 border-b ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
-            <DialogTitle className="text-lg font-medium">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[500px] p-0 overflow-hidden" aria-describedby={undefined}>
+          <DialogHeader className={`py-4 px-6 border-b sticky top-0 z-10 shadow-sm ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+            <DialogTitle className="text-lg font-semibold text-foreground">
               <div className="flex items-center gap-2">
                 {isSuccess ? (
                   <KeenIcon icon="Check" className="size-5 text-green-600 dark:text-green-400" />
@@ -1686,13 +1144,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 <span className={isSuccess ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}>{alertTitle}</span>
               </div>
             </DialogTitle>
-          </div>
+          </DialogHeader>
           <div className="p-6 bg-background">
             <p className="text-foreground mb-6 whitespace-pre-line">{alertDescription}</p>
             <div className="flex justify-end">
               <Button
                 onClick={() => setAlertDialogOpen(false)}
-                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+                className={isSuccess ? "bg-green-600 hover:bg-green-700 text-white" : "bg-primary hover:bg-primary/90 text-white"}
               >
                 확인
               </Button>

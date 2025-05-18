@@ -203,9 +203,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 현재 위치 정보 가져오기
   const location = useLocation();
 
-  // 서비스 타입 값을 다양한 소스에서 체계적으로 추출
+  // 서비스 타입 값을 다양한 소스에서 체계적으로 추출 - 최적화를 위해 의존성을 명확히 함
   const finalServiceCode = useMemo(() => {
     try {
+      // URL 내에 naver-shopping-traffic이 포함되어 있으면 직접 반환 (최적화)
+      if (location.pathname.includes('naver-shopping-traffic')) {
+        return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+      }
+      
       return resolveServiceType({
         campaign,
         serviceCode,
@@ -218,18 +223,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   }, [campaign, serviceCode, location.pathname, category]);
 
-  useEffect(() => {
-    // 서비스 타입 변경 감지만 유지
-  }, [finalServiceCode, serviceCode, campaign, location.pathname, category]);
-
-  // 모달이 열릴 때 캠페인 목록 가져오기
+  // 모달이 열릴 때만 한 번 데이터 로드 (모든 데이터를 한 번에 로드)
   useEffect(() => {
     if (open) {
-      fetchCampaigns();
-      fetchKeywordGroups();
+      fetchCampaigns(); // 캠페인 목록 조회
+      fetchKeywordGroups(); // 키워드 그룹 조회
       fetchUserBalance(); // 사용자 잔액 가져오기
     }
-  }, [open, serviceCode, category]); // serviceCode와 category 변경 시 캠페인 목록 갱신
+  }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
   // 캠페인 로고 또는 아이콘 가져오기 함수
   const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
@@ -275,33 +276,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       setLoading(true);
 
       // DB 쿼리를 위한 서비스 타입 변환 - finalServiceCode 기반
-      let dbServiceType: CampaignServiceType;
-
-      // finalServiceCode는 이미 표준화된 CampaignServiceType 값
-      dbServiceType = finalServiceCode;
+      const dbServiceType = finalServiceCode;
 
       // Supabase 쿼리 준비
       let query = supabase
         .from('campaigns')
         .select('*, mat_id, add_info') // mat_id와 add_info 필드도 가져오기
+        .eq('status', 'active') // 항상 active 상태인 캠페인만 가져오기
         .order('id', { ascending: true });
 
-      // 소스 페이지 정보에 따라 쿼리 조건 변경
-      if (sourcePageInfo?.page === 'campaignInfo') {
-        // 캠페인 소개 페이지에서 온 경우 - active 상태인 캠페인만 표시
-        query = query.eq('status', 'active');
-      } else if (sourcePageInfo?.page === 'myService') {
-        // 내 서비스 관리 페이지에서 온 경우 - 자신이 구매한 캠페인이나 사용 가능한 캠페인
-        query = query.neq('status', 'pause');
-      } else {
-        // 기본 케이스 - pause가 아닌 캠페인만 조회
-        query = query.neq('status', 'pause');
-      }
-
-      // 서비스 타입으로 필터 추가
-      query = query.eq('service_type', dbServiceType);
-
-      // 디버깅을 위한 서비스 타입 정보 기록 제거
+      // 서비스 타입으로 필터 추가 - 문자열로 변환하여 저장
+      query = query.eq('service_type', String(dbServiceType));
 
       // 쿼리 실행
       const { data, error } = await query;

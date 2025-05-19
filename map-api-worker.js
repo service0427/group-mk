@@ -65,8 +65,8 @@ const MOCK_DATA = {
 
 // 개발 환경인지 여부를 확인
 // true: 목업 데이터 사용, false: 실제 네이버 API 호출
-// 배포 환경에서도 목업 데이터를 사용하도록 true로 설정
-const isDevEnvironment = true;
+// 실제 API 호출을 위해 false로 설정
+const isDevEnvironment = false;
 
 /**
  * 요청 핸들러

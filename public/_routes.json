@@ -7,6 +7,7 @@
     "/build/*",
     "/assets/*",
     "/media/*",
+    "/api/*",
     "/*.js",
     "/*.css",
     "/*.map",
@@ -23,6 +24,22 @@
     "/*.eot"
   ],
   "routes": [
+    {
+      "src": "/api/ping",
+      "dest": "/api/ping"
+    },
+    {
+      "src": "/api/search",
+      "dest": "/api/search"
+    },
+    {
+      "src": "/api/location",
+      "dest": "/api/location"
+    },
+    {
+      "src": "/api/places",
+      "dest": "/api/places"
+    },
     {
       "src": "/auth/login",
       "dest": "/index.html"

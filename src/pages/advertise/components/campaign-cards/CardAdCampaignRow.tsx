@@ -11,25 +11,43 @@ const CardAdCampaignRow = ({
   logoSize = '50px', // 기본값 제공
   title,
   description,
+  detailedDescription,
   status,
   statistics,
   progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
-  url
+  url,
+  rawId  // 원본 데이터 ID
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
   
-  // 유틸리티 함수를 사용하여 모달 데이터 생성
-  const campaignData = formatCampaignDetailData({
-    logo, 
-    logoSize, 
-    title, 
-    description, 
-    status, 
-    statistics, 
-    progress
-  });
+  // 원본 데이터에서 상세 설명 가져오기 (전역 변수에 저장된 rawItems 활용)
+  // @ts-ignore - window에 campaignRawItems 추가
+  const rawItems = window.campaignRawItems || [];
+  const rawItem = rawItems.find((item: any) => item.id === rawId);
+  
+  // 원본 데이터에서 직접 detailed_description 가져오기
+  const rawDetailedDesc = rawItem?.detailed_description;
+  
+  // 직접 상세보기 모달에 전달할 데이터 구성
+  const campaignData = {
+    id: rawId || "",
+    campaignName: title,
+    description: description,
+    logo: logo,
+    efficiency: statistics.find(stat => stat.description.includes('상승효율'))?.total || '0%',
+    minQuantity: statistics.find(stat => stat.description.includes('최소수량'))?.total || '0개',
+    deadline: statistics.find(stat => stat.description.includes('접수마감'))?.total || '-',
+    unitPrice: statistics.find(stat => stat.description.includes('건당단가'))?.total || '0원',
+    additionalLogic: statistics.find(stat => stat.description.includes('추가로직'))?.total || '없음',
+    // 원본 데이터의 상세 설명 우선 사용
+    detailedDescription: rawDetailedDesc ? rawDetailedDesc.replace(/\\n/g, '\n') : detailedDescription,
+    status: {
+      label: status.label,
+      color: status.variant
+    }
+  };
 
   const renderItem = (statistic: IAdCampaignItem, index: number) => {
     // 표시할 값 그대로 사용 (IntroTemplate에서 이미 적절한 형식으로 변환했음)

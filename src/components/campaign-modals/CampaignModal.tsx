@@ -526,7 +526,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         }
 
         // DB 업데이트
-        const success = await updateCampaign(parseInt(newCampaign.id), updateData);
+        const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
+        const success = await updateCampaign(campaignId, updateData);
 
         if (!success) {
           throw new Error('캠페인 업데이트에 실패했습니다.');
@@ -1517,7 +1518,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           };
                           
                           // DB 직접 업데이트
-                          const success = await updateCampaign(parseInt(newCampaign.id), updateData);
+                          const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
+                          const success = await updateCampaign(campaignId, updateData);
                           
                           if (success) {
                             // 성공 시 상태 업데이트 (UI 반영용)

@@ -62,6 +62,7 @@ import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
 const AppRoutingSetup = (): ReactElement => {
   return (
     <Routes>
+      {/* 장소 검색 테스트 페이지는 NoAuthRoutes로 이동했음 */}
       {/* 모든 인증된 사용자가 접근 가능한 기본 페이지 (인증만 필요) */}
       <Route element={<RequireAuth />}>
         <Route element={<StandLayout />}>

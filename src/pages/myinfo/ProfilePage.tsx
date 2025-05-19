@@ -26,19 +26,7 @@ const ProfilePage = () => {
   // 사업자 정보와 등업 신청 현황 체크
   // 초기 상태 설정을 위한 useEffect
   useEffect(() => {
-    console.log("프로필 페이지 useEffect 실행");
-    
-    // currentUser 구조 자세히 확인
-    if (currentUser) {
-      console.log("currentUser 전체 구조:", JSON.stringify(currentUser, null, 2));
-      console.log("currentUser 키:", Object.keys(currentUser));
-      console.log("currentUser.business 존재 여부:", currentUser.hasOwnProperty('business'));
-      console.log("currentUser.business 타입:", typeof currentUser.business);
-      console.log("currentUser.business 값:", currentUser.business);
-    } else {
-      console.log("currentUser가 null이거나 undefined입니다.");
-    }
-    
+        
     // 직접 사용자 데이터 가져오기 - business가 없는 경우를 대비
     const fetchUserWithBusiness = async () => {
       if (currentUser?.id) {
@@ -54,11 +42,8 @@ const ProfilePage = () => {
             return;
           }
           
-          console.log("직접 조회한 사용자 데이터:", data);
-          
           // business 필드가 있고 currentUser에 없는 경우 업데이트
           if (data && data.business && !currentUser.business) {
-            console.log("business 필드 업데이트:", data.business);
             const updatedUser = {
               ...currentUser,
               business: data.business
@@ -91,10 +76,8 @@ const ProfilePage = () => {
         const business = currentUser?.business || currentUser?.["business"] || null;
         
         if (business) {
-          console.log("사업자 정보 존재:", business);
           setHasBusinessInfo(true);
         } else {
-          console.log("사업자 정보 없음");
           setHasBusinessInfo(false);
         }
         
@@ -111,9 +94,7 @@ const ProfilePage = () => {
           throw pendingError;
         }
         
-        console.log('대기 중인 등업 신청 데이터:', pendingData);
         const isPending = pendingData && pendingData.length > 0;
-        console.log('hasPendingRequest 값:', isPending);
         setHasPendingRequest(isPending);
         
         // 거부된 등업 신청이 있는지 체크
@@ -130,24 +111,13 @@ const ProfilePage = () => {
           throw rejectedError;
         }
         
-        console.log('거부된 등업 신청 데이터:', rejectedData);
-        
         if (rejectedData && rejectedData.length > 0) {
-          console.log('거부 사유:', rejectedData[0].rejection_reason);
           setHasRejectedRequest(true);
           setRejectionReason(rejectedData[0].rejection_reason || '');
         } else {
           setHasRejectedRequest(false);
           setRejectionReason('');
         }
-        
-        // 최종 상태 로깅
-        console.log('상태 요약:', {
-          hasBusinessInfo: currentUser?.business ? true : false,
-          hasPendingRequest: pendingData && pendingData.length > 0,
-          hasRejectedRequest: rejectedData && rejectedData.length > 0,
-          currentUser: currentUser
-        });
         
       } catch (err) {
         console.error("프로필 페이지 데이터 로드 오류:", err);
@@ -158,19 +128,12 @@ const ProfilePage = () => {
     
     if (currentUser?.id) {
       checkBusinessStatus();
-    } else {
-      console.log("currentUser 또는 ID가 없어 데이터를 불러오지 않습니다.");
     }
   }, [currentUser]);
   
   // 렌더링 확인을 위한 useEffect
   useEffect(() => {
-    console.log("렌더링 상태:", {
-      hasBusinessInfo,
-      hasPendingRequest, 
-      hasRejectedRequest,
-      isUpgradeModalOpen
-    });
+    
   }, [hasBusinessInfo, hasPendingRequest, hasRejectedRequest, isUpgradeModalOpen]);
 
   const roleClass = currentUser?.role ? `bg-${getRoleBadgeColor(currentUser.role)}/10 text-${getRoleBadgeColor(currentUser.role)}` : '';

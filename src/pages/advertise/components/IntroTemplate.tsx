@@ -35,6 +35,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   // 상태 관리
   const [currentMode, setCurrentMode] = useState('cards');
   const [items, setItems] = useState<IAdCampaignsContentItem[]>([]);
+  const [rawItems, setRawItems] = useState<any[]>([]); // 원본 데이터 저장
   const [loading, setLoading] = useState(true);
   
   // 상태값 관련 함수는 유틸리티로 이동했습니다.
@@ -94,15 +95,35 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           .order('id', { ascending: true });
           
         if (error) {
-          
+          console.error('Error fetching campaign data:', error);
           setLoading(false);
           return;
         }
         
+        // 원본 데이터 저장
+        setRawItems(data);
+        
+        // 데이터 변환 전에 원본 데이터를 직접 확인
+        if (data && data.length > 0) {
+
+          // DB에서 가져온 데이터의 키 목록 확인 (모든 필드명 표시)
+          const sampleItem = data[0];
+        }
+        
         // 유틸리티 함수를 사용하여 데이터 변환 (인덱스 전달)
-        const formattedItems: IAdCampaignsContentItem[] = data.map((campaign, index) => 
-          formatCampaignData(campaign as CampaignData, index)
-        );
+        const formattedItems: IAdCampaignsContentItem[] = data.map((campaign, index) => {
+          // 기존 방식으로 포맷된 아이템 생성
+          const formattedItem = formatCampaignData(campaign as CampaignData, index);
+          
+          if (campaign.detailed_description) {
+            formattedItem.detailedDescription = campaign.detailed_description.replace(/\\n/g, '\n');
+          }
+          
+          // ID 설정 (나중에 원본 데이터와 매칭하기 위해)
+          formattedItem.id = campaign.id;
+          
+          return formattedItem;
+        });
         
         setItems(formattedItems);
         setLoading(false);
@@ -175,33 +196,54 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
     />
   );
 
+  // 전역 변수로 원본 데이터 참조를 저장 (모든 컴포넌트에서 공유)
+  window.campaignRawItems = rawItems;
+  
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
+    // 원본 데이터에서 상세 설명 가져오기
+    const rawItem = rawItems.find(raw => raw.id === item.id);
+    const detailedDesc = rawItem?.detailed_description?.replace(/\\n/g, '\n');
+    
+    // rawItem의 ID를 추가로 전달 (실제 ID를 찾기 위해)
+    const rawItemId = rawItem?.id;
+    
     return (
       <CardAdCampaign
         logo={item.logo}
         logoSize={item.logoSize}
         title={item.title}
         description={item.description}
+        detailedDescription={detailedDesc}  // 원본 데이터 우선 사용
         status={item.status}
         statistics={item.statistics}
         progress={item.progress}
         url={campaignPath}
         key={index}
+        rawId={rawItemId}  // 원본 데이터 ID 전달
       />
     );
   };
 
   const renderItem = (data: IAdCampaignsContentItem, index: number) => {
+    // 원본 데이터에서 상세 설명 가져오기
+    const rawItem = rawItems.find(raw => raw.id === data.id);
+    const detailedDesc = rawItem?.detailed_description?.replace(/\\n/g, '\n');
+    
+    // rawItem의 ID를 추가로 전달 (실제 ID를 찾기 위해)
+    const rawItemId = rawItem?.id;
+    
     return (
       <CardAdCampaignRow
         logo={data.logo}
         logoSize={data.logoSize}
         title={data.title}
         description={data.description}
+        detailedDescription={detailedDesc}  // 원본 데이터 우선 사용
         status={data.status}
         statistics={data.statistics}
         url={campaignPath}
         key={index}
+        rawId={rawItemId}  // 원본 데이터 ID 전달
       />
     );
   };

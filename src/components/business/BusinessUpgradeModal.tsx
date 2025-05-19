@@ -332,7 +332,6 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         
         // 기존 계좌 정보가 있는 경우 (수정 불가능)
         if (userHasExistingAccount) {
-          console.log('기존 계좌 정보가 있어 변경할 수 없습니다.');
           // 기존 계좌 정보를 유지합니다 (수정하지 않음)
         } else {
           // 새 계좌 정보 저장 (1회만 수정 가능하도록 설정)

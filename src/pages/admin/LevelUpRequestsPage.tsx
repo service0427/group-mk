@@ -157,8 +157,6 @@ const LevelUpRequestsPage = () => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-
-      console.log('등업 신청 목록:', data);
       
       setRequests(data as RequestWithUser[] || []);
     } catch (err: any) {

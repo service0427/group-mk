@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { HashRouter } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
+import { HashRouter, Routes, Route } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
+import SearchPage from './pages/SearchPage';
 import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
@@ -69,8 +70,15 @@ const App = () => {
       
       <PathnameProvider>
         <ScrollToTop />
-        {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
-        {!isLoggingOut && <AppRouting />}
+        
+        {/* 라우팅 구조 */}
+        <Routes>
+          {/* 인증 없이 접근 가능한 라우트 */}
+          <Route path="/map-search" element={<SearchPage />} />
+          
+          {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
+          {!isLoggingOut && <Route path="/*" element={<AppRouting />} />}
+        </Routes>
         {/* 로그아웃 중이면 라우팅 렌더링 방지 */}
         {isLoggingOut && (
           <div style={{ display: 'none' }}>

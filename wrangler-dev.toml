@@ -1,0 +1,12 @@
+name = "mk-dev"
+main = "map-api-worker.js"
+compatibility_date = "2024-01-01"
+# 지원되지 않는 호환성 플래그 제거
+
+# 개발 환경 설정
+[vars]
+ENVIRONMENT = "development"
+
+# 개발 서버 설정
+[dev]
+port = 9000

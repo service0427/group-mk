@@ -5,13 +5,9 @@ import { useLocation } from 'react-router-dom';
 import { useMenus } from '@/providers';
 import { useMenuBreadcrumbs, KeenIcon } from '@/components';
 import { CardAdCampaign, CardAdCampaignRow } from './campaign-cards';
-import { supabase } from '@/supabase';
-import {
-  formatCampaignData,
-  CampaignData,
-} from '@/utils/CampaignFormat';
+import { formatCampaignData } from '@/utils/CampaignFormat';
+import { fetchCampaignsByServiceType } from '../services/campaignDetailService';
 import { getServiceTypeFromPath } from '@/data/advertiseServices';
-import { CampaignServiceType } from '@/components/campaign-modals/types';
 
 interface CampaignInfoTemplateProps {
   serviceData: ServiceData;
@@ -37,23 +33,23 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
       // 새로운 URL 형식 처리 (/advertise/campaigns/info/:serviceType)
       const pathSegments = pathname.split('/').filter(Boolean);
-      
+
       // serviceType 추출 (naver-traffic, naver-shopping-traffic 등)
       const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
-      
+
       if (!serviceType) {
         setError('서비스 타입 정보가 없습니다.');
         setLoading(false);
         return;
       }
-      
+
       // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
       const parts = serviceType.split('-');
-      
+
       let platform = '';
       let type = '';
       let subservice = '';
-      
+
       if (parts.length === 3) {
         // naver-shopping-traffic 같은 형식
         platform = parts[0];
@@ -78,29 +74,45 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         return;
       }
 
-      // Supabase에서 해당 서비스 타입의 캠페인 가져오기 (active 상태만)
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('service_type', serviceTypeCode)
-        .eq('status', 'active') // 오직 'active' 상태인 캠페인만 표시
-        .order('id', { ascending: true });
+      // 새로운 서비스 함수로 캠페인 데이터 가져오기
+      // includeAllStatus를 false로 설정하여 active 상태의 캠페인만 가져오기
+      const campaigns = await fetchCampaignsByServiceType(serviceTypeCode, undefined, false);
 
-      if (error) {
-        console.error("캠페인 데이터 가져오기 오류:", error);
-        throw new Error('캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
+      if (!campaigns || campaigns.length === 0) {
+        setItems([]);
+        setLoading(false);
+        return;
       }
 
       // 유틸리티 함수를 사용하여 데이터 변환 (인덱스와 서비스 타입 코드 전달)
-      const formattedItems: IAdCampaignsContentItem[] = data.map((campaign, index) =>
-        formatCampaignData(campaign as any, index, serviceTypeCode)
-      );
+      const formattedItems: IAdCampaignsContentItem[] = campaigns.map((campaign, index) => {
+        // formatCampaignData 함수에 맞게 데이터 구조 조정
+        const formattedData = formatCampaignData({
+          id: campaign.id,
+          campaign_name: campaign.campaignName,
+          description: campaign.description,
+          detailed_description: campaign.detailedDescription,
+          logo: campaign.logo,
+          efficiency: campaign.efficiency?.replace('%', ''),
+          min_quantity: campaign.minQuantity?.replace('개', ''),
+          deadline: campaign.deadline,
+          status: campaign.status.label === '진행중' ? 'active' : campaign.status.label === '준비중' ? 'pending' : 'pause',
+          service_type: campaign.serviceType,
+          add_info: campaign.originalData?.add_info,
+          unit_price: campaign.unitPrice,
+          additional_logic: campaign.additionalLogic
+        }, index, serviceTypeCode);
+
+        return {
+          ...formattedData,
+          rawId: campaign.id // 원본 ID 저장
+        };
+      });
 
       setItems(formattedItems);
       setLoading(false);
     } catch (err: any) {
-      console.error("데이터 로딩 중 오류:", err);
-      setError(err.message || '캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
+      setError('캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
       setItems([]);
       setLoading(false);
     }
@@ -116,7 +128,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
   // 새로운 URL 형식 분석 (/advertise/campaigns/info/:serviceType)
   const pathSegments = pathname.split('/').filter(Boolean);
   const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
-  
+
   if (serviceType === 'naver-shopping-traffic') {
     serviceCategory = 'NS 트래픽';
   } else if (serviceType === 'naver-place-save') {
@@ -154,22 +166,24 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         progress={item.progress}
         url={campaignPath}
         key={index}
+        rawId={item.rawId}
       />
     );
   };
 
   // 리스트 형식으로 렌더링
-  const renderItem = (data: IAdCampaignsContentItem, index: number) => {
+  const renderItem = (item: IAdCampaignsContentItem, index: number) => {
     return (
       <CardAdCampaignRow
-        logo={data.logo}
-        logoSize={data.logoSize}
-        title={data.title}
-        description={data.description}
-        status={data.status}
-        statistics={data.statistics}
+        logo={item.logo}
+        logoSize={item.logoSize}
+        title={item.title}
+        description={item.description}
+        status={item.status}
+        statistics={item.statistics}
         url={campaignPath}
         key={index}
+        rawId={item.rawId}
       />
     );
   };
@@ -186,8 +200,8 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
           <KeenIcon icon="warning" className="size-16 mb-4 text-red-500" />
           <p className="text-lg font-medium text-red-600 mb-2">데이터 로딩 오류</p>
           <p className="text-sm text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => fetchData()} 
+          <button
+            onClick={() => fetchData()}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
           >
             <KeenIcon icon="arrows-circle" className="size-4" />
@@ -232,8 +246,8 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
               <KeenIcon icon="information-circle" className="size-16 mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-500 mb-2">캠페인 데이터가 없습니다</p>
               <p className="text-sm text-gray-400 mb-4">현재 제공 가능한 캠페인이 없습니다.</p>
-              <button 
-                onClick={() => fetchData()} 
+              <button
+                onClick={() => fetchData()}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
               >
                 <KeenIcon icon="arrows-circle" className="size-4" />
@@ -252,8 +266,8 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
               <div id="campaigns_list" className={currentMode === 'cards' ? 'hidden' : ''}>
                 <div className="flex flex-col gap-5 lg:gap-7.5">
-                  {items.map((data, index) => {
-                    return renderItem(data, index);
+                  {items.map((item, index) => {
+                    return renderItem(item, index);
                   })}
                 </div>
               </div>

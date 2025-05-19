@@ -38,8 +38,8 @@ export interface FormattedCampaignData {
     variant: string;
     label: string;
   };
-  statistics: Array<{ 
-    total: string; 
+  statistics: Array<{
+    total: string;
     description: string;
   }>;
   progress?: { // 옵셔널로 변경
@@ -119,7 +119,7 @@ export const getStatusColorClass = (variant: string): string => {
  */
 export const addUnit = (value: string | number | undefined, unit: string): string => {
   if (value === undefined || value === null) return '-';
-  
+
   const stringValue = String(value);
   if (stringValue === '-') return '-';
   if (stringValue.includes(unit)) return stringValue;
@@ -207,7 +207,7 @@ export const getAnimalIconFromName = (name: string): string | null => {
   // 2. 명시적 선택: 이름이 "cat 선택" 또는 "고양이 선택" 형태인 경우
   for (const [animalName, iconName] of Object.entries(animalNameMap)) {
     if (lowerName.includes(`${animalName.toLowerCase()} 선택`) ||
-        lowerName.includes(`selected ${animalName.toLowerCase()}`)) {
+      lowerName.includes(`selected ${animalName.toLowerCase()}`)) {
       return iconName;
     }
   }
@@ -308,15 +308,36 @@ export const getProgressVariant = (status: string, index: number): string => {
   if (status === 'pending') {
     return 'progress-gray-300'; // 회색 프로그레스 바
   }
-  
+
   // 반려됨 상태면 연한 빨간색 프로그레스 바 반환
   if (status === 'rejected') {
     return 'progress-danger-light';
   }
-  
+
   // 그 외 상태는 다양한 색상 순환 사용
   const variantIndex = index % PROGRESS_VARIANTS.length;
   return PROGRESS_VARIANTS[variantIndex];
+};
+
+
+// 가격에 콤마 추가하는 함수
+const formatPriceWithCommas = (price: string | number): string => {
+  if (price === undefined || price === null) return '0';
+
+  // 문자열로 변환
+  let priceStr = String(price);
+
+  // "원" 단위가 포함된 경우 제거
+  priceStr = priceStr.replace(/원/g, '');
+
+  // 숫자만 추출
+  priceStr = priceStr.replace(/[^0-9]/g, '');
+
+  // 비어있으면 0 반환
+  if (!priceStr) return '0';
+
+  // 숫자에 천 단위 콤마 추가
+  return priceStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 /**
@@ -324,12 +345,12 @@ export const getProgressVariant = (status: string, index: number): string => {
  */
 export const formatCampaignData = (campaign: CampaignData, index: number = 0, serviceTypeCode?: string): FormattedCampaignData & { id?: string | number } => {
   // 원본 캠페인 데이터의 상세 설명 필드 처리
-  
+
   // ID가 없거나 undefined인 경우 기본값 설정
   if (campaign.id === undefined || campaign.id === null) {
     campaign.id = 1; // 기본 ID 값
   }
-  
+
   // 원본 데이터에 service_type 필드가 없으면 serviceTypeCode 파라미터 사용
   if (serviceTypeCode && !campaign.service_type) {
     campaign.service_type = serviceTypeCode;
@@ -341,7 +362,7 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
       description: '🚀상승효율'
     },
     {
-      total: addUnit(campaign.unit_price, '원'),
+      total: addUnit(formatPriceWithCommas(String(campaign.unit_price)), '원'),
       description: '💰건당단가'
     },
     {
@@ -352,9 +373,9 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
 
   // 추가로직이 0이 아닌 경우에만 통계 항목에 추가
   if (campaign.additional_logic &&
-      Number(campaign.additional_logic) !== 0 &&
-      campaign.additional_logic !== '0' &&
-      campaign.additional_logic !== '-') {
+    Number(campaign.additional_logic) !== 0 &&
+    campaign.additional_logic !== '0' &&
+    campaign.additional_logic !== '-') {
     statistics.splice(2, 0, {
       total: addUnit(campaign.additional_logic, '개'),
       description: '📌추가로직'
@@ -418,7 +439,7 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
 
   // 상세 설명을 온전히 전달하기 위해 명시적으로 처리
   const detailedDesc = campaign.detailed_description?.replace(/\\n/g, '\n') || '';
-  
+
   const formattedResult = {
     id: campaign.id, // 캠페인 ID 추가
     logo: logoPath,
@@ -436,8 +457,8 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
       value: 100
     }
   };
-  
-  
+
+
   return formattedResult;
 };
 
@@ -446,23 +467,23 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
  */
 export const formatCampaignDetailData = (campaign: FormattedCampaignData, originalData?: any): CampaignDetailData => {
   // 상세 설명 데이터 처리
-  
+
   // 추가로직 정보 가져오기
   const additionalLogic = campaign.statistics.find(stat => stat.description.includes('추가로직'));
-  
+
   // 배너 URL 추출
   const bannerUrl = originalData?.add_info?.banner_url || null;
-  
+
   // 원본 데이터에 누락된 ID가 있을 경우 기본값은 설정하지 않음
   // 실제 DB의 캠페인 ID로 매칭되어야 하기 때문에 임의의 값을 설정하지 않음
-  
+
   // 상세 설명 구성 - 여러 소스에서 가져옴
-  const finalDetailedDescription = campaign.detailedDescription || 
-                                  originalData?.detailed_description ||
-                                  (typeof originalData?.add_info === 'string'
-                                    ? JSON.parse(originalData?.add_info || '{}')?.detailed_description
-                                    : originalData?.add_info?.detailed_description) ||
-                                  campaign.description;
+  const finalDetailedDescription = campaign.detailedDescription ||
+    originalData?.detailed_description ||
+    (typeof originalData?.add_info === 'string'
+      ? JSON.parse(originalData?.add_info || '{}')?.detailed_description
+      : originalData?.add_info?.detailed_description) ||
+    campaign.description;
 
   const result = {
     id: originalData?.id || "", // 값이 없으면 빈 문자열로 설정
@@ -486,6 +507,6 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
       color: campaign.status.variant
     }
   };
-  
+
   return result;
 };

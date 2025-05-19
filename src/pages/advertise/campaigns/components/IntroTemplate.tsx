@@ -1,6 +1,6 @@
 import React, { Fragment, useState, useEffect } from 'react';
 import { ServiceData } from '@/data/advertiseServices';
-import { IAdCampaignsContentItem } from '../data/adCampaignTypes';
+import { IAdCampaignsContentItem } from '@/pages/advertise/campaigns/data/adCampaignTypes';
 import { useLocation } from 'react-router-dom';
 import { Container } from '@/components/container';
 import { Navbar } from '@/partials/navbar';
@@ -100,6 +100,15 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           return;
         }
         
+        // 데이터 확인용 - alert 사용 (console.log 대신)
+        alert(`서비스 타입 ${serviceTypeCode}에 대한 캠페인 ${data.length}개 조회 완료`);
+        
+        // 첫 번째 캠페인의 detailed_description 확인
+        if (data && data.length > 0) {
+          const firstCampaign = data[0];
+          alert(`첫 번째 캠페인 ID: ${firstCampaign.id}\n상세설명: ${firstCampaign.detailed_description ? '있음' : '없음'}`);
+        }
+        
         // 원본 데이터 저장
         setRawItems(data);
         
@@ -121,6 +130,9 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           
           // ID 설정 (나중에 원본 데이터와 매칭하기 위해)
           formattedItem.id = campaign.id;
+          
+          // 원본 데이터를 아이템에 직접 포함시킴 (타입 확장)
+          (formattedItem as any).originalData = campaign;
           
           return formattedItem;
         });
@@ -197,15 +209,15 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   );
 
   // 전역 변수로 원본 데이터 참조를 저장 (모든 컴포넌트에서 공유)
-  window.campaignRawItems = rawItems;
+  // 데이터가 있을 때만 설정
+  if (rawItems && rawItems.length > 0) {
+    console.log('IntroTemplate - Setting rawItems:', rawItems);
+    window.campaignRawItems = rawItems;
+  }
   
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
-    // 원본 데이터에서 상세 설명 가져오기
-    const rawItem = rawItems.find(raw => raw.id === item.id);
-    const detailedDesc = rawItem?.detailed_description?.replace(/\\n/g, '\n');
-    
-    // rawItem의 ID를 추가로 전달 (실제 ID를 찾기 위해)
-    const rawItemId = rawItem?.id;
+    // 상세 설명 가져오기 (이제 originalData에서 직접 가져옴)
+    const detailedDesc = item.originalData?.detailed_description?.replace(/\\n/g, '\n') || item.detailedDescription;
     
     return (
       <CardAdCampaign
@@ -219,18 +231,15 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         progress={item.progress}
         url={campaignPath}
         key={index}
-        rawId={rawItemId}  // 원본 데이터 ID 전달
+        rawId={item.id}  // 원본 데이터 ID 전달
+        rawData={item.originalData}  // 원본 데이터 전체 전달
       />
     );
   };
 
   const renderItem = (data: IAdCampaignsContentItem, index: number) => {
-    // 원본 데이터에서 상세 설명 가져오기
-    const rawItem = rawItems.find(raw => raw.id === data.id);
-    const detailedDesc = rawItem?.detailed_description?.replace(/\\n/g, '\n');
-    
-    // rawItem의 ID를 추가로 전달 (실제 ID를 찾기 위해)
-    const rawItemId = rawItem?.id;
+    // 상세 설명 가져오기 (이제 originalData에서 직접 가져옴)
+    const detailedDesc = data.originalData?.detailed_description?.replace(/\\n/g, '\n') || data.detailedDescription;
     
     return (
       <CardAdCampaignRow
@@ -243,7 +252,8 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         statistics={data.statistics}
         url={campaignPath}
         key={index}
-        rawId={rawItemId}  // 원본 데이터 ID 전달
+        rawId={data.id}  // 원본 데이터 ID 전달
+        rawData={data.originalData}  // 원본 데이터 전체 전달
       />
     );
   };
@@ -307,6 +317,21 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
               </div>
             </div>
 
+            {/* 디버그 정보 출력 */}
+            <div className="mb-4 p-4 bg-gray-100 rounded border border-gray-300">
+              <h4 className="font-bold mb-2">디버그 정보:</h4>
+              <p>캠페인 개수: {items.length}</p>
+              <p>원본 데이터 개수: {rawItems.length}</p>
+              {rawItems.length > 0 && (
+                <div>
+                  <p>첫 번째 캠페인 ID: {rawItems[0].id}</p>
+                  <p>첫 번째 캠페인 이름: {rawItems[0].campaign_name}</p>
+                  <p>상세 설명 유무: {rawItems[0].detailed_description ? '있음' : '없음'}</p>
+                  <p>상세 설명 미리보기: {rawItems[0].detailed_description?.substring(0, 30)}...</p>
+                </div>
+              )}
+            </div>
+            
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow">
                 <KeenIcon icon="information-circle" className="size-16 mb-4 text-gray-400" />

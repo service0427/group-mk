@@ -126,12 +126,12 @@ const CampaignPage: React.FC = () => {
       'naver-place': 'N 플레이스 캠페인 관리',
       'nplace-traffic': 'N 플레이스 트래픽 캠페인 관리',
       'naver-place-traffic': 'N 플레이스 트래픽 캠페인 관리',
-      
+
       // 네이버 플레이스 저장
       'nplacesave': 'N 플레이스 저장하기 캠페인 관리',
       'nplace-save': 'N 플레이스 저장하기 캠페인 관리',
       'naver-place-save': 'N 플레이스 저장하기 캠페인 관리',
-      
+
       // 네이버 플레이스 공유
       'nplaceshare': 'N 플레이스 블로그공유 캠페인 관리',
       'nplace-share': 'N 플레이스 블로그공유 캠페인 관리',

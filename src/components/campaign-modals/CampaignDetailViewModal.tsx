@@ -16,6 +16,7 @@ import ReactApexChart from 'react-apexcharts';
 import { getFilteredRankingData, calculateDataStats } from '@/utils/ChartSampleData';
 import { getStatusColorClass } from '@/utils/CampaignFormat';
 import { ICampaign, getStatusColor, getStatusLabel } from './types';
+import { getCampaignDetail } from '@/pages/advertise/campaigns/services/campaignDetailService';
 
 // 가격에 콤마 추가하는 함수
 const formatPriceWithCommas = (price: string | number): string => {
@@ -50,6 +51,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
 }) => {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [campaignDetail, setCampaignDetail] = useState<any>(null);
 
   // 차트 관련 상태
   const [activePeriod, setActivePeriod] = useState<number>(7);
@@ -496,63 +498,35 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     }
   }, [chartData]);
 
-  // 캠페인 이름으로 Supabase에서 배너 이미지 URL 가져오기
+  // 캠페인 ID로 Supabase에서 캠페인 상세 정보 가져오기
   useEffect(() => {
-    if (open && campaign && campaign.campaignName) {
-      const fetchCampaignBanner = async () => {
+    if (open && campaign && campaign.id) {
+      const fetchCampaignDetail = async () => {
         setLoading(true);
         try {
-
-          // Supabase에서 모든 캠페인 목록 가져오기
-          const { data: allCampaigns, error: allError } = await supabase
-            .from('campaigns')
-            .select('id, campaign_name, add_info')
-            .order('id', { ascending: false });
-
-          if (allError) {
-            return;
-          }
-
-          // 이름이 완전히 일치하는 캠페인 찾기
-          let matchedCampaign = allCampaigns?.find(c =>
-            c.campaign_name === campaign.campaignName
-          );
-
-          // 일치하는 캠페인이 없으면 대소문자 무시하고 검색
-          if (!matchedCampaign) {
-            matchedCampaign = allCampaigns?.find(c =>
-              c.campaign_name.toLowerCase() === campaign.campaignName.toLowerCase()
-            );
-          }
-
-          // 아직도 없으면 이름에 포함되는지 검색
-          if (!matchedCampaign) {
-            matchedCampaign = allCampaigns?.find(c =>
-              c.campaign_name.toLowerCase().includes(campaign.campaignName.toLowerCase()) ||
-              campaign.campaignName.toLowerCase().includes(c.campaign_name.toLowerCase())
-            );
-          }
-
-          if (matchedCampaign) {
-            // add_info에서 배너 URL 가져오기
+          // 새 서비스 함수를 사용하여 상세 정보 가져오기
+          const detail = await getCampaignDetail(campaign.id);
+          
+          if (detail) {
+            setCampaignDetail(detail);
+            
+            // 배너 URL 설정
             let bannerUrl = null;
-            if (matchedCampaign.add_info) {
-
-              if (typeof matchedCampaign.add_info === 'string') {
+            if (detail.add_info) {
+              if (typeof detail.add_info === 'string') {
                 try {
-                  const addInfo = JSON.parse(matchedCampaign.add_info);
+                  const addInfo = JSON.parse(detail.add_info);
                   bannerUrl = addInfo.banner_url || null;
                 } catch (e) {
                   // JSON 파싱 오류 무시
                 }
               } else {
-                bannerUrl = matchedCampaign.add_info.banner_url || null;
+                bannerUrl = detail.add_info.banner_url || null;
               }
             }
-
+            
             setBannerUrl(bannerUrl);
           }
-
         } catch (err) {
           // 오류 처리
         } finally {
@@ -560,9 +534,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         }
       };
 
-      fetchCampaignBanner();
+      fetchCampaignDetail();
     }
-  }, [open, campaign]);
+  }, [open, campaign?.id]);
 
   if (!campaign) return null;
 
@@ -767,10 +741,14 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                     <h4 className="font-medium text-primary mb-2">상세 설명</h4>
                     <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                       <p className="whitespace-pre-line text-gray-700">
-                        {/* 상세 설명 표시: CampaignModal.tsx와 같은 로직 사용 */}
-                        {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ? 
-                          campaign.detailedDescription : 
-                          (campaign?.description || '상세 설명이 없습니다.')}
+                        {/* 가져온 상세 정보에서 상세 설명 표시 */}
+                        {campaignDetail?.detailed_description ? 
+                          campaignDetail.detailed_description.replace(/\\n/g, '\n') : 
+                          (campaign?.originalData?.detailed_description ? 
+                            campaign.originalData.detailed_description.replace(/\\n/g, '\n') :
+                            (campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ? 
+                              campaign.detailedDescription : 
+                              (campaign?.description || '상세 설명이 없습니다.')))}
                       </p>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { IntroTemplate } from './components';
+import { IntroTemplate } from './campaigns/components';
 import { getServiceData, ServiceData } from '@/data/advertiseServices';
 
 const ServiceIntroPage: React.FC = () => {

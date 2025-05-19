@@ -26,14 +26,14 @@ import {
 } from "@/components/ui/table";
 
 // 페이지네이션 컴포넌트
-const Pagination = ({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
-}: { 
-  currentPage: number, 
-  totalPages: number, 
-  onPageChange: (page: number) => void 
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange
+}: {
+  currentPage: number,
+  totalPages: number,
+  onPageChange: (page: number) => void
 }) => {
   return (
     <div className="flex items-center justify-center gap-2 mt-4">
@@ -45,7 +45,7 @@ const Pagination = ({
       >
         <KeenIcon icon="arrow-left" className="size-3" />
       </Button>
-      
+
       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
         // 페이지 버튼 표시 로직
         let pageNum;
@@ -62,7 +62,7 @@ const Pagination = ({
           // 그 외에는 현재 페이지 중심으로 2개씩 앞뒤로 표시
           pageNum = currentPage - 2 + i;
         }
-        
+
         return (
           <Button
             key={pageNum}
@@ -75,7 +75,7 @@ const Pagination = ({
           </Button>
         );
       })}
-      
+
       <Button
         variant="outline"
         size="sm"
@@ -99,37 +99,37 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
 }) => {
   // 상태 필터
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  
+
   // 서비스 타입 필터
   const [serviceFilter, setServiceFilter] = useState<string>('all');
-  
+
   // 검색어
   const [searchTerm, setSearchTerm] = useState<string>('');
-  
+
   // 정렬 기준
   const [sortBy, setSortBy] = useState<string>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
+
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
-  
+
   // 상세 모달
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
-  
+
   // 필터링된 캠페인
   const filteredCampaigns = campaigns.filter(campaign => {
     // 상태 필터링
     if (statusFilter !== 'all' && campaign.status.status !== statusFilter) {
       return false;
     }
-    
+
     // 서비스 타입 필터링
     if (serviceFilter !== 'all' && campaign.serviceType !== serviceFilter) {
       return false;
     }
-    
+
     // 검색어 필터링
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -140,14 +140,14 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
         (campaign.matId && campaign.matId.toString().includes(lowerSearchTerm))
       );
     }
-    
+
     return true;
   });
-  
+
   // 정렬
   const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
     let aValue, bValue;
-    
+
     switch (sortBy) {
       case 'name':
         aValue = a.campaignName.toLowerCase();
@@ -170,68 +170,68 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
         aValue = a.originalData?.updated_at || '';
         bValue = b.originalData?.updated_at || '';
     }
-    
+
     if (sortDirection === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
       return aValue < bValue ? 1 : -1;
     }
   });
-  
+
   // 페이지네이션
   const totalPages = Math.max(1, Math.ceil(sortedCampaigns.length / itemsPerPage));
   const paginatedCampaigns = sortedCampaigns.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  
+
   // 모달 열기
   const handleOpenDetail = (campaign: ICampaign) => {
     setSelectedCampaign(campaign);
     setDetailModalOpen(true);
   };
-  
+
   // 모달 닫기
   const handleCloseDetail = () => {
     setDetailModalOpen(false);
     setSelectedCampaign(null);
   };
-  
+
   // 모달에서 저장 성공 시 처리
   const handleCampaignUpdated = () => {
     onCampaignUpdated();
   };
-  
+
   // 빠른 상태 변경 핸들러
   const handleQuickStatusChange = async (campaignId: string, newStatus: string) => {
     try {
       await updateCampaignStatus(parseInt(campaignId), newStatus);
       onCampaignUpdated();
     } catch (error) {
-      
+
     }
   };
-  
+
   // 사용 가능한 서비스 유형 목록
   const availableServices = Array.from(
     new Set(campaigns.map(campaign => campaign.serviceType || ''))
   ).filter(service => service !== '').sort();
-  
+
   // 상태 필터 변경 시 1페이지로 돌아가기
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, serviceFilter, searchTerm]);
-  
+
   // 정렬 방향 토글 핸들러
   const toggleSortDirection = useCallback(() => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   }, []);
-  
+
   // 정렬 핸들러
   const handleSort = useCallback((field: string) => {
     if (sortBy === field) {
@@ -241,14 +241,14 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
       setSortDirection('desc'); // 기본은 내림차순
     }
   }, [sortBy, toggleSortDirection]);
-  
+
   return (
     <>
       <Card className="shadow-md overflow-hidden border border-border">
         <div className="p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
             <h2 className="text-xl font-bold">모든 캠페인 ({filteredCampaigns.length}개)</h2>
-            
+
             {/* 필터 섹션 */}
             <div className="flex flex-col sm:flex-row gap-3">
               {/* 검색창 */}
@@ -265,7 +265,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
               </div>
-              
+
               {/* 상태 필터 */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-44">
@@ -280,7 +280,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                   <SelectItem value="pause">표시안함</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               {/* 서비스 타입 필터 */}
               <Select value={serviceFilter} onValueChange={setServiceFilter}>
                 <SelectTrigger className="w-full sm:w-44">
@@ -297,63 +297,63 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
               </Select>
             </div>
           </div>
-          
+
           {/* 테이블 */}
           <div className="overflow-x-auto">
             <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead 
+                  <TableHead
                     onClick={() => handleSort('name')}
                     className="cursor-pointer hover:bg-muted"
                   >
                     <div className="flex items-center">
                       캠페인 이름
                       {sortBy === 'name' && (
-                        <KeenIcon 
-                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} 
+                        <KeenIcon
+                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
                           className="ml-1 size-3"
                         />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     onClick={() => handleSort('service')}
                     className="cursor-pointer hover:bg-muted"
                   >
                     <div className="flex items-center">
                       서비스
                       {sortBy === 'service' && (
-                        <KeenIcon 
-                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} 
+                        <KeenIcon
+                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
                           className="ml-1 size-3"
                         />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     onClick={() => handleSort('status')}
                     className="cursor-pointer hover:bg-muted"
                   >
                     <div className="flex items-center">
                       상태
                       {sortBy === 'status' && (
-                        <KeenIcon 
-                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} 
+                        <KeenIcon
+                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
                           className="ml-1 size-3"
                         />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     onClick={() => handleSort('updated_at')}
                     className="cursor-pointer hover:bg-muted"
                   >
                     <div className="flex items-center">
                       최근 업데이트
                       {sortBy === 'updated_at' && (
-                        <KeenIcon 
-                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} 
+                        <KeenIcon
+                          icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
                           className="ml-1 size-3"
                         />
                       )}
@@ -383,7 +383,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                               alt={campaign.campaignName}
                               className="size-10 rounded-full object-cover"
                               onError={(e) => {
-                                
+
                                 // 동물 아이콘 목록
                                 const animalIcons = [
                                   'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant', 'flamingo',
@@ -448,7 +448,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                               </Button>
                             </>
                           )}
-                          
+
                           {/* 상세 버튼은 항상 표시 */}
                           <Button
                             variant="outline"
@@ -465,7 +465,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
               </TableBody>
             </Table>
           </div>
-          
+
           {/* 페이지네이션 */}
           {totalPages > 1 && (
             <Pagination
@@ -476,7 +476,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
           )}
         </div>
       </Card>
-      
+
       {/* 캠페인 상세 모달 - 운영자 모드로 열기 (통합된 CampaignModal 사용) */}
       {selectedCampaign && (
         <CampaignModal

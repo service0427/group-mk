@@ -5,26 +5,26 @@ import { USER_ROLES } from '@/config/roles.config';
 // Base64 이미지를 Supabase Storage에 업로드하는 함수
 export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
   try {
-    
-    
+
+
     // Base64 데이터에서 실제 데이터 부분만 추출 (data:image/jpeg;base64, 부분 제거)
     const base64WithoutPrefix = base64Data.split(',')[1];
-    
+
     // 파일 확장자 추출
     const fileType = base64Data.split(';')[0].split('/')[1];
     const fullFileName = `${fileName}.${fileType}`;
-    
+
     // 현재 사용자 ID 가져오기
     const { data } = await supabase.auth.getSession();
     const uid = userId || data.session?.user?.id || 'anonymous';
-    
+
     // 정책에 맞게 user ID를 경로에 포함
     const filePath = `${uid}/${folder}/${fullFileName}`;
-    
-    
-    
-    
-    
+
+
+
+
+
     // Base64 데이터를 Blob 객체로 변환
     const byteCharacters = atob(base64WithoutPrefix);
     const byteNumbers = new Array(byteCharacters.length);
@@ -33,28 +33,28 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
     }
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: `image/${fileType}` });
-    
-    
-    
+
+
+
     // 먼저 버킷 존재 여부 확인
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
+
     if (bucketsError) {
-      
+
     } else {
       const bucketExists = buckets?.some(b => b.name === bucket) || false;
-      
-      
+
+
       if (!bucketExists) {
-        
+
       }
     }
-    
+
     // Supabase Storage에 파일 업로드 시도
     let uploadResult;
     try {
-      
-      
+
+
       uploadResult = await supabase
         .storage
         .from(bucket)
@@ -63,65 +63,65 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
           cacheControl: '3600',
           upsert: true
         });
-        
-      
+
+
     } catch (uploadError) {
-      
+
       uploadResult = { error: uploadError, data: null };
     }
-    
+
     // 업로드 결과 확인
     if (uploadResult.error) {
-      
+
       return null;
     }
-    
+
     // 업로드 성공 시 URL 생성
     try {
       // 먼저 영구적인 public URL 시도
       const { data: publicUrlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
-      
+
       if (publicUrlData && publicUrlData.publicUrl) {
-        
+
         return publicUrlData.publicUrl;
       } else {
         // 대체 방법: 만료 기간이 긴 서명된 URL 시도
-        
+
         const expirySeconds = 365 * 24 * 60 * 60; // 1년
-        
+
         const { data: signedUrlData, error: signedUrlError } = await supabase.storage
           .from(bucket)
           .createSignedUrl(filePath, expirySeconds);
-        
+
         if (signedUrlError) {
-          
+
           throw signedUrlError;
         }
-        
+
         if (signedUrlData && signedUrlData.signedUrl) {
-          
+
           return signedUrlData.signedUrl;
         } else {
           throw new Error('URL을 생성할 수 없습니다.');
         }
       }
     } catch (urlError) {
-      
-      
+
+
       // 마지막 대안: 직접 URL 형식 구성 시도
       try {
         const directPublicUrl = `/storage/v1/object/public/${bucket}/${filePath}`;
-        
+
         return directPublicUrl;
       } catch (directUrlError) {
-        
+
         return null;
       }
     }
   } catch (error) {
-    
+
     return null;
   }
 };
@@ -135,7 +135,7 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
 
   // 기본 쿼리 생성
   let query = supabase.from('campaigns').select('*');
-  
+
   // 서비스 타입이 있을 때만 필터링 추가
   if (serviceType && serviceType.trim() !== '') {
     query = query.eq('service_type', serviceType);
@@ -149,10 +149,6 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   // 정렬 적용
   const { data, error } = await query.order('id', { ascending: true });
 
-  // 결과 로깅
-  if (data) {
-  }
-
   if (error) {
     console.error('fetchCampaigns 오류:', error);
     return [];
@@ -162,23 +158,23 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   return data.map(item => {
     // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
     let parsedItem = { ...item };
-    
+
     // add_info 필드 처리
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
       try {
         parsedItem.add_info = JSON.parse(parsedItem.add_info);
-        
+
       } catch (error) {
-        
+
         // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
         const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
         if (logoUrlMatch && logoUrlMatch[1]) {
           parsedItem.add_info_logo_url = logoUrlMatch[1];
-          
+
         }
       }
     }
-    
+
     return {
       id: parsedItem.id.toString(),
       campaignName: parsedItem.campaign_name,
@@ -213,13 +209,13 @@ export const hasRole = async (userId?: string): Promise<string | null> => {
       .single();
 
     if (error || !data) {
-      
+
       return null;
     }
 
     return data.role;
   } catch (err) {
-    
+
     return null;
   }
 };
@@ -257,7 +253,7 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
     .eq('id', campaignId);
 
   if (error) {
-    
+
     return false;
   }
 
@@ -284,14 +280,14 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .single();
 
     if (fetchError) {
-      
+
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
         try {
           additionalInfo = JSON.parse(existingCampaign.add_info);
         } catch (e) {
-          
+
           additionalInfo = {};
         }
       } else {
@@ -365,17 +361,17 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         ...updateData,
         status: data.status
       };
-      
+
     }
 
     // 반려 사유 처리 (data.rejectionReason 또는 data.rejected_reason 사용)
     const rejectionReason = data.rejectionReason || data.rejected_reason;
-    
+
     if (rejectionReason) {
-      
+
       // 1. 메인 필드 업데이트: rejected_reason
       updateData.rejected_reason = rejectionReason;
-      
+
       // 2. add_info JSON 내부에도 저장 (하위 호환성)
       if (typeof additionalInfo === 'object') {
         additionalInfo.rejection_reason = rejectionReason;
@@ -388,7 +384,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         };
       }
     }
-    
+
     // 상태는 rejected이지만 사유가 없는 경우 경고
     if (data.status === 'rejected' && !rejectionReason) {
       // 
@@ -406,7 +402,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     // 반려 상태일 때는 supabaseAdmin(RLS 우회)을 사용하여 저장
     const client = (data.status === 'rejected') ? supabaseAdmin : supabase;
-    
+
     const { error } = await client
       .from('campaigns')
       .update(updateData)
@@ -418,7 +414,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     return true;
   } catch (err) {
-    
+
     return false;
   }
 };
@@ -442,64 +438,64 @@ export const getServiceTypeCode = (uiCode: string): string => {
     console.warn('getServiceTypeCode: 빈 UI 코드가 전달되었습니다.');
     return '';
   }
-  
+
   // CampaignServiceType enum 값인 경우 그대로 사용
   if (Object.values(CampaignServiceType).includes(uiCode as CampaignServiceType)) {
     return uiCode;
   }
-  
+
   // 소문자로 통일하여 처리 (대소문자 차이로 인한 오류 방지)
   const normalizedCode = uiCode.toLowerCase().trim();
-  
+
   // UI 코드와 DB 코드 매핑 객체
   const codeMap: Record<string, string> = {
     // 네이버 트래픽
     'ntraffic': CampaignServiceType.NAVER_TRAFFIC,
     'naver-traffic': CampaignServiceType.NAVER_TRAFFIC,
     'navertraffic': CampaignServiceType.NAVER_TRAFFIC,
-    
+
     // 네이버 자동완성
     'naver-auto': CampaignServiceType.NAVER_AUTO,
-    'nauto': CampaignServiceType.NAVER_AUTO, 
+    'nauto': CampaignServiceType.NAVER_AUTO,
     'naver-fakesale': CampaignServiceType.NAVER_AUTO,
     'naverfakesale': CampaignServiceType.NAVER_AUTO,
     'nfakesale': CampaignServiceType.NAVER_AUTO,
-    
+
     // 네이버 쇼핑
     'nshopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
     'naver-shopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
     'naver-shopping-traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
-    
+
     // 네이버 쇼핑 가구매
     'nshoppingfakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
     'naver-shopping-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
-    
+
     // 네이버 플레이스 트래픽
     'nplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naver-place': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naverplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'nplace-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naver-place-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
-    
+
     // 네이버 플레이스 저장
     'nplace-save': CampaignServiceType.NAVER_PLACE_SAVE,
     'naver-place-save': CampaignServiceType.NAVER_PLACE_SAVE,
     'nplacesave': CampaignServiceType.NAVER_PLACE_SAVE,
-    
+
     // 네이버 플레이스 공유
     'nplace-share': CampaignServiceType.NAVER_PLACE_SHARE,
     'naver-place-share': CampaignServiceType.NAVER_PLACE_SHARE,
     'nplaceshare': CampaignServiceType.NAVER_PLACE_SHARE,
-    
+
     // 쿠팡 트래픽
     'coupang': CampaignServiceType.COUPANG_TRAFFIC,
     'coupang-traffic': CampaignServiceType.COUPANG_TRAFFIC,
     'coupangtraffic': CampaignServiceType.COUPANG_TRAFFIC,
-    
+
     // 쿠팡 가구매
     'coupang-fakesale': CampaignServiceType.COUPANG_FAKESALE,
     'coupangfakesale': CampaignServiceType.COUPANG_FAKESALE,
-    
+
     // 기존 레거시 코드 호환성 유지
     'nblog': 'nblog',
     'naver-blog': 'nblog',
@@ -511,63 +507,63 @@ export const getServiceTypeCode = (uiCode: string): string => {
     'naver-cafe': 'ncafe',
     'navercafe': 'ncafe',
   };
-  
+
   // 매핑된 값 확인
   const dbCode = codeMap[normalizedCode];
-  
+
   if (dbCode) {
     return dbCode;
   }
-  
+
   // 매핑되지 않은 코드 로깅 후 원래 코드 반환
   console.warn(`getServiceTypeCode: 알 수 없는 서비스 타입 코드 '${uiCode}'`);
   return normalizedCode; // 기본값은 원래 입력한 값 그대로 반환
 };
 
 // 캠페인 생성
-export const createCampaign = async (data: any): Promise<{success: boolean, id?: number, error?: string}> => {
+export const createCampaign = async (data: any): Promise<{ success: boolean, id?: number, error?: string }> => {
   try {
     // 이제 campaign_id가 필요 없으므로 관련 코드 제거
-    
+
     // Supabase Storage에 이미지 업로드
     let logoUrl = null;
     let bannerUrl = null;
     let additionalInfo: any = {};
-    
+
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();
     const userId = authData.session?.user?.id;
-    
+
     // 1. 업로드된 로고 이미지가 있으면 저장
     if (data.uploadedLogo) {
       logoUrl = await uploadImageToStorage(
-        data.uploadedLogo, 
+        data.uploadedLogo,
         'campaigns-image',  // 버킷 이름을 campaigns-image로 변경
         'logos',            // 폴더 이름
         `logo-${Date.now()}`, // 캠페인 ID 대신 타임스탬프 사용
         userId              // 사용자 ID 전달
       );
-      
+
       if (logoUrl) {
         additionalInfo.logo_url = logoUrl;
       }
     }
-    
+
     // 2. 업로드된 배너 이미지가 있으면 저장
     if (data.uploadedBannerImage) {
       bannerUrl = await uploadImageToStorage(
-        data.uploadedBannerImage, 
+        data.uploadedBannerImage,
         'campaigns-image',     // 버킷 이름을 campaigns-image로 변경
         'banners',             // 폴더 이름
         `banner-${Date.now()}`, // 캠페인 ID 대신 타임스탬프 사용
         userId                 // 사용자 ID 전달
       );
-      
+
       if (bannerUrl) {
         additionalInfo.banner_url = bannerUrl;
       }
     }
-    
+
     // DB 컬럼명에 맞게 데이터 변환
     const insertData = {
       group_id: 'default', // NULL이 허용되지 않을 수 있으므로 기본값 설정
@@ -590,8 +586,8 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       mat_id: userId
     };
 
-    
-    
+
+
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회
     const { data: result, error } = await supabaseAdmin
       .from('campaigns')
@@ -600,14 +596,14 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       .single();
 
     if (error) {
-      
-      
+
+
       return { success: false, error: error.message };
     }
 
     return { success: true, id: result?.id };
   } catch (err) {
-    
+
     return { success: false, error: '캠페인 생성 중 오류가 발생했습니다.' };
   }
 };

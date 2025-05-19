@@ -59,13 +59,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(null);
   const [campaigns, setCampaigns] = useState<ICampaign[]>(initialCampaigns);
-  const [loadingStatus, setLoadingStatus] = useState<{[key: string]: boolean}>({});
+  const [loadingStatus, setLoadingStatus] = useState<{ [key: string]: boolean }>({});
 
   // 컴포넌트 마운트 시 초기화
   useEffect(() => {
     // 초기 캠페인 데이터 설정
   }, [initialCampaigns]);
-  
+
   // 캠페인 상태 변경 처리 함수
   const handleStatusChange = async (campaignId: string, newStatus: string) => {
     // 현재 캠페인 찾기
@@ -74,52 +74,52 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       alert('캠페인을 찾을 수 없습니다.');
       return;
     }
-    
+
     // 현재 상태 확인
     const currentStatus = campaign.originalData?.status || '';
-    
+
     // 승인/미승인 상태인 경우 관리자만 변경 가능
     if ((currentStatus === 'waiting_approval' || currentStatus === 'rejected') && !isAdmin) {
       alert('승인 대기 중이거나 반려된 캠페인의 상태는 관리자만 변경할 수 있습니다.');
       return;
     }
-    
+
     // 로딩 상태 설정
     setLoadingStatus(prev => ({ ...prev, [campaignId]: true }));
-    
+
     // 최종 상태 결정
     // 1. 총판이 반려된 캠페인을 변경하려고 하는 경우, 상태를 자동으로 승인 대기중으로 설정
     let finalStatus = newStatus;
     if (!isAdmin && currentStatus === 'rejected') {
       finalStatus = 'waiting_approval';
     }
-    
+
     try {
       // DB 상태 업데이트
       const success = await updateCampaignStatus(parseInt(campaignId), finalStatus);
-      
+
       if (success) {
         // UI 상태 업데이트
-        setCampaigns(prevCampaigns => 
-          prevCampaigns.map(campaign => 
-            campaign.id === campaignId 
-              ? { 
-                  ...campaign, 
-                  status: { 
-                    label: getStatusLabel(finalStatus), 
-                    color: getStatusColor(finalStatus),
-                    status: finalStatus
-                  },
-                  originalData: {
-                    ...campaign.originalData,
-                    status: finalStatus
-                  }
-                } 
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(campaign =>
+            campaign.id === campaignId
+              ? {
+                ...campaign,
+                status: {
+                  label: getStatusLabel(finalStatus),
+                  color: getStatusColor(finalStatus),
+                  status: finalStatus
+                },
+                originalData: {
+                  ...campaign.originalData,
+                  status: finalStatus
+                }
+              }
               : campaign
           )
         );
-        
-        
+
+
         // 반려된 캠페인이 재승인 요청으로 변경된 경우 알림
         if (currentStatus === 'rejected' && finalStatus === 'waiting_approval' && !isAdmin) {
           alert('반려된 캠페인이 승인 요청 상태로 변경되었습니다. 운영자 승인 후 처리됩니다.');
@@ -136,7 +136,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       setLoadingStatus(prev => ({ ...prev, [campaignId]: false }));
     }
   };
-  
+
   // 상태값에 따른 라벨 반환
   const getStatusLabel = (status: string): string => {
     switch (status) {
@@ -148,24 +148,24 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       default: return '준비중';
     }
   };
-  
+
   // 상태 변경 가능 여부 확인 (권한 및 상태 체크)
   const canChangeStatus = (campaign: ICampaign): boolean => {
     // 관리자는 모든 상태 변경 가능
     if (isAdmin) return true;
-    
+
     // 현재 상태 체크
     const currentStatus = campaign.originalData?.status || '';
-    
+
     // 승인 대기 중이거나 반려된 캠페인은 관리자만 상태 변경 가능
     if (currentStatus === 'waiting_approval' || currentStatus === 'rejected') {
       return false;
     }
-    
+
     // 기타 상태는 변경 가능
     return true;
   };
-  
+
   // 상태값에 따른 색상 반환
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -178,7 +178,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       default: return 'info';
     }
   };
-  
+
   // 배경색 클래스 반환 (bg- 접두사에 맞게 변환)
   const getBgColorClass = (color: string): string => {
     // 색상 값에 따라 적절한 배경색 클래스 반환
@@ -192,7 +192,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       default: return 'info'; // 기본값으로 info 색상 사용
     }
   };
-  
+
   // 상세 정보 모달 열기
   const openDetailModal = (campaign: ICampaign) => {
     // 항상 최신 데이터를 사용하기 위해 campaigns 배열에서 해당 캠페인 찾기
@@ -200,21 +200,21 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     setSelectedCampaign(currentCampaign);
     setDetailModalOpen(true);
   };
-  
+
   // 캠페인 정보 저장 핸들러
   const handleSaveCampaign = (updatedCampaign: any) => {
     // 로컬 상태 업데이트 - 수정된 캠페인 정보 반영
-    setCampaigns(prevCampaigns => 
-      prevCampaigns.map(campaign => 
+    setCampaigns(prevCampaigns =>
+      prevCampaigns.map(campaign =>
         campaign.id === updatedCampaign.id ? updatedCampaign : campaign
       )
     );
-    
+
     // 선택된 캠페인도 업데이트 - 모달이 다시 열릴 때 최신 데이터 표시
     setSelectedCampaign(updatedCampaign);
-    
-    
-    
+
+
+
     // 부모 컴포넌트에게 업데이트 알림 (있을 경우만)
     // 이렇게 하면 Template 컴포넌트에서 최신 데이터를 다시 가져올 수 있음
     if (onCampaignUpdated) {
@@ -224,7 +224,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       }, 500);
     }
   };
-  
+
   // 상태값의 실제 값(value) 반환
   const getStatusValue = (label: string): string => {
     switch (label) {
@@ -329,7 +329,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       const normalizedAnimal = animalName.toLowerCase().replace(/\s+/g, '');
 
       if (normalizedName === normalizedAnimal) {
-        
+
         return iconName;
       }
     }
@@ -340,7 +340,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     for (const [animalName, iconName] of sortedEntries) {
       if (lowerName.includes(animalName.toLowerCase())) {
-        
+
         return iconName;
       }
     }
@@ -368,7 +368,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     // campaign.logo 값이 있고, 확장자가 있으면 처리
     if (campaign.logo && (campaign.logo.includes('.svg') || campaign.logo.includes('.png'))) {
-      
+
 
       // 경로에서 동물 아이콘 이름 추출 시도
       if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
@@ -377,7 +377,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           if (segments[i] === 'svg' && i + 1 < segments.length) {
             const animalName = segments[i + 1].split('.')[0];
             if (animalIcons.includes(animalName)) {
-              
+
               return toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
             }
           }
@@ -406,13 +406,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     // 마지막으로 랜덤 동물 아이콘 선택
     const randomAnimal = getRandomAnimalIcon();
-    
+
     return toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
   };
 
   // 필터링 적용
   const filteredData = useMemo(() => {
-    
+
 
     // 캠페인 데이터 확인
     if (campaigns.length > 0) {
@@ -422,15 +422,15 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     return campaigns.filter(campaign => {
       // 검색어 필터링
       const matchesSearch = campaign.campaignName.toLowerCase().includes(searchInput.toLowerCase()) ||
-                          (campaign.description?.toLowerCase().includes(searchInput.toLowerCase()) || false);
+        (campaign.description?.toLowerCase().includes(searchInput.toLowerCase()) || false);
 
       // 상태 필터링
       const matchesStatus = statusFilter === 'all' ||
-                          (statusFilter === 'active' && campaign.status.label === '진행중') ||
-                          (statusFilter === 'pending' && campaign.status.label === '준비중') ||
-                          (statusFilter === 'waiting_approval' && campaign.status.label === '승인 대기중') ||
-                          (statusFilter === 'rejected' && campaign.status.label === '반려됨') ||
-                          (statusFilter === 'pause' && campaign.status.label === '표시안함');
+        (statusFilter === 'active' && campaign.status.label === '진행중') ||
+        (statusFilter === 'pending' && campaign.status.label === '준비중') ||
+        (statusFilter === 'waiting_approval' && campaign.status.label === '승인 대기중') ||
+        (statusFilter === 'rejected' && campaign.status.label === '반려됨') ||
+        (statusFilter === 'pause' && campaign.status.label === '표시안함');
 
       return matchesSearch && matchesStatus;
     });
@@ -440,342 +440,159 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
   return (
     <>
-    <div className="card bg-card">
-      <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5">
-        <h3 className="card-title font-medium text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
-          전체 {campaigns.length}개 {serviceTitle} 캠페인
-        </h3>
+      <div className="card bg-card">
+        <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5">
+          <h3 className="card-title font-medium text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
+            전체 {campaigns.length}개 {serviceTitle} 캠페인
+          </h3>
 
-        <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-3 lg:gap-5">
-          <div className="flex w-full sm:w-auto">
-            <label className="input input-sm w-full sm:w-auto">
-              <KeenIcon icon="magnifier" className="text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="캠페인명 검색"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full"
-              />
-            </label>
-          </div>
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-3 lg:gap-5">
+            <div className="flex w-full sm:w-auto">
+              <label className="input input-sm w-full sm:w-auto">
+                <KeenIcon icon="magnifier" className="text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="캠페인명 검색"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full"
+                />
+              </label>
+            </div>
 
-          <div className="flex items-center justify-between sm:justify-start gap-2.5">
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value)}
-            >
-              <SelectTrigger className="w-28 h-9" size="sm">
-                <SelectValue placeholder="상태" />
-              </SelectTrigger>
-              <SelectContent className="w-44">
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="active">진행중</SelectItem>
-                <SelectItem value="pending">준비중</SelectItem>
-                <SelectItem value="waiting_approval">승인 대기중</SelectItem>
-                <SelectItem value="rejected">반려됨</SelectItem>
-                <SelectItem value="pause">표시안함</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {onAddCampaign && (
-              <button
-                className="btn btn-sm btn-primary h-9 px-3 sm:px-4"
-                onClick={() => {
-                  if (onAddCampaign) {
-                    onAddCampaign();
-                  } else {
-                    
-                    // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
-                  }
-                }}
+            <div className="flex items-center justify-between sm:justify-start gap-2.5">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value)}
               >
-                <KeenIcon icon="plus" className="me-1" />
-                <span className="whitespace-nowrap">캠페인 추가</span>
-              </button>
-            )}
+                <SelectTrigger className="w-28 h-9" size="sm">
+                  <SelectValue placeholder="상태" />
+                </SelectTrigger>
+                <SelectContent className="w-44">
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="active">진행중</SelectItem>
+                  <SelectItem value="pending">준비중</SelectItem>
+                  <SelectItem value="waiting_approval">승인 대기중</SelectItem>
+                  <SelectItem value="rejected">반려됨</SelectItem>
+                  <SelectItem value="pause">표시안함</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {onAddCampaign && (
+                <button
+                  className="btn btn-sm btn-primary h-9 px-3 sm:px-4"
+                  onClick={() => {
+                    if (onAddCampaign) {
+                      onAddCampaign();
+                    } else {
+
+                      // 기본 동작 - 추후에 캠페인 추가 모달을 직접 열거나 할 수 있음
+                    }
+                  }}
+                >
+                  <KeenIcon icon="plus" className="me-1" />
+                  <span className="whitespace-nowrap">캠페인 추가</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="card-body px-0">
-        {/* 모바일에서는 카드 형태로 표시 */}
-        <div className="md:hidden px-4">
-          {filteredData.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {filteredData.map((campaign, index) => (
-                <div key={campaign.id} className="bg-background border rounded-lg p-4 shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={getLogoPath(campaign)}
-                        className="rounded-full size-10 shrink-0"
-                        alt={campaign.campaignName || '캠페인'}
-                        onError={(e) => {
-                          
 
-                          // logo 필드 다시 확인
-                          if (campaign.logo) {
-                            
+        <div className="card-body px-0">
+          {/* 모바일에서는 카드 형태로 표시 */}
+          <div className="md:hidden px-4">
+            {filteredData.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredData.map((campaign, index) => (
+                  <div key={campaign.id} className="bg-background border rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={getLogoPath(campaign)}
+                          className="rounded-full size-10 shrink-0"
+                          alt={campaign.campaignName || '캠페인'}
+                          onError={(e) => {
 
-                            // 로고가 동물 이름인 경우
-                            if (animalIcons.includes(campaign.logo)) {
-                              
-                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
-                              return;
-                            }
 
-                            // 경로에서 동물 이름 추출 시도
-                            if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
-                              const segments = campaign.logo.split(/[\/\\]/);
-                              for (let i = 0; i < segments.length; i++) {
-                                if (segments[i] === 'svg' && i + 1 < segments.length) {
-                                  const animalName = segments[i + 1].split('.')[0];
-                                  if (animalIcons.includes(animalName)) {
-                                    
-                                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
-                                    return;
+                            // logo 필드 다시 확인
+                            if (campaign.logo) {
+
+
+                              // 로고가 동물 이름인 경우
+                              if (animalIcons.includes(campaign.logo)) {
+
+                                (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                                return;
+                              }
+
+                              // 경로에서 동물 이름 추출 시도
+                              if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
+                                const segments = campaign.logo.split(/[\/\\]/);
+                                for (let i = 0; i < segments.length; i++) {
+                                  if (segments[i] === 'svg' && i + 1 < segments.length) {
+                                    const animalName = segments[i + 1].split('.')[0];
+                                    if (animalIcons.includes(animalName)) {
+
+                                      (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
+                                      return;
+                                    }
                                   }
                                 }
                               }
                             }
-                          }
 
-                          // 캠페인 이름에서 동물 추출 시도
-                          const animalFromName = getAnimalIconFromName(campaign.campaignName);
-                          if (animalFromName) {
-                            
-                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
-                          } else {
-                            // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
-                            const randomAnimal = getRandomAnimalIcon();
-                            
-                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
-                          }
-                        }}
-                      />
-                      <div>
-                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-base font-medium text-foreground hover:text-primary-active line-clamp-1">
-                          {campaign.campaignName}
-                        </Link>
-                        <div className="text-xs text-muted-foreground mt-1">#{index + 1}</div>
+                            // 캠페인 이름에서 동물 추출 시도
+                            const animalFromName = getAnimalIconFromName(campaign.campaignName);
+                            if (animalFromName) {
+
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+                            } else {
+                              // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
+                              const randomAnimal = getRandomAnimalIcon();
+
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                            }
+                          }}
+                        />
+                        <div>
+                          <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-base font-medium text-foreground hover:text-primary-active line-clamp-1">
+                            {campaign.campaignName}
+                          </Link>
+                          <div className="text-xs text-muted-foreground mt-1">#{index + 1}</div>
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      className="btn btn-sm btn-icon btn-info ml-2"
-                      title="상세설정"
-                      onClick={() => openDetailModal(campaign)}
-                    >
-                      <KeenIcon icon="setting-3" />
-                    </button>
-                  </div>
-
-                  <div className="mb-3">
-                    <p className="text-sm text-foreground line-clamp-2">
-                      {campaign.description || '-'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="bg-muted/50 p-2 rounded text-center">
-                      <div className="text-xs text-muted-foreground mb-1">상승효율</div>
-                      <div className="text-sm font-medium text-primary">{campaign.efficiency}</div>
-                    </div>
-                    <div className="bg-muted/50 p-2 rounded text-center">
-                      <div className="text-xs text-muted-foreground mb-1">최소수량</div>
-                      <div className="text-sm text-foreground">{campaign.minQuantity}</div>
-                    </div>
-                    <div className="bg-muted/50 p-2 rounded text-center">
-                      <div className="text-xs text-muted-foreground mb-1">마감시간</div>
-                      <div className="text-sm text-foreground">{campaign.deadline}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">상태</label>
-                    {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
-                    {!canChangeStatus(campaign) ? (
-                      <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
-                        <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                        <span>{campaign.status.label}</span>
-                        {campaign.status.label === '반려됨' && !isAdmin && (
-                          <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
-                        )}
-                      </div>
-                    ) : (
-                      /* 그 외에는 상태 변경 가능 Select 표시 */
-                      <Select
-                        value={getStatusValue(campaign.status.label)}
-                        onValueChange={(value) => handleStatusChange(campaign.id, value)}
-                        disabled={loadingStatus[campaign.id]}
+                      <button
+                        className="btn btn-sm btn-icon btn-info ml-2"
+                        title="상세설정"
+                        onClick={() => openDetailModal(campaign)}
                       >
-                        <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
-                          {loadingStatus[campaign.id] ? (
-                            <span className="flex items-center">
-                              <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                              처리중...
-                            </span>
-                          ) : (
-                            <>
-                              <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                              <SelectValue>{campaign.status.label}</SelectValue>
-                            </>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">진행중</SelectItem>
-                          <SelectItem value="pending">준비중</SelectItem>
-                          <SelectItem value="pause">표시안함</SelectItem>
-                          {isAdmin && (
-                            <>
-                              <SelectItem value="waiting_approval">승인 대기중</SelectItem>
-                              <SelectItem value="rejected">반려됨</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    )}
+                        <KeenIcon icon="setting-3" />
+                      </button>
+                    </div>
 
-                    {/* 반려된 캠페인인 경우 반려 사유 표시 */}
-                    {campaign.status.label === '반려됨' && (
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-md">
-                        <div className="font-medium mb-0.5">반려 사유:</div>
-                        <div>{campaign.originalData?.rejected_reason || '반려 사유 없음'}</div>
-                        {!isAdmin && (
-                          <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                            <KeenIcon icon="information-circle" className="mr-1 inline-block size-3" />
-                            수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다.
-                          </div>
-                        )}
+                    <div className="mb-3">
+                      <p className="text-sm text-foreground line-clamp-2">
+                        {campaign.description || '-'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="bg-muted/50 p-2 rounded text-center">
+                        <div className="text-xs text-muted-foreground mb-1">상승효율</div>
+                        <div className="text-sm font-medium text-primary">{campaign.efficiency}</div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
-              <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
-              <p className="text-muted-foreground">생성된 캠페인이 없습니다.</p>
-            </div>
-          )}
-        </div>
-
-        {/* 데스크톱에서는 테이블 형태로 표시 */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full min-w-full divide-y divide-border">
-            <thead className="bg-muted">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
-                  No
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  캠페인명
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  캠페인 설명
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  상승효율
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  최소수량
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  접수마감시간
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ minWidth: '140px' }}>
-                  상태
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상세설정
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-background divide-y divide-border">
-              {filteredData.map((campaign, index) => (
-                <tr key={campaign.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm font-medium text-foreground">
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={getLogoPath(campaign)}
-                        className="rounded-full size-10 shrink-0"
-                        alt={campaign.campaignName || '캠페인'}
-                        onError={(e) => {
-                          
-
-                          // logo 필드 다시 확인
-                          if (campaign.logo) {
-                            
-
-                            // 로고가 동물 이름인 경우
-                            if (animalIcons.includes(campaign.logo)) {
-                              
-                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
-                              return;
-                            }
-
-                            // 경로에서 동물 이름 추출 시도
-                            if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
-                              const segments = campaign.logo.split(/[\/\\]/);
-                              for (let i = 0; i < segments.length; i++) {
-                                if (segments[i] === 'svg' && i + 1 < segments.length) {
-                                  const animalName = segments[i + 1].split('.')[0];
-                                  if (animalIcons.includes(animalName)) {
-                                    
-                                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
-                                    return;
-                                  }
-                                }
-                              }
-                            }
-                          }
-
-                          // 캠페인 이름에서 동물 추출 시도
-                          const animalFromName = getAnimalIconFromName(campaign.campaignName);
-                          if (animalFromName) {
-                            
-                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
-                          } else {
-                            // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
-                            const randomAnimal = getRandomAnimalIcon();
-                            
-                            (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
-                          }
-                        }}
-                      />
-                      <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-sm font-medium text-foreground hover:text-primary-active">
-                        {campaign.campaignName}
-                      </Link>
+                      <div className="bg-muted/50 p-2 rounded text-center">
+                        <div className="text-xs text-muted-foreground mb-1">최소수량</div>
+                        <div className="text-sm text-foreground">{campaign.minQuantity}</div>
+                      </div>
+                      <div className="bg-muted/50 p-2 rounded text-center">
+                        <div className="text-xs text-muted-foreground mb-1">마감시간</div>
+                        <div className="text-sm text-foreground">{campaign.deadline}</div>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
-                      {campaign.description || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-base font-medium text-primary">
-                      {campaign.efficiency}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm text-foreground">
-                      {campaign.minQuantity}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="text-sm text-gray-900">
-                      {campaign.deadline}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
-                    <div className="flex flex-col items-center gap-1">
+
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-1">상태</label>
                       {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
                       {!canChangeStatus(campaign) ? (
                         <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
@@ -821,64 +638,247 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
                       {/* 반려된 캠페인인 경우 반려 사유 표시 */}
                       {campaign.status.label === '반려됨' && (
-                        <div className="flex flex-col">
-                          <div className="mt-1 text-xs text-red-500 max-w-[200px] truncate" title={campaign.originalData?.rejected_reason || '반려 사유 없음'}>
-                            <span className="font-medium">반려 사유:</span> {campaign.originalData?.rejected_reason || '반려 사유 없음'}
-                          </div>
+                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-md">
+                          <div className="font-medium mb-0.5">반려 사유:</div>
+                          <div>{campaign.originalData?.rejected_reason || '반려 사유 없음'}</div>
                           {!isAdmin && (
-                            <div className="mt-0.5 text-xs text-blue-500">
-                              <span className="font-medium" title="수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다">
-                                <KeenIcon icon="information-circle" className="mr-0.5 inline-block size-3" />
-                                수정하여 재승인 요청
-                              </span>
+                            <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                              <KeenIcon icon="information-circle" className="mr-1 inline-block size-3" />
+                              수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다.
                             </div>
                           )}
                         </div>
                       )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="flex justify-center gap-2">
-                      <button
-                        className="btn btn-sm btn-icon btn-info"
-                        title="상세설정"
-                        onClick={() => openDetailModal(campaign)}
-                      >
-                        <KeenIcon icon="setting-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
+                <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+                <p className="text-muted-foreground">생성된 캠페인이 없습니다.</p>
+              </div>
+            )}
+          </div>
 
-              {filteredData.length === 0 && (
+          {/* 데스크톱에서는 테이블 형태로 표시 */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-full divide-y divide-border">
+              <thead className="bg-muted">
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
-                      <p>생성된 캠페인이 없습니다.</p>
-                    </div>
-                  </td>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
+                    No
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    캠페인명
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    캠페인 설명
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    상승효율
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    최소수량
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    접수마감시간
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ minWidth: '140px' }}>
+                    상태
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    상세설정
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-background divide-y divide-border">
+                {filteredData.map((campaign, index) => (
+                  <tr key={campaign.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-sm font-medium text-foreground">
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={getLogoPath(campaign)}
+                          className="rounded-full size-10 shrink-0"
+                          alt={campaign.campaignName || '캠페인'}
+                          onError={(e) => {
+
+
+                            // logo 필드 다시 확인
+                            if (campaign.logo) {
+
+
+                              // 로고가 동물 이름인 경우
+                              if (animalIcons.includes(campaign.logo)) {
+
+                                (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                                return;
+                              }
+
+                              // 경로에서 동물 이름 추출 시도
+                              if (campaign.logo.includes('animal/svg/') || campaign.logo.includes('animal\\svg\\')) {
+                                const segments = campaign.logo.split(/[\/\\]/);
+                                for (let i = 0; i < segments.length; i++) {
+                                  if (segments[i] === 'svg' && i + 1 < segments.length) {
+                                    const animalName = segments[i + 1].split('.')[0];
+                                    if (animalIcons.includes(animalName)) {
+
+                                      (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalName}.svg`);
+                                      return;
+                                    }
+                                  }
+                                }
+                              }
+                            }
+
+                            // 캠페인 이름에서 동물 추출 시도
+                            const animalFromName = getAnimalIconFromName(campaign.campaignName);
+                            if (animalFromName) {
+
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
+                            } else {
+                              // 이름에서 동물을 찾지 못하면 랜덤 동물 아이콘 사용
+                              const randomAnimal = getRandomAnimalIcon();
+
+                              (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                            }
+                          }}
+                        />
+                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-sm font-medium text-foreground hover:text-primary-active">
+                          {campaign.campaignName}
+                        </Link>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
+                        {campaign.description || '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-base font-medium text-primary">
+                        {campaign.efficiency}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-sm text-foreground">
+                        {campaign.minQuantity}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-sm text-gray-900">
+                        {campaign.deadline}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
+                      <div className="flex flex-col items-center gap-1">
+                        {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
+                        {!canChangeStatus(campaign) ? (
+                          <div className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-[28px] py-1 border-0 text-[12px] font-medium flex items-center justify-center`}>
+                            <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                            <span>{campaign.status.label}</span>
+                            {campaign.status.label === '반려됨' && !isAdmin && (
+                              <span className="ml-1 text-xs text-red-500">(수정 필요)</span>
+                            )}
+                          </div>
+                        ) : (
+                          /* 그 외에는 상태 변경 가능 Select 표시 */
+                          <Select
+                            value={getStatusValue(campaign.status.label)}
+                            onValueChange={(value) => handleStatusChange(campaign.id, value)}
+                            disabled={loadingStatus[campaign.id]}
+                          >
+                            <SelectTrigger className={`w-full min-w-[120px] badge badge-${campaign.status.color} shrink-0 badge-outline rounded-[30px] h-auto py-1 border-0 focus:ring-0 text-[12px] font-medium`}>
+                              {loadingStatus[campaign.id] ? (
+                                <span className="flex items-center">
+                                  <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                                  처리중...
+                                </span>
+                              ) : (
+                                <>
+                                  <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
+                                  <SelectValue>{campaign.status.label}</SelectValue>
+                                </>
+                              )}
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">진행중</SelectItem>
+                              <SelectItem value="pending">준비중</SelectItem>
+                              <SelectItem value="pause">표시안함</SelectItem>
+                              {isAdmin && (
+                                <>
+                                  <SelectItem value="waiting_approval">승인 대기중</SelectItem>
+                                  <SelectItem value="rejected">반려됨</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {/* 반려된 캠페인인 경우 반려 사유 표시 */}
+                        {campaign.status.label === '반려됨' && (
+                          <div className="flex flex-col">
+                            <div className="mt-1 text-xs text-red-500 max-w-[200px] truncate" title={campaign.originalData?.rejected_reason || '반려 사유 없음'}>
+                              <span className="font-medium">반려 사유:</span> {campaign.originalData?.rejected_reason || '반려 사유 없음'}
+                            </div>
+                            {!isAdmin && (
+                              <div className="mt-0.5 text-xs text-blue-500">
+                                <span className="font-medium" title="수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다">
+                                  <KeenIcon icon="information-circle" className="mr-0.5 inline-block size-3" />
+                                  수정하여 재승인 요청
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          className="btn btn-sm btn-icon btn-info"
+                          title="상세설정"
+                          onClick={() => openDetailModal(campaign)}
+                        >
+                          <KeenIcon icon="setting-3" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {filteredData.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+                        <p>생성된 캠페인이 없습니다.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-    
 
-    {/* 캠페인 상세 정보 모달 (통합된 CampaignModal 사용) */}
-    <CampaignModal
-      open={detailModalOpen}
-      onClose={() => setDetailModalOpen(false)}
-      campaign={selectedCampaign}
-      onSave={handleSaveCampaign}
-      isDetailMode={true}
-      isOperator={isOperator} // 부모 컴포넌트에서 전달받은 운영자 모드 여부 전달
-      updateCampaign={updateCampaign} // 캠페인 업데이트 서비스 함수 전달
-      serviceType={selectedCampaign?.serviceType || (selectedCampaign?.originalData?.service_type || '')}
-    />
+
+      {/* 캠페인 상세 정보 모달 (통합된 CampaignModal 사용) */}
+      <CampaignModal
+        open={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        campaign={selectedCampaign}
+        onSave={handleSaveCampaign}
+        isDetailMode={true}
+        isOperator={isOperator} // 부모 컴포넌트에서 전달받은 운영자 모드 여부 전달
+        updateCampaign={updateCampaign} // 캠페인 업데이트 서비스 함수 전달
+        serviceType={selectedCampaign?.serviceType || (selectedCampaign?.originalData?.service_type || '')}
+      />
     </>
   );
 };

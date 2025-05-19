@@ -339,15 +339,16 @@
       }
     ]
   };
-  var isDevEnvironment = false;
+  var isDevEnvironment = true;
   async function handleRequest(request) {
     const url = new URL(request.url);
     console.log(`[Worker] Received request for ${url.pathname}`);
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Max-Age": "86400"
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
+      "Access-Control-Max-Age": "86400",
+      "Access-Control-Allow-Credentials": "true"
     };
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -357,13 +358,19 @@
     }
     try {
       if (url.pathname === "/api/ping") {
-        console.log("[Worker] Handling ping request");
-        return new Response(JSON.stringify({
+        console.log("[Worker] Handling ping request from: " + request.headers.get("origin") || "unknown");
+        console.log("[Worker] Request URL: " + url.toString());
+        console.log("[Worker] Worker Mode: " + (isDevEnvironment ? "Mock Data" : "Real API"));
+        const responseData = {
           status: "ok",
           environment: isDevEnvironment ? "development" : "production",
           mockData: isDevEnvironment,
-          timestamp: (/* @__PURE__ */ new Date()).toISOString()
-        }), {
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          worker_url: url.toString(),
+          request_headers: Object.fromEntries([...request.headers])
+        };
+        console.log("[Worker] Sending ping response:", JSON.stringify(responseData));
+        return new Response(JSON.stringify(responseData), {
           headers: {
             "Content-Type": "application/json",
             ...corsHeaders

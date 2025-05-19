@@ -65,7 +65,8 @@ const MOCK_DATA = {
 
 // 개발 환경인지 여부를 확인
 // true: 목업 데이터 사용, false: 실제 네이버 API 호출
-const isDevEnvironment = false;
+// 배포 환경에서도 목업 데이터를 사용하도록 true로 설정
+const isDevEnvironment = true;
 
 /**
  * 요청 핸들러
@@ -76,12 +77,13 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   console.log(`[Worker] Received request for ${url.pathname}`);
   
-  // CORS 헤더 설정
+  // CORS 헤더 설정 - 더 많은 헤더와 메서드 허용
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
     'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true',
   };
   
   // OPTIONS 요청 처리 (CORS preflight)
@@ -95,13 +97,23 @@ async function handleRequest(request) {
   try {
     // 간단한 ping 요청 처리 (서버 상태 확인용)
     if (url.pathname === '/api/ping') {
-      console.log('[Worker] Handling ping request');
-      return new Response(JSON.stringify({ 
+      console.log('[Worker] Handling ping request from: ' + request.headers.get('origin') || 'unknown');
+      console.log('[Worker] Request URL: ' + url.toString());
+      console.log('[Worker] Worker Mode: ' + (isDevEnvironment ? 'Mock Data' : 'Real API'));
+      
+      // 응답 데이터
+      const responseData = { 
         status: 'ok',
         environment: isDevEnvironment ? 'development' : 'production',
         mockData: isDevEnvironment,
-        timestamp: new Date().toISOString()
-      }), {
+        timestamp: new Date().toISOString(),
+        worker_url: url.toString(),
+        request_headers: Object.fromEntries([...request.headers])
+      };
+      
+      console.log('[Worker] Sending ping response:', JSON.stringify(responseData));
+      
+      return new Response(JSON.stringify(responseData), {
         headers: {
           'Content-Type': 'application/json',
           ...corsHeaders

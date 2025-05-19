@@ -437,6 +437,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
     authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
       {
+        title: '장소 검색',
+        icon: 'geolocation text-success',
+        path: '/map-search',
+      },
+      {
         title: '역할별 대시보드',
         icon: 'element-11 text-primary',
         children: [

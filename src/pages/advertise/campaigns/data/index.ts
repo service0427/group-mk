@@ -1,0 +1,1 @@
+export { type IAdCampaignsContentItem } from './adCampaignTypes';

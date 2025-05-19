@@ -76,7 +76,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
       // 서비스 코드를 DB 형식으로 변환
       const dbServiceType = getServiceTypeCode(serviceType);
 
-
       let data: ICampaign[] = [];
       let useBackupData = false;
 
@@ -91,7 +90,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
         console.error('캠페인 데이터 조회 오류:', dbError);
         useBackupData = true;
       }
-
 
       // DB에 데이터가 없을 경우 빈 배열 유지, 백업 데이터 사용하지 않음
       if (useBackupData) {

@@ -1,6 +1,6 @@
 import { KeenIcon } from '@/components';
 import { useState } from 'react';
-import { CampaignDetailViewModal, CampaignSlotWithKeywordModal } from '@/pages/advertise/components';
+import { CampaignDetailViewModal, CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
 import { toAbsoluteUrl } from '@/utils/Assets';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,6 +32,7 @@ interface IAdCampaignProps {
   };
   url: string;
   rawId?: string | number;  // 추가: 원본 데이터 ID
+  rawData?: any;  // 추가: 원본 데이터 전체
 }
 
 const CardAdCampaign = ({
@@ -44,21 +45,17 @@ const CardAdCampaign = ({
   statistics,
   progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
   url,
-  rawId  // 원본 데이터 ID
+  rawId,  // 원본 데이터 ID
+  rawData  // 원본 데이터 전체
 }: IAdCampaignProps) => {
   // 컴포넌트 렌더링
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
-  
-  // 원본 데이터에서 상세 설명 가져오기 (전역 변수에 저장된 rawItems 활용)
-  // @ts-ignore - window에 campaignRawItems 추가
-  const rawItems = window.campaignRawItems || [];
-  const rawItem = rawItems.find((item: any) => item.id === rawId);
-  
-  // 원본 데이터에서 직접 detailed_description 가져오기
-  const rawDetailedDesc = rawItem?.detailed_description;
-  
+
+  // 이제 props로 받은 rawData와 ID만 사용
+  // 원본 데이터는 더 이상 확인하지 않음, 모달에서 직접 조회
+
   // 직접 상세보기 모달에 전달할 데이터 구성
   const campaignData = {
     id: rawId || "",
@@ -70,8 +67,10 @@ const CardAdCampaign = ({
     deadline: statistics.find(stat => stat.description.includes('접수마감'))?.total || '-',
     unitPrice: statistics.find(stat => stat.description.includes('건당단가'))?.total || '0원',
     additionalLogic: statistics.find(stat => stat.description.includes('추가로직'))?.total || '없음',
-    // 원본 데이터의 상세 설명 우선 사용
-    detailedDescription: rawDetailedDesc ? rawDetailedDesc.replace(/\\n/g, '\n') : detailedDescription,
+    // 상세 설명 전달 - 상세정보는 모달에서 직접 조회
+    detailedDescription: detailedDescription || description,
+    // 원본 데이터 전체를 originalData로 전달하여 모달에서 활용할 수 있게 함
+    originalData: rawData,
     status: {
       label: status.label,
       color: status.variant
@@ -149,7 +148,7 @@ const CardAdCampaign = ({
               {(description.split('\n').length > 2 || description.length > 120) ? (
                 /* 3줄 이상인 경우: 2줄만 표시 + ... */
                 <>
-                  <div className="h-[3rem] overflow-hidden" style={{ 
+                  <div className="h-[3rem] overflow-hidden" style={{
                     whiteSpace: 'pre-wrap',
                     lineHeight: '1.5rem'
                   }}>
@@ -161,7 +160,7 @@ const CardAdCampaign = ({
                 </>
               ) : (
                 /* 2줄 이하인 경우: 세로 중앙 정렬 */
-                <div className="flex items-center justify-center h-full" style={{ 
+                <div className="flex items-center justify-center h-full" style={{
                   whiteSpace: 'pre-wrap',
                   lineHeight: '1.5rem'
                 }}>
@@ -182,14 +181,17 @@ const CardAdCampaign = ({
           <div className="progress-bar" style={{ width: `${progress?.value}%` }}></div>
         </div>
       </div>
-      
+
       {/* 상세보기 모달 */}
       <CampaignDetailViewModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        campaign={campaignData}
+        campaign={{
+          ...campaignData,
+          id: rawId || ""  // ID를 반드시 전달하여 상세 정보를 가져올 수 있도록 함
+        }}
       />
-      
+
       {/* 슬롯 추가 모달 */}
       <CampaignSlotWithKeywordModal
         open={slotModalOpen}

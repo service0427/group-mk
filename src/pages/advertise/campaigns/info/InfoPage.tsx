@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { CampaignInfoTemplate } from '../../components';
+import { CampaignInfoTemplate } from '../components';
 import { getServiceData, ServiceData } from '@/data/advertiseServices';
 import { CommonTemplate } from '@/components/pageTemplate';
 
@@ -30,7 +30,7 @@ const InfoPage: React.FC = () => {
 
       // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
       const parts = serviceType.split('-');
-      
+
       if (parts.length === 3) {
         // naver-shopping-traffic 같은 형식
         platform = parts[0];
@@ -100,7 +100,7 @@ const InfoPage: React.FC = () => {
 
   // 서비스 카테고리 생성
   let serviceCategory = '';
-  
+
   if (serviceType) {
     // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
     if (serviceType === 'naver-shopping-traffic') {
@@ -127,10 +127,10 @@ const InfoPage: React.FC = () => {
 
   // 서비스 타입에 맞는 title 생성
   const title = `${serviceCategory} 캠페인 소개`;
-  
+
   // 서비스 타입에 맞는 description 생성
   const description = `서비스 > 캠페인 소개 > ${serviceCategory}`;
-  
+
   // CommonTemplate으로 감싸서 DescTemplate 렌더링
   return (
     <CommonTemplate

@@ -185,10 +185,10 @@ export const getServiceData = (
   subservice?: string
 ): ServiceData | null => {
   try {
-    // ntraffic 특수 처리 (platform이 ntraffic인 경우)
-    if (platform === 'ntraffic') {
-      return serviceData[platform];
-    }
+    // // ntraffic 특수 처리 (platform이 ntraffic인 경우)
+    // if (platform === 'ntraffic') {
+    //   return serviceData[platform];
+    // }
 
     if (subservice) {
       return serviceData[platform][subservice][type];

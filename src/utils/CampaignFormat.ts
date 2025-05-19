@@ -8,6 +8,7 @@ export interface CampaignData {
   id: string | number;
   campaign_name: string;
   description?: string;
+  detailed_description?: string; // 추가: 상세 설명 필드
   logo?: string;
   efficiency?: string | number;
   min_quantity?: string | number;
@@ -32,6 +33,7 @@ export interface FormattedCampaignData {
   logoSize?: string; // 옵셔널로 변경
   title: string;
   description: string;
+  detailedDescription?: string; // 추가: 상세 설명 필드
   status: {
     variant: string;
     label: string;
@@ -321,6 +323,8 @@ export const getProgressVariant = (status: string, index: number): string => {
  * 캠페인 데이터를 화면에 표시할 형식으로 변환
  */
 export const formatCampaignData = (campaign: CampaignData, index: number = 0, serviceTypeCode?: string): FormattedCampaignData & { id?: string | number } => {
+  // 원본 캠페인 데이터의 상세 설명 필드 처리
+  
   // ID가 없거나 undefined인 경우 기본값 설정
   if (campaign.id === undefined || campaign.id === null) {
     campaign.id = 1; // 기본 ID 값
@@ -412,12 +416,16 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
     }
   }
 
-  return {
+  // 상세 설명을 온전히 전달하기 위해 명시적으로 처리
+  const detailedDesc = campaign.detailed_description?.replace(/\\n/g, '\n') || '';
+  
+  const formattedResult = {
     id: campaign.id, // 캠페인 ID 추가
     logo: logoPath,
     logoSize: '50px',
     title: campaign.campaign_name,
     description: campaign.description?.replace(/\\n/g, '\n') || '',
+    detailedDescription: detailedDesc, // 상세 설명 추가 (위에서 계산한 값 사용)
     status: {
       variant: getStatusBadgeClass(campaign.status),
       label: getStatusLabel(campaign.status)
@@ -428,12 +436,17 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
       value: 100
     }
   };
+  
+  
+  return formattedResult;
 };
 
 /**
  * 캠페인 데이터를 상세보기 모달 형식으로 변환
  */
 export const formatCampaignDetailData = (campaign: FormattedCampaignData, originalData?: any): CampaignDetailData => {
+  // 상세 설명 데이터 처리
+  
   // 추가로직 정보 가져오기
   const additionalLogic = campaign.statistics.find(stat => stat.description.includes('추가로직'));
   
@@ -443,7 +456,15 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
   // 원본 데이터에 누락된 ID가 있을 경우 기본값은 설정하지 않음
   // 실제 DB의 캠페인 ID로 매칭되어야 하기 때문에 임의의 값을 설정하지 않음
   
-  return {
+  // 상세 설명 구성 - 여러 소스에서 가져옴
+  const finalDetailedDescription = campaign.detailedDescription || 
+                                  originalData?.detailed_description ||
+                                  (typeof originalData?.add_info === 'string'
+                                    ? JSON.parse(originalData?.add_info || '{}')?.detailed_description
+                                    : originalData?.add_info?.detailed_description) ||
+                                  campaign.description;
+
+  const result = {
     id: originalData?.id || "", // 값이 없으면 빈 문자열로 설정
     campaignName: campaign.title,
     description: campaign.description,
@@ -454,12 +475,8 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
     unitPrice: campaign.statistics.find(stat => stat.description.includes('건당단가'))?.total || '0원',
     // 추가로직이 있는 경우에만 값 설정
     additionalLogic: additionalLogic ? additionalLogic.total : '없음',
-    // 상세 설명 추가 (원본 데이터의 detailed_description 필드 또는 add_info에서 가져오기)
-    detailedDescription: originalData?.detailed_description ||
-                        (typeof originalData?.add_info === 'string'
-                          ? JSON.parse(originalData?.add_info || '{}')?.detailed_description
-                          : originalData?.add_info?.detailed_description) ||
-                        campaign.description,
+    // 상세 설명 추가 (위에서 결정된 finalDetailedDescription 사용)
+    detailedDescription: finalDetailedDescription,
     // 배너 URL 추가
     bannerUrl: bannerUrl,
     // 원본 데이터 추가
@@ -469,4 +486,6 @@ export const formatCampaignDetailData = (campaign: FormattedCampaignData, origin
       color: campaign.status.variant
     }
   };
+  
+  return result;
 };

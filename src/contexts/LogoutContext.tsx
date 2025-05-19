@@ -25,7 +25,7 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
   const safeApiCall = async <T,>(apiCall: () => Promise<T>, fallback: T): Promise<T> => {
     // 로그아웃 중이면 API 호출을 건너뛰고 fallback 값 반환
     if (isLoggingOut) {
-      console.log('로그아웃 중에 API 호출이 방지되었습니다.');
+
       return fallback;
     }
     
@@ -35,7 +35,7 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     } catch (error) {
       // API 오류 발생 시, 로그아웃 중인지 재확인 후 오류 처리
       if (isLoggingOut) {
-        console.log('API 호출 중 로그아웃이 시작되어 오류를 무시합니다.');
+        
         return fallback;
       }
       

@@ -602,6 +602,11 @@ export const MENU_MEGA: TMenuConfig = [
         heading: '정보',
         children: [
           {
+            title: '장소 검색',
+            icon: 'geolocation text-primary',
+            path: '/map-search'
+          },
+          {
             title: '순위분석',
             icon: 'ranking text-info',
             path: '#',

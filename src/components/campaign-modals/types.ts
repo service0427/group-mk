@@ -87,7 +87,7 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
 
 // 캠페인 모달 관련 공통 타입 정의
 export interface ICampaign {
-  id: string;
+  id: string | number; // id는 string 또는 number가 될 수 있음
   campaignName: string;
   description: string;
   logo: string;

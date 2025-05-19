@@ -303,11 +303,7 @@ export class CashManageService {
 
       // 4. 페이지네이션 계산
       const offset = (page - 1) * limit;
-      console.log('page', page);
-      console.log('limit', limit);
-      console.log('offset', offset);
       const end = offset + parseInt(limit.toString()) - 1;
-      console.log('end', end);
 
       // 5. 데이터 쿼리 구성
       let dataQuery = supabase

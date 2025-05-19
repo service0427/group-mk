@@ -192,6 +192,7 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
         color: getStatusColor(parsedItem.status)
       },
       additionalLogic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
+      // 상세 설명을 분리해서 명시적으로 가져오기
       detailedDescription: parsedItem.detailed_description || '',
       // 원본 데이터도 포함 (파싱된 add_info 포함)
       originalData: parsedItem

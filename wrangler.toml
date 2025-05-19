@@ -17,12 +17,24 @@ entry-point = "./"
 [site.not_found_handling]
 type = "single_page_application"
 
+[routes]
+pattern = "/api/*"
+script = "map-api-worker.js"
+
 [env.test]
 name = "mk-test"
 workers_dev = true
 route = { pattern = "wtest.mkt-guide.com", custom_domain = true }
 
+[env.test.routes]
+pattern = "/api/*"
+script = "map-api-worker.js"
+
 [env.production]
 name = "mk"
 workers_dev = true
 route = { pattern = "www.mkt-guide.com", custom_domain = true }
+
+[env.production.routes]
+pattern = "/api/*"
+script = "map-api-worker.js"

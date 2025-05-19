@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "clean": "rimraf dist node_modules/.vite",
-    "dev": "npm run clean && vite",
+    "dev:app": "vite",
+    "dev:worker": "wrangler dev map-api-worker.js --local --port 9000 --config wrangler-dev.toml",
+    "dev": "npm run clean && concurrently \"npm run dev:app\" \"npm run dev:worker\"",
     "build": "tsc -b && vite build && node scripts/create-routes-json.js",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -111,6 +113,7 @@
     "@typescript-eslint/parser": "^8.14.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",

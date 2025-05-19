@@ -348,7 +348,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
     if (open) {
       loadChartData(activePeriod);
     }
-  }, [open]);
+  }, [open, campaign]);
 
   // 다크 모드 변경 감지 및 차트 테마 업데이트
   useEffect(() => {
@@ -767,8 +767,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                     <h4 className="font-medium text-primary mb-2">상세 설명</h4>
                     <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                       <p className="whitespace-pre-line text-gray-700">
-                        {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ?
-                          campaign.detailedDescription :
+                        {/* 상세 설명 표시: CampaignModal.tsx와 같은 로직 사용 */}
+                        {campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ? 
+                          campaign.detailedDescription : 
                           (campaign?.description || '상세 설명이 없습니다.')}
                       </p>
                     </div>

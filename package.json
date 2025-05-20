@@ -15,9 +15,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "delete-chat-data": "node scripts/delete-chat-data.js",
-    "deploy": "npm run deploy:pages",
-    "deploy:test": "npm run deploy:pages",
-    "deploy:prod": "npm run deploy:pages:prod",
+    "deploy": "npm run build && wrangler deploy --env test",
+    "deploy:test": "npm run build && wrangler deploy --env test",
+    "deploy:prod": "npm run build && wrangler deploy --env production",
     "deploy:pages": "npm run build && ./deploy-functions.sh && wrangler pages deploy dist --project-name mk-test",
     "deploy:pages:prod": "npm run build && ./deploy-functions.sh && wrangler pages deploy dist --project-name mk-prod"
   },

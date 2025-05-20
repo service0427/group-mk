@@ -59,7 +59,9 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                         console.error('엑셀 파일 파싱 오류:', error);
                         alert('엑셀 파일을 읽는 도중 오류가 발생했습니다. 파일 형식 및 내용을 확인해주세요.');
                         setUploadFile(null);
-                        e.target.value = '';
+                        if (e.target instanceof HTMLInputElement) {
+                            e.target.value = '';
+                        }
                     }
                 };
             

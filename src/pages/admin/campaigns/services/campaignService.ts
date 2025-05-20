@@ -372,7 +372,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
           };
         } catch (e) {
           console.error('add_info 파싱 오류:', e);
-          additionalInfo = {};
+          // additionalInfo의 add_field는 이미 설정되어 있음
         }
       } else {
         // 기존 데이터 + 새 add_field (덮어쓰기)
@@ -499,6 +499,11 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     // 반려 상태일 때는 supabaseAdmin(RLS 우회)을 사용하여 저장
     const client = (data.status === 'rejected') ? supabaseAdmin : supabase;
+    
+    // 업데이트 바로 전에 최종 데이터 확인
+    console.log("최종 업데이트 데이터:", updateData);
+    console.log("add_info 내부 add_field:", updateData.add_info?.add_field);
+      
     const { error } = await client
       .from('campaigns')
       .update(updateData)

@@ -5,7 +5,7 @@ import { KeenIcon } from '@/components';
 import { LevelupApply } from '@/types/business';
 import { supabase } from '@/supabase';
 import { RejectReasonModal, StatusModal } from './components';
-import { createRoleChangeNotification } from '@/utils/notificationExamples';
+import { createRoleChangeNotification } from '@/utils/notificationActions';
 
 type RequestWithUser = LevelupApply & {
   users: {

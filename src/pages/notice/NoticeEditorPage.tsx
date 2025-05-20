@@ -111,7 +111,7 @@ const NoticeEditorPage = () => {
             await createSystemNotificationForAll({
               title: '[중요] 공지사항이 업데이트되었습니다',
               message: `중요 공지사항: ${title}`,
-              link: `/notice/detail/${id}`,
+              link: `/notice/${id}`,
               priority: NotificationPriority.HIGH
             });
             console.log('중요 공지사항 알림이 전송되었습니다.');
@@ -150,7 +150,7 @@ const NoticeEditorPage = () => {
             await createSystemNotificationForAll({
               title: '[중요] 새 공지사항이 등록되었습니다',
               message: `중요 공지사항: ${title}`,
-              link: `/notice/detail/${newNotice.id}`,
+              link: `/notice/${newNotice.id}`,
               priority: NotificationPriority.HIGH
             });
             console.log('중요 공지사항 알림이 전송되었습니다.');

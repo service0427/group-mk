@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { INotification, NotificationType, NotificationPriority } from '@/types/notification';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -49,6 +50,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
   onArchive,
   onDelete
 }) => {
+  const navigate = useNavigate(); // React Router 네비게이션 훅
   // 날짜 포맷팅
   const formatDate = (dateString: string | Date) => {
     try {
@@ -204,15 +206,32 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
             {/* 링크가 있는 경우 링크 버튼 표시 */}
             {notification.link && (
               <div className="mb-4">
-                <a
-                  href={notification.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
                   className="inline-flex items-center px-4 py-1.5 rounded text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                  onClick={() => {
+                    // 모달 닫기
+                    onClose();
+                    
+                    // 약간의 지연 후 페이지 이동 (모달이 닫히는 시간 고려)
+                    setTimeout(() => {
+                      // 경로 정리 후 navigate 사용
+                      let path = notification.link || '';
+                      // 이미 #이 포함된 경로 처리
+                      if (path.startsWith('#')) {
+                        path = path.substring(1); // # 제거
+                      }
+                      // 슬래시로 시작하지 않으면 추가
+                      if (!path.startsWith('/') && path.length > 0) {
+                        path = '/' + path;
+                      }
+                      
+                      navigate(path);
+                    }, 100);
+                  }}
                 >
                   <i className="ki-external text-sm mr-1.5"></i>
                   관련 페이지로 이동
-                </a>
+                </button>
               </div>
             )}
           </DialogBody>

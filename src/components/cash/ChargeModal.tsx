@@ -319,10 +319,10 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
         await createNotificationForRole('operator', {
           type: NotificationType.TRANSACTION,
           title: '새로운 캐시 충전 요청',
-          message: `${currentUser.username || currentUser.email || '사용자'}님이 ${formatNumberWithCommas(Number(customAmount))}원의 캐시 충전을 요청했습니다. 입금자명: ${depositorName.trim()}`,
+          message: `${currentUser.email || '사용자'}님이 ${formatNumberWithCommas(Number(customAmount))}원의 캐시 충전을 요청했습니다. 입금자명: ${depositorName.trim()}`,
           priority: NotificationPriority.HIGH,
           icon: 'transaction',
-          link: '/admin/cash/requests'
+          link: '/admin/cash'
         });
 
         // 성공 후 폼 초기화 및 내역 갱신

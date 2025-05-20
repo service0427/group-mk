@@ -20,7 +20,7 @@ import {
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { notifyOperators } from '@/utils/notificationExamples';
+import { notifyOperators } from '@/utils/notificationActions';
 
 // X 버튼이 없는 DialogContent 커스텀 컴포넌트
 const DialogContent = React.forwardRef<

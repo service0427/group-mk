@@ -1,7 +1,7 @@
 import { supabase } from "@/supabase";
 import { min } from "date-fns";
 import { id } from "date-fns/locale";
-import { createWithdrawApprovedNotification, createWithdrawRejectedNotification } from "@/utils/notificationExamples";
+import { createWithdrawApprovedNotification, createWithdrawRejectedNotification } from "@/utils/notificationActions";
 
 
 // 출금 전역 설정 정보 가져오는 함수

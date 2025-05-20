@@ -6,7 +6,7 @@ import {
   createCampaignApprovedNotification, 
   createCampaignRejectedNotification,
   createCampaignReapprovalRequestNotification
-} from '@/utils/notificationExamples';
+} from '@/utils/notificationActions';
 
 // Base64 이미지를 Supabase Storage에 업로드하는 함수
 export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
@@ -290,7 +290,8 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
           await createCampaignApprovedNotification(
             matId,
             campaignId.toString(),
-            campaignName
+            campaignName,
+            campaign.service_type
           );
         }
         
@@ -300,7 +301,8 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
             matId,
             campaignId.toString(),
             campaignName,
-            campaign.rejected_reason || '반려 사유가 기록되지 않았습니다.'
+            campaign.rejected_reason || '반려 사유가 기록되지 않았습니다.',
+            campaign.service_type
           );
         }
         
@@ -491,7 +493,8 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         await createCampaignApprovedNotification(
           matId,
           campaignId.toString(),
-          campaignName
+          campaignName,
+          existingCampaign?.service_type
         );
       }
       
@@ -501,7 +504,8 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
           matId,
           campaignId.toString(),
           campaignName,
-          rejectionReason || '반려 사유가 기록되지 않았습니다.'
+          rejectionReason || '반려 사유가 기록되지 않았습니다.',
+          existingCampaign?.service_type
         );
       }
       

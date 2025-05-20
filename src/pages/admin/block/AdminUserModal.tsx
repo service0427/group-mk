@@ -4,7 +4,7 @@ import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
 import { KeenIcon } from "@/components";
 import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
-import { createRoleChangeNotification } from "@/utils/notificationExamples";
+import { createRoleChangeNotification } from "@/utils/notificationActions";
 
 interface ChargeHistoryModalProps {
     open: boolean;

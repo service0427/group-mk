@@ -1,5 +1,5 @@
 import { supabase } from '@/supabase';
-import { createCashChargeNotification } from '@/utils/notificationExamples';
+import { createCashChargeNotification } from '@/utils/notificationActions';
 
 /**
  * 캐시 관리 서비스

@@ -319,21 +319,39 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
                             {notification.link && (
                               <div className="mt-1.5">
-                                <a
-                                  href={notification.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation(); // 부모 클릭 이벤트 방지
+                                    
+                                    // 읽지 않은 알림이면 읽음 처리
                                     if (notification.status === NotificationStatus.UNREAD) {
                                       markAsRead(notification.id);
                                     }
+                                    
+                                    // 드롭다운 닫기
+                                    itemRef.current?.hide();
+                                    
+                                    // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
+                                    setTimeout(() => {
+                                      // 경로 정리 후 navigate 사용
+                                      let path = notification.link || '';
+                                      // 이미 #이 포함된 경로 처리
+                                      if (path.startsWith('#')) {
+                                        path = path.substring(1); // # 제거
+                                      }
+                                      // 슬래시로 시작하지 않으면 추가
+                                      if (!path.startsWith('/') && path.length > 0) {
+                                        path = '/' + path;
+                                      }
+                                      
+                                      navigate(path);
+                                    }, 10);
                                   }}
                                 >
                                   <i className="ki-arrow-right text-[8px] mr-0.5"></i>
                                   바로가기
-                                </a>
+                                </button>
                               </div>
                             )}
 
@@ -419,18 +437,34 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
                             {notification.link && (
                               <div className="mt-1.5">
-                                <a
-                                  href={notification.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation(); // 부모 클릭 이벤트 방지
+                                    
+                                    // 드롭다운 닫기
+                                    itemRef.current?.hide();
+                                    
+                                    // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
+                                    setTimeout(() => {
+                                      // 경로 정리 후 navigate 사용
+                                      let path = notification.link || '';
+                                      // 이미 #이 포함된 경로 처리
+                                      if (path.startsWith('#')) {
+                                        path = path.substring(1); // # 제거
+                                      }
+                                      // 슬래시로 시작하지 않으면 추가
+                                      if (!path.startsWith('/') && path.length > 0) {
+                                        path = '/' + path;
+                                      }
+                                      
+                                      navigate(path);
+                                    }, 10);
                                   }}
                                 >
                                   <i className="ki-arrow-right text-[8px] mr-0.5"></i>
                                   바로가기
-                                </a>
+                                </button>
                               </div>
                             )}
 

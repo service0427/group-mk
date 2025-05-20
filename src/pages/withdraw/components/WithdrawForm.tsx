@@ -5,7 +5,7 @@ import { createWithdrawRequest, getLastWithdrawAccount, LastWithdrawAccount } fr
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
-import { notifyOperators, createNewWithdrawRequestNotification } from '@/utils/notificationExamples';
+import { notifyOperators, createNewWithdrawRequestNotification } from '@/utils/notificationActions';
 
 interface WithdrawFormProps {
   userId: string;

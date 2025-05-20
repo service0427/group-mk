@@ -546,7 +546,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           createdAt: item.created_at,
           updatedAt: item.updated_at,
           workCount: undefined,
-          dueDate: undefined
+          dueDate: undefined,
+          dueDays: 0,
+          inputData: {}
         }));
 
       // 선택된 캠페인의 min_quantity 가져와서 각 키워드에 자동 추가
@@ -1255,7 +1257,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       if (result.slots && result.slots.length > 0) {
         // 사용자에게 구매 완료 알림 전송
         await createNotification(
-          currentUser.id,
+          currentUser?.id || '',
           '키워드 구매 신청 완료',
           `${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드 구매 신청이 완료되었습니다.`,
           '/myinfo/services',

@@ -129,6 +129,7 @@ export interface ExtendedCampaign extends ICampaign {
   bannerImage?: string;
   rejectionReason?: string;
   serviceType?: string;
+  additionalInfo?: any; // 추가 항목 정보
 }
 
 // 캠페인 상태 관련 유틸리티 함수

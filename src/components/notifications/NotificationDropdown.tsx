@@ -17,6 +17,8 @@ import {
 } from '@/components/menu';
 import { KeenIcon } from '@/components/keenicons';
 import { useLanguage } from '@/i18n';
+import { useToast } from '@/providers/ToastProvider';
+import { useDialog } from '@/components/dialog';
 
 interface NotificationDropdownProps {
   containerClassName?: string;
@@ -35,6 +37,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const itemRef = useRef<any>(null);
   const { isRTL } = useLanguage();
+  const toast = useToast();
+  const { showConfirm, showAlert } = useDialog();
 
   // 컴포넌트 마운트 시 알림 데이터 가져오기 및 주기적 갱신
   useEffect(() => {
@@ -64,6 +68,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     // 읽지 않은 알림인 경우 읽음 처리
     if (notification.status === NotificationStatus.UNREAD) {
       markAsRead(notification.id);
+      // 읽음 처리 시 토스트 메시지 표시
+      toast.info('알림을 읽음으로 표시했습니다');
     }
 
     // 자세히 보기 모달 표시
@@ -87,6 +93,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     // 약간의 지연 후 페이지 이동
     setTimeout(() => {
       navigate('/myinfo/notifications');
+      // 알림 센터로 이동 시 토스트 메시지 표시
+      toast.info('알림 센터로 이동합니다');
     }, 10);
   };
 
@@ -209,12 +217,25 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <h3 className="text-base font-medium text-card-foreground dark:text-white">알림</h3>
                 <div className="flex items-center">
                   <button
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      await markAllAsRead();
-                      // 상태 갱신을 위해 명시적으로 알림 데이터 다시 가져오기
-                      fetchNotifications();
+                      
+                      if (unreadCount > 0) {
+                        showConfirm(
+                          '알림 읽음 처리',
+                          `${unreadCount}개의 모든 읽지 않은 알림을 읽음으로 표시하시겠습니까?`,
+                          async (confirmed) => {
+                            if (confirmed) {
+                              await markAllAsRead();
+                              // 상태 갱신을 위해 명시적으로 알림 데이터 다시 가져오기
+                              fetchNotifications();
+                              // 모든 알림 읽음 처리 시 토스트 메시지 표시
+                              toast.success('모든 알림을 읽음으로 표시했습니다');
+                            }
+                          }
+                        );
+                      }
                     }}
                     className={`text-sm font-medium ${unreadCount > 0
                       ? 'text-primary hover:text-primary-dark dark:hover:text-primary-light hover:underline cursor-pointer'
@@ -327,6 +348,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                     // 읽지 않은 알림이면 읽음 처리
                                     if (notification.status === NotificationStatus.UNREAD) {
                                       markAsRead(notification.id);
+                                      toast.info('알림을 읽음으로 표시했습니다');
                                     }
                                     
                                     // 드롭다운 닫기
@@ -346,6 +368,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                       }
                                       
                                       navigate(path);
+                                      // 페이지 이동 시 토스트 메시지 표시
+                                      toast.info('관련 페이지로 이동합니다');
                                     }, 10);
                                   }}
                                 >
@@ -459,6 +483,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                       }
                                       
                                       navigate(path);
+                                      // 페이지 이동 시 토스트 메시지 표시
+                                      toast.info('관련 페이지로 이동합니다');
                                     }, 10);
                                   }}
                                 >

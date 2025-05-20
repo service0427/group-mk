@@ -116,12 +116,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
     authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
   },
   {
-    title: '장소 검색',
-    icon: 'geolocation text-primary',
-    path: '/map-search',
-    authCheck: (role) => true,  // 모든 사용자가 접근 가능
-  },
-  {
     title: '순위 분석',
     icon: 'ranking text-info',
     authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
@@ -442,6 +436,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'code text-info',
     authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
+      {
+        title: '플레이스 검색',
+        icon: 'geolocation text-primary',
+        path: '/map-search',
+        authCheck: (role) => true,  // 모든 사용자가 접근 가능
+      },
       {
         title: '역할별 대시보드',
         icon: 'element-11 text-primary',

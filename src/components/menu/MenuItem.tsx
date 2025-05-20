@@ -75,7 +75,7 @@ const MenuItemComponent = forwardRef<IMenuItemRef | null, IMenuItemProps>(
 
     const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
-    // eslint-disable-next-line no-undef
+     
     const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { pathname, prevPathname } = usePathname();

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { KeenIcon } from "@/components";
 import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
 import { createRoleChangeNotification } from "@/utils/notificationActions";
+import { useDialog } from "@/providers/DialogProvider";
+import { useToast } from "@/providers/ToastProvider";
 
 interface ChargeHistoryModalProps {
     open: boolean;
@@ -27,6 +29,8 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedRole, setSelectedRole] = useState<string>('');
     const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const { showDialog } = useDialog();
+    const { success, error: showError } = useToast();
 
     // 사용 가능한 역할과 상태 옵션
     const roles_array = [
@@ -152,10 +156,10 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
             }
 
             setUserData(prev => prev ? {...prev, status: selectedStatus, role: selectedRole} : null);
-            alert('회원 정보 수정 되었습니다');
+            success('회원 정보가 수정되었습니다.');
         } catch (error: any) {
             console.error('회원 정보 수정 중 오류 발생:', error.message);
-            alert('회원 정보 수정 중 오류가 발생했습니다: ' + error.message);
+            showError('회원 정보 수정 중 오류가 발생했습니다: ' + error.message);
         }
     }
 

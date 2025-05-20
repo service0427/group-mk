@@ -21,7 +21,7 @@ export const getCampaignDetail = async (campaignId: string | number) => {
     }
 
     // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
-    let parsedData = { ...data };
+    const parsedData = { ...data };
     if (typeof parsedData.add_info === 'string' && parsedData.add_info) {
       try {
         parsedData.add_info = JSON.parse(parsedData.add_info);
@@ -65,7 +65,7 @@ export const getActiveCampaignsByServiceType = async (serviceType: string) => {
     // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
     return data.map(item => {
       // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
-      let parsedItem = { ...item };
+      const parsedItem = { ...item };
 
       // add_info 필드 처리
       if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
@@ -142,7 +142,7 @@ export const fetchCampaignsByServiceType = async (serviceType: string, userId?: 
   // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
   return data.map(item => {
     // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
-    let parsedItem = { ...item };
+    const parsedItem = { ...item };
 
     // add_info 필드 처리
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {

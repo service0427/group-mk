@@ -246,7 +246,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
         
         // 2. 금액 유효성 검사
         const userId = requestData.user_id;
-        let amount = Number(requestData.amount);
+        const amount = Number(requestData.amount);
         
         if (isNaN(amount) || amount <= 0) {
             

@@ -436,7 +436,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                                 className="bg-green-500 hover:bg-green-600"
                                 onClick={() => handleQuickStatusChange(campaign.id, 'pending')}
                               >
-                                준비상태로 승인
+                                승인
                               </Button>
                               <Button
                                 variant="default"

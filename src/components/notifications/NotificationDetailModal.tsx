@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogClose
 } from '@/components/ui/dialog';
+import { useToast } from '@/providers/ToastProvider';
+import { useDialog } from '@/components/dialog';
 
 // 모달용 스타일을 추가합니다
 const modalStyles = `
@@ -51,6 +53,8 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
   onDelete
 }) => {
   const navigate = useNavigate(); // React Router 네비게이션 훅
+  const toast = useToast(); // 토스트 메시지 훅
+  const { showConfirm } = useDialog(); // 다이얼로그 훅
   // 날짜 포맷팅
   const formatDate = (dateString: string | Date) => {
     try {
@@ -112,6 +116,45 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
       default:
         return '';
     }
+  };
+
+  // 보관 처리 함수 - showConfirm 사용
+  const handleArchive = () => {
+    showConfirm(
+      '알림 보관',
+      '이 알림을 보관하시겠습니까?',
+      async (confirmed) => {
+        if (confirmed && onArchive) {
+          await onArchive(notification.id);
+          toast.info('알림을 보관함으로 이동했습니다');
+          onClose();
+        }
+      },
+      {
+        confirmText: '보관',
+        cancelText: '취소'
+      }
+    );
+  };
+  
+  // 삭제 처리 함수 - showConfirm 사용
+  const handleDelete = () => {
+    showConfirm(
+      '알림 삭제',
+      '이 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      async (confirmed) => {
+        if (confirmed && onDelete) {
+          await onDelete(notification.id);
+          toast.success('알림을 삭제했습니다');
+          onClose();
+        }
+      },
+      {
+        confirmText: '삭제',
+        cancelText: '취소',
+        confirmButtonClass: 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+      }
+    );
   };
 
   if (!notification) return null;
@@ -226,6 +269,8 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                       }
                       
                       navigate(path);
+                      // 페이지 이동 시 토스트 메시지 표시
+                      toast.info('관련 페이지로 이동합니다');
                     }, 100);
                   }}
                 >
@@ -240,23 +285,13 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
             <div className="flex gap-2">
               <button
                 className="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white px-6"
-                onClick={async () => {
-                  if (onArchive) {
-                    await onArchive(notification.id);
-                  }
-                  onClose();
-                }}
+                onClick={handleArchive}
               >
                 보관
               </button>
               <button
                 className="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-6"
-                onClick={async () => {
-                  if (onDelete) {
-                    await onDelete(notification.id);
-                  }
-                  onClose();
-                }}
+                onClick={handleDelete}
               >
                 삭제
               </button>

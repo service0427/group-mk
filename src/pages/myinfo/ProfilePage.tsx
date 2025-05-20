@@ -4,10 +4,14 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { BusinessUpgradeModal } from '@/components/business';
+import { useDialog } from '@/providers/DialogProvider';
+import { useToast } from '@/providers/ToastProvider';
 import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const ProfilePage = () => {
   const { currentUser, setCurrentUser } = useAuthContext();
+  const { showDialog } = useDialog();
+  const { success, error: showError } = useToast();
 
   const [password, setPassword] = useState<string>('');
   const [change_password, setChangePassword] = useState<string>('');
@@ -377,7 +381,7 @@ const ProfilePage = () => {
           const originalBusiness = JSON.stringify(currentUser.business);
           
           // 승인 대기 중인 경우 업데이트 대상 필드 제한 (verified 필드는 유지)
-          let businessData = { ...currentUser.business };
+          const businessData = { ...currentUser.business };
           
           if (hasPendingRequest) {
             
@@ -419,7 +423,12 @@ const ProfilePage = () => {
           }
         } catch (businessError: any) {
           
-          alert('사업자 정보 업데이트 중 오류가 발생했습니다: ' + businessError.message);
+          showDialog({
+            title: '오류',
+            message: '사업자 정보 업데이트 중 오류가 발생했습니다: ' + businessError.message,
+            variant: 'destructive',
+            confirmText: '확인'
+          });
         }
       }
 
@@ -457,8 +466,17 @@ const ProfilePage = () => {
       // 최종 메시지 디버깅
       
       
-      // 항상 alert로 표시 (디버깅용)
-      alert(displayMessage);
+      // 토스트로 메시지 표시
+      if (updatedSuccessfully) {
+        success(displayMessage);
+      } else {
+        showDialog({
+          title: '알림',
+          message: displayMessage,
+          variant: 'warning',
+          confirmText: '확인'
+        });
+      }
       
       // React state 업데이트
       setMessage(displayMessage);
@@ -479,7 +497,7 @@ const ProfilePage = () => {
       // 에러 메시지 표시
       const errorMessage = '업데이트에 실패했습니다: ' + error.message;
       setMessage(errorMessage);
-      alert(errorMessage);
+      showError(errorMessage);
       
       // 오류 메시지도 5초 후에 자동으로 지우기
       messageTimer = setTimeout(() => {

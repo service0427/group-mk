@@ -33,6 +33,8 @@ export interface Slot {
   rejection_reason?: string; // 반려 사유
   mat_reason?: string; // 관리자 메모
   user_reason?: string; // 사용자 메모
+  start_date?: string; // 작업 시작일
+  end_date?: string; // 작업 종료일
   user?: User; // 사용자 정보 (조인된 데이터)
 }
 

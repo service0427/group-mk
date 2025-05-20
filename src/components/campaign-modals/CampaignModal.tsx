@@ -42,6 +42,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     campaignName: '',
     description: '',
     detailedDescription: '',
+    userInputFields: [], // 사용자 슬롯 구매 시 입력 필드 정보 (배열)
     logo: '',
     unitPrice: '100',
     deadline: '18:00',
@@ -120,6 +121,41 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       // add_info 객체 확인
       const addInfo = campaign.originalData?.add_info || {};
+      
+      // 사용자 입력 필드 설정
+      let userInputFieldsValue = [];
+      
+      // 기존 데이터는 add_info.add_field에 저장되어 있음
+      if (campaign.originalData?.add_info?.add_field && Array.isArray(campaign.originalData.add_info.add_field)) {
+        userInputFieldsValue = campaign.originalData.add_info.add_field.map((field: any) => ({
+          fieldName: field.fieldName || field.name || '',
+          description: field.description || field.desc || ''
+        }));
+      } 
+      // 이전 버전과의 호환성을 위한 처리 (userInputFields가 문자열 형태로 저장된 경우)
+      else if (addInfo.userInputFields) {
+        try {
+          if (typeof addInfo.userInputFields === 'string') {
+            const parsed = JSON.parse(addInfo.userInputFields);
+            if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+              // 이전 형식: {"fieldName": "description", ...} 객체 형태
+              userInputFieldsValue = Object.entries(parsed).map(([fieldName, description]) => ({
+                fieldName,
+                description: description as string
+              }));
+            } else if (Array.isArray(parsed)) {
+              // 이미 배열 형태로 저장된 경우
+              userInputFieldsValue = parsed;
+            }
+          } else if (Array.isArray(addInfo.userInputFields)) {
+            // 이미 배열 형태로 저장된 경우
+            userInputFieldsValue = addInfo.userInputFields;
+          }
+        } catch (e) {
+          // 파싱 실패 시 빈 배열 사용
+          userInputFieldsValue = [];
+        }
+      }
 
       // 로고 이미지 설정 (add_info에서 로고 URL을 확인)
       if (addInfo.logo_url) {
@@ -165,6 +201,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         ...campaign,
         additionalLogic: additionalLogicValue,
         detailedDescription: detailedDescValue,
+        userInputFields: userInputFieldsValue, // 사용자 입력 필드 값 설정
         unitPrice: unitPrice,
         minQuantity: minQuantity,
         efficiency: efficiency,
@@ -437,6 +474,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   };
 
   const handleSave = async () => {
+    // 디버깅: 사용자 입력 필드 로깅
+    console.log("저장 전 userInputFields:", newCampaign.userInputFields);
+    
     // 편집 모드(기존 캠페인이 있는 경우)와 새 캠페인 생성 모드를 구분
     if (campaign && updateCampaign) {
       // 수정 모드
@@ -496,6 +536,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           campaignName: newCampaign.campaignName,
           description: newCampaign.description,
           detailedDescription: newCampaign.detailedDescription,
+          add_field: newCampaign.userInputFields, // 서버에서 이 이름으로 찾음
           unitPrice: newCampaign.unitPrice,
           deadline: newCampaign.deadline,
           logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
@@ -562,6 +603,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             deadline: formatTimeHHMM(newCampaign.deadline || ''),
             description: newCampaign.description,
             detailed_description: newCampaign.detailedDescription,
+            userInputFields: newCampaign.userInputFields,
             status: finalStatus,
             logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
             uploaded_logo_data: previewUrl,
@@ -570,6 +612,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             add_info: {
               ...addInfo,
               additional_fields: additionalFields,
+              add_field: newCampaign.userInputFields, // 사용자 입력 필드 정보를 add_info.add_field에 저장
             },
             // 반려 상태일 때 rejected_reason 필드 업데이트
             ...(finalStatus === 'rejected' ? { rejected_reason: newCampaign.rejectionReason } : {})
@@ -619,26 +662,33 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       setError(null);
 
       try {
-        // 1. DB에 새 캠페인 생성
-        const result = await campaignCreator({
-          campaignName: newCampaign.campaignName,
-          description: newCampaign.description,
-          detailedDescription: newCampaign.detailedDescription,
-          logo: previewUrl ? 'uploaded-logo.png' : newCampaign.logo, // 실제 구현에서는 업로드된 파일 경로로 변경
-          uploadedLogo: previewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-          bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
-          uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-          unitPrice: newCampaign.unitPrice,
-          deadline: newCampaign.deadline,
-          status: 'waiting_approval', // 캠페인 신청 시 항상 '승인 대기중' 상태로 제출
-          serviceType: serviceType,
-          // 서비스 유형별 추가 필드
-          additionalFields: additionalFields,
-          // 기본값 설정
-          efficiency: '0',
-          minQuantity: '10',
-          additionalLogic: '0'
-        });
+        // 디버깅: 서버로 전송되는 데이터 확인
+      const dataToSend = {
+        campaignName: newCampaign.campaignName,
+        description: newCampaign.description,
+        detailedDescription: newCampaign.detailedDescription,
+        logo: previewUrl ? 'uploaded-logo.png' : newCampaign.logo, // 실제 구현에서는 업로드된 파일 경로로 변경
+        uploadedLogo: previewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
+        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
+        uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
+        unitPrice: newCampaign.unitPrice,
+        deadline: newCampaign.deadline,
+        status: 'waiting_approval', // 캠페인 신청 시 항상 '승인 대기중' 상태로 제출
+        serviceType: serviceType,
+        // 서비스 유형별 추가 필드
+        additionalFields: additionalFields,
+        // 사용자 입력 필드 정보를 add_field로 전달
+        add_field: newCampaign.userInputFields,
+        // 기본값 설정
+        efficiency: '0',
+        minQuantity: '10',
+        additionalLogic: '0'
+      };
+      
+      console.log("서버로 전송되는 데이터:", dataToSend);
+      
+      // 1. DB에 새 캠페인 생성
+      const result = await campaignCreator(dataToSend);
 
         if (!result.success) {
           throw new Error(result.error || '캠페인 생성에 실패했습니다.');
@@ -969,6 +1019,83 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                         placeholder="상세한 캠페인 설명을 입력하세요"
                         disabled={loading}
                       />
+                    </td>
+                  </tr>
+                  <tr>
+                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                      사용자 입력 필드
+                    </th>
+                    <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+                      <div className="space-y-3">
+                        {(newCampaign.userInputFields || []).map((field, index) => (
+                          <div key={index} className="flex items-center gap-2 border border-gray-200 rounded-md p-2 bg-gray-50 hover:bg-gray-100">
+                            <div className="flex-1 flex items-center gap-2">
+                              <div className="flex-shrink-0 w-1/3">
+                                <input
+                                  type="text"
+                                  value={field.fieldName}
+                                  onChange={(e) => {
+                                    const updatedFields = [...(newCampaign.userInputFields || [])];
+                                    updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
+                                    setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
+                                  placeholder="필드명 (한글/영문)"
+                                  disabled={loading}
+                                />
+                              </div>
+                              <div className="text-gray-400">→</div>
+                              <div className="flex-1">
+                                <input
+                                  type="text"
+                                  value={field.description}
+                                  onChange={(e) => {
+                                    const updatedFields = [...(newCampaign.userInputFields || [])];
+                                    updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                    setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
+                                  placeholder="필드 설명 (사용자에게 안내할 내용)"
+                                  disabled={loading}
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="flex-shrink-0 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 hover:text-red-600"
+                              onClick={() => {
+                                const updatedFields = [...(newCampaign.userInputFields || [])];
+                                updatedFields.splice(index, 1);
+                                setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
+                              }}
+                              disabled={loading}
+                            >
+                              <KeenIcon icon="trash" className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        <Button
+                          type="button"
+                          className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
+                          onClick={() => {
+                            const updatedFields = [...(newCampaign.userInputFields || [])];
+                            updatedFields.push({ fieldName: '', description: '' });
+                            setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
+                          }}
+                          disabled={loading}
+                        >
+                          <KeenIcon icon="plus" className="size-4 me-1.5" />
+                          입력 필드 추가
+                        </Button>
+                      </div>
+                      
+                      <div className="text-sm text-muted-foreground mt-3">
+                        <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
+                        <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
+                      </div>
                     </td>
                   </tr>
 
@@ -1364,7 +1491,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                         </p>
                       </div>
 
-                      <div>
+                      <div className="mb-4">
                         <h4 className="font-medium text-primary mb-2">상세 설명</h4>
                         <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                           <p className="whitespace-pre-line text-gray-700">
@@ -1374,6 +1501,23 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           </p>
                         </div>
                       </div>
+                      
+                      {newCampaign.userInputFields && newCampaign.userInputFields.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-primary mb-2">사용자 입력 필드</h4>
+                          <div className="max-h-[150px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
+                            <div className="space-y-2">
+                              {newCampaign.userInputFields.map((field, index) => (
+                                <div key={index} className="flex gap-2 items-center text-sm">
+                                  <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
+                                  <span className="text-gray-400">→</span>
+                                  <span className="text-gray-700">{field.description || "(설명 없음)"}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1504,6 +1648,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                             campaignName: newCampaign.campaignName,
                             description: newCampaign.description,
                             detailedDescription: newCampaign.detailedDescription,
+                            additionalInfo: newCampaign.additionalInfo, // 추가 항목 정보
                             unitPrice: newCampaign.unitPrice,
                             deadline: newCampaign.deadline,
                             logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,

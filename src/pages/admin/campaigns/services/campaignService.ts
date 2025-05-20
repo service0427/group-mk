@@ -267,10 +267,22 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
 // 캠페인 데이터 업데이트
 export const updateCampaign = async (campaignId: number, data: any): Promise<boolean> => {
   try {
+    // 디버깅: 업데이트 데이터 출력
+    console.log("업데이트 데이터:", data);
+    console.log("사용자 입력 필드:", data.add_field);
+    
     // Supabase Storage에 이미지 업로드
     let logoUrl = null;
     let bannerUrl = null;
-    let additionalInfo: any = {};
+    
+    // 디버깅: 받은 데이터 확인
+    console.log("받은 add_field 값:", data.add_field);
+
+    // data.add_field를 additionalInfo.add_field로 이동 (키 이동)
+    let additionalInfo: any = {
+      // 사용자 입력 필드가 있으면 add_field로 저장
+      add_field: data.add_field
+    };
 
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();
@@ -284,20 +296,32 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .single();
 
     if (fetchError) {
-      
+      console.log("기존 캠페인 로드 실패:", fetchError);
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
         try {
-          additionalInfo = JSON.parse(existingCampaign.add_info);
+          const parsedAddInfo = JSON.parse(existingCampaign.add_info);
+          // add_field는 덮어쓰지 않고 나머지만 합침
+          additionalInfo = {
+            ...parsedAddInfo,
+            add_field: data.add_field // 항상 새 add_field 사용
+          };
         } catch (e) {
-          
-          additionalInfo = {};
+          console.log("add_info 파싱 실패:", e);
+          // additionalInfo의 add_field는 이미 설정되어 있음
         }
       } else {
-        additionalInfo = existingCampaign.add_info;
+        // 기존 데이터 + 새 add_field (덮어쓰기)
+        additionalInfo = {
+          ...existingCampaign.add_info,
+          add_field: data.add_field // 항상 새 add_field 사용
+        };
       }
     }
+    
+    // 디버깅: 최종 additionalInfo 확인
+    console.log("최종 additionalInfo:", additionalInfo);
 
     // 1. 업로드된 로고 이미지가 있으면 저장
     if (data.uploadedLogo) {
@@ -332,6 +356,8 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     // 3. 반려 사유는 더 이상 add_info에 저장하지 않음
     // (rejected_reason 필드에 직접 저장)
 
+    // 사용자 입력 필드는 add_info.add_field에 저장됩니다
+
     // 업데이트 데이터 타입 정의
     interface IUpdateData {
       campaign_name: string;
@@ -340,12 +366,14 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       unit_price: number;
       deadline: string;
       updated_at: Date;
-      add_info: any;
+      add_info: any; // add_info 내부에 add_field 포함
       logo?: string;
       status?: string;
       rejected_reason?: string;
     }
 
+    // 이제 additionalInfo에 이미 add_field가 포함되어 있음
+    
     // DB 컬럼명에 맞게 데이터 변환
     let updateData: IUpdateData = {
       campaign_name: data.campaignName,
@@ -354,7 +382,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       unit_price: data.unitPrice ? parseFloat(data.unitPrice) : 100,
       deadline: formatTimeHHMM(data.deadline), // 시:분 형식만 저장
       updated_at: new Date(),
-      add_info: additionalInfo, // 추가 정보 업데이트
+      add_info: additionalInfo, // 여기에 이미 add_field가 포함됨
       // 로고 이미지 경로 변경 (업로드된 로고가 있을 경우만)
       ...(data.uploadedLogo ? { logo: data.logo } : {})
     };
@@ -407,6 +435,10 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     // 반려 상태일 때는 supabaseAdmin(RLS 우회)을 사용하여 저장
     const client = (data.status === 'rejected') ? supabaseAdmin : supabase;
     
+    // 업데이트 바로 전에 최종 데이터 확인
+    console.log("최종 업데이트 데이터:", updateData);
+    console.log("add_info 내부 add_field:", updateData.add_info?.add_field);
+      
     const { error } = await client
       .from('campaigns')
       .update(updateData)
@@ -569,6 +601,17 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
     }
     
     // DB 컬럼명에 맞게 데이터 변환
+    // 디버깅: add_field 확인
+    console.log("createCampaign - add_field:", data.add_field);
+    
+    // additionalInfo에 add_field 추가
+    if (data.add_field && Array.isArray(data.add_field)) {
+      additionalInfo.add_field = data.add_field;
+    }
+    
+    // 디버깅: additionalInfo 확인
+    console.log("createCampaign - additionalInfo:", additionalInfo);
+    
     const insertData = {
       group_id: 'default', // NULL이 허용되지 않을 수 있으므로 기본값 설정
       campaign_name: data.campaignName,
@@ -584,8 +627,8 @@ export const createCampaign = async (data: any): Promise<{success: boolean, id?:
       status: data.status || 'waiting_approval', // 기본적으로 승인 대기 상태로 설정
       created_at: new Date(),
       updated_at: new Date(),
-      // 추가 정보 (업로드된 이미지 URL)
-      add_info: Object.keys(additionalInfo).length > 0 ? additionalInfo : null,
+      // 추가 정보 (업로드된 이미지 URL + add_field)
+      add_info: additionalInfo,
       // 현재 사용자의 ID를 mat_id로 설정 (슬롯 등록 시 필요)
       mat_id: userId
     };

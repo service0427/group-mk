@@ -11,7 +11,11 @@
   },
   "env": {
     "production": {
+<<<<<<< HEAD
       "name": "mk-prod", 
+=======
+      "name": "mk",
+>>>>>>> feature/jhjang
       "vars": {
         "ENVIRONMENT": "production"
       },
@@ -23,6 +27,7 @@
       ]
     },
     "develop": {
+      "name": "mk-develop",
       "vars": {
         "ENVIRONMENT": "develop"
       },

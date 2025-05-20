@@ -98,9 +98,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     try {
       // DB 상태 업데이트
-      const success = await updateCampaignStatus(parseInt(campaignId), finalStatus);
+      const result = await updateCampaignStatus(parseInt(campaignId), finalStatus);
 
-      if (success) {
+      if (result) {
         // UI 상태 업데이트
         setCampaigns(prevCampaigns =>
           prevCampaigns.map(campaign =>

@@ -5,6 +5,7 @@ import { createWithdrawRequest, getLastWithdrawAccount, LastWithdrawAccount } fr
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+import { notifyOperators, createNewWithdrawRequestNotification } from '@/utils/notificationActions';
 
 interface WithdrawFormProps {
   userId: string;
@@ -350,7 +351,24 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
         setAccountHolder('');
       }
       
-      // 출금 요청 성공 후 추가 작업이 필요하면 여기에 추가
+      // 출금 요청 성공 후 운영자에게 알림 전송
+      try {
+        // 운영자에게 새로운 출금 요청 알림 전송
+        const notificationResult = await createNewWithdrawRequestNotification(
+          userId,
+          Number(customAmount) || 0,
+          accountHolder
+        );
+        
+        if (notificationResult) {
+          console.log('운영자 알림 전송 성공');
+        } else {
+          console.warn('운영자 알림 전송 결과가 falsy 값 반환');
+        }
+      } catch (notificationError) {
+        // 알림 전송 실패는 출금 신청 성공에 영향을 주지 않음
+        console.error('운영자 알림 전송 실패:', notificationError);
+      }
       
       // 부모 컴포넌트에 성공 알림 (출금 금액 전달)
       onSuccess(amount);

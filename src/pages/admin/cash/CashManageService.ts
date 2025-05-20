@@ -1,4 +1,5 @@
 import { supabase } from '@/supabase';
+import { createCashChargeNotification } from '@/utils/notificationActions';
 
 /**
  * 캐시 관리 서비스
@@ -158,6 +159,17 @@ export class CashManageService {
 
         if (balanceInsertError) throw new Error(`잔액 생성 실패: ${balanceInsertError.message}`);
       }
+      
+      // 사용자에게 충전 완료 알림 발송
+      try {
+        await createCashChargeNotification(
+          requestData.user_id,
+          requestData.amount + (freeAmount || 0)
+        );
+      } catch (notifyError) {
+        console.error('충전 완료 알림 발송 실패:', notifyError);
+        // 알림 실패는 전체 트랜잭션에 영향을 주지 않음
+      }
 
       return {
         success: true,
@@ -209,6 +221,25 @@ export class CashManageService {
         .eq('id', requestId);
 
       if (updateError) throw new Error(`요청 상태 업데이트 실패: ${updateError.message}`);
+      
+      // 사용자에게 충전 거부 알림 발송
+      try {
+        // 사용자에게 충전 거부 알림 전송 - transaction 타입 사용
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: requestData.user_id,
+            type: 'transaction',
+            title: '캐시 충전 요청 거부',
+            message: `${requestData.amount.toLocaleString()}원 캐시 충전 요청이 거부되었습니다. ${rejectionReason ? `사유: ${rejectionReason}` : ''}`,
+            link: '/cash/history',
+            priority: 'medium',
+            status: 'unread'
+          });
+      } catch (notifyError) {
+        console.error('충전 거부 알림 발송 실패:', notifyError);
+        // 알림 실패는 전체 트랜잭션에 영향을 주지 않음
+      }
 
       return {
         success: true,

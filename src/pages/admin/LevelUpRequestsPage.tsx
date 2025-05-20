@@ -5,6 +5,7 @@ import { KeenIcon } from '@/components';
 import { LevelupApply } from '@/types/business';
 import { supabase } from '@/supabase';
 import { RejectReasonModal, StatusModal } from './components';
+import { createRoleChangeNotification } from '@/utils/notificationActions';
 
 type RequestWithUser = LevelupApply & {
   users: {
@@ -12,6 +13,7 @@ type RequestWithUser = LevelupApply & {
     email: string;
     full_name: string;
     business: any;
+    role?: string;
   }
 };
 
@@ -198,9 +200,22 @@ const LevelUpRequestsPage = () => {
         // 현재 로그인된 사용자는 운영자이므로 다른 사용자의 메타데이터를 직접 업데이트할 수 없음
         // 대신, 해당 사용자가 다음에 로그인할 때 users 테이블의 역할이 적용되도록 함
         
-        
+        // 사용자에게 역할 변경 알림 전송
+        await createRoleChangeNotification(
+          request.user_id,
+          request.users?.role || 'beginner', // 이전 역할(일반적으로 beginner에서 업그레이드)
+          'distributor', // 새 역할 (distributor로 고정)
+          {
+            'beginner': '일반 회원',
+            'advertiser': '광고주',
+            'distributor': '총판',
+            'agency': '대행사',
+            'operator': '운영자',
+            'developer': '개발자'
+          }
+        );
       } catch (error) {
-        
+        console.error('알림 전송 실패:', error);
       }
       
       // 2. 등업 신청 상태 업데이트

@@ -55,7 +55,7 @@ const CampaignAddPage: React.FC = () => {
     logo: '', // 기본 로고를 빈 값으로 설정해 기본 제공 로고 선택이 기본값이 되도록 함
     unitPrice: '100',
     deadline: '18:00',
-    status: 'active', // 기본 상태는 '진행중'
+    status: 'waiting_approval', // 기본 상태는 '승인 대기중'
     bannerImage: '',
   });
 
@@ -205,7 +205,7 @@ const CampaignAddPage: React.FC = () => {
         uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
         unitPrice: newCampaign.unitPrice,
         deadline: newCampaign.deadline,
-        status: 'active', // 항상 '진행중' 상태로 제출
+        status: 'waiting_approval', // 항상 '승인 대기중' 상태로 제출
         serviceType: serviceType,
         // 서비스 유형별 추가 필드
         additionalFields: additionalFields,

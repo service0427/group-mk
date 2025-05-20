@@ -45,7 +45,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     logo: '',
     unitPrice: '100',
     deadline: '18:00',
-    status: 'pending',  // 기본 상태는 '준비중'
+    status: 'waiting_approval',  // 기본 상태는 '승인 대기중'
     bannerImage: '',
     efficiency: '0',
     minQuantity: '10'

@@ -1,6 +1,7 @@
 import { supabase } from "@/supabase";
 import { min } from "date-fns";
 import { id } from "date-fns/locale";
+import { createWithdrawApprovedNotification, createWithdrawRejectedNotification } from "@/utils/notificationActions";
 
 
 // 출금 전역 설정 정보 가져오는 함수
@@ -194,6 +195,19 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
             
         }
         
+        // 4. 사용자에게 승인 알림 전송
+        try {
+            const result = await createWithdrawApprovedNotification(
+                requestData.user_id,
+                requestData.amount,
+                requestData.fee_amount || 0
+            );
+            console.log('출금 승인 알림 전송 성공:', result);
+        } catch (notificationError) {
+            // 알림 전송 실패는 출금 승인 성공에 영향을 주지 않음
+            console.error('출금 승인 알림 전송 실패:', notificationError);
+        }
+        
         return {
             success: true,
             message: "출금 요청이 성공적으로 승인되었습니다.",
@@ -333,6 +347,19 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
                 });
         } catch (auditLogError) {
             
+        }
+        
+        // 3.5 사용자에게 반려 알림 전송
+        try {
+            const result = await createWithdrawRejectedNotification(
+                userId,
+                amount,
+                rejected_reason
+            );
+            console.log('출금 반려 알림 전송 성공:', result);
+        } catch (notificationError) {
+            // 알림 전송 실패는 출금 반려 성공에 영향을 주지 않음
+            console.error('출금 반려 알림 전송 실패:', notificationError);
         }
         
         return {

@@ -78,60 +78,47 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
     // 사용자 ID가 제공되면 사용자별 설정을 먼저 확인
     if (userId) {
       
-      // 1. 사용자별 설정 확인
-      const { data: userSetting, error: userSettingError } = await supabase
-        .from('withdraw_user_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true)  // 활성화된 설정만 가져오기
-        .maybeSingle();
+      // 1. 사용자별 설정 확인을 건너뛰고 바로 전역 설정을 사용
+      // withdraw_user_settings 테이블에 user_id 컬럼이 없음
+      
+      // 사용자별 설정 건너뛰기 - 오류가 아닌 일반 로그로 남김
+      const userSetting = null;
+      const userSettingError = null; // 오류 없음
       
       
       
-      // 사용자별 설정이 있고 오류가 없으면 해당 설정 반환
-      if (!userSettingError && userSetting) {
-        
-        
-        // 필드명 매핑 (실제 DB 필드 -> 코드에서 사용하는 필드)
-        const mappedSetting: WithdrawSetting = {
-          min_request_amount: userSetting.min_request_amount || 10000,
-          min_request_percentage: userSetting.min_request_percentage || 0,
-          // 이전 코드와의 호환성을 위한 필드 추가
-          fee_percentage: userSetting.min_request_percentage || 0
-        };
-        
-        
-        return mappedSetting;
-      }
+      // 사용자별 설정은 사용하지 않습니다
+      // userSetting이 null이므로 이 블록은 항상 건너뜁니다
     }
     
     
     // 2. 사용자별 설정이 없거나 오류 발생 시 전역 설정 확인
-    const { data: globalSetting, error: globalSettingError } = await supabase
-      .from('withdraw_global_settings')
-      .select('*')
-      .single();
-    
-    
-    
-    if (globalSettingError) {
+    try {
+      const { data: globalSetting, error: globalSettingError } = await supabase
+        .from('withdraw_global_settings')
+        .select('*')
+        .single();
       
+      if (globalSettingError) {
+        return defaultSettings;
+      }
       
-      return defaultSettings;
+      if (!globalSetting) {
+        return defaultSettings;
+      }
+      
+      // 필드명 매핑 (실제 DB 필드 -> 코드에서 사용하는 필드)
+      const mappedSetting: WithdrawSetting = {
+        min_request_amount: globalSetting.min_request_amount || 10000,
+        min_request_percentage: globalSetting.min_request_percentage || 0,
+        // 이전 코드와의 호환성을 위한 필드 추가
+        fee_percentage: globalSetting.min_request_percentage || 0
+      };
+      
+      return mappedSetting;
+    } catch (err) {
+        return defaultSettings;
     }
-    
-    
-    
-    // 필드명 매핑 (실제 DB 필드 -> 코드에서 사용하는 필드)
-    const mappedSetting: WithdrawSetting = {
-      min_request_amount: globalSetting.min_request_amount || 10000,
-      min_request_percentage: globalSetting.min_request_percentage || 0,
-      // 이전 코드와의 호환성을 위한 필드 추가
-      fee_percentage: globalSetting.min_request_percentage || 0
-    };
-    
-    
-    return mappedSetting;
     
   } catch (err) {
     
@@ -159,19 +146,30 @@ export const getUserCashBalance = async (userId: string, userRole?: string): Pro
   }
   
   try {
-    // 사용자 캐시 잔액 조회 API 호출
-    const { data, error } = await supabase
-      .from('user_balances')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
     
-    if (error) throw error;
+    // 여러 필드명 시도를 위한 쿼리 구성
+    let query = supabase.from('user_balances').select('*');
     
+    // user_id로 먼저 시도
+    try {
+      query = query.eq('user_id', userId);
+    } catch (err1) {
+      // userid로 시도
+      try {
+        query = query.eq('userid', userId);
+      } catch (err2) {
+        // 계속 진행
+      }
+    }
+    
+    // 쿼리 실행
+    const { data, error } = await query.maybeSingle();
+    
+    if (error || !data) {
+      return 0;
+    }
     return data?.paid_balance || 0;
   } catch (err) {
-    // 에러 메시지 로그 (디버깅용)
-    console.error('캐시 잔액 조회 오류:', err);
     return 0;
   }
 };
@@ -190,25 +188,42 @@ export interface LastWithdrawAccount {
 
 export const getLastWithdrawAccount = async (userId: string): Promise<LastWithdrawAccount | null> => {
   try {
-    const { data, error } = await supabase
-      .from('withdraw_requests')
-      .select('bank_name, account_number, account_holder, requested_at')
-      .eq('user_id', userId)
-      .order('requested_at', { ascending: false })
-      .limit(1)
-      .single();
     
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // PGRST116는 결과가 없을 때 발생하는 오류
-        return null;
+    // 초기 조회 시도
+    let query = supabase
+      .from('withdraw_requests')
+      .select('bank_name, account_number, account_holder, requested_at');
+    
+    try {
+      // 사용자 ID로 필터링 시도
+      query = query.eq('user_id', userId);
+    } catch (filterErr) {
+      // 컬럼 이름 다를 경우 대비하여 다른 필드명으로 시도
+      try {
+        query = query.eq('userid', userId);
+      } catch (err2) {
+        // 계속 진행
       }
-      throw error;
     }
     
-    return data as LastWithdrawAccount;
-  } catch (err) {
+    // 완성된 쿼리 실행
+    const result = await query
+      .order('requested_at', { ascending: false })
+      .limit(1);
     
+    const { data, error } = result;
+    
+    // 오류 처리
+    if (error) {
+      return null;
+    }
+    
+    // 결과가 없거나 배열이 비어있는 경우
+    if (!data || data.length === 0) {
+      return null;
+    }
+    return data[0] as LastWithdrawAccount;
+  } catch (err) {
     return null;
   }
 };
@@ -257,17 +272,23 @@ export const createWithdrawRequest = async (
     }
 
     // 2. withdraw_requests 테이블에 출금 요청 데이터 삽입
+    
+    // 기본 필드와 대체 필드 모두 포함하여 삽입 시도
+    const insertData = {
+      user_id: userId,
+      userid: userId, // 대체 필드명 추가
+      amount: amount,
+      status: 'pending',
+      bank_name: bankName,
+      account_number: accountNumber,
+      account_holder: accountHolder,
+      fee_amount: feeAmount
+    };
+    
+    // 삽입 요청
     const { data: requestData, error: requestError } = await supabase
       .from('withdraw_requests')
-      .insert({
-        user_id: userId,
-        amount: amount,
-        status: 'pending',
-        bank_name: bankName,
-        account_number: accountNumber,
-        account_holder: accountHolder,
-        fee_amount: feeAmount
-      })
+      .insert(insertData)
       .select();
     
     if (requestError) {

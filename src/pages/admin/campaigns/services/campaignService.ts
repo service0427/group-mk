@@ -1,6 +1,12 @@
 import { supabase, supabaseAdmin } from '@/supabase';
 import { ICampaign } from '../components/CampaignContent';
 import { USER_ROLES } from '@/config/roles.config';
+import { 
+  createCampaignRequestNotification, 
+  createCampaignApprovedNotification, 
+  createCampaignRejectedNotification,
+  createCampaignReapprovalRequestNotification
+} from '@/utils/notificationActions';
 
 // Base64 이미지를 Supabase Storage에 업로드하는 함수
 export const uploadImageToStorage = async (base64Data: string, bucket: string, folder: string, fileName: string, userId?: string): Promise<string | null> => {
@@ -20,7 +26,6 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
 
     // 정책에 맞게 user ID를 경로에 포함
     const filePath = `${uid}/${folder}/${fullFileName}`;
-
 
 
 
@@ -247,17 +252,79 @@ export const getStatusColor = (status: string): string => {
 
 // 캠페인 상태 업데이트
 export const updateCampaignStatus = async (campaignId: number, newStatus: string): Promise<boolean> => {
-  const { error } = await supabase
-    .from('campaigns')
-    .update({ status: newStatus })
-    .eq('id', campaignId);
+  try {
+    // 현재 캠페인 정보 가져오기 (승인/반려 시 알림을 위해)
+    const { data: campaign, error: fetchError } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('id', campaignId)
+      .single();
+    
+    if (fetchError) {
+      console.error('캠페인 정보 조회 오류:', fetchError);
+      return false;
+    }
 
-  if (error) {
+    // DB에 상태 업데이트
+    const { error } = await supabase
+      .from('campaigns')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date()
+      })
+      .eq('id', campaignId);
 
+    if (error) {
+      console.error('캠페인 상태 업데이트 오류:', error);
+      return false;
+    }
+
+    // 알림 처리
+    if (campaign) {
+      const campaignName = campaign.campaign_name;
+      const matId = campaign.mat_id;
+      
+      try {
+        // 캠페인 승인 시 알림
+        if (newStatus === 'pending' && campaign.status === 'waiting_approval') {
+          await createCampaignApprovedNotification(
+            matId,
+            campaignId.toString(),
+            campaignName,
+            campaign.service_type
+          );
+        }
+        
+        // 캠페인 반려 시 알림 (반려 사유가 없는 상태 변경만 있는 경우, 여기서는 기본 메시지만 전달)
+        if (newStatus === 'rejected' && campaign.status !== 'rejected') {
+          await createCampaignRejectedNotification(
+            matId,
+            campaignId.toString(),
+            campaignName,
+            campaign.rejected_reason || '반려 사유가 기록되지 않았습니다.',
+            campaign.service_type
+          );
+        }
+        
+        // waiting_approval 상태로 변경되면 재승인 요청으로 간주
+        if (newStatus === 'waiting_approval' && campaign.status === 'rejected') {
+          await createCampaignReapprovalRequestNotification(
+            campaignId.toString(),
+            campaignName,
+            matId
+          );
+        }
+      } catch (notificationError) {
+        console.error('캠페인 상태 변경 알림 전송 오류:', notificationError);
+        // 알림 실패해도 상태 업데이트는 성공으로 처리
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.error('캠페인 상태 업데이트 중 예외 발생:', err);
     return false;
   }
-
-  return true;
 };
 
 // 캠페인 데이터 업데이트
@@ -275,19 +342,19 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     // 기존 캠페인 정보 가져오기 (add_info 필드, mat_id, rejected_reason 확인을 위해)
     const { data: existingCampaign, error: fetchError } = await supabase
       .from('campaigns')
-      .select('add_info, mat_id, rejected_reason')
+      .select('*')
       .eq('id', campaignId)
       .single();
 
     if (fetchError) {
-
+      console.error('기존 캠페인 정보 조회 오류:', fetchError);
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
         try {
           additionalInfo = JSON.parse(existingCampaign.add_info);
         } catch (e) {
-
+          console.error('add_info 파싱 오류:', e);
           additionalInfo = {};
         }
       } else {
@@ -355,20 +422,22 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       ...(data.uploadedLogo ? { logo: data.logo } : {})
     };
 
+    // 상태 변경 플래그와 이전 상태 저장
+    const statusChanged = data.status && existingCampaign?.status !== data.status;
+    const previousStatus = existingCampaign?.status;
+
     // 상태 변경이 있으면 업데이트 (먼저 처리)
     if (data.status) {
       updateData = {
         ...updateData,
         status: data.status
       };
-
     }
 
     // 반려 사유 처리 (data.rejectionReason 또는 data.rejected_reason 사용)
     const rejectionReason = data.rejectionReason || data.rejected_reason;
 
     if (rejectionReason) {
-
       // 1. 메인 필드 업데이트: rejected_reason
       updateData.rejected_reason = rejectionReason;
 
@@ -387,7 +456,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     // 상태는 rejected이지만 사유가 없는 경우 경고
     if (data.status === 'rejected' && !rejectionReason) {
-      // 
+      console.warn('반려 상태로 변경되었지만 반려 사유가 지정되지 않았습니다.');
     }
 
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
@@ -409,12 +478,53 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .eq('id', campaignId);
 
     if (error) {
+      console.error('캠페인 업데이트 오류:', error);
       return false;
+    }
+
+    // 캠페인 상태 변경 관련 알림 처리
+    try {
+      const matId = existingCampaign?.mat_id || '';
+      const campaignName = data.campaignName || existingCampaign?.campaign_name || '';
+      
+      // 승인 대기 -> 준비중/진행중 상태 변경 시 (승인 알림)
+      if (statusChanged && previousStatus === 'waiting_approval' && 
+          (data.status === 'pending' || data.status === 'active')) {
+        await createCampaignApprovedNotification(
+          matId,
+          campaignId.toString(),
+          campaignName,
+          existingCampaign?.service_type
+        );
+      }
+      
+      // 반려 상태로 변경된 경우 알림
+      if (statusChanged && data.status === 'rejected') {
+        await createCampaignRejectedNotification(
+          matId,
+          campaignId.toString(),
+          campaignName,
+          rejectionReason || '반려 사유가 기록되지 않았습니다.',
+          existingCampaign?.service_type
+        );
+      }
+      
+      // 반려에서 승인 대기 상태로 변경 (재승인 요청)
+      if (statusChanged && previousStatus === 'rejected' && data.status === 'waiting_approval') {
+        await createCampaignReapprovalRequestNotification(
+          campaignId.toString(),
+          campaignName,
+          matId
+        );
+      }
+    } catch (notificationError) {
+      console.error('캠페인 업데이트 알림 전송 오류:', notificationError);
+      // 알림 실패해도 업데이트는 성공으로 처리
     }
 
     return true;
   } catch (err) {
-
+    console.error('캠페인 업데이트 중 예외 발생:', err);
     return false;
   }
 };
@@ -586,8 +696,6 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       mat_id: userId
     };
 
-
-
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회
     const { data: result, error } = await supabaseAdmin
       .from('campaigns')
@@ -596,14 +704,28 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       .single();
 
     if (error) {
-
-
+      console.error('캠페인 생성 오류:', error);
       return { success: false, error: error.message };
+    }
+
+    // 캠페인 생성 성공 시 운영자에게 알림
+    if (result?.id) {
+      try {
+        await createCampaignRequestNotification(
+          result.id.toString(),
+          data.campaignName,
+          userId || '',
+          getServiceTypeCode(data.serviceType)
+        );
+      } catch (notificationError) {
+        console.error('캠페인 신청 알림 전송 실패:', notificationError);
+        // 알림 전송 실패해도 캠페인 생성은 성공으로 처리
+      }
     }
 
     return { success: true, id: result?.id };
   } catch (err) {
-
+    console.error('캠페인 생성 중 예외 발생:', err);
     return { success: false, error: '캠페인 생성 중 오류가 발생했습니다.' };
   }
 };

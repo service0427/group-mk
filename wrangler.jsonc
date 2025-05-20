@@ -11,6 +11,7 @@
   },
   "env": {
     "production": {
+      "name": "mk",
       "vars": {
         "ENVIRONMENT": "production"
       },
@@ -22,6 +23,7 @@
       ]
     },
     "develop": {
+      "name": "mk-develop",
       "vars": {
         "ENVIRONMENT": "develop"
       },

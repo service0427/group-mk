@@ -11,12 +11,25 @@
   },
   "env": {
     "production": {
+      "name": "mk",
       "vars": {
         "ENVIRONMENT": "production"
       },
       "routes": [
         {
           "pattern": "mkt-guide.com",
+          "custom_domain": true
+        }
+      ]
+    },
+    "develop": {
+      "name": "mk-develop",
+      "vars": {
+        "ENVIRONMENT": "develop"
+      },
+      "routes": [
+        {
+          "pattern": "wdev.mkt-guide.com",
           "custom_domain": true
         }
       ]

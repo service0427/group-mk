@@ -18,8 +18,10 @@
     "delete-chat-data": "node scripts/delete-chat-data.js",
     "deploy": "npm run build:ignore-errors && wrangler deploy --env test",
     "deploy:test": "npm run build:ignore-errors && wrangler deploy --env test",
+    "deploy:develop": "npm run build:ignore-errors && wrangler deploy --env develop",
     "deploy:prod": "npm run build:ignore-errors && wrangler deploy --env production",
     "deploy:pages": "npm run build:ignore-errors && ./deploy-functions.sh && wrangler pages deploy dist --project-name mk-test",
+    "deploy:pages:test": "npm run build:ignore-errors && ./deploy-functions.sh && wrangler pages deploy dist --project-name mk-test",
     "deploy:pages:prod": "npm run build:ignore-errors && ./deploy-functions.sh && wrangler pages deploy dist --project-name mk-prod",
     "build:cloudflare": "tsc --noEmit || true && vite build && node scripts/create-routes-json.js"
   },

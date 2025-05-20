@@ -216,7 +216,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     {/* 추가 키워드 */}
                     <div className="flex flex-wrap gap-1 mt-1">
                       {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 0 ? (
-                        slot.input_data.keywords.map((keyword, idx) => (
+                        slot.input_data.keywords.map((keyword: any, idx: number) => (
                           <span key={idx} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
                             {keyword}
                           </span>
@@ -344,7 +344,7 @@ const SlotList: React.FC<SlotListProps> = ({
                         {userInputFields.map(([key, value]) => (
                           <div key={key} className="flex flex-col">
                             <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{key}:</span>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{value || '-'}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{value ? String(value) : '-'}</span>
                           </div>
                         ))}
                       </div>
@@ -525,7 +525,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 추가 키워드 */}
                 <div className="flex flex-wrap gap-1 mt-1">
                   {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 0 ? (
-                    slot.input_data.keywords.map((keyword, idx) => (
+                    slot.input_data.keywords.map((keyword: any, idx: number) => (
                       <span key={idx} className="px-1.5 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
                         {keyword}
                       </span>
@@ -614,7 +614,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       {userInputFields.map(([key, value]) => (
                         <div key={key} className="flex flex-col">
                           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{key}:</span>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">{value || '-'}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{value ? String(value) : '-'}</span>
                         </div>
                       ))}
                     </div>

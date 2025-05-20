@@ -303,6 +303,7 @@ export const useKeywords = () => {
     error,
     totalKeywords,
     pagination,
+    loadKeywords,
     createDefaultGroup,
     createGroup,
     updateGroup,

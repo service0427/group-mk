@@ -41,16 +41,35 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
   
   if (!inputData) return <div className="mb-2">데이터 없음</div>;
   
-  // 간단한 키워드 렌더링 함수 - keyword1, keyword2, keyword3만 표시
+  // 키워드 렌더링 함수 - 키워드 배열이 있다면 사용하고, 아니면 keyword1, keyword2, keyword3 사용
   const renderKeywords = () => {
-    const keywordsList = [];
+    // 1. keywords 배열 확인 (가장 우선)
+    if (inputData.keywords && Array.isArray(inputData.keywords) && inputData.keywords.length > 0) {
+      const keywordsList = inputData.keywords.filter(Boolean); // null, undefined, '' 제거
+      
+      if (keywordsList.length > 0) {
+        return (
+          <div className="mb-3">
+            <strong>키워드 목록:</strong>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {keywordsList.map((keyword: string, index: number) => (
+                <span key={index} className="badge badge-light-primary">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      }
+    }
     
-    // 키워드1, 키워드2, 키워드3 구조 사용 (가장 우선)
+    // 2. 개별 키워드 필드 사용
+    const keywordsList = [];
     if (inputData.keyword1) keywordsList.push(inputData.keyword1);
     if (inputData.keyword2) keywordsList.push(inputData.keyword2);
     if (inputData.keyword3) keywordsList.push(inputData.keyword3);
     
-    // mainKeyword도 키워드가 없는 경우에만 백업으로 사용
+    // 3. mainKeyword도 키워드가 없는 경우에만 백업으로 사용
     if (keywordsList.length === 0 && inputData.mainKeyword) {
       keywordsList.push(inputData.mainKeyword);
     }
@@ -69,6 +88,7 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
         </div>
       );
     }
+    
     return null;
   };
   
@@ -76,13 +96,12 @@ const SlotDetails: React.FC<SlotDetailsProps> = ({ slot, selectedServiceType }) 
   const renderPrice = () => {
     return null;
   };
-  
-  // URL만 표시하는 뷰
+
+  // 필요하면 추가할 예정 필요 없다면 이대로 진행
+
+  // 모든 추가 필드를 표시하는 뷰
   return (
     <>
-      <div className="mb-2">
-        <strong>URL:</strong> {inputData.url || inputData.product_url || '-'}
-      </div>
     </>
   );
 };

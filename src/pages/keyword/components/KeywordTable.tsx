@@ -14,6 +14,7 @@ interface KeywordTableProps {
   onLimitChange: (limit: number) => void;
   onSearch: (search: string) => void;
   onSort?: (field: string, direction: 'asc' | 'desc') => void;
+  onOpenUploadModal?: () => void; // 엑셀 업로드 모달 열기
 }
 
 const KeywordTable: React.FC<KeywordTableProps> = ({
@@ -29,6 +30,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   onLimitChange,
   onSearch,
   onSort,
+  onOpenUploadModal,
 }) => {
   // 상태 관리
   const [searchText, setSearchText] = useState('');
@@ -341,22 +343,35 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           </h2>
 
           {/* 검색 폼 */}
-          <form onSubmit={handleSearch} className="flex w-full sm:w-auto">
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="키워드 검색"
-              className="flex-1 px-2 py-1 text-xs border border-blue-300 dark:border-blue-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              ref={searchInputRef}
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-r-md"
-            >
-              검색
-            </button>
-          </form>
+          <div className="flex w-full sm:w-auto gap-2">
+            <form onSubmit={handleSearch} className="flex">
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="키워드 검색"
+                className="flex-1 px-2 py-1 text-xs border border-blue-300 dark:border-blue-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                ref={searchInputRef}
+              />
+              <button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-r-md"
+              >
+                검색
+              </button>
+            </form>
+            {onOpenUploadModal && (
+              <button 
+                onClick={onOpenUploadModal}
+                className="flex items-center bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 rounded-md"
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                엑셀 업로드
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

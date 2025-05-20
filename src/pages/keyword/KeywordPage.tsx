@@ -1,11 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useKeywords } from './hooks/useKeywords';
 import { KeywordGroupTree, KeywordTable } from './components';
 import { KeywordInput } from './types';
 import { getTypeNameByCode } from '../../config/campaign.config';
 
+
 // 레이아웃 컴포넌트 임포트
 import { CommonTemplate } from '@/components/pageTemplate';
+import KeywordUploadModal from './components/KeywordUploadModal';
+import { group } from 'console';
 
 const KeywordPage: React.FC = () => {
   // 키워드 관리 훅 사용
@@ -17,6 +20,7 @@ const KeywordPage: React.FC = () => {
     error,
     totalKeywords,
     pagination,
+    loadKeywords,
     createDefaultGroup,
     createGroup,
     updateGroup,
@@ -77,6 +81,12 @@ const KeywordPage: React.FC = () => {
     // updateGroup은 groupId와 name만 받으므로 다른 인자는 전달하지 않음
     return await updateGroup(groupId, name);
   };
+
+  // 업로드 모달 상태 변수
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  
+  // 업로드 모달 열기 핸들러
+  const handleOpenUploadModal = () => setShowUploadModal(true);
 
   return (
     <CommonTemplate
@@ -159,9 +169,18 @@ const KeywordPage: React.FC = () => {
             onLimitChange={handleLimitChange}
             onSearch={handleSearchChange}
             onSort={handleSortChange}
+            onOpenUploadModal={handleOpenUploadModal}
           />
         </div>
       </div>
+      
+      {/* 엑셀 업로드 모달 */}
+      <KeywordUploadModal 
+        isOpen = {showUploadModal}
+        onClose={ () => setShowUploadModal(false)}
+        groups={groups}
+        onSuccess={loadKeywords}
+      />
     </CommonTemplate>
   );
 };

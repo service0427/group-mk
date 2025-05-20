@@ -4,6 +4,7 @@ import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
 import { KeenIcon } from "@/components";
 import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
+import { createRoleChangeNotification } from "@/utils/notificationExamples";
 
 interface ChargeHistoryModalProps {
     open: boolean;
@@ -115,25 +116,47 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
 
     // 회원정보 수정 핸들러
     const handleUpdateUser = async() => {
-        
-        
-        
+        try {
+            // 역할이 변경되었는지 확인
+            const isRoleChanged = userData && userData.role !== selectedRole;
+            const oldRole = userData?.role || '';
+            
+            // 회원 정보 업데이트
+            const { error: updateDBError } = await supabase
+                .from('users')
+                .update({
+                    'status': selectedStatus,
+                    'role': selectedRole
+                })
+                .eq('id', user_id);
+                
+            if (updateDBError) {
+                throw new Error(updateDBError.message);
+            }
 
-        const { error: updateDBError } = await supabase
-            .from('users')
-            .update({
-                'status': selectedStatus,
-                'role': selectedRole
-            })
-            .eq('id', user_id);
-            
-        if (updateDBError) {
-            
-            throw new Error(updateDBError.message);
+            // 역할이 변경되었다면 알림 전송
+            if (isRoleChanged) {
+                // 역할 표시 이름 객체 생성
+                const roleDisplayNames: Record<string, string> = {};
+                roles_array.forEach(role => {
+                    roleDisplayNames[role.code] = role.name;
+                });
+                
+                // 사용자에게 역할 변경 알림 전송
+                await createRoleChangeNotification(
+                    user_id,
+                    oldRole,
+                    selectedRole,
+                    roleDisplayNames
+                );
+            }
+
+            setUserData(prev => prev ? {...prev, status: selectedStatus, role: selectedRole} : null);
+            alert('회원 정보 수정 되었습니다');
+        } catch (error: any) {
+            console.error('회원 정보 수정 중 오류 발생:', error.message);
+            alert('회원 정보 수정 중 오류가 발생했습니다: ' + error.message);
         }
-
-        setUserData(prev => prev ? {...prev, status: selectedStatus, role: selectedRole} : null);
-        alert('회원 정보 수정 되었습니다');
     }
 
     return (

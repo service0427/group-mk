@@ -5,6 +5,8 @@ import { KeenIcon } from '@/components/keenicons';
 import { TipTapEditor } from '@/components/rich-text-editor';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
+import { createSystemNotificationForAll } from '@/utils/notification';
+import { NotificationPriority } from '@/types/notification';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +23,13 @@ const NoticeEditorPage = () => {
   const [isImportant, setIsImportant] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(isEditing);
+
+  // 원래 공지사항 상태 저장 (수정 모드에서 변경 사항 비교용)
+  const [originalNotice, setOriginalNotice] = useState<{
+    title: string;
+    is_active: boolean;
+    is_important: boolean;
+  } | null>(null);
 
   // 공지사항 정보 가져오기 (수정 모드인 경우)
   useEffect(() => {
@@ -42,6 +51,13 @@ const NoticeEditorPage = () => {
           setContent(data.content || '');
           setIsActive(data.is_active || false);
           setIsImportant(data.is_important || false);
+          
+          // 원본 데이터 저장 (수정 후 비교용)
+          setOriginalNotice({
+            title: data.title || '',
+            is_active: data.is_active || false,
+            is_important: data.is_important || false
+          });
         }
       } catch (error) {
         console.error('공지사항 정보 조회 실패:', error);
@@ -71,7 +87,7 @@ const NoticeEditorPage = () => {
     try {
       if (isEditing && id) {
         // 기존 공지사항 업데이트
-        const { error } = await supabase
+        const { data: updatedNotice, error } = await supabase
           .from('notice')
           .update({
             title,
@@ -80,9 +96,30 @@ const NoticeEditorPage = () => {
             is_important: isImportant,
             updated_at: new Date().toISOString()
           })
-          .eq('id', id);
+          .eq('id', id)
+          .select()
+          .single();
 
         if (error) throw error;
+        
+        // 중요 공지 플래그가 변경된 경우 알림 처리
+        if (originalNotice && 
+            isActive && 
+            isImportant && 
+            (!originalNotice.is_important || !originalNotice.is_active)) {
+          try {
+            await createSystemNotificationForAll({
+              title: '[중요] 공지사항이 업데이트되었습니다',
+              message: `중요 공지사항: ${title}`,
+              link: `/notice/detail/${id}`,
+              priority: NotificationPriority.HIGH
+            });
+            console.log('중요 공지사항 알림이 전송되었습니다.');
+          } catch (notifyError) {
+            console.error('공지사항 알림 전송 오류:', notifyError);
+            // 알림 전송 실패해도 공지사항 수정 자체는 성공으로 처리
+          }
+        }
         
         toast.success('공지사항이 수정되었습니다.');
       } else {
@@ -92,7 +129,7 @@ const NoticeEditorPage = () => {
 
         const userId = userData.user?.id;
         
-        const { error } = await supabase
+        const { data: newNotice, error } = await supabase
           .from('notice')
           .insert({
             title,
@@ -101,9 +138,27 @@ const NoticeEditorPage = () => {
             is_important: isImportant,
             author_id: userId, // 현재 로그인한 사용자 ID
             view_count: 0
-          });
+          })
+          .select()
+          .single();
 
         if (error) throw error;
+        
+        // 중요 공지사항일 경우 시스템 알림 전송
+        if (isImportant && isActive) {
+          try {
+            await createSystemNotificationForAll({
+              title: '[중요] 새 공지사항이 등록되었습니다',
+              message: `중요 공지사항: ${title}`,
+              link: `/notice/detail/${newNotice.id}`,
+              priority: NotificationPriority.HIGH
+            });
+            console.log('중요 공지사항 알림이 전송되었습니다.');
+          } catch (notifyError) {
+            console.error('공지사항 알림 전송 오류:', notifyError);
+            // 알림 전송 실패해도 공지사항 등록 자체는 성공으로 처리
+          }
+        }
         
         toast.success('공지사항이 등록되었습니다.');
       }

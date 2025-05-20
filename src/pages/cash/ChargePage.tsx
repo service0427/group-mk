@@ -20,6 +20,7 @@ import {
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { notifyOperators } from '@/utils/notificationExamples';
 
 // X 버튼이 없는 DialogContent 커스텀 컴포넌트
 const DialogContent = React.forwardRef<
@@ -331,6 +332,18 @@ const ChargePage: React.FC = () => {
           `${result.message}\n관리자 승인 후 충전이 완료됩니다.`,
           true
         );
+        
+        // 운영자에게 알림 전송
+        try {
+          await notifyOperators(
+            "새로운 캐시 충전 요청",
+            `${currentUser.email || currentUser.id}님이 ${Number(customAmount).toLocaleString()}원 충전을 요청했습니다.`,
+            "/admin/cash/ManageCashPage"
+          );
+        } catch (error) {
+          console.error("운영자 알림 전송 실패:", error);
+          // 알림 실패는 사용자에게 표시하지 않음 (백그라운드 처리)
+        }
 
         // 성공 후 폼 초기화 및 내역 갱신
         setCustomAmount('');

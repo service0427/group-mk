@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { createNotificationForRole } from '@/utils/notification';
+import { NotificationType, NotificationPriority } from '@/types/notification';
 
 // 충전 요청 타입 정의
 interface ChargeRequest {
@@ -312,6 +314,16 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
           `${result.message}\n관리자 승인 후 충전이 완료됩니다.`,
           true
         );
+
+        // 운영자에게 알림 보내기
+        await createNotificationForRole('operator', {
+          type: NotificationType.TRANSACTION,
+          title: '새로운 캐시 충전 요청',
+          message: `${currentUser.username || currentUser.email || '사용자'}님이 ${formatNumberWithCommas(Number(customAmount))}원의 캐시 충전을 요청했습니다. 입금자명: ${depositorName.trim()}`,
+          priority: NotificationPriority.HIGH,
+          icon: 'transaction',
+          link: '/admin/cash/requests'
+        });
 
         // 성공 후 폼 초기화 및 내역 갱신
         setCustomAmount('0');

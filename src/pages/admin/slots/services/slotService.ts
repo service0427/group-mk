@@ -46,7 +46,9 @@ async function getCampaignInfo(productId: number) {
 export const approveSlot = async (
   slotId: string | string[],
   adminUserId: string,
-  actionType?: string
+  actionType?: string,
+  start_date?: string,
+  end_date?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   // 배열인 경우 (다중 승인)
   if (Array.isArray(slotId)) {
@@ -65,7 +67,7 @@ export const approveSlot = async (
     // 슬롯 ID별로 순차적으로 승인 처리
     for (const id of slotId) {
       try {
-        const result = await approveSingleSlot(id, adminUserId, actionType);
+        const result = await approveSingleSlot(id, adminUserId, actionType, start_date, end_date);
         results.push({
           id,
           success: result.success,
@@ -91,14 +93,16 @@ export const approveSlot = async (
   }
   
   // 단일 슬롯 처리
-  return await approveSingleSlot(slotId, adminUserId, actionType);
+  return await approveSingleSlot(slotId, adminUserId, actionType, start_date, end_date);
 };
 
 // 단일 슬롯 승인 처리 함수 (내부 구현)
 const approveSingleSlot = async (
   slotId: string,
   adminUserId: string,
-  actionType?: string
+  actionType?: string,
+  start_date?: string,
+  end_date?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
     // 1. 슬롯 정보 조회
@@ -152,6 +156,31 @@ const approveSingleSlot = async (
     
     // 현재 시간 가져오기
     const now = new Date().toISOString();
+
+    // 시작일과 종료일 설정
+    let finalStartDate = start_date;
+    let finalEndDate = end_date;
+    
+    if (!finalStartDate) {
+      // 날짜가 제공되지 않았으면 현재 날짜로 설정
+      const today = new Date();
+      finalStartDate = today.toISOString().split('T')[0];
+      
+      // 종료일 계산: 시작일 + (dueDays - 1)
+      let dueDays = 0;
+      if (slotData.input_data?.dueDays) {
+        dueDays = parseInt(String(slotData.input_data.dueDays));
+      }
+      
+      // dueDays가 없거나 유효하지 않은 경우 1로 설정
+      if (isNaN(dueDays) || dueDays <= 0) {
+        dueDays = 1;
+      }
+      
+      const endDateObj = new Date(today);
+      endDateObj.setDate(today.getDate() + dueDays - 1);
+      finalEndDate = endDateObj.toISOString().split('T')[0];
+    }
 
     // 3. 슬롯 상태 업데이트 (actionType에 따라 다른 상태로 업데이트)
     let newStatus = 'approved';
@@ -233,7 +262,9 @@ const approveSingleSlot = async (
       .from('slots')
       .update({
         status: newStatus,
-        processed_at: now
+        processed_at: now,
+        start_date: finalStartDate,
+        end_date: finalEndDate
       })
       .eq('id', slotId)
       .select();

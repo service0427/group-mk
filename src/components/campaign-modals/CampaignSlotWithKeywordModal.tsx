@@ -34,7 +34,10 @@ interface Keyword {
   updatedAt: string;
   // 추가 필드
   workCount?: number | null; // 작업타수
-  dueDate?: string | null;   // 마감일
+  dueDate?: string | null;   // 마감일 (기존: 날짜 형식)
+  dueDays?: number | null;   // 마감 일수 (변경: 숫자 형식)
+  // 사용자 입력 필드 데이터
+  inputData?: Record<string, string>; // 추가 입력 필드 데이터 (필드명: 값)
 }
 
 // 키워드 그룹 인터페이스
@@ -68,7 +71,8 @@ interface KeywordDetail {
   id: number;
   mainKeyword: string;
   workCount: number;
-  dueDate: string;
+  dueDays: number; // 마감 일수 (변경됨)
+  inputData?: Record<string, string>; // 추가 입력 필드 데이터
 }
 
 // 추가할 슬롯 데이터 인터페이스
@@ -82,8 +86,10 @@ interface CampaignSlotData {
   campaignId?: number; // 선택된 캠페인 ID
   // 추가: 선택된 키워드 목록
   selectedKeywords?: number[];
-  // 추가: 키워드 상세 정보 (작업타수, 마감일 등)
+  // 추가: 키워드 상세 정보 (작업타수, 마감일수, 추가 입력 데이터 등)
   keywordDetails?: KeywordDetail[];
+  // 추가 입력 필드 데이터
+  input_data?: Record<string, any>; // 키워드별 추가 입력 필드 데이터
 }
 
 // supabase로부터 가져온 캠페인 데이터 인터페이스
@@ -102,7 +108,12 @@ interface SupabaseCampaign {
   additional_logic?: string | number;
   mat_id?: string; // 총판의 UUID
   user_id?: string; // 관리자/총판 ID
-  add_info?: any; // 배너 URL 등의 추가 정보
+  add_info?: {
+    logo_url?: string;
+    banner_url?: string;
+    add_field?: Array<{ fieldName: string; description: string }>; // 추가 입력 필드 목록
+    [key: string]: any;
+  } | string; // 배너 URL 등의 추가 정보
 }
 
 const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> = ({
@@ -551,10 +562,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity = 1; // 기본값
         }
 
-        // 키워드 목록에 기본 작업타수 설정 및 내일 날짜로 마감일 설정
+        // 키워드 목록에 기본 작업타수 설정 및 기본 마감일수 설정
         transformedData.forEach(keyword => {
           keyword.workCount = minQuantity as unknown as undefined;
-          keyword.dueDate = getTomorrowDate() as unknown as undefined;
+          keyword.dueDays = 1; // 기본 마감일수 1일로 설정
+          keyword.inputData = {}; // 추가 입력 데이터 초기화
         });
       }
 
@@ -616,29 +628,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           k.id === keywordId ? {
             ...k,
             workCount: minQuantity,
-            dueDate: k.dueDate || getTomorrowDate()  // 마감일이 없으면 내일 날짜로 설정
+            dueDays: 1  // 마감일수를 기본값 1일로 설정
           } : k
         )
       );
     }
   };
 
-  // 마감일에 따른 일수 계산 함수
-  const calculateDaysUntilDueDate = (dueDate: string): number => {
-    if (!dueDate) return 1; // 마감일이 없으면 기본값 1일
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // 오늘 날짜의 시작 시간으로 설정
-
-    const dueDateObj = new Date(dueDate);
-    dueDateObj.setHours(0, 0, 0, 0); // 마감일의 시작 시간으로 설정
-
-    // 일수 차이 계산 (밀리초 단위를 일 단위로 변환)
-    const differenceInTime = dueDateObj.getTime() - today.getTime();
-    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
-
-    // 최소 1일 보장 (마감일이 오늘이거나 이미 지났더라도)
-    return Math.max(1, differenceInDays);
+  // 마감 일수 획득 함수 - 숫자 입력값을 직접 반환
+  const getDueDays = (keyword: Keyword): number => {
+    // dueDays가 있으면 그 값을 사용, 없으면 기본값 1일
+    return keyword.dueDays ?? 1;
   };
 
   // 총 결제 금액 계산
@@ -683,11 +683,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity :
           Math.max(keyword.workCount, minQuantity);
 
-        // 마감일에 따른 추가 계산
-        const daysUntilDue = calculateDaysUntilDueDate(keyword.dueDate || getTomorrowDate());
+        // 마감일 수를 getDueDays 함수를 사용하여 가져옴
+        const dueDays = getDueDays(keyword);
 
-        // 기존 공식 * 진행일자 (daysUntilDue)
-        const keywordTotal = unitPrice * workCount * daysUntilDue;
+        // 기존 공식 * 진행일자 (이제 dueDays 사용)
+        const keywordTotal = unitPrice * workCount * dueDays;
         total += keywordTotal;
       }
     });
@@ -744,40 +744,405 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
-  // 내일 날짜 계산 함수 (재사용성을 위해 분리)
-  const getTomorrowDate = (): string => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
-
-    // yyyy-mm-dd 형식으로 반환
-    const result = `${year}-${month}-${day}`;
-
-    return result;
+  // 캠페인의 추가 입력 필드 가져오기
+  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ fieldName: string; description: string }> => {
+    if (!campaign || !campaign.add_info) return [];
+    
+    let addFields: Array<{ fieldName: string; description: string }> = [];
+    
+    try {
+      // 문자열인 경우 파싱 시도
+      if (typeof campaign.add_info === 'string') {
+        const parsedInfo = JSON.parse(campaign.add_info);
+        if (parsedInfo.add_field && Array.isArray(parsedInfo.add_field)) {
+          addFields = parsedInfo.add_field;
+        }
+      } 
+      // 객체인 경우 직접 접근
+      else if (campaign.add_info.add_field && Array.isArray(campaign.add_info.add_field)) {
+        addFields = campaign.add_info.add_field;
+      }
+    } catch (e) {
+      console.error('추가 입력 필드 파싱 오류:', e);
+      return [];
+    }
+    
+    return addFields;
   };
 
-  // 마감일 변경 핸들러
-  const handleDueDateChange = (keywordId: number, value: string) => {
+  // 마감 일수 변경 핸들러
+  const handleDueDaysChange = (keywordId: number, value: number) => {
+    // 값이 1 미만이면 1로 설정
+    const days = value < 1 ? 1 : value;
+    
     setKeywords(prev =>
       prev.map(k =>
-        k.id === keywordId ? { ...k, dueDate: value } : k
+        k.id === keywordId ? { ...k, dueDays: days } : k
+      )
+    );
+    
+    // 해당 키워드가 선택된 상태인지 확인하고 결제 금액 재계산
+    if (selectedKeywords.includes(keywordId)) {
+      setTimeout(() => calculateTotalPayment(), 0);
+    }
+  };
+
+  // 키워드 입력 데이터 변경 핸들러
+  const handleInputDataChange = (keywordId: number, fieldName: string, value: string) => {
+    setKeywords(prev =>
+      prev.map(k =>
+        k.id === keywordId ? { 
+          ...k, 
+          inputData: { 
+            ...k.inputData || {}, 
+            [fieldName]: value 
+          } 
+        } : k
       )
     );
   };
 
   // 폼 유효성 검사 함수
   const validateForm = (): boolean => {
-    // 체크박스로 선택한 키워드만 확인 (이제 input 필드 검증은 하지 않음)
+    // 키워드 선택 확인만 체크
     if (selectedKeywords.length === 0) {
       showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
       return false;
     }
-
+    
+    // 추가 입력 필드는 필수값 아님 - 빈 값으로 허용
     return true;
+  };
+
+  // 직접 Supabase에 슬롯 데이터 저장하는 함수
+  const saveSlotToSupabase = async (slotData: any) => {
+    try {
+      if (!currentUser?.id) {
+        throw new Error('로그인 정보를 찾을 수 없습니다.');
+      }
+
+      const now = new Date().toISOString();
+
+      // 1. 선택된 캠페인 단가 확인
+      let unitPrice: number = 0;
+      if (selectedCampaign) {
+        if (typeof selectedCampaign.unit_price === 'string') {
+          unitPrice = parseInt(selectedCampaign.unit_price) || 0;
+        } else if (typeof selectedCampaign.unit_price === 'number') {
+          unitPrice = selectedCampaign.unit_price;
+        }
+      }
+
+      if (unitPrice <= 0) {
+        throw new Error('유효한 캠페인 단가를 찾을 수 없습니다.');
+      }
+
+      // 2. 각 키워드에 대한 총 결제 금액 계산
+      let totalAmount = 0;
+      for (const detail of slotData.keywordDetails) {
+        // 개별 키워드 가격 계산 (단가 * 작업타수 * 진행일수)
+        const keywordPrice = unitPrice * detail.workCount * detail.dueDays;
+        totalAmount += keywordPrice;
+      }
+
+      // 부가세 10% 추가
+      totalAmount = Math.round(totalAmount * 1.1);
+
+      // 3. 사용자 잔액 확인
+      const { data: userBalance, error: balanceError } = await supabase
+        .from('user_balances')
+        .select('paid_balance, free_balance, total_balance')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (balanceError) {
+        throw new Error('사용자 잔액 정보를 가져올 수 없습니다.');
+      }
+
+      // 사용자 현재 잔액
+      const paidBalance = parseFloat(String(userBalance.paid_balance || 0));
+      const freeBalance = parseFloat(String(userBalance.free_balance || 0));
+      const totalBalance = parseFloat(String(userBalance.total_balance || (paidBalance + freeBalance)));
+
+      // 잔액 부족 체크
+      if (totalBalance < totalAmount) {
+        throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${totalAmount.toLocaleString()}원`);
+      }
+
+      // 4. 사용할 무료/유료 캐시 계산
+      let freeBalanceToUse = Math.min(freeBalance, totalAmount);
+      let paidBalanceToUse = totalAmount - freeBalanceToUse;
+
+      // 5. 각 키워드에 대한 슬롯 데이터 준비
+      const slotEntries = [];
+
+      for (const detail of slotData.keywordDetails) {
+        const keyword = keywords.find(k => k.id === detail.id);
+        if (!keyword) continue;
+
+        // 개별 키워드 가격 계산 (단가 * 작업타수 * 진행일수)
+        const keywordPrice = Math.round(unitPrice * detail.workCount * detail.dueDays * 1.1); // 부가세 포함
+
+        // 키워드 ID에 대한 상세 입력 데이터 가져오기
+        const keywordInputData = slotData.input_data[`keyword_${detail.id}`] || {};
+
+        // 슬롯 데이터 구성 - 테이블 구조에 맞게 수정
+        const slotEntry = {
+          user_id: currentUser.id,
+          mat_id: selectedCampaign?.mat_id || currentUser.id, // 총판 ID (없으면 사용자 ID 사용)
+          product_id: slotData.campaignId, // 캠페인 ID
+          status: 'pending', // 기본 상태는 'pending'
+          created_at: now,
+          updated_at: now,
+          submitted_at: now,
+          keyword_id: detail.id, // 키워드 ID
+          quantity: detail.workCount, // 작업타수 (quantity 사용)
+          // deadline 필드는 DB에서 기본값이 null이므로 저장 항목에서 제외
+          input_data: {
+            ...keywordInputData,
+            mainKeyword: keyword.mainKeyword,
+            workCount: detail.workCount,
+            dueDays: detail.dueDays,
+            keywordId: detail.id,
+            price: keywordPrice, // 가격 정보는 input_data에 저장 (부가세 포함)
+            url: keyword.url || '',
+            mid: keyword.mid || '',
+            // 키워드1, 키워드2, 키워드3 값 명시적으로 추가
+            keyword1: keyword.keyword1 || '',
+            keyword2: keyword.keyword2 || '',
+            keyword3: keyword.keyword3 || '',
+            campaign_name: selectedCampaign?.campaign_name || '',
+            service_type: selectedCampaign?.service_type || '',
+            // dueDays 정보는 input_data에만 저장하고 deadline 필드는 사용하지 않음
+            expected_deadline: new Date(new Date().getTime() + (detail.dueDays * 24 * 60 * 60 * 1000)).toISOString()
+          }
+        };
+
+        slotEntries.push(slotEntry);
+      }
+
+      // 슬롯 데이터가 없으면 오류 리턴
+      if (slotEntries.length === 0) {
+        throw new Error('저장할 슬롯 데이터가 없습니다.');
+      }
+
+      // 6. 트랜잭션 시작 (Supabase에서는 직접 지원하지 않으므로 순차적으로 진행)
+      
+      // 7. 사용자 잔액 차감
+      const { error: updateBalanceError } = await supabase
+        .from('user_balances')
+        .update({
+          free_balance: Math.max(0, freeBalance - freeBalanceToUse),
+          paid_balance: Math.max(0, paidBalance - paidBalanceToUse),
+          total_balance: Math.max(0, totalBalance - totalAmount),
+          updated_at: now
+        })
+        .eq('user_id', currentUser.id);
+
+      if (updateBalanceError) {
+        throw new Error(`잔액 차감 오류: ${updateBalanceError.message}`);
+      }
+
+      // 8. 슬롯 데이터 일괄 저장
+      const { data: insertedSlots, error: insertError } = await supabase
+        .from('slots')
+        .insert(slotEntries)
+        .select();
+
+      if (insertError) {
+        // 슬롯 저장 실패 시 잔액 롤백 필요
+        await supabase
+          .from('user_balances')
+          .update({
+            free_balance: freeBalance,
+            paid_balance: paidBalance,
+            total_balance: totalBalance,
+            updated_at: now
+          })
+          .eq('user_id', currentUser.id);
+          
+        throw new Error(`슬롯 등록 오류: ${insertError.message}`);
+      }
+
+      // 9. 각 슬롯에 대한 히스토리 로그 생성 및 pending_balances 추가
+      if (insertedSlots && insertedSlots.length > 0) {
+        // 슬롯 히스토리 로그 항목 생성
+        const historyEntries = insertedSlots.map(slot => ({
+          slot_id: slot.id,
+          user_id: currentUser.id,
+          old_status: null, // 최초 생성이므로 이전 상태 없음
+          new_status: 'pending',
+          action: 'create',
+          details: {
+            product_id: slot.product_id,
+            product_name: selectedCampaign?.campaign_name || '상품',
+            keyword_id: slot.keyword_id,
+            keyword_name: slot.input_data?.mainKeyword || '키워드',
+            workCount: slot.quantity,
+            price: slot.input_data?.price || 0
+          },
+          created_at: now
+        }));
+
+        // 히스토리 로그 저장
+        const { error: historyError } = await supabase
+          .from('slot_history_logs')
+          .insert(historyEntries);
+
+        if (historyError) {
+          console.error('슬롯 히스토리 로그 저장 오류:', historyError);
+          // 히스토리 로그 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
+        }
+
+        // 보류 잔액 항목 생성 - 테이블 구조에 맞게 수정
+        const pendingBalanceEntries = insertedSlots.map(slot => {
+          // 개별 키워드 가격 계산 (input_data에서 추출)
+          const price = slot.input_data?.price || 0;
+          
+          return {
+            slot_id: slot.id,
+            user_id: currentUser.id,
+            product_id: slot.product_id,
+            amount: Math.round(price), // 정수로 변환 (DB 요구사항)
+            status: 'pending',
+            created_at: now,
+            notes: JSON.stringify({
+              payment_details: {
+                free_balance_used: freeBalanceToUse > 0 ? Math.min(Math.round(freeBalanceToUse), Math.round(price)) : 0,
+                paid_balance_used: paidBalanceToUse > 0 ? Math.min(Math.round(paidBalanceToUse), Math.round(price)) : 0,
+                total_amount: Math.round(price)
+              }
+            })
+          };
+        });
+
+        // 보류 잔액 저장
+        const { error: pendingBalanceError } = await supabase
+          .from('slot_pending_balances')
+          .insert(pendingBalanceEntries);
+
+        if (pendingBalanceError) {
+          console.error('슬롯 보류 잔액 저장 오류:', pendingBalanceError);
+          // 보류 잔액 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
+        }
+      }
+
+      // 10. 캐시 사용 히스토리 기록
+      await recordCashHistory(currentUser.id, totalAmount, freeBalanceToUse, paidBalanceToUse, insertedSlots, slotData);
+
+      // 11. 완료된 결과 반환
+      return {
+        success: true,
+        slots: insertedSlots
+      };
+    } catch (error) {
+      console.error('슬롯 저장 중 오류:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+      };
+    }
+  };
+
+  // 캐시 사용 히스토리 기록 헬퍼 함수 - 테이블 구조에 맞게 수정
+  const recordCashHistory = async (
+    userId: string,
+    totalAmount: number,
+    freeBalanceUsed: number,
+    paidBalanceUsed: number,
+    insertedSlots: any[],
+    slotData: any
+  ) => {
+    const now = new Date().toISOString();
+    const keywordCount = insertedSlots.length;
+    const referenceSlotId = insertedSlots[0]?.id || null;
+    const matId = selectedCampaign?.mat_id || null; // 총판 ID
+    const campaignName = selectedCampaign?.campaign_name || '키워드 구매';
+    
+    try {
+      // 1. 무료 캐시와 유료 캐시가 모두 사용된 경우 (혼합)
+      if (freeBalanceUsed > 0 && paidBalanceUsed > 0) {
+        // 무료 캐시 사용 내역
+        await supabase
+          .from('user_cash_history')
+          .insert({
+            user_id: userId,
+            amount: -Math.round(freeBalanceUsed), // 음수로 표시하여 차감 표시 (integer로 변환)
+            transaction_type: 'purchase',
+            reference_id: referenceSlotId,
+            description: `${campaignName} - ${keywordCount}개 구매(무료 캐시)`,
+            transaction_at: now,
+            mat_id: matId,
+            balance_type: 'free' // 무료 캐시 부분
+          });
+        
+        // 유료 캐시 사용 내역
+        await supabase
+          .from('user_cash_history')
+          .insert({
+            user_id: userId,
+            amount: -Math.round(paidBalanceUsed), // 음수로 표시하여 차감 표시 (integer로 변환)
+            transaction_type: 'purchase',
+            reference_id: referenceSlotId,
+            description: `${campaignName} - ${keywordCount}개 구매(유료 캐시)`,
+            transaction_at: now,
+            mat_id: matId,
+            balance_type: 'paid' // 유료 캐시 부분
+          });
+      }
+      // 2. 무료 캐시만 사용하거나 유료 캐시만 사용한 경우
+      else {
+        const balanceType = freeBalanceUsed > 0 ? 'free' : 'paid';
+        const usedAmount = freeBalanceUsed > 0 ? freeBalanceUsed : paidBalanceUsed;
+        
+        await supabase
+          .from('user_cash_history')
+          .insert({
+            user_id: userId,
+            amount: -Math.round(usedAmount), // 음수로 표시하여 차감 표시 (integer로 변환)
+            transaction_type: 'purchase', // purchase 타입으로 차감
+            reference_id: referenceSlotId,
+            description: `${campaignName} - ${keywordCount}개 구매(${balanceType === 'free' ? '무료' : '유료'} 캐시)`,
+            transaction_at: now,
+            mat_id: matId,
+            balance_type: balanceType
+          });
+      }
+    } catch (error) {
+      console.error('캐시 사용 히스토리 기록 오류:', error);
+      // 히스토리 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
+    }
+  };
+  
+  // 알림 생성 함수
+  const createNotification = async (
+    userId: string,
+    title: string,
+    message: string,
+    link: string,
+    referenceId: string | null
+  ) => {
+    try {
+      const now = new Date().toISOString();
+      
+      // notifications 테이블에 알림 생성
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          type: 'slot_created', // 슬롯 생성 타입
+          title: title,
+          message: message,
+          link: link,
+          reference_id: referenceId,
+          status: 'unread', // 기본 상태는 읽지 않음
+          created_at: now,
+          priority: 'medium' // 우선순위 추가
+        });
+    } catch (error) {
+      console.error('알림 생성 오류:', error);
+      // 알림 생성 실패는 전체 프로세스 실패로 처리하지 않음
+    }
   };
 
   // 저장 버튼 핸들러
@@ -785,9 +1150,137 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     // 이미 저장 중이면 중복 실행 방지
     if (saving) return;
 
-    // 저장 미구현 메시지 표시
-    showAlert('개발 중', '이 기능은 아직 구현 중입니다.', false);
-    return;
+    // 폼 유효성 검사
+    if (!validateForm()) return;
+
+    try {
+      setSaving(true);
+
+      // 선택한 캠페인이 없으면 오류 처리
+      if (!selectedCampaignId) {
+        showAlert('오류', '캠페인을 선택해주세요.', false);
+        return;
+      }
+
+      // 선택된 키워드가 없으면 오류 처리
+      if (selectedKeywords.length === 0) {
+        showAlert('오류', '하나 이상의 키워드를 선택해주세요.', false);
+        return;
+      }
+
+      // 선택된 키워드 상세 정보 수집 - dueDays 필드 사용
+      const keywordDetails: KeywordDetail[] = selectedKeywords.map(keywordId => {
+        const keyword = keywords.find(k => k.id === keywordId);
+        if (!keyword) return null;
+
+        // 최소 작업타수 확인
+        let minQuantity = 1;
+        if (selectedCampaign) {
+          if (typeof selectedCampaign.min_quantity === 'string') {
+            minQuantity = parseInt(selectedCampaign.min_quantity) || 1;
+          } else if (typeof selectedCampaign.min_quantity === 'number') {
+            minQuantity = selectedCampaign.min_quantity;
+          }
+        }
+
+        // 작업타수가 최소값보다 작으면 최소값 사용
+        const workCount = keyword.workCount === null || keyword.workCount === undefined || keyword.workCount < minQuantity
+          ? minQuantity
+          : keyword.workCount;
+
+        // 상세 정보 반환 - dueDays 필드 사용 (dueDate 대신)
+        return {
+          id: keyword.id,
+          mainKeyword: keyword.mainKeyword,
+          workCount,
+          dueDays: keyword.dueDays || 1, // dueDays 필드 사용, 없으면 기본값 1
+          inputData: keyword.inputData || {} // 각 키워드의 입력 데이터 포함
+        };
+      }).filter(Boolean) as KeywordDetail[]; // null 값 필터링
+
+      // 각 키워드의 inputData를 slots.input_data에 올바르게 저장하기 위한 처리
+      const input_data: Record<string, any> = {};
+      
+      // 각 키워드에 대한 처리
+      keywordDetails.forEach(detail => {
+        // 키워드 ID를 문자열로 변환하여 키로 사용
+        const keywordId = `keyword_${detail.id}`;
+        
+        // 원본 키워드 데이터 찾기
+        const keyword = keywords.find(k => k.id === detail.id);
+        
+        // 모든 키워드에 대해 항상 inputData 객체 생성 (빈 객체라도)
+        input_data[keywordId] = { 
+          ...detail.inputData || {},
+          // 키워드의 keyword1, keyword2, keyword3 값 추가
+          keyword1: keyword?.keyword1 || '',
+          keyword2: keyword?.keyword2 || '',
+          keyword3: keyword?.keyword3 || ''
+        };
+        
+        // 추가 필드가 있는 경우, 입력되지 않은 필드에 대해 빈 문자열 추가
+        if (selectedCampaign) {
+          const additionalFields = getAdditionalFields(selectedCampaign);
+          additionalFields.forEach(field => {
+            if (!input_data[keywordId][field.fieldName]) {
+              input_data[keywordId][field.fieldName] = '';
+            }
+          });
+        }
+      });
+      
+      // 공통 정보도 저장
+      input_data.keyword_details = keywordDetails;
+      input_data.campaign_id = selectedCampaignId;
+      input_data.campaign_name = selectedCampaign?.campaign_name || '';
+      input_data.service_type = selectedCampaign?.service_type || '';
+
+      // 캠페인 슬롯 데이터 구성
+      const campaignSlotData: CampaignSlotData = {
+        ...slotData,
+        campaignId: selectedCampaignId,
+        selectedKeywords,
+        keywordDetails,
+        input_data // 키워드 ID별로 구조화된 input_data
+      };
+
+      // Supabase에 직접 슬롯 데이터 저장
+      const result = await saveSlotToSupabase(campaignSlotData);
+
+      if (!result.success) {
+        throw new Error(result.error || '슬롯 저장 중 오류가 발생했습니다.');
+      }
+
+      // 알림 생성 (notifications 테이블에 저장)
+      if (result.slots && result.slots.length > 0) {
+        // 사용자에게 구매 완료 알림 전송
+        await createNotification(
+          currentUser.id,
+          '키워드 구매 신청 완료',
+          `${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드 구매 신청이 완료되었습니다.`,
+          '/myinfo/services',
+          result.slots[0].id
+        );
+      }
+
+      // 상위 컴포넌트에 데이터 전달 (기존 동작 유지)
+      if (onSave) {
+        onSave(campaignSlotData);
+      }
+
+      // 성공 알림 표시 - 메시지 변경
+      showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      
+      // 모달 닫기
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('키워드 구매 신청 중 오류:', error);
+      showAlert('구매 신청 실패', (error instanceof Error ? error.message : '키워드 구매 신청 중 오류가 발생했습니다. 다시 시도해주세요.'), false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 현재 선택된 캠페인 찾기
@@ -1041,7 +1534,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                           <table className="w-full table-fixed border-separate border-spacing-0">
                             <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600/95 to-indigo-600/95 text-white shadow-sm">
                               <tr className="text-left">
-                                <th className="w-[7%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-500/50 rounded-tl-md">
+                                <th className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-500/50 rounded-tl-md">
                                   <div className="flex items-center justify-center relative group">
                                     <input
                                       type="checkbox"
@@ -1065,7 +1558,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                               prev.map(k => ({
                                                 ...k,
                                                 workCount: k.workCount || minQuantity,
-                                                dueDate: k.dueDate || getTomorrowDate()
+                                                dueDays: k.dueDays || 1
                                               }))
                                             );
                                           }
@@ -1081,78 +1574,188 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     </div>
                                   </div>
                                 </th>
-                                <th className="w-[28%] sm:w-[30%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">키워드</th>
-                                <th className="w-[35%] sm:w-[35%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">정보</th>
-                                <th className="w-[12%] sm:w-[10%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">타수</th>
-                                <th className="w-[18%] sm:w-[18%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 rounded-tr-md uppercase tracking-wider antialiased">마감일</th>
+                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">키워드</th>
+                                <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">정보</th>
+                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">타수</th>
+                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">작업일</th>
+                                {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
+                                  <th
+                                    key={index}
+                                    className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased relative group ${
+                                      index === getAdditionalFields(selectedCampaign).length - 1 ? 'rounded-tr-md' : ''
+                                    }`}
+                                    style={{ width: `${35 / Math.max(1, getAdditionalFields(selectedCampaign).length)}%` }}
+                                  >
+                                    <div className="flex items-center justify-center">
+                                      <span>{field.fieldName}</span>
+                                      {field.description && (
+                                        <span className="ml-1 inline-flex items-center justify-center">
+                                          <KeenIcon icon="information" className="size-3 text-blue-300" />
+                                          <div className="hidden group-hover:block absolute top-full left-1/2 transform -translate-x-1/2 z-50 mt-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap">
+                                            {field.description}
+                                          </div>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </th>
+                                ))}
+                                {/* 마지막 컬럼의 오른쪽 모서리를 둥글게 하기 위한 클래스 적용 */}
+                                {(!selectedCampaign || getAdditionalFields(selectedCampaign).length === 0) && (
+                                  <th className="px-0 py-0 w-0 border-none rounded-tr-md">
+                                  </th>
+                                )}
                               </tr>
                             </thead>
                             <tbody>
-                              {keywords.map(keyword => (
-                                <tr
-                                  key={keyword.id}
-                                  className={`transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/70 ${selectedKeywords.includes(keyword.id)
-                                    ? 'bg-blue-50 dark:bg-blue-900/80 shadow-sm'
-                                    : 'bg-white dark:bg-slate-800'
+                              {keywords.map(keyword => {
+                                return (
+                                  <tr
+                                    key={keyword.id}
+                                    className={`transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/70 ${
+                                      selectedKeywords.includes(keyword.id)
+                                        ? 'bg-blue-50 dark:bg-blue-900/80 shadow-sm'
+                                        : 'bg-white dark:bg-slate-800'
                                     }`}
-                                >
-                                  <td className="w-[7%] px-1 sm:px-2 py-2 sm:py-3 border border-gray-200 align-middle text-center">
-                                    <div className="flex justify-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedKeywords.includes(keyword.id)}
-                                        onChange={() => handleKeywordToggle(keyword.id)}
-                                        className="size-3 sm:size-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td className="w-[28%] sm:w-[30%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 group" onClick={() => handleKeywordToggle(keyword.id)}>
-                                    <div className="cursor-pointer transition-all">
-                                      <p className="font-semibold text-xs sm:text-sm text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 line-clamp-1 antialiased">{keyword.mainKeyword}</p>
-                                      <div className="flex flex-wrap gap-1 mt-1.5 text-xs">
-                                        {keyword.keyword1 && <span className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-800/40 font-medium antialiased">{keyword.keyword1}</span>}
-                                        {keyword.keyword2 && <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 font-medium antialiased">{keyword.keyword2}</span>}
-                                        {keyword.keyword3 && <span className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-amber-100 dark:group-hover:bg-amber-800/40 font-medium antialiased">{keyword.keyword3}</span>}
+                                  >
+                                    <td className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 border border-gray-200 align-middle text-center">
+                                      <div className="flex justify-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedKeywords.includes(keyword.id)}
+                                          onChange={() => handleKeywordToggle(keyword.id)}
+                                          className="size-3 sm:size-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
                                       </div>
-                                    </div>
-                                  </td>
-                                  <td className="w-[35%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
-                                    <div className="text-xs">
-                                      {keyword.mid && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">MID</span> {keyword.mid}</p>}
-                                      {keyword.url && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
-                                    </div>
-                                  </td>
-                                  <td className="w-[12%] sm:w-[10%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      placeholder="타수"
-                                      value={keyword.workCount === null || keyword.workCount === undefined ? '' : keyword.workCount}
-                                      onChange={(e) => {
-                                        // 입력이 비어있으면 null로 처리, 아니면 숫자로 변환
-                                        const value = e.target.value === '' ? null : parseInt(e.target.value) || 0;
-                                        handleWorkCountChange(keyword.id, value);
-                                      }}
-                                      onBlur={() => handleWorkCountBlur(keyword.id)}
-                                      className="w-full min-w-[30px] sm:min-w-[60px] px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
-                                      onClick={e => e.stopPropagation()}
-                                    />
-                                  </td>
-                                  <td className="w-[18%] sm:w-[18%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
-                                    <input
-                                      type="date"
-                                      value={keyword.dueDate || getTomorrowDate()}
-                                      onChange={(e) => handleDueDateChange(keyword.id, e.target.value)}
-                                      className="w-full px-0 sm:px-2 py-0.5 sm:py-1.5 text-[9px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
-                                      style={{ minWidth: '60px' }}
-                                      onClick={e => e.stopPropagation()}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
+                                    </td>
+                                    <td className="w-[25%] sm:w-[26%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 group" onClick={() => handleKeywordToggle(keyword.id)}>
+                                      <div className="cursor-pointer transition-all">
+                                        <p className="font-semibold text-xs sm:text-sm text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 line-clamp-1 antialiased">{keyword.mainKeyword}</p>
+                                        <div className="flex flex-wrap gap-1 mt-1.5 text-xs">
+                                          {keyword.keyword1 && <span className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-800/40 font-medium antialiased">{keyword.keyword1}</span>}
+                                          {keyword.keyword2 && <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 font-medium antialiased">{keyword.keyword2}</span>}
+                                          {keyword.keyword3 && <span className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-amber-100 dark:group-hover:bg-amber-800/40 font-medium antialiased">{keyword.keyword3}</span>}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="w-[25%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                      <div className="text-xs">
+                                        {keyword.mid && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">MID</span> {keyword.mid}</p>}
+                                        {keyword.url && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
+                                      </div>
+                                    </td>
+                                    <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                      <input
+                                        type="text"
+                                        placeholder="타수"
+                                        value={keyword.workCount === null || keyword.workCount === undefined ? '' : keyword.workCount}
+                                        onChange={(e) => {
+                                          const inputValue = e.target.value;
+                                          if (inputValue === '') {
+                                            // 빈 문자열은 임시로 null 처리
+                                            handleWorkCountChange(keyword.id, null);
+                                            return;
+                                          }
+                                          
+                                          // 숫자만 입력 허용
+                                          if (/^\d+$/.test(inputValue)) {
+                                            const numValue = parseInt(inputValue);
+                                            handleWorkCountChange(keyword.id, numValue);
+                                          }
+                                        }}
+                                        onBlur={() => handleWorkCountBlur(keyword.id)}
+                                        className="w-full min-w-[30px] sm:min-w-[40px] px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+                                        onClick={e => e.stopPropagation()}
+                                      />
+                                    </td>
+                                    <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                      <input
+                                        type="text"
+                                        placeholder="작업일"
+                                        value={keyword.dueDays === null ? '' : keyword.dueDays}
+                                        onChange={(e) => {
+                                          // 빈 문자열이거나 숫자가 아니면 null로 처리
+                                          const inputValue = e.target.value;
+                                          if (inputValue === '') {
+                                            // 빈 문자열을 허용하고 임시로 null 처리
+                                            setKeywords(prev =>
+                                              prev.map(k =>
+                                                k.id === keyword.id ? { ...k, dueDays: null } : k
+                                              )
+                                            );
+                                            return;
+                                          }
+                                          
+                                          // 숫자만 입력 허용
+                                          if (/^\d+$/.test(inputValue)) {
+                                            const numValue = parseInt(inputValue);
+                                            handleDueDaysChange(keyword.id, numValue);
+                                          }
+                                        }}
+                                        onBlur={(e) => {
+                                          // 포커스를 잃을 때 빈 값이면 기본값 1로 설정
+                                          if (e.target.value === '' || keyword.dueDays === null) {
+                                            handleDueDaysChange(keyword.id, 1);
+                                          }
+                                          
+                                          // 해당 키워드가 선택된 상태인 경우 금액 재계산
+                                          if (selectedKeywords.includes(keyword.id)) {
+                                            setTimeout(() => calculateTotalPayment(), 0);
+                                          }
+                                        }}
+                                        className="w-full px-0 sm:px-2 py-0.5 sm:py-1.5 text-[9px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+                                        style={{ minWidth: '40px' }}
+                                        onClick={e => e.stopPropagation()}
+                                      />
+                                    </td>
+                                    {/* 각 추가 필드를 별도의 td로 분리 */}
+                                    {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
+                                      <td 
+                                        key={index} 
+                                        className="px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle relative group"
+                                        style={{ width: `${35 / Math.max(1, getAdditionalFields(selectedCampaign).length)}%` }}
+                                      >
+                                        {selectedKeywords.includes(keyword.id) ? (
+                                          <div className="relative">
+                                            <input
+                                              type="text"
+                                              placeholder={`${field.fieldName} 입력`}
+                                              value={keyword.inputData?.[field.fieldName] || ''}
+                                              onChange={(e) => handleInputDataChange(keyword.id, field.fieldName, e.target.value)}
+                                              className="w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800"
+                                              onClick={e => e.stopPropagation()}
+                                            />
+                                            {field.description && (
+                                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-help">
+                                                <KeenIcon icon="information" className="size-3 text-blue-400" />
+                                                <div className="hidden group-hover:block absolute bottom-full right-0 z-50 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap max-w-xs">
+                                                  {field.description}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="text-[9px] sm:text-xs text-gray-400 italic">
+                                            선택 후 입력
+                                          </div>
+                                        )}
+                                      </td>
+                                    ))}
+                                    {/* 추가 필드가 없을 경우 빈 셀 (너비 0) */}
+                                    {(!selectedCampaign || getAdditionalFields(selectedCampaign).length === 0) && (
+                                      <td className="w-0 p-0 border-none">
+                                      </td>
+                                    )}
+                                  </tr>
+                                );
+                              })}
                               {keywords.length === 0 && (
                                 <tr>
-                                  <td colSpan={5} className="px-3 py-8 text-center text-gray-600 border border-gray-200 font-bold">
+                                  <td 
+                                    colSpan={selectedCampaign && getAdditionalFields(selectedCampaign).length > 0 
+                                      ? 5 + getAdditionalFields(selectedCampaign).length 
+                                      : 5} 
+                                    className="px-3 py-8 text-center text-gray-600 border border-gray-200 font-bold"
+                                  >
                                     <p>키워드가 없습니다. 키워드를 추가하거나 다른 그룹을 선택해주세요.</p>
                                   </td>
                                 </tr>

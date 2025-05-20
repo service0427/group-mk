@@ -2,6 +2,49 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { KeywordPurchaseInput, KeywordResponse, SlotStatus } from '../types';
 
+// DB 스키마에 맞춘 인터페이스 정의
+interface DbSlot {
+  id: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  keyword_id?: number;
+  input_data: {
+    mainKeyword: string;
+    mid?: number;
+    url?: string;
+    keyword1?: string;
+    keyword2?: string;
+    keyword3?: string;
+    description?: string;
+    keywords?: string[];
+    workCount?: number;
+    dueDays?: number;
+    price?: number;
+    campaign_name?: string;
+    service_type?: string;
+  };
+  is_auto_refund_candidate: boolean;
+  is_auto_continue: boolean;
+}
+
+interface SlotHistoryEntry {
+  slot_id: string;
+  status: string;
+  created_at: string;
+  note: string;
+  user_id: string;
+}
+
+interface PendingBalanceEntry {
+  slot_id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const keywordPurchaseService = {
   async purchaseKeywords(purchaseData: KeywordPurchaseInput): Promise<KeywordResponse> {
     const { keywordIds, amount } = purchaseData;
@@ -99,45 +142,58 @@ export const keywordPurchaseService = {
         // 슬롯 ID 생성
         const slotId = uuidv4();
         const now = new Date().toISOString();
+
+        console.log('keyword:', keyword);
         
-        // 슬롯 항목 생성
-        slotEntries.push({
+        // 슬롯 항목 생성 (타입 매칭을 위해 명확한 인터페이스 사용)
+        const slotEntry: DbSlot = {
           id: slotId,
           user_id: userId,
-          status: SlotStatus.PENDING, // 상태를 'pending'으로 설정
+          status: SlotStatus.PENDING,
           created_at: now,
           updated_at: now,
           keyword_id: keyword.id,
           input_data: {
             mainKeyword: keyword.main_keyword,
             mid: keyword.mid,
-            url: keyword.url,
+            url: keyword.url, 
             keyword1: keyword.keyword1,
             keyword2: keyword.keyword2,
             keyword3: keyword.keyword3,
-            description: keyword.description
+            description: keyword.description,
+            // keywords 배열로도 저장 (호환성을 위해)
+            keywords: [keyword.keyword1, keyword.keyword2, keyword.keyword3].filter(Boolean),
+            // 작업 관련 정보
+            workCount: 10, // 기본 작업 타수 설정
+            dueDays: 3,   // 기본 마감일 설정
+            price: amount, // 구매 금액
+            campaign_name: "키워드 슬롯", // 기본 캠페인 이름
+            service_type: "NaverTraffic", // 기본 서비스 타입
           },
           is_auto_refund_candidate: false,
           is_auto_continue: false
-        });
+        };
+        slotEntries.push(slotEntry);
         
         // 슬롯 히스토리 로그 항목 생성
-        slotHistoryEntries.push({
+        const historyEntry: SlotHistoryEntry = {
           slot_id: slotId,
           status: SlotStatus.PENDING, // 상태를 'pending'으로 설정
           created_at: now,
           note: '키워드 슬롯 생성됨',
           user_id: userId
-        });
+        };
+        slotHistoryEntries.push(historyEntry);
         
         // 보류 잔액 항목 생성
-        pendingBalanceEntries.push({
+        const pendingBalanceEntry: PendingBalanceEntry = {
           slot_id: slotId,
           amount: amount,
           status: 'pending',
           created_at: now,
           updated_at: now
-        });
+        };
+        pendingBalanceEntries.push(pendingBalanceEntry);
       }
       
       // 5. 슬롯 항목 일괄 삽입

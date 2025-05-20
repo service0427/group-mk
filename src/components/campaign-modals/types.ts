@@ -114,10 +114,17 @@ export interface ICampaign {
 }
 
 // 확장된 캠페인 인터페이스
+// 사용자 입력 필드 타입 정의
+export interface UserInputField {
+  fieldName: string;
+  description: string;
+}
+
 export interface ExtendedCampaign extends ICampaign {
   // These fields are already in ICampaign but are listed here for backward compatibility
   additionalLogic?: string;
   detailedDescription?: string;
+  userInputFields?: UserInputField[]; // 사용자 슬롯 구매 시 입력 필드 정보 (배열 형식)
   unitPrice?: string;
   bannerImage?: string;
   rejectionReason?: string;

@@ -3,20 +3,16 @@
   "name": "mk-develop",
   "main": "map-api-worker.js",
   "compatibility_date": "2025-05-06",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": "./dist"
   },
   "dev": {
     "port": 8787
   },
-  "compatibility_flags": [
-    "websockets"
-  ],
-  "build": {
-    "upload": {
-      "format": "service-worker"
-    }
-  },
+  "pages_build_output_dir": "dist",
   "env": {
     "production": {
       "vars": {

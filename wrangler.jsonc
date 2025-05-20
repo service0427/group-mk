@@ -1,13 +1,13 @@
 {
-  "name": "group-mk",
   "account_id": "d487a4f4ab6dd57899955ec5775f10ce",
-  "pages_build_output_dir": "dist",
+  "name": "mk-develop",
+  "main": "map-api-worker.js",
   "compatibility_date": "2025-05-06",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "assets": {
+    "directory": "./dist"
+  },
   "dev": {
-    "port": 9000
+    "port": 8787
   },
   "env": {
     "production": {

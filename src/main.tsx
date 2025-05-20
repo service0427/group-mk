@@ -1,3 +1,6 @@
+// WebSocket 브라우저 호환성 이슈 수정 (supabase 가져오기 전에 로드되어야 함)
+import './hooks/browser-ws-fix';
+
 import '@/components/keenicons/assets/styles.css';
 import './styles/globals.css';
 import './styles/active-parent-dot.js'; // 상위 메뉴 점 표시를 위한 JavaScript

@@ -1,0 +1,7 @@
+# Cloudflare Pages Configuration
+# If needed, you can override Cloudflare's defaults by providing custom build configuration
+
+[build]
+  command = "npm run build:cloudflare"
+  publish = "dist"
+  node_version = "20.x"

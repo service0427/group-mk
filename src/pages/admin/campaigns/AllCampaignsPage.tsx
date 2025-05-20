@@ -52,7 +52,7 @@ const AllCampaignsPage: React.FC = () => {
       // 데이터 변환
       const formattedCampaigns = data.map((item, index) => {
         // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
-        let parsedItem = { ...item };
+        const parsedItem = { ...item };
 
         // add_info 필드 처리
         if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
@@ -152,7 +152,7 @@ const AllCampaignsPage: React.FC = () => {
     <CommonTemplate
       title="모든 캠페인 통합 관리"
       description="관리자 메뉴 > 모든 캠페인 통합 관리"
-      showPageMenu={true}
+      showPageMenu={false}
     >
       <div className="grid gap-5 lg:gap-7.5">
         {loading ? (

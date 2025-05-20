@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+ 
 import { ChangeEvent, DragEvent, FC, useCallback, useRef, useState } from 'react';
 import { getAcceptTypeString, getListFiles, openFileDialog } from './utils';
 

@@ -334,7 +334,7 @@ export const deleteNotifications = async (options: DeleteNotificationsOptions): 
 
     let totalCount = 0;
     let processedCount = 0;
-    let batchSize = 200; // 한 번에 처리할 알림 수
+    const batchSize = 200; // 한 번에 처리할 알림 수
 
     // 1. 전체 삭제할 알림 수 파악
     if (options.type === 'selected' && options.ids && options.ids.length > 0) {

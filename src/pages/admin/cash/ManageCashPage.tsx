@@ -3,45 +3,93 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { CashManageService } from './CashManageService';
 import {
   Dialog,
-  DialogContent as OriginalDialogContent,
+  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogPortal,
-  DialogOverlay,
+  DialogBody,
 } from "@/components/ui/dialog";
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useDialog } from '@/providers/DialogProvider';
 
-// X 버튼이 없는 DialogContent 커스텀 컴포넌트
-const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        'fixed max-h-[95%] scrollable-y-auto left-[50%] top-[50%] z-[1000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
-        className
-      )}
-      style={{ 
-        position: 'fixed', 
-        top: '50%', 
-        left: '50%', 
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1000
-      }}
-      {...props}
-    >
-      {children}
-      {/* X 버튼 제거 */}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+// 다이얼로그 z-index 스타일 오버라이드
+const rejectDialogStyles = `
+  .dialog-overlay {
+    z-index: 9000 !important;
+  }
+  
+  .dialog-content {
+    z-index: 9001 !important;
+  }
+`;
+
+// 거부 사유 입력 다이얼로그 컴포넌트
+interface RejectReasonDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+}
+
+const RejectReasonDialog: React.FC<RejectReasonDialogProps> = ({ isOpen, onClose, onConfirm }) => {
+  const [reason, setReason] = useState<string>("");
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reason.trim()) {
+      onConfirm(reason);
+      setReason(""); // 입력 내용 초기화
+    }
+  };
+  
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: rejectDialogStyles }} />
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="dialog-content sm:max-w-[400px]">
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>거부 사유 입력</DialogTitle>
+            </DialogHeader>
+            <DialogBody className="py-4">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="reason">
+                  거부 사유
+                </label>
+                <textarea
+                  id="reason"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={4}
+                  placeholder="거부 사유를 입력하세요"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  required
+                />
+              </div>
+            </DialogBody>
+            <DialogFooter className="space-x-2">
+              <Button
+                type="submit"
+                className="bg-danger hover:bg-danger/90 text-white"
+                disabled={!reason.trim()}
+              >
+                거부 확인
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+              >
+                취소
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 const ManageCashPage = () => {
   const [cashRequests, setCashRequests] = useState<any[]>([]);
@@ -61,6 +109,10 @@ const ManageCashPage = () => {
   const [dialogDescription, setDialogDescription] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
   
+  // 거부 사유 다이얼로그 상태 관리
+  const [rejectDialogOpen, setRejectDialogOpen] = useState<boolean>(false);
+  const [currentRequestId, setCurrentRequestId] = useState<string>("");
+  
   // 알림 다이얼로그 표시 함수
   const showDialog = (title: string, description: string, success: boolean = true) => {
     setDialogTitle(title);
@@ -70,35 +122,54 @@ const ManageCashPage = () => {
   };
 
   // 캐시 요청 승인 처리 함수
+  const { showConfirm } = useDialog();
+  
   const handleApproveRequest = async (requestId: string) => {
-    if (!window.confirm('이 요청을 승인하시겠습니까?')) return;
-    
-    setLoading(true);
-    try {
-      const result = await CashManageService.approveChargeRequest(requestId);
-      
-      if (result.success) {
-        showDialog("충전 요청 승인 완료", result.message, true);
-        getCashRequestList(currentPage);
-      } else {
-        throw new Error(result.message);
+    showConfirm(
+      '캐시 충전 승인',
+      '이 요청을 승인하시겠습니까?',
+      async (confirmed) => {
+        if (!confirmed) return;
+        
+        setLoading(true);
+        try {
+          const result = await CashManageService.approveChargeRequest(requestId);
+          
+          if (result.success) {
+            showDialog("충전 요청 승인 완료", result.message, true);
+            getCashRequestList(currentPage);
+          } else {
+            throw new Error(result.message);
+          }
+        } catch (error: any) {
+          showDialog("승인 처리 오류", error.message, false);
+        } finally {
+          setLoading(false);
+        }
+      },
+      {
+        confirmText: '승인',
+        cancelText: '취소',
+        confirmButtonClass: 'bg-success hover:bg-success/90 text-white'
       }
-    } catch (error: any) {
-      
-      showDialog("승인 처리 오류", error.message, false);
-    } finally {
-      setLoading(false);
-    }
+    );
+  };
+  
+  // 캐시 요청 거부 다이얼로그 표시 함수
+  const handleRejectRequest = (requestId: string) => {
+    setCurrentRequestId(requestId);
+    setRejectDialogOpen(true);
   };
   
   // 캐시 요청 거부 처리 함수
-  const handleRejectRequest = async (requestId: string) => {
-    const reason = prompt('거부 사유를 입력하세요:');
-    if (reason === null) return; // 취소 버튼 클릭 시
+  const processRejectRequest = async (reason: string) => {
+    setRejectDialogOpen(false);
+    
+    if (!reason.trim()) return;
     
     setLoading(true);
     try {
-      const result = await CashManageService.rejectChargeRequest(requestId, reason);
+      const result = await CashManageService.rejectChargeRequest(currentRequestId, reason);
       
       if (result.success) {
         showDialog("충전 요청 거부 완료", result.message, true);
@@ -107,7 +178,6 @@ const ManageCashPage = () => {
         throw new Error(result.message);
       }
     } catch (error: any) {
-      
       showDialog("거부 처리 오류", error.message, false);
     } finally {
       setLoading(false);
@@ -634,6 +704,13 @@ const ManageCashPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* 거부 사유 입력 다이얼로그 */}
+      <RejectReasonDialog
+        isOpen={rejectDialogOpen}
+        onClose={() => setRejectDialogOpen(false)}
+        onConfirm={processRejectRequest}
+      />
     </CommonTemplate>
   );
 };

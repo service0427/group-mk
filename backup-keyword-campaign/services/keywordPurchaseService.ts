@@ -87,8 +87,8 @@ export const keywordPurchaseService = {
       }
       
       // 3. 사용할 무료 캐시 및 유료 캐시 계산
-      let freeBalanceToUse = Math.min(freeBalance, totalAmount);
-      let paidBalanceToUse = totalAmount - freeBalanceToUse;
+      const freeBalanceToUse = Math.min(freeBalance, totalAmount);
+      const paidBalanceToUse = totalAmount - freeBalanceToUse;
       
       // 4. 각 키워드에 대해 슬롯, 히스토리 로그, 보류 잔액 생성
       const slotEntries = [];

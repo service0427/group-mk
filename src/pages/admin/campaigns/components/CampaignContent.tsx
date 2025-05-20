@@ -11,6 +11,7 @@ import {
 import { toAbsoluteUrl } from '@/utils';
 import { CampaignModal } from '@/components/campaign-modals';
 import { updateCampaignStatus, updateCampaign } from '../services/campaignService';
+import { useToast } from '@/providers/ToastProvider';
 
 // 캠페인 데이터 인터페이스 정의
 export interface ICampaign {
@@ -54,6 +55,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   isAdmin = false // 기본값은 관리자 권한 없음
 }) => {
   const location = useLocation();
+  const { success, error, info } = useToast();
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -71,7 +73,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     // 현재 캠페인 찾기
     const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) {
-      alert('캠페인을 찾을 수 없습니다.');
+      error('캠페인을 찾을 수 없습니다.');
       return;
     }
 
@@ -80,7 +82,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
     // 승인/미승인 상태인 경우 관리자만 변경 가능
     if ((currentStatus === 'waiting_approval' || currentStatus === 'rejected') && !isAdmin) {
-      alert('승인 대기 중이거나 반려된 캠페인의 상태는 관리자만 변경할 수 있습니다.');
+      error('승인 대기 중이거나 반려된 캠페인의 상태는 관리자만 변경할 수 있습니다.');
       return;
     }
 
@@ -119,18 +121,20 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           )
         );
 
+        // 성공 메시지 표시
+        success(`캠페인 상태가 ${getStatusLabel(finalStatus)}(으)로 변경되었습니다.`);
 
         // 반려된 캠페인이 재승인 요청으로 변경된 경우 알림
         if (currentStatus === 'rejected' && finalStatus === 'waiting_approval' && !isAdmin) {
-          alert('반려된 캠페인이 승인 요청 상태로 변경되었습니다. 운영자 승인 후 처리됩니다.');
+          info('반려된 캠페인이 승인 요청 상태로 변경되었습니다. 운영자 승인 후 처리됩니다.');
         }
       } else {
         console.error('상태 변경 실패');
-        alert('상태 변경 중 오류가 발생했습니다.');
+        error('상태 변경 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('상태 변경 오류:', error);
-      alert('상태 변경 중 오류가 발생했습니다.');
+    } catch (err) {
+      console.error('상태 변경 오류:', err);
+      error('상태 변경 중 오류가 발생했습니다.');
     } finally {
       // 로딩 상태 해제
       setLoadingStatus(prev => ({ ...prev, [campaignId]: false }));
@@ -213,7 +217,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     // 선택된 캠페인도 업데이트 - 모달이 다시 열릴 때 최신 데이터 표시
     setSelectedCampaign(updatedCampaign);
 
-
+    // 성공 메시지 표시 - 토스트로 알림
+    success('캠페인 정보가 성공적으로 저장되었습니다.');
 
     // 부모 컴포넌트에게 업데이트 알림 (있을 경우만)
     // 이렇게 하면 Template 컴포넌트에서 최신 데이터를 다시 가져올 수 있음

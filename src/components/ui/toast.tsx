@@ -104,7 +104,8 @@ export const CustomToast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed ${positionClasses[position]} z-50 p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${typeClasses[type]}`}
+      className={`fixed ${positionClasses[position]} p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${typeClasses[type]}`}
+      style={{ pointerEvents: 'auto' }}
     >
       <div className="flex items-center">
         <div className="flex-shrink-0">
@@ -140,7 +141,7 @@ export const ToastContainer: React.FC<{
   className?: string;
 }> = ({ children, className = '' }) => {
   return (
-    <div className={`fixed inset-0 pointer-events-none flex flex-col z-50 ${className}`}>
+    <div className={`flex flex-col items-end w-full h-full ${className}`} style={{ pointerEvents: 'none' }}>
       {children}
     </div>
   );

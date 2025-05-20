@@ -3,6 +3,7 @@ import { useAuthContext } from '@/auth';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
 import { CommonTemplate } from '@/components/pageTemplate';
+import { useDialog } from '@/providers/DialogProvider';
 
 // 메시지 아이템 컴포넌트를 메모이제이션하여 불필요한 렌더링 방지
 const MessageItem = memo(({
@@ -206,13 +207,15 @@ const ChatManagePage: React.FC = () => {
   };
 
   // 메시지 보내기 (순차적 처리로 외래 키 제약 조건 위반 방지)
+  const { showAlert } = useDialog();
+  
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || !currentRoomId || !currentUser?.id) return;
 
     // 채팅방이 활성 상태가 아니면 메시지 전송 불가
     const roomInfo = allRooms.find(room => room.id === currentRoomId);
     if (!roomInfo || roomInfo.status !== 'active') {
-      alert('종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다.');
+      showAlert('알림', '종료되거나 보관된 채팅방에는 메시지를 보낼 수 없습니다.');
       return;
     }
 
@@ -310,10 +313,9 @@ const ChatManagePage: React.FC = () => {
       }
 
     } catch (error) {
-      
-      alert('메시지 전송 중 오류가 발생했습니다');
+      showAlert('오류', '메시지 전송 중 오류가 발생했습니다');
     }
-  }, [inputValue, currentRoomId, currentUser]);
+  }, [inputValue, currentRoomId, currentUser, showAlert]);
 
   // 모든 채팅방 가져오기 (페이지네이션 적용 + 관리자 클라이언트 사용 + 상태 필터링)
   const fetchAllChatRooms = useCallback(async (page = 0) => {
@@ -652,8 +654,7 @@ const ChatManagePage: React.FC = () => {
         .eq('id', roomId);
 
       if (error) {
-        
-        alert(`채팅방 상태 변경 중 오류가 발생했습니다: ${error.message}`);
+        showAlert('오류', `채팅방 상태 변경 중 오류가 발생했습니다: ${error.message}`);
         return;
       }
 
@@ -721,22 +722,50 @@ const ChatManagePage: React.FC = () => {
       // 채팅방 목록 새로고침
       fetchAllChatRooms(0);
     } catch (error) {
-      
-      alert('채팅방 상태 변경 중 오류가 발생했습니다.');
+      showAlert('오류', '채팅방 상태 변경 중 오류가 발생했습니다.');
     }
-  }, [currentRoomId, fetchRoomMessages]);
+  }, [currentRoomId, fetchRoomMessages, showAlert]);
+
+  // showConfirm 불러오기
+  const { showConfirm } = useDialog();
 
   // 채팅 상담 종료
   const closeChatRoom = useCallback((roomId: string) => {
-    updateChatRoomStatus(roomId, 'closed');
-  }, [updateChatRoomStatus]);
+    showConfirm(
+      '상담 종료',
+      '상담을 종료하시겠습니까?',
+      (confirmed) => {
+        if (confirmed) {
+          updateChatRoomStatus(roomId, 'closed');
+        }
+      },
+      {
+        confirmText: '종료',
+        cancelText: '취소',
+        confirmButtonClass: 'bg-danger hover:bg-danger/90 text-white'
+      }
+    );
+  }, [updateChatRoomStatus, showConfirm]);
 
   // 채팅 상담 재개 기능 제거 - 상담 종료 후에는 새 채팅방으로 진행해야 함
 
   // 채팅 보관
   const archiveChatRoom = useCallback((roomId: string) => {
-    updateChatRoomStatus(roomId, 'archived');
-  }, [updateChatRoomStatus]);
+    showConfirm(
+      '채팅 보관',
+      '채팅을 보관하시겠습니까?',
+      (confirmed) => {
+        if (confirmed) {
+          updateChatRoomStatus(roomId, 'archived');
+        }
+      },
+      {
+        confirmText: '보관',
+        cancelText: '취소',
+        confirmButtonClass: 'bg-primary hover:bg-primary/90 text-white'
+      }
+    );
+  }, [updateChatRoomStatus, showConfirm]);
 
   // 현재 선택된 방 정보 메모이제이션
   const currentRoomInfo = useMemo(() => {
@@ -1072,11 +1101,7 @@ const ChatManagePage: React.FC = () => {
                   {/* 상담 종료 버튼 */}
                   {currentRoomInfo && currentRoomInfo.status === 'active' && (
                     <button
-                      onClick={() => {
-                        if (window.confirm('상담을 종료하시겠습니까?')) {
-                          closeChatRoom(currentRoomId);
-                        }
-                      }}
+                      onClick={() => closeChatRoom(currentRoomId)}
                       className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800 w-16 text-center"
                       title="상담 종료"
                     >
@@ -1087,11 +1112,7 @@ const ChatManagePage: React.FC = () => {
                   {/* 보관 버튼 */}
                   {currentRoomInfo && currentRoomInfo.status !== 'archived' && (
                     <button
-                      onClick={() => {
-                        if (window.confirm('채팅을 보관하시겠습니까?')) {
-                          archiveChatRoom(currentRoomId);
-                        }
-                      }}
+                      onClick={() => archiveChatRoom(currentRoomId)}
                       className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 w-16 text-center"
                       title="채팅 보관"
                     >

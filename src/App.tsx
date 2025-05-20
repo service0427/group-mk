@@ -7,6 +7,7 @@ import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
+import { Dialog } from '@/components/dialog';
 
 const App = () => {
   const { settings } = useSettings();
@@ -70,6 +71,9 @@ const App = () => {
       
       <PathnameProvider>
         <ScrollToTop />
+        
+        {/* 전역 다이얼로그 컴포넌트 */}
+        <Dialog />
         
         {/* 라우팅 구조 */}
         <Routes>

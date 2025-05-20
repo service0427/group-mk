@@ -5,6 +5,7 @@ import { SettingsProvider } from './SettingsProvider';
 import { TranslationProvider } from './TranslationProvider';
 import { UIProvider } from './UIProvider';
 import { ToastProvider } from './ToastProvider';
+import { DialogProvider } from './DialogProvider';
 import { HelmetProvider } from 'react-helmet-async';
 import { LogoutProvider } from '@/contexts/LogoutContext';
 
@@ -35,9 +36,11 @@ const ProvidersWrapper = ({ children }: PropsWithChildren) => {
             <TranslationProvider>
               <UIProvider>
                 <ToastProvider>
-                  <HelmetProvider>
-                    {children}
-                  </HelmetProvider>
+                  <DialogProvider>
+                    <HelmetProvider>
+                      {children}
+                    </HelmetProvider>
+                  </DialogProvider>
                 </ToastProvider>
               </UIProvider>
             </TranslationProvider>

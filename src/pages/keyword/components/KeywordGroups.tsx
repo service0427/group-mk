@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { KeywordGroup } from '../types';
+import { useDialog } from '@/providers/DialogProvider';
 
 interface KeywordGroupsProps {
   groups: KeywordGroup[];
@@ -66,10 +67,19 @@ const KeywordGroups: React.FC<KeywordGroupsProps> = ({
   };
 
   // 그룹 삭제 핸들러
+  const { showDialog } = useDialog();
+  
   const handleDeleteGroup = async (groupId: number) => {
-    if (window.confirm('이 그룹을 삭제하시겠습니까? 그룹에 속한 모든 키워드도 함께 삭제됩니다.')) {
-      await onDeleteGroup(groupId);
-    }
+    showDialog({
+      title: '그룹 삭제',
+      message: '이 그룹을 삭제하시겠습니까? 그룹에 속한 모든 키워드도 함께 삭제됩니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'destructive',
+      onConfirm: async () => {
+        await onDeleteGroup(groupId);
+      }
+    });
   };
 
   return (

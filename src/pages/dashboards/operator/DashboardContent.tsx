@@ -136,7 +136,7 @@ export const DashboardContent: React.FC = () => {
       }
       
       // campaigns 테이블 샘플 데이터 (지금은 사용하지 않음)
-      let sampleCampaign = null;
+      const sampleCampaign = null;
       
       // 활성 캠페인 수 (status가 'active'인 캠페인)
       let activeCampaigns = 0;

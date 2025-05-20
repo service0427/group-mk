@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { CustomToast, ToastContainer } from '@/components/ui/toast';
+import { ToastPortal } from '@/components/ui/ToastPortal';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 export type ToastPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -49,9 +50,9 @@ export const ToastProvider: React.FC<{
         type,
         options: { ...defaultOptions, ...options },
       };
-      
+
       setToasts((prevToasts) => [...prevToasts, newToast]);
-      
+
       // Auto-dismiss after duration
       const duration = options?.duration || defaultOptions.duration;
       if (duration) {
@@ -115,19 +116,22 @@ export const ToastProvider: React.FC<{
       }}
     >
       {children}
-      <ToastContainer>
-        {toasts.map((toast) => (
-          <CustomToast
-            key={toast.id}
-            show={true}
-            message={toast.message}
-            type={toast.type}
-            position={toast.options?.position || defaultOptions.position}
-            duration={toast.options?.duration || defaultOptions.duration}
-            onClose={() => dismiss(toast.id)}
-          />
-        ))}
-      </ToastContainer>
+      {/* 포털을 사용하여 토스트를 document.body에 직접 렌더링 */}
+      <ToastPortal>
+        <ToastContainer>
+          {toasts.map((toast) => (
+            <CustomToast
+              key={toast.id}
+              show={true}
+              message={toast.message}
+              type={toast.type}
+              position={toast.options?.position || defaultOptions.position}
+              duration={toast.options?.duration || defaultOptions.duration}
+              onClose={() => dismiss(toast.id)}
+            />
+          ))}
+        </ToastContainer>
+      </ToastPortal>
     </ToastContext.Provider>
   );
 };
@@ -137,10 +141,10 @@ export const ToastProvider: React.FC<{
  */
 export const useToast = (): ToastContextProps => {
   const context = useContext(ToastContext);
-  
+
   if (context === undefined) {
     throw new Error('useToast must be used within a ToastProvider');
   }
-  
+
   return context;
 };

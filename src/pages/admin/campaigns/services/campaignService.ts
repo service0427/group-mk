@@ -162,7 +162,7 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
   return data.map(item => {
     // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
-    let parsedItem = { ...item };
+    const parsedItem = { ...item };
 
     // add_info 필드 처리
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
@@ -670,7 +670,7 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
     // Supabase Storage에 이미지 업로드
     let logoUrl = null;
     let bannerUrl = null;
-    let additionalInfo: any = {};
+    const additionalInfo: any = {};
 
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();

@@ -240,8 +240,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     );
     
     // 페이지 번호 버튼들
-    let startPage = Math.max(1, pagination.page - paginationRange);
-    let endPage = Math.min(totalPages, pagination.page + paginationRange);
+    const startPage = Math.max(1, pagination.page - paginationRange);
+    const endPage = Math.min(totalPages, pagination.page + paginationRange);
     
     // 시작 페이지가 1보다 크면 첫 페이지 표시
     if (startPage > 1) {

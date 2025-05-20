@@ -81,9 +81,9 @@ export class CashManageService {
       if (historyError) throw new Error(`내역 추가 실패: ${historyError.message}`);
 
       // 4.3. 사용자 잔액 업데이트
-      let currentPaidBalance = userBalanceData?.paid_balance || 0;
-      let currentFreeBalance = userBalanceData?.free_balance || 0;
-      let updatedPaidBalance = parseFloat(currentPaidBalance) + parseFloat(requestData.amount);
+      const currentPaidBalance = userBalanceData?.paid_balance || 0;
+      const currentFreeBalance = userBalanceData?.free_balance || 0;
+      const updatedPaidBalance = parseFloat(currentPaidBalance) + parseFloat(requestData.amount);
 
       // 4.4. 무료 캐시 처리
       let freeAmount = 0;
@@ -129,8 +129,8 @@ export class CashManageService {
       }
 
       // 4.5. 사용자 잔액 테이블 업데이트
-      let updatedFreeBalance = parseFloat(currentFreeBalance) + freeAmount;
-      let totalBalance = updatedPaidBalance + updatedFreeBalance;
+      const updatedFreeBalance = parseFloat(currentFreeBalance) + freeAmount;
+      const totalBalance = updatedPaidBalance + updatedFreeBalance;
 
       if (userBalanceData) {
         // 기존 잔액이 있으면 업데이트

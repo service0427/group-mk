@@ -28,6 +28,10 @@ const SlotList: React.FC<SlotListProps> = ({
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  // 추가정보 팝오버 상태 관리
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  // 반려사유 팝오버 상태 관리
+  const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   
   // 노출 안할 inputData
   const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
@@ -333,16 +337,42 @@ const SlotList: React.FC<SlotListProps> = ({
                       <div className="inline-flex items-center gap-1">
                         <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">반려</span>
                         {slot.rejection_reason && (
-                          <div className="group relative inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 cursor-help">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <line x1="12" y1="8" x2="12" y2="12"></line>
-                              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
-                            <div className="absolute z-10 invisible group-hover:visible bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-w-xs shadow-lg border border-gray-700 dark:border-gray-600">
-                              <div className="font-medium mb-1">반려 사유</div>
-                              <div className="text-gray-200 dark:text-gray-300">{slot.rejection_reason}</div>
-                            </div>
+                          <div className="relative inline-block">
+                            <button
+                              className="text-red-500 cursor-pointer hover:text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenRejectionId(openRejectionId === slot.id ? null : slot.id);
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                              </svg>
+                            </button>
+                            {openRejectionId === slot.id && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setOpenRejectionId(null)} />
+                                <div className="absolute z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="font-medium">반려 사유</div>
+                                    <button 
+                                      className="text-gray-400 hover:text-gray-200 transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenRejectionId(null);
+                                      }}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                  <div className="text-gray-200 dark:text-gray-300">{slot.rejection_reason}</div>
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -367,23 +397,59 @@ const SlotList: React.FC<SlotListProps> = ({
                       return <span className="text-xs text-gray-400">-</span>;
                     
                     return (
-                      <div className="group relative inline-block">
-                        <button className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer">
+                      <div className="relative inline-block">
+                        <button 
+                          className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenPopoverId(openPopoverId === slot.id ? null : slot.id);
+                          }}
+                        >
                           {userInputFields.length}개 필드
                         </button>
-                        {/* Tooltip on hover */}
-                        <div className="absolute z-10 invisible group-hover:visible bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-h-48 overflow-y-auto shadow-lg border border-gray-700 dark:border-gray-600">
-                          <div className="font-medium mb-2 text-gray-100 dark:text-gray-200 border-b border-gray-700 dark:border-gray-600 pb-1">추가 정보</div>
-                          <div className="space-y-1">
-                            {userInputFields.map(([key, value]) => (
-                              <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
-                                <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px]">{key}</span>
-                                <span className="text-gray-400 dark:text-gray-500">:</span>
-                                <span className="text-gray-100 dark:text-gray-200 flex-1">{value ? String(value) : '-'}</span>
+                        {/* 클릭 시 표시되는 팝오버 */}
+                        {openPopoverId === slot.id && (
+                          <>
+                            {/* 배경 클릭 시 닫기 */}
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setOpenPopoverId(null)}
+                            />
+                            <div className="absolute z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600">
+                              <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
+                                <span className="font-medium text-gray-100 dark:text-gray-200">추가 정보</span>
+                                <button
+                                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenPopoverId(null);
+                                  }}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                              <div 
+                                className="overflow-y-auto max-h-48 pr-2"
+                                style={{
+                                  scrollbarWidth: 'thin',
+                                  scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
+                                <div className="space-y-1">
+                                  {userInputFields.map(([key, value]) => (
+                                    <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
+                                      <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{key}</span>
+                                      <span className="text-gray-400 dark:text-gray-500">:</span>
+                                      <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">{value ? String(value) : '-'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })()}

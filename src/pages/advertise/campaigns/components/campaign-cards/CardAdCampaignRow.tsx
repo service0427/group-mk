@@ -17,7 +17,8 @@ const CardAdCampaignRow = ({
   progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
   url,
   rawId,  // 원본 데이터 ID
-  rawData  // 원본 데이터 전체
+  rawData,  // 원본 데이터 전체
+  serviceTypeCode  // 서비스 타입 코드
 }: IAdCampaignProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
@@ -67,12 +68,9 @@ const CardAdCampaignRow = ({
           <div className="flex items-center gap-3.5">
             <div className="flex items-center justify-center w-[50px]">
               <img
-                src={logo && logo.includes('http') ? logo : (logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/animal/svg/${logo}`))}
+                src={logo && logo.includes('http') ? logo : toAbsoluteUrl(logo)}
                 className={`size-[${logoSize}] shrink-0`}
                 alt=""
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-                }}
               />
             </div>
 
@@ -160,12 +158,12 @@ const CardAdCampaignRow = ({
         onClose={() => setSlotModalOpen(false)}
         category={title}
         campaign={{
-          id: 1, // 실제 환경에서는 적절한 ID 필요
+          id: rawId || 1, // 실제 ID 사용
           campaign_name: title,
           status: status.label,
-          service_type: 'ntraffic' // 기본값으로 설정, 실제로는 URL에서 파싱 필요
+          service_type: serviceTypeCode || 'NaverTraffic' // 전달받은 서비스 타입 코드 사용
         }}
-        serviceCode={'NaverShopTraffic'} // 기본값으로 설정, 실제로는 URL에서 파싱 필요
+        serviceCode={serviceTypeCode || 'NaverTraffic'} // 전달받은 서비스 타입 코드 사용
       />
     </>
   );

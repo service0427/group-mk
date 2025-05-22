@@ -155,6 +155,26 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
   // 카드 형식으로 렌더링
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
+    // serviceTypeCode 계산
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
+    const parts = serviceType.split('-');
+    
+    let platform = '';
+    let type = '';
+    let subservice = '';
+    
+    if (parts.length === 3) {
+      platform = parts[0];
+      subservice = parts[1];
+      type = parts[2];
+    } else if (parts.length === 2) {
+      platform = parts[0];
+      type = parts[1];
+    }
+    
+    const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
+    
     return (
       <CardAdCampaign
         logo={item.logo}
@@ -167,12 +187,33 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         url={campaignPath}
         key={index}
         rawId={item.rawId}
+        serviceTypeCode={serviceTypeCode}
       />
     );
   };
 
   // 리스트 형식으로 렌더링
   const renderItem = (item: IAdCampaignsContentItem, index: number) => {
+    // serviceTypeCode 계산
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
+    const parts = serviceType.split('-');
+    
+    let platform = '';
+    let type = '';
+    let subservice = '';
+    
+    if (parts.length === 3) {
+      platform = parts[0];
+      subservice = parts[1];
+      type = parts[2];
+    } else if (parts.length === 2) {
+      platform = parts[0];
+      type = parts[1];
+    }
+    
+    const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
+    
     return (
       <CardAdCampaignRow
         logo={item.logo}
@@ -184,6 +225,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         url={campaignPath}
         key={index}
         rawId={item.rawId}
+        serviceTypeCode={serviceTypeCode}
       />
     );
   };

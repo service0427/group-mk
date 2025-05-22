@@ -5,15 +5,6 @@ import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
 import { KeenIcon } from '@/components';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -23,22 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
-import { ICampaign } from '@/pages/admin/campaigns/components/CampaignContent';
 import { toAbsoluteUrl } from '@/utils';
 import { createCampaign, formatTimeHHMM } from '@/pages/admin/campaigns/services/campaignService';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { CampaignForm, type CampaignFormData } from '@/components/campaign-modals';
 
-// 새 캠페인 인터페이스
-interface NewCampaign {
-  campaignName: string;
-  description: string;
-  detailedDescription: string;
-  logo: string;
-  unitPrice: string;
-  deadline: string;
-  status: string;
-  bannerImage: string;
-}
 
 const CampaignAddPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,15 +27,15 @@ const CampaignAddPage: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const serviceType = queryParams.get('type') || 'ntraffic'; // 기본값: 네이버 트래픽
 
-  // 기본값으로 채워진 새 캠페인 객체
-  const [newCampaign, setNewCampaign] = useState<NewCampaign>({
+  // 캠페인 폼 데이터 상태
+  const [formData, setFormData] = useState<CampaignFormData>({
     campaignName: '',
     description: '',
     detailedDescription: '',
-    logo: '', // 기본 로고를 빈 값으로 설정해 기본 제공 로고 선택이 기본값이 되도록 함
+    userInputFields: [], // 사용자 입력 필드 추가
+    logo: '',
     unitPrice: '100',
     deadline: '18:00',
-    status: 'waiting_approval', // 기본 상태는 '승인 대기중'
     bannerImage: '',
   });
 
@@ -65,15 +45,11 @@ const CampaignAddPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 로고 업로드 관련 상태
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  // 이미지 상태 관리
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 배너 이미지 업로드 관련 상태
-  const [uploadedBannerImage, setUploadedBannerImage] = useState<string | null>(null);
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [bannerImagePreviewUrl, setBannerImagePreviewUrl] = useState<string | null>(null);
-  const bannerImageFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedBannerImage, setUploadedBannerImage] = useState<string | null>(null);
 
   // 배너 이미지 미리보기 모달 상태
   const [bannerPreviewModalOpen, setBannerPreviewModalOpen] = useState<boolean>(false);
@@ -81,82 +57,55 @@ const CampaignAddPage: React.FC = () => {
   // 캠페인 전체 미리보기 모달 상태
   const [campaignPreviewModalOpen, setCampaignPreviewModalOpen] = useState<boolean>(false);
 
-  const handleChange = (field: keyof NewCampaign, value: string) => {
-    setNewCampaign(prev => ({ ...prev, [field]: value }));
-  };
 
-  // 숫자만 입력받는 핸들러
-  const handleNumberChange = (field: keyof NewCampaign, value: string) => {
-    // 숫자와 소수점만 허용
-    const numericValue = value.replace(/[^0-9.]/g, '');
-
-    // 소수점이 두 개 이상 있는 경우 첫 번째 소수점만 유지
-    const parts = numericValue.split('.');
-    const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-
-    // unitPrice만 처리 (다른 숫자 필드들은 제거됨)
-    if (field === 'unitPrice') {
-      setNewCampaign(prev => ({ ...prev, [field]: formattedValue }));
+  // 서비스 유형에 따른 이름 반환
+  const getServiceTypeName = (type: string): string => {
+    // 먼저 표준화된 서비스 타입에서 확인
+    if (SERVICE_TYPE_LABELS[type as CampaignServiceType]) {
+      return SERVICE_TYPE_LABELS[type as CampaignServiceType];
+    }
+    
+    // 레거시 타입 매핑
+    switch (type) {
+      case 'ntraffic':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
+      case 'NaverShopTraffic':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
+      case 'NaverPlaceTraffic':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC];
+      case 'NaverPlaceSave':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE];
+      case 'NaverPlaceShare':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE];
+      case 'NaverAuto':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO];
+      case 'CoupangTraffic':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC];
+      default:
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
     }
   };
 
-  // 로고 파일 업로드 처리
-  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // 서비스 유형에 따른 추가 필드 초기화
+  // CampaignForm 컴포넌트에서 자체적으로 처리하므로 여기서는 빈 객체로 초기화
+  useEffect(() => {
+    setAdditionalFields({});
+  }, [serviceType]);
 
-    // 파일 크기 체크 (5MB 이하로 제한)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('파일 크기는 5MB 이하만 가능합니다.');
-      return;
-    }
-
-    // 이미지 파일 체크
-    if (!file.type.startsWith('image/')) {
-      setError('이미지 파일만 업로드 가능합니다.');
-      return;
-    }
-
-    // 파일 데이터를 Base64로 변환하여 저장
+  // 로고 업로드 핸들러
+  const handleLogoUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // 항상 새 이미지로 업데이트
       setPreviewUrl(result);
       setUploadedLogo(file.name);
-
-      // 명시적으로 기본 선택을 지우고 업로드 이미지를 사용하도록 설정
-      setNewCampaign(prev => ({
-        ...prev,
-        logo: '' // 기본 선택을 초기화
-      }));
+      setFormData(prev => ({ ...prev, logo: '' }));
     };
     reader.readAsDataURL(file);
   };
 
-  // 파일 선택 클릭 핸들러
-  const handleFileSelectClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // 배너 이미지 업로드 처리
-  const handleBannerImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 파일 크기 체크 (10MB 이하로 제한)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하만 가능합니다.');
-      return;
-    }
-
-    // 이미지 파일 체크
-    if (!file.type.startsWith('image/')) {
-      setError('이미지 파일만 업로드 가능합니다.');
-      return;
-    }
-
-    // 파일 데이터를 Base64로 변환하여 저장
+  // 배너 이미지 업로드 핸들러
+  const handleBannerImageUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
@@ -166,29 +115,21 @@ const CampaignAddPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // 배너 이미지 파일 선택 클릭 핸들러
-  const handleBannerImageSelectClick = () => {
-    bannerImageFileInputRef.current?.click();
+  // 배너 이미지 제거 핸들러
+  const handleBannerImageRemove = () => {
+    setBannerImagePreviewUrl(null);
+    setUploadedBannerImage(null);
   };
 
+  // 저장 핸들러
   const handleSave = async () => {
     // 필수 필드 검증
-    if (!newCampaign.campaignName.trim()) {
+    if (!formData.campaignName.trim()) {
       setError('캠페인 이름은 필수입니다.');
       return;
     }
 
-    // 서비스 유형별 필수 필드 검증
-    if (serviceType && serviceTypeInfoMap[serviceType]) {
-      const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-
-      for (const [fieldKey, info] of Object.entries(fieldInfo)) {
-        if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
-          setError(`${info.label}은(는) 필수 입력 항목입니다.`);
-          return;
-        }
-      }
-    }
+    // 서비스 유형별 필수 필드 검증은 CampaignForm 컴포넌트에서 처리됨
 
     setLoading(true);
     setError(null);
@@ -196,19 +137,21 @@ const CampaignAddPage: React.FC = () => {
     try {
       // 1. DB에 새 캠페인 생성
       const result = await createCampaign({
-        campaignName: newCampaign.campaignName,
-        description: newCampaign.description,
-        detailedDescription: newCampaign.detailedDescription,
-        logo: previewUrl ? 'uploaded-logo.png' : newCampaign.logo, // 실제 구현에서는 업로드된 파일 경로로 변경
-        uploadedLogo: previewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
-        uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-        unitPrice: newCampaign.unitPrice,
-        deadline: newCampaign.deadline,
+        campaignName: formData.campaignName,
+        description: formData.description,
+        detailedDescription: formData.detailedDescription,
+        logo: previewUrl ? 'uploaded-logo.png' : formData.logo,
+        uploadedLogo: previewUrl,
+        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null,
+        uploadedBannerImage: bannerImagePreviewUrl,
+        unitPrice: formData.unitPrice,
+        deadline: formData.deadline,
         status: 'waiting_approval', // 항상 '승인 대기중' 상태로 제출
         serviceType: serviceType,
         // 서비스 유형별 추가 필드
         additionalFields: additionalFields,
+        // 사용자 입력 필드 정보를 add_field로 전달
+        add_field: formData.userInputFields,
         // 기본값 설정
         efficiency: '0',
         minQuantity: '10',
@@ -220,7 +163,7 @@ const CampaignAddPage: React.FC = () => {
       }
 
       // 성공 메시지 표시
-      toast.success(`'${newCampaign.campaignName}' 캠페인 제안이 접수되었습니다.`);
+      toast.success(`'${formData.campaignName}' 캠페인 제안이 접수되었습니다.`);
 
       // 캠페인 목록 페이지로 이동
       navigate('/campaign-request');
@@ -231,179 +174,6 @@ const CampaignAddPage: React.FC = () => {
     }
   };
 
-  // 상태값에 따른 라벨 반환
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'active': return '진행중';
-      case 'pending': return '준비중';
-      case 'pause': return '표시안함';
-      default: return '준비중';
-    }
-  };
-
-  // 상태값에 따른 색상 반환
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'pause': return 'warning';
-      case 'pending': return 'info';
-      case 'completed': return 'primary';
-      case 'rejected': return 'danger';
-      default: return 'info';
-    }
-  };
-
-  // 서비스 유형에 따른 이름 및 필드 정보
-  interface ServiceTypeInfo {
-    name: string;
-    additionalFields: { [key: string]: { label: string; type: string; defaultValue: string; placeholder?: string; required?: boolean; options?: Array<{ value: string, label: string }> } };
-  }
-
-  // 서비스 유형별 정보 정의
-  const serviceTypeInfoMap: Record<string, ServiceTypeInfo> = {
-    // 새로운 표준화된 서비스 타입 (Enum 기반)
-    [CampaignServiceType.NAVER_TRAFFIC]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC],
-      additionalFields: {
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://example.com', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC],
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        productCategory: {
-          label: '상품 카테고리', type: 'select', defaultValue: '', required: true,
-          options: [
-            { value: 'fashion', label: '패션의류/잡화' },
-            { value: 'beauty', label: '화장품/미용' },
-            { value: 'food', label: '식품' },
-            { value: 'home', label: '가구/인테리어' },
-            { value: 'digital', label: '디지털/가전' },
-            { value: 'sports', label: '스포츠/레저' },
-          ]
-        }
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_SAVE]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        saveTarget: { label: '저장 목표 수', type: 'number', defaultValue: '10', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_SHARE]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        shareTarget: { label: '공유 목표 수', type: 'number', defaultValue: '10', required: true },
-        targetBlog: { label: '타겟 블로그 정보', type: 'text', defaultValue: '', placeholder: '블로그 정보를 입력하세요 (선택사항)' },
-      }
-    },
-    [CampaignServiceType.NAVER_AUTO]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],
-      additionalFields: {
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        searchFrequency: {
-          label: '검색 빈도 (일)', type: 'select', defaultValue: '7', required: true,
-          options: [
-            { value: '3', label: '3일' },
-            { value: '7', label: '7일' },
-            { value: '14', label: '14일' },
-            { value: '30', label: '30일' },
-          ]
-        },
-      }
-    },
-    [CampaignServiceType.COUPANG_TRAFFIC]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
-      }
-    },
-    [CampaignServiceType.COUPANG_FAKESALE]: {
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_FAKESALE],
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
-        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
-      }
-    }
-  };
-  
-  // 레거시 타입에 대한 매핑 함수
-  const getLegacyServiceInfo = (type: string): ServiceTypeInfo | null => {
-    // 레거시 타입 매핑
-    switch (type) {
-      case 'ntraffic':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_TRAFFIC];
-      case 'NaverShopTraffic':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
-      case 'NaverPlaceTraffic':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_TRAFFIC];
-      case 'NaverPlaceSave':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_SAVE];
-      case 'NaverPlaceShare':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_PLACE_SHARE];
-      case 'NaverAuto':
-        return serviceTypeInfoMap[CampaignServiceType.NAVER_AUTO];
-      case 'CoupangTraffic':
-        return serviceTypeInfoMap[CampaignServiceType.COUPANG_TRAFFIC];
-      default:
-        return null;
-    }
-  };
-
-  // 서비스 유형에 따른 이름 반환
-  const getServiceTypeName = (type: string): string => {
-    // 먼저 표준화된 서비스 타입에서 확인
-    if (serviceTypeInfoMap[type]) {
-      return serviceTypeInfoMap[type].name;
-    }
-    
-    // 레거시 타입인 경우 매핑 함수 사용
-    const legacyInfo = getLegacyServiceInfo(type);
-    if (legacyInfo) {
-      return legacyInfo.name;
-    }
-    
-    // 기본값 반환
-    return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
-  };
-
-  // 서비스 유형에 따른 추가 필드 초기화
-  useEffect(() => {
-    if (serviceType && serviceTypeInfoMap[serviceType]) {
-      const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-      const initialValues: { [key: string]: string } = {};
-
-      // 각 필드의 기본값으로 초기화
-      Object.keys(fieldInfo).forEach(key => {
-        initialValues[key] = fieldInfo[key].defaultValue;
-      });
-
-      setAdditionalFields(initialValues);
-    }
-  }, [serviceType]);
-
-  // 추가 필드 값 변경 핸들러
-  const handleAdditionalFieldChange = (field: string, value: string) => {
-    setAdditionalFields(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   return (
     <DashboardTemplate
       title={`${getServiceTypeName(serviceType)} 캠페인 등록 신청`}
@@ -411,352 +181,23 @@ const CampaignAddPage: React.FC = () => {
       headerTextClass="text-white"
     >
       <Card className="overflow-hidden mb-6 shadow-md border border-gray-200 dark:border-gray-700">
-        {/* 오류 메시지 */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 mx-6 my-4 rounded-md flex items-center shadow-sm border border-red-200 dark:border-red-800/50">
-            <KeenIcon icon="warning-triangle" className="size-5 mr-3 flex-shrink-0" />
-            <span className="font-medium">{error}</span>
-          </div>
-        )}
-
         <div className="p-6">
-          <div className="space-y-4">
-            {/* 헤더 정보 - 표 스타일로 통일 */}
-            <div className="overflow-hidden border border-border rounded-lg mb-6 shadow-sm bg-white dark:bg-gray-800/20">
-              <div className="flex items-center p-5">
-                <div className="relative flex-shrink-0 mr-4">
-                  {previewUrl || newCampaign.logo ? (
-                    <img
-                      src={previewUrl || toAbsoluteUrl(`/media/${newCampaign.logo}`)}
-                      className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
-                      alt="캠페인 로고"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 기본 이미지 사용
-                        (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
-                      }}
-                    />
-                  ) : (
-                    <div className="rounded-full size-16 bg-gray-100 flex items-center justify-center text-gray-400 font-medium border border-gray-200 shadow-sm">
-                      로고
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                </div>
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      onClick={handleFileSelectClick}
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
-                      size="sm"
-                      disabled={loading}
-                    >
-                      <KeenIcon icon="picture" className="me-1.5 size-4" />
-                      로고 이미지 업로드
-                    </Button>
-
-                    <span className="text-sm font-medium text-gray-500 mx-2">또는</span>
-
-                    <div className="w-64">
-                      <Select
-                        value={previewUrl ? 'none' : (newCampaign.logo || 'none')}
-                        onValueChange={(value) => {
-                          // 업로드된 이미지를 모두 제거하고 드롭다운 선택으로 전환
-                          setPreviewUrl(null);
-                          setUploadedLogo(null);
-
-                          // 'none'을 선택한 경우 로고를 빈 문자열로 설정
-                          if (value === 'none') {
-                            handleChange('logo', '');
-                            return;
-                          }
-
-                          if (value) {
-                            // 선택된 동물 로고 값
-                            const selectedAnimal = value;
-
-                            // 동물명 추출 및 한글로 변환
-                            const animalNameMap: { [key: string]: string } = {
-                              'bear': '곰',
-                              'cat': '고양이',
-                              'cow': '소',
-                              'crocodile': '악어',
-                              'dolphin': '돌고래',
-                              'elephant': '코끼리',
-                              'flamingo': '플라밍고',
-                              'giraffe': '기린',
-                              'horse': '말',
-                              'kangaroo': '캥거루',
-                              'koala': '코알라',
-                              'leopard': '표범',
-                              'lion': '사자',
-                              'llama': '라마',
-                              'owl': '올빼미',
-                              'pelican': '펠리컨',
-                              'penguin': '펭귄',
-                              'sheep': '양',
-                              'teddy-bear': '테디베어',
-                              'turtle': '거북이'
-                            };
-
-                            // 동물명 추출 (마지막 / 이후, .svg 이전 텍스트)
-                            const animalNameWithPath = selectedAnimal.split('/').pop() || '';
-                            const englishAnimalName = animalNameWithPath.replace('.svg', '');
-
-                            // 영어 동물명을 한글로 변환
-                            const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
-
-                            // 5자리 랜덤 숫자 생성 (10000~99999)
-                            const randomNum = Math.floor(10000 + Math.random() * 90000);
-
-                            // "[한글 동물명]-[랜덤숫자]" 형식으로 자동 설정 (기존 이름 덮어쓰기)
-                            handleChange('campaignName', `${koreanAnimalName}-${randomNum}`);
-
-                            // logo 필드를 선택된 값으로 설정
-                            handleChange('logo', value);
-                          }
-                        }}
-                        disabled={loading}
-                      >
-                        <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
-                          <SelectValue placeholder="기본 제공 로고 선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">기본 제공 로고 선택</SelectItem>
-                          <SelectItem value="animal/svg/bear.svg">곰</SelectItem>
-                          <SelectItem value="animal/svg/cat.svg">고양이</SelectItem>
-                          <SelectItem value="animal/svg/cow.svg">소</SelectItem>
-                          <SelectItem value="animal/svg/crocodile.svg">악어</SelectItem>
-                          <SelectItem value="animal/svg/dolphin.svg">돌고래</SelectItem>
-                          <SelectItem value="animal/svg/elephant.svg">코끼리</SelectItem>
-                          <SelectItem value="animal/svg/flamingo.svg">플라밍고</SelectItem>
-                          <SelectItem value="animal/svg/giraffe.svg">기린</SelectItem>
-                          <SelectItem value="animal/svg/horse.svg">말</SelectItem>
-                          <SelectItem value="animal/svg/kangaroo.svg">캥거루</SelectItem>
-                          <SelectItem value="animal/svg/koala.svg">코알라</SelectItem>
-                          <SelectItem value="animal/svg/leopard.svg">표범</SelectItem>
-                          <SelectItem value="animal/svg/lion.svg">사자</SelectItem>
-                          <SelectItem value="animal/svg/llama.svg">라마</SelectItem>
-                          <SelectItem value="animal/svg/owl.svg">올빼미</SelectItem>
-                          <SelectItem value="animal/svg/pelican.svg">펠리컨</SelectItem>
-                          <SelectItem value="animal/svg/penguin.svg">펭귄</SelectItem>
-                          <SelectItem value="animal/svg/sheep.svg">양</SelectItem>
-                          <SelectItem value="animal/svg/teddy-bear.svg">테디베어</SelectItem>
-                          <SelectItem value="animal/svg/turtle.svg">거북이</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Input
-                    type="text"
-                    value={newCampaign.campaignName}
-                    onChange={(e) => handleChange('campaignName', e.target.value)}
-                    className="text-xl font-semibold"
-                    placeholder="캠페인 이름 입력"
-                    disabled={loading}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요. <span className="text-blue-500">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span></p>
-                </div>
-              </div>
-            </div>
-
-            {/* 캠페인 정보 테이블 */}
-            <div className="overflow-hidden border border-border rounded-lg mb-6 shadow-sm">
-              <table className="min-w-full divide-y divide-border">
-                <tbody className="divide-y divide-border">
-                  <tr>
-                    <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      건당 단가
-                    </th>
-                    <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                      <div className="flex items-center">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="100"
-                          value={newCampaign.unitPrice}
-                          onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                          className="w-24"
-                          disabled={loading}
-                        />
-                        <span className="ml-2 text-md font-medium text-foreground">원</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      접수마감시간
-                    </th>
-                    <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                      <Input
-                        type="time"
-                        value={newCampaign.deadline}
-                        onChange={(e) => handleChange('deadline', e.target.value)}
-                        className="w-36"
-                        disabled={loading}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      배너 이미지
-                    </th>
-                    <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start gap-4">
-                          <Button
-                            type="button"
-                            onClick={handleBannerImageSelectClick}
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
-                            size="sm"
-                            disabled={loading}
-                          >
-                            <KeenIcon icon="picture" className="me-1.5 size-4" />
-                            배너 이미지 업로드
-                          </Button>
-                          {uploadedBannerImage && (
-                            <span className="text-sm text-success">
-                              <KeenIcon icon="check-circle" className="me-1" />
-                              {uploadedBannerImage} 업로드됨
-                            </span>
-                          )}
-                          <input
-                            ref={bannerImageFileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleBannerImageUpload}
-                            className="hidden"
-                          />
-                        </div>
-
-                        {bannerImagePreviewUrl && (
-                          <div className="mt-2 relative flex items-start gap-2">
-                            <div className="relative">
-                              <img
-                                src={bannerImagePreviewUrl}
-                                alt="배너 이미지 미리보기"
-                                className="w-40 h-auto rounded-md border border-border object-cover"
-                                style={{ maxHeight: '60px' }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setBannerImagePreviewUrl(null);
-                                  setUploadedBannerImage(null);
-                                }}
-                                className="absolute -top-2 -right-2 size-5 flex items-center justify-center bg-red-500 rounded-full text-white shadow-md hover:bg-red-600"
-                                title="이미지 제거"
-                              >
-                                <KeenIcon icon="cross" className="size-2.5" />
-                              </button>
-                            </div>
-                            <Button
-                              type="button"
-                              onClick={() => setBannerPreviewModalOpen(true)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white"
-                              size="sm"
-                            >
-                              <KeenIcon icon="eye" className="me-1.5 size-4" />
-                              크게 보기
-                            </Button>
-                          </div>
-                        )}
-                        <p className="text-sm text-muted-foreground mt-1">캠페인 상세 페이지에 표시될 배너 이미지를 업로드하세요.</p>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      캠페인 설명
-                    </th>
-                    <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                      <Textarea
-                        value={newCampaign.description}
-                        onChange={(e) => handleChange('description', e.target.value)}
-                        className="min-h-[60px]"
-                        rows={2}
-                        placeholder="간단한 캠페인 설명을 입력하세요"
-                        disabled={loading}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      캠페인 상세설명
-                    </th>
-                    <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                      <Textarea
-                        value={newCampaign.detailedDescription}
-                        onChange={(e) => handleChange('detailedDescription', e.target.value)}
-                        className="min-h-[100px]"
-                        rows={4}
-                        placeholder="상세한 캠페인 설명을 입력하세요"
-                        disabled={loading}
-                      />
-                    </td>
-                  </tr>
-
-                  {/* 서비스 유형별 추가 필드 */}
-                  {serviceType && serviceTypeInfoMap[serviceType] &&
-                    Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
-                      <tr key={fieldKey}>
-                        <th className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                          {fieldInfo.label}
-                          {fieldInfo.required && <span className="text-red-500 ml-1">*</span>}
-                        </th>
-                        <td className="px-5 py-4 bg-white dark:bg-gray-800/20">
-                          {fieldInfo.type === 'select' ? (
-                            <Select
-                              value={additionalFields[fieldKey] || fieldInfo.defaultValue || 'none'}
-                              onValueChange={(value) => handleAdditionalFieldChange(fieldKey, value)}
-                              disabled={loading}
-                            >
-                              <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
-                                <SelectValue placeholder="선택하세요" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">선택하세요</SelectItem>
-                                {fieldInfo.options?.map(option => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : fieldInfo.type === 'textarea' ? (
-                            <Textarea
-                              value={additionalFields[fieldKey] || ''}
-                              onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                              className="min-h-[60px]"
-                              placeholder={fieldInfo.placeholder}
-                              disabled={loading}
-                              required={fieldInfo.required}
-                            />
-                          ) : (
-                            <Input
-                              type={fieldInfo.type}
-                              value={additionalFields[fieldKey] || ''}
-                              onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                              className="w-full"
-                              placeholder={fieldInfo.placeholder}
-                              disabled={loading}
-                              required={fieldInfo.required}
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <CampaignForm
+            formData={formData}
+            onFormDataChange={setFormData}
+            additionalFields={additionalFields}
+            onAdditionalFieldsChange={setAdditionalFields}
+            serviceType={serviceType}
+            loading={loading}
+            error={error}
+            onBannerPreview={() => setBannerPreviewModalOpen(true)}
+            previewUrl={previewUrl}
+            onLogoUpload={handleLogoUpload}
+            bannerImagePreviewUrl={bannerImagePreviewUrl}
+            onBannerImageUpload={handleBannerImageUpload}
+            onBannerImageRemove={handleBannerImageRemove}
+            isModal={false}
+          />
         </div>
 
         {/* 버튼 - 푸터 영역 */}
@@ -944,8 +385,8 @@ const CampaignAddPage: React.FC = () => {
                       if (previewUrl) return previewUrl;
 
                       // 기본 제공 로고 중 선택된 것이 있으면 그것을 사용
-                      if (newCampaign.logo && newCampaign.logo !== 'none') {
-                        return toAbsoluteUrl(`/media/${newCampaign.logo}`);
+                      if (formData.logo && formData.logo !== 'none') {
+                        return toAbsoluteUrl(`/media/${formData.logo}`);
                       }
 
                       // 아무것도 선택되지 않았으면 랜덤 동물 SVG 사용
@@ -966,7 +407,7 @@ const CampaignAddPage: React.FC = () => {
                   />
                   <div>
                     <h2 className="text-lg font-semibold text-foreground flex items-center">
-                      {newCampaign.campaignName || '(캠페인 이름을 입력해주세요)'}
+                      {formData.campaignName || '(캠페인 이름을 입력해주세요)'}
                       <span className="badge badge-success badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2">
                         <span className="size-1.5 rounded-full bg-success me-1.5"></span>
                         진행중
@@ -988,7 +429,7 @@ const CampaignAddPage: React.FC = () => {
                       <div className="text-sm text-muted-foreground">건당 단가</div>
                     </div>
                     <div className="text-xl font-bold text-primary">
-                      {newCampaign.unitPrice ? `${newCampaign.unitPrice}원` : '100원'}
+                      {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}
                     </div>
                   </div>
                   <div className="bg-white p-4 rounded-xl border border-border">
@@ -1006,7 +447,7 @@ const CampaignAddPage: React.FC = () => {
                       <div className="text-sm text-muted-foreground">접수마감시간</div>
                     </div>
                     <div className="text-xl font-bold text-foreground">
-                      {newCampaign.deadline || '18:00'}
+                      {formData.deadline || '18:00'}
                     </div>
                   </div>
                 </div>
@@ -1018,20 +459,37 @@ const CampaignAddPage: React.FC = () => {
                     <div className="mb-4">
                       <h4 className="font-medium text-primary mb-2">설명</h4>
                       <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
-                        {newCampaign.description || '(캠페인 설명을 입력해주세요)'}
+                        {formData.description || '(캠페인 설명을 입력해주세요)'}
                       </p>
                     </div>
 
-                    <div>
+                    <div className="mb-4">
                       <h4 className="font-medium text-primary mb-2">상세 설명</h4>
                       <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                         <p className="whitespace-pre-line text-gray-700">
-                          {newCampaign.detailedDescription && newCampaign.detailedDescription !== newCampaign.description ?
-                            newCampaign.detailedDescription :
-                            (newCampaign.description || '(캠페인 상세 설명을 입력해주세요)')}
+                          {formData.detailedDescription && formData.detailedDescription !== formData.description ?
+                            formData.detailedDescription :
+                            (formData.description || '(캠페인 상세 설명을 입력해주세요)')}
                         </p>
                       </div>
                     </div>
+                    
+                    {formData.userInputFields && formData.userInputFields.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-primary mb-2">사용자 입력 필드</h4>
+                        <div className="max-h-[150px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
+                          <div className="space-y-2">
+                            {formData.userInputFields.map((field, index) => (
+                              <div key={index} className="flex gap-2 items-center text-sm">
+                                <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
+                                <span className="text-gray-400">→</span>
+                                <span className="text-gray-700">{field.description || "(설명 없음)"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1040,34 +498,29 @@ const CampaignAddPage: React.FC = () => {
                   <h3 className="text-lg font-medium text-foreground mb-3">캠페인 가이드라인</h3>
                   <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border">
                     <ul className="list-disc list-inside space-y-1.5">
-                      <li>해당 캠페인 건당 단가는 {newCampaign.unitPrice ? `${newCampaign.unitPrice}원` : '100원'}입니다.</li>
-                      <li>캠페인 접수 시간은 {newCampaign.deadline || '18:00'}까지 입니다.</li>
+                      <li>해당 캠페인 건당 단가는 {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}입니다.</li>
+                      <li>캠페인 접수 시간은 {formData.deadline || '18:00'}까지 입니다.</li>
                       <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
                     </ul>
                   </div>
                 </div>
 
                 {/* 서비스 유형별 추가 정보 */}
-                {serviceType && serviceTypeInfoMap[serviceType] &&
-                  Object.keys(serviceTypeInfoMap[serviceType].additionalFields).length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
-                      <div className="bg-white p-5 rounded-xl border border-border">
-                        <div className="grid gap-4">
-                          {Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
-                            <div key={fieldKey} className="flex flex-col">
-                              <span className="font-medium text-muted-foreground text-sm mb-1">{fieldInfo.label}</span>
-                              <span className="text-foreground">
-                                {fieldInfo.type === 'select' && fieldInfo.options
-                                  ? fieldInfo.options.find(opt => opt.value === additionalFields[fieldKey])?.label || additionalFields[fieldKey] || '-'
-                                  : additionalFields[fieldKey] || '-'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                {serviceType && Object.keys(additionalFields).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
+                    <div className="bg-white p-5 rounded-xl border border-border">
+                      <div className="grid gap-4">
+                        {Object.entries(additionalFields).map(([fieldKey, fieldValue]) => (
+                          <div key={fieldKey} className="flex flex-col">
+                            <span className="font-medium text-muted-foreground text-sm mb-1">{fieldKey}</span>
+                            <span className="text-foreground">{fieldValue || '-'}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* 미리보기 알림 */}
                 <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300">

@@ -589,53 +589,55 @@ export const getServiceTypeCode = (uiCode: string): string => {
   // 소문자로 통일하여 처리 (대소문자 차이로 인한 오류 방지)
   const normalizedCode = uiCode.toLowerCase().trim();
 
-  // UI 코드와 DB 코드 매핑 객체
+  // UI 코드와 DB 코드 매핑 객체 (CampaignServiceType enum 값으로 통일)
   const codeMap: Record<string, string> = {
     // 네이버 트래픽
-    'ntraffic': CampaignServiceType.NAVER_TRAFFIC,
+    'ntraffic': CampaignServiceType.NAVER_TRAFFIC,              // → 'NaverTraffic'
     'naver-traffic': CampaignServiceType.NAVER_TRAFFIC,
     'navertraffic': CampaignServiceType.NAVER_TRAFFIC,
 
     // 네이버 자동완성
-    'naver-auto': CampaignServiceType.NAVER_AUTO,
+    'naver-auto': CampaignServiceType.NAVER_AUTO,               // → 'NaverAuto'
     'nauto': CampaignServiceType.NAVER_AUTO,
     'naver-fakesale': CampaignServiceType.NAVER_AUTO,
     'naverfakesale': CampaignServiceType.NAVER_AUTO,
     'nfakesale': CampaignServiceType.NAVER_AUTO,
 
     // 네이버 쇼핑
-    'nshopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'nshopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,      // → 'NaverShoppingTraffic'
+    'nshop-traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,  // → 'NaverShoppingTraffic'
     'naver-shopping': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
     'naver-shopping-traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
 
     // 네이버 쇼핑 가구매
+    'nshop-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE, // → 'NaverShoppingFakeSale'
     'nshoppingfakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
     'naver-shopping-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
 
     // 네이버 플레이스 트래픽
-    'nplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'nplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,           // → 'NaverPlaceTraffic'
+    'nplace-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naver-place': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naverplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,
-    'nplace-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
     'naver-place-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
 
     // 네이버 플레이스 저장
-    'nplace-save': CampaignServiceType.NAVER_PLACE_SAVE,
+    'nplace-save': CampaignServiceType.NAVER_PLACE_SAVE,         // → 'NaverPlaceSave'
     'naver-place-save': CampaignServiceType.NAVER_PLACE_SAVE,
     'nplacesave': CampaignServiceType.NAVER_PLACE_SAVE,
 
     // 네이버 플레이스 공유
-    'nplace-share': CampaignServiceType.NAVER_PLACE_SHARE,
+    'nplace-share': CampaignServiceType.NAVER_PLACE_SHARE,       // → 'NaverPlaceShare'
     'naver-place-share': CampaignServiceType.NAVER_PLACE_SHARE,
     'nplaceshare': CampaignServiceType.NAVER_PLACE_SHARE,
 
     // 쿠팡 트래픽
-    'coupang': CampaignServiceType.COUPANG_TRAFFIC,
+    'coupang': CampaignServiceType.COUPANG_TRAFFIC,              // → 'CoupangTraffic'
     'coupang-traffic': CampaignServiceType.COUPANG_TRAFFIC,
     'coupangtraffic': CampaignServiceType.COUPANG_TRAFFIC,
 
     // 쿠팡 가구매
-    'coupang-fakesale': CampaignServiceType.COUPANG_FAKESALE,
+    'coupang-fakesale': CampaignServiceType.COUPANG_FAKESALE,    // → 'CoupangFakeSale'
     'coupangfakesale': CampaignServiceType.COUPANG_FAKESALE,
 
     // 기존 레거시 코드 호환성 유지

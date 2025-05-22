@@ -1436,14 +1436,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="w-[98vw] h-[85vh] sm:w-[95vw] sm:h-[75vh] md:w-[90vw] md:h-[70vh] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col" aria-describedby={undefined}>
-          <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
-            <DialogTitle className="text-lg font-semibold text-foreground">
-              캠페인 슬롯 구매
-            </DialogTitle>
-            <DialogHeaderSpacer />
-            <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
-              <span className="font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
-              <span className="ml-1 font-extrabold text-primary dark:text-primary-foreground">{userCashBalance.toLocaleString()}원</span>
+          <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+              <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
+                캠페인 슬롯 구매
+              </DialogTitle>
+              <div className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs sm:text-sm border border-blue-100 dark:border-blue-900 shadow-sm flex items-center gap-1.5 sm:gap-2">
+                <KeenIcon icon="dollar" className="text-primary size-3 sm:size-4" />
+                <span className="hidden sm:inline font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
+                <span className="font-extrabold text-primary dark:text-primary-foreground text-xs sm:text-sm">{userCashBalance.toLocaleString()}원</span>
+              </div>
             </div>
           </DialogHeader>
           <div className="p-4 sm:p-6 bg-background flex-grow overflow-hidden flex flex-col">
@@ -1452,22 +1454,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               {/* 캠페인 상세 정보 - 더 컴팩트하게 */}
               <div className="w-full">
                 {/* 1행: 서비스 선택 및 캠페인 선택 */}
-                <div className="flex items-center justify-between gap-4">
-                  {/* 좌측: 섹션 제목 */}
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  {/* 좌측: 섹션 제목 - 데스크톱에서만 표시 */}
+                  <div className="hidden sm:flex items-center gap-3">
                     <KeenIcon icon="document" className="text-primary size-4" />
                     <span className="text-sm font-medium text-foreground">캠페인 정보</span>
                   </div>
 
                   {/* 우측: 서비스 선택 및 캠페인 선택 */}
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
                     {/* 서비스 선택 */}
-                    <div className="flex items-center gap-3">
-                      <label htmlFor="service-select" className="text-sm font-medium text-foreground flex items-center gap-1.5 whitespace-nowrap">
-                        <KeenIcon icon="category" className="text-green-500 size-4" />
-                        서비스 선택
-                      </label>
-                      <div className="w-48">
+                    <KeenIcon icon="category" className="text-green-500 size-4 shrink-0" />
+                    <div className="w-1/2 sm:w-48">
                       <select
                         id="service-select"
                         value={selectedServiceCode}
@@ -1483,15 +1481,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         ))}
                       </select>
                     </div>
-                  </div>
 
-                  {/* 캠페인 선택 */}
-                  <div className="flex items-center gap-3">
-                    <label htmlFor="campaign-select" className="text-sm font-medium text-foreground flex items-center gap-1.5 whitespace-nowrap">
-                      <KeenIcon icon="document" className="text-blue-500 size-4" />
-                      캠페인 선택
-                    </label>
-                    <div className="w-64">
+                    {/* 캠페인 선택 */}
+                    <KeenIcon icon="document" className="text-blue-500 size-4 shrink-0" />
+                    <div className="w-1/2 sm:w-64">
                     {loading ? (
                       <div className="text-sm text-muted-foreground">캠페인 목록을 불러오는 중...</div>
                     ) : campaigns.length > 0 ? (
@@ -1524,7 +1517,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       <div className="text-sm text-muted-foreground">사용 가능한 캠페인이 없습니다.</div>
                     )}
                     </div>
-                  </div>
                   </div>
                 </div>
 
@@ -1562,7 +1554,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3">
                             <div className="flex items-center gap-1.5 text-sm">
                               <KeenIcon icon="wallet" className="text-primary size-4" />
                               <span className="text-muted-foreground">단가:</span>
@@ -1617,18 +1609,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
                 <div className="space-y-4 flex-1 flex flex-col min-h-0">
                   {/* 1행: 제목과 컨트롤들 */}
-                  <div className="flex items-center justify-between gap-4 mb-2">
-                    {/* 좌측: 섹션 제목 */}
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
+                    {/* 좌측: 섹션 제목 - 데스크톱에서만 표시 */}
+                    <div className="hidden sm:flex items-center gap-3">
                       <KeenIcon icon="pencil" className="text-success size-4" />
                       <span className="text-sm font-medium text-foreground">내 키워드에서 가져오기</span>
                     </div>
 
                     {/* 우측: 그룹 선택과 키워드 검색 */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
                       {/* 그룹 선택 */}
-                      <div className="flex items-center gap-2 min-w-[200px]">
-                        <KeenIcon icon="folder" className="text-blue-500 size-4 shrink-0" />
+                      <KeenIcon icon="folder" className="text-blue-500 size-4 shrink-0" />
+                      <div className="w-1/2 sm:min-w-[200px] sm:flex-none">
                         <select
                           id="group-select"
                           value={selectedGroupId || ''}
@@ -1648,7 +1640,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       </div>
 
                       {/* 키워드 검색 */}
-                      <div className="w-[220px]">
+                      <div className="w-1/2 sm:w-[220px] sm:flex-none">
                         <div className="relative flex items-center">
                           <KeenIcon icon="magnifier" className="text-blue-500 size-4 absolute left-3" />
                           <Input

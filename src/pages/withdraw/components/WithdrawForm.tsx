@@ -360,11 +360,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           accountHolder
         );
         
-        if (notificationResult) {
-          console.log('운영자 알림 전송 성공');
-        } else {
-          console.warn('운영자 알림 전송 결과가 falsy 값 반환');
-        }
       } catch (notificationError) {
         // 알림 전송 실패는 출금 신청 성공에 영향을 주지 않음
         console.error('운영자 알림 전송 실패:', notificationError);

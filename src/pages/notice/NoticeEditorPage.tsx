@@ -114,7 +114,7 @@ const NoticeEditorPage = () => {
               link: `/notice/${id}`,
               priority: NotificationPriority.HIGH
             });
-            console.log('중요 공지사항 알림이 전송되었습니다.');
+
           } catch (notifyError) {
             console.error('공지사항 알림 전송 오류:', notifyError);
             // 알림 전송 실패해도 공지사항 수정 자체는 성공으로 처리
@@ -153,7 +153,7 @@ const NoticeEditorPage = () => {
               link: `/notice/${newNotice.id}`,
               priority: NotificationPriority.HIGH
             });
-            console.log('중요 공지사항 알림이 전송되었습니다.');
+            
           } catch (notifyError) {
             console.error('공지사항 알림 전송 오류:', notifyError);
             // 알림 전송 실패해도 공지사항 등록 자체는 성공으로 처리

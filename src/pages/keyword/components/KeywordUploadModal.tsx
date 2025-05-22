@@ -101,9 +101,6 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
             }
         }
 
-        // 첫줄은 타이틀 이므로 데이터 에서 제외
-        console.log(`파일 확인 완료: 총 ${data.length - 1}개 행 발견`);
-
         return true;
     }
 

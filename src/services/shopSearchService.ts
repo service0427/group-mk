@@ -52,8 +52,6 @@ export const shopSearchService = {
       return 'http://localhost:9000/api';
     }
     
-    // 배포 환경에서는 절대 경로 사용 (URL 디버깅용 로그 추가)
-    console.log('[ShopSearchService] API URL: /api, Environment:', import.meta.env.MODE);
     return '/api'; // Cloudflare에서는 동일 도메인에서 Workers가 실행됨
   },
 

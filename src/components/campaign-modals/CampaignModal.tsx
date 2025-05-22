@@ -474,8 +474,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   };
 
   const handleSave = async () => {
-    // 디버깅: 사용자 입력 필드 로깅
-    console.log("저장 전 userInputFields:", newCampaign.userInputFields);
     
     // 편집 모드(기존 캠페인이 있는 경우)와 새 캠페인 생성 모드를 구분
     if (campaign && updateCampaign) {
@@ -684,8 +682,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         minQuantity: '10',
         additionalLogic: '0'
       };
-      
-      console.log("서버로 전송되는 데이터:", dataToSend);
       
       // 1. DB에 새 캠페인 생성
       const result = await campaignCreator(dataToSend);

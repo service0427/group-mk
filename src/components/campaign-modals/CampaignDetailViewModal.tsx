@@ -719,7 +719,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
                 <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
                   <div className="mb-4">
-                    <h4 className="font-medium text-primary mb-2">설명</h4>
+                    <h4 className="font-medium text-primary mb-2">소개</h4>
                     <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
                       {campaign?.description || '설명이 없습니다.'}
                     </p>

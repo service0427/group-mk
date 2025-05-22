@@ -20,7 +20,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC],
       icon: '/media/ad-brand/naver.png',
-      description: '네이버 검색을 통한 사이트 방문 증가'
+      description: '네이버 검색을 통한 사이트 방문 트래픽'
     },
     {
       id: CampaignServiceType.NAVER_AUTO,
@@ -44,19 +44,19 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
       icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 지도/플레이스 트래픽 증가'
+      description: '네이버 플레이스 트래픽 증가'
     },
     {
       id: CampaignServiceType.NAVER_PLACE_SAVE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
       icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 장소 저장하기 증가'
+      description: '네이버 플레이스 저장하기 증가'
     },
     {
       id: CampaignServiceType.NAVER_PLACE_SHARE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
       icon: '/media/ad-brand/naver-place.png',
-      description: '네이버 장소 블로그 공유 증가'
+      description: '네이버 플레이스 블로그 공유 증가'
     },
     {
       id: CampaignServiceType.COUPANG_TRAFFIC,

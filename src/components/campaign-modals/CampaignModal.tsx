@@ -993,7 +993,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   </tr>
                   <tr>
                     <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                      캠페인 설명
+                      캠페인 소개
                     </th>
                     <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                       <textarea
@@ -1001,7 +1001,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                         onChange={(e) => handleChange('description', e.target.value)}
                         className="w-full h-[60px] px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
                         rows={2}
-                        placeholder="간단한 캠페인 설명을 입력하세요"
+                        placeholder="간단한 캠페인 소개를 입력하세요"
                         disabled={loading}
                       />
                     </td>

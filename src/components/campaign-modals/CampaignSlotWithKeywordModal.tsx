@@ -1472,7 +1472,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         onChange={(e) => {
                           handleServiceChange(e.target.value);
                         }}
-                        className="select flex w-full bg-white rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 h-10 px-3 py-2"
+                        className="select flex w-full bg-white rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 h-10 pl-3 py-2"
                       >
                         {Object.entries(SERVICE_TYPE_LABELS).map(([type, label]) => (
                           <option key={type} value={type}>
@@ -1505,7 +1505,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             fetchCampaignBanner(selected);
                           }
                         }}
-                        className="select flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 px-3 py-2"
+                        className="select flex w-full bg-background rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 h-10 pl-3 py-2"
                       >
                         {campaigns.map((camp) => (
                           <option key={camp.id} value={camp.id}>
@@ -1611,21 +1611,21 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                   {/* 1행: 제목과 컨트롤들 */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
                     {/* 좌측: 섹션 제목 - 데스크톱에서만 표시 */}
-                    <div className="hidden sm:flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
                       <KeenIcon icon="pencil" className="text-success size-4" />
                       <span className="text-sm font-medium text-foreground">내 키워드에서 가져오기</span>
                     </div>
 
                     {/* 우측: 그룹 선택과 키워드 검색 */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
                       {/* 그룹 선택 */}
                       <KeenIcon icon="folder" className="text-blue-500 size-4 shrink-0" />
-                      <div className="w-1/2 sm:min-w-[200px] sm:flex-none">
+                      <div className="flex-1 sm:w-48 sm:flex-none min-w-0">
                         <select
                           id="group-select"
                           value={selectedGroupId || ''}
                           onChange={(e) => handleGroupSelect(Number(e.target.value))}
-                          className="select w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-9 px-3"
+                          className="select w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-9 pl-3"
                         >
                           {keywordGroups.length === 0 ? (
                             <option value="">그룹이 없습니다</option>
@@ -1640,16 +1640,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       </div>
 
                       {/* 키워드 검색 */}
-                      <div className="w-1/2 sm:w-[220px] sm:flex-none">
-                        <div className="relative flex items-center">
-                          <KeenIcon icon="magnifier" className="text-blue-500 size-4 absolute left-3" />
-                          <Input
-                            value={searchKeyword}
-                            onChange={(e) => setSearchKeyword(e.target.value)}
-                            placeholder="키워드 검색어 입력"
-                            className="input w-full pl-9 pr-3 h-9 bg-white border-gray-300 focus:border-blue-400 focus:ring-blue-300"
-                          />
-                        </div>
+                      <KeenIcon icon="magnifier" className="text-blue-500 size-4 shrink-0" />
+                      <div className="flex-1 sm:w-52 sm:flex-none min-w-0">
+                        <Input
+                          value={searchKeyword}
+                          onChange={(e) => setSearchKeyword(e.target.value)}
+                          placeholder="키워드 검색어 입력"
+                          className="input w-full pl-3 pr-3 h-9 bg-white border-gray-300 focus:border-blue-400 focus:ring-blue-300"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1695,9 +1693,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         <div className="flex-1 overflow-hidden sm:overflow-visible bg-white dark:bg-slate-900 min-h-0">
                           <div className="h-full overflow-y-auto custom-scrollbar -mr-3 pr-3 sm:-mr-1 sm:pr-1">
                             <table className="w-full table-fixed border-separate border-spacing-0">
-                            <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600/95 to-indigo-600/95 text-white shadow-sm">
+                            <thead className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white shadow-lg backdrop-blur-sm">
                               <tr className="text-left">
-                                <th className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-500/50 rounded-tl-md">
+                                <th className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
                                   <div className="flex items-center justify-center relative group">
                                     <input
                                       type="checkbox"
@@ -1737,14 +1735,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     </div>
                                   </div>
                                 </th>
-                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">키워드</th>
-                                <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">정보</th>
-                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">타수</th>
-                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased">작업일</th>
+                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">키워드</th>
+                                <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
+                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
+                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업일</th>
                                 {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
                                   <th
                                     key={index}
-                                    className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-500/50 uppercase tracking-wider antialiased relative group ${
+                                    className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased relative group ${
                                       index === getAdditionalFields(selectedCampaign).length - 1 ? 'rounded-tr-md' : ''
                                     }`}
                                     style={{ width: `${35 / Math.max(1, getAdditionalFields(selectedCampaign).length)}%` }}

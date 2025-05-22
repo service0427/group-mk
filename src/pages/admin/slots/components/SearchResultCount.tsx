@@ -17,26 +17,29 @@ const SearchResultCount: React.FC<SearchResultCountProps> = ({
   searchDateTo
 }) => {
   return (
-    <div className="px-5 pb-3">
-      <div className="text-sm font-medium text-gray-700">
-        총 <span className="font-bold text-primary">{count}</span>개의 슬롯이 있습니다.
+    <div className="px-6 pb-3">
+      <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-3">
+        <span>총 <span className="font-semibold text-gray-900 dark:text-gray-100">{count}</span>개</span>
         {searchTerm && (
-          <span className="ml-2">
-            (검색어: "<span className="font-bold text-primary">{searchTerm}</span>")
+          <span className="flex items-center gap-1">
+            <span className="text-gray-400">|</span>
+            <span>검색어: <span className="font-medium text-gray-900 dark:text-gray-100">{searchTerm}</span></span>
           </span>
         )}
         {searchStatus && (
-          <span className="ml-2">
-            (상태: "<span className="font-bold text-primary">
+          <span className="flex items-center gap-1">
+            <span className="text-gray-400">|</span>
+            <span>상태: <span className="font-medium text-gray-900 dark:text-gray-100">
               {STATUS_OPTIONS.find(opt => opt.code === searchStatus)?.name || searchStatus}
-            </span>")
+            </span></span>
           </span>
         )}
         {searchDateFrom && (
-          <span className="ml-2">
-            (기간: <span className="font-bold text-primary">{searchDateFrom}</span>
-            {searchDateTo ? ` ~ ${searchDateTo}` : ''}
-            )
+          <span className="flex items-center gap-1">
+            <span className="text-gray-400">|</span>
+            <span>기간: <span className="font-medium text-gray-900 dark:text-gray-100">{searchDateFrom}</span>
+            {searchDateTo && <span> ~ <span className="font-medium text-gray-900 dark:text-gray-100">{searchDateTo}</span></span>}
+            </span>
           </span>
         )}
       </div>

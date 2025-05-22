@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Campaign, SearchParams } from './types';
-import { SERVICE_TYPE_TO_CATEGORY, STATUS_OPTIONS } from './constants';
+import React from 'react';
+import { Campaign } from './types';
+import { STATUS_OPTIONS } from './constants';
+import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 interface SearchFormProps {
   loading: boolean;
@@ -37,83 +38,168 @@ const SearchForm: React.FC<SearchFormProps> = ({
   onSearchDateToChange,
   onSearch
 }) => {
-  const [isAdvancedSearchVisible, setIsAdvancedSearchVisible] = useState<boolean>(false);
-
   return (
-    <div className="card mb-5 shadow-sm bg-card">
-      <div className="card-header p-6 pb-5 flex justify-between items-center">
-        <h3 className="card-title text-lg font-semibold">슬롯 승인 검색</h3>
-        <button 
-          className="btn btn-sm btn-light hidden md:flex"
-          onClick={() => setIsAdvancedSearchVisible(!isAdvancedSearchVisible)}
-        >
-          {isAdvancedSearchVisible ? (
-            <span className="flex items-center">
-              <span className="mr-2">간편 검색</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="18 15 12 9 6 15"></polyline>
-              </svg>
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <span className="mr-2">상세 검색</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          )}
-        </button>
+    <div className="card shadow-sm mb-5">
+      <div className="card-header px-6 py-4">
+        <h3 className="card-title">슬롯 검색</h3>
       </div>
-      
-      <div className="card-body p-0 px-6">
-        {/* 데스크톱 검색 폼 (md 이상) */}
-        <div className="hidden md:block">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-            {/* 서비스 타입 - select box */}
-            <div className="form-control w-full">
-              <label className="label">
-                <span className="label-text text-sm font-medium text-foreground">서비스 타입</span>
-              </label>
-              <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
+      <div className="card-body px-6 py-4">
+        {/* 데스크톱 검색 폼 */}
+        <div className="hidden md:block space-y-4">
+          {/* 첫 번째 줄 */}
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-3">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">서비스</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={selectedServiceType}
+                  onChange={onServiceTypeChange}
+                  disabled={loading || Object.keys(SERVICE_TYPE_LABELS).length === 0}
+                >
+                  {Object.keys(SERVICE_TYPE_LABELS).map((serviceType) => (
+                    <option key={serviceType} value={serviceType}>
+                      {SERVICE_TYPE_LABELS[serviceType] || serviceType}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="col-span-4">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">캠페인</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={selectedCampaign}
+                  onChange={onCampaignChange}
+                  disabled={loading || filteredCampaigns.length <= 1}
+                >
+                  {filteredCampaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.campaign_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[50px]">상태</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchStatus}
+                  onChange={onSearchStatusChange}
+                >
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="col-span-3">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">검색어</label>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="이름, 상품명, URL, 키워드"
+                    className="input input-bordered input-sm w-full pr-8"
+                    value={searchTerm}
+                    onChange={onSearchChange}
+                  />
+                  {searchTerm && (
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 두 번째 줄 */}
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-3">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">시작일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateFrom}
+                  onChange={onSearchDateFromChange}
+                />
+              </div>
+            </div>
+            
+            <div className="col-span-3">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">종료일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateTo}
+                  onChange={onSearchDateToChange}
+                />
+              </div>
+            </div>
+
+            <div className="col-span-6 flex items-center justify-end">
+              <button
+                className="btn btn-primary btn-sm px-6"
+                onClick={onSearch}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="loading loading-spinner loading-xs"></span>
+                    검색 중
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    검색
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 모바일 검색 폼 */}
+        <div className="block md:hidden space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">서비스 타입</label>
+              <select
+                className="select select-bordered select-sm w-full"
                 value={selectedServiceType}
                 onChange={onServiceTypeChange}
-                disabled={loading || Object.keys(SERVICE_TYPE_TO_CATEGORY).length === 0}
+                disabled={loading || Object.keys(SERVICE_TYPE_LABELS).length === 0}
               >
-                {Object.keys(SERVICE_TYPE_TO_CATEGORY).map((serviceType) => (
+                {Object.keys(SERVICE_TYPE_LABELS).map((serviceType) => (
                   <option key={serviceType} value={serviceType}>
-                    {SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType}
+                    {SERVICE_TYPE_LABELS[serviceType] || serviceType}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* 캠페인 - select box */}
-            <div className="form-control w-full">
-              <label className="label">
-                <span className="label-text text-sm font-medium text-foreground">캠페인</span>
-              </label>
-              <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
-                value={selectedCampaign}
-                onChange={onCampaignChange}
-                disabled={loading || filteredCampaigns.length <= 1}
-              >
-                {filteredCampaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.campaign_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 상태(status) - select box */}
-            <div className="form-control w-full">
-              <label className="label">
-                <span className="label-text text-sm font-medium text-foreground">상태</span>
-              </label>
-              <select 
-                className="select select-bordered w-full focus:ring-2 focus:ring-primary"
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">상태</label>
+              <select
+                className="select select-bordered select-sm w-full"
                 value={searchStatus}
                 onChange={onSearchStatusChange}
               >
@@ -126,103 +212,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </div>
           </div>
 
-          {/* 상세 검색 옵션 - 접었다 펼 수 있음 */}
-          {isAdvancedSearchVisible && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-              {/* 검색어 - input */}
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text text-sm font-medium text-foreground">검색어</span>
-                </label>
-                <div className="input-group">
-                  <input 
-                    type="text" 
-                    placeholder="이름, 상품명, URL, 키워드 등 검색" 
-                    className="input input-bordered w-full focus:ring-2 focus:ring-primary"
-                    value={searchTerm}
-                    onChange={onSearchChange}
-                  />
-                  {searchTerm && (
-                    <button 
-                      className="btn btn-light"
-                      onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 제출일 시작 */}
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text text-sm font-medium text-foreground">제출일 (시작)</span>
-                </label>
-                <input 
-                  type="date" 
-                  className="input input-bordered w-full focus:ring-2 focus:ring-primary"
-                  value={searchDateFrom}
-                  onChange={onSearchDateFromChange}
-                />
-              </div>
-
-              {/* 제출일 종료 */}
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text text-sm font-medium text-foreground">제출일 (종료)</span>
-                </label>
-                <input 
-                  type="date" 
-                  className="input input-bordered w-full focus:ring-2 focus:ring-primary"
-                  value={searchDateTo}
-                  onChange={onSearchDateToChange}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 모바일 검색 폼 (md 미만) */}
-        <div className="block md:hidden">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="text-base font-medium">기본 검색</h4>
-            <button 
-              className="btn btn-sm btn-light"
-              onClick={() => setIsAdvancedSearchVisible(!isAdvancedSearchVisible)}
-            >
-              {isAdvancedSearchVisible ? '간편 검색' : '상세 검색'} 
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                {isAdvancedSearchVisible ? 
-                  <polyline points="18 15 12 9 6 15"></polyline> : 
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                }
-              </svg>
-            </button>
-          </div>
-
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">서비스 타입</label>
-            <select 
-              className="form-select form-select-sm" 
-              value={selectedServiceType}
-              onChange={onServiceTypeChange}
-              disabled={loading || Object.keys(SERVICE_TYPE_TO_CATEGORY).length === 0}
-            >
-              {Object.keys(SERVICE_TYPE_TO_CATEGORY).map((serviceType) => (
-                <option key={serviceType} value={serviceType}>
-                  {SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">캠페인</label>
-            <select 
-              className="form-select form-select-sm"
+          <div>
+            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">캠페인</label>
+            <select
+              className="select select-bordered select-sm w-full"
               value={selectedCampaign}
               onChange={onCampaignChange}
               disabled={loading || filteredCampaigns.length <= 1}
@@ -235,119 +228,55 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </select>
           </div>
 
-          <div className="mb-4">
-            <label className="form-label text-sm font-weight-medium">상태</label>
-            <select 
-              className="form-select form-select-sm"
-              value={searchStatus}
-              onChange={onSearchStatusChange}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
+          <div>
+            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">검색어</label>
+            <input
+              type="text"
+              placeholder="이름, 상품명, URL, 키워드"
+              className="input input-bordered input-sm w-full"
+              value={searchTerm}
+              onChange={onSearchChange}
+            />
           </div>
 
-          {/* 상세 검색 옵션 - 접었다 펼 수 있음 */}
-          {isAdvancedSearchVisible && (
-            <>
-              <div className="mb-4">
-                <label className="form-label text-sm font-weight-medium">검색어</label>
-                <div className="input-group input-group-sm">
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="이름, 상품명, URL, 키워드 등" 
-                    value={searchTerm}
-                    onChange={onSearchChange}
-                  />
-                  {searchTerm && (
-                    <button 
-                      className="btn btn-outline-secondary" 
-                      type="button"
-                      onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">시작일</label>
+              <input
+                type="date"
+                className="input input-bordered input-sm w-full"
+                value={searchDateFrom}
+                onChange={onSearchDateFromChange}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">종료일</label>
+              <input
+                type="date"
+                className="input input-bordered input-sm w-full"
+                value={searchDateTo}
+                onChange={onSearchDateToChange}
+              />
+            </div>
+          </div>
 
-              <div className="row mb-3">
-                <div className="col-6">
-                  <label className="form-label text-sm font-weight-medium">시작일</label>
-                  <input 
-                    type="date" 
-                    className="form-control form-control-sm"
-                    value={searchDateFrom}
-                    onChange={onSearchDateFromChange}
-                  />
-                </div>
-                <div className="col-6">
-                  <label className="form-label text-sm font-weight-medium">종료일</label>
-                  <input 
-                    type="date" 
-                    className="form-control form-control-sm"
-                    value={searchDateTo}
-                    onChange={onSearchDateToChange}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      
-      <div className={`card-footer p-6 ${isAdvancedSearchVisible ? 'pt-2' : 'pt-3'}`}>
-        {/* 데스크톱 검색 버튼 */}
-        <div className="hidden md:flex justify-end">
-          <button 
-            className="btn btn-primary px-6" 
+          <button
+            className="btn btn-primary btn-sm w-full"
             onClick={onSearch}
             disabled={loading}
           >
             {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span className="flex items-center justify-center gap-2">
+                <span className="loading loading-spinner loading-xs"></span>
                 검색 중...
-              </>
+              </span>
             ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="me-2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                검색
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* 모바일 검색 버튼 */}
-        <div className="block md:hidden">
-          <button 
-            className={`btn btn-primary ${isAdvancedSearchVisible ? 'mt-4' : 'mt-0'} w-100`}
-            onClick={onSearch}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                검색 중...
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="me-2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 검색하기
-              </>
+              </span>
             )}
           </button>
         </div>

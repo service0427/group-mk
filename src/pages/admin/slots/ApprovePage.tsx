@@ -6,10 +6,11 @@ import { useLocation } from 'react-router-dom';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { Toaster } from 'sonner';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import { getServiceTypeFromUrl } from '@/utils/serviceTypeResolver';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
-import { SERVICE_TYPE_TO_CATEGORY } from './components/constants';
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 슬롯 서비스 import
 import { approveSlot, rejectSlot, updateSlotMemo } from './services/slotService';
@@ -21,10 +22,7 @@ import RejectModal from './components/RejectModal';
 // 컴포넌트 가져오기
 import SearchForm from './components/SearchForm';
 import SlotList from './components/SlotList';
-import SlotCard from './components/SlotCard';
 import LoadingState from './components/LoadingState';
-import ErrorState from './components/ErrorState';
-import EmptyState from './components/EmptyState';
 import AuthRequired from './components/AuthRequired';
 import SearchResultCount from './components/SearchResultCount';
 import SlotMemoModal from './components/SlotMemoModal';
@@ -32,8 +30,6 @@ import SlotMemoModal from './components/SlotMemoModal';
 // 화면 상태를 열거형으로 명확하게 정의
 enum ViewState {
   LOADING = 'loading',
-  ERROR = 'error',
-  EMPTY = 'empty',
   DATA = 'data',
   AUTH_REQUIRED = 'auth_required',
 }
@@ -46,11 +42,14 @@ const ApprovePage: React.FC = () => {
   // URL에서 쿼리 파라미터 추출
   const queryParams = new URLSearchParams(location.search);
   const campaignFromUrl = queryParams.get('campaign');
-  let serviceTypeFromUrl = queryParams.get('service_type');
+  const serviceTypeFromQuery = queryParams.get('service_type');
 
-  // service_type이 naver-traffic인 경우 ntraffic으로 변환
-  if (serviceTypeFromUrl === 'naver-traffic') {
-    serviceTypeFromUrl = 'ntraffic';
+  // service_type 변환 처리
+  let serviceTypeFromUrl = '';
+  if (serviceTypeFromQuery) {
+    // URL 패턴으로부터 표준 서비스 타입 가져오기
+    const resolvedType = getServiceTypeFromUrl(`/advertise/campaigns/manage/${serviceTypeFromQuery}`);
+    serviceTypeFromUrl = resolvedType || serviceTypeFromQuery;
   }
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([]);
@@ -72,7 +71,7 @@ const ApprovePage: React.FC = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [initialMemo, setInitialMemo] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  
+
   // 반려 모달 상태
   const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
   const [actionSlotId, setActionSlotId] = useState<string | null>(null);
@@ -100,22 +99,14 @@ const ApprovePage: React.FC = () => {
       return ViewState.AUTH_REQUIRED;
     }
 
-    if (error) {
-      return ViewState.ERROR;
-    }
-
-    if (filteredSlots.length === 0) {
-      return ViewState.EMPTY;
-    }
-
     return ViewState.DATA;
-  }, [loading, authLoading, currentUser, error, filteredSlots.length]);
+  }, [loading, authLoading, currentUser]);
 
   // 화면 상태 업데이트 (의존성이 변경될 때마다 실행)
   useEffect(() => {
     const newViewState = determineViewState();
     setViewState(newViewState);
-  }, [determineViewState, loading, authLoading, error, currentUser, filteredSlots.length, selectedServiceType]);
+  }, [determineViewState, loading, authLoading, currentUser]);
 
   // 캠페인 정보 가져오기
   useEffect(() => {
@@ -131,38 +122,52 @@ const ApprovePage: React.FC = () => {
 
         // 현재 사용자가 없다면 조용히 실행 종료 (에러 메시지 표시하지 않음)
         if (!currentUser) {
-          
+
           setLoading(false);
           return;
         }
 
-        
+
 
         // 사용자 역할 확인
         const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
 
         // ADMIN 그룹은 모든 캠페인을, 다른 사용자는 자신의 캠페인만 조회
-        let campaignsQuery = supabase.from('campaigns').select('*');
+        let campaignsQuery = supabase.from('campaigns').select('id, mat_id, campaign_name, service_type, status, description, logo, add_info');
         if (!isAdmin) {
           campaignsQuery = campaignsQuery.eq('mat_id', currentUser.id);
         }
-        
+
         const { data, error } = await campaignsQuery;
 
         if (error) {
-          
+
           setError('캠페인 정보를 가져오는데 실패했습니다.');
         } else if (data) {
+          // add_info 필드가 문자열로 저장된 경우 파싱
+          const parsedCampaigns = data.map(campaign => {
+            if (campaign.add_info && typeof campaign.add_info === 'string') {
+              try {
+                campaign.add_info = JSON.parse(campaign.add_info);
+              } catch (e) {
+                console.error('add_info 파싱 오류:', e);
+                campaign.add_info = null;
+              }
+            }
+            return campaign;
+          });
           
-          setCampaigns(data);
-
-          // 첫 번째 캠페인의 service_type을 기본값으로 설정
-          if (data.length > 0) {
-            setSelectedServiceType(data[0].service_type);
+          setCampaigns(parsedCampaigns);
+          
+          // selectedServiceType이 아직 설정되지 않은 경우에만 기본값 설정
+          if (!selectedServiceType && data.length > 0) {
+            // SERVICE_TYPE_LABELS의 첫 번째 키를 기본값으로 사용
+            const firstServiceType = Object.keys(SERVICE_TYPE_LABELS)[0];
+            setSelectedServiceType(firstServiceType);
           }
         }
       } catch (err: any) {
-        
+
         setError('데이터 조회 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
@@ -177,18 +182,29 @@ const ApprovePage: React.FC = () => {
     if (campaigns.length === 0 || !initialized) return;
 
     if (serviceTypeFromUrl) {
-      
       setSelectedServiceType(serviceTypeFromUrl);
     }
-
-    // 캠페인 선택은 filteredCampaigns가 설정된 후에 처리할 것이므로 여기서는 처리하지 않음
   }, [serviceTypeFromUrl, campaigns, initialized]);
+
+  // URL에서 전달된 캠페인 처리 (초기 로드 시만)
+  useEffect(() => {
+    if (!initialized || !campaignFromUrl || filteredCampaigns.length === 0) return;
+
+    // URL에 캠페인이 지정되어 있고, 해당 캠페인이 현재 필터링된 목록에 있는 경우만 설정
+    const campaignExists = filteredCampaigns.some(c =>
+      c.id.toString() === campaignFromUrl || c.mat_id === campaignFromUrl
+    );
+
+    if (campaignExists) {
+      setSelectedCampaign(campaignFromUrl);
+    }
+  }, [campaignFromUrl, filteredCampaigns, initialized]);
 
   // 선택된 서비스 타입에 따라 캠페인 필터링
   useEffect(() => {
     if (!selectedServiceType || campaigns.length === 0) return;
 
-    
+
 
     // 중요: 서비스 타입이 변경되면 error는 항상 초기화
     setError(null);
@@ -203,19 +219,13 @@ const ApprovePage: React.FC = () => {
       ...filtered
     ]);
 
-    // URL에서 전달된, 또는 기본값으로 "전체" 선택
-    if (campaignFromUrl) {
-      
-      // 숫자 문자열을 숫자로 변환 (캠페인 ID는 숫자)
-      setSelectedCampaign(campaignFromUrl);
-    } else {
-      setSelectedCampaign('all');
-    }
+    // 서비스 타입이 변경되면 캠페인은 "전체"로 초기화
+    setSelectedCampaign('all');
 
     // 서비스 타입이 바뀌면 슬롯 목록도 다시 가져오기
     setSlots([]);
     setFilteredSlots([]);
-  }, [selectedServiceType, campaigns, campaignFromUrl]);
+  }, [selectedServiceType, campaigns]);
 
   // 슬롯 데이터 가져오기
   useEffect(() => {
@@ -237,7 +247,7 @@ const ApprovePage: React.FC = () => {
         // 이전 에러 초기화 
         setError(null);
 
-        
+
 
         // slots 테이블에서 필요한 필드만 선택 + users 테이블을 조인하여 사용자 정보를 한번에 가져옴
         let query = supabase
@@ -265,63 +275,67 @@ const ApprovePage: React.FC = () => {
             )
           `);
 
-        
+
 
         // 사용자 역할 확인
         const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
 
-        // 서비스 타입 필터링 추가
-        // 먼저 해당 서비스 타입을 가진 모든 캠페인 가져오기
+        // 1. 먼저 서비스 타입으로 필터링
+        // 해당 서비스 타입을 가진 캠페인들 찾기
         const serviceTypeCampaigns = campaigns.filter(campaign =>
           campaign.service_type === selectedServiceType
         );
 
-        // 캠페인 ID 목록 생성
-        const serviceTypeCampaignIds = serviceTypeCampaigns.map(campaign => campaign.mat_id);
+        // 서비스 타입에 해당하는 캠페인이 없으면 빈 결과 반환
+        if (!selectedServiceType || serviceTypeCampaigns.length === 0) {
+          // 빈 결과를 위해 Supabase에서 잘 작동하는 방법 사용
+          const { data: emptyData, error } = await query
+            .eq('product_id', -999)
+            .order('created_at', { ascending: false });
 
-        
-
-        // ADMIN 그룹은 서비스 타입으로만 필터링하고, 총판 등은 자신의 mat_id로도 필터링
-        if (!isAdmin) {
-          // 총판 등 일반 사용자: 서비스 타입 + 자신의 캠페인만 필터링
-          if (serviceTypeCampaignIds.length > 0) {
-            query = query.in('mat_id', serviceTypeCampaignIds);
+          if (error) {
+            console.error('빈 결과 쿼리 오류:', error);
+            setError('슬롯 정보를 가져오는데 실패했습니다.');
           } else {
-            // 해당하는 캠페인이 없으면 빈 결과 반환하도록 - 불가능한 조건 추가
-            query = query.eq('id', currentUser.id);
+            setSlots([]);
+            setFilteredSlots([]);
           }
+          return; // 여기서 함수 종료
         } else {
-          // ADMIN 그룹: 서비스 타입 기준으로 캠페인 ID를 찾아서 필터링
-          if (selectedServiceType) {
-            // 서비스 타입이 선택된 경우, 해당 타입의 캠페인들의 ID 목록을 사용
-            const serviceTypeCampaignIds = campaigns
-              .filter(campaign => campaign.service_type === selectedServiceType)
-              .map(campaign => campaign.id);
-            
-            if (serviceTypeCampaignIds.length > 0) {
-              // 찾은 캠페인 ID로 product_id 필터링
-              query = query.in('product_id', serviceTypeCampaignIds);
+          // 2. 사용자 역할에 따른 필터링
+          if (!isAdmin) {
+            // 일반 사용자: 자신의 mat_id + 서비스 타입에 해당하는 캠페인만 필터링
+            const myCampaigns = serviceTypeCampaigns.filter(campaign =>
+              campaign.mat_id === currentUser.id
+            );
+
+            if (myCampaigns.length > 0) {
+              // 내 캠페인 중 해당 서비스 타입의 캠페인 ID들로 필터링
+              const myCampaignIds = myCampaigns.map(campaign => campaign.id);
+              query = query.eq('mat_id', currentUser.id).in('product_id', myCampaignIds);
             } else {
-              console.warn(`해당 서비스 타입(${selectedServiceType})의 캠페인이 없습니다.`);
-              // 결과가 없도록 불가능한 조건 추가
-              query = query.eq('id', 'no-matching-id');
+              // 내 캠페인이 없으면 빈 결과
+              query = query.eq('product_id', -999);
             }
-          }
-        }
-
-        // 특정 캠페인이 선택된 경우 추가 필터링
-        if (selectedCampaign && selectedCampaign !== 'all') {
-          
-
-          // 캠페인 ID를 숫자로 변환
-          const campaignId = parseInt(selectedCampaign);
-
-          if (!isNaN(campaignId)) {
-            // product_id로 필터링 (슬롯이 속한 캠페인 ID)
-            query = query.eq('product_id', campaignId);
           } else {
-            
-            query = query.eq('mat_id', selectedCampaign); // 기존 방식으로 fallback
+            // ADMIN: 서비스 타입의 모든 캠페인 ID로 필터링
+            const campaignIds = serviceTypeCampaigns.map(campaign => campaign.id);
+            query = query.in('product_id', campaignIds);
+          }
+
+          // 3. 특정 캠페인이 선택된 경우 추가 필터링
+          if (selectedCampaign && selectedCampaign !== 'all') {
+            const campaignId = parseInt(selectedCampaign);
+
+            if (!isNaN(campaignId)) {
+              // 숫자 ID인 경우 product_id로 필터링
+              query = query.eq('product_id', campaignId);
+            } else {
+              // 문자열 ID인 경우 mat_id로 필터링 (일반 사용자용)
+              if (!isAdmin) {
+                query = query.eq('mat_id', selectedCampaign);
+              }
+            }
           }
         }
 
@@ -351,12 +365,12 @@ const ApprovePage: React.FC = () => {
         const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
-          
+
           setError('슬롯 정보를 가져오는데 실패했습니다.');
           return;
         }
 
-        
+
 
         if (data && data.length > 0) {
           // 조인된 데이터 형식 변환 (users 객체를 user 필드로 변경)
@@ -373,21 +387,31 @@ const ApprovePage: React.FC = () => {
             // 기존 users 필드 제거하고 user 필드 추가
             const { users, ...slotWithoutUsers } = slot;
 
-            // 캠페인 이름 설정 - 현재 선택된 캠페인 리스트에서 추출
+            // 캠페인 정보 설정 - 현재 선택된 캠페인 리스트에서 추출
             let campaignName;
+            let campaignLogo;
             if (slot.product_id) {
-              // 현재 캠페인 목록에서 캠페인 이름 찾기
+              // 현재 캠페인 목록에서 캠페인 정보 찾기
               const campaignId = parseInt(String(slot.product_id));
               const campaign = campaigns.find(c => parseInt(String(c.id)) === campaignId);
               if (campaign) {
                 campaignName = campaign.campaign_name;
+                
+                // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
+                if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
+                  campaignLogo = campaign.add_info.logo_url;
+                } else {
+                  // 업로드된 로고가 없으면 동물 아이콘 사용
+                  campaignLogo = campaign.logo;
+                }
               }
             }
 
             return {
               ...slotWithoutUsers,
               user,
-              campaign_name: campaignName
+              campaign_name: campaignName,
+              campaign_logo: campaignLogo
             };
           });
 
@@ -401,14 +425,12 @@ const ApprovePage: React.FC = () => {
             setFilteredSlots(enrichedSlots as Slot[]);
           }
         } else {
-          
           setSlots(data || [] as Slot[]);
           setFilteredSlots(data || [] as Slot[]);
           // 데이터가 없는 경우에도 error는 null 상태로 유지
           setError(null);
         }
       } catch (err: any) {
-        
         setError('슬롯 데이터 조회 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
@@ -487,7 +509,7 @@ const ApprovePage: React.FC = () => {
   const handleApproveSlot = async (slotId: string | string[], actionType?: string) => {
     // 로딩 상태 표시
     setLoading(true);
-    
+
     try {
       // 사용자 정보가 없으면 처리 중단
       if (!currentUser?.id) {
@@ -495,7 +517,7 @@ const ApprovePage: React.FC = () => {
         setLoading(false);
         return;
       }
-      
+
       // 처리할 슬롯 ID 설정
       let slotIdsToProcess: string[] = [];
       if (Array.isArray(slotId)) {
@@ -507,43 +529,43 @@ const ApprovePage: React.FC = () => {
       } else {
         slotIdsToProcess = [slotId];
       }
-      
+
       // 해당 슬롯 정보 가져오기
       const slotsToProcess = slots.filter(slot => slotIdsToProcess.includes(slot.id));
-      
+
       // 각 슬롯에 대해 처리
       const results = [];
       for (const slot of slotsToProcess) {
         // 시작일은 오늘로 설정
         const today = new Date();   // 현재일
         const startDateObj = new Date(today);
-        startDateObj.setDate(today.getDate()+1);
+        startDateObj.setDate(today.getDate() + 1);
         const startDate = startDateObj.toISOString().split('T')[0];
-        
+
         // 종료일 계산: 시작일 + (dueDays - 1)
         let dueDays = 0;
         if (slot.input_data?.dueDays) {
           dueDays = parseInt(String(slot.input_data.dueDays));
         }
-        
+
         // dueDays가 없거나 유효하지 않은 경우 1로 설정
         if (isNaN(dueDays) || dueDays <= 0) {
           dueDays = 1;
         }
-        
+
         const endDateObj = new Date(today);
         endDateObj.setDate(today.getDate() + dueDays);
         const endDate = endDateObj.toISOString().split('T')[0];
-        
+
         // API 호출 처리
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
         results.push(result);
-        
+
         if (result.success) {
           // UI 상태 업데이트
-          const newStatus = actionType === 'success' ? 'success' : 
-                          actionType === 'refund' ? 'refund' : 'approved';
-          
+          const newStatus = actionType === 'success' ? 'success' :
+            actionType === 'refund' ? 'refund' : 'approved';
+
           setSlots(prevSlots => {
             return prevSlots.map(s => {
               if (s.id === slot.id) {
@@ -558,7 +580,7 @@ const ApprovePage: React.FC = () => {
               return s;
             });
           });
-          
+
           setFilteredSlots(prevSlots => {
             return prevSlots.map(s => {
               if (s.id === slot.id) {
@@ -575,21 +597,21 @@ const ApprovePage: React.FC = () => {
           });
         }
       }
-      
+
       // 성공 메시지 표시
       const successResults = results.filter(r => r.success);
       if (successResults.length > 0) {
-        showSuccess(slotsToProcess.length > 1 
-          ? `${successResults.length}/${slotsToProcess.length}개의 슬롯이 성공적으로 처리되었습니다.` 
+        showSuccess(slotsToProcess.length > 1
+          ? `${successResults.length}/${slotsToProcess.length}개의 슬롯이 성공적으로 처리되었습니다.`
           : '슬롯이 성공적으로 처리되었습니다.');
       }
-      
+
       // 실패한 결과가 있는 경우
       const failedResults = results.filter(r => !r.success);
       if (failedResults.length > 0) {
         showError(`${failedResults.length}개의 슬롯 처리 중 오류가 발생했습니다.`);
       }
-      
+
       // 선택 초기화
       setSelectedSlots([]);
     } catch (err: any) {
@@ -608,19 +630,19 @@ const ApprovePage: React.FC = () => {
       processRejectSlot(slotId, reason);
       return;
     }
-    
+
     // 배열인 경우 (다중 반려)
     if (Array.isArray(slotId)) {
       if (slotId.length === 0) {
         return; // 선택된 슬롯이 없으면 처리하지 않음
       }
-      
+
       // 모달로 대체
       setActionSlotId(null); // null로 설정하여 배열 처리임을 표시
       setRejectModalOpen(true);
       return;
     }
-    
+
     // 단일 슬롯 처리
     if (!currentUser?.id) {
       setError('사용자 정보를 찾을 수 없습니다.');
@@ -631,14 +653,14 @@ const ApprovePage: React.FC = () => {
     setActionSlotId(slotId);
     setRejectModalOpen(true);
   };
-  
+
   // 실제 반려 처리 로직
   const processRejectSlot = async (slotId: string | string[], reason: string) => {
     if (!currentUser?.id) {
       setError('사용자 정보를 찾을 수 없습니다.');
       return false;
     }
-    
+
     // 로딩 상태 표시
     setLoading(true);
 
@@ -662,7 +684,7 @@ const ApprovePage: React.FC = () => {
               return slot;
             });
           });
-          
+
           setFilteredSlots(prevSlots => {
             return prevSlots.map(slot => {
               if (slotId.includes(slot.id)) {
@@ -715,21 +737,21 @@ const ApprovePage: React.FC = () => {
   // 메모 모달 열기 함수
   const handleOpenMemoModal = (slotId: string) => {
     // 현재 슬롯의 메모 정보 가져오기
-    
-    
-    
+
+
+
 
     const slot = [...slots, ...filteredSlots].find(s => s.id === slotId);
-    
+
 
     if (slot) {
       const currentMemo = slot.mat_reason || '';
-      
-      
+
+
 
       // 로그에 input_data의 구조 출력
       if (slot.input_data) {
-        
+
       }
 
       setSelectedSlotId(slotId);
@@ -737,7 +759,7 @@ const ApprovePage: React.FC = () => {
       setInitialMemo(currentMemo);
       setMemoModalOpen(true);
     } else {
-      
+
     }
   };
 
@@ -757,8 +779,8 @@ const ApprovePage: React.FC = () => {
     }
 
     try {
-      
-      
+
+
 
       const result = await updateSlotMemo(slotId, memo, currentUser.id);
 
@@ -770,7 +792,7 @@ const ApprovePage: React.FC = () => {
 
       // 성공 메시지 표시
       showSuccess('메모가 성공적으로 저장되었습니다.');
-      
+
       // 슬롯 목록 업데이트 (로컬 상태)
       const updateSlotMemoState = (slots: Slot[]) =>
         slots.map(slot =>
@@ -782,7 +804,7 @@ const ApprovePage: React.FC = () => {
       setSlots(updateSlotMemoState);
       setFilteredSlots(updateSlotMemoState);
 
-      
+
       return true;
     } catch (err: any) {
       const errorMsg = err.message || '메모 저장 중 오류가 발생했습니다.';
@@ -794,22 +816,20 @@ const ApprovePage: React.FC = () => {
 
   // 검색 함수 (이벤트 핸들러)
   const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // 서비스 타입이 변경될 때 확실하게 상태 관리
     const newServiceType = e.target.value;
-    
 
-    // 강제로 빈 슬롯 상태로 변경
-    setFilteredSlots([]);
-    setSlots([]);
+    // 서비스 타입이 실제로 변경된 경우만 처리
+    if (newServiceType !== selectedServiceType) {
+      // 오류 상태 초기화
+      setError(null);
 
-    // 오류 상태 초기화
-    setError(null);
+      // 슬롯 데이터 초기화
+      setSlots([]);
+      setFilteredSlots([]);
 
-    // 새 서비스 타입 설정
-    setSelectedServiceType(newServiceType);
-
-    // 로딩 상태로 전환
-    setLoading(true);
+      // 새 서비스 타입 설정
+      setSelectedServiceType(newServiceType);
+    }
   };
 
   const handleCampaignChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -837,7 +857,7 @@ const ApprovePage: React.FC = () => {
     setError(null);
     setSearchRefreshCounter(prev => prev + 1);
     setLoading(true);
-    
+
   };
 
   // 초기 로딩 중에는 간소화된 템플릿 반환
@@ -848,21 +868,12 @@ const ApprovePage: React.FC = () => {
         description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
         showPageMenu={false}
       >
-        <div className="card mb-0 bg-card" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
-          <div className="card-header px-5">
-            <div className="card-title">
-              <h3>슬롯 승인 관리</h3>
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="spinner-border text-primary mb-4" role="status">
+              <span className="visually-hidden">로딩 중...</span>
             </div>
-          </div>
-          <div className="card-body py-5">
-            <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">로딩 중...</span>
-              </div>
-            </div>
-            <div className="text-center mt-3">
-              <p>사용자 정보를 불러오는 중입니다...</p>
-            </div>
+            <p className="text-gray-600 dark:text-gray-400">사용자 정보를 불러오는 중입니다...</p>
           </div>
         </div>
       </CommonTemplate>
@@ -876,13 +887,6 @@ const ApprovePage: React.FC = () => {
       showPageMenu={false}
     >
       <Toaster position="top-right" richColors closeButton />
-      <div className="card mb-0 bg-card" style={{ width: '100%', maxWidth: '100%', margin: 0, borderRadius: 0 }}>
-        <div className="card-header px-5">
-          <div className="card-title">
-            <h3>슬롯 승인 관리</h3>
-          </div>
-        </div>
-
         {/* 검색 및 필터 영역 */}
         <SearchForm
           loading={loading}
@@ -902,7 +906,6 @@ const ApprovePage: React.FC = () => {
           onSearch={handleSearch}
         />
 
-        <div className="card-body py-3 px-0">
           {/* 검색 결과 카운트는 항상 표시 (사용자가 로그인한 경우) */}
           {currentUser && (
             <SearchResultCount
@@ -919,26 +922,10 @@ const ApprovePage: React.FC = () => {
 
           {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
 
-          {viewState === ViewState.ERROR && (
-            <ErrorState error={error} onRetry={handleSearch} />
-          )}
-
-          {viewState === ViewState.EMPTY && (
-            <EmptyState onRefresh={handleSearch} />
-          )}
 
           {viewState === ViewState.DATA && (
             <>
               <SlotList
-                slots={filteredSlots}
-                selectedServiceType={selectedServiceType}
-                onApprove={handleApproveSlot}
-                onReject={handleRejectSlot}
-                onMemo={handleOpenMemoModal}
-                selectedSlots={selectedSlots}
-                onSelectedSlotsChange={setSelectedSlots}
-              />
-              <SlotCard
                 slots={filteredSlots}
                 selectedServiceType={selectedServiceType}
                 onApprove={handleApproveSlot}
@@ -957,9 +944,9 @@ const ApprovePage: React.FC = () => {
                 onSave={handleSaveMemo}
                 slot={selectedSlot}
               />
-              
+
               {/* 승인 모달 제거함 */}
-              
+
               {/* 반려 모달 */}
               <RejectModal
                 isOpen={rejectModalOpen}
@@ -968,7 +955,7 @@ const ApprovePage: React.FC = () => {
                   // actionSlotId가 null이면 배열 처리(선택된 슬롯들), 아니면 단일 슬롯 처리
                   const slotIdToProcess = actionSlotId === null ? selectedSlots : actionSlotId;
                   processRejectSlot(slotIdToProcess, reason);
-                  
+
                   // 모달 상태 초기화
                   setRejectModalOpen(false);
                   setActionSlotId(null);
@@ -977,8 +964,6 @@ const ApprovePage: React.FC = () => {
               />
             </>
           )}
-        </div>
-      </div>
     </CommonTemplate>
   );
 };

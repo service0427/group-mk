@@ -6,6 +6,8 @@ export interface Campaign {
   service_type: string;
   status: string;
   description: string;
+  logo?: string;
+  add_info?: any;
 }
 
 export interface User {
@@ -20,6 +22,7 @@ export interface Slot {
   user_id: string;
   product_id?: number; // 캠페인 ID
   campaign_name?: string; // 캠페인 이름 (UI 표시용)
+  campaign_logo?: string; // 캠페인 로고 (UI 표시용)
   status: string;
   created_at: string;
   submitted_at: string | null;

@@ -71,7 +71,7 @@ export async function onRequest(context) {
         rawType = rawType.replace('ListSummary', '').replace('Summary', '').replace('Ad', 'Ad');
         
         const typeMap = {
-          Place: '떡집(Place)',
+          Place: '플레이스(Place)',
           Restaurant: '맛집(Restaurant)',
           Hospital: '병원(Hospital)',
           Beauty: '미용(Beauty)',
@@ -88,8 +88,8 @@ export async function onRequest(context) {
         const visit = value.visitorReviewCount || 0;
         const blog = value.blogCafeReviewCount || 0;
         const imageCount = value.imageCount || 0;
-        const booking = value.hasBooking ? 'O' : '-';
-        const npay = value.hasNPay ? 'O' : '-';
+        const booking = value.hasBooking ? 'Y' : 'N';
+        const npay = value.hasNPay ? 'Y' : 'N';
         const distance = value.distance || 'N/A';
         const category = value.category || '-';
         const businessCategory = value.businessCategory || '-';

@@ -437,9 +437,15 @@ export const MENU_SIDEBAR: TMenuConfig = [
     authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
       {
-        title: '플레이스 검색',
-        icon: 'geolocation text-primary',
-        path: '/map-search',
+        title: 'N 쇼핑 순위 검색',
+        iconImage: '/media/ad-brand/naver-shopping.png',
+        path: '/search-shop',
+        authCheck: (role) => true,  // 모든 사용자가 접근 가능
+      },
+      {
+        title: 'N 플레이스 순위 검색',
+        iconImage: '/media/ad-brand/naver-place.png',
+        path: '/search-place',
         authCheck: (role) => true,  // 모든 사용자가 접근 가능
       },
       {

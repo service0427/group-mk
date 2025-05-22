@@ -1,19 +1,5 @@
-// 서비스 타입 매핑 정의
-export const SERVICE_TYPE_MAP = {
-  'NS 트래픽': 'NaverShopTraffic',
-  'NP 저장': 'NaverPlaceSave',
-  'NP 공유': 'NaverPlaceShare',
-  'NP 트래픽': 'NaverPlaceTraffic',
-  'N 자동완성': 'NaverAuto',
-  'N 트래픽': 'ntraffic',
-  'C 트래픽': 'CoupangTraffic'
-};
-
-// 서비스 타입 코드와 카테고리 매핑 (역방향)
-export const SERVICE_TYPE_TO_CATEGORY = Object.entries(SERVICE_TYPE_MAP).reduce(
-  (acc, [key, value]) => ({ ...acc, [value]: key }),
-  {} as Record<string, string>
-);
+// CampaignServiceType을 사용하므로 SERVICE_TYPE_MAP과 SERVICE_TYPE_TO_CATEGORY는 삭제됨
+// campaign-modals/types.ts의 CampaignServiceType enum과 SERVICE_TYPE_LABELS를 사용하세요
 
 // 상태 옵션 배열
 export const STATUS_OPTIONS = [

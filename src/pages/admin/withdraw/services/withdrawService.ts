@@ -202,7 +202,7 @@ export async function approveWithdrawRequest(id: string, adminUserId: string) {
                 requestData.amount,
                 requestData.fee_amount || 0
             );
-            console.log('출금 승인 알림 전송 성공:', result);
+            
         } catch (notificationError) {
             // 알림 전송 실패는 출금 승인 성공에 영향을 주지 않음
             console.error('출금 승인 알림 전송 실패:', notificationError);
@@ -356,7 +356,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
                 amount,
                 rejected_reason
             );
-            console.log('출금 반려 알림 전송 성공:', result);
+            
         } catch (notificationError) {
             // 알림 전송 실패는 출금 반려 성공에 영향을 주지 않음
             console.error('출금 반려 알림 전송 실패:', notificationError);

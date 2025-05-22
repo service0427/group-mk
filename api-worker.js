@@ -148,7 +148,6 @@ const isDevEnvironment = false;
  */
 async function handleRequest(request) {
   const url = new URL(request.url);
-  console.log(`[Worker] Received request for ${url.pathname}`);
   
   // CORS 헤더 설정 - 더 많은 헤더와 메서드 허용
   const corsHeaders = {
@@ -170,10 +169,7 @@ async function handleRequest(request) {
   try {
     // 간단한 ping 요청 처리 (서버 상태 확인용)
     if (url.pathname === '/api/ping') {
-      console.log('[Worker] Handling ping request from: ' + request.headers.get('origin') || 'unknown');
-      console.log('[Worker] Request URL: ' + url.toString());
-      console.log('[Worker] Worker Mode: ' + (isDevEnvironment ? 'Mock Data' : 'Real API'));
-      
+
       // 응답 데이터
       const responseData = { 
         status: 'ok',
@@ -183,8 +179,6 @@ async function handleRequest(request) {
         worker_url: url.toString(),
         request_headers: Object.fromEntries([...request.headers])
       };
-      
-      console.log('[Worker] Sending ping response:', JSON.stringify(responseData));
       
       return new Response(JSON.stringify(responseData), {
         headers: {
@@ -196,12 +190,10 @@ async function handleRequest(request) {
 
     // API 요청 처리
     if (url.pathname.startsWith('/api/')) {
-      console.log(`[Worker] Processing API request: ${url.pathname}`);
       
       // 개발 환경이고 모의 데이터 사용이 활성화된 경우 모의 데이터 반환
       if (isDevEnvironment) {
         if (url.pathname === '/api/search') {
-          console.log('[Worker] Returning mock data for search request');
           
           // 검색어에 따라 데이터 변형 (테스트용)
           const query = url.searchParams.get('query') || '테스트';
@@ -221,7 +213,7 @@ async function handleRequest(request) {
             }
           });
         } else if (url.pathname === '/api/location') {
-          console.log('[Worker] Returning mock location data');
+          
           return new Response(JSON.stringify({
             result: {
               point: {
@@ -236,7 +228,7 @@ async function handleRequest(request) {
             }
           });
         } else if (url.pathname === '/api/places') {
-          console.log('[Worker] Returning mock places data');
+          
           return new Response(JSON.stringify(MOCK_DATA), {
             headers: {
               'Content-Type': 'application/json',
@@ -244,7 +236,7 @@ async function handleRequest(request) {
             }
           });
         } else if (url.pathname === '/api/shop') {
-          console.log('[Worker] Returning mock shop data');
+          
           const query = url.searchParams.get('query') || SHOP_CONFIG.defaultQuery;
           const mockShopData = JSON.parse(JSON.stringify(MOCK_SHOP_DATA));
           
@@ -276,10 +268,7 @@ async function handleRequest(request) {
         } catch (apiError) {
           console.error(`[Worker] API call failed: ${apiError.message}`);
           console.error(apiError.stack);
-          
-          // API 오류 시 모의 데이터로 대체
-          console.log('[Worker] Falling back to mock data due to API error');
-          
+                    
           if (url.pathname === '/api/search') {
             const query = url.searchParams.get('query') || '테스트';
             const mockData = JSON.parse(JSON.stringify(MOCK_DATA));
@@ -335,7 +324,6 @@ async function handleRequest(request) {
       }
       
       // 지원하지 않는 API 경로
-      console.log(`[Worker] Unsupported API path: ${url.pathname}`);
       return new Response(JSON.stringify({ error: '지원하지 않는 API 경로입니다.' }), {
         status: 404,
         headers: {
@@ -346,7 +334,6 @@ async function handleRequest(request) {
     }
     
     // API 경로가 아닌 경우 404 반환
-    console.log(`[Worker] Not an API path: ${url.pathname}`);
     return new Response('Not Found', { 
       status: 404,
       headers: corsHeaders
@@ -390,7 +377,6 @@ async function handleLocationRequest(request, url, corsHeaders) {
   
   try {
     const encodedQuery = encodeURIComponent(query);
-    console.log(`[Worker] Fetching location for query: ${query}`);
     
     // 네이버 위치 API 호출
     const response = await fetch('https://map.naver.com/p/api/location', {
@@ -446,7 +432,6 @@ async function handlePlacesRequest(request, url, corsHeaders) {
   
   try {
     const encodedQuery = encodeURIComponent(query);
-    console.log(`[Worker] Fetching places for query: ${query}, coordinates: ${longitude},${latitude}`);
     const display = 70;
     const timestamp = Date.now();
     
@@ -566,7 +551,6 @@ async function handlePlacesRequest(request, url, corsHeaders) {
  */
 async function handleSearchRequest(request, url, corsHeaders) {
   const searchQuery = url.searchParams.get('query');
-  console.log(`[Worker] Processing search request for query: ${searchQuery}`);
   
   if (!searchQuery) {
     return new Response(JSON.stringify({ error: '검색어(query) 파라미터가 필요합니다.' }), {
@@ -582,7 +566,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     const encodedQuery = encodeURIComponent(searchQuery);
     
     // 1. 좌표 추출
-    console.log(`[Worker] Fetching coordinates for: ${searchQuery}`);
     const locResponse = await fetch('https://map.naver.com/p/api/location', {
       headers: {
         "accept": "application/json, text/plain, */*",
@@ -599,7 +582,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     }
     
     const locData = await locResponse.json();
-    console.log(`[Worker] Location API response received`);
     
     let longitude, latitude;
     if (locData && locData.result && locData.result.point) {
@@ -613,14 +595,11 @@ async function handleSearchRequest(request, url, corsHeaders) {
       latitude = '37.639775';
     }
     
-    console.log(`[Worker] Using coordinates: ${longitude}, ${latitude}`);
-    
     // 2. HTML 요청
     const display = 70;
     const timestamp = Date.now();
     const placesUrl = `https://pcmap.place.naver.com/place/list?query=${encodedQuery}&x=${longitude}&y=${latitude}&clientX=${longitude}&clientY=${latitude}&display=${display}&ts=${timestamp}&additionalHeight=76&locale=ko&mapUrl=https%3A%2F%2Fmap.naver.com%2Fp%2Fsearch%2F${encodedQuery}`;
     
-    console.log(`[Worker] Fetching HTML content from Naver Places`);
     const htmlResponse = await fetch(placesUrl, {
       headers: {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -634,9 +613,7 @@ async function handleSearchRequest(request, url, corsHeaders) {
       throw new Error(`HTML request returned status ${htmlResponse.status}`);
     }
     
-    const html = await htmlResponse.text();
-    console.log(`[Worker] HTML content received, length: ${html.length}`);
-    
+    const html = await htmlResponse.text();    
     const apolloStateMatch = html.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?});/);
     
     if (!apolloStateMatch || !apolloStateMatch[1]) {
@@ -646,7 +623,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     
     let apolloStateData;
     try {
-      console.log(`[Worker] Parsing APOLLO_STATE data`);
       apolloStateData = JSON.parse(apolloStateMatch[1]);
     } catch (parseError) {
       console.error(`[Worker] Failed to parse APOLLO_STATE: ${parseError.message}`);
@@ -654,7 +630,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     }
     
     // 데이터 분류 및 가공
-    console.log(`[Worker] Processing place data`);
     let placeInfoList = [];
     Object.entries(apolloStateData).forEach(([key, value]) => {
       if (value && typeof value.__typename === 'string' &&
@@ -709,8 +684,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
       rank: idx + 1,
       isAdDup: adMids.includes(place.id)
     }));
-    
-    console.log(`[Worker] Found ${normalListWithDup.length} places`);
     
     // 응답 JSON 구조
     return new Response(JSON.stringify({

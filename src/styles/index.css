@@ -33,3 +33,44 @@ body {
     border-color: #4b5563 !important; /* dark mode 테두리 색상 */
     box-shadow: 0 0 0 1px rgba(75, 85, 99, 0.5);
 }
+
+/* 커스텀 스크롤바 스타일 - 모바일 최적화 */
+.custom-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+
+/* Webkit 기반 브라우저 (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    border: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* 다크모드에서의 스크롤바 */
+.dark .custom-scrollbar {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}

@@ -5,8 +5,7 @@ import { toAbsoluteUrl } from '@/utils/Assets';
 import { useNavigate } from 'react-router-dom';
 import {
   getStatusColorClass,
-  formatCampaignDetailData,
-  getAnimalIconFromName
+  formatCampaignDetailData
 } from '@/utils/CampaignFormat';
 
 interface IAdCampaignItem {
@@ -33,6 +32,7 @@ interface IAdCampaignProps {
   url: string;
   rawId?: string | number;  // 추가: 원본 데이터 ID
   rawData?: any;  // 추가: 원본 데이터 전체
+  serviceTypeCode?: string;  // 추가: 서비스 타입 코드
 }
 
 const CardAdCampaign = ({
@@ -46,7 +46,8 @@ const CardAdCampaign = ({
   progress = { variant: 'progress-primary', value: 100 }, // 기본값 제공
   url,
   rawId,  // 원본 데이터 ID
-  rawData  // 원본 데이터 전체
+  rawData,  // 원본 데이터 전체
+  serviceTypeCode  // 서비스 타입 코드
 }: IAdCampaignProps) => {
   // 컴포넌트 렌더링
   const [modalOpen, setModalOpen] = useState(false);
@@ -125,19 +126,9 @@ const CardAdCampaign = ({
           <div className="flex flex-col items-center mb-7">
             <div className="flex items-center gap-2 mb-3">
               <img
-                src={logo && logo.includes('http') ? logo : (logo.startsWith('/media') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/animal/svg/${logo}`))}
+                src={logo && logo.includes('http') ? logo : toAbsoluteUrl(logo)}
                 className={`size-[30px] shrink-0`}
                 alt=""
-                onError={(e) => {
-                  // 캠페인 이름에서 동물 추출 시도
-                  const animalFromName = getAnimalIconFromName(title);
-                  if (animalFromName) {
-                    (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalFromName}.svg`);
-                  } else {
-                    // 기본 이미지 사용
-                    (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-                  }
-                }}
               />
               <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
                 {title}
@@ -193,18 +184,20 @@ const CardAdCampaign = ({
       />
 
       {/* 슬롯 추가 모달 */}
-      <CampaignSlotWithKeywordModal
-        open={slotModalOpen}
-        onClose={() => setSlotModalOpen(false)}
-        category={title}
-        campaign={{
-          id: 1, // 실제 환경에서는 적절한 ID 필요
-          campaign_name: title,
-          status: status.label,
-          service_type: 'ntraffic' // 기본값으로 설정, 실제로는 URL에서 파싱 필요
-        }}
-        serviceCode={'NaverShopTraffic'} // 기본값으로 설정, 실제로는 URL에서 파싱 필요
-      />
+      {slotModalOpen && (
+        <CampaignSlotWithKeywordModal
+            open={slotModalOpen}
+            onClose={() => setSlotModalOpen(false)}
+            category={title}
+            campaign={{
+              id: rawId || 1, // 실제 ID 사용
+              campaign_name: title,
+              status: status.label,
+              service_type: serviceTypeCode || 'NaverTraffic' // 전달받은 서비스 타입 코드 사용
+            }}
+            serviceCode={serviceTypeCode || 'NaverTraffic'} // 전달받은 서비스 타입 코드 사용
+          />
+      )}
     </>
   );
 };

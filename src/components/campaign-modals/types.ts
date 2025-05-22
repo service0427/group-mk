@@ -11,8 +11,9 @@ export enum CampaignServiceType {
   COUPANG_FAKESALE = 'CoupangFakeSale'
 }
 
-// 서비스 타입 설명
-export const SERVICE_TYPE_LABELS: Record<CampaignServiceType, string> = {
+// 서비스 타입 설명 (CampaignServiceType enum 기준으로 통일)
+export const SERVICE_TYPE_LABELS: Record<string, string> = {
+  // 표준 enum 형태
   [CampaignServiceType.NAVER_TRAFFIC]: 'N 트래픽',
   [CampaignServiceType.NAVER_AUTO]: 'N 자동완성',
   [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'NS 트래픽',

@@ -99,13 +99,18 @@ interface SupabaseCampaign {
   campaign_name: string;
   description?: string;
   logo?: string;
+  banner_image?: string;
   status: string;
   service_type: string;
   efficiency?: string | number;
   min_quantity?: string | number;
+  max_quantity?: string | number;
   deadline?: string;
   unit_price?: string | number;
+  detailed_description?: string;
   additional_logic?: string | number;
+  user_input_fields?: string;
+  rejection_reason?: string;
   mat_id?: string; // 총판의 UUID
   user_id?: string; // 관리자/총판 ID
   add_info?: {
@@ -183,6 +188,98 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 비동기 작업 오류 상태
   const [keywordError, setKeywordError] = useState<string | null>(null);
 
+  // 선택된 서비스 코드 상태
+  const [selectedServiceCode, setSelectedServiceCode] = useState<CampaignServiceType | string>(serviceCode);
+
+  // 모달이 열릴 때 서비스 코드 초기화
+  useEffect(() => {
+    if (open) {
+      setSelectedServiceCode(serviceCode);
+    }
+  }, [open, serviceCode]);
+
+  // 서비스 변경 처리 함수
+  const handleServiceChange = async (newServiceCode: string) => {
+    setSelectedServiceCode(newServiceCode);
+    
+    // 캠페인 선택 초기화
+    setSelectedCampaignId(null);
+    setCampaigns([]);
+    setBannerUrl(null);
+    
+    // 키워드 선택 초기화
+    setSelectedKeywords([]);
+    
+    // 새로운 서비스에 맞는 캠페인 목록 불러오기
+    try {
+      setLoading(true);
+
+      // DB 쿼리를 위한 서비스 타입 변환
+      const dbServiceType = newServiceCode;
+
+      // Supabase 쿼리 준비
+      let query = supabase
+        .from('campaigns')
+        .select('*, mat_id, add_info')
+        .eq('service_type', dbServiceType)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('캠페인 불러오기 실패:', error);
+        setCampaigns([]);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const transformedCampaigns = data.map(campaign => ({
+          id: campaign.id,
+          campaign_name: campaign.campaign_name,
+          description: campaign.description,
+          efficiency: campaign.efficiency,
+          min_quantity: campaign.min_quantity,
+          max_quantity: campaign.max_quantity,
+          deadline: campaign.deadline,
+          status: campaign.status,
+          unit_price: campaign.unit_price,
+          detailed_description: campaign.detailed_description,
+          additional_logic: campaign.additional_logic,
+          user_input_fields: campaign.user_input_fields,
+          rejection_reason: campaign.rejection_reason,
+          logo: campaign.logo,
+          banner_image: campaign.banner_image,
+          service_type: campaign.service_type,
+          mat_id: campaign.mat_id,
+          add_info: campaign.add_info,
+          created_at: campaign.created_at
+        }));
+
+        setCampaigns(transformedCampaigns);
+
+        // 첫 번째 캠페인 자동 선택
+        const firstCampaign = transformedCampaigns[0];
+        setSelectedCampaignId(firstCampaign.id);
+
+        // 캠페인 배너 이미지 가져오기 - fetchCampaignBanner 함수 사용
+        fetchCampaignBanner(firstCampaign);
+      } else {
+        // 캠페인이 없는 경우 처리
+        setCampaigns([]);
+        setSelectedCampaignId(null);
+        setBannerUrl(null);
+      }
+    } catch (error) {
+      console.error('캠페인 불러오기 중 오류:', error);
+      setCampaigns([]);
+      setSelectedCampaignId(null);
+      setBannerUrl(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 사용자의 캐시 잔액 가져오기
   const fetchUserBalance = async () => {
     if (!currentUser?.id) return;
@@ -243,6 +340,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
+  // 선택된 캠페인이 변경될 때 로고 업데이트
+  useEffect(() => {
+    if (selectedCampaignId && campaigns.length > 0) {
+      const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+      if (selectedCampaign) {
+        fetchCampaignBanner(selectedCampaign);
+      }
+    }
+  }, [selectedCampaignId, campaigns]);
+
   // 캠페인 로고 또는 아이콘 가져오기 함수
   const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
     if (!campaign) return;
@@ -255,29 +362,64 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           try {
             const addInfo = JSON.parse(campaign.add_info);
             // 로고 URL을 우선으로, 없으면 배너 URL 사용
-            logoUrl = addInfo.logo_url || addInfo.banner_url || null;
+            let rawLogoUrl = addInfo.logo_url || addInfo.banner_url || null;
+            
+            // 경로 수정 로직 적용
+            if (rawLogoUrl) {
+              if (rawLogoUrl.startsWith('animal/')) {
+                logoUrl = `/media/${rawLogoUrl}`;
+              } else if (!rawLogoUrl.startsWith('/') && !rawLogoUrl.startsWith('http')) {
+                logoUrl = `/${rawLogoUrl}`;
+              } else {
+                logoUrl = rawLogoUrl;
+              }
+            }
           } catch (e) {
             // JSON 파싱 오류 무시
           }
         } else {
           // 로고 URL을 우선으로, 없으면 배너 URL 사용
-          logoUrl = campaign.add_info.logo_url || campaign.add_info.banner_url || null;
+          let rawLogoUrl = campaign.add_info.logo_url || campaign.add_info.banner_url || null;
+          
+          // 경로 수정 로직 적용
+          if (rawLogoUrl) {
+            if (rawLogoUrl.startsWith('animal/')) {
+              logoUrl = `/media/${rawLogoUrl}`;
+            } else if (!rawLogoUrl.startsWith('/') && !rawLogoUrl.startsWith('http')) {
+              logoUrl = `/${rawLogoUrl}`;
+            } else {
+              logoUrl = rawLogoUrl;
+            }
+          }
         }
       }
 
       // 로고 URL이 없으면 campaign.logo 필드 확인
       if (!logoUrl && campaign.logo) {
-        // campaign.logo가 animal 이름인 경우
-        if (!campaign.logo.includes('/')) {
-          logoUrl = `/media/animal/svg/${campaign.logo}.svg`;
+        // 이미 경로가 포함된 경우 올바른 절대 경로로 수정
+        if (campaign.logo.startsWith('animal/')) {
+          logoUrl = `/media/${campaign.logo}`;
+        } else if (!campaign.logo.startsWith('/') && !campaign.logo.startsWith('http')) {
+          logoUrl = `/${campaign.logo}`;
         } else {
           logoUrl = campaign.logo;
         }
       }
 
+      // banner_image 필드도 확인
+      if (!logoUrl && campaign.banner_image) {
+        // banner_image도 동일한 경로 수정 로직 적용
+        if (campaign.banner_image.startsWith('animal/')) {
+          logoUrl = `/media/${campaign.banner_image}`;
+        } else if (!campaign.banner_image.startsWith('/') && !campaign.banner_image.startsWith('http')) {
+          logoUrl = `/${campaign.banner_image}`;
+        } else {
+          logoUrl = campaign.banner_image;
+        }
+      }
+      
       setBannerUrl(logoUrl);
     } catch (err) {
-      // 로고 불러오기 오류 무시
       setBannerUrl(null);
     }
   };
@@ -1293,13 +1435,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col max-h-[95vh]" aria-describedby={undefined}>
+        <DialogContent className="w-[98vw] h-[85vh] sm:w-[95vw] sm:h-[75vh] md:w-[90vw] md:h-[70vh] max-w-full sm:max-w-[1000px] md:max-w-[1200px] p-0 overflow-hidden flex flex-col" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <DialogTitle className="text-lg font-semibold text-foreground">
-              {typeof serviceCode === 'string'
-                ? '캠페인 슬롯 관리' // 문자열이면 기본 타이틀 표시
-                : SERVICE_TYPE_LABELS[serviceCode] + ' 슬롯 관리' // enum 값 사용
-              }
+              캠페인 슬롯 구매
             </DialogTitle>
             <DialogHeaderSpacer />
             <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs md:text-sm border border-blue-100 dark:border-blue-900 shadow-sm">
@@ -1307,18 +1446,52 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               <span className="ml-1 font-extrabold text-primary dark:text-primary-foreground">{userCashBalance.toLocaleString()}원</span>
             </div>
           </DialogHeader>
-          <div className="p-6 bg-background flex-grow overflow-auto">
+          <div className="p-4 sm:p-6 bg-background flex-grow overflow-hidden flex flex-col">
             {/* 수직 레이아웃: 캠페인 선택이 위에, 키워드 관리가 아래에 */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 h-full min-h-0">
               {/* 캠페인 상세 정보 - 더 컴팩트하게 */}
-              <div className="w-full border-b border-border pb-4">
-                <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-3 sm:mb-4">
-                  {/* 캠페인 선택 드롭박스 */}
-                  <div className="w-full md:w-1/3">
-                    <label htmlFor="campaign-select" className="block text-sm font-medium text-foreground mb-2 flex items-center gap-1.5">
+              <div className="w-full">
+                {/* 1행: 서비스 선택 및 캠페인 선택 */}
+                <div className="flex items-center justify-between gap-4">
+                  {/* 좌측: 섹션 제목 */}
+                  <div className="flex items-center gap-3">
+                    <KeenIcon icon="document" className="text-primary size-4" />
+                    <span className="text-sm font-medium text-foreground">캠페인 정보</span>
+                  </div>
+
+                  {/* 우측: 서비스 선택 및 캠페인 선택 */}
+                  <div className="flex items-center gap-6">
+                    {/* 서비스 선택 */}
+                    <div className="flex items-center gap-3">
+                      <label htmlFor="service-select" className="text-sm font-medium text-foreground flex items-center gap-1.5 whitespace-nowrap">
+                        <KeenIcon icon="category" className="text-green-500 size-4" />
+                        서비스 선택
+                      </label>
+                      <div className="w-48">
+                      <select
+                        id="service-select"
+                        value={selectedServiceCode}
+                        onChange={(e) => {
+                          handleServiceChange(e.target.value);
+                        }}
+                        className="select flex w-full bg-white rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 h-10 px-3 py-2"
+                      >
+                        {Object.entries(SERVICE_TYPE_LABELS).map(([type, label]) => (
+                          <option key={type} value={type}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 캠페인 선택 */}
+                  <div className="flex items-center gap-3">
+                    <label htmlFor="campaign-select" className="text-sm font-medium text-foreground flex items-center gap-1.5 whitespace-nowrap">
                       <KeenIcon icon="document" className="text-blue-500 size-4" />
                       캠페인 선택
                     </label>
+                    <div className="w-64">
                     {loading ? (
                       <div className="text-sm text-muted-foreground">캠페인 목록을 불러오는 중...</div>
                     ) : campaigns.length > 0 ? (
@@ -1350,61 +1523,36 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     ) : (
                       <div className="text-sm text-muted-foreground">사용 가능한 캠페인이 없습니다.</div>
                     )}
+                    </div>
                   </div>
+                  </div>
+                </div>
 
-                  {/* 선택된 캠페인 정보 - 고정 높이 유지 */}
-                  <div className="w-full md:w-2/3 min-h-[110px] sm:min-h-[130px] bg-white rounded-lg border border-border shadow-sm p-2 sm:p-3">
+                {/* 2행: 선택된 캠페인 정보 */}
+                <div className="w-full bg-white rounded-lg border border-border shadow-sm p-3 sm:p-4 mt-3">
                     {selectedCampaign ? (
                       <div className="flex gap-4">
                         <div className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] shrink-0 rounded-md overflow-hidden flex items-center justify-center bg-gray-50">
-                          {/* 동물 아이콘 사용 */}
-                          {selectedCampaign.campaign_name && (
+                          {bannerUrl && (
                             <img
-                              src={bannerUrl ? toAbsoluteUrl(bannerUrl) : toAbsoluteUrl('/media/animal/svg/lion.svg')}
+                              src={bannerUrl}
                               alt="캠페인 로고"
                               className="size-[60px] sm:size-[70px] object-contain"
-                              onError={(e) => {
-                                // 로고 로드 실패 시 기본 동물 아이콘으로 대체
-                                // 캠페인 이름에서 동물 이름 추출 시도
-                                const name = selectedCampaign.campaign_name.toLowerCase();
-                                let animalIcon = 'lion';
-
-                                const animals = [
-                                  'bear', 'cat', 'cow', 'dog', 'dolphin', 'elephant', 'flamingo',
-                                  'giraffe', 'horse', 'kangaroo', 'koala', 'lion', 'owl', 'penguin'
-                                ];
-
-                                for (const animal of animals) {
-                                  if (name.includes(animal)) {
-                                    animalIcon = animal;
-                                    break;
-                                  }
-                                }
-
-                                // 한글 동물 이름 체크
-                                if (name.includes('곰')) animalIcon = 'bear';
-                                if (name.includes('고양이')) animalIcon = 'cat';
-                                if (name.includes('소')) animalIcon = 'cow';
-                                if (name.includes('개')) animalIcon = 'dog';
-                                if (name.includes('돌고래')) animalIcon = 'dolphin';
-                                if (name.includes('코끼리')) animalIcon = 'elephant';
-                                if (name.includes('플라밍고')) animalIcon = 'flamingo';
-                                if (name.includes('기린')) animalIcon = 'giraffe';
-                                if (name.includes('말')) animalIcon = 'horse';
-                                if (name.includes('캥거루')) animalIcon = 'kangaroo';
-                                if (name.includes('코알라')) animalIcon = 'koala';
-                                if (name.includes('사자')) animalIcon = 'lion';
-                                if (name.includes('올빼미')) animalIcon = 'owl';
-                                if (name.includes('펭귄')) animalIcon = 'penguin';
-
-                                (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${animalIcon}.svg`);
+                              onError={() => {
+                                // 로고 로드 실패 시 상태 초기화
+                                setBannerUrl(null);
                               }}
                             />
+                          )}
+                          {!bannerUrl && (
+                            <div className="text-xs text-gray-400 text-center">
+                              로고 없음
+                            </div>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 mb-2">
                             <h2 className="text-lg font-bold text-foreground truncate">
                               {selectedCampaign.campaign_name}
                             </h2>
@@ -1414,12 +1562,24 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3">
                             <div className="flex items-center gap-1.5 text-sm">
                               <KeenIcon icon="wallet" className="text-primary size-4" />
                               <span className="text-muted-foreground">단가:</span>
                               <span className="font-bold text-primary">
-                                {selectedCampaign.unit_price ? `${selectedCampaign.unit_price}원` : '1,000원'}
+                                {selectedCampaign.unit_price 
+                                  ? `${Number(selectedCampaign.unit_price.toString().replace(/[^\d]/g, '')).toLocaleString()}원` 
+                                  : '1,000원'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-sm">
+                              <KeenIcon icon="purchase" className="text-orange-500 size-4" />
+                              <span className="text-muted-foreground">최소수량:</span>
+                              <span className="font-bold">
+                                {selectedCampaign.min_quantity 
+                                  ? `${Number(selectedCampaign.min_quantity.toString().replace(/[^\d]/g, '')).toLocaleString()}개` 
+                                  : '1개'}
                               </span>
                             </div>
 
@@ -1427,6 +1587,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                               <KeenIcon icon="timer" className="text-blue-500 size-4" />
                               <span className="text-muted-foreground">마감:</span>
                               <span className="font-bold">{selectedCampaign.deadline}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-sm">
+                              <KeenIcon icon="rocket" className="text-green-500 size-4" />
+                              <span className="text-muted-foreground">상승효율:</span>
+                              <span className="font-bold text-green-600">
+                                {selectedCampaign.efficiency || '-%'}
+                              </span>
                             </div>
                           </div>
 
@@ -1438,34 +1606,34 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-full">
+                      <div className="flex items-center justify-center py-8">
                         <p className="text-muted-foreground text-sm">선택된 캠페인이 없거나 로딩 중입니다.</p>
                       </div>
                     )}
-                  </div>
                 </div>
               </div>
 
               {/* 키워드 선택 영역 */}
-              <div className="w-full space-y-6 pt-4">
-                <div className="space-y-6">
-                  {/* 키워드 그룹 선택 및 검색 - 한 행에 모두 배치 */}
-                  <div className="flex flex-wrap gap-2 sm:gap-4 mb-2">
-                    {/* 섹션 제목 */}
-                    <div className="flex items-center gap-2 min-w-32">
-                      <KeenIcon icon="search" className="text-blue-600 size-5" />
-                      <h3 className="text-base font-medium text-foreground">키워드 관리</h3>
+              <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
+                <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                  {/* 1행: 제목과 컨트롤들 */}
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    {/* 좌측: 섹션 제목 */}
+                    <div className="flex items-center gap-3">
+                      <KeenIcon icon="pencil" className="text-success size-4" />
+                      <span className="text-sm font-medium text-foreground">내 키워드에서 가져오기</span>
                     </div>
 
-                    {/* 그룹 선택 */}
-                    <div className="flex-1 min-w-[180px]">
-                      <div className="flex items-center gap-2">
+                    {/* 우측: 그룹 선택과 키워드 검색 */}
+                    <div className="flex items-center gap-3">
+                      {/* 그룹 선택 */}
+                      <div className="flex items-center gap-2 min-w-[200px]">
                         <KeenIcon icon="folder" className="text-blue-500 size-4 shrink-0" />
                         <select
                           id="group-select"
                           value={selectedGroupId || ''}
                           onChange={(e) => handleGroupSelect(Number(e.target.value))}
-                          className="select flex-1 w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-9 px-3"
+                          className="select w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-9 px-3"
                         >
                           {keywordGroups.length === 0 ? (
                             <option value="">그룹이 없습니다</option>
@@ -1478,24 +1646,24 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                           )}
                         </select>
                       </div>
-                    </div>
 
-                    {/* 키워드 검색 */}
-                    <div className="flex-1 min-w-[220px]">
-                      <div className="relative flex items-center">
-                        <KeenIcon icon="magnifying-glass" className="text-blue-500 size-4 absolute left-3" />
-                        <Input
-                          value={searchKeyword}
-                          onChange={(e) => setSearchKeyword(e.target.value)}
-                          placeholder="키워드 검색어 입력"
-                          className="w-full pl-9 pr-3 h-9 bg-white border-gray-300 focus:border-blue-400 focus:ring-blue-300"
-                        />
+                      {/* 키워드 검색 */}
+                      <div className="w-[220px]">
+                        <div className="relative flex items-center">
+                          <KeenIcon icon="magnifier" className="text-blue-500 size-4 absolute left-3" />
+                          <Input
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                            placeholder="키워드 검색어 입력"
+                            className="input w-full pl-9 pr-3 h-9 bg-white border-gray-300 focus:border-blue-400 focus:ring-blue-300"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 키워드 목록 - 테이블 구역 최적화 */}
-                  <div className="border rounded-md overflow-hidden shadow-sm">
+                  <div className="border rounded-md overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
                     {keywordLoading ? (
                       <div className="p-6 text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
@@ -1532,8 +1700,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             <span className="font-semibold text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
                           </div>
                         </div>
-                        <div className="h-[280px] md:h-[320px] overflow-y-auto bg-white dark:bg-slate-900">
-                          <table className="w-full table-fixed border-separate border-spacing-0">
+                        <div className="flex-1 overflow-hidden sm:overflow-visible bg-white dark:bg-slate-900 min-h-0">
+                          <div className="h-full overflow-y-auto custom-scrollbar -mr-3 pr-3 sm:-mr-1 sm:pr-1">
+                            <table className="w-full table-fixed border-separate border-spacing-0">
                             <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600/95 to-indigo-600/95 text-white shadow-sm">
                               <tr className="text-left">
                                 <th className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-500/50 rounded-tl-md">
@@ -1763,7 +1932,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                 </tr>
                               )}
                             </tbody>
-                          </table>
+                            </table>
+                          </div>
                         </div>
                       </>
                     )}

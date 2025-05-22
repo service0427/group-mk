@@ -96,7 +96,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] border-4 border-primary" aria-describedby={undefined}>
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col h-[85vh] border-4 border-primary" aria-describedby={undefined}>
         <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 border-b sticky top-0 z-20 shadow-sm">
           <DialogTitle className="text-lg font-semibold text-foreground flex items-center">
             <KeenIcon icon="eye" className="mr-2 text-primary" />

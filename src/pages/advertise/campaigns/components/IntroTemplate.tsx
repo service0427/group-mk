@@ -38,50 +38,61 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   const [rawItems, setRawItems] = useState<any[]>([]); // 원본 데이터 저장
   const [loading, setLoading] = useState(true);
   
+  // 서비스 타입 코드를 동기적으로 계산
+  const getServiceTypeCodeFromURL = () => {
+    console.log('🔍 [DEBUG] getServiceTypeCodeFromURL 호출 시작');
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
+    
+    console.log('🔍 [DEBUG] getServiceTypeCodeFromURL:', {
+      pathname,
+      pathSegments,
+      serviceType
+    });
+    
+    if (!serviceType) {
+      console.log('🔍 [DEBUG] serviceType이 없어서 빈 문자열 반환');
+      return '';
+    }
+    
+    const parts = serviceType.split('-');
+    let platform = '';
+    let type = '';
+    let subservice = '';
+    
+    if (parts.length === 3) {
+      platform = parts[0];
+      subservice = parts[1];
+      type = parts[2];
+    } else if (parts.length === 2) {
+      platform = parts[0];
+      type = parts[1];
+    }
+    
+    console.log('🔍 [DEBUG] URL 파싱 결과:', { platform, type, subservice });
+    
+    const result = getServiceTypeFromPath(platform, type, subservice);
+    console.log('🔍 [DEBUG] getServiceTypeFromPath 결과:', result);
+    
+    return result;
+  };
+  
+  const serviceTypeCode = getServiceTypeCodeFromURL();
+  console.log('🔍 [DEBUG] IntroTemplate - 최종 serviceTypeCode:', serviceTypeCode);
+  
   // 상태값 관련 함수는 유틸리티로 이동했습니다.
   
   // 페이지 로딩 시 데이터 가져오기
   useEffect(() => {
+    console.log('🔍 [DEBUG] IntroTemplate - useEffect 시작');
     const fetchData = async () => {
+      console.log('🔍 [DEBUG] IntroTemplate - fetchData 시작');
+      console.log('🔍 [DEBUG] IntroTemplate - 사용할 serviceTypeCode:', serviceTypeCode);
       try {
         setLoading(true);
         
-        // 새로운 URL 형식 처리 (/advertise/campaigns/info/:serviceType)
-        const pathSegments = pathname.split('/').filter(Boolean);
-        
-        // serviceType 추출 (naver-traffic, naver-shopping-traffic 등)
-        const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
-        
-        if (!serviceType) {
-          setLoading(false);
-          return;
-        }
-        
-        // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
-        const parts = serviceType.split('-');
-        
-        let platform = '';
-        let type = '';
-        let subservice = '';
-        
-        if (parts.length === 3) {
-          // naver-shopping-traffic 같은 형식
-          platform = parts[0];
-          subservice = parts[1];
-          type = parts[2];
-        } else if (parts.length === 2) {
-          // naver-auto, coupang-traffic 같은 형식
-          platform = parts[0];
-          type = parts[1];
-        }
-        
-        
-        
-        // 서비스 타입 코드 변환
-        const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
-        
         if (!serviceTypeCode) {
-          
+          console.log('🔍 [DEBUG] IntroTemplate - serviceTypeCode가 없어서 종료');
           setLoading(false);
           return;
         }
@@ -93,6 +104,8 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           .eq('service_type', serviceTypeCode)
           .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
           .order('id', { ascending: true });
+          
+        console.log('🔍 [DEBUG] IntroTemplate - DB 조회 결과:', { data, error });
           
         if (error) {
           console.error('Error fetching campaign data:', error);
@@ -147,7 +160,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
     };
     
     fetchData();
-  }, [pathname]);
+  }, [pathname, serviceTypeCode]);
   
   // breadcrumbs 정보에서 상위 메뉴 찾기
   const parentMenu = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2].title : '';
@@ -219,6 +232,14 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
     // 상세 설명 가져오기 (이제 originalData에서 직접 가져옴)
     const detailedDesc = item.originalData?.detailed_description?.replace(/\\n/g, '\n') || item.detailedDescription;
     
+    console.log('🔍 [DEBUG] IntroTemplate renderProject 호출:', {
+      index,
+      title: item.title,
+      serviceTypeCode,
+      serviceTypeCodeType: typeof serviceTypeCode,
+      serviceTypeCodeLength: serviceTypeCode?.length
+    });
+    
     return (
       <CardAdCampaign
         logo={item.logo}
@@ -233,6 +254,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         key={index}
         rawId={item.id}  // 원본 데이터 ID 전달
         rawData={item.originalData}  // 원본 데이터 전체 전달
+        serviceTypeCode={serviceTypeCode}  // 서비스 타입 코드 전달
       />
     );
   };
@@ -254,6 +276,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         key={index}
         rawId={data.id}  // 원본 데이터 ID 전달
         rawData={data.originalData}  // 원본 데이터 전체 전달
+        serviceTypeCode={serviceTypeCode}  // 서비스 타입 코드 전달
       />
     );
   };

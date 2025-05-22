@@ -583,19 +583,19 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           <DialogTitle className="text-lg font-medium text-foreground">캠페인 상세 정보</DialogTitle>
           <DialogHeaderSpacer />
         </DialogHeader>
-        <div className="bg-background flex flex-col max-h-[80vh] w-full">
+        <div className="bg-background flex flex-col h-[85vh] w-full">
           <div className="flex-shrink-0">
-            {/* 배너 이미지 영역 - 배너 URL이 없으면 배너 영역 숨김 */}
+            {/* 배너 이미지 영역 - 항상 표시, 배너가 없으면 기본 이미지 사용 */}
             {loading ? (
               <div className="w-full h-[150px] bg-gray-100 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
               </div>
-            ) : bannerUrl ? (
-              <div className="w-full relative">
+            ) : (
+              <div className="w-full relative h-[220px]">
                 <div className="absolute inset-0 overflow-hidden">
                   {/* 배경 이미지(블러용) */}
                   <img
-                    src={bannerUrl}
+                    src={bannerUrl || toAbsoluteUrl('/media/app/default-logo.svg')}
                     alt=""
                     className="w-full h-full object-cover"
                     style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
@@ -604,31 +604,19 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                   <div className="absolute inset-0 bg-black/20"></div>
                 </div>
                 {/* 실제 이미지 (블러 없음) */}
-                <div className="relative z-10 flex justify-center items-center py-6">
+                <div className="relative z-10 flex justify-center items-center h-full">
                   <img
-                    src={bannerUrl}
+                    src={bannerUrl || toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
                     alt="캠페인 배너"
-                    className="object-contain max-h-[160px] max-w-[90%] shadow-lg rounded-md"
+                    className="object-contain max-h-[180px] max-w-[90%] shadow-lg rounded-md"
                     onError={(e) => {
                       // 이미지 로드 실패 시 기본 배경으로 대체
-                      e.currentTarget.style.display = 'none';
-                      const parentDiv = e.currentTarget.parentElement;
-                      if (parentDiv) {
-                        parentDiv.innerHTML = `
-                          <div class="size-20 rounded-full bg-white/30 flex items-center justify-center">
-                            <img
-                              src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}"
-                              alt="캠페인 로고"
-                              class="h-14 w-auto"
-                            />
-                          </div>
-                        `;
-                      }
+                      e.currentTarget.src = toAbsoluteUrl('/media/app/mini-logo-primary.svg');
                     }}
                   />
                 </div>
               </div>
-            ) : null /* 배너가 없으면 아무것도 표시하지 않음 */}
+            )}
 
             {/* 캠페인 헤더 정보 */}
             <div className="bg-background border-b px-5 py-3">

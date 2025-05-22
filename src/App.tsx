@@ -2,12 +2,14 @@ import { useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
-import SearchPage from './pages/SearchPage';
+import SearchPlaceInfo from './pages/SearchPlaceInfo';
+import SearchShopInfo from './pages/SearchShopInfo';
 import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { Dialog } from '@/components/dialog';
+import { StandLayout } from '@/layouts/stand';
 
 const App = () => {
   const { settings } = useSettings();
@@ -68,18 +70,21 @@ const App = () => {
     >
       {/* 가장 먼저 로그아웃 전환 컴포넌트 렌더링 - 최상위 우선순위 */}
       <LogoutTransition />
-      
+
       <PathnameProvider>
         <ScrollToTop />
-        
+
         {/* 전역 다이얼로그 컴포넌트 */}
         <Dialog />
-        
+
         {/* 라우팅 구조 */}
         <Routes>
           {/* 인증 없이 접근 가능한 라우트 */}
-          <Route path="/map-search" element={<SearchPage />} />
-          
+          <Route element={<StandLayout />}>
+            <Route path="/search-place" element={<SearchPlaceInfo />} />
+            <Route path="/search-shop" element={<SearchShopInfo />} />
+          </Route>
+
           {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
           {!isLoggingOut && <Route path="/*" element={<AppRouting />} />}
         </Routes>

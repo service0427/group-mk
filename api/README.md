@@ -53,10 +53,10 @@ npm run deploy:prod
 
 ### 2. Mock 데이터 지원
 
-API 호출에 실패하거나 개발 모드에서 작동할 때 `map-api-worker.js`는 모의 데이터를 반환합니다.
+API 호출에 실패하거나 개발 모드에서 작동할 때 `api-worker.js`는 모의 데이터를 반환합니다.
 
 ```javascript
-// map-api-worker.js에서 설정
+// api-worker.js에서 설정
 const isDevEnvironment = true;  // true로 설정하면 항상 모의 데이터 사용
 ```
 
@@ -133,7 +133,7 @@ GET /api/search?query={검색어}
 ```
 /api/
   ├── README.md  # 이 문서
-/map-api-worker.js  # Cloudflare Worker 구현
+/api-worker.js  # Cloudflare Worker 구현
 /worker-site.js  # SPA 라우팅 Worker
 /wrangler.toml  # 배포용 설정
 /wrangler-dev.toml  # 개발용 설정
@@ -178,7 +178,7 @@ const nearbyPlaces = await searchPlaceService.searchPlaceByCoordinates(
 
 2. CORS 정책으로 인해 클라이언트에서 직접 API를 호출할 수 없으므로 Cloudflare Workers를 사용해 프록시합니다.
 
-3. 배포 환경에서 네이버 API 호출이 원활하지 않을 경우 `map-api-worker.js`의 `isDevEnvironment` 값을 `true`로 설정하여 모의 데이터를 사용하도록 할 수 있습니다.
+3. 배포 환경에서 네이버 API 호출이 원활하지 않을 경우 `api-worker.js`의 `isDevEnvironment` 값을 `true`로 설정하여 모의 데이터를 사용하도록 할 수 있습니다.
 
 ## 문제 해결
 
@@ -202,6 +202,6 @@ Cloudflare 배포 시 오류가 발생하는 경우:
 
 실제 네이버 API 응답이 예상과 다른 경우:
 
-1. `map-api-worker.js`에서 `isDevEnvironment = true`로 설정하여 모의 데이터 사용
+1. `api-worker.js`에서 `isDevEnvironment = true`로 설정하여 모의 데이터 사용
 2. 콘솔 로그에서 오류 메시지 확인
 3. 네트워크 탭에서 API 응답 분석

@@ -330,16 +330,10 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
 // 캠페인 데이터 업데이트
 export const updateCampaign = async (campaignId: number, data: any): Promise<boolean> => {
   try {
-    // 디버깅: 업데이트 데이터 출력
-    console.log("업데이트 데이터:", data);
-    console.log("사용자 입력 필드:", data.add_field);
     
     // Supabase Storage에 이미지 업로드
     let logoUrl = null;
     let bannerUrl = null;
-    
-    // 디버깅: 받은 데이터 확인
-    console.log("받은 add_field 값:", data.add_field);
 
     // data.add_field를 additionalInfo.add_field로 이동 (키 이동)
     let additionalInfo: any = {
@@ -359,7 +353,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .single();
 
     if (fetchError) {
-      console.log("기존 캠페인 로드 실패:", fetchError);
+      console.error("기존 캠페인 로드 실패:", fetchError);
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
@@ -382,9 +376,6 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         };
       }
     }
-    
-    // 디버깅: 최종 additionalInfo 확인
-    console.log("최종 additionalInfo:", additionalInfo);
 
     // 1. 업로드된 로고 이미지가 있으면 저장
     if (data.uploadedLogo) {
@@ -499,10 +490,6 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     // 반려 상태일 때는 supabaseAdmin(RLS 우회)을 사용하여 저장
     const client = (data.status === 'rejected') ? supabaseAdmin : supabase;
-    
-    // 업데이트 바로 전에 최종 데이터 확인
-    console.log("최종 업데이트 데이터:", updateData);
-    console.log("add_info 내부 add_field:", updateData.add_info?.add_field);
       
     const { error } = await client
       .from('campaigns')
@@ -709,16 +696,10 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
     }
 
     // DB 컬럼명에 맞게 데이터 변환
-    // 디버깅: add_field 확인
-    console.log("createCampaign - add_field:", data.add_field);
-    
     // additionalInfo에 add_field 추가
     if (data.add_field && Array.isArray(data.add_field)) {
       additionalInfo.add_field = data.add_field;
     }
-    
-    // 디버깅: additionalInfo 확인
-    console.log("createCampaign - additionalInfo:", additionalInfo);
     
     const insertData = {
       group_id: 'default', // NULL이 허용되지 않을 수 있으므로 기본값 설정

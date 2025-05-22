@@ -40,18 +40,10 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
 
   // 서비스 타입 코드를 동기적으로 계산
   const getServiceTypeCodeFromURL = () => {
-    console.log('🔍 [DEBUG] getServiceTypeCodeFromURL 호출 시작');
     const pathSegments = pathname.split('/').filter(Boolean);
     const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
 
-    console.log('🔍 [DEBUG] getServiceTypeCodeFromURL:', {
-      pathname,
-      pathSegments,
-      serviceType
-    });
-
     if (!serviceType) {
-      console.log('🔍 [DEBUG] serviceType이 없어서 빈 문자열 반환');
       return '';
     }
 
@@ -69,30 +61,21 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
       type = parts[1];
     }
 
-    console.log('🔍 [DEBUG] URL 파싱 결과:', { platform, type, subservice });
-
     const result = getServiceTypeFromPath(platform, type, subservice);
-    console.log('🔍 [DEBUG] getServiceTypeFromPath 결과:', result);
-
     return result;
   };
 
   const serviceTypeCode = getServiceTypeCodeFromURL();
-  console.log('🔍 [DEBUG] IntroTemplate - 최종 serviceTypeCode:', serviceTypeCode);
 
   // 상태값 관련 함수는 유틸리티로 이동했습니다.
 
   // 페이지 로딩 시 데이터 가져오기
   useEffect(() => {
-    console.log('🔍 [DEBUG] IntroTemplate - useEffect 시작');
     const fetchData = async () => {
-      console.log('🔍 [DEBUG] IntroTemplate - fetchData 시작');
-      console.log('🔍 [DEBUG] IntroTemplate - 사용할 serviceTypeCode:', serviceTypeCode);
       try {
         setLoading(true);
 
         if (!serviceTypeCode) {
-          console.log('🔍 [DEBUG] IntroTemplate - serviceTypeCode가 없어서 종료');
           setLoading(false);
           return;
         }
@@ -104,8 +87,6 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           .eq('service_type', serviceTypeCode)
           .neq('status', 'pause') // 'pause' 상태인 캠페인 제외
           .order('id', { ascending: true });
-
-        console.log('🔍 [DEBUG] IntroTemplate - DB 조회 결과:', { data, error });
 
         if (error) {
           console.error('Error fetching campaign data:', error);
@@ -220,21 +201,12 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   // 전역 변수로 원본 데이터 참조를 저장 (모든 컴포넌트에서 공유)
   // 데이터가 있을 때만 설정
   if (rawItems && rawItems.length > 0) {
-    console.log('IntroTemplate - Setting rawItems:', rawItems);
     window.campaignRawItems = rawItems;
   }
 
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
     // 상세 설명 가져오기 (이제 originalData에서 직접 가져옴)
     const detailedDesc = item.originalData?.detailed_description?.replace(/\\n/g, '\n') || item.detailedDescription;
-
-    console.log('🔍 [DEBUG] IntroTemplate renderProject 호출:', {
-      index,
-      title: item.title,
-      serviceTypeCode,
-      serviceTypeCodeType: typeof serviceTypeCode,
-      serviceTypeCodeLength: serviceTypeCode?.length
-    });
 
     return (
       <CardAdCampaign

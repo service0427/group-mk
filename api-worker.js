@@ -19,8 +19,8 @@ const MOCK_DATA = {
       visit: 150,
       blog: 50,
       imageCount: 25,
-      booking: "O",
-      npay: "O",
+      booking: "Y",
+      npay: "Y",
       distance: "1.2km",
       category: "한식",
       businessCategory: "음식점",
@@ -35,8 +35,8 @@ const MOCK_DATA = {
       visit: 120,
       blog: 40,
       imageCount: 18,
-      booking: "-",
-      npay: "O",
+      booking: "N",
+      npay: "Y",
       distance: "1.5km",
       category: "양식",
       businessCategory: "음식점",
@@ -51,8 +51,8 @@ const MOCK_DATA = {
       visit: 80,
       blog: 30,
       imageCount: 15,
-      booking: "-",
-      npay: "-",
+      booking: "N",
+      npay: "N",
       distance: "0.8km",
       category: "카페,디저트",
       businessCategory: "카페",
@@ -61,6 +61,79 @@ const MOCK_DATA = {
       isAdDup: true
     }
   ]
+};
+
+// 쇼핑 검색 목(mock) 데이터
+const MOCK_SHOP_DATA = {
+  lastBuildDate: "Wed, 08 Nov 2023 17:00:00 +0900",
+  total: 100,
+  display: 3,
+  items: [
+    {
+      rank: 1,
+      title: "기정떡 1kg",
+      link: "https://shopping.naver.com/gate.nhn?id=123456",
+      image: "https://shopping-phinf.pstatic.net/test1.jpg",
+      lprice: "15000",
+      hprice: "20000",
+      mallName: "테스트 쇼핑몰",
+      productId: "123456",
+      productType: "1",
+      brand: "기정떡",
+      maker: "기정떡집",
+      category1: "식품",
+      category2: "떡류",
+      category3: "기정떡",
+      category4: ""
+    },
+    {
+      rank: 2,
+      title: "기정떡 500g",
+      link: "https://shopping.naver.com/gate.nhn?id=234567",
+      image: "https://shopping-phinf.pstatic.net/test2.jpg",
+      lprice: "8000",
+      hprice: "12000",
+      mallName: "떡 전문점",
+      productId: "234567",
+      productType: "1",
+      brand: "기정떡",
+      maker: "전통떡집",
+      category1: "식품",
+      category2: "떡류",
+      category3: "기정떡",
+      category4: ""
+    },
+    {
+      rank: 3,
+      title: "기정떡 선물세트",
+      link: "https://shopping.naver.com/gate.nhn?id=345678",
+      image: "https://shopping-phinf.pstatic.net/test3.jpg",
+      lprice: "25000",
+      hprice: "30000",
+      mallName: "전통식품몰",
+      productId: "345678",
+      productType: "1",
+      brand: "기정떡",
+      maker: "한국떡집",
+      category1: "식품",
+      category2: "떡류",
+      category3: "기정떡",
+      category4: ""
+    }
+  ]
+};
+
+// 네이버 쇼핑 API 설정
+const SHOP_CONFIG = {
+  apiKeys: [
+    { client_id: 'BQlzqihxYt4JAZL_mUgF', client_secret: 'R9vsA7070H' },
+    { client_id: 'DRuTTVdcIb88OtHCVP8t', client_secret: 'fb110n9dq8' },
+    { client_id: 'lnCKjiOaDDweBgYhQwsw', client_secret: '09jUejcs37' }
+  ],
+  baseUrl: 'https://openapi.naver.com/v1/search/shop',
+  maxItemsLimit: 300,
+  defaultDisplay: 100,
+  defaultQuery: '기정떡'
 };
 
 // 개발 환경인지 여부를 확인
@@ -75,7 +148,6 @@ const isDevEnvironment = false;
  */
 async function handleRequest(request) {
   const url = new URL(request.url);
-  console.log(`[Worker] Received request for ${url.pathname}`);
   
   // CORS 헤더 설정 - 더 많은 헤더와 메서드 허용
   const corsHeaders = {
@@ -97,10 +169,7 @@ async function handleRequest(request) {
   try {
     // 간단한 ping 요청 처리 (서버 상태 확인용)
     if (url.pathname === '/api/ping') {
-      console.log('[Worker] Handling ping request from: ' + request.headers.get('origin') || 'unknown');
-      console.log('[Worker] Request URL: ' + url.toString());
-      console.log('[Worker] Worker Mode: ' + (isDevEnvironment ? 'Mock Data' : 'Real API'));
-      
+
       // 응답 데이터
       const responseData = { 
         status: 'ok',
@@ -110,8 +179,6 @@ async function handleRequest(request) {
         worker_url: url.toString(),
         request_headers: Object.fromEntries([...request.headers])
       };
-      
-      console.log('[Worker] Sending ping response:', JSON.stringify(responseData));
       
       return new Response(JSON.stringify(responseData), {
         headers: {
@@ -123,12 +190,10 @@ async function handleRequest(request) {
 
     // API 요청 처리
     if (url.pathname.startsWith('/api/')) {
-      console.log(`[Worker] Processing API request: ${url.pathname}`);
       
       // 개발 환경이고 모의 데이터 사용이 활성화된 경우 모의 데이터 반환
       if (isDevEnvironment) {
         if (url.pathname === '/api/search') {
-          console.log('[Worker] Returning mock data for search request');
           
           // 검색어에 따라 데이터 변형 (테스트용)
           const query = url.searchParams.get('query') || '테스트';
@@ -148,7 +213,7 @@ async function handleRequest(request) {
             }
           });
         } else if (url.pathname === '/api/location') {
-          console.log('[Worker] Returning mock location data');
+          
           return new Response(JSON.stringify({
             result: {
               point: {
@@ -163,8 +228,25 @@ async function handleRequest(request) {
             }
           });
         } else if (url.pathname === '/api/places') {
-          console.log('[Worker] Returning mock places data');
+          
           return new Response(JSON.stringify(MOCK_DATA), {
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } else if (url.pathname === '/api/shop') {
+          
+          const query = url.searchParams.get('query') || SHOP_CONFIG.defaultQuery;
+          const mockShopData = JSON.parse(JSON.stringify(MOCK_SHOP_DATA));
+          
+          // 검색어에 따라 상품명 변경
+          mockShopData.items = mockShopData.items.map(item => ({
+            ...item,
+            title: `${query} ${item.title.split(' ').slice(-1)[0]}`
+          }));
+          
+          return new Response(JSON.stringify(mockShopData), {
             headers: {
               'Content-Type': 'application/json',
               ...corsHeaders
@@ -180,14 +262,13 @@ async function handleRequest(request) {
             return await handleLocationRequest(request, url, corsHeaders);
           } else if (url.pathname === '/api/places') {
             return await handlePlacesRequest(request, url, corsHeaders);
+          } else if (url.pathname === '/api/shop') {
+            return await handleShopRequest(request, url, corsHeaders);
           }
         } catch (apiError) {
           console.error(`[Worker] API call failed: ${apiError.message}`);
           console.error(apiError.stack);
-          
-          // API 오류 시 모의 데이터로 대체
-          console.log('[Worker] Falling back to mock data due to API error');
-          
+                    
           if (url.pathname === '/api/search') {
             const query = url.searchParams.get('query') || '테스트';
             const mockData = JSON.parse(JSON.stringify(MOCK_DATA));
@@ -224,12 +305,25 @@ async function handleRequest(request) {
                 ...corsHeaders
               }
             });
+          } else if (url.pathname === '/api/shop') {
+            const query = url.searchParams.get('query') || SHOP_CONFIG.defaultQuery;
+            const mockShopData = JSON.parse(JSON.stringify(MOCK_SHOP_DATA));
+            mockShopData.items = mockShopData.items.map(item => ({
+              ...item,
+              title: `${query} ${item.title.split(' ').slice(-1)[0]} - 모의 데이터`
+            }));
+            
+            return new Response(JSON.stringify(mockShopData), {
+              headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
           }
         }
       }
       
       // 지원하지 않는 API 경로
-      console.log(`[Worker] Unsupported API path: ${url.pathname}`);
       return new Response(JSON.stringify({ error: '지원하지 않는 API 경로입니다.' }), {
         status: 404,
         headers: {
@@ -240,7 +334,6 @@ async function handleRequest(request) {
     }
     
     // API 경로가 아닌 경우 404 반환
-    console.log(`[Worker] Not an API path: ${url.pathname}`);
     return new Response('Not Found', { 
       status: 404,
       headers: corsHeaders
@@ -284,7 +377,6 @@ async function handleLocationRequest(request, url, corsHeaders) {
   
   try {
     const encodedQuery = encodeURIComponent(query);
-    console.log(`[Worker] Fetching location for query: ${query}`);
     
     // 네이버 위치 API 호출
     const response = await fetch('https://map.naver.com/p/api/location', {
@@ -340,7 +432,6 @@ async function handlePlacesRequest(request, url, corsHeaders) {
   
   try {
     const encodedQuery = encodeURIComponent(query);
-    console.log(`[Worker] Fetching places for query: ${query}, coordinates: ${longitude},${latitude}`);
     const display = 70;
     const timestamp = Date.now();
     
@@ -388,7 +479,7 @@ async function handlePlacesRequest(request, url, corsHeaders) {
         rawType = rawType.replace('ListSummary', '').replace('Summary', '').replace('Ad', 'Ad');
         
         const typeMap = {
-          Place: '떡집(Place)',
+          Place: '플레이스(Place)',
           Restaurant: '맛집(Restaurant)',
           Hospital: '병원(Hospital)',
           Beauty: '미용(Beauty)',
@@ -405,8 +496,8 @@ async function handlePlacesRequest(request, url, corsHeaders) {
         const visit = value.visitorReviewCount || 0;
         const blog = value.blogCafeReviewCount || 0;
         const imageCount = value.imageCount || 0;
-        const booking = value.hasBooking ? 'O' : '-';
-        const npay = value.hasNPay ? 'O' : '-';
+        const booking = value.hasBooking ? 'Y' : 'N';
+        const npay = value.hasNPay ? 'Y' : 'N';
         const distance = value.distance || 'N/A';
         const category = value.category || '-';
         const businessCategory = value.businessCategory || '-';
@@ -460,7 +551,6 @@ async function handlePlacesRequest(request, url, corsHeaders) {
  */
 async function handleSearchRequest(request, url, corsHeaders) {
   const searchQuery = url.searchParams.get('query');
-  console.log(`[Worker] Processing search request for query: ${searchQuery}`);
   
   if (!searchQuery) {
     return new Response(JSON.stringify({ error: '검색어(query) 파라미터가 필요합니다.' }), {
@@ -476,7 +566,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     const encodedQuery = encodeURIComponent(searchQuery);
     
     // 1. 좌표 추출
-    console.log(`[Worker] Fetching coordinates for: ${searchQuery}`);
     const locResponse = await fetch('https://map.naver.com/p/api/location', {
       headers: {
         "accept": "application/json, text/plain, */*",
@@ -493,7 +582,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     }
     
     const locData = await locResponse.json();
-    console.log(`[Worker] Location API response received`);
     
     let longitude, latitude;
     if (locData && locData.result && locData.result.point) {
@@ -507,14 +595,11 @@ async function handleSearchRequest(request, url, corsHeaders) {
       latitude = '37.639775';
     }
     
-    console.log(`[Worker] Using coordinates: ${longitude}, ${latitude}`);
-    
     // 2. HTML 요청
     const display = 70;
     const timestamp = Date.now();
     const placesUrl = `https://pcmap.place.naver.com/place/list?query=${encodedQuery}&x=${longitude}&y=${latitude}&clientX=${longitude}&clientY=${latitude}&display=${display}&ts=${timestamp}&additionalHeight=76&locale=ko&mapUrl=https%3A%2F%2Fmap.naver.com%2Fp%2Fsearch%2F${encodedQuery}`;
     
-    console.log(`[Worker] Fetching HTML content from Naver Places`);
     const htmlResponse = await fetch(placesUrl, {
       headers: {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -528,9 +613,7 @@ async function handleSearchRequest(request, url, corsHeaders) {
       throw new Error(`HTML request returned status ${htmlResponse.status}`);
     }
     
-    const html = await htmlResponse.text();
-    console.log(`[Worker] HTML content received, length: ${html.length}`);
-    
+    const html = await htmlResponse.text();    
     const apolloStateMatch = html.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?});/);
     
     if (!apolloStateMatch || !apolloStateMatch[1]) {
@@ -540,7 +623,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     
     let apolloStateData;
     try {
-      console.log(`[Worker] Parsing APOLLO_STATE data`);
       apolloStateData = JSON.parse(apolloStateMatch[1]);
     } catch (parseError) {
       console.error(`[Worker] Failed to parse APOLLO_STATE: ${parseError.message}`);
@@ -548,7 +630,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
     }
     
     // 데이터 분류 및 가공
-    console.log(`[Worker] Processing place data`);
     let placeInfoList = [];
     Object.entries(apolloStateData).forEach(([key, value]) => {
       if (value && typeof value.__typename === 'string' &&
@@ -575,8 +656,8 @@ async function handleSearchRequest(request, url, corsHeaders) {
         const visit = value.visitorReviewCount || 0;
         const blog = value.blogCafeReviewCount || 0;
         const imageCount = value.imageCount || 0;
-        const booking = value.hasBooking ? 'O' : '-';
-        const npay = value.hasNPay ? 'O' : '-';
+        const booking = value.hasBooking ? 'Y' : 'N';
+        const npay = value.hasNPay ? 'Y' : 'N';
         const distance = value.distance || 'N/A';
         const category = value.category || '-';
         const businessCategory = value.businessCategory || '-';
@@ -604,8 +685,6 @@ async function handleSearchRequest(request, url, corsHeaders) {
       isAdDup: adMids.includes(place.id)
     }));
     
-    console.log(`[Worker] Found ${normalListWithDup.length} places`);
-    
     // 응답 JSON 구조
     return new Response(JSON.stringify({
       query: searchQuery,
@@ -622,4 +701,205 @@ async function handleSearchRequest(request, url, corsHeaders) {
     console.error(err.stack);
     throw err;
   }
+}
+
+/**
+ * 네이버 쇼핑 검색 API 요청 처리
+ * @param {Request} request 원본 요청
+ * @param {URL} url 요청 URL
+ * @param {Object} corsHeaders CORS 헤더
+ * @returns {Promise<Response>} 응답
+ */
+async function handleShopRequest(request, url, corsHeaders) {
+  const searchParams = parseShopSearchParams(url);
+  const apiKey = getRandomShopApiKey();
+  
+  try {
+    const searchResult = await fetchShopItems(searchParams, apiKey);
+    
+    return new Response(JSON.stringify(searchResult), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error(`[Worker] Shop API error: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * 쇼핑 검색 파라미터 파싱
+ */
+function parseShopSearchParams(url) {
+  const query = url.searchParams.get('query') || SHOP_CONFIG.defaultQuery;
+  const limit = Math.min(
+    parseInt(url.searchParams.get('limit')) || SHOP_CONFIG.defaultDisplay,
+    SHOP_CONFIG.maxItemsLimit
+  );
+  
+  return { query, limit };
+}
+
+/**
+ * 랜덤하게 쇼핑 API 키 선택
+ */
+function getRandomShopApiKey() {
+  const randomIndex = Math.floor(Math.random() * SHOP_CONFIG.apiKeys.length);
+  return SHOP_CONFIG.apiKeys[randomIndex];
+}
+
+/**
+ * 쇼핑 아이템 검색
+ */
+async function fetchShopItems(searchParams, apiKey) {
+  const { query, limit } = searchParams;
+  let allItems = [];
+  let start = 1;
+  
+  // 첫 페이지 요청
+  const firstPageResult = await fetchShopPage({
+    query,
+    start,
+    display: Math.min(SHOP_CONFIG.defaultDisplay, limit),
+    apiKey
+  });
+  
+  // 전체 아이템 수 확인
+  const totalItems = parseInt(firstPageResult.total);
+  const itemsToFetch = Math.min(totalItems, limit);
+  
+  // 첫 페이지 결과 처리
+  allItems = processShopItems(firstPageResult.items, start);
+  
+  // 나머지 페이지 요청 (필요한 경우)
+  await fetchRemainingShopPages({
+    query,
+    apiKey,
+    itemsToFetch,
+    totalItems,
+    allItems
+  });
+  
+  // 결과 검증
+  validateShopResults(allItems, totalItems);
+  
+  // 결과 데이터 구성
+  return formatShopResults(firstPageResult, totalItems, allItems, itemsToFetch);
+}
+
+/**
+ * 나머지 쇼핑 페이지 요청
+ */
+async function fetchRemainingShopPages({ query, apiKey, itemsToFetch, totalItems, allItems }) {
+  let start = SHOP_CONFIG.defaultDisplay + 1;
+  
+  while (allItems.length < itemsToFetch && allItems.length < totalItems && start <= itemsToFetch) {
+    const remainingItems = Math.min(itemsToFetch - allItems.length, SHOP_CONFIG.defaultDisplay);
+    
+    const pageResult = await fetchShopPage({
+      query,
+      start,
+      display: remainingItems,
+      apiKey
+    });
+    
+    if (!pageResult.items || pageResult.items.length === 0) {
+      break;
+    }
+    
+    // 결과 처리 및 태그 제거 후 추가
+    const processedItems = processShopItems(pageResult.items, start);
+    allItems.push(...processedItems);
+    
+    start += SHOP_CONFIG.defaultDisplay;
+  }
+}
+
+/**
+ * 쇼핑 결과 검증
+ */
+function validateShopResults(allItems, totalItems) {
+  if (allItems.length > totalItems) {
+    throw new Error(`가져온 아이템 수(${allItems.length})가 전체 아이템 수(${totalItems})보다 많습니다!`);
+  }
+}
+
+/**
+ * 쇼핑 결과 포맷팅
+ */
+function formatShopResults(firstPageResult, totalItems, allItems, itemsToFetch) {
+  return {
+    lastBuildDate: firstPageResult.lastBuildDate,
+    total: totalItems,
+    display: allItems.length,
+    items: allItems.slice(0, itemsToFetch)
+  };
+}
+
+/**
+ * 단일 쇼핑 페이지 요청
+ */
+async function fetchShopPage({ query, start, display, apiKey }) {
+  const api_url = `${SHOP_CONFIG.baseUrl}?query=${encodeURI(query)}&start=${start}&display=${display}`;
+  
+  const headers = {
+    'X-Naver-Client-Id': apiKey.client_id,
+    'X-Naver-Client-Secret': apiKey.client_secret
+  };
+  
+  try {
+    const response = await fetch(api_url, { headers });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * 쇼핑 아이템 처리 및 태그 제거
+ */
+function processShopItems(items, startIndex) {
+  return items.map((item, index) => {
+    // 순위 정보 추가
+    const rank = startIndex + index;
+    
+    // 모든 문자열 필드에서 HTML 태그 제거
+    const cleanedItem = cleanShopItemTags(item);
+    
+    // 순위 정보 추가
+    return {
+      rank,
+      ...cleanedItem
+    };
+  });
+}
+
+/**
+ * 쇼핑 아이템의 모든 문자열 필드에서 HTML 태그 제거
+ */
+function cleanShopItemTags(item) {
+  const cleanedItem = {};
+  
+  Object.keys(item).forEach(key => {
+    if (typeof item[key] === 'string') {
+      cleanedItem[key] = stripShopTags(item[key]);
+    } else {
+      cleanedItem[key] = item[key];
+    }
+  });
+  
+  return cleanedItem;
+}
+
+/**
+ * HTML 태그 제거 (쇼핑용)
+ */
+function stripShopTags(str) {
+  if (!str) return '';
+  return str.replace(/<\/?[^>]+(>|$)/g, '');
 }

@@ -1,29 +1,31 @@
 import axios, { AxiosError } from 'axios';
 
 /**
- * 장소 검색 결과 인터페이스
+ * 쇼핑 검색 결과 인터페이스
  */
-export interface PlaceSearchResult {
-  query: string;
-  adMids: string[];
-  normalList: PlaceInfo[];
+export interface ShopSearchResult {
+  lastBuildDate: string;
+  total: number;
+  display: number;
+  items: ShopItem[];
 }
 
-export interface PlaceInfo {
-  type: string;
-  name: string;
-  id: string;
-  visit: number;
-  blog: number;
-  imageCount: number;
-  booking: string;
-  npay: string;
-  distance: string;
-  category: string;
-  businessCategory: string;
-  categoryCodeList: string;
-  rank?: number;
-  isAdDup?: boolean;
+export interface ShopItem {
+  rank: number;
+  title: string;
+  link: string;
+  image: string;
+  lprice: string;
+  hprice: string;
+  mallName: string;
+  productId: string;
+  productType: string;
+  brand: string;
+  maker: string;
+  category1: string;
+  category2: string;
+  category3: string;
+  category4: string;
 }
 
 /**
@@ -36,10 +38,10 @@ export interface ApiStatus {
 }
 
 /**
- * 네이버 지도 API를 사용하여 장소를 검색하는 서비스
+ * 네이버 쇼핑 API를 사용하여 상품을 검색하는 서비스
  * 개발 및 프로덕션 환경에서 모두 사용 가능
  */
-export const searchPlaceService = {
+export const shopSearchService = {
   /**
    * API 서버 URL - 환경에 따라 달라짐
    * 개발 환경: 로컬 Worker (port 9000)
@@ -75,7 +77,7 @@ export const searchPlaceService = {
       console.error('API 서버 연결 오류:', err);
 
       // 오류 유형에 따른 구체적인 메시지 제공
-      let errorMessage = '네이버 지도 검색 API에 연결할 수 없습니다.';
+      let errorMessage = '네이버 쇼핑 검색 API에 연결할 수 없습니다.';
 
       if (axios.isAxiosError(err)) {
         const axiosError = err as AxiosError;
@@ -97,11 +99,12 @@ export const searchPlaceService = {
   },
 
   /**
-   * 주어진 검색어에 대한 장소 검색을 수행
+   * 주어진 검색어에 대한 쇼핑 검색을 수행
    * @param searchQuery 검색어
+   * @param limit 결과 수 (기본값: 100, 최대: 300)
    * @returns 검색 결과
    */
-  async searchPlace(searchQuery: string): Promise<PlaceSearchResult | null> {
+  async searchShop(searchQuery: string, limit: number = 100): Promise<ShopSearchResult | null> {
     if (!searchQuery) {
       console.error('검색어가 필요합니다.');
       return null;
@@ -109,11 +112,14 @@ export const searchPlaceService = {
 
     try {
       // API 서버를 통해 검색 요청
-      const apiUrl = `${this.getApiUrl()}/search`;
+      const apiUrl = `${this.getApiUrl()}/shop`;
 
       const response = await axios.get(apiUrl, {
-        params: { query: searchQuery },
-        timeout: 10000 // 10초 타임아웃
+        params: { 
+          query: searchQuery,
+          limit: Math.min(limit, 300) // 최대 300개 제한
+        },
+        timeout: 15000 // 15초 타임아웃 (쇼핑은 더 오래 걸릴 수 있음)
       });
 
       return response.data;
@@ -133,82 +139,12 @@ export const searchPlaceService = {
           console.error('API 요청 중 오류 발생:', axiosError.message);
         }
       } else {
-        console.error('장소 검색 중 알 수 없는 오류 발생:', err);
+        console.error('쇼핑 검색 중 알 수 없는 오류 발생:', err);
       }
 
-      return null;
-    }
-  },
-
-  /**
-   * 좌표를 기반으로 주변 장소를 검색
-   * @param query 검색어
-   * @param longitude 경도
-   * @param latitude 위도
-   * @returns 검색 결과
-   */
-  async searchPlaceByCoordinates(
-    query: string,
-    longitude: string,
-    latitude: string
-  ): Promise<PlaceSearchResult | null> {
-    if (!query || !longitude || !latitude) {
-      console.error('검색어와 좌표가 모두 필요합니다.');
-      return null;
-    }
-
-    try {
-      // API 서버를 통해 좌표 기반 검색 요청
-      const apiUrl = `${this.getApiUrl()}/places`;
-
-      const response = await axios.get(apiUrl, {
-        params: {
-          query,
-          x: longitude,
-          y: latitude
-        },
-        timeout: 10000 // 10초 타임아웃
-      });
-
-      return response.data;
-    } catch (err) {
-      console.error('좌표 기반 장소 검색 중 오류 발생:', err);
-      return null;
-    }
-  },
-
-  /**
-   * 주소 또는 장소명으로 좌표 검색
-   * @param query 검색어 (주소 또는 장소명)
-   * @returns 좌표 정보 (x: 경도, y: 위도)
-   */
-  async searchCoordinates(query: string): Promise<{ x: string, y: string } | null> {
-    if (!query) {
-      console.error('검색어가 필요합니다.');
-      return null;
-    }
-
-    try {
-      // API 서버를 통해 좌표 검색 요청
-      const apiUrl = `${this.getApiUrl()}/location`;
-
-      const response = await axios.get(apiUrl, {
-        params: { query },
-        timeout: 8000
-      });
-
-      if (response.data?.result?.point) {
-        const { x, y } = response.data.result.point;
-        return { x, y };
-      }
-
-      console.error('유효한 좌표 정보를 찾을 수 없습니다.');
-      return null;
-    } catch (err) {
-      console.error('좌표 검색 중 오류 발생:', err);
       return null;
     }
   }
 };
 
-export default searchPlaceService;
+export default shopSearchService;

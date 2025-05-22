@@ -57,6 +57,7 @@ import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw
 import { WithdrawRequestPage } from '@/pages/withdraw';
 import { CampaignRequestPage } from '@/pages/distributor/campaign-request';
 import { CampaignAddPage } from '@/pages/distributor/campaign-request/add';
+import { WorkInputPage } from '@/pages/admin/work-input';
 import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
 
 const AppRoutingSetup = (): ReactElement => {
@@ -164,6 +165,9 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 총판 캠페인 신청 라우트 */}
           <Route path="/campaign-request" element={<CampaignRequestPage />} />
           <Route path="/campaign-request/add" element={<CampaignAddPage />} />
+          
+          {/* 총판 작업 입력 라우트 */}
+          <Route path="/admin/work-input" element={<WorkInputPage />} />
 
           {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
 

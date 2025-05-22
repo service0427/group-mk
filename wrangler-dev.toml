@@ -1,5 +1,5 @@
 name = "mk-dev"
-main = "map-api-worker.js"
+main = "api-worker.js"
 compatibility_date = "2024-01-01"
 # 지원되지 않는 호환성 플래그 제거
 

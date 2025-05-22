@@ -150,7 +150,6 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({
               isAdmin={isAdmin} // 관리자 권한 여부 전달
             />
           )}
-          <AdMiscFaq />
         </div>
       </CommonTemplate>
 

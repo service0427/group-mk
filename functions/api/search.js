@@ -115,8 +115,8 @@ export async function onRequest(context) {
         const visit = value.visitorReviewCount || 0;
         const blog = value.blogCafeReviewCount || 0;
         const imageCount = value.imageCount || 0;
-        const booking = value.hasBooking ? 'O' : '-';
-        const npay = value.hasNPay ? 'O' : '-';
+        const booking = value.hasBooking ? 'Y' : 'N';
+        const npay = value.hasNPay ? 'Y' : 'N';
         const distance = value.distance || 'N/A';
         const category = value.category || '-';
         const businessCategory = value.businessCategory || '-';

@@ -82,7 +82,7 @@ const CampaignRequestPage: React.FC = () => {
         <div className="p-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6">
             <div className="flex">
-              <KeenIcon icon="information-circle" className="h-5 w-5 text-blue-500 mt-0.5 mr-2" />
+              <KeenIcon icon="information" className="h-5 w-5 text-blue-500 mt-0.5 mr-2" />
               <div>
                 <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">신규 캠페인 제안 안내</p>
                 <p className="text-sm text-blue-600 dark:text-blue-400">

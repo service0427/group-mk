@@ -426,8 +426,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: '총판 작업 입력',
         icon: 'dollar text-warning',
-        path: '/admin/work',
-        disabled: true,
+        path: '/admin/work-input'
       }
     ]
   },

@@ -54,6 +54,7 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
         end_date, 
         user_id, 
         mat_id,
+        user_slot_number,
         product_id,
         input_data,
         users!inner(
@@ -71,6 +72,12 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
     if (slotsError) {
       console.error('슬롯 목록 조회 중 오류 발생:', slotsError);
       throw slotsError;
+    }
+    
+    // 디버깅: user_slot_number 확인
+    if (slotsData && slotsData.length > 0) {
+      console.log('첫 번째 슬롯 데이터:', slotsData[0]);
+      console.log('user_slot_number 값:', slotsData[0].user_slot_number);
     }
     
     // 3. 캠페인 데이터를 Map으로 변환하여 빠르게 조회할 수 있게 함
@@ -96,6 +103,7 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
         // 사용자 정보 추가
         user_email: (slot.users as any)?.email,
         user_name: (slot.users as any)?.full_name || (slot.users as any)?.email,
+        user_slot_number: slot.user_slot_number, // 명시적으로 추가
         // input_data에서 키워드, MID, URL 추출
         keywords: (() => {
           try {
@@ -182,6 +190,54 @@ export const getSlotWorks = async (slotId: string): Promise<SlotWorkInfo[]> => {
 // 작업 기록 추가
 export const addSlotWork = async (workData: WorkInputFormData, userId: string): Promise<SlotWorkInfo> => {
   try {
+    // 슬롯 상태 확인
+    const { data: slotData, error: slotError } = await supabase
+      .from('slots')
+      .select('status, start_date, end_date')
+      .eq('id', workData.slot_id)
+      .single();
+    
+    if (slotError || !slotData) {
+      throw new Error('슬롯 정보를 확인할 수 없습니다.');
+    }
+    
+    if (slotData.status !== 'approved') {
+      throw new Error(`승인되지 않은 슬롯입니다. (현재 상태: ${slotData.status})`);
+    }
+    
+    // 종료일 확인
+    if (slotData.end_date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(slotData.end_date);
+      
+      if (endDate < today) {
+        throw new Error('종료일이 지난 슬롯에는 작업을 입력할 수 없습니다.');
+      }
+    }
+    
+    // 작업 날짜 검증
+    const workDate = new Date(workData.date);
+    const today = new Date();
+    
+    workDate.setHours(0, 0, 0, 0);
+    today.setHours(23, 59, 59, 999);
+    
+    // 미래 날짜 검증
+    if (workDate > today) {
+      throw new Error('미래 날짜의 작업은 입력할 수 없습니다.');
+    }
+    
+    // 시작일 검증
+    if (slotData.start_date) {
+      const startDate = new Date(slotData.start_date);
+      startDate.setHours(0, 0, 0, 0);
+      
+      if (workDate < startDate) {
+        throw new Error(`작업 날짜는 시작일(${slotData.start_date}) 이후여야 합니다.`);
+      }
+    }
+    
     // 동일 날짜에 이미 기록이 있는지 확인
     const { data: existingData, error: checkError } = await supabase
       .from('slot_works_info')
@@ -496,3 +552,160 @@ export const formatDateToKorean = (dateString: string): string => {
   const [year, month, day] = dateString.split('-');
   return `${year}년 ${month}월 ${day}일`;
 };
+
+// 매트별 슬롯 번호로 슬롯 ID 조회
+export const getSlotIdByUserSlotNumber = async (matId: string, userSlotNumber: number): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('slots')
+      .select('id')
+      .eq('mat_id', matId)
+      .eq('user_slot_number', userSlotNumber)
+      .single();
+
+    if (error) {
+      console.error('슬롯 ID 조회 중 오류 발생:', error);
+      return null;
+    }
+
+    return data?.id || null;
+  } catch (error) {
+    console.error('슬롯 ID 조회 중 오류 발생:', error);
+    return null;
+  }
+};
+
+// 엑셀 데이터 일괄 업로드
+export const bulkUploadSlotWorks = async (workDataList: WorkExcelData[], userId: string): Promise<{ success: number; failed: number; errors: string[] }> => {
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: [] as string[]
+  };
+
+  for (const workData of workDataList) {
+    try {
+      // user_slot_number로 실제 slot_id 조회
+      let slotId = workData.slot_id;
+      let slotData: any = null;
+      
+      if (!slotId && workData.mat_id && workData.user_slot_number) {
+        // 슬롯 정보 전체 조회 (시작일, 종료일 및 상태 확인용)
+        const { data, error } = await supabase
+          .from('slots')
+          .select('id, start_date, end_date, status')
+          .eq('mat_id', workData.mat_id)
+          .eq('user_slot_number', workData.user_slot_number)
+          .single();
+          
+        if (error || !data) {
+          results.failed++;
+          results.errors.push(`슬롯 번호 ${workData.user_slot_number}을(를) 찾을 수 없습니다.`);
+          continue;
+        }
+        
+        slotId = data.id;
+        slotData = data;
+      }
+      
+      // 슬롯 상태 검증
+      if (slotData && slotData.status !== 'approved') {
+        results.failed++;
+        results.errors.push(`슬롯 번호 ${workData.user_slot_number}은(는) 승인되지 않은 상태입니다. (현재 상태: ${slotData.status})`);
+        continue;
+      }
+      
+      // 종료일 검증
+      if (slotData && slotData.end_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endDate = new Date(slotData.end_date);
+        
+        if (endDate < today) {
+          results.failed++;
+          results.errors.push(`슬롯 번호 ${workData.user_slot_number}의 종료일(${slotData.end_date})이 지났습니다.`);
+          continue;
+        }
+      }
+      
+      // 작업 날짜 검증
+      const workDate = new Date(workData.date);
+      const today = new Date();
+      
+      // 날짜만 비교하기 위해 시간 설정
+      workDate.setHours(0, 0, 0, 0);
+      today.setHours(23, 59, 59, 999);
+      
+      // 미래 날짜 검증
+      if (workDate > today) {
+        results.failed++;
+        results.errors.push(`슬롯 번호 ${workData.user_slot_number}의 작업 날짜(${workData.date})는 미래일 수 없습니다.`);
+        continue;
+      }
+      
+      // 시작일 검증
+      if (slotData && slotData.start_date) {
+        const startDate = new Date(slotData.start_date);
+        startDate.setHours(0, 0, 0, 0);
+        
+        if (workDate < startDate) {
+          results.failed++;
+          results.errors.push(`슬롯 번호 ${workData.user_slot_number}의 작업 날짜(${workData.date})는 시작일(${slotData.start_date}) 이후여야 합니다.`);
+          continue;
+        }
+      }
+
+      // 동일 날짜에 이미 기록이 있는지 확인
+      const { data: existingData, error: checkError } = await supabase
+        .from('slot_works_info')
+        .select('id')
+        .eq('slot_id', slotId)
+        .eq('date', workData.date);
+
+      if (checkError) {
+        results.failed++;
+        results.errors.push(`슬롯 번호 ${workData.user_slot_number} 확인 중 오류 발생`);
+        continue;
+      }
+
+      if (existingData && existingData.length > 0) {
+        results.failed++;
+        results.errors.push(`슬롯 번호 ${workData.user_slot_number}의 ${workData.date} 날짜에 이미 작업 기록이 존재합니다. (중복 데이터)`);
+        continue;
+      }
+
+      // 새 작업 기록 추가
+      const { error: insertError } = await supabase
+        .from('slot_works_info')
+        .insert({
+          slot_id: slotId,
+          date: workData.date,
+          work_cnt: workData.work_cnt,
+          notes: workData.notes || null,
+          created_by: userId
+        });
+
+      if (insertError) {
+        results.failed++;
+        results.errors.push(`슬롯 번호 ${workData.user_slot_number} 작업 기록 추가 실패`);
+      } else {
+        results.success++;
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push(`슬롯 번호 ${workData.user_slot_number} 처리 중 오류 발생`);
+    }
+  }
+
+  return results;
+};
+
+// WorkExcelData 타입 정의 (import 필요)
+interface WorkExcelData {
+  slot_id: string;
+  date: string;
+  work_cnt: number;
+  notes?: string;
+  mat_id?: string;
+  user_slot_number?: number;
+}

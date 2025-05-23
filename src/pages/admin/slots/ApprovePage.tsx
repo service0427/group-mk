@@ -24,7 +24,6 @@ import SearchForm from './components/SearchForm';
 import SlotList from './components/SlotList';
 import LoadingState from './components/LoadingState';
 import AuthRequired from './components/AuthRequired';
-import SearchResultCount from './components/SearchResultCount';
 import SlotMemoModal from './components/SlotMemoModal';
 
 // 화면 상태를 열거형으로 명확하게 정의
@@ -906,16 +905,6 @@ const ApprovePage: React.FC = () => {
           onSearch={handleSearch}
         />
 
-          {/* 검색 결과 카운트는 항상 표시 (사용자가 로그인한 경우) */}
-          {currentUser && (
-            <SearchResultCount
-              count={filteredSlots.length}
-              searchTerm={searchTerm}
-              searchStatus={searchStatus}
-              searchDateFrom={searchDateFrom}
-              searchDateTo={searchDateTo}
-            />
-          )}
 
           {/* viewState에 따라 적절한 컴포넌트 표시 */}
           {viewState === ViewState.LOADING && <LoadingState />}
@@ -928,6 +917,7 @@ const ApprovePage: React.FC = () => {
               <SlotList
                 slots={filteredSlots}
                 selectedServiceType={selectedServiceType}
+                campaigns={campaigns}
                 onApprove={handleApproveSlot}
                 onReject={handleRejectSlot}
                 onMemo={handleOpenMemoModal}

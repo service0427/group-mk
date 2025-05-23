@@ -95,7 +95,22 @@ const DefaultTooltip: React.FC<TooltipProps> = ({ children, className = '', ...p
           disableHoverListener
           disableTouchListener
           PopperProps={{
-            disablePortal: true,
+            disablePortal: false,
+            sx: {
+              zIndex: 9999,
+              '& .MuiTooltip-tooltip': {
+                zIndex: 9999,
+              }
+            },
+            modifiers: [
+              {
+                name: 'preventOverflow',
+                enabled: true,
+                options: {
+                  boundary: 'viewport',
+                },
+              },
+            ],
           } as any}
         >
           {childElement}

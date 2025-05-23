@@ -11,7 +11,7 @@ const StandLayout = () => {
     header-fixed 
     bg-[--tw-page-bg]
     dark:bg-[--tw-page-bg-dark]
-    overflow-hidden
+    lg:overflow-hidden
   `);
 
   return (

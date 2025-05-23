@@ -3,6 +3,9 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Index styles - Pretendard font and base styles */
+@import "index";
+
 /* Layouts */
 @import "demos/stand";
 
@@ -12,6 +15,7 @@
 /* Custom styles */
 @import "active-parent-dot.css";
 @import "main.css";
+@import "mobile-sidebar.css"; /* 모바일 사이드바 스타일 */
 @import "margin-fix.css"; /* 마진 긴급 수정 */
 @import "chat.css"; /* 채팅 스타일 */
 @import "keyframes.css"; /* 애니메이션 키프레임 */
@@ -19,5 +23,3 @@
 @import "card-fix.css"; /* 카드 스타일 통일 */
 @import "css/hide-scrollbar.css"; /* 모바일 스크롤바 숨기기 */
 @import "css/menu-active-child.css"; /* 메뉴 활성 상태 스타일 */
-
-@import "index";

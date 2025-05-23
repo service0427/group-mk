@@ -1,134 +1,239 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { getCampaignData, CampaignData } from '@/data/advertiseServices';
+import { useAuthContext } from '@/auth';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { CampaignTemplate } from '../components';
-import { CampaignServiceType } from '@/components/campaign-modals/types';
 import { CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
 import { KeenIcon } from '@/components';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { Toaster } from 'sonner';
+import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+
+// 컴포넌트 import
+import {
+  SearchForm,
+  SlotList,
+  MemoModal,
+  useServiceCategory,
+  useCampaignSlots,
+  useSlotEditing,
+  useEditableCellStyles,
+  SERVICE_TYPE_MAP,
+  SERVICE_TYPE_TO_CATEGORY
+} from '../components/campaign-components';
+
+// 화면 상태를 열거형으로 명확하게 정의
+enum ViewState {
+  LOADING = 'loading',
+  DATA = 'data',
+  AUTH_REQUIRED = 'auth_required',
+}
+
+// 검색 결과 카운트 컴포넌트
+const SearchResultCount: React.FC<{
+  count: number;
+  searchTerm: string;
+  searchStatus: string;
+  searchDateFrom: string;
+  searchDateTo: string;
+  isAllData?: boolean;
+}> = ({ count, searchTerm, searchStatus, searchDateFrom, searchDateTo, isAllData }) => {
+  const hasFilters = searchTerm || searchStatus || searchDateFrom || searchDateTo;
+
+  return (
+    <div className="card">
+      <div className="card-body">
+        <div className="flex flex-wrap justify-between items-center gap-2">
+          <h3 className="text-base font-medium">
+            검색 결과: <span className="text-primary">{count}</span>건
+            {hasFilters && <span className="text-sm text-gray-500 ml-2">(필터 적용됨)</span>}
+            {isAllData && <span className="text-sm text-info ml-2">(전체 데이터)</span>}
+          </h3>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 로딩 상태 컴포넌트
+const LoadingState: React.FC = () => (
+  <div className="card">
+    <div className="card-body">
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">데이터를 불러오는 중입니다...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// 인증 필요 컴포넌트
+const AuthRequired: React.FC = () => (
+  <div className="card">
+    <div className="card-body">
+      <div className="text-center py-10">
+        <h3 className="text-lg font-semibold mb-2">로그인이 필요합니다</h3>
+        <p className="text-gray-600 dark:text-gray-400">이 페이지를 보려면 로그인해주세요.</p>
+      </div>
+    </div>
+  </div>
+);
 
 const CampaignPage: React.FC = () => {
-  const { serviceType } = useParams<{
-    serviceType: string;
-  }>();
+  const { serviceType } = useParams<{ serviceType: string }>();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // 모달 상태 관리 - 항상 동일한 순서로 모든 Hook 호출해야 함
+  const location = useLocation();
+  const { pathname } = location;
+  const { currentUser, userRole, loading: authLoading } = useAuthContext();
+  const { showSuccess, showError } = useCustomToast();
+
+  // URL에서 쿼리 파라미터 추출
+  const queryParams = new URLSearchParams(location.search);
+  const campaignFromUrl = queryParams.get('campaign');
+
+  const [initialized, setInitialized] = useState<boolean>(false);
+  const [viewState, setViewState] = useState<ViewState>(ViewState.LOADING);
+
+  // 모달 상태 관리
   const [modalOpen, setModalOpen] = useState(false);
+  const [memoModalOpen, setMemoModalOpen] = useState(false);
+  const [currentMemoSlotId, setCurrentMemoSlotId] = useState<string>('');
+  const [memoText, setMemoText] = useState<string>('');
 
+  // URL 기반으로 서비스 카테고리 결정
+  const serviceCategory = useServiceCategory(pathname);
+
+  // 슬롯 데이터 가져오기 및 필터링
+  const {
+    isLoading,
+    error,
+    slots,
+    setSlots,
+    filteredSlots,
+    setFilteredSlots,
+    totalCount,
+    campaignList,
+    statusFilter,
+    setStatusFilter,
+    searchInput,
+    setSearchInput,
+    searchDateFrom,
+    setSearchDateFrom,
+    searchDateTo,
+    setSearchDateTo,
+    selectedCampaignId,
+    setSelectedCampaignId,
+    fetchSlots,
+    handleDeleteSlot
+  } = useCampaignSlots(serviceType || '', currentUser?.id, userRole);
+
+  // 슬롯 편집 관련 기능
+  const {
+    editingCell,
+    editingValue,
+    handleEditStart,
+    handleEditChange,
+    saveEdit,
+    handleEditCancel
+  } = useSlotEditing(slots, setSlots, filteredSlots, setFilteredSlots);
+
+  // 초기 로딩 상태 관리
   useEffect(() => {
+    if (!authLoading) {
+      setInitialized(true);
+    }
+  }, [authLoading]);
+
+  // 화면 상태 결정 함수
+  const determineViewState = useCallback(() => {
+    if (!initialized || authLoading || isLoading) {
+      return ViewState.LOADING;
+    }
+
+    if (!currentUser) {
+      return ViewState.AUTH_REQUIRED;
+    }
+
+    return ViewState.DATA;
+  }, [initialized, authLoading, currentUser, isLoading]);
+
+  // 화면 상태 업데이트
+  useEffect(() => {
+    const newViewState = determineViewState();
+    setViewState(newViewState);
+  }, [determineViewState]);
+
+  // URL 파라미터 처리
+  useEffect(() => {
+    if (!initialized) return;
+
+    if (!serviceType) {
+      navigate('/advertise/campaigns/my/naver-traffic', { replace: true });
+      return;
+    }
+  }, [serviceType, navigate, initialized]);
+
+  // URL에서 전달된 캠페인 처리
+  useEffect(() => {
+    if (!initialized || !campaignFromUrl || campaignList.length === 0) return;
+
+    const campaignExists = campaignList.some(c =>
+      c.id.toString() === campaignFromUrl
+    );
+
+    if (campaignExists) {
+      setSelectedCampaignId(parseInt(campaignFromUrl));
+    }
+  }, [campaignFromUrl, campaignList, initialized]);
+
+  // 메모 모달 열기
+  const handleOpenMemoModal = (slotId: string) => {
+    const slot = slots.find(item => item.id === slotId);
+    if (slot) {
+      setCurrentMemoSlotId(slotId);
+      setMemoText(slot.userReason || '');
+      setMemoModalOpen(true);
+    }
+  };
+
+  // 메모 저장
+  const handleSaveMemo = async () => {
+    if (!currentMemoSlotId) return;
+
     try {
-      // URL 파라미터 처리
-      if (!serviceType) {
-        // 파라미터가 없는 경우 기본값 설정 (ex: naver-traffic)
-        navigate('/advertise/campaigns/my/naver-traffic', { replace: true });
-        return;
-      }
+      // 여기에 메모 저장 로직 구현
+      // 기존 CampaignTemplate의 handleSaveMemo 로직 사용
 
-      // serviceType에서 platform, subservice, type 추출
-      let platform: string;
-      let subservice: string | undefined;
-      let type: string;
-
-      // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
-      const parts = serviceType.split('-');
-
-      if (parts.length === 3) {
-        // naver-shopping-traffic 같은 형식
-        platform = parts[0];
-        subservice = parts[1];
-        type = parts[2];
-      } else if (parts.length === 2) {
-        // naver-auto, coupang-traffic 같은 형식
-        platform = parts[0];
-        type = parts[1];
-        subservice = undefined;
-      } else {
-        // 알 수 없는 형식
-        setError('올바르지 않은 서비스 타입 형식입니다.');
-        setLoading(false);
-        return;
-      }
-
-      // getCampaignData 호출하여 데이터 가져오기
-      const data = getCampaignData(platform, type, subservice);
-
-      if (!data) {
-        setError('캠페인 데이터를 찾을 수 없습니다.');
-        setLoading(false);
-        return;
-      }
-
-      setCampaignData(data);
-      setLoading(false);
+      showSuccess('메모가 저장되었습니다.');
+      setMemoModalOpen(false);
     } catch (err) {
-      setError('캠페인 정보를 불러오는 중 오류가 발생했습니다.');
-      setLoading(false);
+      showError('메모 저장 중 오류가 발생했습니다.');
     }
-  }, [serviceType, pathname, navigate]);
+  };
 
-  if (loading) {
-    return (
-      <CommonTemplate>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
-        </div>
-      </CommonTemplate>
-    );
-  }
+  // 검색 함수
+  const handleSearch = () => {
+    fetchSlots();
+  };
 
-  if (error || !campaignData) {
-    return (
-      <CommonTemplate title="오류 발생">
-        <div className="container mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">오류 발생</h1>
-          <p className="text-muted-foreground mb-6">{error || '알 수 없는 오류가 발생했습니다.'}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            홈으로 돌아가기
-          </button>
-        </div>
-      </CommonTemplate>
-    );
-  }
+  // 인라인 편집 스타일 적용
+  useEditableCellStyles();
 
-  // 서비스 카테고리 생성
-  let serviceCategory = '';
-
+  // 서비스 카테고리 라벨 생성
+  let serviceCategoryLabel = '';
   if (serviceType) {
-    // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
-    if (serviceType === 'naver-shopping-traffic') {
-      serviceCategory = 'NS 트래픽';
-    } else if (serviceType === 'naver-place-save') {
-      serviceCategory = 'NP 저장';
-    } else if (serviceType === 'naver-place-share') {
-      serviceCategory = 'NP 공유';
-    } else if (serviceType === 'naver-place-traffic') {
-      serviceCategory = 'NP 트래픽';
-    } else if (serviceType === 'naver-auto') {
-      serviceCategory = 'N 자동완성';
-    } else if (serviceType === 'naver-traffic') {
-      serviceCategory = 'N 트래픽';
-    } else if (serviceType === 'coupang-traffic') {
-      serviceCategory = 'CP 트래픽';
-    } else if (serviceType === 'ohouse-traffic') {
-      serviceCategory = 'OH 트래픽';
-    } else {
-      // 알 수 없는 형식인 경우 그대로 표시
-      serviceCategory = serviceType.replace(/-/g, ' ');
-    }
+    // constants.tsx의 SERVICE_TYPE_TO_CATEGORY 매핑 사용
+    serviceCategoryLabel = SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType.replace(/-/g, ' ');
   }
 
-  // 툴바 액션 버튼 정의
+  // 툴바 액션 버튼
   const toolbarActions = (
     <>
-      <button className="btn btn-sm btn-light"
+      <button
+        className="btn btn-sm btn-light"
         onClick={() => setModalOpen(true)}
+        disabled={viewState !== ViewState.DATA}
       >
         <span className="hidden md:inline">추가</span>
         <span className="md:hidden"><KeenIcon icon="plus" /></span>
@@ -142,37 +247,102 @@ const CampaignPage: React.FC = () => {
     </>
   );
 
-  // 서비스 타입에 맞는 title 생성
-  const title = `${serviceCategory} 캠페인 관리`;
-
-  // 서비스 타입에 맞는 description 생성
-  const description = `내 정보 관리 > 내 서비스 관리 > ${serviceCategory}`;
-
-  // CommonTemplate으로 감싸서 CampaignTemplate 렌더링
-  return (
-    <>
+  // 초기 로딩 중
+  if (authLoading && !initialized) {
+    return (
       <CommonTemplate
-        title={title}
-        description={description}
+        title={`${serviceCategoryLabel} 캠페인 관리`}
+        description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
         showPageMenu={false}
         showBreadcrumb={true}
         toolbarActions={toolbarActions}
       >
-        <CampaignTemplate campaignData={campaignData} />
+        <LoadingState />
+      </CommonTemplate>
+    );
+  }
+
+  return (
+    <>
+      <CommonTemplate
+        title={`${serviceCategoryLabel} 캠페인 관리`}
+        description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
+        showPageMenu={false}
+        showBreadcrumb={true}
+        toolbarActions={toolbarActions}
+      >
+        <Toaster position="top-right" richColors closeButton />
+
+        <div className="grid gap-5 lg:gap-7.5">
+          {/* 검색 및 필터 영역 */}
+          <SearchForm
+            loading={isLoading}
+            campaignList={campaignList}
+            selectedCampaignId={selectedCampaignId}
+            statusFilter={statusFilter}
+            searchInput={searchInput}
+            searchDateFrom={searchDateFrom}
+            searchDateTo={searchDateTo}
+            onCampaignChange={(value) => setSelectedCampaignId(value === 'all' ? 'all' : parseInt(value))}
+            onStatusChange={setStatusFilter}
+            onSearchChange={setSearchInput}
+            onDateFromChange={setSearchDateFrom}
+            onDateToChange={setSearchDateTo}
+            onSearch={handleSearch}
+          />
+
+
+          {/* viewState에 따라 적절한 컴포넌트 표시 */}
+          {viewState === ViewState.LOADING && <LoadingState />}
+
+          {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
+
+          {viewState === ViewState.DATA && (
+            <>
+              <SlotList
+                filteredSlots={filteredSlots}
+                isLoading={isLoading}
+                error={error}
+                serviceType={serviceType || ''}
+                editingCell={editingCell}
+                editingValue={editingValue}
+                onEditStart={handleEditStart}
+                onEditChange={handleEditChange}
+                onEditSave={saveEdit}
+                onEditCancel={handleEditCancel}
+                onDeleteSlot={handleDeleteSlot}
+                onOpenMemoModal={handleOpenMemoModal}
+                userRole={userRole}
+                hasFilters={!!searchInput || statusFilter !== 'all' || !!searchDateFrom || !!searchDateTo}
+                isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
+              />
+
+              {/* 메모 모달 */}
+              <MemoModal
+                isOpen={memoModalOpen}
+                onClose={() => setMemoModalOpen(false)}
+                memoText={memoText}
+                setMemoText={setMemoText}
+                onSave={handleSaveMemo}
+              />
+            </>
+          )}
+        </div>
       </CommonTemplate>
 
       {/* 슬롯 추가 모달 */}
       <CampaignSlotWithKeywordModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        category={serviceCategory}
-        campaign={campaignData?.campaigns?.length > 0 ? {
-          id: campaignData.campaigns[0]?.id || '',
-          campaign_name: campaignData.campaigns[0]?.name || '',
-          status: campaignData.campaigns[0]?.status || '',
+        category={serviceCategoryLabel}
+        campaign={campaignList.length > 0 ? {
+          id: campaignList[0]?.id || '',
+          campaign_name: campaignList[0]?.campaignName || '',
+          status: campaignList[0]?.status || '',
           service_type: serviceType
         } : null}
         serviceCode={serviceType}
+        onSave={() => fetchSlots()}
       />
     </>
   );

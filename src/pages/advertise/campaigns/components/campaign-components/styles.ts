@@ -56,7 +56,7 @@ export const useEditableCellStyles = (): void => {
   useEffect(() => {
     const style = createEditableStyles();
     document.head.appendChild(style);
-    
+
     // 컴포넌트 언마운트 시 스타일 제거
     return () => {
       document.head.removeChild(style);

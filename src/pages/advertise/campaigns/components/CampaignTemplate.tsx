@@ -32,7 +32,7 @@ interface CampaignTemplateProps {
 
 const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => {
   const { pathname } = useLocation();
-  const { currentUser } = useAuthContext();
+  const { currentUser, userRole } = useAuthContext();
 
   // URL 기반으로 서비스 카테고리 결정
   const serviceCategory = useServiceCategory(pathname);
@@ -69,7 +69,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
     setSelectedCampaignId,
     fetchSlots,
     handleDeleteSlot
-  } = useCampaignSlots(serviceType, currentUser?.id);
+  } = useCampaignSlots(serviceType, currentUser?.id, userRole);
 
   // 슬롯 편집 관련 기능
   const {
@@ -77,7 +77,8 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
     editingValue,
     handleEditStart,
     handleEditChange,
-    saveEdit
+    saveEdit,
+    handleEditCancel
   } = useSlotEditing(slots, setSlots, filteredSlots, setFilteredSlots);
 
   // 메모 모달 열기
@@ -163,7 +164,7 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
           searchInput={searchInput}
           searchDateFrom={searchDateFrom}
           searchDateTo={searchDateTo}
-          onCampaignChange={setSelectedCampaignId}
+          onCampaignChange={(value) => setSelectedCampaignId(value === 'all' ? 'all' : parseInt(value))}
           onStatusChange={setStatusFilter}
           onSearchChange={setSearchInput}
           onDateFromChange={setSearchDateFrom}
@@ -242,8 +243,10 @@ const CampaignTemplate: React.FC<CampaignTemplateProps> = ({ campaignData }) => 
               onEditStart={handleEditStart}
               onEditChange={handleEditChange}
               onEditSave={saveEdit}
+              onEditCancel={handleEditCancel}
               onDeleteSlot={handleDeleteSlot}
               onOpenMemoModal={handleOpenMemoModal}
+              userRole={userRole}
             />
           </div>
           <div className="card-footer">

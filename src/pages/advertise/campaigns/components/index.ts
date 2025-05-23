@@ -1,7 +1,7 @@
 export { CampaignInfoTemplate } from './CampaignInfoTemplate';
 export { IntroTemplate } from './IntroTemplate';
 export * as CampaignTableTemplate from './CampaignTableTemplate';
-export { CampaignTemplate } from './CampaignTemplate';
+// CampaignTemplate은 더 이상 사용하지 않음 - CampaignPage에서 직접 구현
 export { 
   CardAdCampaign,
   CardAdCampaignRow,

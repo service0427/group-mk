@@ -89,7 +89,6 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           .order('id', { ascending: true });
 
         if (error) {
-          console.error('Error fetching campaign data:', error);
           setLoading(false);
           return;
         }

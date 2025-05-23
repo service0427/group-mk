@@ -16,13 +16,14 @@ export const SERVICE_TYPE_MAP = {
 };
 
 // 서비스 타입 코드와 카테고리 매핑 (역방향)
-export const SERVICE_TYPE_TO_CATEGORY = {
+export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   // 기존 코드 매핑 (하위 호환성)
   'ntraffic': 'NS/N 트래픽', // 네이버 트래픽 서비스 통합 (구 코드)
   
   // 새 코드 매핑
   'NaverTraffic': 'N 트래픽',
   'NaverShoppingTraffic': 'NS 트래픽',
+  'NaverShoppingFakeSale': 'NS 가짜매출',
   'NaverPlaceSave': 'NP 저장하기',
   'NaverPlaceShare': 'NP 블로그공유',
   'NaverPlaceTraffic': 'NP 트래픽',
@@ -41,6 +42,18 @@ export const SERVICE_TYPE_TO_CATEGORY = {
   'ohouse-traffic': 'OH 트래픽'
 };
 
+// URL 서비스 타입을 DB 서비스 타입으로 변환하는 매핑
+export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
+  'naver-traffic': 'NaverTraffic',
+  'naver-shopping-traffic': 'NaverShoppingTraffic',
+  'naver-place-save': 'NaverPlaceSave',
+  'naver-place-share': 'NaverPlaceShare',
+  'naver-place-traffic': 'NaverPlaceTraffic',
+  'naver-auto': 'NaverAuto',
+  'coupang-traffic': 'CoupangTraffic',
+  'ohouse-traffic': 'OhouseTraffic'
+};
+
 // 상태 옵션
 export const STATUS_OPTIONS = [
   {value: 'all', label: '전체'},
@@ -57,33 +70,32 @@ export const STATUS_OPTIONS = [
 export const formatDate = (dateString: string | null): string => {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString('ko-KR', { 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 // 상태에 따른 배지 스타일 결정 함수
 export const getStatusBadge = (status: string): JSX.Element => {
   switch(status) {
     case 'submitted':
-      return <span className="badge badge-warning">승인요청</span>;
+      return <span className="badge badge-warning whitespace-nowrap">승인요청</span>;
     case 'approved':
-      return <span className="badge badge-success">승인완료</span>;
+      return <span className="badge badge-success whitespace-nowrap">승인완료</span>;
     case 'rejected':
-      return <span className="badge badge-danger">반려</span>;
+      return <span className="badge badge-danger whitespace-nowrap">반려</span>;
     case 'draft':
-      return <span className="badge badge-light">임시저장</span>;
+      return <span className="badge badge-light whitespace-nowrap">임시저장</span>;
     case 'active':
-      return <span className="badge badge-primary">진행중</span>;
+      return <span className="badge badge-primary whitespace-nowrap">진행중</span>;
     case 'paused':
-      return <span className="badge badge-secondary">일시중단</span>;
+      return <span className="badge badge-secondary whitespace-nowrap">일시중단</span>;
     case 'completed':
-      return <span className="badge badge-dark">완료</span>;
+      return <span className="badge badge-dark whitespace-nowrap">완료</span>;
     default:
-      return <span className="badge badge-light">대기중</span>;
+      return <span className="badge badge-light whitespace-nowrap">대기중</span>;
   }
 };

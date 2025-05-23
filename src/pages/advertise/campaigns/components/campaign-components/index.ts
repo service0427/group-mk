@@ -5,16 +5,17 @@ export { default as EditableCell } from './EditableCell';
 export { default as MemoModal } from './MemoModal';
 
 // 상수 및 유틸리티 함수 내보내기
-export { 
+export {
   SERVICE_TYPE_MAP,
   SERVICE_TYPE_TO_CATEGORY,
+  URL_TO_DB_SERVICE_TYPE,
   STATUS_OPTIONS,
   formatDate,
   getStatusBadge
 } from './constants.tsx';
 
 // 타입 내보내기
-export type { 
+export type {
   Campaign,
   SlotItem,
   CampaignListItem

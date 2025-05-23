@@ -40,6 +40,53 @@ body.dark {
   z-index: 40;
 }
 
+/* MUI Tooltip z-index 설정 - 테이블 헤더보다 높게 */
+.MuiTooltip-popper {
+  z-index: 9999 !important;
+}
+
+/* 사용자 정의 tooltip z-index 설정 */
+.campaign-status-tooltip,
+.custom-tooltip,
+.popover-content {
+  z-index: 9999 !important;
+}
+
+/* Popover z-index 설정 */
+.MuiPopover-root,
+[data-popover] {
+  z-index: 9998 !important;
+}
+
+/* Table header z-index 설정 (tooltip보다 낮게) */
+thead {
+  position: relative;
+  z-index: 1 !important;
+}
+
+th {
+  position: static !important;
+  z-index: auto !important;
+}
+
+.bg-muted {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* Table row z-index 설정 */
+tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tooltip trigger elements should be above table headers */
+[data-tooltip-trigger],
+.has-tooltip {
+  position: relative;
+  z-index: 20;
+}
+
 /* 다이얼로그 요소의 z-index는 dialog.css에서 처리 (z-index: 50~52) */
 
 /* 로더는 최상위에 표시 */

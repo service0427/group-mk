@@ -2,7 +2,6 @@
 export { 
   CampaignInfoTemplate,
   IntroTemplate,
-  CampaignTemplate,
   CardAdCampaign,
   CardAdCampaignRow,
 } from '../campaigns/components';

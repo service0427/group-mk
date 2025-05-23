@@ -69,21 +69,21 @@ const MemoModal: React.FC<MemoModalProps> = ({
               placeholder="여기에 메모를 입력하세요..."
             />
             <div className="text-xs text-muted-foreground mt-1">
-              <span className="bg-muted px-1 py-0.5 rounded">Shift+Enter</span> : 줄바꿈 / 
+              <span className="bg-muted px-1 py-0.5 rounded">Shift+Enter</span> : 줄바꿈 /
               <span className="bg-muted px-1 py-0.5 rounded ml-1">Enter</span> : 저장
             </div>
           </div>
         </div>
         <div className="px-6 py-4 border-t flex justify-end gap-2 flex-shrink-0">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn btn-sm btn-secondary"
             onClick={onClose}
           >
             취소
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn btn-sm btn-primary"
             onClick={handleSave}
           >

@@ -39,7 +39,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
   const [duplicateErrors, setDuplicateErrors] = useState<string[]>([]);
   const [uploadResult, setUploadResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   
-  const { session, currentUser } = useAuthContext();
+  const { currentUser } = useAuthContext();
 
   // 엑셀 파일 선택 핸들러
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +172,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
         row,
         dateValue: date,
         dateType: typeof date,
-        isDate: date instanceof Date
+        isDate: Object.prototype.toString.call(date) === '[object Date]'
       });
 
       // 슬롯 번호 파싱
@@ -208,10 +208,11 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
           } catch (e) {
             console.warn('엑셀 날짜 변환 실패:', date);
           }
-        } else if (date instanceof Date) {
+        } else if (Object.prototype.toString.call(date) === '[object Date]') {
           // Date 객체인 경우
-          if (!isNaN(date.getTime())) {
-            formattedDate = date.toISOString().split('T')[0];
+          const dateObj = date as Date;
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().split('T')[0];
           }
         }
       }
@@ -307,9 +308,9 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     }
     
     // 사용자 인증 확인
-    const userId = session?.user?.id || currentUser?.id;
+    const userId = currentUser?.id;
     if (!userId) {
-      console.error('업로드 시작 시 Auth 정보:', { session, currentUser, matId });
+      console.error('업로드 시작 시 Auth 정보:', { currentUser, matId });
       toast.error('사용자 인증 정보를 확인할 수 없습니다. 다시 로그인해주세요.');
       return;
     }
@@ -349,9 +350,9 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
               }
 
               // 사용자 ID 확인
-              const userId = session?.user?.id || currentUser?.id;
+              const userId = currentUser?.id;
               if (!userId) {
-                console.error('Auth 정보:', { session, currentUser });
+                console.error('Auth 정보:', { currentUser });
                 throw new Error('사용자 인증 정보를 확인할 수 없습니다.');
               }
 

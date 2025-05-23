@@ -223,11 +223,12 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
                   max={new Date().toISOString().split('T')[0]} // 오늘까지만 선택 가능
+                  min={slot.start_date || undefined} // 시작일 이후만 선택 가능
                   className="block w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm bg-transparent"
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  작업을 수행한 날짜를 선택해주세요.
+                  오늘 날짜 이전의 작업 날짜만 선택 가능합니다.
                 </p>
               </div>
 

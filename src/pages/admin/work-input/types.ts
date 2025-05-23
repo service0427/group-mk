@@ -16,6 +16,7 @@ export interface Slot {
   end_date?: string; // 작업 종료일
   user_id: string; // 사용자 ID
   mat_id: string; // 매트 ID
+  user_slot_number?: number; // 매트별 슬롯 번호
   campaign_name?: string; // 캠페인 이름
   campaign_id?: number; // 캠페인 ID
   service_type?: string; // 서비스 타입

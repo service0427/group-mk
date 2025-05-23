@@ -6,6 +6,15 @@ html, body {
   min-height: 100%;
 }
 
+/* 모바일에서 자연스러운 스크롤 허용 */
+@media (max-width: 1023px) {
+  html, body {
+    overflow: visible;
+    height: auto;
+    min-height: 100vh;
+  }
+}
+
 /* 사이드바 스타일 변경 */
 .sidebar {
   transition: width 0.3s ease;
@@ -91,6 +100,15 @@ html, body {
   overflow: hidden;
 }
 
+/* 모바일에서는 overflow 허용 */
+@media (max-width: 1023px) {
+  .stand .flex.h-screen.overflow-hidden {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}
+
 /* 메인 콘텐츠 영역 스타일 재정의 */
 main.content {
   padding-top: 2.5rem !important; /* 상단 패딩 줄임 */
@@ -100,6 +118,15 @@ main.content {
   height: auto; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
   position: relative; /* 로더 포지셔닝 위해 추가 */
   contain: content; /* 컨텐츠 컨테인먼트 추가 */
+}
+
+/* 모바일에서 콘텐츠 영역 스크롤 개선 */
+@media (max-width: 1023px) {
+  main.content {
+    overflow: visible;
+    height: auto;
+    min-height: calc(100vh - 4rem); /* 헤더 높이 제외 */
+  }
 }
 
 /* 공지사항이 있는 경우 마진 추가 */

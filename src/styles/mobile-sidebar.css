@@ -3,8 +3,12 @@
   /* Sheet 컨테이너 높이 설정 */
   [data-radix-dialog-content] {
     height: 100vh !important;
+    height: 100dvh !important; /* Dynamic viewport height for iOS */
+    height: -webkit-fill-available !important; /* iOS Safari 대응 */
     display: flex !important;
     flex-direction: column !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
   }
 
   /* 사이드바 컨테이너 */
@@ -22,6 +26,9 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    height: -webkit-fill-available;
+    max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .sidebar-content {
@@ -43,14 +50,36 @@
 
   /* 메뉴 컨테이너 */
   .sidebar-menu {
-    padding-bottom: 100px !important; /* 충분한 하단 여백 */
+    padding-bottom: 200px !important; /* 충분한 하단 여백 */
+  }
+  
+  /* 모바일 메뉴 추가 여백 */
+  .mobile-sidebar-menu {
+    padding-bottom: 250px !important; /* 더 많은 여백 */
+    padding-bottom: calc(250px + env(safe-area-inset-bottom)) !important; /* iOS Safe Area 대응 */
+    min-height: calc(100vh - 40px); /* 최소 높이 보장 */
+  }
+  
+  /* iOS Safari 하단 주소창 대응 */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .sidebar-menu {
+      padding-bottom: calc(200px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    #sidebar-scrollable-container {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 
-  /* iOS 바운스 효과 제거 */
+  /* iOS 바운스 효과 제거 - 사이드바 열릴 때만 스크롤 방지 */
   body.has-mobile-sidebar-open {
     position: fixed;
     width: 100%;
     overflow: hidden;
+    /* 현재 스크롤 위치 유지 */
+    top: 0;
+    left: 0;
+    right: 0;
   }
 
   /* 스크롤바 숨기기 (기존 스타일 강화) */
@@ -96,4 +125,26 @@ body[data-sidebar-open="true"] {
   overflow: hidden;
   position: fixed;
   width: 100%;
+}
+
+/* iOS Safari 특별 처리 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS에서만 적용되는 스타일 */
+  .mobile-sidebar-content {
+    height: 100vh;
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+  }
+  
+  #sidebar-scrollable-container {
+    max-height: calc(100vh - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0) - 40px);
+  }
+  
+  /* 사이드바가 열릴 때 전체 화면 사용 */
+  body[data-sidebar-open="true"] [data-radix-dialog-content] {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100% !important;
+  }
 }

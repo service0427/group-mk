@@ -17,8 +17,8 @@ const SidebarContent = ({ height = 0 }: Props) => {
           ...(height > 0 && !isMobile && { height: `${height}px` }), // 모바일에서는 height prop 무시
           ...(isMobile && {
             height: '100%', // 부모 높이에 맞춤
-            maxHeight: 'calc(100vh - 60px)', // 최대 높이 제한
-            paddingBottom: '120px', // 하단 여백 더 증가
+            maxHeight: 'calc(100vh - 40px)', // 최대 높이 제한
+            paddingBottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', // iOS Safe Area 포함
             overflowX: 'hidden', // 가로스크롤 방지
             overflowY: 'auto', // 세로 스크롤 명시적 설정
             WebkitOverflowScrolling: 'touch', // iOS 부드러운 스크롤
@@ -27,7 +27,7 @@ const SidebarContent = ({ height = 0 }: Props) => {
           }),
           ...(!isMobile && {
             overflowX: 'hidden', // PC에서도 가로스크롤 방지
-            paddingBottom: '60px', // PC 환경에서도 하단 여백 추가
+            paddingBottom: '80px', // PC 환경에서도 하단 여백 추가
           })
         }}
       >

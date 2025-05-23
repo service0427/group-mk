@@ -380,7 +380,7 @@ const SidebarMenu = () => {
         'flex flex-col grow sidebar-menu', 
         itemsGap, 
         'h-full w-full',
-        isMobile && 'mobile-sidebar-menu pb-20' // 모바일에서 추가 패딩
+        isMobile && 'mobile-sidebar-menu' // 모바일에서 추가 스타일 (CSS에서 처리)
       )}
     >
       {filteredMenuConfig && buildMenu(filteredMenuConfig)}

@@ -75,17 +75,41 @@ export const Sidebar = () => {
   // 모바일 사이드바 열림/닫힘 시 body 클래스 제어
   useEffect(() => {
     if (!desktopMode && mobileSidebarOpen) {
+      // 현재 스크롤 위치 저장
+      const scrollY = window.scrollY;
+      
+      // iOS Safari 주소창 숨기기 트릭
+      if (window.scrollY === 0) {
+        // 페이지 최상단에 있으면 살짝 아래로 스크롤
+        window.scrollTo(0, 1);
+      }
+      
+      // body 클래스 추가
       document.body.classList.add('has-mobile-sidebar-open');
       document.body.setAttribute('data-sidebar-open', 'true');
+      document.body.style.top = `-${scrollY}px`;
+      
+      // iOS에서 주소창 숨기기 시도
+      setTimeout(() => {
+        window.scrollTo(0, 1);
+      }, 100);
     } else {
+      // 원래 스크롤 위치 복원
+      const scrollY = document.body.style.top;
       document.body.classList.remove('has-mobile-sidebar-open');
       document.body.setAttribute('data-sidebar-open', 'false');
+      document.body.style.removeProperty('top');
+      
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+      }
     }
 
     // cleanup
     return () => {
       document.body.classList.remove('has-mobile-sidebar-open');
       document.body.removeAttribute('data-sidebar-open');
+      document.body.style.removeProperty('top');
     };
   }, [mobileSidebarOpen, desktopMode]);
 

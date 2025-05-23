@@ -1,15 +1,10 @@
+/* External imports */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css");
 
-/* 캠페인 프로그레스바 스타일 */
+/* Local imports */
 @import "campaign-progress.css";
-
-/* z-index 수정 */
 @import "z-index-fix.css";
-
-/* 다이얼로그 컴포넌트 수정 - 통합 스타일 */
 @import "dialog.css";
-
-/* 로그아웃 전환 처리 스타일 */
 @import "logout-transition.css";
 
 /* 폰트 크기 전역 조정 - 기본 폰트 크기를 10% 증가 */

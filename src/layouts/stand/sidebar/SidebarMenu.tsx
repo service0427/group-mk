@@ -373,7 +373,16 @@ const SidebarMenu = () => {
   const filteredMenuConfig = filterMenuByRole(menuConfig || []);
 
   return (
-    <Menu highlight={true} multipleExpand={true} className={clsx('flex flex-col grow sidebar-menu', itemsGap, 'h-full w-full')}>
+    <Menu 
+      highlight={true} 
+      multipleExpand={true} 
+      className={clsx(
+        'flex flex-col grow sidebar-menu', 
+        itemsGap, 
+        'h-full w-full',
+        isMobile && 'mobile-sidebar-menu pb-20' // 모바일에서 추가 패딩
+      )}
+    >
       {filteredMenuConfig && buildMenu(filteredMenuConfig)}
     </Menu>
   );

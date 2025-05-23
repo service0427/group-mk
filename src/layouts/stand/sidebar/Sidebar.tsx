@@ -49,12 +49,14 @@ export const Sidebar = () => {
       <div
         ref={selfRef}
         className={clsx(
-          'sidebar sidebar-enhanced bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:h-screen lg:flex flex-col items-stretch shrink-0 z-30',
-          themeClass
+          'sidebar sidebar-enhanced bg-light lg:border-e lg:border-e-gray-200 dark:border-e-coal-100 lg:h-screen flex flex-col items-stretch shrink-0 z-30',
+          themeClass,
+          !desktopMode && 'h-full' // 모바일에서 전체 높이
         )}
         style={{
           width: layout.options.sidebar.collapse ? '80px' : '280px',
-          transition: 'width 0.3s ease'
+          transition: 'width 0.3s ease',
+          ...(!desktopMode && { height: '100%' }) // 모바일에서 높이 100%
         }}
       >
         {desktopMode && <SidebarHeader ref={headerRef} />}
@@ -70,25 +72,47 @@ export const Sidebar = () => {
     }
   }, [desktopMode, pathname, prevPathname]);
 
+  // 모바일 사이드바 열림/닫힘 시 body 클래스 제어
+  useEffect(() => {
+    if (!desktopMode && mobileSidebarOpen) {
+      document.body.classList.add('has-mobile-sidebar-open');
+      document.body.setAttribute('data-sidebar-open', 'true');
+    } else {
+      document.body.classList.remove('has-mobile-sidebar-open');
+      document.body.setAttribute('data-sidebar-open', 'false');
+    }
+
+    // cleanup
+    return () => {
+      document.body.classList.remove('has-mobile-sidebar-open');
+      document.body.removeAttribute('data-sidebar-open');
+    };
+  }, [mobileSidebarOpen, desktopMode]);
+
   if (desktopMode) {
     return renderContent();
   } else {
     return (
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent
-          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px]"
+          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px] h-full flex flex-col"
           forceMount={true}
           side="left"
           close={false}
           style={{
-            padding: '0'
+            padding: '0',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Mobile Menu</SheetTitle>
             <SheetDescription></SheetDescription>
           </SheetHeader>
-          {renderContent()}
+          <div className="flex-1 overflow-hidden">
+            {renderContent()}
+          </div>
         </SheetContent>
       </Sheet>
     );

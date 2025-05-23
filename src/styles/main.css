@@ -131,3 +131,6 @@ body.is-logging-out #root {
   transition: none !important;
   animation: none !important;
 }
+
+/* 모바일 사이드바 스크롤 수정 import */
+@import './mobile-sidebar.css';

@@ -1,0 +1,99 @@
+/* 모바일 사이드바 스크롤 수정 */
+@media (max-width: 768px) {
+  /* Sheet 컨테이너 높이 설정 */
+  [data-radix-dialog-content] {
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* 사이드바 컨테이너 */
+  .mobile-sidebar-content {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+    position: relative;
+  }
+
+  /* 사이드바 내부 플렉스 설정 */
+  .sidebar.h-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .sidebar-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 스크롤 가능한 영역 */
+  #sidebar-scrollable-container {
+    flex: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+  }
+
+  /* 메뉴 컨테이너 */
+  .sidebar-menu {
+    padding-bottom: 100px !important; /* 충분한 하단 여백 */
+  }
+
+  /* iOS 바운스 효과 제거 */
+  body.has-mobile-sidebar-open {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* 스크롤바 숨기기 (기존 스타일 강화) */
+  .mobile-sidebar-content::-webkit-scrollbar,
+  #sidebar-scrollable-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .mobile-sidebar-content,
+  #sidebar-scrollable-container {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  /* 모바일 메뉴 아이템 터치 영역 확대 */
+  .mobile-menu-link,
+  .mobile-submenu-link {
+    min-height: 44px; /* iOS 권장 터치 타겟 크기 */
+    display: flex;
+    align-items: center;
+  }
+
+  /* 메뉴 펼침/접기 애니메이션 */
+  .menu-sub {
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+/* 다크모드 지원 */
+.dark .mobile-sidebar-content {
+  background-color: var(--tw-coal-600);
+}
+
+/* 안드로이드 오버스크롤 글로우 제거 */
+.mobile-sidebar-content {
+  overscroll-behavior: none;
+}
+
+/* 모바일 사이드바 열릴 때 body 스크롤 방지 */
+body[data-sidebar-open="true"] {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}

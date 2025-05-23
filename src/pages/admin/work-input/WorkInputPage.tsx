@@ -92,6 +92,7 @@ export const WorkInputPage: React.FC = () => {
           slots={slots}
           onSubmit={handleWorkInputSubmit}
           isLoading={isLoading}
+          matId={currentUser?.id || ''}
         />
       )}
     </DashboardTemplate>

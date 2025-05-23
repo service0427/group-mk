@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { bulkUploadSlotWorks } from '../services/workInputService';
+import { useAuthContext } from '@/auth';
 
 // 엑셀 업로드를 위한 작업 데이터 타입
 interface WorkExcelData {
@@ -10,6 +12,8 @@ interface WorkExcelData {
   date: string;
   work_cnt: number;
   notes?: string;
+  mat_id?: string; // 매트별 슬롯 조회용
+  user_slot_number?: number; // 사용자 슬롯 번호
 }
 
 // 엑셀 업로드 모달 props
@@ -17,21 +21,33 @@ interface WorkExcelUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void; // 업로드 성공 후 데이터 리로드 함수
+  matId: string; // 현재 로그인한 총판 ID
 }
 
 const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  matId
 }) => {
   // 상태 관리
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [totalRows, setTotalRows] = useState<number>(0);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [duplicateErrors, setDuplicateErrors] = useState<string[]>([]);
+  const [uploadResult, setUploadResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  
+  const { currentUser } = useAuthContext();
 
   // 엑셀 파일 선택 핸들러
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // 에러 초기화
+    setValidationErrors([]);
+    setDuplicateErrors([]);
+    setUploadResult(null);
+    
     const file = e.target.files?.[0];
     if (file) {
       // 파일 타입 체크
@@ -45,9 +61,16 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
         reader.onload = (e) => {
           try {
             const data = new Uint8Array(e.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array'});
+            const workbook = XLSX.read(data, { 
+              type: 'array',
+              cellDates: true, // 날짜를 Date 객체로 파싱
+              dateNF: 'yyyy-mm-dd' // 날짜 형식 지정
+            });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {
+              raw: false, // 원시 값 대신 형식화된 문자열 사용
+              dateNF: 'yyyy-mm-dd'
+            });
 
             setTotalRows(jsonData.length);
             validateExcelData(jsonData);
@@ -81,22 +104,15 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     const firstRow = data[0];
     const keys = Object.keys(firstRow);
     
-    // 슬롯 식별 방법 체크 (슬롯ID 또는 조합키)
-    const hasSlotId = keys.some(key => 
-      key.toLowerCase().replace(/\s+/g, '').includes('슬롯') ||
-      key.toLowerCase().replace(/\s+/g, '').includes('slotid')
+    // 슬롯 번호 체크 (매트별 슬롯 번호)
+    const hasSlotNumber = keys.some(key => 
+      key.toLowerCase().replace(/\s+/g, '').includes('슬롯번호') ||
+      key.toLowerCase().replace(/\s+/g, '').includes('slotnumber') ||
+      key.toLowerCase().replace(/\s+/g, '').includes('번호')
     );
     
-    const hasComboKeys = keys.some(key => 
-      key.toLowerCase().replace(/\s+/g, '').includes('캠페인')
-    ) && keys.some(key => 
-      key.toLowerCase().replace(/\s+/g, '').includes('mid')
-    ) && keys.some(key => 
-      key.toLowerCase().replace(/\s+/g, '').includes('사용자')
-    );
-    
-    if (!hasSlotId && !hasComboKeys) {
-      toast.error('슬롯 식별 정보가 없습니다. "슬롯 ID" 또는 "캠페인명+MID+사용자명" 조합이 필요합니다.');
+    if (!hasSlotNumber) {
+      toast.error('슬롯 번호가 없습니다. "슬롯 번호" 컬럼이 필요합니다.');
       setUploadFile(null);
       return false;
     }
@@ -122,7 +138,11 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
 
   // 엑셀 데이터를 작업 데이터로 변환
   const convertExcelToWorkData = (data: any[]): WorkExcelData[] => {
-    return data.map(row => {
+    const validatedData: WorkExcelData[] = [];
+    const errors: string[] = [];
+    const rowDataMap: { rowNum: number; slotNum: number; date: string; workCnt: number }[] = [];
+    
+    data.forEach((row, index) => {
       // 컬럼명 정규화 함수
       const normalizeKey = (key: string) => key.toLowerCase().replace(/\s+/g, '');
 
@@ -141,48 +161,157 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
         return undefined;
       };
 
-      // 필드 매핑 - 조합 키 또는 UUID 지원
-      const slotId = findValue(['슬롯ID', '슬롯 ID', 'slot_id', 'slotid']) || '';
-      const campaignName = findValue(['캠페인명', '캠페인 명', 'campaign_name', '캠페인']) || '';
-      const mid = findValue(['MID', 'mid', '엠아이디']) || '';
-      const userName = findValue(['사용자명', '사용자 명', 'user_name', '사용자']) || '';
+      // 필드 매핑 - 매트별 슬롯 번호 사용
+      const slotNumberStr = findValue(['슬롯번호', '슬롯 번호', 'slot_number', 'slotnumber', '번호']) || '';
       const date = findValue(['날짜', 'date', '작업날짜', '작업 날짜']) || '';
       const workCntStr = findValue(['작업량', '작업 량', 'work_cnt', 'workcnt', '타수']) || '0';
       const notes = findValue(['비고', '메모', 'notes', '설명']) || '';
+      
+      // 디버깅: 원본 데이터 타입 확인
+      console.log('엑셀 데이터 디버그:', {
+        row,
+        dateValue: date,
+        dateType: typeof date,
+        isDate: Object.prototype.toString.call(date) === '[object Date]'
+      });
 
-      // 슬롯ID가 없으면 조합 키로 찾기 시도
-      let finalSlotId = slotId;
-      if (!slotId && campaignName && mid && userName) {
-        // 조합 키로 슬롯 찾기 (나중에 실제 구현 시 매핑 테이블 참조)
-        finalSlotId = `${campaignName}_${mid}_${userName}`;
-      }
+      // 슬롯 번호 파싱
+      const slotNumber = parseInt(slotNumberStr) || 0;
 
       // 날짜 형식 정규화 (YYYY-MM-DD)
-      let formattedDate = date;
-      if (date && !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        try {
-          const dateObj = new Date(date);
+      let formattedDate = '';
+      if (date) {
+        // 날짜가 문자열인지 확인
+        if (typeof date === 'string') {
+          // 이미 YYYY-MM-DD 형식인지 확인
+          if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedDate = date;
+          } else {
+            try {
+              const dateObj = new Date(date);
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = dateObj.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              console.warn('날짜 파싱 실패:', date);
+            }
+          }
+        } else if (typeof date === 'number') {
+          // 엑셀 날짜 시리얼 번호 처리 (1900년 1월 1일부터의 일수)
+          try {
+            // Excel의 날짜 시작점: 1900년 1월 1일 (단, 1900년 2월 29일 버그 고려)
+            const excelStartDate = new Date(1899, 11, 30); // 1899년 12월 30일
+            const dateObj = new Date(excelStartDate.getTime() + date * 24 * 60 * 60 * 1000);
+            if (!isNaN(dateObj.getTime())) {
+              formattedDate = dateObj.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('엑셀 날짜 변환 실패:', date);
+          }
+        } else if (Object.prototype.toString.call(date) === '[object Date]') {
+          // Date 객체인 경우
+          const dateObj = date as Date;
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
           }
-        } catch (e) {
-          console.warn('날짜 파싱 실패:', date);
         }
       }
 
-      return {
-        slot_id: finalSlotId,
+      // 데이터 유효성 검사
+      const rowNum = index + 2; // 엑셀은 1부터 시작, 헤더 제외
+      
+      // 슬롯 번호 검증
+      if (!slotNumber || slotNumber <= 0) {
+        errors.push(`행 ${rowNum}: 유효하지 않은 슬롯 번호 (${slotNumberStr})`);
+        return;
+      }
+      
+      // 날짜 검증
+      if (!formattedDate) {
+        errors.push(`행 ${rowNum}: 유효하지 않은 날짜 형식 (${date})`);
+        return;
+      }
+      
+      // 작업량 검증
+      const workCnt = parseInt(workCntStr) || 0;
+      if (workCnt <= 0) {
+        errors.push(`행 ${rowNum}: 작업량은 0보다 커야 합니다 (${workCntStr})`);
+        return;
+      }
+      
+      // 작업량 상한 체크 (예: 10000 이상은 비정상)
+      if (workCnt > 10000) {
+        errors.push(`행 ${rowNum}: 비정상적으로 큰 작업량입니다 (${workCnt}). 확인이 필요합니다.`);
+        return;
+      }
+      
+      // 유효한 데이터 저장
+      validatedData.push({
+        slot_id: '', // 나중에 실제 slot_id로 매핑
         date: formattedDate,
-        work_cnt: parseInt(workCntStr) || 0,
-        notes: notes || undefined
-      };
+        work_cnt: workCnt,
+        notes: notes || undefined,
+        mat_id: matId,
+        user_slot_number: slotNumber
+      });
+      
+      // 중복 체크를 위한 데이터 저장
+      rowDataMap.push({
+        rowNum: index + 2,
+        slotNum: slotNumber,
+        date: formattedDate,
+        workCnt: workCnt
+      });
     });
+    
+    // 검증 오류가 있으면 상태에 저장
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+    }
+    
+    // 중복 데이터 체크
+    const duplicateCheck = new Map<string, number[]>();
+    
+    rowDataMap.forEach((item) => {
+      const key = `${item.slotNum}-${item.date}`;
+      if (!duplicateCheck.has(key)) {
+        duplicateCheck.set(key, []);
+      }
+      duplicateCheck.get(key)!.push(item.rowNum);
+    });
+    
+    console.log('중복 체크 맵:', duplicateCheck);
+    console.log('원본 데이터 맵:', rowDataMap);
+    
+    const duplicateErrors: string[] = [];
+    duplicateCheck.forEach((rows, key) => {
+      if (rows.length > 1) {
+        const [slotNum, ...dateParts] = key.split('-');
+        const date = dateParts.join('-'); // 날짜에 '-'가 포함되어 있을 수 있음
+        duplicateErrors.push(`슬롯 번호 ${slotNum}, 날짜 ${date}: 행 ${rows.join(', ')}에서 중복됨`);
+      }
+    });
+    
+    if (duplicateErrors.length > 0) {
+      console.log('중복 데이터 발견:', duplicateErrors);
+      setDuplicateErrors(duplicateErrors);
+    }
+    
+    return validatedData;
   };
 
   // 엑셀 업로드 제출
   const handleUploadSubmit = async () => {
     if (!uploadFile) {
       toast.error('업로드할 파일을 선택해주세요.');
+      return;
+    }
+    
+    // 사용자 인증 확인
+    const userId = currentUser?.id;
+    if (!userId) {
+      console.error('업로드 시작 시 Auth 정보:', { currentUser, matId });
+      toast.error('사용자 인증 정보를 확인할 수 없습니다. 다시 로그인해주세요.');
       return;
     }
 
@@ -192,39 +321,49 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     try {
       // 파일 처리
       const processFile = () => {
-        return new Promise((resolve, reject) => {
+        return new Promise<{ success: number; failed: number; errors: string[] }>((resolve, reject) => {
           const reader = new FileReader();
           
           reader.onload = async (e) => {
             try {
               const data = new Uint8Array(e.target?.result as ArrayBuffer);
-              const workbook = XLSX.read(data, { type: 'array'});
+              const workbook = XLSX.read(data, { 
+                type: 'array',
+                cellDates: true, // 날짜를 Date 객체로 파싱
+                dateNF: 'yyyy-mm-dd' // 날짜 형식 지정
+              });
               const sheet = workbook.Sheets[workbook.SheetNames[0]];
-              const jsonData = XLSX.utils.sheet_to_json(sheet);
+              const jsonData = XLSX.utils.sheet_to_json(sheet, {
+                raw: false, // 원시 값 대신 형식화된 문자열 사용
+                dateNF: 'yyyy-mm-dd'
+              });
 
               // 엑셀 데이터를 작업 데이터로 변환
               const workData = convertExcelToWorkData(jsonData);
-
-              // TODO: 실제 작업 데이터 업로드 로직 구현
-              // 현재는 시뮬레이션
-              const CHUNK_SIZE = 50;
-              const totalChunks = Math.ceil(workData.length / CHUNK_SIZE);
-
-              for (let i = 0; i < totalChunks; i++) {
-                const startIdx = i * CHUNK_SIZE;
-                const endIdx = Math.min((i + 1) * CHUNK_SIZE, workData.length);
-                const chunk = workData.slice(startIdx, endIdx);
-
-                // 시뮬레이션: 실제로는 서버에 전송
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                console.log(`청크 ${i + 1} 처리:`, chunk);
-
-                // 진행률 업데이트
-                const progress = Math.round(((i + 1) / totalChunks) * 100);
-                setProgressPercent(progress);
-              }
               
-              resolve(true);
+              console.log('변환된 작업 데이터:', workData);
+              console.log('현재 matId:', matId);
+              
+              // 유효한 데이터가 없는 경우
+              if (workData.length === 0) {
+                throw new Error('업로드할 유효한 데이터가 없습니다. 데이터를 확인해주세요.');
+              }
+
+              // 사용자 ID 확인
+              const userId = currentUser?.id;
+              if (!userId) {
+                console.error('Auth 정보:', { currentUser });
+                throw new Error('사용자 인증 정보를 확인할 수 없습니다.');
+              }
+
+              // 실제 업로드 처리
+              const result = await bulkUploadSlotWorks(workData, userId);
+
+              // 결과 처리
+              setProgressPercent(100);
+              
+              // 성공적으로 완료
+              resolve(result);
             } catch (error) {
               reject(error);
             }
@@ -239,38 +378,58 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
       };
       
       // 파일 처리 실행
-      await processFile();
+      const result = await processFile();
       
-      toast.success('작업 데이터가 성공적으로 업로드되었습니다.');
-      resetState();
-      onSuccess();
-      
-    } catch (error) {
-      console.error('파일 업로드 중 오류:', error);
-      toast.error('파일 업로드에 실패했습니다. 다시 시도해 주세요.');
-    } finally {
+      // 결과 저장
+      setUploadResult(result);
       setIsUploading(false);
+      
+      // 성공한 경우에만 3초 후 새로고침
+      if (result.success > 0) {
+        setTimeout(() => {
+          onSuccess();
+        }, 3000);
+      }
+      
+    } catch (error: any) {
+      console.error('파일 업로드 중 오류:', error);
+      const errorMessage = error.message || '파일 업로드에 실패했습니다. 다시 시도해 주세요.';
+      setUploadResult({
+        success: 0,
+        failed: 1,
+        errors: [errorMessage]
+      });
+      setIsUploading(false);
+      setProgressPercent(0);
     }
   };
 
-  // 샘플 파일 다운로드 (조합키 방식)
+  // 샘플 파일 다운로드 (매트별 슬롯 번호 방식)
   const handleDownloadSample = () => {
     const sampleData = [
       {
-        '캠페인명': '네이버 트래픽',
-        'MID': '12345',
-        '사용자명': '홍길동',
+        '슬롯 번호': 1,
         '날짜': '2024-01-15',
         '작업량': 100,
         '비고': '정상 완료'
       },
       {
-        '캠페인명': '쿠팡 트래픽',
-        'MID': '23456',
-        '사용자명': '김철수',
-        '날짜': '2024-01-16',
+        '슬롯 번호': 2,
+        '날짜': '2024-01-15',
         '작업량': 150,
         '비고': '추가 작업 완료'
+      },
+      {
+        '슬롯 번호': 1,
+        '날짜': '2024-01-16',
+        '작업량': 120,
+        '비고': ''
+      },
+      {
+        '슬롯 번호': 3,
+        '날짜': '2024-01-16',
+        '작업량': 200,
+        '비고': '특별 작업'
       }
     ];
 
@@ -278,9 +437,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     
     // 열 너비 설정
     const wcols = [
-      { wch: 15 }, // 캠페인명
-      { wch: 10 }, // MID
-      { wch: 12 }, // 사용자명
+      { wch: 12 }, // 슬롯 번호
       { wch: 12 }, // 날짜
       { wch: 10 }, // 작업량
       { wch: 20 }  // 비고
@@ -288,7 +445,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     ws['!cols'] = wcols;
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.utils.book_append_sheet(wb, ws, '작업입력');
     XLSX.writeFile(wb, '작업입력_샘플.xlsx');
   };
 
@@ -297,6 +454,9 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     setUploadFile(null);
     setProgressPercent(0);
     setTotalRows(0);
+    setValidationErrors([]);
+    setDuplicateErrors([]);
+    setUploadResult(null);
   };
 
   // 모달 닫기
@@ -327,6 +487,73 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
         </DialogHeader>
 
         <div className="p-6 bg-background space-y-4">
+          {/* 알림 메시지 영역 */}
+          {(validationErrors.length > 0 || duplicateErrors.length > 0 || uploadResult) && (
+            <div className="space-y-3">
+              {/* 검증 오류 */}
+              {validationErrors.length > 0 && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  <strong className="font-bold block mb-1">데이터 검증 실패:</strong>
+                  <ul className="list-disc list-inside text-sm">
+                    {validationErrors.slice(0, 5).map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                    {validationErrors.length > 5 && (
+                      <li className="text-gray-600">... 외 {validationErrors.length - 5}건</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              
+              {/* 중복 오류 */}
+              {duplicateErrors.length > 0 && (
+                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                  <strong className="font-bold block mb-1">엑셀 파일 내 중복 데이터 발견!</strong>
+                  <ul className="list-disc list-inside text-sm">
+                    {duplicateErrors.slice(0, 5).map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                    {duplicateErrors.length > 5 && (
+                      <li className="text-gray-600">... 외 {duplicateErrors.length - 5}건</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              
+              {/* 업로드 결과 */}
+              {uploadResult && (
+                <div className={`px-4 py-3 rounded border ${
+                  uploadResult.success > 0 && uploadResult.failed === 0
+                    ? 'bg-green-100 border-green-400 text-green-700'
+                    : uploadResult.success > 0 && uploadResult.failed > 0
+                    ? 'bg-yellow-100 border-yellow-400 text-yellow-700'
+                    : 'bg-red-100 border-red-400 text-red-700'
+                }`}>
+                  <strong className="font-bold block mb-1">
+                    {uploadResult.success > 0 && uploadResult.failed === 0
+                      ? `업로드 성공! (총 ${uploadResult.success}건)`
+                      : uploadResult.success > 0 && uploadResult.failed > 0
+                      ? `업로드 부분 완료: 성공 ${uploadResult.success}건, 실패 ${uploadResult.failed}건`
+                      : `업로드 실패: 총 ${uploadResult.failed}건`}
+                  </strong>
+                  {uploadResult.errors.length > 0 && (
+                    <ul className="list-disc list-inside text-sm mt-2">
+                      {uploadResult.errors.slice(0, 5).map((error, idx) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                      {uploadResult.errors.length > 5 && (
+                        <li className="text-gray-600">... 외 {uploadResult.errors.length - 5}건</li>
+                      )}
+                    </ul>
+                  )}
+                  {uploadResult.success > 0 && (
+                    <p className="text-sm mt-2 font-medium">3초 후 자동으로 새로고침됩니다...</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* 샘플 파일 다운로드 */}
           <div>
             <button
@@ -408,33 +635,35 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
 
           {/* 사용법 안내 */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">슬롯 식별 방법 (둘 중 하나 선택)</h4>
+            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">엑셀 업로드 가이드</h4>
             
-            {/* 방법 1: 조합키 */}
+            {/* 슬롯 번호 안내 */}
             <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded">
-              <h5 className="text-xs font-medium text-green-800 dark:text-green-300 mb-1">✅ 권장: 조합키 방식</h5>
+              <h5 className="text-xs font-medium text-green-800 dark:text-green-300 mb-1">📌 슬롯 번호 안내</h5>
               <ul className="text-xs text-green-700 dark:text-green-200 space-y-1">
-                <li>• <strong>캠페인명</strong>: 캠페인 이름 (예: "네이버 트래픽")</li>
-                <li>• <strong>MID</strong>: 상품 MID 번호</li>
-                <li>• <strong>사용자명</strong>: 작업자 이름</li>
+                <li>• 슬롯 번호는 해당 매트에서 관리하는 슬롯의 고유 번호입니다</li>
+                <li>• 각 매트별로 1번부터 순차적으로 부여됩니다</li>
+                <li>• 슬롯 목록에서 확인 가능합니다</li>
               </ul>
             </div>
 
-            {/* 방법 2: UUID */}
-            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800/50 rounded">
-              <h5 className="text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">🔹 대안: 직접 ID 방식</h5>
-              <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <li>• <strong>슬롯 ID</strong>: 시스템에서 제공하는 고유 ID</li>
-              </ul>
-            </div>
-
-            {/* 공통 필수 */}
+            {/* 필수 컬럼 */}
             <div>
-              <h5 className="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">📋 공통 필수 컬럼</h5>
+              <h5 className="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">📋 필수 컬럼</h5>
               <ul className="text-xs text-blue-700 dark:text-blue-200 space-y-1">
+                <li>• <strong>슬롯 번호</strong>: 작업할 슬롯의 번호 (숫자)</li>
                 <li>• <strong>날짜</strong>: 작업 날짜 (YYYY-MM-DD 형식)</li>
                 <li>• <strong>작업량</strong>: 작업한 타수 (숫자)</li>
                 <li>• <strong>비고</strong>: 메모 (선택사항)</li>
+              </ul>
+            </div>
+            
+            {/* 주의사항 */}
+            <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded">
+              <h5 className="text-xs font-medium text-yellow-800 dark:text-yellow-300 mb-1">⚠️ 주의사항</h5>
+              <ul className="text-xs text-yellow-700 dark:text-yellow-200 space-y-1">
+                <li>• 동일한 슬롯의 같은 날짜에는 하나의 작업만 등록 가능합니다</li>
+                <li>• 날짜 형식을 정확히 지켜주세요 (예: 2024-01-15)</li>
               </ul>
             </div>
           </div>

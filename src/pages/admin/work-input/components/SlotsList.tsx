@@ -6,14 +6,16 @@ import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-
 import WorkInputModal from './WorkInputModal';
 import SlotDetailModal from './SlotDetailModal';
 import WorkExcelUploadModal from './WorkExcelUploadModal';
+import { toast } from 'sonner';
 
 interface SlotsListProps {
   slots: Slot[];
   onSubmit: (data: WorkInputFormData) => Promise<void>;
   isLoading: boolean;
+  matId: string;
 }
 
-const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => {
+const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId }) => {
   // 모달 상태
   const [isWorkInputModalOpen, setIsWorkInputModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -46,8 +48,8 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
   
   // 엑셀 업로드 성공 핸들러
   const handleExcelUploadSuccess = () => {
-    // TODO: 데이터 새로고침 로직
-    console.log('엑셀 업로드 성공 - 데이터 새로고침 필요');
+    // 데이터 새로고침
+    window.location.reload();
   };
 
   // 슬롯별 플랫폼 정보 계산
@@ -449,6 +451,9 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                슬롯#
+              </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 캠페인명
               </th>
@@ -481,7 +486,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={10} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
                   <div className="flex justify-center">
                     <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -493,7 +498,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
               </tr>
             ) : filteredSlots.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-4 text-center">
+                <td colSpan={10} className="px-3 py-4 text-center">
                   <div className="flex flex-col items-center py-8">
                     <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -516,6 +521,13 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
             ) : (
               filteredSlots.map((slot) => (
                 <tr key={slot.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  {/* 슬롯 번호 */}
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {slot.user_slot_number || '-'}
+                    </div>
+                  </td>
+                  
                   {/* 캠페인명 */}
                   <td className="px-3 py-3 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -608,15 +620,41 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
 
                   {/* 작업 입력 */}
                   <td className="px-3 py-3 text-center whitespace-nowrap">
-                    <button
-                      onClick={() => handleWorkInput(slot)}
-                      className="px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-xs font-medium rounded-md transition-colors duration-200 flex items-center mx-auto"
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                      </svg>
-                      입력
-                    </button>
+                    {(() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const endDate = slot.end_date ? new Date(slot.end_date) : null;
+                      const isExpired = endDate && endDate < today;
+                      
+                      if (isExpired) {
+                        return (
+                          <button
+                            onClick={() => {
+                              // TODO: 환불 처리 로직
+                              toast.info('환불 기능은 준비 중입니다.');
+                            }}
+                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-medium rounded-md transition-colors duration-200 flex items-center mx-auto"
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                            환불
+                          </button>
+                        );
+                      }
+                      
+                      return (
+                        <button
+                          onClick={() => handleWorkInput(slot)}
+                          className="px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-xs font-medium rounded-md transition-colors duration-200 flex items-center mx-auto"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                          </svg>
+                          입력
+                        </button>
+                      );
+                    })()}
                   </td>
 
                 </tr>
@@ -646,6 +684,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit }) => 
         isOpen={isExcelUploadModalOpen}
         onClose={() => setIsExcelUploadModalOpen(false)}
         onSuccess={handleExcelUploadSuccess}
+        matId={matId}
       />
     </div>
   );

@@ -1,13 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Slot, User } from './types';
+import ReactDOM from 'react-dom';
+import { Slot, User, Campaign } from './types';
 import SlotDetails from './SlotDetails';
 import { formatDate } from './constants';
 import { supabase } from '@/supabase';
 // 모달 컴포넌트는 부모에서 사용하므로 import 제거
 
+// CSS for campaign status dot tooltip
+const campaignStatusStyles = `
+  <style>
+    .campaign-status-dot {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .campaign-status-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      z-index: 50;
+      background-color: #1f2937;
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 0.375rem;
+      padding: 0.5rem;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border: 1px solid #374151;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+    
+    .campaign-status-dot:hover .campaign-status-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .campaign-status-arrow {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid #1f2937;
+    }
+  </style>
+`;
+
 interface SlotListProps {
   slots: Slot[];
   selectedServiceType: string;
+  campaigns?: Campaign[]; // 캠페인 목록 추가
   onApprove: (slotId: string | string[], actionType?: string) => void;
   onReject: (slotId: string | string[], reason?: string) => void;
   onMemo: (slotId: string) => void;
@@ -17,7 +68,8 @@ interface SlotListProps {
 
 const SlotList: React.FC<SlotListProps> = ({ 
   slots, 
-  selectedServiceType, 
+  selectedServiceType,
+  campaigns,
   onApprove, 
   onReject,
   onMemo,
@@ -30,6 +82,7 @@ const SlotList: React.FC<SlotListProps> = ({
   const [selectAll, setSelectAll] = useState<boolean>(false);
   // 추가정보 팝오버 상태 관리
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   // 반려사유 팝오버 상태 관리
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   
@@ -128,6 +181,35 @@ const SlotList: React.FC<SlotListProps> = ({
     
     loadUserInfo();
   }, [slots]);
+  
+  // 캠페인 상태에 따른 닷 색상과 메시지
+  const getCampaignStatusDot = (slot: Slot) => {
+    if (!campaigns || !slot.product_id) return null;
+    
+    const campaign = campaigns.find(c => c.id === slot.product_id);
+    if (!campaign) return null;
+    
+    const statusConfig = {
+      active: { color: 'bg-green-500', text: '진행중' },
+      paused: { color: 'bg-yellow-500', text: '일시중지' },
+      completed: { color: 'bg-gray-500', text: '종료' },
+      pending: { color: 'bg-blue-500', text: '대기중' }
+    };
+    
+    const config = statusConfig[campaign.status as keyof typeof statusConfig] || 
+                  { color: 'bg-gray-400', text: '알 수 없음' };
+    
+    return (
+      <div className="campaign-status-dot">
+        <div className={`w-2 h-2 rounded-full ${config.color}`}></div>
+        <div className="campaign-status-tooltip">
+          {config.text}
+          <div className="campaign-status-arrow"></div>
+        </div>
+      </div>
+    );
+  };
+  
   // 캠페인 로고 또는 기본 서비스 로고 반환 함수
   const getCampaignLogo = (slot: Slot): string | undefined => {
     // 캠페인 로고가 있으면 우선 사용
@@ -146,10 +228,19 @@ const SlotList: React.FC<SlotListProps> = ({
   };
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-header px-6 py-4">
-        <h3 className="card-title">슬롯 목록</h3>
-      </div>
+    <>
+      <div dangerouslySetInnerHTML={{ __html: campaignStatusStyles }} />
+      <div className="card shadow-sm">
+        <div className="card-header px-6 py-4">
+          <h3 className="card-title">슬롯 목록</h3>
+          <div className="card-toolbar">
+            <div className="flex flex-wrap justify-between items-center gap-2">
+              <h3 className="card-title font-medium text-sm">
+                전체 <span className="text-primary font-medium">{slots.length}</span> 건
+              </h3>
+            </div>
+          </div>
+        </div>
       <div className="card-body px-6 py-4">
       {/* 선택된 슬롯에 대한 일괄 작업 버튼 */}
       {selectedSlots.length > 0 && (
@@ -321,6 +412,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     <span className="text-gray-700 dark:text-gray-300">
                       {slot.campaign_name || '-'}
                     </span>
+                    {getCampaignStatusDot(slot)}
                   </div>
                 </td>
                 
@@ -402,20 +494,33 @@ const SlotList: React.FC<SlotListProps> = ({
                           className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopoverPosition({
+                              top: rect.top - 10,
+                              left: rect.left + rect.width / 2
+                            });
                             setOpenPopoverId(openPopoverId === slot.id ? null : slot.id);
                           }}
                         >
                           {userInputFields.length}개 필드
                         </button>
                         {/* 클릭 시 표시되는 팝오버 */}
-                        {openPopoverId === slot.id && (
+                        {openPopoverId === slot.id && ReactDOM.createPortal(
                           <>
                             {/* 배경 클릭 시 닫기 */}
                             <div 
-                              className="fixed inset-0 z-40" 
+                              className="fixed inset-0" 
+                              style={{zIndex: 9998}}
                               onClick={() => setOpenPopoverId(null)}
                             />
-                            <div className="absolute z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600">
+                            <div 
+                              className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600" 
+                              style={{
+                                zIndex: 9999,
+                                left: `${popoverPosition.left}px`,
+                                top: `${popoverPosition.top}px`,
+                                transform: 'translate(-50%, -100%)'
+                              }}>
                               <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
                                 <span className="font-medium text-gray-100 dark:text-gray-200">추가 정보</span>
                                 <button
@@ -448,7 +553,8 @@ const SlotList: React.FC<SlotListProps> = ({
                                 </div>
                               </div>
                             </div>
-                          </>
+                          </>,
+                          document.body
                         )}
                       </div>
                     );
@@ -760,6 +866,7 @@ const SlotList: React.FC<SlotListProps> = ({
       )}
       </div>
     </div>
+    </>
   );
 };
 

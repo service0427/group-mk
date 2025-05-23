@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/supabase';
 import { SlotItem, CampaignListItem, Campaign } from './types';
+import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import { SERVICE_TYPE_TO_CATEGORY, URL_TO_DB_SERVICE_TYPE } from './constants';
 
 /**
  * 슬롯 편집 관련 커스텀 훅
  */
 export const useSlotEditing = (
-  slots: SlotItem[], 
-  setSlots: (slots: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => void, 
-  filteredSlots: SlotItem[], 
+  slots: SlotItem[],
+  setSlots: (slots: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => void,
+  filteredSlots: SlotItem[],
   setFilteredSlots: (slots: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => void
 ) => {
   const [editingCell, setEditingCell] = useState<{ id: string, field: string }>({ id: '', field: '' });
@@ -19,24 +21,24 @@ export const useSlotEditing = (
     const handleDocumentClick = (e: MouseEvent) => {
       // 편집 중인 상태가 아니면 아무 작업도 하지 않음
       if (!editingCell.id || !editingCell.field) return;
-      
+
       // 클릭된 요소가 input이거나 editable-cell인 경우 무시
       const target = e.target as HTMLElement;
       if (
-        target.tagName === 'INPUT' || 
-        target.closest('.editable-cell') || 
+        target.tagName === 'INPUT' ||
+        target.closest('.editable-cell') ||
         target.classList.contains('editable-cell')
       ) {
         return;
       }
-      
+
       // 다른 곳을 클릭한 경우 편집 모드 종료 (저장)
       saveEdit();
     };
-    
+
     // 이벤트 리스너 등록
     document.addEventListener('mousedown', handleDocumentClick);
-    
+
     // 컴포넌트 언마운트 시 이벤트 리스너 제거
     return () => {
       document.removeEventListener('mousedown', handleDocumentClick);
@@ -49,7 +51,7 @@ export const useSlotEditing = (
     if (!slot) return;
 
     let initialValue = '';
-    
+
     switch (field) {
       case 'productName':
         initialValue = slot.inputData.productName;
@@ -61,7 +63,7 @@ export const useSlotEditing = (
         initialValue = slot.inputData.url;
         break;
       case 'keywords':
-        initialValue = slot.inputData.keywords.join(',');
+        initialValue = Array.isArray(slot.inputData.keywords) ? slot.inputData.keywords.join(',') : '';
         break;
       default:
         return;
@@ -111,16 +113,16 @@ export const useSlotEditing = (
         default:
           return;
       }
-      
+
       // Supabase 업데이트
       await supabase
         .from('slots')
-        .update({ 
+        .update({
           input_data: updatedInputData,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingCell.id);
-      
+
       // 로컬 상태 업데이트
       setSlots((prevSlots: SlotItem[]) => {
         return prevSlots.map((item: SlotItem) => {
@@ -134,7 +136,7 @@ export const useSlotEditing = (
           return item;
         });
       });
-      
+
       setFilteredSlots((prevFiltered: SlotItem[]) => {
         return prevFiltered.map((item: SlotItem) => {
           if (item.id === editingCell.id) {
@@ -148,7 +150,7 @@ export const useSlotEditing = (
         });
       });
     } catch (err) {
-      
+
     } finally {
       // 편집 상태 초기화 (성공/실패 상관없이)
       setEditingCell({ id: '', field: '' });
@@ -161,7 +163,11 @@ export const useSlotEditing = (
     editingValue,
     handleEditStart,
     handleEditChange: setEditingValue,
-    saveEdit
+    saveEdit,
+    handleEditCancel: () => {
+      setEditingCell({ id: '', field: '' });
+      setEditingValue('');
+    }
   };
 };
 
@@ -170,48 +176,22 @@ export const useSlotEditing = (
  */
 export const useServiceCategory = (pathname: string) => {
   const [serviceCategory, setServiceCategory] = useState<string>('');
-  
+
   useEffect(() => {
     // 새로운 URL 형식 처리 (/advertise/campaigns/info/:serviceType 또는 /advertise/campaigns/my/:serviceType)
     if (pathname.includes('/advertise/campaigns/') && (pathname.includes('/info/') || pathname.includes('/my/'))) {
       const pathSegments = pathname.split('/').filter(Boolean);
       // 서비스 타입은 마지막 세그먼트 (예: naver-shopping-traffic)
       const serviceType = pathSegments.length >= 4 ? pathSegments[3] : '';
-      
+
       if (serviceType) {
-        switch (serviceType) {
-          case 'naver-traffic':
-            setServiceCategory('N 트래픽');
-            break;
-          case 'naver-auto':
-            setServiceCategory('N 자동완성');
-            break;
-          case 'naver-shopping-traffic':
-            setServiceCategory('NS 트래픽');
-            break;
-          case 'naver-place-save':
-            setServiceCategory('NP 저장하기');
-            break;
-          case 'naver-place-share':
-            setServiceCategory('NP 블로그공유');
-            break;
-          case 'naver-place-traffic':
-            setServiceCategory('NP 트래픽');
-            break;
-          case 'coupang-traffic':
-            setServiceCategory('CP 트래픽');
-            break;
-          case 'ohouse-traffic':
-            setServiceCategory('OH 트래픽');
-            break;
-          default:
-            // 기본 형식으로 변환 (하이픈을 공백으로)
-            setServiceCategory(serviceType.replace(/-/g, ' '));
-        }
+        // constants.tsx의 SERVICE_TYPE_TO_CATEGORY 매핑 사용
+        const category = SERVICE_TYPE_TO_CATEGORY[serviceType];
+        setServiceCategory(category || serviceType.replace(/-/g, ' '));
         return;
       }
     }
-    
+
     // 구 URL 형식에 대한 backward compatibility 유지
     if (pathname.includes('/ntraffic')) {
       setServiceCategory('N 트래픽');
@@ -244,14 +224,14 @@ export const useServiceCategory = (pathname: string) => {
 /**
  * 캠페인 및 슬롯 데이터 가져오는 커스텀 훅
  */
-export const useCampaignSlots = (serviceType: string, userId: string | undefined) => {
+export const useCampaignSlots = (serviceType: string, userId: string | undefined, userRole?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slots, setSlots] = useState<SlotItem[]>([]);
   const [filteredSlots, setFilteredSlots] = useState<SlotItem[]>([]);
   const [campaignList, setCampaignList] = useState<CampaignListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  
+
   // 타입 오류 방지를 위한 래퍼 함수
   const updateSlots = (newSlotsOrUpdater: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => {
     if (typeof newSlotsOrUpdater === 'function') {
@@ -260,7 +240,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
       setSlots(newSlotsOrUpdater);
     }
   };
-  
+
   const updateFilteredSlots = (newSlotsOrUpdater: SlotItem[] | ((prev: SlotItem[]) => SlotItem[])) => {
     if (typeof newSlotsOrUpdater === 'function') {
       setFilteredSlots(prev => newSlotsOrUpdater(prev));
@@ -268,7 +248,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
       setFilteredSlots(newSlotsOrUpdater);
     }
   };
-  
+
   // 검색 파라미터 상태
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
@@ -279,25 +259,29 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
   // 슬롯 데이터 가져오기
   const fetchSlots = useCallback(async () => {
     if (!serviceType || !userId) {
-      
+
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
+      // URL 서비스 타입을 DB 서비스 타입으로 변환
+      const dbServiceType = URL_TO_DB_SERVICE_TYPE[serviceType] || serviceType;
+
       // 서비스 타입에 맞는 캠페인 ID들 가져오기
+
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaigns')
-        .select('id, campaign_name, logo, status, service_type')
-        .eq('service_type', serviceType)
-        .order('id', {ascending: true});
-      
+        .select('id, campaign_name, logo, status, service_type, add_info')
+        .eq('service_type', dbServiceType)
+        .order('id', { ascending: true });
+
       if (campaignError) {
         throw campaignError;
       }
-      
+
       if (!campaignData || campaignData.length === 0) {
         setSlots([]);
         setFilteredSlots([]);
@@ -306,60 +290,90 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
         setIsLoading(false);
         return;
       }
-      
+
       // 캠페인 목록 설정
       const campaigns = campaignData.map(campaign => ({
         id: campaign.id,
         campaignName: campaign.campaign_name
       }));
-      
+
       setCampaignList(campaigns);
-      
+
       // 캠페인 ID 배열 생성
       const campaignIds = campaignData.map(campaign => campaign.id);
-      
-      // 현재 서비스 타입의 캠페인에 해당하는 사용자의 슬롯 데이터 가져오기
+
+      // 운영자 이상 권한 체크
+      const isOperatorOrAbove = userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false;
+
+
+      // 현재 서비스 타입의 캠페인에 해당하는 슬롯 데이터 가져오기
       let query = supabase
         .from('slots')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .in('product_id', campaignIds);
-      
+        .select(`
+          *,
+          user:users(id, email, full_name)
+        `, { count: 'exact' });
+
+      // 캠페인 ID 필터가 있는 경우에만 적용
+      if (campaignIds.length > 0) {
+        query = query.in('product_id', campaignIds);
+      }
+
+      // 운영자 이상이 아닌 경우에만 사용자 ID로 필터링
+      if (!isOperatorOrAbove) {
+        query = query.eq('user_id', userId);
+      }
+
       // 캠페인 필터 적용
       if (selectedCampaignId !== 'all') {
         query = query.eq('product_id', selectedCampaignId);
       }
-      
+
       // 상태 필터 적용
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
-      
+
       // 검색어 필터 적용
       if (searchInput) {
         query = query.or(`input_data->productName.ilike.%${searchInput}%,input_data->mid.ilike.%${searchInput}%,input_data->url.ilike.%${searchInput}%`);
       }
-      
+
       // 날짜 필터 적용 (created_at 필드 기준)
       if (searchDateFrom) {
         query = query.gte('created_at', `${searchDateFrom}T00:00:00`);
       }
-      
+
       if (searchDateTo) {
         query = query.lte('created_at', `${searchDateTo}T23:59:59`);
       }
-      
+
       const { data, error: slotsError, count } = await query.order('created_at', { ascending: false });
-      
+
+
       if (slotsError) {
         throw slotsError;
       }
-      
+
       if (data) {
         // 데이터 변환 및 캠페인 정보 추가
         const processedSlots: SlotItem[] = data.map(slot => {
           const matchingCampaign = campaignData.find(campaign => campaign.id === slot.product_id);
-          
+
+
+          // 캠페인 로고 처리 (ApprovePage 로직과 동일)
+          let campaignLogo = undefined;
+          if (matchingCampaign) {
+            // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
+            if (matchingCampaign.add_info && typeof matchingCampaign.add_info === 'object' && matchingCampaign.add_info.logo_url) {
+              campaignLogo = matchingCampaign.add_info.logo_url;
+            } else {
+              // 업로드된 로고가 없으면 동물 아이콘 사용
+              campaignLogo = matchingCampaign.logo;
+            }
+
+          }
+
           return {
             id: slot.id,
             matId: slot.mat_id,
@@ -377,21 +391,22 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             campaign: matchingCampaign ? {
               id: matchingCampaign.id,
               campaignName: matchingCampaign.campaign_name,
-              logo: matchingCampaign.logo,
+              logo: campaignLogo,
               status: matchingCampaign.status,
               serviceType: matchingCampaign.service_type
-            } : undefined
+            } : undefined,
+            user: slot.user
           };
         });
-        
+
         setSlots(processedSlots);
         setFilteredSlots(processedSlots);
         setTotalCount(count || 0);
       }
     } catch (err) {
-      
+
       setError('슬롯 데이터를 불러오는 중 오류가 발생했습니다.');
-      
+
       // 개발 모드에서만 임시 데이터 사용
       if (process.env.NODE_ENV === 'development') {
         const mockSlots = generateMockSlots(serviceType, userId);
@@ -402,47 +417,47 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     } finally {
       setIsLoading(false);
     }
-  }, [serviceType, userId, statusFilter, searchInput, searchDateFrom, searchDateTo, selectedCampaignId]);
+  }, [serviceType, userId, userRole, statusFilter, searchInput, searchDateFrom, searchDateTo, selectedCampaignId]);
 
   // 필터 변경 시 데이터 다시 필터링
   useEffect(() => {
     if (statusFilter !== 'all' || searchInput || searchDateFrom || searchDateTo || selectedCampaignId !== 'all') {
       let filtered = [...slots];
-      
+
       // 캠페인 필터링 (클라이언트 측)
       if (selectedCampaignId !== 'all') {
         filtered = filtered.filter(item => item.productId === selectedCampaignId);
       }
-      
+
       // 상태 필터링
       if (statusFilter !== 'all') {
         filtered = filtered.filter(item => item.status === statusFilter);
       }
-      
+
       // 검색어 필터링
       if (searchInput) {
         const normalizedSearchTerm = searchInput.toLowerCase().trim();
-        filtered = filtered.filter(item => 
-          item.inputData.productName.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.mid.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.url.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.keywords.some(keyword => 
+        filtered = filtered.filter(item =>
+          item.inputData.productName?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.mid?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
+          (Array.isArray(item.inputData.keywords) && item.inputData.keywords.some(keyword =>
             keyword.toLowerCase().includes(normalizedSearchTerm)
-          )
+          ))
         );
       }
-      
+
       // 날짜 필터링 (클라이언트 측)
       if (searchDateFrom) {
         const fromDate = new Date(`${searchDateFrom}T00:00:00`);
         filtered = filtered.filter(item => new Date(item.createdAt) >= fromDate);
       }
-      
+
       if (searchDateTo) {
         const toDate = new Date(`${searchDateTo}T23:59:59`);
         filtered = filtered.filter(item => new Date(item.createdAt) <= toDate);
       }
-      
+
       setFilteredSlots(filtered);
     } else {
       setFilteredSlots(slots);
@@ -454,7 +469,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     if (serviceType && userId) {
       fetchSlots();
     }
-  }, [serviceType, userId, fetchSlots]);
+  }, [serviceType, userId, userRole, fetchSlots]);
 
   // 슬롯 삭제 핸들러
   const handleDeleteSlot = async (id: string) => {
@@ -482,7 +497,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
       setFilteredSlots(updatedFilteredSlots);
 
     } catch (err) {
-      
+
       alert('슬롯 삭제 중 오류가 발생했습니다.');
     }
   };
@@ -498,7 +513,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     campaignList,
     statusFilter,
     setStatusFilter,
-    searchInput, 
+    searchInput,
     setSearchInput,
     searchDateFrom,
     setSearchDateFrom,
@@ -514,16 +529,9 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 // 임시 데이터 생성 (개발 모드에서만 사용)
 const generateMockSlots = (serviceType: string, userId: string): SlotItem[] => {
   const statuses = ['draft', 'submitted', 'approved', 'rejected', 'active', 'paused', 'completed'];
-  const serviceCategory = serviceType ? { 
-    'ntraffic': 'NS 트래픽 / N 트래픽', // 네이버 트래픽 서비스 통합
-    'NaverPlaceSave': 'NP 저장',
-    'NaverPlaceShare': 'NP 공유',
-    'NaverPlaceTraffic': 'NP 트래픽',
-    'NaverAuto': 'N 자동완성',
-    'CoupangTraffic': 'C 트래픽',
-    'OhouseTraffic': 'OH 트래픽'
-  }[serviceType] : '테스트 서비스';
-  
+  // constants.tsx의 SERVICE_TYPE_TO_CATEGORY 매핑 사용
+  const serviceCategory = SERVICE_TYPE_TO_CATEGORY[serviceType] || '테스트 서비스';
+
   return Array.from({ length: 10 }, (_, i) => ({
     id: `mock-slot-${i}`,
     matId: `mock-mat-${i}`,

@@ -20,15 +20,21 @@ export interface SlotItem {
     productName: string;
     mid: string;
     url: string;
-    keywords: string[];
+    keywords?: string[];
   };
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
   campaign?: Campaign;
+  user?: {
+    id: string;
+    email: string;
+    full_name: string;
+  };
 }
 
 export interface CampaignListItem {
   id: number;
   campaignName: string;
+  status?: string;
 }

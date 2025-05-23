@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { CampaignInfoTemplate } from '../components';
 import { getServiceData, ServiceData } from '@/data/advertiseServices';
 import { CommonTemplate } from '@/components/pageTemplate';
+import { SERVICE_TYPE_TO_CATEGORY } from '../components/campaign-components';
 
 const InfoPage: React.FC = () => {
   const { serviceType } = useParams<{
@@ -100,29 +101,9 @@ const InfoPage: React.FC = () => {
 
   // 서비스 카테고리 생성
   let serviceCategory = '';
-
   if (serviceType) {
-    // URL 형식 분석 (naver-shopping-traffic, naver-auto, coupang-traffic 등)
-    if (serviceType === 'naver-shopping-traffic') {
-      serviceCategory = 'NS 트래픽';
-    } else if (serviceType === 'naver-place-save') {
-      serviceCategory = 'NP 저장';
-    } else if (serviceType === 'naver-place-share') {
-      serviceCategory = 'NP 공유';
-    } else if (serviceType === 'naver-place-traffic') {
-      serviceCategory = 'NP 트래픽';
-    } else if (serviceType === 'naver-auto') {
-      serviceCategory = 'N 자동완성';
-    } else if (serviceType === 'naver-traffic') {
-      serviceCategory = 'N 트래픽';
-    } else if (serviceType === 'coupang-traffic') {
-      serviceCategory = 'CP 트래픽';
-    } else if (serviceType === 'ohouse-traffic') {
-      serviceCategory = 'OH 트래픽';
-    } else {
-      // 알 수 없는 형식인 경우 그대로 표시
-      serviceCategory = serviceType.replace(/-/g, ' ');
-    }
+    // constants.tsx의 SERVICE_TYPE_TO_CATEGORY 매핑 사용
+    serviceCategory = SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType.replace(/-/g, ' ');
   }
 
   // 서비스 타입에 맞는 title 생성

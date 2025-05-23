@@ -159,11 +159,11 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
     const pathSegments = pathname.split('/').filter(Boolean);
     const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
     const parts = serviceType.split('-');
-    
+
     let platform = '';
     let type = '';
     let subservice = '';
-    
+
     if (parts.length === 3) {
       platform = parts[0];
       subservice = parts[1];
@@ -172,9 +172,9 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
       platform = parts[0];
       type = parts[1];
     }
-    
+
     const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
-    
+
     return (
       <CardAdCampaign
         logo={item.logo}
@@ -198,11 +198,11 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
     const pathSegments = pathname.split('/').filter(Boolean);
     const serviceType = pathSegments.length >= 3 ? pathSegments[3] : '';
     const parts = serviceType.split('-');
-    
+
     let platform = '';
     let type = '';
     let subservice = '';
-    
+
     if (parts.length === 3) {
       platform = parts[0];
       subservice = parts[1];
@@ -211,9 +211,9 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
       platform = parts[0];
       type = parts[1];
     }
-    
+
     const serviceTypeCode = getServiceTypeFromPath(platform, type, subservice);
-    
+
     return (
       <CardAdCampaignRow
         logo={item.logo}

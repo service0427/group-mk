@@ -322,7 +322,7 @@ const approveSingleSlot = async (
           created_at: now
         });
     } catch (logError) {
-      
+      // admin_action_logs 테이블이 없는 경우 무시
       // 로그 저장 실패는 전체 프로세스 실패로 취급하지 않음
     }
     
@@ -413,6 +413,7 @@ const approveSingleSlot = async (
           link: `/myinfo/services`,
           reference_id: slotId,
           status: 'unread',
+          priority: 'medium', // 필수 필드 추가
           created_at: now
         });
     } catch (notifyError) {
@@ -740,7 +741,7 @@ const rejectSingleSlot = async (
           created_at: now
         });
     } catch (logError) {
-      
+      // admin_action_logs 테이블이 없는 경우 무시
       // 로그 저장 실패는 전체 프로세스 실패로 취급하지 않음
     }
     
@@ -787,6 +788,7 @@ const rejectSingleSlot = async (
           link: `/myinfo/services`,
           reference_id: slotId,
           status: 'unread',
+          priority: 'high', // 반려는 중요도 높음
           created_at: now
         });
     } catch (notifyError) {
@@ -856,7 +858,7 @@ export const updateSlotMemo = async (
           created_at: new Date().toISOString()
         });
     } catch (logError) {
-      
+      // admin_action_logs 테이블이 없는 경우 무시
     }
     
     // 슬롯 이력 로그에 메모 변경 액션 추가

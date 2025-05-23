@@ -101,30 +101,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
               </div>
             </div>
 
-            <div className="col-span-3">
-              <div className="flex items-center h-9">
-                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">검색어</label>
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    placeholder="이름, 상품명, URL, 키워드"
-                    className="input input-bordered input-sm w-full pr-8"
-                    value={searchTerm}
-                    onChange={onSearchChange}
-                  />
-                  {searchTerm && (
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* 두 번째 줄 */}
@@ -153,7 +129,32 @@ const SearchForm: React.FC<SearchFormProps> = ({
               </div>
             </div>
 
-            <div className="col-span-6 flex items-center justify-end">
+            <div className="col-span-3">
+              <div className="flex items-center h-9">
+                <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">검색어</label>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="이름, 상품명, URL, 키워드"
+                    className="input input-bordered input-sm w-full pr-8"
+                    value={searchTerm}
+                    onChange={onSearchChange}
+                  />
+                  {searchTerm && (
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-3 flex items-center justify-end">
               <button
                 className="btn btn-primary btn-sm px-6"
                 onClick={onSearch}

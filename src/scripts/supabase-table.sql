@@ -282,3 +282,53 @@ create index IF not exists idx_balance_audit_log_change_type on public.balance_a
 create index IF not exists idx_balance_audit_log_created_at on public.balance_audit_log using btree (created_at) TABLESPACE pg_default;
 
 create index IF not exists idx_balance_audit_log_user_id on public.balance_audit_log using btree (user_id) TABLESPACE pg_default;
+
+
+create table public.notifications (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid not null,
+  type text not null,
+  title text not null,
+  message text not null,
+  link text null,
+  icon text null,
+  priority text not null,
+  status text not null default 'unread'::text,
+  created_at timestamp with time zone null default now(),
+  expires_at timestamp with time zone null,
+  action_taken boolean null default false,
+  constraint notifications_pkey primary key (id),
+  constraint idx_notifications_user_status_created unique (user_id, status, created_at),
+  constraint notifications_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint notifications_priority_check check (
+    (
+      priority = any (array['low'::text, 'medium'::text, 'high'::text])
+    )
+  ),
+  constraint notifications_status_check check (
+    (
+      status = any (
+        array['unread'::text, 'read'::text, 'archived'::text]
+      )
+    )
+  ),
+  constraint notifications_type_check check (
+    (
+      type = any (
+        array[
+          'system'::text,
+          'transaction'::text,
+          'service'::text,
+          'slot'::text,
+          'marketing'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists notifications_user_id_idx on public.notifications using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists notifications_user_id_status_idx on public.notifications using btree (user_id, status) TABLESPACE pg_default;
+
+create index IF not exists notifications_created_at_idx on public.notifications using btree (created_at) TABLESPACE pg_default;

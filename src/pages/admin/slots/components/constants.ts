@@ -4,7 +4,7 @@
 // 상태 옵션 배열
 export const STATUS_OPTIONS = [
   {"code": "", "name": "전체"},
-  {"code": "submitted", "name": "검토 대기중"},
+  {"code": "pending", "name": "대기중"},
   {"code": "approved", "name": "승인됨"},
   {"code": "rejected", "name": "반려됨"},
 ];

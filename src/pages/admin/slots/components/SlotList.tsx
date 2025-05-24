@@ -61,6 +61,7 @@ interface SlotListProps {
   campaigns?: Campaign[]; // 캠페인 목록 추가
   onApprove: (slotId: string | string[], actionType?: string) => void;
   onReject: (slotId: string | string[], reason?: string) => void;
+  onComplete?: (slotId: string | string[]) => void; // 완료 처리 함수 추가
   onMemo: (slotId: string) => void;
   selectedSlots?: string[]; // 부모로부터 전달받을 선택된 슬롯 ID 배열 (옵션)
   onSelectedSlotsChange?: (selectedSlots: string[]) => void; // 선택된 슬롯 상태가 변경될 때 호출될 콜백
@@ -72,6 +73,7 @@ const SlotList: React.FC<SlotListProps> = ({
   campaigns,
   onApprove, 
   onReject,
+  onComplete,
   onMemo,
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange
@@ -138,6 +140,22 @@ const SlotList: React.FC<SlotListProps> = ({
     if (selectedSlots.length > 0) {
       // 직접 onReject 호출하여 부모에서 모달을 표시하도록 함
       onReject(selectedSlots);
+    }
+  };
+  
+  const handleBulkComplete = () => {
+    if (selectedSlots.length > 0 && onComplete) {
+      // approved 상태인 슬롯만 필터링
+      const approvedSlots = selectedSlots.filter(slotId => 
+        slots.find(slot => slot.id === slotId && slot.status === 'approved')
+      );
+      
+      if (approvedSlots.length === 0) {
+        alert('승인된 슬롯만 완료 처리할 수 있습니다.');
+        return;
+      }
+      
+      onComplete(approvedSlots);
     }
   };
   
@@ -253,6 +271,14 @@ const SlotList: React.FC<SlotListProps> = ({
             >
               일괄 승인
             </button>
+            {onComplete && (
+              <button 
+                className="px-2.5 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors" 
+                onClick={handleBulkComplete}
+              >
+                일괄 완료
+              </button>
+            )}
             <button 
               className="px-2.5 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors" 
               onClick={handleBulkReject}
@@ -621,13 +647,15 @@ const SlotList: React.FC<SlotListProps> = ({
                     {/* 승인된 상태일 때 액션 버튼 */}
                     {slot.status === 'approved' && (
                       <>
-                        <button
-                          className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                          onClick={() => onApprove(slot.id, 'success')}
-                          title="완료 처리"
-                        >
-                          완료
-                        </button>
+                        {onComplete && (
+                          <button
+                            className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                            onClick={() => onComplete(slot.id)}
+                            title="작업 완료 처리"
+                          >
+                            완료
+                          </button>
+                        )}
                         <button
                           className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
                           onClick={() => onApprove(slot.id, 'refund')}
@@ -831,12 +859,14 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 승인된 상태일 때 액션 버튼 */}
                 {slot.status === 'approved' && (
                   <>
-                    <button
-                      className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                      onClick={() => onApprove(slot.id, 'success')}
-                    >
-                      완료
-                    </button>
+                    {onComplete && (
+                      <button
+                        className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                        onClick={() => onComplete(slot.id)}
+                      >
+                        완료
+                      </button>
+                    )}
                     <button
                       className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
                       onClick={() => onApprove(slot.id, 'refund')}

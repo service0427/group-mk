@@ -63,6 +63,7 @@ export const STATUS_OPTIONS = [
   {value: 'pending', label: '대기중'},
   {value: 'active', label: '진행중'},
   {value: 'paused', label: '일시중단'},
+  {value: 'pending_user_confirm', label: '거래확인대기'},
   {value: 'completed', label: '완료'}
 ];
 
@@ -95,6 +96,8 @@ export const getStatusBadge = (status: string): JSX.Element => {
       return <span className="badge badge-secondary whitespace-nowrap">일시중단</span>;
     case 'completed':
       return <span className="badge badge-dark whitespace-nowrap">완료</span>;
+    case 'pending_user_confirm':
+      return <span className="badge badge-info whitespace-nowrap">거래확인대기</span>;
     default:
       return <span className="badge badge-light whitespace-nowrap">대기중</span>;
   }

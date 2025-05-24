@@ -217,6 +217,34 @@ const CampaignPage: React.FC = () => {
     fetchSlots();
   };
 
+  // 거래완료 처리 함수
+  const handleConfirmTransaction = async (slotId: string) => {
+    if (!currentUser) {
+      showError('로그인이 필요합니다.');
+      return;
+    }
+
+    if (!confirm('정말로 거래를 완료하시겠습니까? 이 작업은 취소할 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      // user_confirm_slot_completion RPC 호출
+      const { confirmSlotByUser } = await import('@/pages/admin/slots/services/slotService');
+      const result = await confirmSlotByUser(slotId, currentUser?.id || '');
+
+      if (result.success) {
+        showSuccess('거래가 성공적으로 완료되었습니다.');
+        fetchSlots(); // 슬롯 목록 새로고침
+      } else {
+        showError(result.message || '거래 완료 처리 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('거래 완료 처리 오류:', error);
+      showError('거래 완료 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   // 인라인 편집 스타일 적용
   useEditableCellStyles();
 
@@ -312,6 +340,7 @@ const CampaignPage: React.FC = () => {
                 onEditCancel={handleEditCancel}
                 onDeleteSlot={handleDeleteSlot}
                 onOpenMemoModal={handleOpenMemoModal}
+                onConfirmTransaction={handleConfirmTransaction}
                 userRole={userRole}
                 hasFilters={!!searchInput || statusFilter !== 'all' || !!searchDateFrom || !!searchDateTo}
                 isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}

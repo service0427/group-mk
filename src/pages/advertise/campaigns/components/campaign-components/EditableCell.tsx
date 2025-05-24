@@ -14,6 +14,7 @@ interface EditableCellProps {
   isUrl?: boolean;
   children?: React.ReactNode;
   showEditIcon?: boolean;
+  disabled?: boolean;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -29,7 +30,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
   placeholder,
   isUrl = false,
   children,
-  showEditIcon
+  showEditIcon,
+  disabled = false
 }) => {
   const isEditing = editingCell.id === id && editingCell.field === field;
 
@@ -44,7 +46,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!isEditing) {
+    if (!isEditing && !disabled) {
       e.stopPropagation();
       onEditStart(id, field);
     }
@@ -52,9 +54,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   return (
     <div
-      className={`editable-cell relative ${!isEditing ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`}
-      onClick={!isEditing ? handleClick : undefined}
-      title={!isEditing ? "클릭하여 편집" : ""}
+      className={`editable-cell relative ${!isEditing && !disabled ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      onClick={!isEditing && !disabled ? handleClick : undefined}
+      title={!isEditing && !disabled ? "클릭하여 편집" : disabled ? "대기중 상태에서만 편집 가능합니다" : ""}
     >
       {isEditing ? (
         <div className="flex items-center gap-1 min-w-0">

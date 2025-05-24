@@ -7,13 +7,14 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { Toaster } from 'sonner';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { getServiceTypeFromUrl } from '@/utils/serviceTypeResolver';
+import { useDialog } from '@/providers/DialogProvider';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 슬롯 서비스 import
-import { approveSlot, rejectSlot, updateSlotMemo } from './services/slotService';
+import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat } from './services/slotService';
 
 // 모달 컴포넌트 import
 // ApproveModal 제거
@@ -25,6 +26,7 @@ import SlotList from './components/SlotList';
 import LoadingState from './components/LoadingState';
 import AuthRequired from './components/AuthRequired';
 import SlotMemoModal from './components/SlotMemoModal';
+import ApprovalConfirmModal from './components/ApprovalConfirmModal';
 
 // 화면 상태를 열거형으로 명확하게 정의
 enum ViewState {
@@ -37,6 +39,7 @@ const ApprovePage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const location = useLocation();
   const { showSuccess, showError } = useCustomToast();
+  const { showConfirm } = useDialog();
 
   // URL에서 쿼리 파라미터 추출
   const queryParams = new URLSearchParams(location.search);
@@ -77,6 +80,16 @@ const ApprovePage: React.FC = () => {
   const [actionType, setActionType] = useState<string | undefined>(undefined);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  
+  // 승인 확인 모달 상태
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [approvalModalData, setApprovalModalData] = useState<{
+    slotId: string;
+    campaignName: string;
+    dailyQuantity: number;
+    progress: any;
+    actionType?: string;
+  } | null>(null);
 
   // 현재 화면 상태를 저장하는 상태 변수 (특정 순간의 여러 상태를 종합해 하나의 명확한 상태로 관리)
   const [viewState, setViewState] = useState<ViewState>(ViewState.LOADING);
@@ -133,7 +146,7 @@ const ApprovePage: React.FC = () => {
 
         // ADMIN 그룹은 모든 캠페인을, 다른 사용자는 자신의 캠페인만 조회
         let campaignsQuery = supabase.from('campaigns').select('id, mat_id, campaign_name, service_type, status, description, logo, add_info');
-        if (!isAdmin) {
+        if (!isAdmin && currentUser.id) {
           campaignsQuery = campaignsQuery.eq('mat_id', currentUser.id);
         }
 
@@ -267,6 +280,8 @@ const ApprovePage: React.FC = () => {
             updated_at,
             start_date,
             end_date,
+            quantity,
+            keyword_id,
             users:user_id (
               id,
               full_name,
@@ -372,6 +387,14 @@ const ApprovePage: React.FC = () => {
 
 
         if (data && data.length > 0) {
+          // 데이터 조회 확인을 위한 로그
+          console.log('슬롯 원본 데이터 (첫 번째):', data[0]);
+          console.log('quantity 필드 확인:', data.map(slot => ({ 
+            id: slot.id, 
+            quantity: slot.quantity,
+            input_data_keys: slot.input_data ? Object.keys(slot.input_data) : []
+          })));
+          
           // 조인된 데이터 형식 변환 (users 객체를 user 필드로 변경)
           const enrichedSlots = data.map(slot => {
             // users 필드에서 사용자 정보 추출
@@ -406,12 +429,23 @@ const ApprovePage: React.FC = () => {
               }
             }
 
-            return {
+            const enrichedSlot = {
               ...slotWithoutUsers,
               user,
               campaign_name: campaignName,
               campaign_logo: campaignLogo
             };
+            
+            // quantity 필드 확인을 위한 로그 (처음 몇 개만)
+            if (data.indexOf(slot) < 3) {
+              console.log(`슬롯 ${slot.id} enriched 후:`, {
+                quantity: enrichedSlot.quantity,
+                hasQuantity: 'quantity' in enrichedSlot,
+                quantityValue: enrichedSlot.quantity
+              });
+            }
+            
+            return enrichedSlot;
           });
 
           setSlots(enrichedSlots as Slot[]);
@@ -504,8 +538,214 @@ const ApprovePage: React.FC = () => {
   };
 
 
+  // 작업 진행률 계산 함수
+  const calculateWorkProgress = async (slotId: string) => {
+    try {
+      // slot_works_info에서 작업 내역 조회
+      const { data: workData, error: workError } = await supabase
+        .from('slot_works_info')
+        .select('work_cnt, date')
+        .eq('slot_id', slotId);
+
+      if (workError) {
+        console.error('작업 내역 조회 오류:', workError);
+        return null;
+      }
+
+      // 해당 슬롯 정보 가져오기
+      let slot = slots.find(s => s.id === slotId) || filteredSlots.find(s => s.id === slotId);
+      
+      if (!slot) {
+        console.log('메모리에서 슬롯을 찾을 수 없어 직접 조회합니다:', slotId);
+        
+        // 슬롯을 직접 조회
+        const { data: slotInfo, error: slotError } = await supabase
+          .from('slots')
+          .select('id, quantity, input_data, start_date, end_date, product_id')
+          .eq('id', slotId)
+          .single();
+          
+        if (slotError || !slotInfo) {
+          console.error('슬롯 직접 조회 실패:', slotError);
+          return null;
+        }
+        
+        console.log('직접 조회한 슬롯 데이터:', slotInfo);
+        slot = slotInfo as Slot;
+      }
+
+      // 작업 기간 계산
+      let dueDays = 1;
+      
+      // 1. start_date와 end_date가 있으면 이를 사용 (가장 정확)
+      if (slot.start_date && slot.end_date) {
+        const start = new Date(slot.start_date);
+        const end = new Date(slot.end_date);
+        dueDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      } 
+      // 2. input_data의 dueDays 사용
+      else if (slot.input_data?.dueDays && Number(slot.input_data.dueDays) > 0) {
+        dueDays = Number(slot.input_data.dueDays);
+      }
+      // 3. input_data의 workCount가 있으면 작업일수로 사용
+      else if (slot.input_data?.workCount && Number(slot.input_data.workCount) > 0) {
+        dueDays = Number(slot.input_data.workCount);
+      }
+      
+      // 일일 작업량 가져오기
+      let dailyQuantity = 0;
+      
+      // 1. slots 테이블의 quantity 필드 확인 (가장 우선)
+      if (slot.quantity && Number(slot.quantity) > 0) {
+        dailyQuantity = Number(slot.quantity);
+      }
+      // 2. input_data의 quantity 확인
+      else if (slot.input_data?.quantity && Number(slot.input_data.quantity) > 0) {
+        dailyQuantity = Number(slot.input_data.quantity);
+      }
+      // 3. input_data의 타수 관련 필드들 확인
+      else if (slot.input_data?.타수 && Number(slot.input_data.타수) > 0) {
+        dailyQuantity = Number(slot.input_data.타수);
+      }
+      // 4. input_data의 다른 가능한 필드들 확인
+      else if (slot.input_data?.['일일 타수'] && Number(slot.input_data['일일 타수']) > 0) {
+        dailyQuantity = Number(slot.input_data['일일 타수']);
+      }
+      else if (slot.input_data?.['작업량'] && Number(slot.input_data['작업량']) > 0) {
+        dailyQuantity = Number(slot.input_data['작업량']);
+      }
+      
+      // 디버깅을 위한 상세 로그
+      console.log('슬롯 상세 정보:', {
+        slotId,
+        quantity: slot.quantity,
+        input_data: slot.input_data,
+        input_data_keys: slot.input_data ? Object.keys(slot.input_data) : [],
+        start_date: slot.start_date,
+        end_date: slot.end_date,
+        계산된_dueDays: dueDays,
+        계산된_dailyQuantity: dailyQuantity
+      });
+      
+      // input_data의 모든 필드와 값을 출력
+      if (slot.input_data) {
+        console.log('input_data 상세:');
+        Object.entries(slot.input_data).forEach(([key, value]) => {
+          console.log(`  ${key}: ${value} (타입: ${typeof value})`);
+        });
+      }
+      
+      // 총 요청 수량 계산
+      const totalRequestedQuantity = dailyQuantity * dueDays;
+
+      // 실제 작업량 계산
+      const totalWorkedQuantity = workData?.reduce((sum, work) => sum + (work.work_cnt || 0), 0) || 0;
+      
+      // 작업 일수 계산
+      const workedDays = workData?.length || 0;
+
+      // 완료율 계산 (100% 상한)
+      const completionRate = totalRequestedQuantity > 0 
+        ? Math.min(100, Math.round((totalWorkedQuantity / totalRequestedQuantity) * 100))
+        : 0;
+
+      console.log('작업 진행률 계산 결과:', {
+        총요청수량: totalRequestedQuantity,
+        총작업수량: totalWorkedQuantity,
+        요청일수: dueDays,
+        작업일수: workedDays,
+        완료율: completionRate
+      });
+
+      return {
+        totalRequestedQuantity,
+        totalWorkedQuantity,
+        requestedDays: dueDays,
+        workedDays,
+        completionRate,
+        isEarlyCompletion: workedDays < dueDays && completionRate < 100
+      };
+    } catch (error) {
+      console.error('작업 진행률 계산 오류:', error);
+      return null;
+    }
+  };
+
   // 승인 처리 함수 (actionType 매개변수 추가)
   const handleApproveSlot = async (slotId: string | string[], actionType?: string) => {
+    // 처리할 슬롯 ID 설정
+    let slotIdsToProcess: string[] = [];
+    if (Array.isArray(slotId)) {
+      if (slotId.length === 0) {
+        return; // 선택된 슬롯이 없으면 처리하지 않음
+      }
+      slotIdsToProcess = slotId;
+    } else {
+      slotIdsToProcess = [slotId];
+    }
+
+    // 단일 슬롯 승인이고 actionType이 없는 경우 (일반 승인)
+    if (slotIdsToProcess.length === 1 && !actionType) {
+      try {
+        // 작업 진행률 확인
+        const progress = await calculateWorkProgress(slotIdsToProcess[0]);
+        const slot = slots.find(s => s.id === slotIdsToProcess[0]) || filteredSlots.find(s => s.id === slotIdsToProcess[0]);
+        
+        if (!slot) {
+          showError('슬롯을 찾을 수 없습니다.');
+          return;
+        }
+
+        const campaignName = slot.campaign_name || slot.input_data?.productName || '캠페인';
+        
+        // 작업 진행률이 있으면 확인 다이얼로그 표시
+        if (progress && progress.totalRequestedQuantity > 0) {
+          const completionRate = Math.min(100, progress.completionRate);
+          
+          let confirmMessage = `캠페인: ${campaignName}\n\n`;
+          confirmMessage += `작업 현황:\n`;
+          confirmMessage += `• 요청 수량: ${progress.totalRequestedQuantity.toLocaleString()}개\n`;
+          confirmMessage += `• 완료 수량: ${progress.totalWorkedQuantity.toLocaleString()}개\n`;
+          confirmMessage += `• 작업 일수: ${progress.workedDays}일 / ${progress.requestedDays}일\n`;
+          confirmMessage += `• 진행률: ${completionRate}%\n`;
+          
+          if (progress.totalWorkedQuantity > 0 && completionRate < 100) {
+            confirmMessage += `\n⚠️ 작업이 진행 중입니다. 미완료분은 추후 환불됩니다.\n`;
+          } else if (progress.totalWorkedQuantity === 0) {
+            confirmMessage += `\n⚠️ 아직 작업이 시작되지 않았습니다.\n`;
+          }
+          
+          confirmMessage += `\n이 슬롯을 승인하시겠습니까?`;
+          
+          const confirmed = await new Promise<boolean>((resolve) => {
+            showConfirm(
+              '슬롯 승인 확인',
+              confirmMessage,
+              (confirmed) => resolve(confirmed),
+              {
+                confirmText: '승인',
+                cancelText: '취소'
+              }
+            );
+          });
+          
+          if (confirmed) {
+            await processApproval(slotIdsToProcess, actionType);
+          }
+          
+          return;
+        }
+      } catch (error) {
+        console.error('작업 진행률 확인 오류:', error);
+      }
+    }
+    
+    // 다중 선택이거나 진행률 확인 실패 시 바로 처리
+    await processApproval(slotIdsToProcess, actionType);
+  };
+
+  // 실제 승인 처리 함수
+  const processApproval = async (slotIdsToProcess: string[], actionType?: string) => {
     // 로딩 상태 표시
     setLoading(true);
 
@@ -515,18 +755,6 @@ const ApprovePage: React.FC = () => {
         setError('사용자 정보를 찾을 수 없습니다.');
         setLoading(false);
         return;
-      }
-
-      // 처리할 슬롯 ID 설정
-      let slotIdsToProcess: string[] = [];
-      if (Array.isArray(slotId)) {
-        if (slotId.length === 0) {
-          setLoading(false);
-          return; // 선택된 슬롯이 없으면 처리하지 않음
-        }
-        slotIdsToProcess = slotId;
-      } else {
-        slotIdsToProcess = [slotId];
       }
 
       // 해당 슬롯 정보 가져오기
@@ -733,6 +961,147 @@ const ApprovePage: React.FC = () => {
     }
   };
 
+  // 슬롯 완료 처리 함수
+  const handleCompleteSlot = async (slotId: string | string[]) => {
+    try {
+      // 권한 확인
+      if (!currentUser?.id) {
+        showError('사용자 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      const isSingleSlot = typeof slotId === 'string';
+      const slotIds = isSingleSlot ? [slotId] : slotId;
+
+      // 선택된 슬롯이 없는 경우
+      if (slotIds.length === 0) {
+        showError('처리할 슬롯이 없습니다.');
+        return;
+      }
+
+      // 단일 슬롯인 경우 작업 진행률 확인 후 모달 표시
+      if (isSingleSlot && slotIds.length === 1) {
+        const progress = await calculateWorkProgress(slotIds[0]);
+        
+        if (progress) {
+          const slot = slots.find(s => s.id === slotIds[0]) || filteredSlots.find(s => s.id === slotIds[0]);
+          
+          if (!slot) {
+            showError('슬롯을 찾을 수 없습니다.');
+            return;
+          }
+          
+          const campaignName = slot.campaign_name || slot.input_data?.productName || '캠페인';
+          
+          // 일일 작업량 가져오기
+          let dailyQuantity = 0;
+          
+          if (slot.quantity && Number(slot.quantity) > 0) {
+            dailyQuantity = Number(slot.quantity);
+          } else if (slot.input_data?.quantity && Number(slot.input_data.quantity) > 0) {
+            dailyQuantity = Number(slot.input_data.quantity);
+          } else if (slot.input_data?.타수 && Number(slot.input_data.타수) > 0) {
+            dailyQuantity = Number(slot.input_data.타수);
+          } else if (slot.input_data?.['일일 타수'] && Number(slot.input_data['일일 타수']) > 0) {
+            dailyQuantity = Number(slot.input_data['일일 타수']);
+          } else if (slot.input_data?.['작업량'] && Number(slot.input_data['작업량']) > 0) {
+            dailyQuantity = Number(slot.input_data['작업량']);
+          }
+          
+          // 모달 데이터 설정
+          setApprovalModalData({
+            slotId: slotIds[0],
+            campaignName,
+            dailyQuantity,
+            progress,
+            actionType: 'complete'
+          });
+          setApprovalModalOpen(true);
+          
+          return;
+        }
+      }
+
+      // 다중 선택이거나 진행률 조회 실패 시 확인 다이얼로그
+      const confirmMessage = isSingleSlot 
+        ? '이 슬롯을 완료 처리하시겠습니까? 사용자가 확인 후 정산이 진행됩니다.'
+        : `선택한 ${slotIds.length}개의 슬롯을 완료 처리하시겠습니까? 사용자가 확인 후 정산이 진행됩니다.`;
+
+      const confirmed = await new Promise<boolean>((resolve) => {
+        showConfirm(
+          '슬롯 완료 처리',
+          confirmMessage,
+          (confirmed) => resolve(confirmed),
+          {
+            confirmText: '완료 처리',
+            cancelText: '취소'
+          }
+        );
+      });
+
+      if (!confirmed) return;
+
+      await processCompleteSlot(slotIds);
+    } catch (err: any) {
+      console.error('슬롯 완료 처리 오류:', err);
+      showError(err.message || '슬롯 완료 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 실제 완료 처리 함수
+  const processCompleteSlot = async (slotIds: string[]) => {
+    setLoading(true);
+
+    try {
+      // 각 슬롯에 대해 완료 처리
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const id of slotIds) {
+        try {
+          const result = await completeSlotByMat(id, currentUser?.id || '');
+          
+          if (result.success) {
+            successCount++;
+            
+            // UI 업데이트
+            const updateSlotStatus = (slots: Slot[]) =>
+              slots.map(slot =>
+                slot.id === id
+                  ? {
+                      ...slot,
+                      status: 'pending_user_confirm',
+                      updated_at: new Date().toISOString()
+                    }
+                  : slot
+              );
+
+            setSlots(updateSlotStatus);
+            setFilteredSlots(updateSlotStatus);
+          } else {
+            errors.push(`슬롯 ${id}: ${result.message}`);
+          }
+        } catch (err: any) {
+          errors.push(`슬롯 ${id}: ${err.message || '오류 발생'}`);
+        }
+      }
+
+      // 결과 메시지 표시
+      if (successCount > 0) {
+        showSuccess(`${successCount}개의 슬롯이 완료 처리되었습니다.`);
+      }
+
+      if (errors.length > 0) {
+        showError(`완료 처리 실패:\n${errors.join('\n')}`);
+      }
+
+      // 선택 초기화
+      setSelectedSlots([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 메모 모달 열기 함수
   const handleOpenMemoModal = (slotId: string) => {
     // 현재 슬롯의 메모 정보 가져오기
@@ -920,6 +1289,7 @@ const ApprovePage: React.FC = () => {
                 campaigns={campaigns}
                 onApprove={handleApproveSlot}
                 onReject={handleRejectSlot}
+                onComplete={handleCompleteSlot}
                 onMemo={handleOpenMemoModal}
                 selectedSlots={selectedSlots}
                 onSelectedSlotsChange={setSelectedSlots}
@@ -936,6 +1306,30 @@ const ApprovePage: React.FC = () => {
               />
 
               {/* 승인 모달 제거함 */}
+
+              {/* 승인 확인 모달 */}
+              {approvalModalData && (
+                <ApprovalConfirmModal
+                  isOpen={approvalModalOpen}
+                  onClose={() => {
+                    setApprovalModalOpen(false);
+                    setApprovalModalData(null);
+                  }}
+                  onConfirm={async () => {
+                    setApprovalModalOpen(false);
+                    if (approvalModalData.actionType === 'complete') {
+                      await processCompleteSlot([approvalModalData.slotId]);
+                    } else {
+                      await processApproval([approvalModalData.slotId], approvalModalData.actionType);
+                    }
+                    setApprovalModalData(null);
+                  }}
+                  campaignName={approvalModalData.campaignName}
+                  dailyQuantity={approvalModalData.dailyQuantity}
+                  progress={approvalModalData.progress}
+                  actionType={approvalModalData.actionType}
+                />
+              )}
 
               {/* 반려 모달 */}
               <RejectModal

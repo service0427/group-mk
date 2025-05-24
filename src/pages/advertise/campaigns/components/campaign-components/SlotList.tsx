@@ -18,6 +18,7 @@ interface SlotListProps {
   onEditCancel: () => void;
   onDeleteSlot: (id: string) => void;
   onOpenMemoModal: (id: string) => void;
+  onConfirmTransaction?: (id: string) => void;
   userRole?: string;
   hasFilters?: boolean;
   isAllData?: boolean;
@@ -83,6 +84,7 @@ const SlotList: React.FC<SlotListProps> = ({
   onEditCancel,
   onDeleteSlot,
   onOpenMemoModal,
+  onConfirmTransaction,
   userRole,
   hasFilters = false,
   isAllData = false
@@ -274,11 +276,12 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-start font-medium text-xs w-[23%]">상품명</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[15%]">키워드</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">캠페인</th>
+                    <th className="py-2 px-3 text-start font-medium text-xs w-[20%]">상품명</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">메인키워드</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">서브키워드</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">등록일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">등록일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">관리</th>
                   </tr>
                 </thead>
@@ -313,42 +316,25 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
 
                       {/* 상품명 */}
-                      <td className="py-2 px-3 w-[23%]">
+                      <td className="py-2 px-3 w-[20%]">
                         <div className="flex flex-col gap-0.5 min-w-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <EditableCell
-                              id={item.id}
-                              field="productName"
-                              value={item.inputData?.productName || ''}
-                              editingCell={editingCell}
-                              editingValue={editingValue}
-                              onEditStart={onEditStart}
-                              onEditChange={onEditChange}
-                              onEditSave={onEditSave}
-                              onEditCancel={onEditCancel}
-                              placeholder="상품명을 입력해주세요"
-                            >
-                              <span className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
-                                {item.inputData?.productName || <span className="text-gray-400 font-normal">상품명을 입력해주세요</span>}
-                              </span>
-                            </EditableCell>
-                            <EditableCell
-                              id={item.id}
-                              field="mid"
-                              value={item.inputData?.mid || ''}
-                              editingCell={editingCell}
-                              editingValue={editingValue}
-                              onEditStart={onEditStart}
-                              onEditChange={onEditChange}
-                              onEditSave={onEditSave}
-                              onEditCancel={onEditCancel}
-                              placeholder="MID를 입력해주세요"
-                            >
-                              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                                [{item.inputData?.mid || <span className="text-gray-400">MID를 입력해주세요</span>}]
-                              </span>
-                            </EditableCell>
-                          </div>
+                          <EditableCell
+                            id={item.id}
+                            field="mid"
+                            value={item.inputData?.mid || ''}
+                            editingCell={editingCell}
+                            editingValue={editingValue}
+                            onEditStart={onEditStart}
+                            onEditChange={onEditChange}
+                            onEditSave={onEditSave}
+                            onEditCancel={onEditCancel}
+                            placeholder="MID를 입력해주세요"
+                            disabled={item.status !== 'pending'}
+                          >
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                              {item.inputData?.mid || '-'}
+                            </span>
+                          </EditableCell>
 
                           <EditableCell
                             id={item.id}
@@ -361,12 +347,41 @@ const SlotList: React.FC<SlotListProps> = ({
                             onEditSave={onEditSave}
                             onEditCancel={onEditCancel}
                             isUrl={true}
+                            disabled={item.status !== 'pending'}
                           />
                         </div>
                       </td>
 
-                      {/* 키워드 */}
-                      <td className="py-2 px-3 w-[15%]">
+                      {/* 메인키워드 */}
+                      <td className="py-2 px-3 w-[10%]">
+                        <EditableCell
+                          id={item.id}
+                          field="mainKeyword"
+                          value={item.inputData.mainKeyword || ''}
+                          editingCell={editingCell}
+                          editingValue={editingValue}
+                          onEditStart={onEditStart}
+                          onEditChange={onEditChange}
+                          onEditSave={onEditSave}
+                          onEditCancel={onEditCancel}
+                          placeholder="메인키워드"
+                          disabled={item.status !== 'pending'}
+                        >
+                          <div className="flex justify-center">
+                            {item.inputData.mainKeyword ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary dark:bg-primary/20 border border-primary/20">
+                                <KeenIcon icon="star" className="size-3 mr-1" />
+                                {item.inputData.mainKeyword}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </div>
+                        </EditableCell>
+                      </td>
+
+                      {/* 서브키워드 */}
+                      <td className="py-2 px-3 w-[12%]">
                         <EditableCell
                           id={item.id}
                           field="keywords"
@@ -377,11 +392,12 @@ const SlotList: React.FC<SlotListProps> = ({
                           onEditChange={onEditChange}
                           onEditSave={onEditSave}
                           onEditCancel={onEditCancel}
-                          placeholder="키워드1,키워드2,키워드3"
+                          placeholder="서브1,서브2,서브3"
+                          disabled={item.status !== 'pending'}
                         >
                           <div className="flex flex-wrap gap-1 justify-center">
                             {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 ? (
-                              item.inputData.keywords.slice(0, 2).map((keyword, index) => (
+                              item.inputData.keywords.slice(0, 3).map((keyword, index) => (
                                 <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
                                   {keyword}
                                 </span>
@@ -389,17 +405,12 @@ const SlotList: React.FC<SlotListProps> = ({
                             ) : (
                               <span className="text-gray-400 text-sm">-</span>
                             )}
-                            {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 2 && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200">
-                                +{item.inputData.keywords.length - 2}
-                              </span>
-                            )}
                           </div>
                         </EditableCell>
                       </td>
 
                       {/* 캠페인 */}
-                      <td className="py-2 px-3 text-center w-[12%]">
+                      <td className="py-2 px-3 text-center w-[10%]">
                         <div className="flex items-center justify-center gap-1 min-w-0">
                           <img
                             src={getCampaignLogo(item)}
@@ -462,6 +473,21 @@ const SlotList: React.FC<SlotListProps> = ({
                                 </div>
                               )}
                             </div>
+                          ) : item.status === 'pending_user_confirm' ? (
+                            <div className="flex flex-col items-center gap-1">
+                              {getStatusBadge(item.status)}
+                              <button
+                                className="btn btn-xs btn-info"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onConfirmTransaction) {
+                                    onConfirmTransaction(item.id);
+                                  }
+                                }}
+                              >
+                                거래완료
+                              </button>
+                            </div>
                           ) : (
                             getStatusBadge(item.status)
                           )}
@@ -469,7 +495,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 등록일 */}
-                      <td className="py-2 px-3 text-center w-[12%]">
+                      <td className="py-2 px-3 text-center w-[10%]">
                         <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                           {formatDate(item.createdAt)}
                         </span>
@@ -519,18 +545,19 @@ const SlotList: React.FC<SlotListProps> = ({
                     <div className="flex-1">
                       <EditableCell
                         id={item.id}
-                        field="productName"
-                        value={item.inputData?.productName || ''}
+                        field="mid"
+                        value={item.inputData?.mid || ''}
                         editingCell={editingCell}
                         editingValue={editingValue}
                         onEditStart={onEditStart}
                         onEditChange={onEditChange}
                         onEditSave={onEditSave}
                         onEditCancel={onEditCancel}
-                        placeholder="상품명을 입력해주세요"
+                        placeholder="MID를 입력해주세요"
+                        disabled={item.status !== 'pending'}
                       >
                         <h4 className="font-medium text-gray-900">
-                          {item.inputData?.productName || <span className="text-gray-400 font-normal">상품명을 입력해주세요</span>}
+                          {item.inputData?.mid || '-'}
                         </h4>
                       </EditableCell>
                       <div className="mt-1 flex items-center gap-2">
@@ -564,25 +591,23 @@ const SlotList: React.FC<SlotListProps> = ({
                     </div>
                   )}
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex">
-                      <span className="text-gray-600 w-16">MID:</span>
-                      <EditableCell
-                        id={item.id}
-                        field="mid"
-                        value={item.inputData?.mid || ''}
-                        editingCell={editingCell}
-                        editingValue={editingValue}
-                        onEditStart={onEditStart}
-                        onEditChange={onEditChange}
-                        onEditSave={onEditSave}
-                        onEditCancel={onEditCancel}
-                        placeholder="MID를 입력해주세요"
+                  {item.status === 'pending_user_confirm' && (
+                    <div className="mb-3 flex justify-center">
+                      <button
+                        className="btn btn-sm btn-info"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onConfirmTransaction) {
+                            onConfirmTransaction(item.id);
+                          }
+                        }}
                       >
-                        <span className="text-gray-900">{item.inputData?.mid || <span className="text-gray-400">MID를 입력해주세요</span>}</span>
-                      </EditableCell>
+                        거래완료
+                      </button>
                     </div>
+                  )}
 
+                  <div className="space-y-2 text-sm">
                     <div className="flex">
                       <span className="text-gray-600 w-16">등록일:</span>
                       <span className="text-gray-900">{formatDate(item.createdAt)}</span>
@@ -609,21 +634,25 @@ const SlotList: React.FC<SlotListProps> = ({
                             href={item.inputData.url} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-primary hover:underline text-sm break-all block cursor-pointer"
+                            className={`text-primary hover:underline text-sm break-all block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onEditStart(item.id, 'url');
+                              if (item.status === 'pending') {
+                                onEditStart(item.id, 'url');
+                              }
                             }}
+                            title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
                           >
                             {item.inputData.url}
                           </a>
                         ) : (
                           <span 
-                            className="text-gray-400 text-sm block cursor-pointer"
-                            onClick={() => onEditStart(item.id, 'url')}
+                            className={`text-gray-400 text-sm block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                            onClick={() => item.status === 'pending' && onEditStart(item.id, 'url')}
+                            title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
                           >
-                            URL을 입력해주세요
+                            -
                           </span>
                         )}
                       </div>
@@ -641,17 +670,40 @@ const SlotList: React.FC<SlotListProps> = ({
                         onEditChange={onEditChange}
                         onEditSave={onEditSave}
                         onEditCancel={onEditCancel}
-                        placeholder="키워드1,키워드2,키워드3"
+                        placeholder="메인키워드,서브1,서브2,서브3"
+                        disabled={item.status !== 'pending'}
                       >
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 ? (
-                            item.inputData.keywords.map((keyword, index) => (
-                              <span key={index} className="badge badge-sm badge-light">
-                                {keyword}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-400 text-sm">키워드를 입력해주세요</span>
+                        <div className="space-y-2 mt-1">
+                          {/* 메인 키워드 영역 */}
+                          {item.inputData.mainKeyword && (
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                              <div className="text-[10px] text-gray-500 font-medium mb-1">메인키워드</div>
+                              <div className="flex">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary dark:bg-primary/20 border border-primary/20">
+                                  <KeenIcon icon="star" className="size-3 mr-1" />
+                                  {item.inputData.mainKeyword}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 서브 키워드 영역 */}
+                          {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 && (
+                            <div>
+                              <div className="text-[10px] text-gray-500 font-medium mb-1">서브키워드</div>
+                              <div className="flex flex-wrap gap-1">
+                                {item.inputData.keywords.map((keyword, index) => (
+                                  <span key={index} className="badge badge-sm badge-light">
+                                    {keyword}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 키워드가 없는 경우 */}
+                          {!item.inputData.mainKeyword && (!Array.isArray(item.inputData.keywords) || item.inputData.keywords.length === 0) && (
+                            <span className="text-gray-400 text-sm">-</span>
                           )}
                         </div>
                       </EditableCell>

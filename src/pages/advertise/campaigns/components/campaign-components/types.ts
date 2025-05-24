@@ -21,6 +21,10 @@ export interface SlotItem {
     mid: string;
     url: string;
     keywords?: string[];
+    mainKeyword?: string;
+    keyword1?: string;
+    keyword2?: string;
+    keyword3?: string;
   };
   deadline: string | null;
   createdAt: string;

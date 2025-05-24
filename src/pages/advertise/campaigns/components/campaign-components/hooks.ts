@@ -62,7 +62,11 @@ export const useSlotEditing = (
       case 'url':
         initialValue = slot.inputData.url;
         break;
+      case 'mainKeyword':
+        initialValue = slot.inputData.mainKeyword || '';
+        break;
       case 'keywords':
+        // 서브키워드만 편집
         initialValue = Array.isArray(slot.inputData.keywords) ? slot.inputData.keywords.join(',') : '';
         break;
       default:
@@ -105,10 +109,21 @@ export const useSlotEditing = (
             updatedInputData.url = 'https://' + updatedInputData.url.replace(/^(https?:\/\/)/, '');
           }
           break;
+        case 'mainKeyword':
+          updatedInputData.mainKeyword = editingValue.trim();
+          break;
         case 'keywords':
-          updatedInputData.keywords = editingValue.split(',')
+          const keywordArray = editingValue.split(',')
             .map(k => k.trim())
             .filter(k => k);
+          
+          // keywords 배열로 저장
+          updatedInputData.keywords = keywordArray;
+          
+          // keyword1, keyword2, keyword3로도 저장 (하위 호환성)
+          updatedInputData.keyword1 = keywordArray[0] || '';
+          updatedInputData.keyword2 = keywordArray[1] || '';
+          updatedInputData.keyword3 = keywordArray[2] || '';
           break;
         default:
           return;
@@ -374,6 +389,18 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
           }
 
+          // input_data 처리 - keyword1, keyword2, keyword3를 keywords 배열로 변환
+          const processedInputData = { ...slot.input_data };
+          
+          // keywords 배열이 없으면 keyword1, keyword2, keyword3에서 생성
+          if (!processedInputData.keywords && (processedInputData.keyword1 || processedInputData.keyword2 || processedInputData.keyword3)) {
+            const keywords = [];
+            if (processedInputData.keyword1) keywords.push(processedInputData.keyword1);
+            if (processedInputData.keyword2) keywords.push(processedInputData.keyword2);
+            if (processedInputData.keyword3) keywords.push(processedInputData.keyword3);
+            processedInputData.keywords = keywords;
+          }
+
           return {
             id: slot.id,
             matId: slot.mat_id,
@@ -384,7 +411,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             processedAt: slot.processed_at,
             rejectionReason: slot.rejection_reason,
             userReason: slot.user_reason,
-            inputData: slot.input_data,
+            inputData: processedInputData,
             deadline: slot.deadline,
             createdAt: slot.created_at,
             updatedAt: slot.updated_at,

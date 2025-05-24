@@ -8,6 +8,10 @@ import SlotDetailModal from './SlotDetailModal';
 import WorkExcelUploadModal from './WorkExcelUploadModal';
 import { toast } from 'sonner';
 
+// 정렬 타입 정의
+type SortField = 'user_slot_number' | 'campaign_name' | 'service_type' | 'quantity' | 'start_date' | 'end_date';
+type SortDirection = 'asc' | 'desc';
+
 interface SlotsListProps {
   slots: Slot[];
   onSubmit: (data: WorkInputFormData) => Promise<void>;
@@ -21,6 +25,10 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExcelUploadModalOpen, setIsExcelUploadModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  
+  // 정렬 상태
+  const [sortField, setSortField] = useState<SortField>('user_slot_number');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // 상세보기 핸들러
   const handleDetailView = (slot: Slot) => {
@@ -46,6 +54,32 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   
+  // 정렬 핸들러
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // 정렬 아이콘 렌더링
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return (
+        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    return (
+      <svg className={`w-3 h-3 text-gray-700 dark:text-gray-300 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+      </svg>
+    );
+  };
+
   // 엑셀 업로드 성공 핸들러
   const handleExcelUploadSuccess = () => {
     // 데이터 새로고침
@@ -297,8 +331,48 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
       });
     }
     
+    // 정렬 적용
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'user_slot_number':
+          aValue = a.user_slot_number || 0;
+          bValue = b.user_slot_number || 0;
+          break;
+        case 'campaign_name':
+          aValue = a.campaign_name || '';
+          bValue = b.campaign_name || '';
+          break;
+        case 'service_type':
+          aValue = a.service_type || '';
+          bValue = b.service_type || '';
+          break;
+        case 'quantity':
+          aValue = a.quantity || 0;
+          bValue = b.quantity || 0;
+          break;
+        case 'start_date':
+          aValue = a.start_date || '';
+          bValue = b.start_date || '';
+          break;
+        case 'end_date':
+          aValue = a.end_date || '';
+          bValue = b.end_date || '';
+          break;
+        default:
+          aValue = a.user_slot_number || 0;
+          bValue = b.user_slot_number || 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
     return filtered;
-  }, [slotsWithPlatform, selectedPlatform, selectedServiceType, searchTerm]);
+  }, [slotsWithPlatform, selectedPlatform, selectedServiceType, searchTerm, sortField, sortDirection]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -451,11 +525,25 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                슬롯#
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                onClick={() => handleSort('user_slot_number')}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  슬롯#
+                  {renderSortIcon('user_slot_number')}
+                </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                캠페인명
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                onClick={() => handleSort('campaign_name')}
+              >
+                <div className="flex items-center gap-1">
+                  캠페인명
+                  {renderSortIcon('campaign_name')}
+                </div>
               </th>
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 키워드
@@ -466,14 +554,35 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 사용자
               </th>
-              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                작업량
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                onClick={() => handleSort('quantity')}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  작업량
+                  {renderSortIcon('quantity')}
+                </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                시작일
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                onClick={() => handleSort('start_date')}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  시작일
+                  {renderSortIcon('start_date')}
+                </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                종료일
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                onClick={() => handleSort('end_date')}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  종료일
+                  {renderSortIcon('end_date')}
+                </div>
               </th>
               <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 상세보기
@@ -628,18 +737,9 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                       
                       if (isExpired) {
                         return (
-                          <button
-                            onClick={() => {
-                              // TODO: 환불 처리 로직
-                              toast.info('환불 기능은 준비 중입니다.');
-                            }}
-                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-medium rounded-md transition-colors duration-200 flex items-center mx-auto"
-                          >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                            </svg>
-                            환불
-                          </button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            종료됨
+                          </span>
                         );
                       }
                       

@@ -27,7 +27,23 @@ export interface Slot {
   created_at: string;
   submitted_at: string | null;
   processed_at?: string;
-  input_data: any; // 캠페인 입력 데이터 (JSON)
+  input_data: {
+    productName?: string;
+    mid?: string;
+    url?: string;
+    keywords?: string[];
+    mainKeyword?: string;
+    keyword1?: string;
+    keyword2?: string;
+    keyword3?: string;
+    dueDays?: number | string;
+    workCount?: number | string;
+    quantity?: number | string;
+    타수?: number | string;
+    '일일 타수'?: number | string;
+    '작업량'?: number | string;
+    [key: string]: any; // 추가 필드를 허용
+  }; // 캠페인 입력 데이터 (JSON)
   keyword_id?: number; // 키워드 ID 필드 추가
   quantity?: number; // 작업 타수 필드 추가
   deadline?: string; // 마감일 필드 추가

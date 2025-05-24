@@ -162,11 +162,13 @@ const approveSingleSlot = async (
     let finalEndDate = end_date;
     
     if (!finalStartDate) {
-      // 날짜가 제공되지 않았으면 현재 날짜로 설정
+      // 날짜가 제공되지 않았으면 승인일 다음날을 시작일로 설정
       const today = new Date();
-      finalStartDate = today.toISOString().split('T')[0];
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      finalStartDate = tomorrow.toISOString().split('T')[0];
       
-      // 종료일 계산: 시작일 + (dueDays - 1)
+      // dueDays 가져오기
       let dueDays = 0;
       if (slotData.input_data?.dueDays) {
         dueDays = parseInt(String(slotData.input_data.dueDays));
@@ -177,8 +179,10 @@ const approveSingleSlot = async (
         dueDays = 1;
       }
       
-      const endDateObj = new Date(today);
-      endDateObj.setDate(today.getDate() + dueDays - 1);
+      // 종료일 계산: 시작일 + (dueDays - 1)
+      // 예: 21일 시작, 10일간 작업 = 21일부터 30일까지
+      const endDateObj = new Date(tomorrow);
+      endDateObj.setDate(tomorrow.getDate() + dueDays - 1);
       finalEndDate = endDateObj.toISOString().split('T')[0];
     }
 
@@ -1220,10 +1224,122 @@ export const getSlotList = async (
   }
 };
 
+// 총판이 슬롯 작업 완료 처리하는 함수
+export const completeSlotByMat = async (
+  slotId: string,
+  matId: string,
+  notes?: string
+): Promise<{ success: boolean; message: string; data?: any }> => {
+  try {
+    // RPC 함수 호출 - mat_complete_slot
+    const { data, error } = await supabase
+      .rpc('mat_complete_slot', {
+        p_slot_id: slotId,
+        p_mat_id: matId,
+        p_notes: notes || null
+      });
+
+    if (error) {
+      console.error('슬롯 완료 처리 RPC 오류:', error);
+      
+      // 오류 메시지를 더 친화적으로 변환
+      if (error.message.includes('찾을 수 없습니다')) {
+        throw new Error('해당 슬롯을 찾을 수 없습니다.');
+      } else if (error.message.includes('권한이 없습니다')) {
+        throw new Error('이 슬롯을 처리할 권한이 없습니다.');
+      } else if (error.message.includes('승인된 슬롯만')) {
+        throw new Error('승인된 슬롯만 완료 처리할 수 있습니다.');
+      } else if (error.message.includes('이미 완료')) {
+        throw new Error('이미 완료 처리된 슬롯입니다.');
+      }
+      
+      throw error;
+    }
+
+    // RPC 함수의 반환값 확인
+    if (data && data.success) {
+      return {
+        success: true,
+        message: data.message || '슬롯이 성공적으로 완료 처리되었습니다.',
+        data: data
+      };
+    } else {
+      return {
+        success: false,
+        message: data?.message || '슬롯 완료 처리에 실패했습니다.',
+        data: data
+      };
+    }
+  } catch (err: any) {
+    console.error('슬롯 완료 처리 오류:', err);
+    return {
+      success: false,
+      message: err.message || '슬롯 완료 처리 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 사용자가 슬롯 완료를 확인하는 함수
+export const confirmSlotByUser = async (
+  slotId: string,
+  userId: string,
+  notes?: string
+): Promise<{ success: boolean; message: string; data?: any }> => {
+  try {
+    // RPC 함수 호출 - user_confirm_slot_completion
+    const { data, error } = await supabase
+      .rpc('user_confirm_slot_completion', {
+        p_slot_id: slotId,
+        p_user_id: userId,
+        p_notes: notes || null
+      });
+
+    if (error) {
+      console.error('슬롯 확인 처리 RPC 오류:', error);
+      
+      // 오류 메시지를 더 친화적으로 변환
+      if (error.message.includes('찾을 수 없습니다')) {
+        throw new Error('해당 슬롯을 찾을 수 없거나 권한이 없습니다.');
+      } else if (error.message.includes('이미 완료')) {
+        throw new Error('이미 완료 처리된 슬롯입니다.');
+      } else if (error.message.includes('총판이 아직')) {
+        throw new Error('총판이 아직 작업을 완료하지 않았습니다.');
+      } else if (error.message.includes('사용자 확인 대기')) {
+        throw new Error('사용자 확인 대기 중인 슬롯만 처리할 수 있습니다.');
+      }
+      
+      throw error;
+    }
+
+    // RPC 함수의 반환값 확인
+    if (data && data.success) {
+      return {
+        success: true,
+        message: data.message || '슬롯이 성공적으로 완료되었습니다.',
+        data: data
+      };
+    } else {
+      return {
+        success: false,
+        message: data?.message || '슬롯 확인 처리에 실패했습니다.',
+        data: data
+      };
+    }
+  } catch (err: any) {
+    console.error('슬롯 확인 처리 오류:', err);
+    return {
+      success: false,
+      message: err.message || '슬롯 확인 처리 중 오류가 발생했습니다.'
+    };
+  }
+};
+
 export default {
   approveSlot,
   rejectSlot,
   updateSlotMemo,
   createSlot,
-  getSlotList
+  getSlotList,
+  completeSlotByMat,
+  confirmSlotByUser
 };

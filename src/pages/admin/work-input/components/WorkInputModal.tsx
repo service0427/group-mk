@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,11 +18,37 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
   slot,
   onSubmit
 }) => {
+  // 로컬 날짜를 YYYY-MM-DD 형식으로 가져오는 함수
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0], // 오늘 날짜를 기본값으로
+    date: getLocalDateString(), // 오늘 날짜를 기본값으로
     work_cnt: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 날짜 포맷팅 함수
+  const formatDateKorean = (dateString: string) => {
+    // dateString이 'YYYY-MM-DD' 형식이므로 직접 파싱
+    const [year, month, day] = dateString.split('-');
+    return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+  };
+
+  // 모달이 열릴 때마다 폼 데이터 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        date: getLocalDateString(),
+        work_cnt: ''
+      });
+    }
+  }, [isOpen]);
 
   // 폼 데이터 변경 핸들러
   const handleInputChange = (field: string, value: string) => {
@@ -48,6 +74,44 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
       return;
     }
 
+    // 추가 유효성 검사
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const workDate = new Date(formData.date);
+    workDate.setHours(0, 0, 0, 0);
+
+    // 미래 날짜 체크
+    if (workDate > today) {
+      toast.error('미래 날짜에는 작업을 입력할 수 없습니다.');
+      return;
+    }
+
+    // 시작일 체크
+    if (slot && slot.start_date) {
+      const startDate = new Date(slot.start_date);
+      startDate.setHours(0, 0, 0, 0);
+      if (workDate < startDate) {
+        toast.error(`작업 날짜는 시작일(${new Date(slot.start_date).toLocaleDateString()}) 이후여야 합니다.`);
+        return;
+      }
+    }
+
+    // 종료일 체크
+    if (slot && slot.end_date) {
+      const endDate = new Date(slot.end_date);
+      endDate.setHours(0, 0, 0, 0);
+      if (workDate > endDate) {
+        toast.error(`이미 종료된 슬롯입니다. 종료일: ${new Date(slot.end_date).toLocaleDateString()}`);
+        return;
+      }
+    }
+
+    // 작업량 상한 체크
+    if (workCount > 10000) {
+      toast.error('작업량이 너무 큽니다. 10,000 이하로 입력해주세요.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (!slot) return;
@@ -61,7 +125,14 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
       toast.success('작업이 성공적으로 입력되었습니다.');
       handleClose();
     } catch (error: any) {
-      toast.error(error.message || '작업 입력 중 오류가 발생했습니다.');
+      // 서버 에러 메시지 파싱
+      if (error.message?.includes('duplicate key')) {
+        toast.error('해당 날짜에 이미 작업이 입력되어 있습니다.');
+      } else if (error.message?.includes('exceeds quantity')) {
+        toast.error('총 작업량이 슬롯 수량을 초과합니다.');
+      } else {
+        toast.error(error.message || '작업 입력 중 오류가 발생했습니다.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -70,7 +141,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
   // 모달 닫기
   const handleClose = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
       work_cnt: ''
     });
     onClose();
@@ -100,7 +171,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
         </DialogHeader>
 
         <div className="p-6 bg-background overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form id="work-input-form" onSubmit={handleSubmit} className="space-y-6">
             {/* 슬롯 정보 요약 */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
               <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-3 flex items-center">
@@ -217,42 +288,39 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
                   <label htmlFor="work-date" className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
                     작업 날짜 *
                   </label>
-                <input
-                  id="work-date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange('date', e.target.value)}
-                  max={new Date().toISOString().split('T')[0]} // 오늘까지만 선택 가능
-                  min={slot.start_date || undefined} // 시작일 이후만 선택 가능
-                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm bg-transparent"
-                  required
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  오늘 날짜 이전의 작업 날짜만 선택 가능합니다.
-                </p>
-              </div>
+                  <Input
+                    id="work-date"
+                    type="text"
+                    value={formatDateKorean(formData.date)}
+                    readOnly
+                    className="block w-full bg-gray-50 dark:bg-gray-800 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    오늘 날짜({formatDateKorean(getLocalDateString())})로 자동 설정됩니다.
+                  </p>
+                </div>
 
-              {/* 작업 타수 입력 */}
-              <div>
-                <label htmlFor="work-count" className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
-                  작업 타수 *
-                </label>
-                <input
-                  id="work-count"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={formData.work_cnt}
-                  onChange={(e) => handleInputChange('work_cnt', e.target.value)}
-                  placeholder="예: 100"
-                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm bg-transparent"
-                  required
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  실제로 작업한 타수를 입력해주세요.
-                </p>
+                {/* 작업 타수 입력 */}
+                <div>
+                  <label htmlFor="work-count" className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
+                    작업 타수 *
+                  </label>
+                  <Input
+                    id="work-count"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.work_cnt}
+                    onChange={(e) => handleInputChange('work_cnt', e.target.value)}
+                    placeholder="예: 100"
+                    className="block w-full"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    실제로 작업한 타수를 입력해주세요.
+                  </p>
+                </div>
               </div>
-            </div>
             </div>
           </form>
         </div>
@@ -268,7 +336,8 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
             취소
           </Button>
           <Button
-            onClick={handleSubmit}
+            type="submit"
+            form="work-input-form"
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 text-white"
           >

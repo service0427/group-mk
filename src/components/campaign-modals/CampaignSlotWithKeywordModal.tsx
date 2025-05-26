@@ -17,6 +17,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getStatusLabel, getStatusColor, CampaignServiceType, SERVICE_TYPE_LABELS } from './types';
 import { getStatusColorClass } from '@/utils/CampaignFormat';
 import { resolveServiceType } from '@/utils/serviceTypeResolver';
+import { useKeywordFieldConfig } from '@/pages/keyword/hooks/useKeywordFieldConfig';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -190,6 +191,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 선택된 서비스 코드 상태
   const [selectedServiceCode, setSelectedServiceCode] = useState<CampaignServiceType | string>(serviceCode);
+
+  // 선택된 키워드 그룹
+  const selectedGroup = useMemo(() => {
+    return keywordGroups.find(group => group.id === selectedGroupId) || null;
+  }, [keywordGroups, selectedGroupId]);
+
+  // 키워드 필드 설정 훅 사용
+  const { getFieldConfig, isHidden } = useKeywordFieldConfig(selectedGroup?.campaignType);
+
+  // 필드별 라벨 가져오기
+  const getFieldLabel = (fieldName: string, defaultLabel: string) => {
+    const config = getFieldConfig(fieldName);
+    return config?.label || defaultLabel;
+  };
 
   // 모달이 열릴 때 서비스 코드 초기화
   useEffect(() => {
@@ -1735,7 +1750,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     </div>
                                   </div>
                                 </th>
-                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">키워드</th>
+                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
                                 <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
                                 <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
                                 <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업일</th>
@@ -1792,16 +1807,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       <div className="cursor-pointer transition-all">
                                         <p className="font-semibold text-xs sm:text-sm text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 line-clamp-1 antialiased">{keyword.mainKeyword}</p>
                                         <div className="flex flex-wrap gap-1 mt-1.5 text-xs">
-                                          {keyword.keyword1 && <span className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-800/40 font-medium antialiased">{keyword.keyword1}</span>}
-                                          {keyword.keyword2 && <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 font-medium antialiased">{keyword.keyword2}</span>}
-                                          {keyword.keyword3 && <span className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-amber-100 dark:group-hover:bg-amber-800/40 font-medium antialiased">{keyword.keyword3}</span>}
+                                          {keyword.keyword1 && !isHidden('keyword1') && <span className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-800/40 font-medium antialiased">{keyword.keyword1}</span>}
+                                          {keyword.keyword2 && !isHidden('keyword2') && <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 font-medium antialiased">{keyword.keyword2}</span>}
+                                          {keyword.keyword3 && !isHidden('keyword3') && <span className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-xs transition-colors group-hover:bg-amber-100 dark:group-hover:bg-amber-800/40 font-medium antialiased">{keyword.keyword3}</span>}
                                         </div>
                                       </div>
                                     </td>
                                     <td className="w-[25%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
                                       <div className="text-xs">
-                                        {keyword.mid && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">MID</span> {keyword.mid}</p>}
-                                        {keyword.url && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
+                                        {keyword.mid && !isHidden('mid') && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getFieldLabel('mid', 'MID')}</span> {keyword.mid}</p>}
+                                        {keyword.url && !isHidden('url') && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
+                                        {keyword.description && !isHidden('description') && <p className="text-gray-500 text-xs mt-1">{keyword.description}</p>}
                                       </div>
                                     </td>
                                     <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">

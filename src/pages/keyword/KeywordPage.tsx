@@ -9,6 +9,7 @@ import { getTypeNameByCode } from '../../config/campaign.config';
 import { CommonTemplate } from '@/components/pageTemplate';
 import KeywordUploadModal from './components/KeywordUploadModal';
 import { group } from 'console';
+import { TestKeywordFieldConfig } from './components/TestKeywordFieldConfig';
 
 const KeywordPage: React.FC = () => {
   // 키워드 관리 훅 사용
@@ -100,6 +101,14 @@ const KeywordPage: React.FC = () => {
           <p>{error}</p>
         </div>
       )}
+
+      {/* 테스트용 - 설정 확인 */}
+      {/*selectedGroup?.campaignType && (
+        <div className="mb-4">
+          <TestKeywordFieldConfig campaignType={selectedGroup.campaignType} />
+        </div>
+      )*/}
+
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* 왼쪽: 키워드 그룹 관리 (접을 수 있는 영역) */}

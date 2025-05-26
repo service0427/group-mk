@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slot, WorkInputFormData } from '../types';
 import { toast } from 'sonner';
+import { formatDate } from '../utils/dateUtils';
 
 interface WorkInputModalProps {
   isOpen: boolean;
@@ -91,7 +92,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
       const startDate = new Date(slot.start_date);
       startDate.setHours(0, 0, 0, 0);
       if (workDate < startDate) {
-        toast.error(`작업 날짜는 시작일(${new Date(slot.start_date).toLocaleDateString()}) 이후여야 합니다.`);
+        toast.error(`작업 날짜는 시작일(${formatDate(slot.start_date)}) 이후여야 합니다.`);
         return;
       }
     }
@@ -101,7 +102,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
       const endDate = new Date(slot.end_date);
       endDate.setHours(0, 0, 0, 0);
       if (workDate > endDate) {
-        toast.error(`이미 종료된 슬롯입니다. 종료일: ${new Date(slot.end_date).toLocaleDateString()}`);
+        toast.error(`이미 종료된 슬롯입니다. 종료일: ${formatDate(slot.end_date)}`);
         return;
       }
     }
@@ -151,8 +152,8 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10">
+      <DialogContent className="w-[95vw] sm:max-w-md p-0 overflow-hidden flex flex-col h-[75vh] sm:h-[70vh]">
+        <DialogHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 py-3 sm:py-4 px-4 sm:px-6 border-b sticky top-0 z-10 shrink-0">
           <div className="flex items-center">
             <div className="flex items-center justify-center w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full mr-3">
               <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -163,26 +164,26 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
               <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                 작업 입력
               </DialogTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {slot.campaign_name || `캠페인 #${slot.id.substring(0, 8)}`}
-              </p>
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="p-6 bg-background overflow-y-auto flex-1">
-          <form id="work-input-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-4 sm:p-6 bg-background overflow-y-auto flex-1">
+          <form id="work-input-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* 슬롯 정보 요약 */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-3 flex items-center">
-                <svg className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <div className="bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg p-3 sm:p-4">
+              <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 슬롯 정보
               </h4>
               <div className="space-y-3">
                 {/* 첫 번째 행: 캠페인, 작업량 */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">캠페인:</span>
                     <span className="ml-2 text-gray-900 dark:text-white">
@@ -198,140 +199,128 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
                 </div>
 
                 {/* 두 번째 행: 시작일, 종료일 */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">시작일:</span>
                     <span className="ml-2 text-gray-900 dark:text-white">
-                      {slot.start_date ? new Date(slot.start_date).toLocaleDateString() : '-'}
+                      {formatDate(slot.start_date)}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">종료일:</span>
                     <span className="ml-2 text-gray-900 dark:text-white">
-                      {slot.end_date ? new Date(slot.end_date).toLocaleDateString() : '-'}
+                      {formatDate(slot.end_date)}
                     </span>
                   </div>
                 </div>
 
-                {/* 세 번째 행: 사용자, MID */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">사용자:</span>
-                    <span className="ml-2 text-gray-900 dark:text-white">
-                      {slot.user_name || '-'}
-                    </span>
-                    {slot.user_email && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {slot.user_email}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">MID:</span>
-                    <span className="ml-2 text-gray-900 dark:text-white">
-                      {slot.mid || '-'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 네 번째 행: 키워드 (전체 너비) */}
+                {/* 키워드 */}
                 {slot.keywords && (
-                  <div className="text-sm">
-                    <span className="text-blue-600 dark:text-blue-400 font-medium flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                      </svg>
-                      키워드
-                    </span>
-                    <div className="mt-1 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded text-yellow-900 dark:text-yellow-100 whitespace-pre-line text-xs">
+                  <div>
+                    <div className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">키워드:</div>
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded text-gray-900 dark:text-gray-100 whitespace-pre-line text-xs sm:text-sm">
                       {slot.keywords}
                     </div>
                   </div>
                 )}
 
-                {/* 다섯 번째 행: URL (전체 너비) */}
-                {slot.url && (
+                {/* MID/URL */}
+                {(slot.mid || slot.url) && (
                   <div className="text-sm">
-                    <span className="text-purple-600 dark:text-purple-400 font-medium flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                      </svg>
-                      URL
-                    </span>
-                    <div className="mt-1 p-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 rounded">
-                      <a 
-                        href={slot.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-purple-700 dark:text-purple-300 hover:underline text-xs break-all"
-                        title={slot.url}
-                      >
-                        {slot.url}
-                      </a>
-                    </div>
+                    {slot.mid && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">MID:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{slot.mid}</span>
+                      </div>
+                    )}
+                    {slot.url && (
+                      <div className="mt-1">
+                        <span className="text-gray-500 dark:text-gray-400">URL:</span>
+                        <a 
+                          href={slot.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="ml-2 text-blue-600 dark:text-blue-400 hover:underline text-xs sm:text-sm break-all"
+                        >
+                          {slot.url}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* 작업 입력 폼 */}
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-green-900 dark:text-green-300 mb-3 flex items-center">
-                <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                작업 입력
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                {/* 날짜 입력 */}
-                <div>
-                  <label htmlFor="work-date" className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
-                    작업 날짜 *
-                  </label>
-                  <Input
-                    id="work-date"
-                    type="text"
-                    value={formatDateKorean(formData.date)}
-                    readOnly
-                    className="block w-full bg-gray-50 dark:bg-gray-800 cursor-not-allowed"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    오늘 날짜({formatDateKorean(getLocalDateString())})로 자동 설정됩니다.
-                  </p>
-                </div>
+            <div className="space-y-4">
+              {/* 작업 날짜 */}
+              <div>
+                <label htmlFor="work-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  작업 날짜 <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="work-date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleInputChange('date', e.target.value)}
+                  max={getLocalDateString()}
+                  min={slot.start_date ? slot.start_date.split('T')[0] : undefined}
+                  className="w-full"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  선택한 날짜: {formatDateKorean(formData.date)}
+                </p>
+              </div>
 
-                {/* 작업 타수 입력 */}
-                <div>
-                  <label htmlFor="work-count" className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
-                    작업 타수 *
-                  </label>
-                  <Input
-                    id="work-count"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={formData.work_cnt}
-                    onChange={(e) => handleInputChange('work_cnt', e.target.value)}
-                    placeholder="예: 100"
-                    className="block w-full"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    실제로 작업한 타수를 입력해주세요.
-                  </p>
-                </div>
+              {/* 작업 타수 */}
+              <div>
+                <label htmlFor="work-count" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  작업 타수 <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="work-count"
+                  type="number"
+                  value={formData.work_cnt}
+                  onChange={(e) => handleInputChange('work_cnt', e.target.value)}
+                  placeholder="예: 100"
+                  min="1"
+                  max="10000"
+                  className="w-full"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  해당 날짜에 완료한 작업 타수를 입력하세요.
+                </p>
+              </div>
+
+              {/* 작업 안내 */}
+              <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800/50 rounded-lg p-2.5 sm:p-3">
+                <h5 className="text-sm font-medium text-sky-900 dark:text-sky-300 mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  작업 입력 안내
+                </h5>
+                <ul className="text-xs sm:text-sm text-sky-700 dark:text-sky-200 space-y-1">
+                  <li>• 하루에 한 번만 작업을 입력할 수 있습니다.</li>
+                  <li>• 이미 입력한 날짜는 수정할 수 없습니다.</li>
+                  <li>• 작업량은 1 이상 10,000 이하로 입력해주세요.</li>
+                  <li>• 미래 날짜에는 작업을 입력할 수 없습니다.</li>
+                </ul>
               </div>
             </div>
           </form>
         </div>
 
         {/* 버튼 영역 */}
-        <div className="flex justify-end items-center gap-3 py-4 px-6 bg-gray-50 dark:bg-gray-800/50 border-t">
+        <div className="flex justify-end items-center gap-3 py-3 sm:py-4 px-4 sm:px-6 bg-gray-50 dark:bg-gray-800/50 border-t shrink-0">
           <Button
+            type="button"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
           >
             취소
           </Button>
@@ -339,24 +328,9 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
             type="submit"
             form="work-input-form"
             disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
           >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                입력 중...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                작업 입력
-              </>
-            )}
+            {isSubmitting ? '처리 중...' : '작업 입력'}
           </Button>
         </div>
       </DialogContent>

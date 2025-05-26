@@ -28,6 +28,8 @@ export interface Slot {
   url?: string; // URL 정보
   user_email?: string; // 사용자 이메일
   user_name?: string; // 사용자 이름
+  mat_name?: string; // 총판 이름
+  mat_email?: string; // 총판 이메일
 }
 
 // 작업 입력 폼 데이터 인터페이스

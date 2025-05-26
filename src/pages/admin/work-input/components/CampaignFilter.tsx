@@ -36,7 +36,6 @@ const CampaignFilter: React.FC<CampaignFilterProps> = ({
       setLoading(true);
       try {
         const data = await getCampaignsByServiceType(currentUser.id, serviceType);
-        console.log('캠페인 데이터:', data, '서비스 타입:', serviceType);
         setCampaigns(data);
       } catch (error) {
         console.error('캠페인 목록 로드 중 오류 발생:', error);

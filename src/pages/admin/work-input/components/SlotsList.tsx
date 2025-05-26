@@ -17,9 +17,10 @@ interface SlotsListProps {
   onSubmit: (data: WorkInputFormData) => Promise<void>;
   isLoading: boolean;
   matId: string;
+  isAdmin?: boolean;
 }
 
-const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId }) => {
+const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId, isAdmin = false }) => {
   // 모달 상태
   const [isWorkInputModalOpen, setIsWorkInputModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -89,10 +90,6 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
   // 슬롯별 플랫폼 정보 계산
   const slotsWithPlatform = useMemo(() => {
     return slots.map(slot => {
-      // 실제 서비스 타입 로깅으로 디버깅
-      if (slot.service_type) {
-        console.log('실제 슬롯 service_type:', slot.service_type);
-      }
       
       // 서비스 타입에서 플랫폼 추출 (더 유연한 매칭)
       let platform = '기타';
@@ -166,7 +163,6 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
       if (slot.service_type) {
         // 실제 서비스 타입과 config 라벨 매칭 시도
         const actualServiceType = slot.service_type;
-        console.log('서비스 타입 매칭 시도:', actualServiceType);
         
         // 1. 정확한 매칭 시도
         let label = SERVICE_TYPE_LABELS[actualServiceType as CampaignServiceType];
@@ -185,7 +181,6 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
           for (const variation of variations) {
             if (SERVICE_TYPE_LABELS[variation as CampaignServiceType]) {
               label = SERVICE_TYPE_LABELS[variation as CampaignServiceType];
-              console.log('매칭 성공:', variation, '->', label);
               break;
             }
           }
@@ -224,14 +219,10 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
         // 4. 최종적으로 원본을 사용
         if (!label) {
           label = actualServiceType;
-          console.log('매칭 실패, 원본 사용:', actualServiceType);
         }
         
         if (counts.hasOwnProperty(label)) {
           counts[label]++;
-          console.log('카운트 증가:', label, counts[label]);
-        } else {
-          console.log('counts에 해당 라벨 없음:', label, 'available:', Object.keys(counts));
         }
       }
     });
@@ -554,6 +545,11 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                 사용자
               </th>
+              {isAdmin && (
+                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                  총판
+                </th>
+              )}
               <th 
                 scope="col" 
                 className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -595,7 +591,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={10} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
                   <div className="flex justify-center">
                     <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -607,7 +603,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
               </tr>
             ) : filteredSlots.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-3 py-4 text-center">
+                <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center">
                   <div className="flex flex-col items-center py-8">
                     <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -691,6 +687,20 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                       </div>
                     )}
                   </td>
+
+                  {/* 총판 정보 (ADMIN만 볼 수 있음) */}
+                  {isAdmin && (
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {slot.mat_name || '-'}
+                      </div>
+                      {slot.mat_email && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 max-w-32 truncate" title={slot.mat_email}>
+                          {slot.mat_email}
+                        </div>
+                      )}
+                    </td>
+                  )}
 
                   {/* 작업량 */}
                   <td className="px-3 py-3 text-center whitespace-nowrap">

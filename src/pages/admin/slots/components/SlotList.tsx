@@ -394,7 +394,7 @@ const SlotList: React.FC<SlotListProps> = ({
                           {additionalCount > 0 && (
                             <div className="inline-flex items-center gap-1">
                               <button
-                                className="text-gray-400 text-xs cursor-pointer hover:text-gray-600 dark:hover:text-gray-200"
+                                className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const rect = e.currentTarget.getBoundingClientRect();
@@ -439,25 +439,49 @@ const SlotList: React.FC<SlotListProps> = ({
                                         </svg>
                                       </button>
                                     </div>
-                                    <div className="flex flex-wrap gap-1">
-                                      {allKeywords.map((item, index) => (
-                                        <span
-                                          key={index}
-                                          className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                                            item.isMain
-                                              ? 'bg-blue-500/20 text-blue-200 font-medium'
-                                              : index % 4 === 0
-                                              ? 'bg-green-500/20 text-green-200'
-                                              : index % 4 === 1
-                                              ? 'bg-purple-500/20 text-purple-200'
-                                              : index % 4 === 2
-                                              ? 'bg-orange-500/20 text-orange-200'
-                                              : 'bg-pink-500/20 text-pink-200'
-                                          }`}
-                                        >
-                                          {item.keyword}
-                                        </span>
-                                      ))}
+                                    <div className="space-y-2">
+                                      {/* 메인 키워드 */}
+                                      <div>
+                                        <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                        <div className="flex flex-wrap gap-1">
+                                          {allKeywords.filter(item => item.isMain).map((item, index) => (
+                                            <span
+                                              key={index}
+                                              className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                            >
+                                              {item.keyword}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* 서브 키워드 */}
+                                      {allKeywords.filter(item => !item.isMain).length > 0 && (
+                                        <>
+                                          <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                          <div>
+                                            <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                            <div className="flex flex-wrap gap-1">
+                                              {allKeywords.filter(item => !item.isMain).map((item, index) => (
+                                                <span
+                                                  key={index}
+                                                  className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                    index % 4 === 0
+                                                    ? 'bg-green-500/20 text-green-200'
+                                                    : index % 4 === 1
+                                                    ? 'bg-purple-500/20 text-purple-200'
+                                                    : index % 4 === 2
+                                                    ? 'bg-orange-500/20 text-orange-200'
+                                                    : 'bg-pink-500/20 text-pink-200'
+                                                  }`}
+                                                >
+                                                  {item.keyword}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                     {/* Arrow */}
                                     <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
@@ -867,7 +891,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </span>
                       {additionalCount > 0 && (
                         <button
-                          className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600 dark:hover:text-gray-200"
+                          className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5 ml-1"
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
@@ -1065,7 +1089,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </svg>
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="space-y-2">
                     {(() => {
                       // 모든 키워드 수집
                       const allKeywords = [];
@@ -1087,24 +1111,52 @@ const SlotList: React.FC<SlotListProps> = ({
                         });
                       }
                       
-                      return allKeywords.map((item, index) => (
-                        <span
-                          key={index}
-                          className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                            item.isMain
-                              ? 'bg-blue-500/20 text-blue-200 font-medium'
-                              : index % 4 === 0
-                              ? 'bg-green-500/20 text-green-200'
-                              : index % 4 === 1
-                              ? 'bg-purple-500/20 text-purple-200'
-                              : index % 4 === 2
-                              ? 'bg-orange-500/20 text-orange-200'
-                              : 'bg-pink-500/20 text-pink-200'
-                          }`}
-                        >
-                          {item.keyword}
-                        </span>
-                      ));
+                      return (
+                        <>
+                          {/* 메인 키워드 */}
+                          <div>
+                            <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                            <div className="flex flex-wrap gap-1">
+                              {allKeywords.filter(item => item.isMain).map((item, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                >
+                                  {item.keyword}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* 서브 키워드 */}
+                          {allKeywords.filter(item => !item.isMain).length > 0 && (
+                            <>
+                              <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                              <div>
+                                <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {allKeywords.filter(item => !item.isMain).map((item, index) => (
+                                    <span
+                                      key={index}
+                                      className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                        index % 4 === 0
+                                        ? 'bg-green-500/20 text-green-200'
+                                        : index % 4 === 1
+                                        ? 'bg-purple-500/20 text-purple-200'
+                                        : index % 4 === 2
+                                        ? 'bg-orange-500/20 text-orange-200'
+                                        : 'bg-pink-500/20 text-pink-200'
+                                      }`}
+                                    >
+                                      {item.keyword}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      );
                     })()}
                   </div>
                   {/* Arrow */}

@@ -154,7 +154,6 @@ const ApprovePage: React.FC = () => {
           const keywordMatch = inputData.keywords.some((keyword: any) => {
             const keywordLower = safeToLower(keyword);
             const isMatch = keywordLower.includes(normalizedSearchTerm);
-            console.log(`  - 키워드 "${keyword}" (lower: "${keywordLower}") 검색어 "${normalizedSearchTerm}" 포함여부: ${isMatch}`);
             return isMatch;
           });
           

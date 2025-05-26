@@ -87,6 +87,8 @@ const SlotList: React.FC<SlotListProps> = ({
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   // 반려사유 팝오버 상태 관리
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
+  // 키워드 툴팁 상태 관리
+  const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   
   // 노출 안할 inputData
   const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
@@ -355,14 +357,121 @@ const SlotList: React.FC<SlotListProps> = ({
                 
                 {/* 키워드 정보 */}
                 <td className="py-3 px-3 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <span className="text-gray-900 dark:text-gray-100 font-medium">
-                      {slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
-                    </span>
-                    {/* 추가 키워드 개수만 표시 */}
-                    {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 1 && (
-                      <span className="text-gray-400 text-xs">+{slot.input_data.keywords.length - 1}</span>
-                    )}
+                  <div className="flex items-center justify-center gap-1 relative">
+                    {(() => {
+                      // 모든 키워드 수집
+                      const allKeywords = [];
+                      if (slot.input_data?.mainKeyword) {
+                        allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
+                      }
+                      if (slot.input_data?.keyword1) {
+                        allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
+                      }
+                      if (slot.input_data?.keyword2) {
+                        allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
+                      }
+                      if (slot.input_data?.keyword3) {
+                        allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
+                      }
+                      if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
+                        slot.input_data.keywords.forEach((kw: string) => {
+                          allKeywords.push({ keyword: kw, isMain: false });
+                        });
+                      }
+
+                      if (allKeywords.length === 0) {
+                        return <span className="text-gray-400">-</span>;
+                      }
+
+                      const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
+                      const additionalCount = allKeywords.length - 1;
+
+                      return (
+                        <>
+                          <span className="text-gray-900 dark:text-gray-100 font-medium">
+                            {mainKeyword}
+                          </span>
+                          {additionalCount > 0 && (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                className="text-gray-400 text-xs cursor-pointer hover:text-gray-600 dark:hover:text-gray-200"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setPopoverPosition({
+                                    top: rect.top - 10,
+                                    left: rect.left + rect.width / 2
+                                  });
+                                  setOpenKeywordTooltipId(openKeywordTooltipId === slot.id ? null : slot.id);
+                                }}
+                              >
+                                +{additionalCount}
+                              </button>
+                              {/* Tooltip */}
+                              {openKeywordTooltipId === slot.id && ReactDOM.createPortal(
+                                <>
+                                  {/* 배경 클릭 시 닫기 */}
+                                  <div 
+                                    className="fixed inset-0" 
+                                    style={{zIndex: 9998}}
+                                    onClick={() => setOpenKeywordTooltipId(null)}
+                                  />
+                                  <div 
+                                    className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                    style={{
+                                      zIndex: 99999,
+                                      left: `${popoverPosition.left}px`,
+                                      top: `${popoverPosition.top}px`,
+                                      transform: 'translate(-50%, -100%)'
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="font-medium text-gray-100">전체 키워드</div>
+                                      <button
+                                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenKeywordTooltipId(null);
+                                        }}
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {allKeywords.map((item, index) => (
+                                        <span
+                                          key={index}
+                                          className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                            item.isMain
+                                              ? 'bg-blue-500/20 text-blue-200 font-medium'
+                                              : index % 4 === 0
+                                              ? 'bg-green-500/20 text-green-200'
+                                              : index % 4 === 1
+                                              ? 'bg-purple-500/20 text-purple-200'
+                                              : index % 4 === 2
+                                              ? 'bg-orange-500/20 text-orange-200'
+                                              : 'bg-pink-500/20 text-pink-200'
+                                          }`}
+                                        >
+                                          {item.keyword}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    {/* Arrow */}
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                    </div>
+                                  </div>
+                                </>,
+                                document.body
+                              )}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </td>
                 
@@ -723,12 +832,58 @@ const SlotList: React.FC<SlotListProps> = ({
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400 mb-2">
               <span>
                 <span className="text-gray-500">키워드:</span> 
-                <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">
-                  {slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
-                </span>
-                {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 1 && (
-                  <span className="text-gray-400 ml-1">+{slot.input_data.keywords.length - 1}</span>
-                )}
+                {(() => {
+                  // 모든 키워드 수집
+                  const allKeywords = [];
+                  if (slot.input_data?.mainKeyword) {
+                    allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
+                  }
+                  if (slot.input_data?.keyword1) {
+                    allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
+                  }
+                  if (slot.input_data?.keyword2) {
+                    allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
+                  }
+                  if (slot.input_data?.keyword3) {
+                    allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
+                  }
+                  if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
+                    slot.input_data.keywords.forEach((kw: string) => {
+                      allKeywords.push({ keyword: kw, isMain: false });
+                    });
+                  }
+
+                  if (allKeywords.length === 0) {
+                    return <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">-</span>;
+                  }
+
+                  const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
+                  const additionalCount = allKeywords.length - 1;
+
+                  return (
+                    <>
+                      <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">
+                        {mainKeyword}
+                      </span>
+                      {additionalCount > 0 && (
+                        <button
+                          className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600 dark:hover:text-gray-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopoverPosition({
+                              top: rect.top - 10,
+                              left: rect.left + rect.width / 2
+                            });
+                            setOpenKeywordTooltipId(openKeywordTooltipId === `mobile-${slot.id}` ? null : `mobile-${slot.id}`);
+                          }}
+                        >
+                          +{additionalCount}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </span>
               <span>
                 <span className="text-gray-500">타수:</span> 
@@ -877,6 +1032,89 @@ const SlotList: React.FC<SlotListProps> = ({
                 )}
               </div>
             </div>
+            
+            {/* 모바일 키워드 툴팁 */}
+            {openKeywordTooltipId === `mobile-${slot.id}` && ReactDOM.createPortal(
+              <>
+                {/* 배경 클릭 시 닫기 */}
+                <div 
+                  className="fixed inset-0" 
+                  style={{zIndex: 9998}}
+                  onClick={() => setOpenKeywordTooltipId(null)}
+                />
+                <div 
+                  className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                  style={{
+                    zIndex: 9999,
+                    left: `${popoverPosition.left}px`,
+                    top: `${popoverPosition.top}px`,
+                    transform: 'translate(-50%, -100%)'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-gray-100">전체 키워드</div>
+                    <button
+                      className="text-gray-400 hover:text-gray-200 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenKeywordTooltipId(null);
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {(() => {
+                      // 모든 키워드 수집
+                      const allKeywords = [];
+                      if (slot.input_data?.mainKeyword) {
+                        allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
+                      }
+                      if (slot.input_data?.keyword1) {
+                        allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
+                      }
+                      if (slot.input_data?.keyword2) {
+                        allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
+                      }
+                      if (slot.input_data?.keyword3) {
+                        allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
+                      }
+                      if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
+                        slot.input_data.keywords.forEach((kw: string) => {
+                          allKeywords.push({ keyword: kw, isMain: false });
+                        });
+                      }
+                      
+                      return allKeywords.map((item, index) => (
+                        <span
+                          key={index}
+                          className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                            item.isMain
+                              ? 'bg-blue-500/20 text-blue-200 font-medium'
+                              : index % 4 === 0
+                              ? 'bg-green-500/20 text-green-200'
+                              : index % 4 === 1
+                              ? 'bg-purple-500/20 text-purple-200'
+                              : index % 4 === 2
+                              ? 'bg-orange-500/20 text-orange-200'
+                              : 'bg-pink-500/20 text-pink-200'
+                          }`}
+                        >
+                          {item.keyword}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                  {/* Arrow */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                  </div>
+                </div>
+              </>,
+              document.body
+            )}
           </div>
         ))}
         

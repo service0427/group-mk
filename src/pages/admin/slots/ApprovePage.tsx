@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -56,7 +56,6 @@ const ApprovePage: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [filteredSlots, setFilteredSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedServiceType, setSelectedServiceType] = useState<string>('');
   const [selectedCampaign, setSelectedCampaign] = useState<string>('');
@@ -80,6 +79,108 @@ const ApprovePage: React.FC = () => {
   const [actionType, setActionType] = useState<string | undefined>(undefined);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  
+  // 필터링된 슬롯들을 useMemo로 계산
+  const filteredSlots = useMemo(() => {
+    if (!searchTerm || !searchTerm.trim()) {
+      return slots;
+    }
+
+    const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+    
+    
+    // 안전한 문자열 변환 함수
+    const safeToLower = (value: any): string => {
+      if (typeof value === 'string') return value.toLowerCase();
+      if (value != null) return String(value).toLowerCase();
+      return '';
+    };
+
+    return slots.filter((slot, index) => {
+      // 사용자 이름, 이메일 검색
+      if (
+        safeToLower(slot.user?.full_name).includes(normalizedSearchTerm) ||
+        safeToLower(slot.user?.email).includes(normalizedSearchTerm)
+      ) {
+        return true;
+      }
+
+      // input_data 내 검색
+      if (slot.input_data) {
+        const inputData = slot.input_data;
+
+        // 상품명 검색
+        if (safeToLower(inputData.productName).includes(normalizedSearchTerm)) {
+          return true;
+        }
+
+        // mid 검색
+        if (safeToLower(inputData.mid).includes(normalizedSearchTerm)) {
+          return true;
+        }
+
+        // url 검색
+        if (
+          safeToLower(inputData.url).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.product_url).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.ohouse_url).includes(normalizedSearchTerm)
+        ) {
+          return true;
+        }
+
+
+        // keywords가 문자열로 저장된 경우 (JSON string)
+        if (inputData.keywords && typeof inputData.keywords === 'string') {
+          try {
+            const parsedKeywords = JSON.parse(inputData.keywords);
+            
+            if (Array.isArray(parsedKeywords)) {
+              const keywordMatch = parsedKeywords.some((keyword: any) => {
+                const keywordLower = safeToLower(keyword);
+                const isMatch = keywordLower.includes(normalizedSearchTerm);
+                return isMatch;
+              });
+              
+              if (keywordMatch) {
+                return true;
+              }
+            }
+          } catch (e) {
+          }
+        }
+        
+        // keywords가 배열로 저장된 경우
+        if (inputData.keywords && Array.isArray(inputData.keywords)) {
+          const keywordMatch = inputData.keywords.some((keyword: any) => {
+            const keywordLower = safeToLower(keyword);
+            const isMatch = keywordLower.includes(normalizedSearchTerm);
+            console.log(`  - 키워드 "${keyword}" (lower: "${keywordLower}") 검색어 "${normalizedSearchTerm}" 포함여부: ${isMatch}`);
+            return isMatch;
+          });
+          
+          if (keywordMatch) {
+            return true;
+          }
+        }
+
+        // 다른 키워드 필드 검색
+        if (
+          safeToLower(inputData.keyword).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.search_term).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.place_name).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.mainKeyword).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.keyword1).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.keyword2).includes(normalizedSearchTerm) ||
+          safeToLower(inputData.keyword3).includes(normalizedSearchTerm)
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [slots, searchTerm]);
+  
   
   // 승인 확인 모달 상태
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
@@ -236,7 +337,6 @@ const ApprovePage: React.FC = () => {
 
     // 서비스 타입이 바뀌면 슬롯 목록도 다시 가져오기
     setSlots([]);
-    setFilteredSlots([]);
   }, [selectedServiceType, campaigns]);
 
   // 슬롯 데이터 가져오기
@@ -251,7 +351,6 @@ const ApprovePage: React.FC = () => {
         // 서비스 타입이 선택되지 않았으면 종료
         if (!selectedServiceType) {
           setSlots([]);
-          setFilteredSlots([]);
           return;
         }
 
@@ -312,7 +411,6 @@ const ApprovePage: React.FC = () => {
             setError('슬롯 정보를 가져오는데 실패했습니다.');
           } else {
             setSlots([]);
-            setFilteredSlots([]);
           }
           return; // 여기서 함수 종료
         } else {
@@ -368,12 +466,8 @@ const ApprovePage: React.FC = () => {
         }
 
         // 문자열 검색 - 조인된 사용자 정보에서 필터링
-        if (searchTerm) {
-          // 사용자 이름, 이메일 검색 (조인된 users 테이블에서 필터링)
-          query = query.or(`users.full_name.ilike.%${searchTerm}%,users.email.ilike.%${searchTerm}%`);
-
-          // 나머지 input_data 내 검색은 클라이언트에서 수행 (여기서는 할 수 없음)
-        }
+        // 서버 측 필터링은 제거하고 클라이언트 측에서만 처리
+        // (한글 검색어로 인한 오류 방지)
 
         // 정렬 적용
         const { data, error } = await query.order('created_at', { ascending: false });
@@ -433,17 +527,8 @@ const ApprovePage: React.FC = () => {
           });
 
           setSlots(enrichedSlots as Slot[]);
-
-          // 검색어로 필터링 (input_data 기반)
-          if (searchTerm.trim()) {
-            const filteredBySearchTerm = filterSlotsBySearchTermWithoutStateUpdate(enrichedSlots);
-            setFilteredSlots(filteredBySearchTerm as Slot[]);
-          } else {
-            setFilteredSlots(enrichedSlots as Slot[]);
-          }
         } else {
           setSlots(data || [] as Slot[]);
-          setFilteredSlots(data || [] as Slot[]);
           // 데이터가 없는 경우에도 error는 null 상태로 유지
           setError(null);
         }
@@ -455,71 +540,8 @@ const ApprovePage: React.FC = () => {
     };
 
     fetchSlots();
-  }, [currentUser, selectedCampaign, selectedServiceType, searchStatus, searchDateFrom, searchDateTo, searchRefreshCounter, searchTerm, campaigns]);
+  }, [currentUser, selectedCampaign, selectedServiceType, searchStatus, searchDateFrom, searchDateTo, searchRefreshCounter, campaigns]);
 
-  // 상태 변경없이 검색어로 슬롯 필터링 함수 (상태 업데이트 없음)
-  const filterSlotsBySearchTermWithoutStateUpdate = (slotsToFilter: Slot[]): Slot[] => {
-    if (!searchTerm) return slotsToFilter;
-    if (!searchTerm.trim()) {
-      return slotsToFilter;
-    }
-
-    const normalizedSearchTerm = searchTerm.toLowerCase().trim();
-
-    return slotsToFilter.filter(slot => {
-      // 사용자 이름, 이메일 검색
-      if (
-        slot.user?.full_name?.toLowerCase().includes(normalizedSearchTerm) ||
-        slot.user?.email?.toLowerCase().includes(normalizedSearchTerm)
-      ) {
-        return true;
-      }
-
-      // input_data 내 검색
-      if (slot.input_data) {
-        const inputData = slot.input_data;
-
-        // 상품명 검색
-        if (inputData.productName?.toLowerCase().includes(normalizedSearchTerm)) {
-          return true;
-        }
-
-        // mid 검색
-        if (inputData.mid?.toLowerCase().includes(normalizedSearchTerm)) {
-          return true;
-        }
-
-        // url 검색
-        if (
-          inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
-          inputData.product_url?.toLowerCase().includes(normalizedSearchTerm) ||
-          inputData.ohouse_url?.toLowerCase().includes(normalizedSearchTerm)
-        ) {
-          return true;
-        }
-
-        // 키워드 검색
-        if (inputData.keywords && Array.isArray(inputData.keywords)) {
-          if (inputData.keywords.some((keyword: string) =>
-            keyword.toLowerCase().includes(normalizedSearchTerm)
-          )) {
-            return true;
-          }
-        }
-
-        // 다른 키워드 필드 검색
-        if (
-          inputData.keyword?.toLowerCase().includes(normalizedSearchTerm) ||
-          inputData.search_term?.toLowerCase().includes(normalizedSearchTerm) ||
-          inputData.place_name?.toLowerCase().includes(normalizedSearchTerm)
-        ) {
-          return true;
-        }
-      }
-
-      return false;
-    });
-  };
 
 
   // 작업 진행률 계산 함수
@@ -761,21 +783,6 @@ const ApprovePage: React.FC = () => {
               return s;
             });
           });
-
-          setFilteredSlots(prevSlots => {
-            return prevSlots.map(s => {
-              if (s.id === slot.id) {
-                return {
-                  ...s,
-                  status: newStatus,
-                  processed_at: new Date().toISOString(),
-                  start_date: startDate,
-                  end_date: endDate
-                };
-              }
-              return s;
-            });
-          });
         }
       }
 
@@ -865,20 +872,6 @@ const ApprovePage: React.FC = () => {
               return slot;
             });
           });
-
-          setFilteredSlots(prevSlots => {
-            return prevSlots.map(slot => {
-              if (slotId.includes(slot.id)) {
-                return {
-                  ...slot,
-                  status: 'rejected',
-                  processed_at: new Date().toISOString(),
-                  rejection_reason: reason
-                };
-              }
-              return slot;
-            });
-          });
         } else {
           // 단일 슬롯인 경우
           const updateSlotStatus = (slots: Slot[]) =>
@@ -894,7 +887,6 @@ const ApprovePage: React.FC = () => {
             );
 
           setSlots(updateSlotStatus);
-          setFilteredSlots(updateSlotStatus);
         }
 
         // 성공 메시지 표시
@@ -1031,7 +1023,6 @@ const ApprovePage: React.FC = () => {
               );
 
             setSlots(updateSlotStatus);
-            setFilteredSlots(updateSlotStatus);
           } else {
             errors.push(`슬롯 ${id}: ${result.message}`);
           }
@@ -1124,7 +1115,6 @@ const ApprovePage: React.FC = () => {
         );
 
       setSlots(updateSlotMemoState);
-      setFilteredSlots(updateSlotMemoState);
 
 
       return true;
@@ -1147,7 +1137,6 @@ const ApprovePage: React.FC = () => {
 
       // 슬롯 데이터 초기화
       setSlots([]);
-      setFilteredSlots([]);
 
       // 새 서비스 타입 설정
       setSelectedServiceType(newServiceType);
@@ -1175,11 +1164,8 @@ const ApprovePage: React.FC = () => {
   };
 
   const handleSearch = () => {
-    // 검색 시 에러 상태 초기화
-    setError(null);
-    setSearchRefreshCounter(prev => prev + 1);
-    setLoading(true);
-
+    // 검색 버튼 클릭 시 특별한 동작 없음 (useMemo로 자동 필터링됨)
+    // 필요시 검색 이벤트 로깅 등 추가 가능
   };
 
   // 초기 로딩 중에는 간소화된 템플릿 반환

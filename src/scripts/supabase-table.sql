@@ -332,3 +332,50 @@ create index IF not exists notifications_user_id_idx on public.notifications usi
 create index IF not exists notifications_user_id_status_idx on public.notifications using btree (user_id, status) TABLESPACE pg_default;
 
 create index IF not exists notifications_created_at_idx on public.notifications using btree (created_at) TABLESPACE pg_default;
+
+create table public.keywords (
+  id serial not null,
+  group_id integer not null,
+  main_keyword character varying(100) not null,
+  mid integer null,
+  url character varying(500) null,
+  keyword1 character varying(100) null,
+  keyword2 character varying(100) null,
+  keyword3 character varying(100) null,
+  description text null,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  constraint keywords_pkey primary key (id),
+  constraint keywords_group_id_fkey foreign KEY (group_id) references keyword_groups (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_keywords_group_id on public.keywords using btree (group_id) TABLESPACE pg_default;
+
+create index IF not exists idx_keywords_main_keyword on public.keywords using btree (main_keyword) TABLESPACE pg_default;
+
+create index IF not exists idx_keywords_mid on public.keywords using btree (mid) TABLESPACE pg_default;
+
+create unique INDEX IF not exists idx_unique_main_keyword_per_group on public.keywords using btree (group_id, main_keyword) TABLESPACE pg_default
+where
+  (main_keyword is not null);
+
+  create table public.keyword_groups (
+  id serial not null,
+  user_id uuid not null,
+  name character varying(100) not null,
+  is_default boolean null default false,
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  campaign_name character varying(50) null,
+  campaign_type character varying(50) null,
+  constraint keyword_groups_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_keyword_groups_user_id on public.keyword_groups using btree (user_id) TABLESPACE pg_default;
+
+create unique INDEX IF not exists idx_unique_group_name_per_user on public.keyword_groups using btree (user_id, name) TABLESPACE pg_default
+where
+  (name is not null);
+
+create index IF not exists idx_keyword_groups_campaign on public.keyword_groups using btree (campaign_name, campaign_type) TABLESPACE pg_default;

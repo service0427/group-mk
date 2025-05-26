@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types';
+import { useKeywordFieldConfig } from '../hooks/useKeywordFieldConfig';
 
 interface KeywordTableProps {
   keywords: Keyword[];
@@ -32,6 +33,9 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   onSort,
   onOpenUploadModal,
 }) => {
+  // 키워드 필드 설정 훅 사용
+  const { getFieldConfig, isRequired, isHidden } = useKeywordFieldConfig(selectedGroup?.campaignType);
+  
   // 상태 관리
   const [searchText, setSearchText] = useState('');
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
@@ -69,6 +73,78 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   const keyword2Ref = useRef<HTMLInputElement>(null);
   const keyword3Ref = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLInputElement>(null);
+
+  // 필드별 라벨과 플레이스홀더 가져오기
+  const getFieldLabel = (fieldName: string, defaultLabel: string) => {
+    const config = getFieldConfig(fieldName);
+    return config?.label || defaultLabel;
+  };
+
+  const getFieldPlaceholder = (fieldName: string, defaultPlaceholder: string) => {
+    const config = getFieldConfig(fieldName);
+    return config?.placeholder || defaultPlaceholder;
+  };
+
+  // 테이블 헤더 렌더링
+  const renderTableHeaders = () => {
+    const headers = [
+      { field: 'main_keyword', defaultLabel: '메인 키워드', sortable: true, align: 'left' },
+      { field: 'mid', defaultLabel: 'MID', sortable: true, align: 'left' },
+      { field: 'url', defaultLabel: 'URL', sortable: false, align: 'left' },
+      { field: 'keywords', defaultLabel: '키워드', sortable: false, align: 'left' },
+      { field: 'status', defaultLabel: '상태', sortable: true, align: 'center', alwaysShow: true },
+      { field: 'description', defaultLabel: '설명', sortable: false, align: 'left' },
+      { field: 'created_at', defaultLabel: '등록일', sortable: true, align: 'center', alwaysShow: true },
+      { field: 'actions', defaultLabel: '작업', sortable: false, align: 'right', alwaysShow: true }
+    ];
+
+    return headers.map((header) => {
+      // alwaysShow가 true가 아닌 필드만 숨김 체크
+      if (!header.alwaysShow && header.field !== 'keywords' && isHidden(header.field)) {
+        return null;
+      }
+
+      let label = header.defaultLabel;
+      
+      if (header.field === 'keywords') {
+        // keywords 필드는 keyword1, keyword2, keyword3의 라벨을 조합해서 표시
+        const keyword1Label = getFieldLabel('keyword1', '키워드1');
+        const keyword2Label = getFieldLabel('keyword2', '키워드2');
+        const keyword3Label = getFieldLabel('keyword3', '키워드3');
+        
+        // 보이는 키워드 필드들의 라벨을 조합
+        const visibleKeywordLabels = [];
+        if (!isHidden('keyword1')) visibleKeywordLabels.push(keyword1Label);
+        if (!isHidden('keyword2')) visibleKeywordLabels.push(keyword2Label);
+        if (!isHidden('keyword3')) visibleKeywordLabels.push(keyword3Label);
+        
+        label = visibleKeywordLabels.length > 0 ? visibleKeywordLabels.join('/') : '키워드';
+      } else if (!header.alwaysShow) {
+        // 동적 필드는 설정된 라벨 사용
+        label = getFieldLabel(header.field, header.defaultLabel);
+      }
+
+      return (
+        <th
+          key={header.field}
+          scope="col"
+          className={`px-2 py-2 text-${header.align} text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b ${header.field !== 'actions' ? 'border-r' : ''} border-gray-300 dark:border-gray-600 ${header.sortable ? 'cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700' : ''}`}
+          onClick={header.sortable ? () => handleSort(header.field) : undefined}
+        >
+          {label} {header.sortable && renderSortArrow(header.field)}
+        </th>
+      );
+    }).filter(Boolean);
+  };
+
+  // 보이는 열의 개수 계산
+  const getVisibleColumnCount = () => {
+    let count = 5; // 기본: main_keyword, keywords, status, created_at, actions
+    if (!isHidden('mid')) count++;
+    if (!isHidden('url')) count++;
+    if (!isHidden('description')) count++;
+    return count;
+  };
 
   // 검색 핸들러
   const handleSearch = (e: React.FormEvent) => {
@@ -379,12 +455,14 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30">
         <form onSubmit={handleAddKeyword} className="flex flex-wrap items-end gap-2 w-full">
           <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[100px] sm:max-w-[130px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">메인 키워드 *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {getFieldLabel('main_keyword', '메인 키워드')} {(isRequired('main_keyword') || !selectedGroup?.campaignType) && '*'}
+            </label>
             <input
               type="text"
               value={newKeywordData.mainKeyword}
               onChange={(e) => handleNewKeywordChange(e, 'mainKeyword')}
-              placeholder="메인 키워드"
+              placeholder={getFieldPlaceholder('main_keyword', '메인 키워드')}
               className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
               disabled={isLoading}
               required
@@ -397,96 +475,121 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               }}
             />
           </div>
-          <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">MID</label>
-            <input
-              type="number"
-              value={newKeywordData.mid || ''}
-              onChange={(e) => handleNewKeywordChange(e, 'mid')}
-              placeholder="MID"
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              ref={midRef}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  urlRef.current?.focus();
-                }
-              }}
-            />
-          </div>
-          <div className="w-full md:w-[300px] sm:w-auto sm:flex-grow sm:min-w-[250px] sm:max-w-none">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-            <input
-              type="text"
-              value={newKeywordData.url}
-              onChange={(e) => handleNewKeywordChange(e, 'url')}
-              placeholder="URL"
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              ref={urlRef}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  keyword1Ref.current?.focus();
-                }
-              }}
-            />
-          </div>
-          <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">키워드1</label>
-            <input
-              type="text"
-              value={newKeywordData.keyword1}
-              onChange={(e) => handleNewKeywordChange(e, 'keyword1')}
-              placeholder="키워드1"
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              ref={keyword1Ref}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  keyword2Ref.current?.focus();
-                }
-              }}
-            />
-          </div>
-          <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">키워드2</label>
-            <input
-              type="text"
-              value={newKeywordData.keyword2}
-              onChange={(e) => handleNewKeywordChange(e, 'keyword2')}
-              placeholder="키워드2"
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              ref={keyword2Ref}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  keyword3Ref.current?.focus();
-                }
-              }}
-            />
-          </div>
-          <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">키워드3</label>
-            <input
-              type="text"
-              value={newKeywordData.keyword3}
-              onChange={(e) => handleNewKeywordChange(e, 'keyword3')}
-              placeholder="키워드3"
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              ref={keyword3Ref}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  descriptionRef.current?.focus();
-                }
-              }}
-            />
-          </div>
+          {!isHidden('mid') && (
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('mid', 'MID')} {isRequired('mid') && '*'}
+              </label>
+              <input
+                type="number"
+                value={newKeywordData.mid || ''}
+                onChange={(e) => handleNewKeywordChange(e, 'mid')}
+                placeholder={getFieldPlaceholder('mid', 'MID')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={isRequired('mid')}
+                ref={midRef}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    urlRef.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
+          {!isHidden('url') && (
+            <div className="w-full md:w-[300px] sm:w-auto sm:flex-grow sm:min-w-[250px] sm:max-w-none">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('url', 'URL')} {isRequired('url') && '*'}
+              </label>
+              <input
+                type="text"
+                value={newKeywordData.url}
+                onChange={(e) => handleNewKeywordChange(e, 'url')}
+                placeholder={getFieldPlaceholder('url', 'URL')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={isRequired('url')}
+                ref={urlRef}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    keyword1Ref.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
+          {!isHidden('keyword1') && (
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('keyword1', '키워드1')} {isRequired('keyword1') && '*'}
+              </label>
+              <input
+                type="text"
+                value={newKeywordData.keyword1}
+                onChange={(e) => handleNewKeywordChange(e, 'keyword1')}
+                placeholder={getFieldPlaceholder('keyword1', '키워드1')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={isRequired('keyword1')}
+                ref={keyword1Ref}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    keyword2Ref.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
+          {!isHidden('keyword2') && (
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('keyword2', '키워드2')} {isRequired('keyword2') && '*'}
+              </label>
+              <input
+                type="text"
+                value={newKeywordData.keyword2}
+                onChange={(e) => handleNewKeywordChange(e, 'keyword2')}
+                placeholder={getFieldPlaceholder('keyword2', '키워드2')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={isRequired('keyword2')}
+                ref={keyword2Ref}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    keyword3Ref.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
+          {!isHidden('keyword3') && (
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('keyword3', '키워드3')} {isRequired('keyword3') && '*'}
+              </label>
+              <input
+                type="text"
+                value={newKeywordData.keyword3}
+                onChange={(e) => handleNewKeywordChange(e, 'keyword3')}
+                placeholder={getFieldPlaceholder('keyword3', '키워드3')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={isRequired('keyword3')}
+                ref={keyword3Ref}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    descriptionRef.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
           
           <div className="w-full sm:w-auto sm:flex-grow-0 flex-shrink-0 sm:flex-shrink-0 mt-1 sm:mt-0">
             <div className="flex items-end gap-2 w-full">
@@ -519,64 +622,13 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-300 dark:border-gray-600">
           <thead className="bg-blue-100 dark:bg-blue-800">
             <tr>
-              <th
-                scope="col"
-                className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700"
-                onClick={() => handleSort('main_keyword')}
-              >
-                메인 키워드 {renderSortArrow('main_keyword')}
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700"
-                onClick={() => handleSort('mid')}
-              >
-                MID {renderSortArrow('mid')}
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600"
-              >
-                URL
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600"
-              >
-                키워드
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700"
-                onClick={() => handleSort('is_active')}
-              >
-                상태 {renderSortArrow('is_active')}
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600"
-              >
-                설명
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-700"
-                onClick={() => handleSort('created_at')}
-              >
-                등록일 {renderSortArrow('created_at')}
-              </th>
-              <th
-                scope="col"
-                className="px-2 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b border-gray-300 dark:border-gray-600"
-              >
-                작업
-              </th>
+              {renderTableHeaders()}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
+                <td colSpan={getVisibleColumnCount()} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
                   <div className="flex justify-center">
                     <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -588,7 +640,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </tr>
             ) : keywords.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
+                <td colSpan={getVisibleColumnCount()} className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-600">
                   {searchText ? '검색 결과가 없습니다.' : '등록된 키워드가 없습니다.'}
                 </td>
               </tr>
@@ -613,82 +665,93 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   </td>
                   
                   {/* MID */}
-                  <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                    {editingKeywordId === keyword.id ? (
-                      <input
-                        type="number"
-                        value={editingKeywordData.mid || ''}
-                        onChange={(e) => handleEditingKeywordChange(e, 'mid')}
-                        className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      />
-                    ) : (
-                      <div className="text-xs text-gray-700 dark:text-gray-300">
-                        {keyword.mid || '-'}
-                      </div>
-                    )}
-                  </td>
+                  {!isHidden('mid') && (
+                    <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
+                      {editingKeywordId === keyword.id ? (
+                        <input
+                          type="number"
+                          value={editingKeywordData.mid || ''}
+                          onChange={(e) => handleEditingKeywordChange(e, 'mid')}
+                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-700 dark:text-gray-300">
+                          {keyword.mid || '-'}
+                        </div>
+                      )}
+                    </td>
+                  )}
                   
                   {/* URL */}
-                  <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                    {editingKeywordId === keyword.id ? (
-                      <input
-                        type="text"
-                        value={editingKeywordData.url}
-                        onChange={(e) => handleEditingKeywordChange(e, 'url')}
-                        className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      />
-                    ) : (
-                      <div className="text-xs text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                        {keyword.url ? (
-                          <a
-                            href={keyword.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            {keyword.url}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </div>
-                    )}
-                  </td>
+                  {!isHidden('url') && (
+                    <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
+                      {editingKeywordId === keyword.id ? (
+                        <input
+                          type="text"
+                          value={editingKeywordData.url}
+                          onChange={(e) => handleEditingKeywordChange(e, 'url')}
+                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                          {keyword.url ? (
+                            <a
+                              href={keyword.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {keyword.url}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  )}
                   
                   {/* 키워드 */}
                   <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
                     {editingKeywordId === keyword.id ? (
                       <div className="space-y-1">
-                        <input
-                          type="text"
-                          value={editingKeywordData.keyword1}
-                          onChange={(e) => handleEditingKeywordChange(e, 'keyword1')}
-                          placeholder="키워드1"
-                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={editingKeywordData.keyword2}
-                          onChange={(e) => handleEditingKeywordChange(e, 'keyword2')}
-                          placeholder="키워드2"
-                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={editingKeywordData.keyword3}
-                          onChange={(e) => handleEditingKeywordChange(e, 'keyword3')}
-                          placeholder="키워드3"
-                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                        />
+                        {!isHidden('keyword1') && (
+                          <input
+                            type="text"
+                            value={editingKeywordData.keyword1}
+                            onChange={(e) => handleEditingKeywordChange(e, 'keyword1')}
+                            placeholder={getFieldPlaceholder('keyword1', '키워드1')}
+                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                          />
+                        )}
+                        {!isHidden('keyword2') && (
+                          <input
+                            type="text"
+                            value={editingKeywordData.keyword2}
+                            onChange={(e) => handleEditingKeywordChange(e, 'keyword2')}
+                            placeholder={getFieldPlaceholder('keyword2', '키워드2')}
+                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                          />
+                        )}
+                        {!isHidden('keyword3') && (
+                          <input
+                            type="text"
+                            value={editingKeywordData.keyword3}
+                            onChange={(e) => handleEditingKeywordChange(e, 'keyword3')}
+                            placeholder={getFieldPlaceholder('keyword3', '키워드3')}
+                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                          />
+                        )}
                       </div>
                     ) : (
                       <div className="text-xs text-gray-700 dark:text-gray-300">
-                        <ul className="list-disc list-inside text-xs">
-                          {keyword.keyword1 && <li>{keyword.keyword1}</li>}
-                          {keyword.keyword2 && <li>{keyword.keyword2}</li>}
-                          {keyword.keyword3 && <li>{keyword.keyword3}</li>}
-                          {!keyword.keyword1 && !keyword.keyword2 && !keyword.keyword3 && '-'}
-                        </ul>
+                        {(() => {
+                          const keywords = [];
+                          if (keyword.keyword1 && !isHidden('keyword1')) keywords.push(keyword.keyword1);
+                          if (keyword.keyword2 && !isHidden('keyword2')) keywords.push(keyword.keyword2);
+                          if (keyword.keyword3 && !isHidden('keyword3')) keywords.push(keyword.keyword3);
+                          return keywords.length > 0 ? keywords.join(' / ') : '-';
+                        })()}
                       </div>
                     )}
                   </td>
@@ -719,21 +782,23 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   </td>
                   
                   {/* 설명 */}
-                  <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                    {editingKeywordId === keyword.id ? (
-                      <input
-                        type="text"
-                        value={editingKeywordData.description}
-                        onChange={(e) => handleEditingKeywordChange(e, 'description')}
-                        className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="설명 (선택사항)"
-                      />
-                    ) : (
-                      <div className="text-xs text-gray-700 dark:text-gray-300">
-                        {keyword.description || '-'}
-                      </div>
-                    )}
-                  </td>
+                  {!isHidden('description') && (
+                    <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
+                      {editingKeywordId === keyword.id ? (
+                        <input
+                          type="text"
+                          value={editingKeywordData.description}
+                          onChange={(e) => handleEditingKeywordChange(e, 'description')}
+                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="설명 (선택사항)"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-700 dark:text-gray-300">
+                          {keyword.description || '-'}
+                        </div>
+                      )}
+                    </td>
+                  )}
 
                   {/* 등록일 */}
                   <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">

@@ -1,0 +1,102 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/supabase';
+
+interface FieldConfig {
+  label: string;
+  placeholder: string;
+  order: number;
+  required?: boolean;
+  hidden?: boolean;
+  tooltip?: string;
+}
+
+interface ServiceKeywordConfig {
+  field_mapping: Record<string, FieldConfig>;
+  ui_config: {
+    listHeaders: string[];
+    listFieldOrder: string[];
+    hiddenFields: string[];
+    requiredFields: string[];
+    description: string;
+  };
+}
+
+export const useKeywordFieldConfig = (campaignType: string | null | undefined) => {
+  const [config, setConfig] = useState<ServiceKeywordConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      if (!campaignType) {
+        setConfig(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: fetchError } = await supabase
+          .from('service_keyword_field_mappings')
+          .select('*')
+          .eq('service_type', campaignType)
+          .single();
+
+        if (fetchError) {
+          console.error('키워드 설정 로드 실패:', fetchError);
+          // 기본값 사용
+          setConfig(null);
+        } else {
+          setConfig(data);
+        }
+      } catch (err) {
+        console.error('키워드 설정 로드 중 오류:', err);
+        setError('키워드 설정을 불러올 수 없습니다.');
+        setConfig(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, [campaignType]);
+
+  // 필드명에 대한 설정 가져오기
+  const getFieldConfig = (fieldName: string): FieldConfig | null => {
+    if (!config?.field_mapping) return null;
+    return config.field_mapping[fieldName] || null;
+  };
+
+  // 순서대로 정렬된 필드 목록
+  const orderedFields = config ? 
+    Object.entries(config.field_mapping)
+      .filter(([, fieldConfig]) => !fieldConfig.hidden)
+      .sort((a, b) => (a[1].order || 999) - (b[1].order || 999))
+      .map(([fieldName, fieldConfig]) => ({
+        fieldName,
+        ...fieldConfig
+      })) : [];
+
+  // 필수 필드인지 확인
+  const isRequired = (fieldName: string): boolean => {
+    return config?.ui_config?.requiredFields?.includes(fieldName) || false;
+  };
+
+  // 숨김 필드인지 확인
+  const isHidden = (fieldName: string): boolean => {
+    const fieldConfig = getFieldConfig(fieldName);
+    return fieldConfig?.hidden || config?.ui_config?.hiddenFields?.includes(fieldName) || false;
+  };
+
+  return { 
+    config, 
+    loading, 
+    error,
+    getFieldConfig,
+    orderedFields,
+    isRequired,
+    isHidden
+  };
+};

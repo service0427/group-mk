@@ -72,7 +72,7 @@ export const WorkInputPage: React.FC = () => {
 
   // 페이지 제목과 설명
   const getPageTitle = () => isAdmin ? "총판 작업 입력 관리" : "총판 작업 입력";
-  const getPageDescription = () => isAdmin 
+  const getPageDescription = () => isAdmin
     ? "모든 총판의 작업 입력 현황을 확인하고 관리하는 페이지입니다."
     : "모든 서비스의 총판 작업 입력을 확인하는 페이지입니다.";
 

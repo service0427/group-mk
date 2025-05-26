@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { Slot, WorkInputFormData } from '../types';
 import { CAMPAIGNS, getCampaignByName } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
@@ -33,6 +34,10 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
   // 정렬 상태
   const [sortField, setSortField] = useState<SortField>('user_slot_number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  
+  // 키워드 툴팁 상태
+  const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
 
   // 상세보기 핸들러
   const handleDetailView = (slot: Slot) => {
@@ -435,9 +440,128 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
             {slot.keywords && (
               <div className="flex">
                 <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">키워드</span>
-                <span className="text-sm text-gray-900 dark:text-white flex-1 whitespace-pre-line">
-                  {slot.keywords}
-                </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 relative">
+                    {(() => {
+                      const keywordArray = slot.keywords.split('\n').filter(k => k.trim());
+                      
+                      if (keywordArray.length === 0) {
+                        return null;
+                      }
+
+                      const mainKeyword = keywordArray[0];
+                      const additionalCount = keywordArray.length - 1;
+
+                      return (
+                        <>
+                          <span className="text-sm text-gray-900 dark:text-white font-medium">
+                            {mainKeyword}
+                          </span>
+                          {additionalCount > 0 && (
+                            <>
+                              <button
+                                className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setPopoverPosition({
+                                    top: rect.top - 10,
+                                    left: rect.left + rect.width / 2
+                                  });
+                                  setOpenKeywordTooltipId(openKeywordTooltipId === slot.id ? null : slot.id);
+                                }}
+                              >
+                                +{additionalCount}
+                              </button>
+                              {/* Tooltip - 모바일에서도 동일하게 사용 */}
+                              {openKeywordTooltipId === slot.id && ReactDOM.createPortal(
+                                <>
+                                  <div 
+                                    className="fixed inset-0" 
+                                    style={{zIndex: 9998}}
+                                    onClick={() => setOpenKeywordTooltipId(null)}
+                                  />
+                                  <div 
+                                    className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                    style={{
+                                      zIndex: 99999,
+                                      left: `${popoverPosition.left}px`,
+                                      top: `${popoverPosition.top}px`,
+                                      transform: 'translate(-50%, -100%)'
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="font-medium text-gray-100">전체 키워드</div>
+                                      <button
+                                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenKeywordTooltipId(null);
+                                        }}
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {/* 메인 키워드 */}
+                                      <div>
+                                        <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                        <div className="flex flex-wrap gap-1">
+                                          {keywordArray.slice(0, 1).map((keyword, index) => (
+                                            <span
+                                              key={index}
+                                              className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                            >
+                                              {keyword}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* 서브 키워드 */}
+                                      {keywordArray.length > 1 && (
+                                        <>
+                                          <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                          <div>
+                                            <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                            <div className="flex flex-wrap gap-1">
+                                              {keywordArray.slice(1).map((keyword, index) => (
+                                                <span
+                                                  key={index}
+                                                  className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                    index % 4 === 0
+                                                    ? 'bg-green-500/20 text-green-200'
+                                                    : index % 4 === 1
+                                                    ? 'bg-purple-500/20 text-purple-200'
+                                                    : index % 4 === 2
+                                                    ? 'bg-orange-500/20 text-orange-200'
+                                                    : 'bg-pink-500/20 text-pink-200'
+                                                  }`}
+                                                >
+                                                  {keyword}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                    </div>
+                                  </div>
+                                </>,
+                                document.body
+                              )}
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -943,11 +1067,129 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                         {/* 키워드 */}
                         <td className="px-3 py-3">
                           <div className="text-sm text-gray-900 dark:text-white max-w-40">
-                            {slot.keywords ? (
-                              <div className="whitespace-pre-line" title={slot.keywords.replace('\n', ' / ')}>
-                                {slot.keywords}
-                              </div>
-                            ) : '-'}
+                            <div className="flex items-center gap-1 relative">
+                              {(() => {
+                                // keywords 문자열을 배열로 변환
+                                const keywordArray = slot.keywords ? slot.keywords.split('\n').filter(k => k.trim()) : [];
+                                
+                                if (keywordArray.length === 0) {
+                                  return <span className="text-gray-400">-</span>;
+                                }
+
+                                const mainKeyword = keywordArray[0];
+                                const additionalCount = keywordArray.length - 1;
+
+                                return (
+                                  <>
+                                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                      {mainKeyword}
+                                    </span>
+                                    {additionalCount > 0 && (
+                                      <>
+                                        <button
+                                          className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            setPopoverPosition({
+                                              top: rect.top - 10,
+                                              left: rect.left + rect.width / 2
+                                            });
+                                            setOpenKeywordTooltipId(openKeywordTooltipId === slot.id ? null : slot.id);
+                                          }}
+                                        >
+                                          +{additionalCount}
+                                        </button>
+                                        {/* Tooltip */}
+                                        {openKeywordTooltipId === slot.id && ReactDOM.createPortal(
+                                          <>
+                                            {/* 배경 클릭 시 닫기 */}
+                                            <div 
+                                              className="fixed inset-0" 
+                                              style={{zIndex: 9998}}
+                                              onClick={() => setOpenKeywordTooltipId(null)}
+                                            />
+                                            <div 
+                                              className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                              style={{
+                                                zIndex: 99999,
+                                                left: `${popoverPosition.left}px`,
+                                                top: `${popoverPosition.top}px`,
+                                                transform: 'translate(-50%, -100%)'
+                                              }}
+                                            >
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="font-medium text-gray-100">전체 키워드</div>
+                                                <button
+                                                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenKeywordTooltipId(null);
+                                                  }}
+                                                >
+                                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                  </svg>
+                                                </button>
+                                              </div>
+                                              <div className="space-y-2">
+                                                {/* 메인 키워드 */}
+                                                <div>
+                                                  <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {keywordArray.slice(0, 1).map((keyword, index) => (
+                                                      <span
+                                                        key={index}
+                                                        className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                                      >
+                                                        {keyword}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                                
+                                                {/* 서브 키워드 */}
+                                                {keywordArray.length > 1 && (
+                                                  <>
+                                                    <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                                    <div>
+                                                      <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                      <div className="flex flex-wrap gap-1">
+                                                        {keywordArray.slice(1).map((keyword, index) => (
+                                                          <span
+                                                            key={index}
+                                                            className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                              index % 4 === 0
+                                                              ? 'bg-green-500/20 text-green-200'
+                                                              : index % 4 === 1
+                                                              ? 'bg-purple-500/20 text-purple-200'
+                                                              : index % 4 === 2
+                                                              ? 'bg-orange-500/20 text-orange-200'
+                                                              : 'bg-pink-500/20 text-pink-200'
+                                                            }`}
+                                                          >
+                                                            {keyword}
+                                                          </span>
+                                                        ))}
+                                                      </div>
+                                                    </div>
+                                                  </>
+                                                )}
+                                              </div>
+                                              {/* Arrow */}
+                                              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                              </div>
+                                            </div>
+                                          </>,
+                                          document.body
+                                        )}
+                                      </>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </td>
 

@@ -144,10 +144,10 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
             
             if (!mainKeyword && subKeywords.length === 0) return '';
             
-            // 메인 키워드 + 줄바꿈 + 서브 키워드들
+            // 메인 키워드 + 줄바꿈 + 각 서브 키워드를 개별 줄로
             let result = mainKeyword;
             if (subKeywords.length > 0) {
-              result += '\n' + subKeywords.join(', ');
+              result += '\n' + subKeywords.join('\n');
             }
             
             return result;

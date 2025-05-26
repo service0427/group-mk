@@ -75,7 +75,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
             setTotalRows(jsonData.length);
             validateExcelData(jsonData);
           } catch (error) {
-            console.error('엑셀 파일 파싱 오류:', error);
             toast.error('엑셀 파일을 읽는 도중 오류가 발생했습니다. 파일 형식을 확인해주세요.');
             setUploadFile(null);
             if (e.target instanceof HTMLInputElement) {
@@ -132,7 +131,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
       }
     }
 
-    console.log(`파일 확인 완료: 총 ${data.length}개 행 발견`);
     return true;
   };
 
@@ -167,13 +165,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
       const workCntStr = findValue(['작업량', '작업 량', 'work_cnt', 'workcnt', '타수']) || '0';
       const notes = findValue(['비고', '메모', 'notes', '설명']) || '';
       
-      // 디버깅: 원본 데이터 타입 확인
-      console.log('엑셀 데이터 디버그:', {
-        row,
-        dateValue: date,
-        dateType: typeof date,
-        isDate: Object.prototype.toString.call(date) === '[object Date]'
-      });
 
       // 슬롯 번호 파싱
       const slotNumber = parseInt(slotNumberStr) || 0;
@@ -193,7 +184,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
                 formattedDate = dateObj.toISOString().split('T')[0];
               }
             } catch (e) {
-              console.warn('날짜 파싱 실패:', date);
+              // 날짜 파싱 실패
             }
           }
         } else if (typeof date === 'number') {
@@ -206,7 +197,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
               formattedDate = dateObj.toISOString().split('T')[0];
             }
           } catch (e) {
-            console.warn('엑셀 날짜 변환 실패:', date);
+            // 엑셀 날짜 변환 실패
           }
         } else if (Object.prototype.toString.call(date) === '[object Date]') {
           // Date 객체인 경우
@@ -280,8 +271,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
       duplicateCheck.get(key)!.push(item.rowNum);
     });
     
-    console.log('중복 체크 맵:', duplicateCheck);
-    console.log('원본 데이터 맵:', rowDataMap);
     
     const duplicateErrors: string[] = [];
     duplicateCheck.forEach((rows, key) => {
@@ -293,7 +282,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     });
     
     if (duplicateErrors.length > 0) {
-      console.log('중복 데이터 발견:', duplicateErrors);
       setDuplicateErrors(duplicateErrors);
     }
     
@@ -310,7 +298,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
     // 사용자 인증 확인
     const userId = currentUser?.id;
     if (!userId) {
-      console.error('업로드 시작 시 Auth 정보:', { currentUser, matId });
       toast.error('사용자 인증 정보를 확인할 수 없습니다. 다시 로그인해주세요.');
       return;
     }
@@ -341,9 +328,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
               // 엑셀 데이터를 작업 데이터로 변환
               const workData = convertExcelToWorkData(jsonData);
               
-              console.log('변환된 작업 데이터:', workData);
-              console.log('현재 matId:', matId);
-              
               // 유효한 데이터가 없는 경우
               if (workData.length === 0) {
                 throw new Error('업로드할 유효한 데이터가 없습니다. 데이터를 확인해주세요.');
@@ -352,7 +336,6 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
               // 사용자 ID 확인
               const userId = currentUser?.id;
               if (!userId) {
-                console.error('Auth 정보:', { currentUser });
                 throw new Error('사용자 인증 정보를 확인할 수 없습니다.');
               }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardTemplate } from '@/components/pageTemplate/DashboardTemplate';
 import { CampaignFilter, SlotsList } from './components';
 import { Slot, FilterOptions, WorkInputFormData } from './types';
-import { 
+import {
   getActiveSlots,
   addSlotWork
 } from './services/workInputService';
@@ -21,13 +21,18 @@ export const WorkInputPage: React.FC = () => {
     campaign_id: undefined,
   });
 
+  // ADMIN 권한 체크 (operator, developer)
+  const isAdmin = currentUser?.role === 'operator' || currentUser?.role === 'developer';
+
   // 슬롯 목록 가져오기
   const fetchSlots = async () => {
     if (!currentUser?.id) return;
-    
+
     setIsLoading(true);
     try {
-      const data = await getActiveSlots(currentUser.id, filters);
+      // ADMIN은 모든 슬롯 조회, 일반 사용자는 자신의 슬롯만 조회
+      const matId = isAdmin ? undefined : currentUser.id;
+      const data = await getActiveSlots(matId, filters);
       setSlots(data);
     } catch (error: any) {
       toast.error('슬롯 목록을 불러오는 중 오류가 발생했습니다.', {
@@ -37,7 +42,7 @@ export const WorkInputPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   // 캐페인 선택 변경 시
   const handleCampaignSelect = (campaignId: number | undefined) => {
     setFilters(prev => ({ ...prev, campaign_id: campaignId }));
@@ -63,11 +68,13 @@ export const WorkInputPage: React.FC = () => {
   // 컴포넌트 마운트 시 초기 데이터 로드
   useEffect(() => {
     fetchSlots();
-  }, [currentUser, filters]);
+  }, [currentUser, filters, isAdmin]);
 
   // 페이지 제목과 설명
-  const getPageTitle = () => "승인된 슬롯 목록";
-  const getPageDescription = () => "모든 서비스의 승인된 슬롯 목록을 확인하는 페이지입니다.";
+  const getPageTitle = () => isAdmin ? "총판 작업 입력 관리" : "총판 작업 입력";
+  const getPageDescription = () => isAdmin 
+    ? "모든 총판의 작업 입력 현황을 확인하고 관리하는 페이지입니다."
+    : "모든 서비스의 총판 작업 입력을 확인하는 페이지입니다.";
 
   return (
     <DashboardTemplate
@@ -93,6 +100,7 @@ export const WorkInputPage: React.FC = () => {
           onSubmit={handleWorkInputSubmit}
           isLoading={isLoading}
           matId={currentUser?.id || ''}
+          isAdmin={isAdmin}
         />
       )}
     </DashboardTemplate>

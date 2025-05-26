@@ -3,7 +3,7 @@ import { SlotWorkInfo, WorkInputFormData, Slot, FilterOptions } from '../types';
 import { toast } from 'sonner';
 
 // 활성화된 슬롯 목록 가져오기
-export const getActiveSlots = async (userId: string, filterOptions?: FilterOptions): Promise<Slot[]> => {
+export const getActiveSlots = async (userId: string | undefined, filterOptions?: FilterOptions): Promise<Slot[]> => {
   try {
     // 1. 필터에 따라 campaigns 테이블 조회 쿼리 구성
     let campaignQuery = supabase
@@ -35,7 +35,6 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
     const { data: campaignsData, error: campaignsError } = await campaignQuery;
     
     if (campaignsError) {
-      console.error('캠페인 목록 조회 중 오류 발생:', campaignsError);
       throw campaignsError;
     }
     
@@ -57,36 +56,55 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
         user_slot_number,
         product_id,
         input_data,
-        users!inner(
+        users!slots_user_id_fkey(
           email,
           full_name
         )
       `)
       .eq('status', 'approved')
-      .eq('mat_id', userId)
       .in('product_id', campaignsData.map(c => c.id));
+    
+    // userId가 제공된 경우(일반 사용자)에만 mat_id 필터 적용
+    if (userId) {
+      slotQuery = slotQuery.eq('mat_id', userId);
+    }
     
     
     const { data: slotsData, error: slotsError } = await slotQuery;
     
     if (slotsError) {
-      console.error('슬롯 목록 조회 중 오류 발생:', slotsError);
       throw slotsError;
     }
     
-    // 디버깅: user_slot_number 확인
-    if (slotsData && slotsData.length > 0) {
-      console.log('첫 번째 슬롯 데이터:', slotsData[0]);
-      console.log('user_slot_number 값:', slotsData[0].user_slot_number);
+    
+    // 3. 총판 정보를 가져오기 위해 mat_id 목록 추출
+    const matIds = [...new Set(slotsData?.map(slot => slot.mat_id).filter(id => id) || [])];
+    let matData: any[] = [];
+    
+    if (matIds.length > 0) {
+      const { data: matUsers, error: matError } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .in('id', matIds);
+      
+      if (!matError && matUsers) {
+        matData = matUsers;
+      }
     }
     
-    // 3. 캠페인 데이터를 Map으로 변환하여 빠르게 조회할 수 있게 함
+    // 총판 데이터를 Map으로 변환
+    const matMap = new Map<string, typeof matData[0]>();
+    matData.forEach(mat => {
+      matMap.set(mat.id, mat);
+    });
+    
+    // 4. 캠페인 데이터를 Map으로 변환하여 빠르게 조회할 수 있게 함
     const campaignMap = new Map<number, typeof campaignsData[0]>();
     campaignsData.forEach(campaign => {
       campaignMap.set(campaign.id, campaign);
     });
     
-    // 4. 슬롯 데이터와 캠페인 데이터 결합
+    // 5. 슬롯 데이터와 캠페인 데이터 결합
     const formattedData = slotsData?.map(slot => {
       const campaign = campaignMap.get(slot.product_id);
       
@@ -103,6 +121,9 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
         // 사용자 정보 추가
         user_email: (slot.users as any)?.email,
         user_name: (slot.users as any)?.full_name || (slot.users as any)?.email,
+        // 총판 정보 추가
+        mat_email: matMap.get(slot.mat_id)?.email,
+        mat_name: matMap.get(slot.mat_id)?.full_name || matMap.get(slot.mat_id)?.email,
         user_slot_number: slot.user_slot_number, // 명시적으로 추가
         // input_data에서 키워드, MID, URL 추출
         keywords: (() => {
@@ -161,7 +182,6 @@ export const getActiveSlots = async (userId: string, filterOptions?: FilterOptio
 
     return formattedData;
   } catch (error) {
-    console.error('슬롯 목록 조회 중 오류 발생:', error);
     throw error;
   }
 };
@@ -176,13 +196,11 @@ export const getSlotWorks = async (slotId: string): Promise<SlotWorkInfo[]> => {
       .order('date', { ascending: false });
 
     if (error) {
-      console.error('작업 기록 조회 중 오류 발생:', error);
       throw error;
     }
 
     return data || [];
   } catch (error) {
-    console.error('작업 기록 조회 중 오류 발생:', error);
     throw error;
   }
 };
@@ -246,7 +264,6 @@ export const addSlotWork = async (workData: WorkInputFormData, userId: string): 
       .eq('date', workData.date);
 
     if (checkError) {
-      console.error('기존 작업 기록 확인 중 오류 발생:', checkError);
       throw checkError;
     }
 
@@ -268,13 +285,11 @@ export const addSlotWork = async (workData: WorkInputFormData, userId: string): 
       .single();
 
     if (error) {
-      console.error('작업 기록 추가 중 오류 발생:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('작업 기록 추가 중 오류 발생:', error);
     throw error;
   }
 };
@@ -294,13 +309,11 @@ export const updateSlotWork = async (id: string, workData: Partial<WorkInputForm
       .single();
 
     if (error) {
-      console.error('작업 기록 수정 중 오류 발생:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('작업 기록 수정 중 오류 발생:', error);
     throw error;
   }
 };
@@ -314,11 +327,9 @@ export const deleteSlotWork = async (id: string): Promise<void> => {
       .eq('id', id);
 
     if (error) {
-      console.error('작업 기록 삭제 중 오류 발생:', error);
       throw error;
     }
   } catch (error) {
-    console.error('작업 기록 삭제 중 오류 발생:', error);
     throw error;
   }
 };
@@ -369,13 +380,11 @@ export const getUserNameFromMatId = async (matId: string): Promise<string> => {
       .single();
 
     if (error) {
-      console.error('사용자 정보 조회 중 오류 발생:', error);
       return '알 수 없음';
     }
 
     return (data?.organization_name || data?.full_name || '알 수 없음') as string;
   } catch (error) {
-    console.error('사용자 정보 조회 중 오류 발생:', error);
     return '알 수 없음';
   }
 };
@@ -407,7 +416,6 @@ export const getCampaignGroups = async (userId: string, serviceType?: string, ma
     const { data: campaignsData, error: campaignsError } = await campaignQuery;
     
     if (campaignsError) {
-      console.error('캠페인 목록 조회 중 오류 발생:', campaignsError);
       throw campaignsError;
     }
     
@@ -424,7 +432,6 @@ export const getCampaignGroups = async (userId: string, serviceType?: string, ma
       .in('product_id', campaignsData.map(c => c.id));
       
     if (slotsError) {
-      console.error('슬롯 목록 조회 중 오류 발생:', slotsError);
       throw slotsError;
     }
     
@@ -470,7 +477,6 @@ export const getCampaignGroups = async (userId: string, serviceType?: string, ma
     
     return matGroups;
   } catch (error) {
-    console.error('캠페인 그룹 조회 중 오류 발생:', error);
     throw error;
   }
 };
@@ -502,7 +508,6 @@ export const getCampaignsByServiceType = async (userId: string, serviceType: str
     const { data: campaignData, error: campaignError } = await campaignQuery;
 
     if (campaignError) {
-      console.error('캠페인 목록 조회 중 오류 발생:', campaignError);
       throw campaignError;
     }
 
@@ -519,12 +524,8 @@ export const getCampaignsByServiceType = async (userId: string, serviceType: str
       .in('product_id', campaignData.map(c => c.id));
 
     if (slotsError) {
-      console.error('슬롯 수 조회 중 오류 발생:', slotsError);
       throw slotsError;
     }
-
-    console.log('campaigndata:', campaignData);
-    console.log(slotsData);
     
     // 3. 수동으로 슬롯 개수 카운팅하여 Map으로 변환
     const slotCountMap = new Map<number, number>();
@@ -542,7 +543,6 @@ export const getCampaignsByServiceType = async (userId: string, serviceType: str
     // 모든 캠페인 반환 (슬롯이 없는 캠페인도 포함)
     return campaignsWithSlotCount;
   } catch (error) {
-    console.error('캠페인 목록 조회 중 오류 발생:', error);
     throw error;
   }
 };
@@ -564,13 +564,11 @@ export const getSlotIdByUserSlotNumber = async (matId: string, userSlotNumber: n
       .single();
 
     if (error) {
-      console.error('슬롯 ID 조회 중 오류 발생:', error);
       return null;
     }
 
     return data?.id || null;
   } catch (error) {
-    console.error('슬롯 ID 조회 중 오류 발생:', error);
     return null;
   }
 };

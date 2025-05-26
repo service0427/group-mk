@@ -387,13 +387,6 @@ const ApprovePage: React.FC = () => {
 
 
         if (data && data.length > 0) {
-          // 데이터 조회 확인을 위한 로그
-          console.log('슬롯 원본 데이터 (첫 번째):', data[0]);
-          console.log('quantity 필드 확인:', data.map(slot => ({ 
-            id: slot.id, 
-            quantity: slot.quantity,
-            input_data_keys: slot.input_data ? Object.keys(slot.input_data) : []
-          })));
           
           // 조인된 데이터 형식 변환 (users 객체를 user 필드로 변경)
           const enrichedSlots = data.map(slot => {
@@ -435,15 +428,6 @@ const ApprovePage: React.FC = () => {
               campaign_name: campaignName,
               campaign_logo: campaignLogo
             };
-            
-            // quantity 필드 확인을 위한 로그 (처음 몇 개만)
-            if (data.indexOf(slot) < 3) {
-              console.log(`슬롯 ${slot.id} enriched 후:`, {
-                quantity: enrichedSlot.quantity,
-                hasQuantity: 'quantity' in enrichedSlot,
-                quantityValue: enrichedSlot.quantity
-              });
-            }
             
             return enrichedSlot;
           });
@@ -556,8 +540,6 @@ const ApprovePage: React.FC = () => {
       let slot = slots.find(s => s.id === slotId) || filteredSlots.find(s => s.id === slotId);
       
       if (!slot) {
-        console.log('메모리에서 슬롯을 찾을 수 없어 직접 조회합니다:', slotId);
-        
         // 슬롯을 직접 조회
         const { data: slotInfo, error: slotError } = await supabase
           .from('slots')
@@ -570,7 +552,6 @@ const ApprovePage: React.FC = () => {
           return null;
         }
         
-        console.log('직접 조회한 슬롯 데이터:', slotInfo);
         slot = slotInfo as Slot;
       }
 
@@ -615,25 +596,6 @@ const ApprovePage: React.FC = () => {
         dailyQuantity = Number(slot.input_data['작업량']);
       }
       
-      // 디버깅을 위한 상세 로그
-      console.log('슬롯 상세 정보:', {
-        slotId,
-        quantity: slot.quantity,
-        input_data: slot.input_data,
-        input_data_keys: slot.input_data ? Object.keys(slot.input_data) : [],
-        start_date: slot.start_date,
-        end_date: slot.end_date,
-        계산된_dueDays: dueDays,
-        계산된_dailyQuantity: dailyQuantity
-      });
-      
-      // input_data의 모든 필드와 값을 출력
-      if (slot.input_data) {
-        console.log('input_data 상세:');
-        Object.entries(slot.input_data).forEach(([key, value]) => {
-          console.log(`  ${key}: ${value} (타입: ${typeof value})`);
-        });
-      }
       
       // 총 요청 수량 계산
       const totalRequestedQuantity = dailyQuantity * dueDays;
@@ -648,14 +610,6 @@ const ApprovePage: React.FC = () => {
       const completionRate = totalRequestedQuantity > 0 
         ? Math.min(100, Math.round((totalWorkedQuantity / totalRequestedQuantity) * 100))
         : 0;
-
-      console.log('작업 진행률 계산 결과:', {
-        총요청수량: totalRequestedQuantity,
-        총작업수량: totalWorkedQuantity,
-        요청일수: dueDays,
-        작업일수: workedDays,
-        완료율: completionRate
-      });
 
       return {
         totalRequestedQuantity,

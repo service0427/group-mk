@@ -39,6 +39,10 @@ const MenuSubComponent = forwardRef<HTMLDivElement | null, IMenuSubProps>(
         handleEntered();
       }
       
+      // 메뉴 상태 변경 알림
+      const event = new CustomEvent('menuStateChange', { detail: { show: true } });
+      window.dispatchEvent(event);
+      
       // 애니메이션 완료 후 최종 스크롤 위치 조정
       setTimeout(() => {
         scrollToSubMenu(true);
@@ -175,7 +179,14 @@ const MenuSubComponent = forwardRef<HTMLDivElement | null, IMenuSubProps>(
           <Collapse
             in={show}
             onEntered={handleCollapseDone}
-            onExited={handleExited}
+            onExited={() => {
+              if (handleExited) {
+                handleExited();
+              }
+              // 메뉴 상태 변경 알림
+              const event = new CustomEvent('menuStateChange', { detail: { show: false } });
+              window.dispatchEvent(event);
+            }}
             timeout="auto"
             enter={enter}
           >

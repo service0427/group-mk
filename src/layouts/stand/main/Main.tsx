@@ -48,43 +48,6 @@ const Main = () => {
     };
   }, []);
 
-  // 모바일 높이 디버깅
-  const isMobile = useMediaQuery('(max-width: 1023px)');
-  useEffect(() => {
-    if (isMobile) {
-      const debugHeight = () => {
-        const mainContent = document.querySelector('main.content');
-        const hasNotice = document.body.classList.contains('has-notice');
-        
-        if (mainContent) {
-          const computedStyle = window.getComputedStyle(mainContent);
-          console.log('[Main] Mobile height debug:', {
-            hasNotice,
-            mainHeight: computedStyle.height,
-            mainMarginTop: computedStyle.marginTop,
-            mainPaddingTop: computedStyle.paddingTop,
-            bodyClasses: document.body.className,
-            noticeHeight: window.getComputedStyle(document.documentElement).getPropertyValue('--notice-height'),
-            headerHeight: window.getComputedStyle(document.documentElement).getPropertyValue('--header-height'),
-            windowHeight: window.innerHeight,
-            documentHeight: document.documentElement.clientHeight
-          });
-        }
-      };
-
-      // 초기 로드 시
-      debugHeight();
-      
-      // body 클래스 변경 감지
-      const observer = new MutationObserver(debugHeight);
-      observer.observe(document.body, { 
-        attributes: true, 
-        attributeFilter: ['class'] 
-      });
-
-      return () => observer.disconnect();
-    }
-  }, [isMobile]);
 
   // 페이지 타이틀 결정
   const getPageTitle = () => {

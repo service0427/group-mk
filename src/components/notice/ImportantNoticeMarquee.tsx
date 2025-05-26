@@ -66,17 +66,6 @@ const ImportantNoticeMarquee: React.FC = () => {
       document.body.classList.add('has-notice');
       document.documentElement.style.setProperty('--notice-visible', '1');
       document.documentElement.style.setProperty('--notice-height', '36px'); // 9(h-9) * 4 = 36px
-      
-      // 모바일 디버깅을 위한 콘솔 로그
-      if (isMobile) {
-        console.log('[ImportantNoticeMarquee] Mobile notice activated:', {
-          hasNotice: true,
-          noticeHeight: '36px',
-          isMobile,
-          bodyClasses: document.body.className,
-          computedHeight: window.getComputedStyle(document.documentElement).getPropertyValue('--notice-height')
-        });
-      }
     } else {
       // 공지사항이 없는 경우 클래스 제거
       document.body.classList.remove('has-notice');

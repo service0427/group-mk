@@ -14,6 +14,7 @@
 
 /* Custom styles */
 @import "active-parent-dot.css";
+@import "layout-overrides.css"; /* 레이아웃 오버라이드 - main.css보다 먼저 */
 @import "main.css";
 @import "mobile-sidebar.css"; /* 모바일 사이드바 스타일 */
 @import "margin-fix.css"; /* 마진 긴급 수정 */

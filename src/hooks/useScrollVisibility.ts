@@ -38,7 +38,9 @@ export const useScrollVisibility = (options: {
 
     // SPA에서 실제 스크롤되는 요소 찾기
     const mainContentElement = document.querySelector('main[role="content"]');
-    const scrollElement = mainContentElement || window;
+    
+    // 모바일에서는 main 요소만, 데스크톱에서는 window 스크롤 사용
+    const scrollElement = (isMobile && mainContentElement) ? mainContentElement : window;
     
     // 초기 스크롤 위치 저장
     lastScrollYRef.current = scrollElement === window 
@@ -47,7 +49,7 @@ export const useScrollVisibility = (options: {
     
     // 스크롤 핸들러 함수
     function handleScroll() {
-      // 현재 스크롤 위치 (메인 콘텐츠 또는 윈도우)
+      // 현재 스크롤 위치
       const currentScrollY = scrollElement === window 
         ? window.scrollY 
         : (mainContentElement?.scrollTop || 0);

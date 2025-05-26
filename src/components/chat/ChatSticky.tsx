@@ -168,21 +168,22 @@ const ChatSticky: React.FC = () => {
       return;
     }
     
-    // SPA에서 실제 스크롤되는 요소 찾기
+    // 모바일에서는 main 요소에서만 스크롤 이벤트 감지
     const mainContentElement = document.querySelector('main[role="content"]');
-    const scrollElement = mainContentElement || window;
+    
+    if (!mainContentElement) {
+      return;
+    }
     
     // 초기 스크롤 위치 저장
-    lastScrollYRef.current = scrollElement === window
-      ? window.scrollY
-      : (mainContentElement?.scrollTop || 0);
+    lastScrollYRef.current = mainContentElement.scrollTop || 0;
     
     // 스크롤 핸들러 함수
     function handleScroll() {
-      // 현재 스크롤 위치 (메인 콘텐츠 또는 윈도우)
-      const currentScrollY = scrollElement === window
-        ? window.scrollY
-        : (mainContentElement?.scrollTop || 0);
+      if (!mainContentElement) return;
+      
+      // 현재 스크롤 위치
+      const currentScrollY = mainContentElement.scrollTop || 0;
       
       // 이전 스크롤 위치
       const prevScrollY = lastScrollYRef.current;
@@ -194,17 +195,9 @@ const ChatSticky: React.FC = () => {
       const isAtTop = currentScrollY < 100;
       
       // 화면 하단에 있는지 여부
-      let isAtBottom = false;
-      
-      if (scrollElement === window) {
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        isAtBottom = windowHeight + currentScrollY >= documentHeight - 100;
-      } else if (mainContentElement) {
-        const containerHeight = mainContentElement.clientHeight;
-        const scrollHeight = mainContentElement.scrollHeight;
-        isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
-      }
+      const containerHeight = mainContentElement.clientHeight;
+      const scrollHeight = mainContentElement.scrollHeight;
+      const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
       
       // 버튼 표시 여부 결정 로직
       if (isScrollingUp || isAtTop || isAtBottom) {
@@ -218,11 +211,11 @@ const ChatSticky: React.FC = () => {
     }
     
     // 스크롤 이벤트 리스너 등록
-    scrollElement.addEventListener('scroll', handleScroll);
+    mainContentElement.addEventListener('scroll', handleScroll);
     
     // 컴포넌트 언마운트 시 이벤트 리스너 제거
     return () => {
-      scrollElement.removeEventListener('scroll', handleScroll);
+      mainContentElement.removeEventListener('scroll', handleScroll);
     };
   }, [isMobile]);
   
@@ -250,6 +243,30 @@ const ChatSticky: React.FC = () => {
       styleEl.remove();
     };
   }, []);
+
+  // 다크모드 전환 시 컴포넌트 강제 리렌더링
+  const [, forceUpdate] = useState({});
+  
+  useEffect(() => {
+    // 다크모드 전환 감지를 위한 MutationObserver
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class' && mutation.target === document.documentElement) {
+          // 클래스 변경이 감지되면 컴포넌트 리렌더링
+          forceUpdate({});
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   
   // 메시지가 추가되면 스크롤을 아래로 이동
   useEffect(() => {
@@ -258,36 +275,8 @@ const ChatSticky: React.FC = () => {
     }
   }, [messages, currentRoomId]);
   
-  // 스타일 값을 직접 지정
-  // 모바일 여부에 따라 동적으로 스타일을 적용
-  // 오른쪽에서 왼쪽으로 슬라이딩 효과를 위한 CSS 설정
-  const rightPosition = isVisible ? '24px' : '-100px';
-  const opacityValue = isVisible ? 1 : 0;
-  
-  const buttonStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '60px',  // 푸터 위로 위치 조정 (60px로 낮춤)
-    right: rightPosition,
-    zIndex: 999, // 모달보다 낮은 z-index
-    width: '64px',
-    height: '64px',
-    borderRadius: '50%',
-    backgroundColor: '#4285F4',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    border: 'none',
-    // 애니메이션 직접 적용 (오른쪽으로 사라지고 오른쪽에서 나타나는 효과)
-    transition: 'right 0.3s ease-out, opacity 0.3s ease-out',
-    animation: isVisible ? '2s ease-in-out infinite alternate none running customPulse' : 'none',
-    // 투명도 직접 제어
-    opacity: opacityValue,
-    // 숨김 상태에서 마우스 이벤트 차단
-    pointerEvents: !isVisible ? 'none' : 'auto',
-  };
+  // 버튼 클래스 이름 동적 생성
+  const buttonClassName = `chat-sticky-button ${isVisible ? 'visible' : 'hidden'}`;
   
   // 채팅방 초기화
   const initializeChat = async () => {
@@ -566,7 +555,7 @@ const ChatSticky: React.FC = () => {
   return (
     <>
       <button 
-        style={buttonStyle}
+        className={buttonClassName}
         onClick={handleToggleChat}
         aria-label="운영자와 채팅"
       >
@@ -578,86 +567,29 @@ const ChatSticky: React.FC = () => {
       </button>
       
       {isOpen && isAuthenticated && (
-        <div className="chat-container" style={{ 
-          position: 'fixed', 
-          bottom: '120px', 
-          right: '24px', 
-          zIndex: 1001, // 버튼보다는 높지만 모달보다는 낮게 설정
-          width: '350px', 
-          height: '500px',
-          maxHeight: '80vh',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 5px 20px rgba(0,0,0,0.15)',
-          overflow: 'hidden',
-          border: '1px solid rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+        <div className="chat-sticky-container">
           {/* 헤더 */}
-          <div style={{ 
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: '#4285F4',
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid rgba(0,0,0,0.1)'
-          }}>
-            <span style={{ fontWeight: 'bold' }}>
+          <div className="chat-sticky-header">
+            <span className="chat-sticky-header-title">
               {currentRoom?.name || '운영자와의 채팅'}
             </span>
             <button 
               onClick={() => setIsOpen(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                padding: '4px',
-                fontSize: '20px',
-                lineHeight: '20px'
-              }}
+              className="chat-sticky-header-close"
             >
               &times;
             </button>
           </div>
           
           {/* 메시지 영역 */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              backgroundColor: '#f5f5f5'
-            }}
-          >
+          <div className="chat-sticky-messages">
             {(loading || loadingMessages) && currentMessages.length === 0 ? (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                height: '100%',
-                color: '#666'
-              }}>
+              <div className="chat-sticky-messages-loading">
                 메시지를 불러오는 중...
               </div>
             ) : currentMessages.length === 0 ? (
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                justifyContent: 'center', 
-                alignItems: 'center',
-                height: '100%',
-                color: '#666',
-                textAlign: 'center',
-                fontSize: '13px'
-              }}>
-                <div style={{ marginBottom: '10px' }}>
+              <div className="chat-sticky-messages-empty">
+                <div className="chat-sticky-messages-empty-icon">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
@@ -666,67 +598,44 @@ const ChatSticky: React.FC = () => {
                 문의사항을 남겨주시면 운영자가 답변드립니다.
               </div>
             ) : (
-              currentMessages.map((message) => (
-                <div
-                  key={message.id}
-                  style={{
-                    alignSelf: message.senderId === currentUser?.id ? 'flex-end' : 'flex-start',
-                    maxWidth: '80%',
-                    padding: '8px 10px',
-                    borderRadius: message.senderId === currentUser?.id ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
-                    backgroundColor: message.senderRole === 'system' 
-                      ? '#f0f0f0' 
-                      : message.senderId === currentUser?.id 
-                        ? '#4285F4' 
-                        : 'white',
-                    color: message.senderId === currentUser?.id ? 'white' : 'black',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    position: 'relative',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-wrap',
-                    margin: '2px 0'
-                  }}
-                >
-                  {/* 발신자 이름 (시스템 메시지이거나 사용자 메시지가 아닌 경우에만 표시) */}
-                  {message.senderId !== currentUser?.id && message.senderRole !== 'system' && (
-                    <div style={{ 
-                      fontSize: '11px', 
-                      fontWeight: 'bold',
-                      marginBottom: '3px',
-                      color: '#666'
-                    }}>
-                      {message.senderName}
-                    </div>
-                  )}
-                  
-                  {/* 메시지 내용 */}
-                  <div style={{ fontSize: '13px' }}>{message.content}</div>
-                  
-                  {/* 메시지 시간 */}
-                  <div 
-                    style={{
-                      fontSize: '9px',
-                      color: message.senderId === currentUser?.id ? 'rgba(255,255,255,0.7)' : '#999',
-                      marginTop: '3px',
-                      textAlign: 'right'
-                    }}
+              currentMessages.map((message) => {
+                const isMyMessage = message.senderId === currentUser?.id;
+                const isSystemMessage = message.senderRole === 'system';
+                const messageClasses = [
+                  'chat-sticky-message',
+                  isMyMessage && 'chat-sticky-message-mine',
+                  !isMyMessage && !isSystemMessage && 'chat-sticky-message-other',
+                  isSystemMessage && 'chat-sticky-message-system'
+                ].filter(Boolean).join(' ');
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={messageClasses}
                   >
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {/* 발신자 이름 (시스템 메시지이거나 사용자 메시지가 아닌 경우에만 표시) */}
+                    {!isMyMessage && !isSystemMessage && (
+                      <div className="chat-sticky-message-sender">
+                        {message.senderName}
+                      </div>
+                    )}
+                    
+                    {/* 메시지 내용 */}
+                    <div className="chat-sticky-message-content">{message.content}</div>
+                    
+                    {/* 메시지 시간 */}
+                    <div className="chat-sticky-message-time">
+                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
           
           {/* 입력 영역 */}
-          <div style={{
-            borderTop: '1px solid #eee',
-            padding: '12px',
-            backgroundColor: 'white',
-            display: 'flex',
-            gap: '8px'
-          }}>
+          <div className="chat-sticky-input-area">
             <input
               type="text"
               value={inputValue}
@@ -739,31 +648,12 @@ const ChatSticky: React.FC = () => {
                 }
               }}
               disabled={loading || loadingMessages}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: '20px',
-                outline: 'none',
-                fontSize: '13px'
-              }}
+              className="chat-sticky-input"
             />
             <button
               onClick={handleSendMessage}
               disabled={loading || loadingMessages || !inputValue.trim()}
-              style={{
-                backgroundColor: '#4285F4',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: inputValue.trim() ? 'pointer' : 'not-allowed',
-                opacity: inputValue.trim() ? 1 : 0.6
-              }}
+              className="chat-sticky-send-button"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
@@ -773,31 +663,12 @@ const ChatSticky: React.FC = () => {
           
           {/* 에러 메시지 */}
           {error && (
-            <div style={{
-              position: 'absolute',
-              bottom: '60px',
-              left: '12px',
-              right: '12px',
-              padding: '8px 12px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              borderRadius: '4px',
-              fontSize: '12px',
-              zIndex: 9001
-            }}>
+            <div className="chat-sticky-error">
               {error}
-              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+              <div className="chat-sticky-error-buttons">
                 <button
                   onClick={runDiagnostics}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    padding: '4px 8px',
-                    fontSize: '11px',
-                    borderRadius: '3px'
-                  }}
+                  className="chat-sticky-error-button"
                 >
                   진단 실행
                 </button>
@@ -806,14 +677,7 @@ const ChatSticky: React.FC = () => {
                     setError(null);
                     setShowDiagnostic(false);
                   }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    padding: '4px 8px',
-                    fontSize: '11px'
-                  }}
+                  className="chat-sticky-error-close"
                 >
                   닫기
                 </button>
@@ -823,37 +687,17 @@ const ChatSticky: React.FC = () => {
           
           {/* 진단 결과 모달 */}
           {showDiagnostic && diagnosticResult && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '300px',
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-              padding: '16px',
-              zIndex: 9002
-            }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '16px', color: '#333' }}>데이터베이스 진단 결과</h3>
+            <div className="chat-sticky-diagnostic">
+              <h3 className="chat-sticky-diagnostic-title">데이터베이스 진단 결과</h3>
               
-              <div style={{ marginBottom: '16px', fontSize: '13px' }}>
-                <div style={{ 
-                  padding: '8px', 
-                  backgroundColor: diagnosticResult.authOk ? '#e8f5e9' : '#ffebee',
-                  borderRadius: '4px',
-                  marginBottom: '8px'
-                }}>
+              <div className="chat-sticky-diagnostic-content">
+                <div className={`chat-sticky-diagnostic-item ${diagnosticResult.authOk ? 'chat-sticky-diagnostic-item-success' : 'chat-sticky-diagnostic-item-error'}`}>
                   <div style={{ fontWeight: 'bold' }}>
                     인증 상태: {diagnosticResult.authOk ? '정상' : '오류'}
                   </div>
                 </div>
                 
-                <div style={{ 
-                  padding: '8px', 
-                  backgroundColor: diagnosticResult.tablesExist ? '#e8f5e9' : '#ffebee',
-                  borderRadius: '4px' 
-                }}>
+                <div className={`chat-sticky-diagnostic-item ${diagnosticResult.tablesExist ? 'chat-sticky-diagnostic-item-success' : 'chat-sticky-diagnostic-item-error'}`}>
                   <div style={{ fontWeight: 'bold' }}>
                     데이터베이스 테이블: {diagnosticResult.tablesExist ? '정상' : '오류'}
                   </div>
@@ -866,25 +710,11 @@ const ChatSticky: React.FC = () => {
               </div>
               
               {diagnosticResult.success ? (
-                <div style={{ 
-                  padding: '8px', 
-                  backgroundColor: '#e8f5e9', 
-                  color: '#2e7d32',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  marginBottom: '16px'
-                }}>
+                <div className="chat-sticky-diagnostic-message chat-sticky-diagnostic-message-success">
                   모든 진단이 정상입니다. 그럼에도 문제가 발생한다면 권한 설정을 확인해주세요.
                 </div>
               ) : (
-                <div style={{ 
-                  padding: '8px', 
-                  backgroundColor: '#ffebee',
-                  color: '#c62828',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  marginBottom: '16px' 
-                }}>
+                <div className="chat-sticky-diagnostic-message chat-sticky-diagnostic-message-error">
                   <p style={{ margin: '0 0 8px' }}>
                     {diagnosticResult.errorMessage}
                   </p>
@@ -897,13 +727,7 @@ const ChatSticky: React.FC = () => {
               <div style={{ textAlign: 'right' }}>
                 <button 
                   onClick={() => setShowDiagnostic(false)} 
-                  style={{
-                    backgroundColor: '#f5f5f5',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: '6px 12px',
-                    cursor: 'pointer'
-                  }}
+                  className="chat-sticky-diagnostic-close"
                 >
                   닫기
                 </button>

@@ -1,18 +1,20 @@
-/* 메인 콘텐츠 영역 스타일 */
-:root {
-  --header-height: 64px; /* 4rem (헤더 높이) */
-  --notice-height: 0px;  /* 공지사항 높이 (기본값) */
-  --notice-visible: 0;   /* 공지사항 표시 여부 (0: 숨김, 1: 표시) */
-}
+/* 메인 콘텐츠 영역 스타일 - layout-overrides.css의 CSS 변수 사용 */
+/* CSS 변수는 layout-overrides.css에서 정의됨 */
 
-/* 메인 콘텐츠 영역 설정 */
-main.content {
-  height: auto !important; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
-  padding-top: 16px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  position: relative !important;
-  margin-top: calc(var(--header-height) + var(--notice-height)) !important;
+/* ChatSticky 스타일 */
+@import './chat-sticky.css';
+@import './chat-sticky-fix.css';
+
+/* 데스크톱 메인 콘텐츠 영역 설정 */
+@media (min-width: 1024px) {
+  main.content {
+    height: auto !important; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
+    padding-top: 16px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    margin-top: calc(var(--header-height) + var(--notice-height)) !important;
+  }
 }
 
 /* 공지사항 영역 조정 */

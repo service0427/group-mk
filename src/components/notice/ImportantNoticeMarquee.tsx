@@ -79,7 +79,7 @@ const ImportantNoticeMarquee: React.FC = () => {
       document.documentElement.style.setProperty('--notice-visible', '0');
       document.documentElement.style.setProperty('--notice-height', '0px');
     };
-  }, [notices.length]);
+  }, [notices.length, isMobile]);
 
   // 공지사항 클릭 시 공지사항 상세 페이지로 이동
   const handleNoticeClick = () => {

@@ -7,6 +7,7 @@ import { useMenus, useLoaders } from '@/providers';
 import { ContentLoader } from '@/components/loaders';
 import { Chat, ChatSticky } from '@/components/chat';
 import { useAuthContext } from '@/auth';
+import { useMediaQuery } from '@/hooks';
 
 const Main = () => {
   const { layout } = useStandLayout();
@@ -47,6 +48,7 @@ const Main = () => {
     };
   }, []);
 
+
   // 페이지 타이틀 결정
   const getPageTitle = () => {
     // 알림센터 페이지 경로 확인
@@ -64,7 +66,7 @@ const Main = () => {
   };
 
   // 컨텐츠 영역의 클래스를 로딩 상태에 따라 동적으로 결정
-  const contentClassName = `grow content pt-6 overflow-y-auto relative pb-10`;
+  const contentClassName = `grow content overflow-y-auto relative pb-10`;
 
   return (
     <Fragment>
@@ -75,17 +77,17 @@ const Main = () => {
         <meta http-equiv="Cache-Control" content="no-store" />
       </Helmet>
 
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen h-[100dvh] overflow-hidden">
         {/* 사이드바 컴포넌트 - 고정 영역 */}
         <Sidebar />
         
         {/* 메인 콘텐츠 영역 */}
-        <div className="flex grow flex-col overflow-hidden">
+        <div className="flex grow flex-col overflow-hidden relative">
           {/* 헤더 컴포넌트 - 고정 영역 */}
           <Header />
           
           {/* 스크롤 가능한 콘텐츠 영역 - 동적 영역 */}
-          <main className={contentClassName} role="content" style={{ marginTop: '10px' }}>
+          <main className={contentClassName} role="content">
             {/* 컨텐츠 로더가 활성화되면 콘텐츠 영역에만 표시 */}
             {contentLoader && <ContentLoader />}
             
@@ -94,7 +96,7 @@ const Main = () => {
             </div>
           </main>
           
-          {/* 푸터 컴포넌트 - 고정 영역 */}
+          {/* 푸터 컴포넌트 - 모바일에서는 absolute 위치 */}
           <Footer />
         </div>
         

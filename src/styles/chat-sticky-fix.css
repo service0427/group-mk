@@ -1,0 +1,116 @@
+/* ChatSticky 다크모드 전환 문제 해결을 위한 추가 스타일 */
+
+/* 트랜지션 중 레이아웃 안정성 보장 */
+html.dark .chat-sticky-button,
+html:not(.dark) .chat-sticky-button {
+  /* 위치 고정 강제 */
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 60px !important;
+  left: auto !important;
+  top: auto !important;
+  
+  /* 크기 고정 */
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  min-height: 64px !important;
+  max-width: 64px !important;
+  max-height: 64px !important;
+  
+  /* 박스 모델 초기화 */
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  
+  /* 트랜스폼 원점 고정 */
+  transform-origin: center center !important;
+  
+  /* 컨테이너 쿼리 영향 차단 */
+  container-type: normal !important;
+  contain: layout style !important;
+}
+
+/* 다크모드 전환 시 애니메이션 일시 정지 */
+html.transitioning .chat-sticky-button {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+
+/* 컨테이너도 동일하게 처리 */
+html.dark .chat-sticky-container,
+html:not(.dark) .chat-sticky-container {
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 140px !important;
+  left: auto !important;
+  top: auto !important;
+  width: 350px !important;
+  max-width: calc(100vw - 48px) !important;
+}
+
+/* 모바일에서도 안정적으로 */
+@media (max-width: 768px) {
+  html.dark .chat-sticky-button,
+  html:not(.dark) .chat-sticky-button {
+    right: 24px !important;
+    bottom: 60px !important;
+  }
+  
+  html.dark .chat-sticky-container,
+  html:not(.dark) .chat-sticky-container {
+    right: 24px !important;
+    left: 24px !important;
+    width: auto !important;
+  }
+}
+
+/* GPU 가속 강제 */
+.chat-sticky-button,
+.chat-sticky-container {
+  transform: translate3d(0, 0, 0) !important;
+  -webkit-transform: translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  perspective: 1000px !important;
+  -webkit-perspective: 1000px !important;
+}
+
+/* z-index 레이어 분리 */
+.chat-sticky-button {
+  z-index: 999 !important;
+  isolation: isolate !important;
+}
+
+.chat-sticky-container {
+  z-index: 1001 !important;
+  isolation: isolate !important;
+}
+
+/* 사이드바 영향 완전 차단 */
+.sidebar-fixed .chat-sticky-button,
+.sidebar-collapse .chat-sticky-button,
+.stand .chat-sticky-button {
+  position: fixed !important;
+  right: 24px !important;
+  left: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* 다크모드 전환 시에도 동일하게 적용 */
+html.dark .sidebar-fixed .chat-sticky-button,
+html.dark .sidebar-collapse .chat-sticky-button,
+html.dark .stand .chat-sticky-button {
+  position: fixed !important;
+  right: 24px !important;
+  left: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* 레이아웃 시프트 방지 */
+.chat-sticky-button {
+  content-visibility: auto !important;
+  contain-intrinsic-size: 64px 64px !important;
+}

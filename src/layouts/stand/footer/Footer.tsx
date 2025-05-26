@@ -31,15 +31,20 @@ const Footer = () => {
   return (
     <footer
       className={clsx(
-        'footer fixed bottom-0 z-10 end-0 flex items-stretch shrink-0',
+        'footer z-10 flex items-stretch shrink-0',
         'bg-light border-t border-t-gray-200 dark:border-t-coal-100', // 사이드바와 같은 배경색 및 상단 구분선 추가
         '!h-10', // !important로 강제 적용
-        themeClass
+        themeClass,
+        // 데스크톱에서는 fixed, 모바일에서는 absolute
+        'lg:fixed lg:bottom-0 lg:end-0',
+        'absolute bottom-0 left-0 right-0'
       )}
       style={{
-        left: layout.options.sidebar.collapse ? '80px' : '280px',
+        // 데스크톱에서만 left 위치 조정
+        ...(window.innerWidth >= 1024 ? { left: layout.options.sidebar.collapse ? '80px' : '280px' } : {}),
         transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
-        width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
+        // 데스크톱에서만 width 계산
+        ...(window.innerWidth >= 1024 ? { width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})` } : { width: '100%' }),
         height: '2.5rem !important', // !important로 최우선 적용
         transform: !isVisible && isMobile ? 'translateY(100%)' : 'translateY(0)',
         opacity: !isVisible && isMobile ? 0 : 1

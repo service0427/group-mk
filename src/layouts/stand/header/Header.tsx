@@ -36,9 +36,9 @@ const Header = () => {
           themeClass
         )}
         style={{
-          left: layout.options.sidebar.collapse ? '80px' : '280px',
+          left: isMobile ? '0' : (layout.options.sidebar.collapse ? '80px' : '280px'),
           transition: 'left 0.3s ease',
-          width: `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
+          width: isMobile ? '100%' : `calc(100% - ${layout.options.sidebar.collapse ? '80px' : '280px'})`,
           height: 'var(--header-height)' // 고정 높이로 변경
         }}
       >

@@ -7,6 +7,7 @@ import WorkInputModal from './WorkInputModal';
 import SlotDetailModal from './SlotDetailModal';
 import WorkExcelUploadModal from './WorkExcelUploadModal';
 import { toast } from 'sonner';
+import { useResponsive } from '@/hooks';
 
 // 정렬 타입 정의
 type SortField = 'user_slot_number' | 'campaign_name' | 'service_type' | 'quantity' | 'start_date' | 'end_date';
@@ -21,6 +22,9 @@ interface SlotsListProps {
 }
 
 const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId, isAdmin = false }) => {
+  // 반응형 디바이스 체크
+  const isMobile = !useResponsive('up', 'md');
+  
   // 모달 상태
   const [isWorkInputModalOpen, setIsWorkInputModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -365,6 +369,148 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
     return filtered;
   }, [slotsWithPlatform, selectedPlatform, selectedServiceType, searchTerm, sortField, sortDirection]);
 
+  // 모바일 카드 레이아웃 렌더링
+  const renderMobileCard = (slot: Slot & { platform: string }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = slot.end_date ? new Date(slot.end_date) : null;
+    const isExpired = endDate && endDate < today;
+
+    return (
+      <Card key={slot.id} className="mb-4 overflow-hidden">
+        <div className="p-4">
+          {/* 헤더 영역 */}
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  슬롯 #{slot.user_slot_number || '-'}
+                </span>
+                {isExpired && (
+                  <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
+                    종료됨
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">
+                {slot.campaign_name || `캠페인 #${slot.id.substring(0, 8)}`}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                ID: {slot.id.substring(0, 8)}...
+              </p>
+            </div>
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+              {slot.quantity ? `${slot.quantity.toLocaleString()} 타` : '미지정'}
+            </span>
+          </div>
+
+          {/* 정보 영역 */}
+          <div className="space-y-2 mb-3">
+            {/* 키워드 */}
+            {slot.keywords && (
+              <div className="flex">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">키워드</span>
+                <span className="text-sm text-gray-900 dark:text-white flex-1 whitespace-pre-line">
+                  {slot.keywords}
+                </span>
+              </div>
+            )}
+
+            {/* MID/URL */}
+            {(slot.mid || slot.url) && (
+              <div className="flex">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">정보</span>
+                <div className="flex-1">
+                  {slot.mid && (
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      MID: {slot.mid}
+                    </div>
+                  )}
+                  {slot.url && (
+                    <a 
+                      href={slot.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline break-all"
+                    >
+                      {slot.url}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 사용자 */}
+            <div className="flex">
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">사용자</span>
+              <div className="flex-1">
+                <div className="text-sm text-gray-900 dark:text-white">
+                  {slot.user_name || '-'}
+                </div>
+                {slot.user_email && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {slot.user_email}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 총판 (ADMIN만) */}
+            {isAdmin && (slot.mat_name || slot.mat_email) && (
+              <div className="flex">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">총판</span>
+                <div className="flex-1">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {slot.mat_name || '-'}
+                  </div>
+                  {slot.mat_email && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {slot.mat_email}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 기간 */}
+            <div className="flex">
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">기간</span>
+              <div className="flex-1 text-sm text-gray-900 dark:text-white">
+                {slot.start_date ? new Date(slot.start_date).toLocaleDateString() : '-'} ~ 
+                {slot.end_date ? ' ' + new Date(slot.end_date).toLocaleDateString() : ' -'}
+              </div>
+            </div>
+          </div>
+
+          {/* 액션 버튼 */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleDetailView(slot)}
+              className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              상세보기
+            </button>
+            {!isExpired && (
+              <button
+                onClick={() => handleWorkInput(slot)}
+                className="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                입력
+              </button>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900">
@@ -380,9 +526,9 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
         </div>
         
         {/* 플랫폼 탭과 액션 버튼들 */}
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-3 mt-3">
+        <div className="flex flex-col gap-3 mt-3">
           {/* 플랫폼 탭 */}
-          <div className="flex flex-wrap gap-1">
+          <div className={`flex ${isMobile ? 'overflow-x-auto scrollbar-hide -mx-2 px-2' : 'flex-wrap'} gap-1`}>
             {Object.entries(platformCounts).map(([platform, count]) => (
               <button
                 key={platform}
@@ -390,7 +536,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                   setSelectedPlatform(platform);
                   setSelectedServiceType('전체'); // 플랫폼 변경시 서비스 타입 초기화
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`${isMobile ? 'flex-shrink-0' : ''} px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   selectedPlatform === platform
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
@@ -402,42 +548,45 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
           </div>
           
           {/* 검색 및 액션 버튼들 */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={`flex ${isMobile ? 'flex-col' : 'flex-wrap items-center justify-end'} gap-2`}>
             {/* 검색 입력 */}
             <div className="relative">
               <input
                 type="text"
-                placeholder="캠페인명, 키워드, 사용자명으로 검색..."
+                placeholder={isMobile ? "검색..." : "캠페인명, 키워드, 사용자명으로 검색..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className={`${isMobile ? 'w-full' : 'w-64'} pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
               />
               <svg className="absolute left-2.5 top-2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
             
-            {/* 필터 버튼 */}
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
-              </svg>
-              필터
-            </button>
-            
-            {/* 엑셀 업로드 버튼 */}
-            <button
-              onClick={() => setIsExcelUploadModalOpen(true)}
-              className="flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 border border-green-600 rounded-md transition-colors"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-              엑셀 업로드
-            </button>
+            {/* 액션 버튼들 */}
+            <div className={`flex ${isMobile ? 'justify-between' : ''} gap-2`}>
+              {/* 필터 버튼 */}
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`flex items-center ${isMobile ? 'flex-1 justify-center' : ''} px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors`}
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                </svg>
+                필터
+              </button>
+              
+              {/* 엑셀 업로드 버튼 */}
+              <button
+                onClick={() => setIsExcelUploadModalOpen(true)}
+                className={`flex items-center ${isMobile ? 'flex-1 justify-center' : ''} px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 border border-green-600 rounded-md transition-colors`}
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                {isMobile ? '엑셀' : '엑셀 업로드'}
+              </button>
+            </div>
           </div>
         </div>
         
@@ -493,12 +642,12 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
         
         {/* 서비스 타입 서브탭 */}
         {selectedPlatform !== '전체' && Object.keys(serviceTypeCounts).length > 1 && (
-          <div className="flex flex-wrap gap-1 mt-2 pl-4">
+          <div className={`flex ${isMobile ? 'overflow-x-auto scrollbar-hide -mx-2 px-2' : 'flex-wrap pl-4'} gap-1 mt-2`}>
             {Object.entries(serviceTypeCounts).map(([serviceType, count]) => (
               <button
                 key={serviceType}
                 onClick={() => setSelectedServiceType(serviceType)}
-                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                className={`${isMobile ? 'flex-shrink-0' : ''} px-2 py-1 text-xs font-medium rounded transition-colors ${
                   selectedServiceType === serviceType
                     ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                     : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-500'
@@ -511,9 +660,46 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
         )}
       </div>
 
-      {/* 슬롯 테이블 */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      {/* 슬롯 목록 */}
+      {isMobile ? (
+        // 모바일 카드 레이아웃
+        <div className="p-4">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="ml-2">로딩 중...</span>
+            </div>
+          ) : filteredSlots.length === 0 ? (
+            <div className="flex flex-col items-center py-8">
+              <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <p className="text-gray-500 dark:text-gray-400 text-base font-medium mb-2">
+                {selectedPlatform === '전체' && selectedServiceType === '전체' 
+                  ? '승인된 슬롯이 없습니다.'
+                  : selectedServiceType !== '전체' 
+                    ? `${selectedServiceType}에 승인된 슬롯이 없습니다.`
+                    : `${selectedPlatform}에 승인된 슬롯이 없습니다.`}
+              </p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
+                {selectedServiceType !== '전체' 
+                  ? '다른 서비스 타입을 선택하거나 새로운 캠페인을 생성해보세요.'
+                  : '캠페인 생성 후 슬롯 승인을 받아보세요.'}
+              </p>
+            </div>
+          ) : (
+            <div>
+              {filteredSlots.map((slot) => renderMobileCard(slot))}
+            </div>
+          )}
+        </div>
+      ) : (
+        // 데스크톱 테이블 레이아웃
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th 
@@ -773,6 +959,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
           </tbody>
         </table>
       </div>
+      )}
 
       {/* 상세보기 모달 */}
       <SlotDetailModal

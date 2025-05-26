@@ -7,6 +7,7 @@ import { useMenus, useLoaders } from '@/providers';
 import { ContentLoader } from '@/components/loaders';
 import { Chat, ChatSticky } from '@/components/chat';
 import { useAuthContext } from '@/auth';
+import { useMediaQuery } from '@/hooks';
 
 const Main = () => {
   const { layout } = useStandLayout();
@@ -47,6 +48,44 @@ const Main = () => {
     };
   }, []);
 
+  // 모바일 높이 디버깅
+  const isMobile = useMediaQuery('(max-width: 1023px)');
+  useEffect(() => {
+    if (isMobile) {
+      const debugHeight = () => {
+        const mainContent = document.querySelector('main.content');
+        const hasNotice = document.body.classList.contains('has-notice');
+        
+        if (mainContent) {
+          const computedStyle = window.getComputedStyle(mainContent);
+          console.log('[Main] Mobile height debug:', {
+            hasNotice,
+            mainHeight: computedStyle.height,
+            mainMarginTop: computedStyle.marginTop,
+            mainPaddingTop: computedStyle.paddingTop,
+            bodyClasses: document.body.className,
+            noticeHeight: window.getComputedStyle(document.documentElement).getPropertyValue('--notice-height'),
+            headerHeight: window.getComputedStyle(document.documentElement).getPropertyValue('--header-height'),
+            windowHeight: window.innerHeight,
+            documentHeight: document.documentElement.clientHeight
+          });
+        }
+      };
+
+      // 초기 로드 시
+      debugHeight();
+      
+      // body 클래스 변경 감지
+      const observer = new MutationObserver(debugHeight);
+      observer.observe(document.body, { 
+        attributes: true, 
+        attributeFilter: ['class'] 
+      });
+
+      return () => observer.disconnect();
+    }
+  }, [isMobile]);
+
   // 페이지 타이틀 결정
   const getPageTitle = () => {
     // 알림센터 페이지 경로 확인
@@ -64,7 +103,7 @@ const Main = () => {
   };
 
   // 컨텐츠 영역의 클래스를 로딩 상태에 따라 동적으로 결정
-  const contentClassName = `grow content pt-6 overflow-y-auto relative pb-10`;
+  const contentClassName = `grow content overflow-y-auto relative pb-10`;
 
   return (
     <Fragment>
@@ -75,17 +114,17 @@ const Main = () => {
         <meta http-equiv="Cache-Control" content="no-store" />
       </Helmet>
 
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen h-[100dvh] overflow-hidden">
         {/* 사이드바 컴포넌트 - 고정 영역 */}
         <Sidebar />
         
         {/* 메인 콘텐츠 영역 */}
-        <div className="flex grow flex-col overflow-hidden">
+        <div className="flex grow flex-col overflow-hidden relative">
           {/* 헤더 컴포넌트 - 고정 영역 */}
           <Header />
           
           {/* 스크롤 가능한 콘텐츠 영역 - 동적 영역 */}
-          <main className={contentClassName} role="content" style={{ marginTop: '10px' }}>
+          <main className={contentClassName} role="content">
             {/* 컨텐츠 로더가 활성화되면 콘텐츠 영역에만 표시 */}
             {contentLoader && <ContentLoader />}
             
@@ -94,7 +133,7 @@ const Main = () => {
             </div>
           </main>
           
-          {/* 푸터 컴포넌트 - 고정 영역 */}
+          {/* 푸터 컴포넌트 - 모바일에서는 absolute 위치 */}
           <Footer />
         </div>
         

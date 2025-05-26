@@ -16,9 +16,19 @@ const App = () => {
   const { isLoggingOut } = useLogoutContext();
 
   useEffect(() => {
+    // 다크모드 전환 시 transitioning 클래스 추가
+    document.documentElement.classList.add('transitioning');
+    
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.remove('light');
     document.documentElement.classList.add(settings.themeMode);
+    
+    // 트랜지션 완료 후 transitioning 클래스 제거
+    const timer = setTimeout(() => {
+      document.documentElement.classList.remove('transitioning');
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [settings]);
 
   // 세션/로컬 스토리지 플래그 정리 전용 (리디렉션 제거)

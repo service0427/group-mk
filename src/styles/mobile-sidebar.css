@@ -1,3 +1,9 @@
+/* CSS 변수 설정 */
+:root {
+  --sidebar-scrollable-height: calc(100vh - 80px);
+  --menu-depth: 0;
+}
+
 /* 모바일 사이드바 스크롤 수정 */
 @media (max-width: 768px) {
   /* Sheet 컨테이너 높이 설정 */
@@ -57,7 +63,8 @@
   .mobile-sidebar-menu {
     padding-bottom: 250px !important; /* 더 많은 여백 */
     padding-bottom: calc(250px + env(safe-area-inset-bottom)) !important; /* iOS Safe Area 대응 */
-    min-height: calc(100vh - 40px); /* 최소 높이 보장 */
+    min-height: calc(100dvh - 40px); /* 동적 뷰포트 높이 사용 */
+    min-height: calc(100vh - 40px); /* fallback */
   }
   
   /* iOS Safari 하단 주소창 대응 */
@@ -137,7 +144,8 @@ body[data-sidebar-open="true"] {
   }
   
   #sidebar-scrollable-container {
-    max-height: calc(100vh - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0) - 40px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0) - 40px);
+    max-height: calc(100vh - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0) - 40px); /* fallback */
   }
   
   /* 사이드바가 열릴 때 전체 화면 사용 */
@@ -146,5 +154,26 @@ body[data-sidebar-open="true"] {
     top: 0;
     bottom: 0;
     height: 100% !important;
+  }
+}
+
+/* PC 환경에서 CSS 변수 활용 */
+@media (min-width: 769px) {
+  /* 사이드바 스크롤 컨테이너 높이 */
+  #sidebar-scrollable-container {
+    max-height: var(--sidebar-scrollable-height, calc(100vh - 80px));
+  }
+  
+  /* 메뉴 깊이에 따른 동적 패딩 */
+  .menu-accordion.show {
+    --menu-depth: 1;
+  }
+  
+  .menu-accordion.show .menu-accordion.show {
+    --menu-depth: 2;
+  }
+  
+  .menu-accordion.show .menu-accordion.show .menu-accordion.show {
+    --menu-depth: 3;
   }
 }

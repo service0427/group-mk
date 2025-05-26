@@ -19,8 +19,13 @@ import {
 import { useMenus } from '@/providers';
 import { useResponsive } from '@/hooks';
 import { useAuthContext } from '@/auth/useAuthContext';
+import { useEffect } from 'react';
 
-const SidebarMenu = () => {
+interface SidebarMenuProps {
+  onMenuStateChange?: () => void;
+}
+
+const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
   const isMobile = !useResponsive('up', 'md');
   const linkPl = isMobile ? 'ps-[6px]' : 'ps-[8px]';
   const linkPr = isMobile ? 'pe-[6px]' : 'pe-[8px]';
@@ -338,6 +343,22 @@ const SidebarMenu = () => {
   const { getMenuConfig } = useMenus();
   const menuConfig = getMenuConfig('primary');
   const { userRole } = useAuthContext();
+
+  // 메뉴 상태 변경 이벤트 리스너
+  useEffect(() => {
+    const handleMenuStateChange = () => {
+      if (onMenuStateChange) {
+        // 약간의 지연을 두어 DOM 업데이트 후 실행
+        setTimeout(onMenuStateChange, 100);
+      }
+    };
+
+    window.addEventListener('menuStateChange', handleMenuStateChange);
+    
+    return () => {
+      window.removeEventListener('menuStateChange', handleMenuStateChange);
+    };
+  }, [onMenuStateChange]);
 
   // 사용자 역할에 따라 메뉴 필터링 (재귀적으로 처리)
   const filterMenuByRole = (items: TMenuConfig): TMenuConfig => {

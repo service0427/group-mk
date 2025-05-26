@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useResponsive, useViewport } from '@/hooks';
 import { useStandLayout } from '../';
 import { SidebarContent, SidebarHeader } from './';
@@ -17,20 +17,67 @@ import {
 export const Sidebar = () => {
   const selfRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [scrollableHeight, setScrollableHeight] = useState<number>(0);
-  const scrollableOffset = 40;
+  const [dynamicOffset, setDynamicOffset] = useState<number>(40);
   const [viewportHeight] = useViewport();
   const { pathname, prevPathname } = usePathname();
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  useEffect(() => {
+  // 높이 계산 함수
+  const calculateHeight = useCallback(() => {
     if (headerRef.current) {
       const headerHeight = getHeight(headerRef.current);
-      const availableHeight = viewportHeight - headerHeight - scrollableOffset;
+      
+      // 콘텐츠의 실제 높이를 기반으로 동적 오프셋 계산
+      if (contentRef.current) {
+        const contentHeight = contentRef.current.scrollHeight;
+        const visibleHeight = contentRef.current.clientHeight;
+        
+        // 콘텐츠가 넘치는 경우 추가 오프셋 적용
+        const additionalOffset = contentHeight > visibleHeight ? 20 : 0;
+        setDynamicOffset(40 + additionalOffset);
+      }
+      
+      const availableHeight = viewportHeight - headerHeight - dynamicOffset;
       setScrollableHeight(availableHeight);
+      
+      // CSS 변수로 높이 값 공유
+      document.documentElement.style.setProperty('--sidebar-scrollable-height', `${availableHeight}px`);
     } else {
       setScrollableHeight(viewportHeight);
     }
-  }, [viewportHeight]);
+  }, [viewportHeight, dynamicOffset]);
+
+  // ResizeObserver 설정
+  useLayoutEffect(() => {
+    resizeObserverRef.current = new ResizeObserver((entries) => {
+      // 애니메이션 프레임으로 리플로우 최적화
+      requestAnimationFrame(() => {
+        calculateHeight();
+      });
+    });
+
+    // 헤더와 콘텐츠 요소 관찰
+    if (headerRef.current) {
+      resizeObserverRef.current.observe(headerRef.current);
+    }
+    if (contentRef.current) {
+      resizeObserverRef.current.observe(contentRef.current);
+    }
+
+    // 초기 계산
+    calculateHeight();
+
+    return () => {
+      resizeObserverRef.current?.disconnect();
+    };
+  }, [calculateHeight]);
+
+  // 뷰포트 변경 시 높이 재계산
+  useEffect(() => {
+    calculateHeight();
+  }, [viewportHeight, calculateHeight]);
 
   const desktopMode = useResponsive('up', 'lg');
   const { mobileSidebarOpen, setMobileSidebarOpen } = useStandLayout();
@@ -60,7 +107,11 @@ export const Sidebar = () => {
         }}
       >
         {desktopMode && <SidebarHeader ref={headerRef} />}
-        <SidebarContent {...(desktopMode && { height: scrollableHeight })} />
+        <SidebarContent 
+          {...(desktopMode && { height: scrollableHeight })} 
+          ref={contentRef}
+          onMenuStateChange={calculateHeight}
+        />
       </div>
     );
   };

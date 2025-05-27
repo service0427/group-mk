@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 import { backgroundTaskManager } from '@/utils/backgroundTasks';
 import { NotificationStats } from '../services/notificationService';
 import { INotificationAggregate } from '@/types/notification/statistics';

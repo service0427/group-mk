@@ -4,8 +4,8 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { BusinessUpgradeModal } from '@/components/business';
-import { useDialog } from '@/providers/DialogProvider';
-import { useToast } from '@/providers/ToastProvider';
+import { useDialog } from '@/providers';
+import { useToast } from '@/providers';
 import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const ProfilePage = () => {

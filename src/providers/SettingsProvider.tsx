@@ -1,5 +1,4 @@
- 
-import { createContext, type PropsWithChildren, useContext, useState } from 'react';
+import { createContext, type PropsWithChildren, useContext, useState, useMemo, useCallback } from 'react';
 
 import { defaultSettings, ISettings, type TSettingsThemeMode } from '@/config/settings.config';
 
@@ -31,16 +30,16 @@ const useSettings = () => useContext(LayoutsContext);
 const SettingsProvider = ({ children }: PropsWithChildren) => {
   const [settings, setSettings] = useState(initialProps.settings);
 
-  const updateSettings = (newSettings: Partial<ISettings>) => {
-    setSettings({ ...settings, ...newSettings });
-  };
+  const updateSettings = useCallback((newSettings: Partial<ISettings>) => {
+    setSettings(prevSettings => ({ ...prevSettings, ...newSettings }));
+  }, []);
 
-  const storeSettings = (newSettings: Partial<ISettings>) => {
+  const storeSettings = useCallback((newSettings: Partial<ISettings>) => {
     setData(SETTINGS_CONFIGS_KEY, { ...getStoredSettings(), ...newSettings });
     updateSettings(newSettings);
-  };
+  }, [updateSettings]);
 
-  const getThemeMode = (): TSettingsThemeMode => {
+  const getThemeMode = useCallback((): TSettingsThemeMode => {
     const { themeMode } = settings;
 
     if (themeMode === 'system') {
@@ -50,10 +49,17 @@ const SettingsProvider = ({ children }: PropsWithChildren) => {
     } else {
       return 'light';
     }
-  };
+  }, [settings.themeMode]);
+
+  const contextValue = useMemo(() => ({
+    settings,
+    updateSettings,
+    storeSettings,
+    getThemeMode
+  }), [settings, updateSettings, storeSettings, getThemeMode]);
 
   return (
-    <LayoutsContext.Provider value={{ settings, updateSettings, storeSettings, getThemeMode }}>
+    <LayoutsContext.Provider value={contextValue}>
       {children}
     </LayoutsContext.Provider>
   );

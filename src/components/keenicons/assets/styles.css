@@ -1,4 +1,6 @@
-@import 'duotone/style.css';
+/* Only import the fonts that are actually used */
+/* duotone is not used at all, so commenting it out */
+/* @import 'duotone/style.css'; */
 @import 'outline/style.css';
 @import 'filled/style.css';
 @import 'solid/style.css';

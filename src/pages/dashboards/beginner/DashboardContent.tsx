@@ -20,7 +20,7 @@ import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { toast } from 'sonner';
 
-// 초보자 대시보드 통계 데이터 인터페이스
+// 비기너 대시보드 통계 데이터 인터페이스
 interface BeginnerStats {
   currentBalance: { count: number; trend: number };
   lastLoginDays: { count: number; trend: number };
@@ -36,7 +36,7 @@ export const DashboardContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 샘플 공지사항 데이터 (초보자 역할을 위한 기본값)
+  // 샘플 공지사항 데이터 (비기너 역할을 위한 기본값)
   const sampleNotices = [
     { id: 'notice-1', title: '서비스 이용 안내', created_at: '2024-05-01 09:30', category: '공지', is_important: true },
     { id: 'notice-2', title: '신규 기능 추가 안내', created_at: '2024-04-28 14:20', category: '업데이트', is_important: false },
@@ -45,7 +45,7 @@ export const DashboardContent: React.FC = () => {
     { id: 'notice-5', title: '이벤트 안내', created_at: '2024-04-15 16:30', category: '이벤트', is_important: false }
   ];
   
-  // 샘플 FAQ 데이터 (초보자 역할을 위한 기본값)
+  // 샘플 FAQ 데이터 (비기너 역할을 위한 기본값)
   const sampleFaqs = [
     { id: 'faq-1', question: '서비스를 어떻게 시작하나요?', category: '기본', views: 1520 },
     { id: 'faq-2', question: '회원 등급은 어떻게 올리나요?', category: '계정', views: 1350 },
@@ -54,7 +54,7 @@ export const DashboardContent: React.FC = () => {
     { id: 'faq-5', question: '문의는 어디로 하나요?', category: '지원', views: 980 }
   ];
 
-  // 대시보드 데이터 상태 관리 - 초보자를 위한 기본값 사용
+  // 대시보드 데이터 상태 관리 - 비기너를 위한 기본값 사용
   const [stats, setStats] = useState<BeginnerStats>({
     currentBalance: { count: 0, trend: 0 },
     lastLoginDays: { count: 0, trend: 0 },
@@ -62,7 +62,7 @@ export const DashboardContent: React.FC = () => {
     faqCount: { count: 10, trend: 0 },
   });
 
-  // 공지사항 데이터 - 초보자는 기본값으로 초기화
+  // 공지사항 데이터 - 비기너는 기본값으로 초기화
   const [notices, setNotices] = useState<Array<{
     id: string;
     title: string;
@@ -71,7 +71,7 @@ export const DashboardContent: React.FC = () => {
     is_important: boolean;
   }>>(currentUser?.role === 'beginner' ? sampleNotices : []);
 
-  // FAQ 데이터 - 초보자는 기본값으로 초기화
+  // FAQ 데이터 - 비기너는 기본값으로 초기화
   const [faqs, setFaqs] = useState<Array<{
     id: string;
     question: string;
@@ -85,7 +85,7 @@ export const DashboardContent: React.FC = () => {
   const [koreanAmount, setKoreanAmount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   
-  // 통계 데이터 로드 함수 - 초보자 역할 특별 처리
+  // 통계 데이터 로드 함수 - 비기너 역할 특별 처리
   const loadStats = async () => {
     try {
       setLoading(true);
@@ -94,10 +94,10 @@ export const DashboardContent: React.FC = () => {
         return;
       }
       
-      // 초보자 역할 확인
+      // 비기너 역할 확인
       const isBeginner = currentUser.role === 'beginner';
       
-      // 초보자일 경우에도 공지사항과 FAQ는 실제 데이터와 연동 (나머지는 기본값 사용)
+      // 비기너일 경우에도 공지사항과 FAQ는 실제 데이터와 연동 (나머지는 기본값 사용)
       if (isBeginner) {
         // 잔액 및 로그인 정보는 항상 기본값으로 설정 (BeginnerRoleHandling.md 참조)
         setStats((prevStats) => ({
@@ -196,7 +196,7 @@ export const DashboardContent: React.FC = () => {
       }
       
       // -------------------------
-      // 초보자가 아닌 경우에만 아래 코드 실행
+      // 비기너가 아닌 경우에만 아래 코드 실행
       // -------------------------
       
       // 데이터 병렬 로드를 위한 함수들 정의
@@ -374,7 +374,7 @@ export const DashboardContent: React.FC = () => {
     setChargeAmount(newAmount);
   };
   
-  // 캐시 충전 함수 - 초보자 역할 특별 처리
+  // 캐시 충전 함수 - 비기너 역할 특별 처리
   const handleCashCharge = async () => {
     try {
       if (!currentUser) {
@@ -401,11 +401,11 @@ export const DashboardContent: React.FC = () => {
         return;
       }
       
-      // 초보자 역할 확인 - 초보자일 경우 fake API 사용
+      // 비기너 역할 확인 - 비기너일 경우 fake API 사용
       const isBeginner = currentUser.role === 'beginner';
       
       if (isBeginner) {
-        // 초보자는 실제 API 호출 없이 성공한 것처럼 처리
+        // 비기너는 실제 API 호출 없이 성공한 것처럼 처리
         // 지연 효과를 위해 setTimeout 사용
         setTimeout(() => {
           toast.success('캐시 충전 신청이 완료되었습니다. 입금 확인 후 충전됩니다.');
@@ -415,7 +415,7 @@ export const DashboardContent: React.FC = () => {
         return;
       }
       
-      // 초보자가 아닌 경우 실제 API 호출
+      // 비기너가 아닌 경우 실제 API 호출
       try {
         // 충전 요청 생성
         const { data, error } = await supabase
@@ -503,15 +503,15 @@ export const DashboardContent: React.FC = () => {
     }
   }, [chargeAmount]);
 
-  // 컴포넌트 마운트 시 데이터 로드 - 초보자 역할에 맞게 수정
+  // 컴포넌트 마운트 시 데이터 로드 - 비기너 역할에 맞게 수정
   useEffect(() => {
     // 처음 데이터 로드
     loadStats();
     
-    // 자동 갱신 간격 설정 - 초보자는 더 긴 간격 사용
+    // 자동 갱신 간격 설정 - 비기너는 더 긴 간격 사용
     const refreshInterval = setInterval(
       () => loadStats(),
-      currentUser?.role === 'beginner' ? 3 * 60 * 1000 : 60 * 1000  // 초보자는 3분, 일반 사용자는 1분
+      currentUser?.role === 'beginner' ? 3 * 60 * 1000 : 60 * 1000  // 비기너는 3분, 일반 사용자는 1분
     );
     
     // 컴포넌트 언마운트 시 인터벌 클리어
@@ -521,7 +521,7 @@ export const DashboardContent: React.FC = () => {
   return (
     <DashboardTemplate
       title="비기너 대시보드"
-      description="서비스 시작을 위한 정보와 가이드를 확인할 수 있는 초보자용 대시보드입니다."
+      description="서비스 시작을 위한 정보와 가이드를 확인할 수 있는 비기너용 대시보드입니다."
       headerTextClass="text-white"
       toolbarActions={
         <>
@@ -570,9 +570,9 @@ export const DashboardContent: React.FC = () => {
         />
       </div>
 
-      {/* 두 번째 줄: 초보자 가이드 & 캐시 충전 신청 */}
+      {/* 두 번째 줄: 비기너 가이드 & 캐시 충전 신청 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        {/* 초보자 가이드 카드 */}
+        {/* 비기너 가이드 카드 */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <div className="flex items-center">
@@ -581,7 +581,7 @@ export const DashboardContent: React.FC = () => {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">초보자 가이드</h3>
+              <h3 className="text-lg font-semibold text-gray-800">비기너 가이드</h3>
             </div>
             <Button variant="outline" size="sm" className="h-8 px-4">
               전체 가이드

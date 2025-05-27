@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { useDialog } from "@/providers/DialogProvider";
+import { useDialog } from "@/providers";
 
 /**
  * Dialog 컴포넌트 - DialogProvider에서 관리하는 상태를 기반으로 다이얼로그를 렌더링합니다.

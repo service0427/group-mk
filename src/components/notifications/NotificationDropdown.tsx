@@ -17,7 +17,7 @@ import {
 } from '@/components/menu';
 import { KeenIcon } from '@/components/keenicons';
 import { useLanguage } from '@/i18n';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 import { useDialog } from '@/components/dialog';
 
 interface NotificationDropdownProps {

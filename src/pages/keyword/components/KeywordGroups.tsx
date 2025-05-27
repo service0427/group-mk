@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { KeywordGroup } from '../types';
-import { useDialog } from '@/providers/DialogProvider';
+import { useDialog } from '@/providers';
 
 interface KeywordGroupsProps {
   groups: KeywordGroup[];

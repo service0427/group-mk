@@ -1,12 +1,10 @@
 @font-face {
   font-family: 'keenicons-filled';
   src:
-    url('fonts/keenicons-filled.ttf?nz57rx') format('truetype'),
-    url('fonts/keenicons-filled.woff?nz57rx') format('woff'),
-    url('fonts/keenicons-filled.svg?nz57rx#keenicons-filled') format('svg');
+    url('fonts/keenicons-filled.woff?nz57rx') format('woff');
   font-weight: normal;
   font-style: normal;
-  font-display: block;
+  font-display: swap; /* swap으로 변경하여 폰트 로딩 중에도 텍스트 표시 */
 }
 
 .ki-filled {

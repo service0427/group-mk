@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogClose
 } from '@/components/ui/dialog';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 import { useDialog } from '@/components/dialog';
 
 // 모달용 스타일을 추가합니다

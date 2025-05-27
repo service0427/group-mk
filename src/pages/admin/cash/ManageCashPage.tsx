@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useDialog } from '@/providers/DialogProvider';
+import { useDialog } from '@/providers';
 
 // 다이얼로그 z-index 스타일 오버라이드
 const rejectDialogStyles = `

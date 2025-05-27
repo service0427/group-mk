@@ -1,5 +1,5 @@
 -- 이 스크립트는 'user_balances' 테이블에 대한 RLS 정책을 업데이트하여
--- 초보자 역할을 가진 사용자가 자신의 잔액을 볼 수 있도록 합니다.
+-- 비기너 역할을 가진 사용자가 자신의 잔액을 볼 수 있도록 합니다.
 
 -- 기존 정책 삭제 (오류 방지를 위해 IF EXISTS 사용)
 DROP POLICY IF EXISTS "사용자는 자신의 잔액만 볼 수 있음" ON "public"."user_balances";
@@ -22,7 +22,7 @@ BEGIN
 END
 $$;
 
--- 읽기 정책 - 사용자는 자신의 잔액만 볼 수 있음 (초보자 포함)
+-- 읽기 정책 - 사용자는 자신의 잔액만 볼 수 있음 (비기너 포함)
 CREATE POLICY "사용자는 자신의 잔액만 볼 수 있음"
 ON "public"."user_balances"
 FOR SELECT
@@ -46,7 +46,7 @@ USING (
     )
 );
 
--- 수정 정책 - 사용자는 자신의 잔액만 업데이트할 수 있음 (초보자 제외)
+-- 수정 정책 - 사용자는 자신의 잔액만 업데이트할 수 있음 (비기너 제외)
 CREATE POLICY "사용자는 자신의 잔액만 업데이트할 수 있음"
 ON "public"."user_balances"
 FOR UPDATE

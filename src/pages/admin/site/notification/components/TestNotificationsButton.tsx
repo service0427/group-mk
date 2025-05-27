@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 import { supabaseAdmin } from '@/supabase';
 import { NotificationType, NotificationPriority, NotificationStatus } from '@/types/notification';
 import { KeenIcon } from '@/components/keenicons';

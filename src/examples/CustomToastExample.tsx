@@ -1,5 +1,5 @@
 import React from 'react';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 
 /**
  * Example component showing how to use the custom toast component

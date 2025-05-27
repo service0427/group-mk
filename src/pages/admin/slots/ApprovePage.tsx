@@ -7,7 +7,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { Toaster } from 'sonner';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { getServiceTypeFromUrl } from '@/utils/serviceTypeResolver';
-import { useDialog } from '@/providers/DialogProvider';
+import { useDialog } from '@/providers';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';

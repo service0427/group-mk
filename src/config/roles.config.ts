@@ -26,7 +26,7 @@ export const ROLE_LEVELS = {
   [USER_ROLES.DISTRIBUTOR]: 50,   // 총판
   [USER_ROLES.AGENCY]: 30,        // 대행사
   [USER_ROLES.ADVERTISER]: 10,    // 광고주
-  [USER_ROLES.BEGINNER]: 5        // 초보자
+  [USER_ROLES.BEGINNER]: 5        // 비기너
 };
 
 /**
@@ -62,7 +62,7 @@ export const USER_ROLE_DISPLAY_NAMES = {
   [USER_ROLES.DISTRIBUTOR]: '총판',
   [USER_ROLES.AGENCY]: '대행사',
   [USER_ROLES.ADVERTISER]: '광고주',
-  [USER_ROLES.BEGINNER]: '초보자'
+  [USER_ROLES.BEGINNER]: '비기너'
 };
 
 /**
@@ -77,7 +77,7 @@ export const USER_ROLE_BADGE_COLORS = {
   [USER_ROLES.DISTRIBUTOR]: 'success',  // 총판
   [USER_ROLES.AGENCY]: 'info',          // 대행사
   [USER_ROLES.ADVERTISER]: 'danger',    // 광고주
-  [USER_ROLES.BEGINNER]: 'secondary'    // 초보자
+  [USER_ROLES.BEGINNER]: 'secondary'    // 비기너
 };
 
 /**
@@ -146,7 +146,7 @@ export const USER_ROLE_THEME_COLORS: Record<string, RoleThemeColors> = {
     transparent: 'bg-blue-50'
   },
 
-  // 초보자 테마 색상 (회색 계열)
+  // 비기너 테마 색상 (회색 계열)
   [USER_ROLES.BEGINNER]: {
     base: 'bg-gray-500',
     gradient: 'bg-gradient-to-r from-gray-400 to-gray-600',
@@ -265,10 +265,10 @@ export const hasPermissionExcluding = (
   excludedRoles: string[]
 ): boolean => {
   if (!roleId) return false;
-  
+
   // 제외 역할에 해당하면 false 반환
   if (excludedRoles.includes(roleId)) return false;
-  
+
   // 최소 레벨 이상인지 확인
   const userLevel = getRoleLevel(roleId);
   return userLevel >= minLevel;

@@ -3,7 +3,8 @@ import { useAuthContext } from '@/auth';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { useDialog } from '@/providers/DialogProvider';
+import { useDialog } from '@/providers';
+import { useRealtimeSubscription } from '@/hooks';
 
 // 메시지 아이템 컴포넌트를 메모이제이션하여 불필요한 렌더링 방지
 const MessageItem = memo(({
@@ -470,96 +471,83 @@ const ChatManagePage: React.FC = () => {
   }, [statusFilter, fetchAllChatRooms]);
 
   // 실시간 메시지 구독 설정 (최적화 버전)
-  useEffect(() => {
-    if (!currentUser?.id || !currentRoomId) return;
+  const lastSubscriptionTimeRef = useRef(new Date().toISOString());
+  
+  useRealtimeSubscription({
+    channelName: `chat-messages-${currentRoomId}`,
+    event: 'INSERT',
+    table: 'chat_messages',
+    filter: currentRoomId ? `room_id=eq.${currentRoomId}` : undefined,
+    enabled: !!(currentUser?.id && currentRoomId),
+    onMessage: useCallback((payload) => {
+      const newMessage = payload.new as any;
+      const myUserId = currentUser?.id;
 
-    // 현재 내가 보낸 메시지가 아닌 새 메시지만 필터링하기 위한 준비
-    const myUserId = currentUser.id;
-    let lastSubscriptionTime = new Date().toISOString();
+      // 내가 보낸 메시지는 이미 UI에 표시됐으므로 처리 스킵
+      if (newMessage.sender_id === myUserId) {
+        return;
+      }
 
-    // 메시지 구독
-    const messageChannel = supabase
-      .channel('chat-messages-' + currentRoomId)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `room_id=eq.${currentRoomId}`
-        },
-        async (payload) => {
-          const newMessage = payload.new as any;
+      // 저장 시점보다 이후에 생성된 메시지인지 확인 (동일 메시지 중복 처리 방지)
+      if (newMessage.created_at <= lastSubscriptionTimeRef.current) {
+        return;
+      }
 
-          // 내가 보낸 메시지는 이미 UI에 표시됐으므로 처리 스킵
-          if (newMessage.sender_id === myUserId) {
-            return;
-          }
+      // 단일 메시지만 추가 (전체 리스트 다시 로드하지 않음)
+      const formattedMessage: IMessage = {
+        id: newMessage.id,
+        roomId: newMessage.room_id,
+        senderId: newMessage.sender_id,
+        senderName: newMessage.sender_name || '사용자',
+        senderRole: newMessage.sender_role || 'user',
+        content: newMessage.content,
+        timestamp: newMessage.created_at,
+        status: newMessage.status || 'sent'
+      };
 
-          // 저장 시점보다 이후에 생성된 메시지인지 확인 (동일 메시지 중복 처리 방지)
-          if (newMessage.created_at <= lastSubscriptionTime) {
-            return;
-          }
-
-          // 단일 메시지만 추가 (전체 리스트 다시 로드하지 않음)
-          const formattedMessage: IMessage = {
-            id: newMessage.id,
-            roomId: newMessage.room_id,
-            senderId: newMessage.sender_id,
-            senderName: newMessage.sender_name || '사용자',
-            senderRole: newMessage.sender_role || 'user',
-            content: newMessage.content,
-            timestamp: newMessage.created_at,
-            status: newMessage.status || 'sent'
-          };
-
-          // 기존 메시지 목록에 새 메시지 추가 (중복 체크)
-          setCurrentMessages(prev => {
-            // 이미 같은 ID의 메시지가 있는지 확인
-            if (prev.some(msg => msg.id === formattedMessage.id)) {
-              return prev; // 중복이면 변경하지 않음
-            }
-            return [...prev, formattedMessage]; // 중복이 아니면 추가
-          });
-
-          // 효율성을 위해 메모이제이션된 함수 활용
-          // 채팅방 목록의 마지막 메시지 정보만 업데이트
-          setAllRooms(prev => {
-            const updatedRooms = [...prev];
-            const roomIndex = updatedRooms.findIndex(r => r.id === currentRoomId);
-
-            if (roomIndex >= 0) {
-              updatedRooms[roomIndex] = {
-                ...updatedRooms[roomIndex],
-                lastMessage: newMessage.content,
-                lastMessageTime: newMessage.created_at,
-                updatedAt: newMessage.created_at
-              };
-
-              // 가장 최근 대화를 맨 위로 정렬
-              updatedRooms.sort((a, b) =>
-                new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-              );
-            }
-
-            return updatedRooms;
-          });
+      // 기존 메시지 목록에 새 메시지 추가 (중복 체크)
+      setCurrentMessages(prev => {
+        // 이미 같은 ID의 메시지가 있는지 확인
+        if (prev.some(msg => msg.id === formattedMessage.id)) {
+          return prev; // 중복이면 변경하지 않음
         }
-      )
-      .subscribe(status => {
-        if (status === 'SUBSCRIBED') {
-          // 구독 시점 갱신 (이 시점 이후 메시지만 처리)
-          lastSubscriptionTime = new Date().toISOString();
-        } else {
-          
-        }
+        return [...prev, formattedMessage]; // 중복이 아니면 추가
       });
 
-    return () => {
-      // 구독 해제
-      supabase.removeChannel(messageChannel);
-    };
-  }, [currentUser?.id, currentRoomId]);
+      // 효율성을 위해 메모이제이션된 함수 활용
+      // 채팅방 목록의 마지막 메시지 정보만 업데이트
+      setAllRooms(prev => {
+        const updatedRooms = [...prev];
+        const roomIndex = updatedRooms.findIndex(r => r.id === currentRoomId);
+
+        if (roomIndex >= 0) {
+          updatedRooms[roomIndex] = {
+            ...updatedRooms[roomIndex],
+            lastMessage: newMessage.content,
+            lastMessageTime: newMessage.created_at,
+            updatedAt: newMessage.created_at
+          };
+
+          // 가장 최근 대화를 맨 위로 정렬
+          updatedRooms.sort((a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        }
+
+        return updatedRooms;
+      });
+    }, [currentUser?.id, currentRoomId]),
+    onError: (error) => {
+      console.error('채팅 메시지 구독 오류:', error);
+    }
+  });
+
+  // 구독 시점 업데이트
+  useEffect(() => {
+    if (currentRoomId) {
+      lastSubscriptionTimeRef.current = new Date().toISOString();
+    }
+  }, [currentRoomId]);
 
   // 채팅방 선택 및 운영자 참여 처리 (최적화 버전)
   const handleSelectRoom = useCallback(async (roomId: string) => {

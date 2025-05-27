@@ -12,7 +12,7 @@ interface UseUserCashBalanceReturn {
 /**
  * 사용자 캐시 잔액을 조회하는 커스텀 훅
  * 
- * 초보자 역할의 사용자는 Supabase 호출을 수행하지 않고 항상 0 반환
+ * 비기너 역할의 사용자는 Supabase 호출을 수행하지 않고 항상 0 반환
  * 
  * @param userId 사용자 ID (선택적)
  * @returns 캐시 잔액, 로딩 상태, 에러 메시지, 다시 불러오기 함수
@@ -34,7 +34,7 @@ export const useUserCashBalance = (userId?: string): UseUserCashBalanceReturn =>
       return;
     }
     
-    // 초보자 역할의 사용자는 항상 잔액 0 사용
+    // 비기너 역할의 사용자는 항상 잔액 0 사용
     if (userRole === 'beginner') {
       setBalance(0);
       setIsLoading(false);

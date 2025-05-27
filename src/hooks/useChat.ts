@@ -551,6 +551,10 @@ export const useChat = () => {
       return;
     }
     
+    // 구독 채널을 저장할 변수
+    let messageChannel: any = null;
+    let roomChannel: any = null;
+    
     // 클라이언트 측 재연결 로직
     let retryCount = 0;
     const maxRetries = 5;
@@ -558,7 +562,7 @@ export const useChat = () => {
     
     const setupSubscription = () => {
       // 새로운 메시지 구독
-      const messageChannel = supabase
+      messageChannel = supabase
         .channel('chat-messages')
         .on(
           'postgres_changes',
@@ -710,7 +714,7 @@ export const useChat = () => {
         });
       
       // 새로운 채팅방 구독
-      const roomChannel = supabase
+      roomChannel = supabase
         .channel('chat-rooms')
         .on(
           'postgres_changes',
@@ -746,18 +750,21 @@ export const useChat = () => {
         )
         .subscribe();
       
-      // 구독 해제 함수 반환
-      return () => {
-        // 각 채널 구독 제거
-        supabase.removeChannel(messageChannel);
-        supabase.removeChannel(roomChannel);
-      };
     };
     
-    const unsubscribe = setupSubscription();
+    setupSubscription();
     
+    // 컴포넌트 언마운트 시 구독 해제
     return () => {
-      if (unsubscribe) unsubscribe();
+      // 구독 채널 정리
+      if (messageChannel) {
+        supabase.removeChannel(messageChannel);
+        messageChannel = null;
+      }
+      if (roomChannel) {
+        supabase.removeChannel(roomChannel);
+        roomChannel = null;
+      }
     };
   // 의존성 배열에 isLoggingOut 추가
   }, [currentUser?.id, fetchChatRooms, rooms, isLoggingOut]);

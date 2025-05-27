@@ -123,32 +123,21 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }, [auth, decodeToken, refreshToken]);
 
-    // 사용자 정보를 가져오는 함수 - 중복 API 호출 최적화 및 초보자 역할 특별 처리
+    // 사용자 정보를 가져오는 함수 - 병렬 처리 최적화
     const getUser = useCallback(async (): Promise<CustomUser | null> => {
         try {
-            // 세션과 사용자 정보를 병렬로 요청
-            const [sessionResponse, userResponse] = await Promise.all([
-                supabase.auth.getSession(),
-                supabase.auth.getUser()
-            ]);
+            // 세션 정보만 먼저 확인 (사용자 정보는 이미 세션에 포함되어 있음)
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-            if (sessionResponse.error || !sessionResponse.data.session) {
+            if (sessionError || !sessionData.session || !sessionData.session.user) {
                 return null;
             }
 
-            if (userResponse.error || !userResponse.data.user) {
-                return null;
-            }
-
-            const user = userResponse.data.user;
-
-            // 사용자 메타데이터에서 역할 확인
+            const user = sessionData.session.user;
             const metadataRole = user.user_metadata?.role;
 
-            // 초보자 역할 확인 - 초보자인 경우 users 테이블 조회 스킵
-            /*
+            // 비기너 역할 최적화 - users 테이블 조회 스킵
             if (metadataRole === USER_ROLES.BEGINNER) {
-                // 초보자는 메타데이터만 사용하여 기본 사용자 정보 생성
                 const beginnerUserData: CustomUser = {
                     id: user.id,
                     email: user.email || '',
@@ -160,9 +149,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 };
                 return beginnerUserData;
             }
-            */
 
-            // 사용자 프로필 정보 병합 (초보자가 아닌 경우에만 실행)
+            // 비기너가 아닌 경우에만 users 테이블 조회
             try {
                 const { data: userData, error: userError } = await supabase
                     .from('users')
@@ -171,13 +159,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     .single();
 
                 if (userError) {
-                    // 기본 사용자 정보 반환 - 메타데이터 역할 유지
+                    // 기본 사용자 정보 반환
                     const basicUserData: CustomUser = {
                         id: user.id,
                         email: user.email || '',
                         full_name: user.user_metadata?.full_name || '',
                         phone_number: '',
-                        role: metadataRole || USER_ROLES.BEGINNER, // 기본 역할로 초보자 사용
+                        role: metadataRole || USER_ROLES.BEGINNER,
                         status: 'active',
                         raw_user_meta_data: user.user_metadata
                     };
@@ -192,7 +180,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: user.email || '',
                     full_name: user.user_metadata?.full_name || '',
                     phone_number: '',
-                    role: metadataRole || USER_ROLES.BEGINNER, // 기본 역할로 초보자 사용
+                    role: metadataRole || USER_ROLES.BEGINNER,
                     status: 'active',
                     raw_user_meta_data: user.user_metadata
                 };
@@ -402,7 +390,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         };
     }, [authInitialized, getUser]);
 
-    // 로그인 함수
+    // 로그인 함수 - 최적화된 버전
     const login = async (email: string, password: string) => {
         setLoading(true);
 
@@ -430,25 +418,73 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // Auth Data 저장
             saveAuth(authData);
 
+            // 세션의 user 객체에서 직접 사용자 정보 추출 (추가 API 호출 없음)
+            const user = session.user;
+            const metadataRole = user.user_metadata?.role;
+
+            // 비기너인 경우 바로 사용자 정보 설정
+            if (metadataRole === USER_ROLES.BEGINNER) {
+                const beginnerUser: CustomUser = {
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.full_name || '',
+                    phone_number: '',
+                    role: USER_ROLES.BEGINNER,
+                    status: 'active',
+                    raw_user_meta_data: user.user_metadata
+                };
+
+                setCurrentUser(beginnerUser);
+                setAuthVerified(true);
+
+                // 캐싱
+                sessionStorage.setItem('currentUser', JSON.stringify(beginnerUser));
+                sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+
+                return true;
+            }
+
+            // 비기너가 아닌 경우에만 users 테이블 조회
             try {
-                const user = await getUser();
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select("*")
+                    .eq('id', user.id)
+                    .single();
 
-                if (!user) {
-                    throw new Error('사용자 정보를 가져올 수 없습니다.');
-                }
+                const finalUser = userError ? {
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.full_name || '',
+                    phone_number: '',
+                    role: metadataRole || USER_ROLES.BEGINNER,
+                    status: 'active',
+                    raw_user_meta_data: user.user_metadata
+                } : userData as CustomUser;
 
-                setCurrentUser(user);
+                setCurrentUser(finalUser);
                 setAuthVerified(true);
 
                 // 사용자 정보 캐싱
-                try {
-                    sessionStorage.setItem('currentUser', JSON.stringify(user));
-                    sessionStorage.setItem('lastAuthCheck', Date.now().toString());
-                } catch (e) {
-                    // 캐시 저장 실패 시 무시
-                }
+                sessionStorage.setItem('currentUser', JSON.stringify(finalUser));
+                sessionStorage.setItem('lastAuthCheck', Date.now().toString());
             } catch (getUserError) {
-                throw new Error('사용자 정보를 가져오는데 실패했습니다.');
+                // users 테이블 조회 실패 시에도 기본 정보로 로그인 허용
+                const basicUser: CustomUser = {
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.full_name || '',
+                    phone_number: '',
+                    role: metadataRole || USER_ROLES.BEGINNER,
+                    status: 'active',
+                    raw_user_meta_data: user.user_metadata
+                };
+
+                setCurrentUser(basicUser);
+                setAuthVerified(true);
+
+                sessionStorage.setItem('currentUser', JSON.stringify(basicUser));
+                sessionStorage.setItem('lastAuthCheck', Date.now().toString());
             }
 
             return true;
@@ -506,7 +542,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             setLoading(false);
         }
     }
-    
+
     // 이메일 중복 체크 함수 - 데이터베이스 함수 사용
     const checkEmailExists = async (email: string) => {
         try {
@@ -514,18 +550,18 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             if (!email || !/\S+@\S+\.\S+/.test(email)) {
                 return false;
             }
-            
+
             // 데이터베이스 함수 호출하여 이메일 중복 체크
             const { data, error } = await supabase
-                .rpc('check_email_exists', { 
-                    email_to_check: email 
+                .rpc('check_email_exists', {
+                    email_to_check: email
                 });
-            
+
             if (error) {
                 console.error('이메일 중복 체크 오류:', error.message);
                 return false;
             }
-            
+
             // 함수가 true를 반환하면 이메일이 이미 존재함
             return !!data;
         } catch (error) {
@@ -550,7 +586,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 options: {
                     data: {
                         full_name: full_name,
-                        role: USER_ROLES.BEGINNER // 초보자로 기본 역할 설정
+                        role: USER_ROLES.BEGINNER // 비기너로 기본 역할 설정
                     }
                 }
             });
@@ -572,13 +608,13 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: email,
                     full_name: full_name,
                     status: 'active',
-                    role: USER_ROLES.BEGINNER // 초보자로 기본 역할 설정
+                    role: USER_ROLES.BEGINNER // 비기너로 기본 역할 설정
                 };
 
                 const hashPassword = await supabase.rpc('hash_password', {
                     password: password
                 });
-                
+
                 if (hashPassword.error) {
                     console.error('비밀번호 해시 생성 오류:', hashPassword.error);
                     throw new Error(hashPassword.error.message);
@@ -589,7 +625,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     ...newUser,
                     password_hash: hashPassword.data
                 };
-                
+
                 const { error: insertError } = await supabase.from('users').insert([insertData]);
 
                 if (insertError) {
@@ -601,7 +637,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     });
                     throw new Error(insertError.message);
                 }
-                
+
 
                 // user_balances 테이블에 초기 잔액 정보 추가
                 const { error: balanceError } = await supabase.from('user_balances').insert([{
@@ -630,7 +666,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         localStorage.removeItem(key);
                     }
                 });
-                
+
             } catch (dbError: any) {
                 console.error('회원가입 DB 오류:', dbError);
                 console.error('DB 오류 스택:', dbError.stack || '스택 없음');
@@ -770,14 +806,14 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 setCurrentUser(null);
                 setAuthVerified(false);
                 authHelper.removeAuth();
-                
+
                 // Supabase 로그아웃 (비동기이지만 결과를 기다리지 않음)
                 try {
                     supabase.auth.signOut();
                 } catch (e) {
-                    
+
                 }
-                
+
                 // 로컬 스토리지 정리
                 if (typeof localStorage !== 'undefined') {
                     try {
@@ -793,7 +829,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         });
                     } catch (_) { }
                 }
-                
+
                 // 세션 스토리지 정리
                 if (typeof sessionStorage !== 'undefined') {
                     try {
@@ -801,35 +837,35 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     } catch (_) { }
                 }
             };
-            
+
             // 네비게이션 함수 정의
             const navigateToLogin = (path: string) => {
                 window.location.hash = path;
             };
-            
+
             // syncedLogout 함수를 사용하여 로그아웃 프로세스 실행
             // 이 함수는 정확한 순서로 상태 변경, 스토리지 정리, 네비게이션을 처리합니다
             await syncedLogout(clearAuthState, navigateToLogin, setIsLoggingOut);
-            
+
             return true;
         } catch (error) {
             console.error("로그아웃 오류:", error);
-            
+
             // 오류 발생 시 수동으로 인증 상태 초기화
             setAuth(undefined);
             setCurrentUser(null);
             setAuthVerified(false);
             authHelper.removeAuth();
-            
+
             // 로그인 페이지로 이동 시도
             try {
                 const timestamp = new Date().getTime();
                 window.location.hash = `/auth/login?t=${timestamp}`;
             } catch (_) { }
-            
+
             // 로그아웃 상태 해제 - 전환 효과 종료
             setIsLoggingOut(false);
-            
+
             return false;
         }
     }, [setIsLoggingOut]);
@@ -841,15 +877,22 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         (currentUser?.raw_user_meta_data?.role) ||
         'guest';
 
-    // 비활성 시간 기반 자동 로그아웃
+    // 비활성 시간 기반 자동 로그아웃 - 최적화된 버전
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30분 (밀리초)
 
     useEffect(() => {
         if (!isAuthenticated) return;
 
         let inactivityTimer: number;
+        let lastActivity = Date.now();
 
         const resetInactivityTimer = () => {
+            const now = Date.now();
+            // 마지막 활동으로부터 1초 이상 지났을 때만 타이머 리셋
+            if (now - lastActivity < 1000) return;
+
+            lastActivity = now;
+
             if (inactivityTimer) clearTimeout(inactivityTimer);
 
             inactivityTimer = window.setTimeout(() => {
@@ -857,19 +900,34 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             }, INACTIVITY_TIMEOUT);
         };
 
+        // throttle 함수 구현 (lodash 대신 간단한 구현)
+        const throttle = (func: Function, delay: number) => {
+            let lastCall = 0;
+            return (...args: any[]) => {
+                const now = Date.now();
+                if (now - lastCall >= delay) {
+                    lastCall = now;
+                    func(...args);
+                }
+            };
+        };
+
+        // throttle된 리셋 함수 (1초에 한 번만 실행)
+        const throttledReset = throttle(resetInactivityTimer, 1000);
+
         // 초기 타이머 설정
         resetInactivityTimer();
 
-        // 사용자 활동 이벤트 리스너
-        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        // 사용자 활동 이벤트 리스너 - 중요한 이벤트만 선택
+        const events = ['mousedown', 'keypress', 'touchstart'];
         events.forEach(event => {
-            window.addEventListener(event, resetInactivityTimer);
+            window.addEventListener(event, throttledReset);
         });
 
         return () => {
             if (inactivityTimer) clearTimeout(inactivityTimer);
             events.forEach(event => {
-                window.removeEventListener(event, resetInactivityTimer);
+                window.removeEventListener(event, throttledReset);
             });
         };
     }, [isAuthenticated, logout]);

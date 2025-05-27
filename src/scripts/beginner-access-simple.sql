@@ -1,5 +1,5 @@
 -- beginner-access-simple.sql
--- 초보자 역할에 대한 간단한 접근 권한 설정
+-- 비기너 역할에 대한 간단한 접근 권한 설정
 
 -- 공지사항 테이블 접근 권한
 ALTER TABLE notice ENABLE ROW LEVEL SECURITY;

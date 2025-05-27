@@ -125,21 +125,21 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
   const [contentLoader, setContentLoader] = useState(false);
   const [progressBarLoader, setProgressBarLoader] = useState(false);
   const [screenLoader, setScreenLoader] = useState(false);
-  
+
   // 레이아웃 상태
   const [currentLayout, setCurrentLayout] = useState<any>(null);
-  
+
   // 메뉴 상태
   const [currentMenuItem, setCurrentMenuItem] = useState<IMenuItemConfig | null>(null);
-  const menuConfigs = new Map<string, TMenuConfig | null>();
-  
+  const [menuConfigs] = useState(() => new Map<string, TMenuConfig | null>());
+
   // Toast 상태
   const [toasts, setToasts] = useState<Toast[]>([]);
-  
+
   // Dialog 상태
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogOptions, setDialogOptions] = useState<DialogOptions | null>(null);
-  
+
   // 레이아웃 관련 함수
   const getLayout = useCallback((name: string): Partial<ILayoutConfig> | undefined => {
     const storedLayouts = getLayouts();
@@ -161,7 +161,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     storedLayouts.set(name, config);
     setData(LAYOUTS_CONFIGS_KEY, Object.fromEntries(storedLayouts));
   }, []);
-  
+
   // 메뉴 관련 함수
   const setMenuConfig = useCallback((name: string, config: TMenuConfig | null) => {
     menuConfigs.set(name, config);
@@ -174,7 +174,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
   const getCurrentMenuItem = useCallback((): IMenuItemConfig | null => {
     return currentMenuItem;
   }, [currentMenuItem]);
-  
+
   // Toast 관련 함수
   const generateToastId = useCallback((): string => {
     return Date.now().toString() + Math.random().toString(36).substr(2, 5);
@@ -222,7 +222,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
   const dismissAll = useCallback(() => {
     setToasts([]);
   }, []);
-  
+
   // Dialog 관련 함수
   const showDialog = useCallback((options: DialogOptions) => {
     setDialogOptions(options);
@@ -369,13 +369,12 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                       )}
                       <Button
                         type="button"
-                        className={`px-4 ${
-                          dialogOptions.variant === 'destructive'
+                        className={`px-4 ${dialogOptions.variant === 'destructive'
                             ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
                             : dialogOptions.variant === 'warning'
-                            ? 'bg-warning hover:bg-warning/90 text-warning-foreground'
-                            : 'bg-primary hover:bg-primary/90 text-white'
-                        }`}
+                              ? 'bg-warning hover:bg-warning/90 text-warning-foreground'
+                              : 'bg-primary hover:bg-primary/90 text-white'
+                          }`}
                         onClick={() => {
                           dialogOptions.onConfirm?.();
                           hideDialog();
@@ -441,7 +440,7 @@ export const useUI = () => {
   const loaders = useLoaders();
   const layout = useLayout();
   const menus = useMenus();
-  
+
   return {
     ...loaders,
     ...layout,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDialog } from '../providers/DialogProvider';
+import { useDialog } from '@/providers';
 
 export const DialogMethodsTest: React.FC = () => {
   // Import the dialog hooks from our updated components
@@ -17,7 +17,7 @@ export const DialogMethodsTest: React.FC = () => {
     showConfirm(
       '확인 테스트',
       '이것은 showConfirm 함수 테스트입니다.',
-      (confirmed) => {
+      (confirmed: boolean) => {
         console.log('Confirm result:', confirmed);
       },
       {

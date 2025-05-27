@@ -1,5 +1,5 @@
 -- beginner-role-rls-fix.sql
--- 초보자 역할에 대한 RLS 정책 수정
+-- 비기너 역할에 대한 RLS 정책 수정
 
 -- 1. 사용자 역할 정보 확인
 SELECT 
@@ -10,7 +10,7 @@ FROM users
 WHERE role = 'beginner'
 ORDER BY email;
 
--- 2. 공지사항에 대한 RLS 정책 업데이트 (초보자도 읽기 허용)
+-- 2. 공지사항에 대한 RLS 정책 업데이트 (비기너도 읽기 허용)
 ALTER TABLE notice ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP
@@ -24,7 +24,7 @@ CREATE POLICY notice_select_policy ON notice
         is_active = true
     );
 
--- 3. FAQ에 대한 RLS 정책 업데이트 (초보자도 읽기 허용)
+-- 3. FAQ에 대한 RLS 정책 업데이트 (비기너도 읽기 허용)
 ALTER TABLE faq ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP
@@ -38,7 +38,7 @@ CREATE POLICY faq_select_policy ON faq
         is_active = true
     );
 
--- 4. 캐시 충전 요청에 대한 RLS 정책 업데이트 (초보자도 작성 허용)
+-- 4. 캐시 충전 요청에 대한 RLS 정책 업데이트 (비기너도 작성 허용)
 ALTER TABLE cash_charge_requests ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP
@@ -62,7 +62,7 @@ CREATE POLICY cash_charge_requests_insert_policy ON cash_charge_requests
         auth.uid() = user_id
     );
 
--- 5. 사용자 잔액에 대한 RLS 정책 업데이트 (초보자도 읽기 허용)
+-- 5. 사용자 잔액에 대한 RLS 정책 업데이트 (비기너도 읽기 허용)
 ALTER TABLE user_balances ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP
@@ -77,7 +77,7 @@ CREATE POLICY user_balances_select_policy ON user_balances
         (current_setting('request.jwt.claims', true)::json ->> 'role') IN ('operator', 'developer')
     );
 
--- 6. auth_logs 테이블에 대한 RLS 정책 업데이트 (초보자도 자신의 로그 읽기 허용)
+-- 6. auth_logs 테이블에 대한 RLS 정책 업데이트 (비기너도 자신의 로그 읽기 허용)
 ALTER TABLE auth_logs ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP
@@ -92,7 +92,7 @@ CREATE POLICY auth_logs_select_policy ON auth_logs
         (current_setting('request.jwt.claims', true)::json ->> 'role') IN ('operator', 'developer')
     );
 
--- 7. users 테이블에 대한 RLS 정책 업데이트 (초보자도 자신의 정보 읽기 허용)
+-- 7. users 테이블에 대한 RLS 정책 업데이트 (비기너도 자신의 정보 읽기 허용)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- 기존 정책이 있으면 DROP

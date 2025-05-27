@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { KeenIcon } from "@/components";
 import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
 import { createRoleChangeNotification } from "@/utils/notificationActions";
-import { useDialog } from "@/providers/DialogProvider";
-import { useToast } from "@/providers/ToastProvider";
+import { useDialog, useToast } from "@/providers";
 
 interface ChargeHistoryModalProps {
     open: boolean;

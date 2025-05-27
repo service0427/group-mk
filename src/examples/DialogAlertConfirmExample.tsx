@@ -1,4 +1,4 @@
-import { useDialog } from "@/providers/DialogProvider";
+import { useDialog } from "@/providers";
 import { Button } from "@/components/ui/button";
 
 /**

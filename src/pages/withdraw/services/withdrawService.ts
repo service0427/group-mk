@@ -140,7 +140,7 @@ export const getWithdrawSettings = async (userId?: string): Promise<WithdrawSett
  * @returns 캐시 잔액
  */
 export const getUserCashBalance = async (userId: string, userRole?: string): Promise<number> => {
-  // 초보자(beginner) 역할의 경우 항상 0 반환
+  // 비기너(beginner) 역할의 경우 항상 0 반환
   if (userRole === 'beginner') {
     return 0;
   }
@@ -251,9 +251,9 @@ export const createWithdrawRequest = async (
   userRole?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
-    // 초보자(beginner) 역할은 출금 불가
+    // 비기너(beginner) 역할은 출금 불가
     if (userRole === 'beginner') {
-      throw new Error('초보자 계정은 출금 기능을 사용할 수 없습니다. 계정 업그레이드 후 이용해주세요.');
+      throw new Error('비기너 계정은 출금 기능을 사용할 수 없습니다. 계정 업그레이드 후 이용해주세요.');
     }
 
     // 1. user_balances 테이블에서 현재 잔액 확인

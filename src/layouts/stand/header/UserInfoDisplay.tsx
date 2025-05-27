@@ -41,7 +41,7 @@ const UserInfoDisplay = () => {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isTablet = useMediaQuery('(max-width: 1023px)');
 
-  // 사용자의 캐시 잔액 조회 (초보자 역할 특별 처리 추가)
+  // 사용자의 캐시 잔액 조회 (비기너 역할 특별 처리 추가)
   useEffect(() => {
     // 로그아웃 중이면 실행하지 않음
     if (isLoggingOut) return;
@@ -54,7 +54,7 @@ const UserInfoDisplay = () => {
       
       setIsLoading(true);
       try {
-        // 초보자 사용자는 기본값 0으로 처리
+        // 비기너 사용자는 기본값 0으로 처리
         if (currentUser.role === 'beginner') {
           setCashBalance(0);
         } else {
@@ -88,13 +88,13 @@ const UserInfoDisplay = () => {
 
     fetchCashBalance();
 
-    // 초보자 역할이 아닌 경우이고 로그아웃 중이 아닌 경우에만 실시간 구독 설정
-    let subscription: any = null;
+    // 비기너 역할이 아닌 경우이고 로그아웃 중이 아닌 경우에만 실시간 구독 설정
+    let balanceChannel: any = null;
     
     if (currentUser?.role !== 'beginner' && !isLoggingOut) {
       // 실시간 잔액 업데이트를 위한 구독 설정
       try {
-        subscription = supabase
+        balanceChannel = supabase
           .channel('user_balances_changes')
           .on('postgres_changes', 
             { 
@@ -120,8 +120,9 @@ const UserInfoDisplay = () => {
     }
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
+      if (balanceChannel) {
+        supabase.removeChannel(balanceChannel);
+        balanceChannel = null;
       }
     };
   }, [currentUser?.id, currentUser?.role, isLoggingOut, safeApiCall]);

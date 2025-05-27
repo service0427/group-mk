@@ -1,64 +1,88 @@
-import { ReactElement } from 'react';
+import { ReactElement, lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import {
   StandDarkSidebarPage,
   RoleBasedDashboard
 } from '@/pages/dashboards';
 
-// 역할별 대시보드 별도 임포트
-import { DeveloperDashboardPage } from '@/pages/dashboards/developer';
-import { OperatorDashboardPage } from '@/pages/dashboards/operator';
-import { DistributorDashboardPage } from '@/pages/dashboards/distributor';
-import { AgencyDashboardPage } from '@/pages/dashboards/agency';
-import { AdvertiserDashboardPage } from '@/pages/dashboards/advertiser';
-import { BeginnerDashboardPage } from '@/pages/dashboards/beginner';
+// 역할별 대시보드 lazy loading
+const DeveloperDashboardPage = lazy(() => import('@/pages/dashboards/developer').then(m => ({ default: m.DeveloperDashboardPage })));
+const OperatorDashboardPage = lazy(() => import('@/pages/dashboards/operator').then(m => ({ default: m.OperatorDashboardPage })));
+const DistributorDashboardPage = lazy(() => import('@/pages/dashboards/distributor').then(m => ({ default: m.DistributorDashboardPage })));
+const AgencyDashboardPage = lazy(() => import('@/pages/dashboards/agency').then(m => ({ default: m.AgencyDashboardPage })));
+const AdvertiserDashboardPage = lazy(() => import('@/pages/dashboards/advertiser').then(m => ({ default: m.AdvertiserDashboardPage })));
+const BeginnerDashboardPage = lazy(() => import('@/pages/dashboards/beginner').then(m => ({ default: m.BeginnerDashboardPage })));
 
-import {
-  InfoPage,
-  CampaignPage
-} from '@/pages/advertise';
+// 관리자 페이지 lazy loading
+const UsersPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.UsersPage })));
+const ChatManagePage = lazy(() => import('@/pages/admin').then(m => ({ default: m.ChatManagePage })));
+const LevelUpRequestsPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.LevelUpRequestsPage })));
+const ManageCashPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.ManageCashPage })));
 
-// 새로 추가한 페이지 임포트
+// 광고 페이지 lazy loading
+const InfoPage = lazy(() => import('@/pages/advertise').then(m => ({ default: m.InfoPage })));
+const CampaignPage = lazy(() => import('@/pages/advertise').then(m => ({ default: m.CampaignPage })));
+
+// 마이페이지 lazy loading
+const ProfilePage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.ProfilePage })));
+const ServicesPage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.ServicesPage })));
+const CashRequestsPage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.CashRequestsPage })));
+const NotificationsPage = lazy(() => import('@/pages/myinfo/notifications'));
+
+// 캐시 페이지 lazy loading
+const GuidePage = lazy(() => import('@/pages/cash').then(m => ({ default: m.GuidePage })));
+const ChargePage = lazy(() => import('@/pages/cash').then(m => ({ default: m.ChargePage })));
+const CashHistoryPage = lazy(() => import('@/pages/cash').then(m => ({ default: m.HistoryPage })));
+
+// 포인트 페이지 lazy loading
+const PointHistoryPage = lazy(() => import('@/pages/point').then(m => ({ default: m.HistoryPage })));
+
+// 공지사항 페이지 lazy loading
+const NoticePage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticePage })));
+const NoticeDetailPage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticeDetailPage })));
+const NoticeEditorPage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticeEditorPage })));
+
+// FAQ 페이지 lazy loading
+const FAQPage = lazy(() => import('@/pages/faq'));
+
+// 키워드 페이지 lazy loading
+const KeywordPage = lazy(() => import('@/pages/keyword'));
+
+// 출금 페이지 lazy loading
+const WithdrawRequestPage = lazy(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
+const WithdrawApprovePage = lazy(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
+const WithdrawSettingPage = lazy(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawSettingPage })));
+
+// 캐시 관리 페이지 lazy loading
+const ManageSettingPage = lazy(() => import('@/pages/admin/cash').then(m => ({ default: m.ManageSettingPage })));
+
+// 총판 캠페인 요청 페이지 lazy loading
+const CampaignRequestPage = lazy(() => import('@/pages/distributor/campaign-request').then(m => ({ default: m.CampaignRequestPage })));
+const CampaignAddPage = lazy(() => import('@/pages/distributor/campaign-request/add').then(m => ({ default: m.CampaignAddPage })));
+
+// 작업 입력 페이지 lazy loading
+const WorkInputPage = lazy(() => import('@/pages/admin/work-input').then(m => ({ default: m.WorkInputPage })));
+
+// 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
-  ProfilePage,
-  ServicesPage,
-  CashRequestsPage
-} from '@/pages/myinfo';
-import {
-  GuidePage,
-  ChargePage,
-  HistoryPage as CashHistoryPage
-} from '@/pages/cash';
-import {
-  HistoryPage as PointHistoryPage
-} from '@/pages/point';
-import {
-  UsersPage,
   Campaigns,
   Slots,
-  Site,
-  ManageCashPage,
-  ChatManagePage,
-  LevelUpRequestsPage
+  Site
 } from '@/pages/admin';
-
-// 일반 사용자용 공지사항, FAQ, 사이트맵 페이지 임포트
-import { NoticePage, NoticeDetailPage, NoticeEditorPage } from '@/pages/notice';
-import FAQPage from '@/pages/faq';
-import NotificationsPage from '@/pages/myinfo/notifications';
-import KeywordPage from '@/pages/keyword';
 
 import { AuthPage } from '@/auth';
 import { RequireAuth } from '@/auth/RequireAuth';
 import { StandLayout } from '@/layouts/stand';
 import { ErrorsRouting } from '@/errors';
-import { ManageSettingPage } from '@/pages/admin/cash';
-import { WithdrawApprovePage, WithdrawSettingPage } from '@/pages/admin/withdraw';
-import { WithdrawRequestPage } from '@/pages/withdraw';
-import { CampaignRequestPage } from '@/pages/distributor/campaign-request';
-import { CampaignAddPage } from '@/pages/distributor/campaign-request/add';
-import { WorkInputPage } from '@/pages/admin/work-input';
 import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
+import { ScreenLoader } from '@/components/loaders';
+
+// Suspense 래퍼 컴포넌트
+const SuspenseWrapper = ({ children }: { children: ReactElement }) => (
+  <Suspense fallback={<ScreenLoader />}>
+    {children}
+  </Suspense>
+);
 
 const AppRoutingSetup = (): ReactElement => {
   return (
@@ -71,16 +95,16 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/" element={<RoleBasedDashboard />} />
 
           {/* 일반 사용자용 공지사항, FAQ, 사이트맵, 알림센터 페이지 */}
-          <Route path="/notice" element={<NoticePage />} />
-          <Route path="/notice/:id" element={<NoticeDetailPage />} />
-          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/notice" element={<SuspenseWrapper><NoticePage /></SuspenseWrapper>} />
+          <Route path="/notice/:id" element={<SuspenseWrapper><NoticeDetailPage /></SuspenseWrapper>} />
+          <Route path="/faq" element={<SuspenseWrapper><FAQPage /></SuspenseWrapper>} />
 
           {/* 기본 사용자 정보 */}
-          <Route path="/myinfo/profile" element={<ProfilePage />} />
-          <Route path="/myinfo/notifications" element={<NotificationsPage />} />
+          <Route path="/myinfo/profile" element={<SuspenseWrapper><ProfilePage /></SuspenseWrapper>} />
+          <Route path="/myinfo/notifications" element={<SuspenseWrapper><NotificationsPage /></SuspenseWrapper>} />
 
           {/* 캐쉬/포인트 가이드(정보) 페이지 */}
-          <Route path="/cash/guide" element={<GuidePage />} />
+          <Route path="/cash/guide" element={<SuspenseWrapper><GuidePage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -95,15 +119,15 @@ const AppRoutingSetup = (): ReactElement => {
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.BEGINNER} />}>
         <Route element={<StandLayout />}>
           {/* 내 키워드 */}
-          <Route path="/keyword" element={<KeywordPage />} />
+          <Route path="/keyword" element={<SuspenseWrapper><KeywordPage /></SuspenseWrapper>} />
 
           {/* 캐쉬 관련 라우트 */}
-          <Route path="/cash/charge" element={<ChargePage />} />
-          <Route path="/cash/history" element={<CashHistoryPage />} />
+          <Route path="/cash/charge" element={<SuspenseWrapper><ChargePage /></SuspenseWrapper>} />
+          <Route path="/cash/history" element={<SuspenseWrapper><CashHistoryPage /></SuspenseWrapper>} />
 
           {/* 포인트 관련 라우트 */}
-          <Route path="/point/history" element={<PointHistoryPage />} />
-          <Route path="/myinfo/cash-requests" element={<CashRequestsPage />} />
+          <Route path="/point/history" element={<SuspenseWrapper><PointHistoryPage /></SuspenseWrapper>} />
+          <Route path="/myinfo/cash-requests" element={<SuspenseWrapper><CashRequestsPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -113,10 +137,10 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 캠페인 관련 경로는 URL 파라미터 방식으로 통일 */}
 
           {/* 캠페인 소개 페이지 - URL 파라미터 사용 */}
-          <Route path="/advertise/campaigns/info/:serviceType" element={<InfoPage />} />
+          <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
 
           {/* 캠페인 관리 페이지 - URL 파라미터 사용 */}
-          <Route path="/advertise/campaigns/my/:serviceType" element={<CampaignPage />} />
+          <Route path="/advertise/campaigns/my/:serviceType" element={<SuspenseWrapper><CampaignPage /></SuspenseWrapper>} />
 
           {/* 구형 URL 패턴에서 새로운 URL 패턴으로 리다이렉트 처리 */}
           {/* 네이버 쇼핑 트래픽 */}
@@ -152,7 +176,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/advertise/ohouse/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/ohouse-traffic" replace />} />
 
           {/* 내 서비스 관리 라우트 */}
-          <Route path="/myinfo/services" element={<ServicesPage />} />
+          <Route path="/myinfo/services" element={<SuspenseWrapper><ServicesPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -160,14 +184,14 @@ const AppRoutingSetup = (): ReactElement => {
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.DISTRIBUTOR} />}>
         <Route element={<StandLayout />}>
           {/* 총판 출금 신청 라우트 */}
-          <Route path="/withdraw" element={<WithdrawRequestPage />} />
+          <Route path="/withdraw" element={<SuspenseWrapper><WithdrawRequestPage /></SuspenseWrapper>} />
 
           {/* 총판 캠페인 신청 라우트 */}
-          <Route path="/campaign-request" element={<CampaignRequestPage />} />
-          <Route path="/campaign-request/add" element={<CampaignAddPage />} />
+          <Route path="/campaign-request" element={<SuspenseWrapper><CampaignRequestPage /></SuspenseWrapper>} />
+          <Route path="/campaign-request/add" element={<SuspenseWrapper><CampaignAddPage /></SuspenseWrapper>} />
           
           {/* 총판 작업 입력 라우트 */}
-          <Route path="/admin/work-input" element={<WorkInputPage />} />
+          <Route path="/admin/work-input" element={<SuspenseWrapper><WorkInputPage /></SuspenseWrapper>} />
 
           {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
 
@@ -186,38 +210,38 @@ const AppRoutingSetup = (): ReactElement => {
       {/* 관리자 전용 페이지 */}
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADMIN} />}>
         <Route element={<StandLayout />}>
-          {/* 사용자 관리 라우트 */}
-          <Route path="/admin/users" element={<UsersPage />} />
-          <Route path="/admin/levelup-requests" element={<LevelUpRequestsPage />} />
+          {/* 사용자 관리 라우트 - Lazy Loading */}
+          <Route path="/admin/users" element={<SuspenseWrapper><UsersPage /></SuspenseWrapper>} />
+          <Route path="/admin/levelup-requests" element={<SuspenseWrapper><LevelUpRequestsPage /></SuspenseWrapper>} />
 
           {/* 캠페인 관리 라우트 */}
           <Route path="/admin/campaigns/all" element={<Campaigns.AllCampaignsPage />} />
 
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
-          <Route path="/admin/site/notice/new" element={<NoticeEditorPage />} />
-          <Route path="/admin/site/notice/edit/:id" element={<NoticeEditorPage />} />
+          <Route path="/admin/site/notice/new" element={<SuspenseWrapper><NoticeEditorPage /></SuspenseWrapper>} />
+          <Route path="/admin/site/notice/edit/:id" element={<SuspenseWrapper><NoticeEditorPage /></SuspenseWrapper>} />
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
           <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
-          <Route path="/admin/site/chat" element={<ChatManagePage />} />
+          <Route path="/admin/site/chat" element={<SuspenseWrapper><ChatManagePage /></SuspenseWrapper>} />
 
           {/* 캐시 관리 라우트 */}
-          <Route path="/admin/cash" element={<ManageCashPage />} />
-          <Route path="/admin/cash_setting" element={<ManageSettingPage />} />
-          <Route path="/admin/withdraw_setting" element={<WithdrawSettingPage />} />
-          <Route path="/admin/withdraw_approve" element={<WithdrawApprovePage />} />
+          <Route path="/admin/cash" element={<SuspenseWrapper><ManageCashPage /></SuspenseWrapper>} />
+          <Route path="/admin/cash_setting" element={<SuspenseWrapper><ManageSettingPage /></SuspenseWrapper>} />
+          <Route path="/admin/withdraw_setting" element={<SuspenseWrapper><WithdrawSettingPage /></SuspenseWrapper>} />
+          <Route path="/admin/withdraw_approve" element={<SuspenseWrapper><WithdrawApprovePage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
-      {/* 역할별 대시보드 - 개발자 전용 */}
+      {/* 역할별 대시보드 - 개발자 전용 - Lazy Loading */}
       <Route element={<RequireAuth allowedRoles={[USER_ROLES.DEVELOPER]} />}>
         <Route element={<StandLayout />}>
-          <Route path="/dashboard/developer" element={<DeveloperDashboardPage />} />
-          <Route path="/dashboard/operator" element={<OperatorDashboardPage />} />
-          <Route path="/dashboard/distributor" element={<DistributorDashboardPage />} />
-          <Route path="/dashboard/agency" element={<AgencyDashboardPage />} />
-          <Route path="/dashboard/advertiser" element={<AdvertiserDashboardPage />} />
-          <Route path="/dashboard/beginner" element={<BeginnerDashboardPage />} />
+          <Route path="/dashboard/developer" element={<SuspenseWrapper><DeveloperDashboardPage /></SuspenseWrapper>} />
+          <Route path="/dashboard/operator" element={<SuspenseWrapper><OperatorDashboardPage /></SuspenseWrapper>} />
+          <Route path="/dashboard/distributor" element={<SuspenseWrapper><DistributorDashboardPage /></SuspenseWrapper>} />
+          <Route path="/dashboard/agency" element={<SuspenseWrapper><AgencyDashboardPage /></SuspenseWrapper>} />
+          <Route path="/dashboard/advertiser" element={<SuspenseWrapper><AdvertiserDashboardPage /></SuspenseWrapper>} />
+          <Route path="/dashboard/beginner" element={<SuspenseWrapper><BeginnerDashboardPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 

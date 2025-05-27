@@ -1,67 +1,68 @@
-import { ReactElement, lazy, Suspense } from 'react';
+import { ReactElement, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import {
   StandDarkSidebarPage,
   RoleBasedDashboard
 } from '@/pages/dashboards';
+import { lazyWithPreload } from '@/utils/lazyWithPreload';
 
-// 역할별 대시보드 lazy loading
-const DeveloperDashboardPage = lazy(() => import('@/pages/dashboards/developer').then(m => ({ default: m.DeveloperDashboardPage })));
-const OperatorDashboardPage = lazy(() => import('@/pages/dashboards/operator').then(m => ({ default: m.OperatorDashboardPage })));
-const DistributorDashboardPage = lazy(() => import('@/pages/dashboards/distributor').then(m => ({ default: m.DistributorDashboardPage })));
-const AgencyDashboardPage = lazy(() => import('@/pages/dashboards/agency').then(m => ({ default: m.AgencyDashboardPage })));
-const AdvertiserDashboardPage = lazy(() => import('@/pages/dashboards/advertiser').then(m => ({ default: m.AdvertiserDashboardPage })));
-const BeginnerDashboardPage = lazy(() => import('@/pages/dashboards/beginner').then(m => ({ default: m.BeginnerDashboardPage })));
+// 역할별 대시보드 lazy loading with preload
+export const DeveloperDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/developer').then(m => ({ default: m.DeveloperDashboardPage })));
+export const OperatorDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/operator').then(m => ({ default: m.OperatorDashboardPage })));
+export const DistributorDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/distributor').then(m => ({ default: m.DistributorDashboardPage })));
+export const AgencyDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/agency').then(m => ({ default: m.AgencyDashboardPage })));
+export const AdvertiserDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/advertiser').then(m => ({ default: m.AdvertiserDashboardPage })));
+export const BeginnerDashboardPage = lazyWithPreload(() => import('@/pages/dashboards/beginner').then(m => ({ default: m.BeginnerDashboardPage })));
 
-// 관리자 페이지 lazy loading
-const UsersPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.UsersPage })));
-const ChatManagePage = lazy(() => import('@/pages/admin').then(m => ({ default: m.ChatManagePage })));
-const LevelUpRequestsPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.LevelUpRequestsPage })));
-const ManageCashPage = lazy(() => import('@/pages/admin').then(m => ({ default: m.ManageCashPage })));
+// 관리자 페이지 lazy loading with preload
+export const UsersPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.UsersPage })));
+export const ChatManagePage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.ChatManagePage })));
+export const LevelUpRequestsPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.LevelUpRequestsPage })));
+export const ManageCashPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.ManageCashPage })));
 
-// 광고 페이지 lazy loading
-const InfoPage = lazy(() => import('@/pages/advertise').then(m => ({ default: m.InfoPage })));
-const CampaignPage = lazy(() => import('@/pages/advertise').then(m => ({ default: m.CampaignPage })));
+// 광고 페이지 lazy loading with preload
+export const InfoPage = lazyWithPreload(() => import('@/pages/advertise').then(m => ({ default: m.InfoPage })));
+export const CampaignPage = lazyWithPreload(() => import('@/pages/advertise').then(m => ({ default: m.CampaignPage })));
 
-// 마이페이지 lazy loading
-const ProfilePage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.ProfilePage })));
-const ServicesPage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.ServicesPage })));
-const CashRequestsPage = lazy(() => import('@/pages/myinfo').then(m => ({ default: m.CashRequestsPage })));
-const NotificationsPage = lazy(() => import('@/pages/myinfo/notifications'));
+// 마이페이지 lazy loading with preload
+export const ProfilePage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.ProfilePage })));
+export const ServicesPage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.ServicesPage })));
+export const CashRequestsPage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.CashRequestsPage })));
+export const NotificationsPage = lazyWithPreload(() => import('@/pages/myinfo/notifications'));
 
-// 캐시 페이지 lazy loading
-const GuidePage = lazy(() => import('@/pages/cash').then(m => ({ default: m.GuidePage })));
-const ChargePage = lazy(() => import('@/pages/cash').then(m => ({ default: m.ChargePage })));
-const CashHistoryPage = lazy(() => import('@/pages/cash').then(m => ({ default: m.HistoryPage })));
+// 캐시 페이지 lazy loading with preload
+export const GuidePage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.GuidePage })));
+export const ChargePage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.ChargePage })));
+export const CashHistoryPage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.HistoryPage })));
 
-// 포인트 페이지 lazy loading
-const PointHistoryPage = lazy(() => import('@/pages/point').then(m => ({ default: m.HistoryPage })));
+// 포인트 페이지 lazy loading with preload
+export const PointHistoryPage = lazyWithPreload(() => import('@/pages/point').then(m => ({ default: m.HistoryPage })));
 
-// 공지사항 페이지 lazy loading
-const NoticePage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticePage })));
-const NoticeDetailPage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticeDetailPage })));
-const NoticeEditorPage = lazy(() => import('@/pages/notice').then(m => ({ default: m.NoticeEditorPage })));
+// 공지사항 페이지 lazy loading with preload
+export const NoticePage = lazyWithPreload(() => import('@/pages/notice').then(m => ({ default: m.NoticePage })));
+export const NoticeDetailPage = lazyWithPreload(() => import('@/pages/notice').then(m => ({ default: m.NoticeDetailPage })));
+export const NoticeEditorPage = lazyWithPreload(() => import('@/pages/notice').then(m => ({ default: m.NoticeEditorPage })));
 
-// FAQ 페이지 lazy loading
-const FAQPage = lazy(() => import('@/pages/faq'));
+// FAQ 페이지 lazy loading with preload
+export const FAQPage = lazyWithPreload(() => import('@/pages/faq'));
 
-// 키워드 페이지 lazy loading
-const KeywordPage = lazy(() => import('@/pages/keyword'));
+// 키워드 페이지 lazy loading with preload
+export const KeywordPage = lazyWithPreload(() => import('@/pages/keyword'));
 
-// 출금 페이지 lazy loading
-const WithdrawRequestPage = lazy(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
-const WithdrawApprovePage = lazy(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
-const WithdrawSettingPage = lazy(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawSettingPage })));
+// 출금 페이지 lazy loading with preload
+export const WithdrawRequestPage = lazyWithPreload(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
+export const WithdrawApprovePage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
+export const WithdrawSettingPage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawSettingPage })));
 
-// 캐시 관리 페이지 lazy loading
-const ManageSettingPage = lazy(() => import('@/pages/admin/cash').then(m => ({ default: m.ManageSettingPage })));
+// 캐시 관리 페이지 lazy loading with preload
+export const ManageSettingPage = lazyWithPreload(() => import('@/pages/admin/cash').then(m => ({ default: m.ManageSettingPage })));
 
-// 총판 캠페인 요청 페이지 lazy loading
-const CampaignRequestPage = lazy(() => import('@/pages/distributor/campaign-request').then(m => ({ default: m.CampaignRequestPage })));
-const CampaignAddPage = lazy(() => import('@/pages/distributor/campaign-request/add').then(m => ({ default: m.CampaignAddPage })));
+// 총판 캠페인 요청 페이지 lazy loading with preload
+export const CampaignRequestPage = lazyWithPreload(() => import('@/pages/distributor/campaign-request').then(m => ({ default: m.CampaignRequestPage })));
+export const CampaignAddPage = lazyWithPreload(() => import('@/pages/distributor/campaign-request/add').then(m => ({ default: m.CampaignAddPage })));
 
-// 작업 입력 페이지 lazy loading
-const WorkInputPage = lazy(() => import('@/pages/admin/work-input').then(m => ({ default: m.WorkInputPage })));
+// 작업 입력 페이지 lazy loading with preload
+export const WorkInputPage = lazyWithPreload(() => import('@/pages/admin/work-input').then(m => ({ default: m.WorkInputPage })));
 
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
@@ -76,10 +77,11 @@ import { StandLayout } from '@/layouts/stand';
 import { ErrorsRouting } from '@/errors';
 import { USER_ROLES, PERMISSION_GROUPS } from '@/config/roles.config';
 import { ScreenLoader } from '@/components/loaders';
+import { MinimalLoader } from '@/components/loaders/MinimalLoader';
 
-// Suspense 래퍼 컴포넌트
-const SuspenseWrapper = ({ children }: { children: ReactElement }) => (
-  <Suspense fallback={<ScreenLoader />}>
+// Suspense 래퍼 컴포넌트 - 최소한의 로딩 표시
+const SuspenseWrapper = ({ children, minimal = true }: { children: ReactElement; minimal?: boolean }) => (
+  <Suspense fallback={minimal ? <MinimalLoader /> : <ScreenLoader />}>
     {children}
   </Suspense>
 );
@@ -252,5 +254,65 @@ const AppRoutingSetup = (): ReactElement => {
     </Routes>
   );
 };
+
+// Initialize route preload map with all preloadable components
+import { initializeComponentMap } from '@/utils/routePreloadMap';
+
+initializeComponentMap({
+  // 역할별 대시보드
+  '/dashboard/developer': DeveloperDashboardPage,
+  '/dashboard/operator': OperatorDashboardPage,
+  '/dashboard/distributor': DistributorDashboardPage,
+  '/dashboard/agency': AgencyDashboardPage,
+  '/dashboard/advertiser': AdvertiserDashboardPage,
+  '/dashboard/beginner': BeginnerDashboardPage,
+  
+  // 관리자 페이지
+  '/admin/users': UsersPage,
+  '/admin/chat': ChatManagePage,
+  '/admin/levelup-requests': LevelUpRequestsPage,
+  '/admin/cash': ManageCashPage,
+  '/admin/cash_setting': ManageSettingPage,
+  '/admin/withdraw_setting': WithdrawSettingPage,
+  '/admin/withdraw_approve': WithdrawApprovePage,
+  '/admin/work-input': WorkInputPage,
+  
+  // 광고 페이지
+  '/advertise/campaigns/info/*': InfoPage,
+  '/advertise/campaigns/my/*': CampaignPage,
+  
+  // 마이페이지
+  '/myinfo/profile': ProfilePage,
+  '/myinfo/services': ServicesPage,
+  '/myinfo/cash-requests': CashRequestsPage,
+  '/myinfo/notifications': NotificationsPage,
+  
+  // 캐시 페이지
+  '/cash/guide': GuidePage,
+  '/cash/charge': ChargePage,
+  '/cash/history': CashHistoryPage,
+  
+  // 포인트 페이지
+  '/point/history': PointHistoryPage,
+  
+  // 공지사항 페이지
+  '/notice': NoticePage,
+  '/notice/*': NoticeDetailPage,
+  '/admin/site/notice/new': NoticeEditorPage,
+  '/admin/site/notice/edit/*': NoticeEditorPage,
+  
+  // FAQ 페이지
+  '/faq': FAQPage,
+  
+  // 키워드 페이지
+  '/keyword': KeywordPage,
+  
+  // 출금 페이지
+  '/withdraw': WithdrawRequestPage,
+  
+  // 총판 캠페인 요청 페이지
+  '/campaign-request': CampaignRequestPage,
+  '/campaign-request/add': CampaignAddPage,
+});
 
 export { AppRoutingSetup };

@@ -7,6 +7,7 @@ import './styles/active-parent-dot.js'; // 상위 메뉴 점 표시를 위한 Ja
 import './styles/layout-overrides.css'; // 새로운 레이아웃 오버라이드 스타일
 import './styles/auth-verification.css'; // 인증 검증 및 로딩 스타일
 import './styles/logout-transition.css'; // 로그아웃 전환 개선 스타일
+import './styles/loading-animation.css'; // 페이지 로딩 애니메이션
 import './scripts/dark-mode-debug.js'; // 다크모드 z-index 문제 디버그 스크립트
 import './utils/logoutSafety'; // 로그아웃 중 404 오류 방지 모듈
 
@@ -21,6 +22,7 @@ import { App } from './App';
 import { setupAxios } from './auth';
 import { ProvidersWrapper } from './providers';
 import React from 'react';
+import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 
 /**
  * Inject interceptors for axios.
@@ -40,3 +42,7 @@ root.render(
     </ProvidersWrapper>
   </React.StrictMode>
 );
+
+// 서비스 워커 등록 (프로덕션 환경에서만)
+// TODO: 초기화 문제 해결 후 다시 활성화
+// serviceWorkerRegistration.register();

@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import { IMenuLinkProps } from './';
+import { PreloadLink } from '@/components/PreloadLink';
+import { getPreloadComponent } from '@/utils/routePreloadMap';
 
 const MenuLink = ({
   path,
@@ -28,11 +30,27 @@ const MenuLink = ({
         </a>
       );
     } else {
-      return (
-        <Link to={path} onClick={handleClick} className={clsx('menu-link', className && className)}>
-          {children}
-        </Link>
-      );
+      // Preload 가능한 컴포넌트 찾기
+      const preloadComponent = getPreloadComponent(path);
+      
+      if (preloadComponent) {
+        return (
+          <PreloadLink 
+            to={path} 
+            onClick={handleClick} 
+            className={clsx('menu-link', className && className)}
+            preload={preloadComponent}
+          >
+            {children}
+          </PreloadLink>
+        );
+      } else {
+        return (
+          <Link to={path} onClick={handleClick} className={clsx('menu-link', className && className)}>
+            {children}
+          </Link>
+        );
+      }
     }
   } else {
     if (hasItemSub) {

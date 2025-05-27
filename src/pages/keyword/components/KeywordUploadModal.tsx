@@ -1,6 +1,5 @@
 import React, { ChangeEvent, useDebugValue, useState } from "react";
 import { KeywordGroup, KeywordInput } from "../types";
-import * as XLSX from 'xlsx';
 import { getServiceTypeFromPath, SERVICE_TYPE_LABELS, CampaignServiceType } from '@/components/campaign-modals/types';
 import { keywordService } from "../services/keywordService";
 
@@ -38,8 +37,11 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
 
                 // 2. 파일 내용 미리 읽기
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     try {
+                        // XLSX 동적 import
+                        const XLSX = await import('xlsx');
+                        
                         const data = new Uint8Array(e.target?.result as ArrayBuffer);
                         const workbook = XLSX.read(data, { type: 'array'});
 
@@ -127,6 +129,9 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                     
                     reader.onload = async (e) => {
                         try {
+                            // XLSX 동적 import
+                            const XLSX = await import('xlsx');
+                            
                             const data = new Uint8Array(e.target?.result as ArrayBuffer);
                             const workbook = XLSX.read(data, { type: 'array'});
                             const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -266,7 +271,10 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
     };
 
     // 업로드 샘플 다운로드 함수 추가
-    const handleDownloadSample = () => {
+    const handleDownloadSample = async () => {
+        // XLSX 동적 import
+        const XLSX = await import('xlsx');
+        
         // 샘플 데이터 정의 (키워드 형식에 맞게)
         const sampleData = [
             {

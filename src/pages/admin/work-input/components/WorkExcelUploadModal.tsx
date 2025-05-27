@@ -1,7 +1,6 @@
 import React, { ChangeEvent, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { bulkUploadSlotWorks } from '../services/workInputService';
 import { useAuthContext } from '@/auth';
@@ -58,8 +57,11 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
 
         // 파일 내용 미리 읽기
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           try {
+            // XLSX 동적 import
+            const XLSX = await import('xlsx');
+            
             const data = new Uint8Array(e.target?.result as ArrayBuffer);
             const workbook = XLSX.read(data, { 
               type: 'array',
@@ -313,6 +315,9 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
           
           reader.onload = async (e) => {
             try {
+              // XLSX 동적 import
+              const XLSX = await import('xlsx');
+              
               const data = new Uint8Array(e.target?.result as ArrayBuffer);
               const workbook = XLSX.read(data, { 
                 type: 'array',
@@ -388,7 +393,10 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
   };
 
   // 샘플 파일 다운로드 (매트별 슬롯 번호 방식)
-  const handleDownloadSample = () => {
+  const handleDownloadSample = async () => {
+    // XLSX 동적 import
+    const XLSX = await import('xlsx');
+    
     const sampleData = [
       {
         '슬롯 번호': 1,

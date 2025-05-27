@@ -38,29 +38,8 @@ export default defineConfig(function (_a) {
             chunkSizeWarningLimit: 3000,
             rollupOptions: {
                 output: {
-                    manualChunks: function (id) {
-                        // node_modules의 라이브러리를 vendor 청크로 분리
-                        if (id.includes('node_modules')) {
-                            // React 관련
-                            if (id.includes('react')) {
-                                return 'react-vendor';
-                            }
-                            // UI 라이브러리
-                            if (id.includes('@radix-ui') || id.includes('clsx') || id.includes('tailwind')) {
-                                return 'ui-vendor';
-                            }
-                            // 유틸리티
-                            if (id.includes('axios') || id.includes('date-fns') || id.includes('lodash')) {
-                                return 'utils-vendor';
-                            }
-                            // Supabase
-                            if (id.includes('supabase')) {
-                                return 'supabase-vendor';
-                            }
-                            // 나머지 vendor
-                            return 'vendor';
-                        }
-                    }
+                    // 수동 청크 분리를 제거하여 Vite가 자동으로 최적화하도록 함
+                    manualChunks: undefined
                 }
             }
         }

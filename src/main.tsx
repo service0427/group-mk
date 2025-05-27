@@ -44,4 +44,5 @@ root.render(
 );
 
 // 서비스 워커 등록 (프로덕션 환경에서만)
-serviceWorkerRegistration.register();
+// TODO: 초기화 문제 해결 후 다시 활성화
+// serviceWorkerRegistration.register();

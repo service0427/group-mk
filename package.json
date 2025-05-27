@@ -13,7 +13,7 @@
     "dev:with-build": "npm run build && ./deploy-functions.sh && concurrently \"npm run dev:app\" \"wrangler pages dev --port 9000 ./dist\"",
     "build": "tsc -b && vite build && node scripts/create-routes-json.js",
     "build:ignore-errors": "tsc --noEmit || true && vite build && node scripts/create-routes-json.js",
-    "build:analyze": "ANALYZE=true vite build",
+    "build:analyze": "echo 'Bundle analysis is temporarily disabled due to Cloudflare compatibility issues'",
     "lint": "eslint .",
     "preview": "vite preview",
     "delete-chat-data": "node scripts/delete-chat-data.js",

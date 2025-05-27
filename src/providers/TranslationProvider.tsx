@@ -8,7 +8,7 @@ import '@formatjs/intl-relativetimeformat/locale-data/fr';
 import '@formatjs/intl-relativetimeformat/locale-data/ja';
 import '@formatjs/intl-relativetimeformat/locale-data/zh';
 
-import { createContext, type PropsWithChildren, useContext, useEffect, useState } from 'react';
+import { createContext, type PropsWithChildren, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { IntlProvider } from 'react-intl';
 
 import { I18N_LANGUAGES, I18N_CONFIG_KEY, I18N_DEFAULT_LANGUAGE } from '@/i18n';
@@ -58,27 +58,27 @@ const I18NProvider = ({ children }: PropsWithChildren) => {
 const TranslationProvider = ({ children }: PropsWithChildren) => {
   const [currentLanguage, setCurrentLanguage] = useState(initialProps.currentLanguage);
 
-  const changeLanguage = (language: TLanguage) => {
+  const changeLanguage = useCallback((language: TLanguage) => {
     setData(I18N_CONFIG_KEY, language);
     setCurrentLanguage(language);
-  };
+  }, []);
 
-  const isRTL = () => {
+  const isRTL = useCallback(() => {
     return currentLanguage.direction === 'rtl';
-  };
+  }, [currentLanguage.direction]);
 
   useEffect(() => {
     document.documentElement.setAttribute('dir', currentLanguage.direction);
-  }, [currentLanguage]);
+  }, [currentLanguage.direction]);
+
+  const contextValue = useMemo(() => ({
+    isRTL,
+    currentLanguage,
+    changeLanguage
+  }), [isRTL, currentLanguage, changeLanguage]);
 
   return (
-    <TranslationsContext.Provider
-      value={{
-        isRTL,
-        currentLanguage,
-        changeLanguage
-      }}
-    >
+    <TranslationsContext.Provider value={contextValue}>
       <I18NProvider>{children}</I18NProvider>
     </TranslationsContext.Provider>
   );

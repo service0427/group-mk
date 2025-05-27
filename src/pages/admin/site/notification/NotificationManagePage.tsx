@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
 import { NotificationPriority, NotificationType, NotificationStatus } from '@/types/notification';
 import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 // 테이블 확인 유틸리티 추가 - 이제 TypeScript 파일
 import { checkNotificationAggregatesTable } from './utils/check-table';
 import SendNotificationModal from './components/SendNotificationModal';

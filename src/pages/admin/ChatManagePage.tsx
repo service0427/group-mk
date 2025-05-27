@@ -3,7 +3,7 @@ import { useAuthContext } from '@/auth';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { useDialog } from '@/providers/DialogProvider';
+import { useDialog } from '@/providers';
 
 // 메시지 아이템 컴포넌트를 메모이제이션하여 불필요한 렌더링 방지
 const MessageItem = memo(({

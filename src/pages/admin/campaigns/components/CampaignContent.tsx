@@ -11,7 +11,7 @@ import {
 import { toAbsoluteUrl } from '@/utils';
 import { CampaignModal } from '@/components/campaign-modals';
 import { updateCampaignStatus, updateCampaign } from '../services/campaignService';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 
 // 캠페인 데이터 인터페이스 정의
 export interface ICampaign {

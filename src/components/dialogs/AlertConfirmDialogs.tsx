@@ -8,7 +8,7 @@ import {
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { useToast } from '@/providers/ToastProvider';
+import { useToast } from '@/providers';
 
 // 기본 다이얼로그 상태 인터페이스
 interface DialogState {

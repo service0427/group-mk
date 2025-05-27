@@ -1,2 +1,2 @@
 export { Dialog } from './Dialog';
-export { useDialog } from '@/providers/DialogProvider';
+export { useDialog } from '@/providers';

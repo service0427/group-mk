@@ -2,19 +2,18 @@ import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import tailwindcss from 'tailwindcss';
-import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(function (_a) {
     var mode = _a.mode;
     return ({
         plugins: [
             react(),
-            // 번들 분석 플러그인 (ANALYZE 환경 변수가 있을 때만)
-            process.env.ANALYZE && visualizer({
-                filename: './dist/bundle-stats.html',
-                open: true,
-                gzipSize: true,
-                brotliSize: true,
-            })
+            // 번들 분석 플러그인은 로컬에서만 사용 (Cloudflare 빌드 오류 방지)
+            // process.env.ANALYZE && visualizer({
+            //   filename: './dist/bundle-stats.html',
+            //   open: true,
+            //   gzipSize: true,
+            //   brotliSize: true,
+            // })
         ].filter(Boolean),
         css: {
             postcss: {

@@ -34,6 +34,7 @@ const SearchShopInfo: React.FC = () => {
     mainKeyword: string;
     mid?: string;
     url?: string;
+    keyword1?: string;
   } | null>(null);
 
   // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인

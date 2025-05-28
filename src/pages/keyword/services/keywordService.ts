@@ -21,7 +21,17 @@ export const keywordGroupService = {
 
       const { data, error } = await supabase
         .from('keyword_groups')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          name,
+          campaign_name,
+          campaign_type,
+          is_default,
+          created_at,
+          updated_at,
+          keywords(count)
+        `)
         .eq('user_id', user.id)
         .order('name');
 
@@ -36,7 +46,8 @@ export const keywordGroupService = {
         campaignType: item.campaign_type,
         isDefault: item.is_default,
         createdAt: item.created_at,
-        updatedAt: item.updated_at
+        updatedAt: item.updated_at,
+        keywordCount: item.keywords?.[0]?.count || 0
       }));
 
       return { success: true, data: transformedData };
@@ -235,30 +246,12 @@ export const keywordGroupService = {
         };
       }
 
-      // 기본 그룹을 만들려고 할 때 이미 존재하는지 확인
+      // 기본 그룹 생성 방지 - 사용자가 직접 그룹을 생성해야 함
       if (isDefault) {
-        const { data: existingDefaultGroups, error: checkError } = await supabase
-          .from('keyword_groups')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_default', true);
-
-        if (checkError) throw checkError;
-
-        // 기본 그룹이 이미 있으면 그 그룹 반환
-        if (existingDefaultGroups && existingDefaultGroups.length > 0) {
-          const defaultGroup = {
-            id: existingDefaultGroups[0].id,
-            userId: existingDefaultGroups[0].user_id,
-            name: existingDefaultGroups[0].name,
-            campaignName: existingDefaultGroups[0].campaign_name,
-            campaignType: existingDefaultGroups[0].campaign_type,
-            isDefault: existingDefaultGroups[0].is_default,
-            createdAt: existingDefaultGroups[0].created_at,
-            updatedAt: existingDefaultGroups[0].updated_at
-          };
-          return { success: true, data: defaultGroup };
-        }
+        return {
+          success: false,
+          message: '기본 그룹 기능은 더 이상 지원되지 않습니다. 일반 그룹을 생성해주세요.',
+        };
       }
 
       // 새 그룹 생성
@@ -299,54 +292,8 @@ export const keywordGroupService = {
     }
   },
 
-  // 기본 그룹 가져오기 또는 생성
-  async getOrCreateDefaultGroup(): Promise<KeywordResponse> {
-    try {
-      // 현재 로그인한 사용자 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return {
-          success: false,
-          message: '로그인이 필요합니다.',
-        };
-      }
-
-      // 사용자의 기본 그룹 조회
-      const { data, error } = await supabase
-        .from('keyword_groups')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      // 기본 그룹이 이미 있으면 반환
-      if (data) {
-        const defaultGroup = {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          campaignName: data.campaign_name,
-          campaignType: data.campaign_type,
-          isDefault: data.is_default,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at
-        };
-        return { success: true, data: defaultGroup };
-      }
-      
-      // 기본 그룹이 없으면 생성
-      return this.createGroup('기본 그룹', null, null, true);
-    } catch (error) {
-      
-      return {
-        success: false,
-        message: '기본 그룹을 가져오는 중 오류가 발생했습니다.',
-      };
-    }
-  },
+  // 기본 그룹 가져오기 또는 생성 - 제거됨
+  // 사용자가 직접 그룹을 생성해야 함
 
   // 키워드 그룹 업데이트
   async updateGroup(
@@ -458,10 +405,10 @@ export const keywordGroupService = {
         };
       }
 
-      // 기본 그룹인지 확인
+      // 그룹 소유권 확인
       const { data: groupData, error: checkError } = await supabase
         .from('keyword_groups')
-        .select('is_default')
+        .select('*')
         .eq('id', groupId)
         .eq('user_id', user.id)
         .single();
@@ -470,14 +417,6 @@ export const keywordGroupService = {
         return {
           success: false,
           message: '해당 그룹에 접근할 권한이 없습니다.',
-        };
-      }
-
-      // 기본 그룹이면 삭제 불가
-      if (groupData && groupData.is_default) {
-        return {
-          success: false,
-          message: '기본 그룹은 삭제할 수 없습니다.',
         };
       }
 
@@ -496,6 +435,119 @@ export const keywordGroupService = {
       return {
         success: false,
         message: '키워드 그룹을 삭제하는 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 키워드 이동
+  async moveKeywords(
+    keywordIds: number[],
+    targetGroupId: number
+  ): Promise<KeywordResponse> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return {
+          success: false,
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      // 대상 그룹이 사용자의 그룹인지 확인
+      const { data: groupData, error: groupError } = await supabase
+        .from('keyword_groups')
+        .select('*')
+        .eq('id', targetGroupId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (groupError) {
+        return {
+          success: false,
+          message: '해당 그룹에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 키워드들의 그룹 ID 업데이트
+      const { error } = await supabase
+        .from('keywords')
+        .update({ group_id: targetGroupId })
+        .in('id', keywordIds);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: '키워드를 이동하는 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 키워드 복사
+  async copyKeywords(
+    keywordIds: number[],
+    targetGroupId: number
+  ): Promise<KeywordResponse> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return {
+          success: false,
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      // 대상 그룹이 사용자의 그룹인지 확인
+      const { data: groupData, error: groupError } = await supabase
+        .from('keyword_groups')
+        .select('*')
+        .eq('id', targetGroupId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (groupError) {
+        return {
+          success: false,
+          message: '해당 그룹에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 원본 키워드들 가져오기
+      const { data: keywords, error: fetchError } = await supabase
+        .from('keywords')
+        .select('*')
+        .in('id', keywordIds);
+
+      if (fetchError) throw fetchError;
+
+      // 키워드 복사
+      const keywordsToCopy = keywords.map(kw => ({
+        group_id: targetGroupId,
+        main_keyword: kw.main_keyword,
+        mid: kw.mid,
+        url: kw.url,
+        keyword1: kw.keyword1,
+        keyword2: kw.keyword2,
+        keyword3: kw.keyword3,
+        description: kw.description,
+        is_active: kw.is_active
+      }));
+
+      const { error: insertError } = await supabase
+        .from('keywords')
+        .insert(keywordsToCopy);
+
+      if (insertError) throw insertError;
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: '키워드를 복사하는 중 오류가 발생했습니다.',
       };
     }
   },
@@ -524,7 +576,7 @@ export const keywordService = {
       // 먼저 그룹이 현재 사용자의 것인지 확인
       const { data: groupData, error: groupError } = await supabase
         .from('keyword_groups')
-        .select('*')
+        .select('id') // 필요한 필드만 선택
         .eq('id', groupId)
         .eq('user_id', user.id)
         .single();
@@ -536,9 +588,23 @@ export const keywordService = {
         };
       }
 
+      // 필요한 필드만 선택하여 네트워크 부하 감소
       let query = supabase
         .from('keywords')
-        .select('*', { count: 'exact' });
+        .select(`
+          id,
+          group_id,
+          main_keyword,
+          mid,
+          url,
+          keyword1,
+          keyword2,
+          keyword3,
+          description,
+          is_active,
+          created_at,
+          updated_at
+        `, { count: 'exact' });
 
       // 그룹 ID 필터
       query = query.eq('group_id', groupId);
@@ -906,6 +972,147 @@ export const keywordService = {
       return {
         success: false,
         message: '키워드를 대량 추가하는 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 키워드 이동
+  async moveKeywords(keywordIds: number[], targetGroupId: number): Promise<KeywordResponse> {
+    try {
+      // 현재 로그인한 사용자 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return {
+          success: false,
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      // 대상 그룹이 사용자의 것인지 확인
+      const { data: groupData, error: groupError } = await supabase
+        .from('keyword_groups')
+        .select('*')
+        .eq('id', targetGroupId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (groupError) {
+        return {
+          success: false,
+          message: '대상 그룹에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 키워드들이 사용자의 것인지 확인
+      const { data: keywordsData, error: keywordsError } = await supabase
+        .from('keywords')
+        .select('*, keyword_groups!inner(user_id)')
+        .in('id', keywordIds)
+        .eq('keyword_groups.user_id', user.id);
+
+      if (keywordsError || !keywordsData || keywordsData.length !== keywordIds.length) {
+        return {
+          success: false,
+          message: '일부 키워드에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 키워드 이동 (그룹 ID 업데이트)
+      const { error } = await supabase
+        .from('keywords')
+        .update({ 
+          group_id: targetGroupId,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', keywordIds);
+
+      if (error) throw error;
+
+      return { 
+        success: true, 
+        message: `${keywordIds.length}개의 키워드를 이동했습니다.`
+      };
+    } catch (error) {
+      console.error('moveKeywords error:', error);
+      return {
+        success: false,
+        message: '키워드를 이동하는 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 키워드 복사
+  async copyKeywords(keywordIds: number[], targetGroupId: number): Promise<KeywordResponse> {
+    try {
+      // 현재 로그인한 사용자 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return {
+          success: false,
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      // 대상 그룹이 사용자의 것인지 확인
+      const { data: groupData, error: groupError } = await supabase
+        .from('keyword_groups')
+        .select('*')
+        .eq('id', targetGroupId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (groupError) {
+        return {
+          success: false,
+          message: '대상 그룹에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 원본 키워드 데이터 가져오기
+      const { data: keywordsData, error: keywordsError } = await supabase
+        .from('keywords')
+        .select('*, keyword_groups!inner(user_id)')
+        .in('id', keywordIds)
+        .eq('keyword_groups.user_id', user.id);
+
+      if (keywordsError || !keywordsData || keywordsData.length !== keywordIds.length) {
+        return {
+          success: false,
+          message: '일부 키워드에 접근할 권한이 없습니다.',
+        };
+      }
+
+      // 복사할 키워드 데이터 준비
+      const keywordsToCopy = keywordsData.map(kw => ({
+        group_id: targetGroupId,
+        main_keyword: kw.main_keyword,
+        mid: kw.mid,
+        url: kw.url,
+        keyword1: kw.keyword1,
+        keyword2: kw.keyword2,
+        keyword3: kw.keyword3,
+        description: kw.description,
+        is_active: kw.is_active
+      }));
+
+      // 키워드 복사 (새로 추가)
+      const { error } = await supabase
+        .from('keywords')
+        .insert(keywordsToCopy);
+
+      if (error) throw error;
+
+      return { 
+        success: true, 
+        message: `${keywordIds.length}개의 키워드를 복사했습니다.`
+      };
+    } catch (error) {
+      console.error('copyKeywords error:', error);
+      return {
+        success: false,
+        message: '키워드를 복사하는 중 오류가 발생했습니다.',
       };
     }
   }

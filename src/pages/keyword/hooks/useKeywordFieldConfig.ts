@@ -86,8 +86,47 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
 
   // 숨김 필드인지 확인
   const isHidden = (fieldName: string): boolean => {
+    // 설정이 없는 경우
+    if (!config) {
+      // field_mapping이 없으면 해당 필드는 숨김 처리
+      // 즉, field_mapping에 정의된 필드만 표시
+      console.log(`No config for field ${fieldName}, hiding by default`);
+      
+      // 기본 필드는 항상 표시 (main_keyword, status, created_at, actions)
+      const defaultFields = ['main_keyword', 'status', 'created_at', 'actions'];
+      if (defaultFields.includes(fieldName)) {
+        return false;
+      }
+      
+      // 나머지 필드는 숨김
+      return true;
+    }
+    
+    // field_mapping에 없는 필드는 숨김 처리
     const fieldConfig = getFieldConfig(fieldName);
-    return fieldConfig?.hidden || config?.ui_config?.hiddenFields?.includes(fieldName) || false;
+    if (!fieldConfig) {
+      // field_mapping에 정의되지 않은 필드는 숨김
+      console.log(`Field ${fieldName} not in field_mapping, hiding`);
+      return true;
+    }
+    
+    const isHiddenInFieldConfig = fieldConfig?.hidden || false;
+    const isHiddenInUIConfig = config?.ui_config?.hiddenFields?.includes(fieldName) || false;
+    
+    // 디버그 로그
+    if (fieldName === 'keyword3') {
+      console.log('=== keyword3 hidden check ===');
+      console.log('campaignType:', campaignType);
+      console.log('config:', config);
+      console.log('fieldName:', fieldName);
+      console.log('fieldConfig:', fieldConfig);
+      console.log('ui_config.hiddenFields:', config?.ui_config?.hiddenFields);
+      console.log('isHiddenInFieldConfig:', isHiddenInFieldConfig);
+      console.log('isHiddenInUIConfig:', isHiddenInUIConfig);
+      console.log('최종 결과 (hidden?):', isHiddenInFieldConfig || isHiddenInUIConfig);
+    }
+    
+    return isHiddenInFieldConfig || isHiddenInUIConfig;
   };
 
   return { 

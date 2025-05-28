@@ -49,6 +49,9 @@ export const FAQPage = lazyWithPreload(() => import('@/pages/faq'));
 // 키워드 페이지 lazy loading with preload
 export const KeywordPage = lazyWithPreload(() => import('@/pages/keyword'));
 
+// 엑셀 테스트 페이지
+export const ExcelDataTest = lazyWithPreload(() => import('@/pages/admin/slots/ExcelDataTest'));
+
 // 출금 페이지 lazy loading with preload
 export const WithdrawRequestPage = lazyWithPreload(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
 export const WithdrawApprovePage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
@@ -206,6 +209,7 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 슬롯 관리 라우트 */}
           <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
           <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
+          <Route path="/admin/slots/excel-test" element={<SuspenseWrapper><ExcelDataTest /></SuspenseWrapper>} />
         </Route>
       </Route>
 

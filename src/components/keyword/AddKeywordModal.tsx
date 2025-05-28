@@ -22,7 +22,7 @@ interface AddKeywordModalProps {
     mid?: string;
     url?: string;
     type: 'shop' | 'place';
-    keyword1?: string;
+    description?: string;
   };
 }
 
@@ -78,7 +78,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
         mainKeyword: defaultData.mainKeyword,
         mid: defaultData.mid ? parseInt(defaultData.mid) : undefined,
         url: defaultData.url || '',
-        keyword1: defaultData.keyword1 || ''
+        description: defaultData.description || ''
       }));
     }
   }, [defaultData]);

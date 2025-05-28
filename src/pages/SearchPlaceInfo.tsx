@@ -32,7 +32,7 @@ const SearchPlaceInfo: React.FC = () => {
     mainKeyword: string;
     mid?: string;
     url?: string;
-    keyword1?: string;
+    description?: string;
   } | null>(null);
 
   // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인
@@ -168,10 +168,10 @@ const SearchPlaceInfo: React.FC = () => {
     const placeLink = item.link || `https://map.naver.com/v5/entry/place/${item.id}`;
     
     setSelectedItemForKeyword({
-      mainKeyword: item.name,
+      mainKeyword: searchTerm,  // 검색한 키워드를 메인 키워드로
       mid: item.id,
       url: placeLink,
-      keyword1: searchTerm  // 검색한 키워드를 keyword1에 추가
+      description: item.name  // 업체명을 설명에 추가
     });
     setIsKeywordModalOpen(true);
   };

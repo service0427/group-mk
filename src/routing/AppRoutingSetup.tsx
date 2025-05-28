@@ -57,6 +57,7 @@ export const SearchHistoryPage = lazyWithPreload(() => import('@/pages/search').
 // 검색 제한 관리 페이지 lazy loading with preload
 export const SearchLimitsPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.SearchLimitsPage })));
 
+
 // 출금 페이지 lazy loading with preload
 export const WithdrawRequestPage = lazyWithPreload(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
 export const WithdrawApprovePage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));

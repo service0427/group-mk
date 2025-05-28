@@ -3,13 +3,18 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
+import { Badge } from '@/components/ui/badge';
+import { useLocation } from 'react-router-dom';
 import shopSearchService, { ShopItem, ApiStatus } from '@/services/shopSearchService';
+import searchLimitService, { SearchLimitStatus } from '@/services/searchLimitService';
+import { AddKeywordModal } from '@/components/keyword';
 
 /**
  * 네이버 쇼핑 검색 페이지 컴포넌트
  * Cloudflare Workers를 사용하여 API 요청을 처리
  */
 const SearchShopInfo: React.FC = () => {
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
@@ -18,11 +23,26 @@ const SearchShopInfo: React.FC = () => {
   const [totalResults, setTotalResults] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState<number>(100);
+  const [searchLimitStatus, setSearchLimitStatus] = useState<SearchLimitStatus | null>(null);
+  const [isCheckingLimit, setIsCheckingLimit] = useState<boolean>(true);
+  const [limitError, setLimitError] = useState<string | null>(null);
+  const [hasAutoSearched, setHasAutoSearched] = useState<boolean>(false);
+  
+  // 키워드 추가 모달 상태
+  const [isKeywordModalOpen, setIsKeywordModalOpen] = useState<boolean>(false);
+  const [selectedItemForKeyword, setSelectedItemForKeyword] = useState<{
+    mainKeyword: string;
+    mid?: string;
+    url?: string;
+  } | null>(null);
 
-  // 컴포넌트 마운트 시 API 상태 확인
+  // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인
   useEffect(() => {
-    const checkApiStatus = async () => {
+    const initialize = async () => {
       setIsChecking(true);
+      setIsCheckingLimit(true);
+      
+      // API 상태 확인
       const status = await shopSearchService.checkApiStatus();
       setApiStatus(status);
 
@@ -30,15 +50,86 @@ const SearchShopInfo: React.FC = () => {
         setError(status.error || 'API에 연결할 수 없습니다.');
       }
 
+      // 검색 제한 상태 확인
+      try {
+        const limitStatus = await searchLimitService.checkSearchLimit('shop');
+        setSearchLimitStatus(limitStatus);
+        setLimitError(null);
+      } catch (error) {
+        setLimitError('검색 제한 서비스에 연결할 수 없습니다. 관리자에게 문의하세요.');
+        setSearchLimitStatus(null);
+      }
+
       setIsChecking(false);
+      setIsCheckingLimit(false);
     };
 
-    checkApiStatus();
+    initialize();
   }, []);
+
+  // location.state에서 검색어가 있으면 자동 검색
+  useEffect(() => {
+    const performAutoSearch = async () => {
+      if (location.state?.searchQuery && !hasAutoSearched && apiStatus.isAvailable && searchLimitStatus) {
+        const query = location.state.searchQuery;
+        setSearchTerm(query);
+        setHasAutoSearched(true);
+        
+        // 검색 제한 확인
+        if (!searchLimitStatus.canSearch) {
+          setError(searchLimitStatus.message);
+          return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          const searchResult = await shopSearchService.searchShop(query, limit);
+
+          if (searchResult && searchResult.items) {
+            setResults(searchResult.items);
+            setTotalResults(searchResult.total);
+            setError(null);
+            
+            // 검색 로그 추가
+            await searchLimitService.addSearchLog('shop', query, searchResult.total);
+            
+            // 검색 제한 상태 업데이트
+            await updateSearchLimit();
+          } else {
+            setError('검색 결과가 없습니다');
+            setResults([]);
+            setTotalResults(0);
+          }
+        } catch (err) {
+          setError('검색 중 오류가 발생했습니다');
+          setResults([]);
+          setTotalResults(0);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    performAutoSearch();
+  }, [location.state, hasAutoSearched, apiStatus.isAvailable, searchLimitStatus, limit]);
+
+  // 검색 후 제한 상태 업데이트
+  const updateSearchLimit = async () => {
+    const limitStatus = await searchLimitService.checkSearchLimit('shop');
+    setSearchLimitStatus(limitStatus);
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       setError('검색어를 입력해주세요');
+      return;
+    }
+
+    // 검색 제한 확인
+    if (searchLimitStatus && !searchLimitStatus.canSearch) {
+      setError(searchLimitStatus.message);
       return;
     }
 
@@ -52,6 +143,12 @@ const SearchShopInfo: React.FC = () => {
         setResults(searchResult.items);
         setTotalResults(searchResult.total);
         setError(null);
+        
+        // 검색 로그 추가
+        await searchLimitService.addSearchLog('shop', searchTerm, searchResult.total);
+        
+        // 검색 제한 상태 업데이트
+        await updateSearchLimit();
       } else {
         setError('검색 결과가 없습니다');
         setResults([]);
@@ -82,6 +179,16 @@ const SearchShopInfo: React.FC = () => {
     window.open(link, '_blank', 'noopener,noreferrer');
   };
 
+  const handleAddKeyword = (item: ShopItem) => {
+    setSelectedItemForKeyword({
+      mainKeyword: item.title,
+      mid: item.productId,
+      url: item.link,
+      keyword1: searchTerm  // 검색한 키워드를 keyword1에 추가
+    });
+    setIsKeywordModalOpen(true);
+  };
+
   return (
     <CommonTemplate
       title="쇼핑 순위 검색"
@@ -96,6 +203,38 @@ const SearchShopInfo: React.FC = () => {
           </div>
 
           <div className="p-5">
+            {/* 검색 제한 상태 표시 */}
+            {!isCheckingLimit && searchLimitStatus && (
+              <div className="mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">오늘 검색 횟수</span>
+                    <Badge variant={searchLimitStatus.canSearch ? "default" : "destructive"}>
+                      {searchLimitStatus.dailyUsed} / {searchLimitStatus.dailyLimit === -1 ? '무제한' : searchLimitStatus.dailyLimit}
+                    </Badge>
+                  </div>
+                  {searchLimitStatus.monthlyLimit && searchLimitStatus.monthlyLimit !== -1 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">월간 검색 횟수</span>
+                      <Badge className={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" : ""}
+                             variant={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "outline" : "destructive"}>
+                        {searchLimitStatus.monthlyUsed} / {searchLimitStatus.monthlyLimit}
+                        {searchLimitStatus.purchasedQuota > 0 && ` (+${searchLimitStatus.purchasedQuota})`}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                {searchLimitStatus.dailyLimit !== -1 && (
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (searchLimitStatus.dailyUsed / searchLimitStatus.dailyLimit) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* API 상태 안내 */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6">
               <div className="flex">
@@ -111,10 +250,22 @@ const SearchShopInfo: React.FC = () => {
             </div>
 
             {/* API 연결 상태 확인 */}
-            {isChecking ? (
+            {isChecking || isCheckingLimit ? (
               <div className="flex items-center justify-center p-10">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-                <p className="text-muted-foreground">API 연결 확인 중...</p>
+                <p className="text-muted-foreground">서비스 연결 확인 중...</p>
+              </div>
+            ) : limitError ? (
+              // 검색 제한 서비스 연결 실패
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-6">
+                <div className="flex">
+                  <KeenIcon icon="shield" className="h-5 w-5 text-red-500 mt-0.5 mr-2" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-2">검색 제한 서비스 오류</h3>
+                    <p className="text-red-700 dark:text-red-400 mb-4">{limitError}</p>
+                    <p className="text-sm text-red-600 dark:text-red-500">검색 기능을 사용할 수 없습니다.</p>
+                  </div>
+                </div>
               </div>
             ) : apiStatus.isAvailable ? (
               <div className="space-y-4">
@@ -145,7 +296,7 @@ const SearchShopInfo: React.FC = () => {
                     </select>
                     <button
                       onClick={handleSearch}
-                      disabled={isLoading}
+                      disabled={isLoading || (searchLimitStatus !== null && !searchLimitStatus.canSearch)}
                       className="btn btn-primary"
                     >
                       {isLoading ? (
@@ -214,12 +365,13 @@ const SearchShopInfo: React.FC = () => {
                   <th className="py-3 px-3 text-start font-medium w-[120px]">브랜드</th>
                   <th className="py-3 px-3 text-start font-medium w-[120px]">제조사</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">이미지</th>
+                  <th className="py-3 px-3 text-center font-medium w-[80px]">작업</th>
                 </tr>
               </thead>
               <tbody>
                 {results.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <h4 className="text-lg font-medium text-foreground mb-2">
                         {searchTerm.trim() === '' ? '검색어를 입력하세요' : '조회된 상품이 없습니다'}
                       </h4>
@@ -235,15 +387,14 @@ const SearchShopInfo: React.FC = () => {
                   results.map((item, index) => (
                     <tr
                       key={item.productId || index}
-                      className="border-b border-border hover:bg-muted/40 cursor-pointer"
-                      onClick={() => handleProductClick(item.link)}
+                      className="border-b border-border hover:bg-muted/40"
                     >
                       <td className="py-3 px-3 text-center">
                         <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium bg-primary/10 text-primary rounded-full">
                           {item.rank}
                         </span>
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 cursor-pointer" onClick={() => handleProductClick(item.link)}>
                         <div className="font-medium text-foreground line-clamp-2">{item.title}</div>
                         <div className="text-xs text-muted-foreground">ID: {item.productId}</div>
                       </td>
@@ -276,6 +427,18 @@ const SearchShopInfo: React.FC = () => {
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </td>
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddKeyword(item);
+                          }}
+                          className="btn btn-xs btn-primary"
+                          title="내 키워드에 추가"
+                        >
+                          <KeenIcon icon="plus" className="text-sm" />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -302,8 +465,7 @@ const SearchShopInfo: React.FC = () => {
                 {results.map((item, index) => (
                   <div
                     key={item.productId || index}
-                    className="p-4 cursor-pointer hover:bg-muted/40"
-                    onClick={() => handleProductClick(item.link)}
+                    className="p-4 hover:bg-muted/40"
                   >
                     <div className="flex items-start gap-3">
                       <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium bg-primary/10 text-primary rounded-full flex-shrink-0 mt-1">
@@ -311,7 +473,7 @@ const SearchShopInfo: React.FC = () => {
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-3 mb-2">
-                          <div className="flex-1">
+                          <div className="flex-1 cursor-pointer" onClick={() => handleProductClick(item.link)}>
                             <h3 className="font-medium text-foreground text-sm line-clamp-2 mb-1">{item.title}</h3>
                             <div className="text-xs text-muted-foreground mb-2">
                               {item.mallName} • {item.brand || '브랜드 없음'}
@@ -343,6 +505,20 @@ const SearchShopInfo: React.FC = () => {
                             제조사: {item.maker}
                           </div>
                         )}
+                        <div className="mt-3 flex justify-between items-center">
+                          <div className="text-xs text-muted-foreground">ID: {item.productId}</div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddKeyword(item);
+                            }}
+                            className="btn btn-xs btn-primary"
+                            title="내 키워드에 추가"
+                          >
+                            <KeenIcon icon="plus" className="text-sm me-1" />
+                            키워드 추가
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -352,6 +528,19 @@ const SearchShopInfo: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* 키워드 추가 모달 */}
+      <AddKeywordModal
+        isOpen={isKeywordModalOpen}
+        onClose={() => {
+          setIsKeywordModalOpen(false);
+          setSelectedItemForKeyword(null);
+        }}
+        defaultData={selectedItemForKeyword ? {
+          ...selectedItemForKeyword,
+          type: 'shop'
+        } : undefined}
+      />
     </CommonTemplate>
   );
 };

@@ -8,6 +8,7 @@ export interface KeywordGroup {
   isDefault: boolean;            // 기본 그룹 여부
   createdAt: string;
   updatedAt: string;
+  keywordCount?: number;         // 그룹의 키워드 개수
 }
 
 // 키워드 타입

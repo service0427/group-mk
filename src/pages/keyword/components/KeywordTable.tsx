@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types';
 import { useKeywordFieldConfig } from '../hooks/useKeywordFieldConfig';
+import { Button } from '@/components/ui/button';
+import { KeenIcon } from '@/components';
 
 interface KeywordTableProps {
   keywords: Keyword[];
@@ -16,6 +18,9 @@ interface KeywordTableProps {
   onSearch: (search: string) => void;
   onSort?: (field: string, direction: 'asc' | 'desc') => void;
   onOpenUploadModal?: () => void; // 엑셀 업로드 모달 열기
+  selectedKeywordIds?: number[]; // 선택된 키워드 ID 목록
+  onSelectionChange?: (ids: number[]) => void; // 선택 변경 핸들러
+  onMoveKeywords?: () => void; // 키워드 이동/복사 모달 열기
 }
 
 const KeywordTable: React.FC<KeywordTableProps> = ({
@@ -32,6 +37,9 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   onSearch,
   onSort,
   onOpenUploadModal,
+  selectedKeywordIds = [],
+  onSelectionChange,
+  onMoveKeywords,
 }) => {
   // 키워드 필드 설정 훅 사용
   const { getFieldConfig, isRequired, isHidden } = useKeywordFieldConfig(selectedGroup?.campaignType);
@@ -92,10 +100,10 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       { field: 'mid', defaultLabel: 'MID', sortable: true, align: 'left' },
       { field: 'url', defaultLabel: 'URL', sortable: false, align: 'left' },
       { field: 'keywords', defaultLabel: '키워드', sortable: false, align: 'left' },
-      { field: 'status', defaultLabel: '상태', sortable: true, align: 'center', alwaysShow: true },
+      { field: 'status', defaultLabel: '상태', sortable: true, align: 'center' },
       { field: 'description', defaultLabel: '설명', sortable: false, align: 'left' },
-      { field: 'created_at', defaultLabel: '등록일', sortable: true, align: 'center', alwaysShow: true },
-      { field: 'actions', defaultLabel: '작업', sortable: false, align: 'right', alwaysShow: true }
+      { field: 'created_at', defaultLabel: '등록일', sortable: true, align: 'center' },
+      { field: 'actions', defaultLabel: '작업', sortable: false, align: 'right', alwaysShow: true } // 작업 열만은 항상 표시
     ];
 
     return headers.map((header) => {
@@ -118,11 +126,17 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
         if (!isHidden('keyword2')) visibleKeywordLabels.push(keyword2Label);
         if (!isHidden('keyword3')) visibleKeywordLabels.push(keyword3Label);
         
-        label = visibleKeywordLabels.length > 0 ? visibleKeywordLabels.join('/') : '키워드';
+        // keyword1, keyword2, keyword3이 모두 숨김이면 keywords 헤더도 숨김
+        if (visibleKeywordLabels.length === 0) {
+          return null;
+        }
+        
+        label = visibleKeywordLabels.join('/');
       } else if (!header.alwaysShow) {
         // 동적 필드는 설정된 라벨 사용
         label = getFieldLabel(header.field, header.defaultLabel);
       }
+
 
       return (
         <th
@@ -139,10 +153,16 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 
   // 보이는 열의 개수 계산
   const getVisibleColumnCount = () => {
-    let count = 5; // 기본: main_keyword, keywords, status, created_at, actions
+    let count = 1; // 기본: actions (작업 열은 항상 표시)
+    if (!isHidden('main_keyword')) count++;
     if (!isHidden('mid')) count++;
     if (!isHidden('url')) count++;
     if (!isHidden('description')) count++;
+    if (!isHidden('status')) count++;
+    if (!isHidden('created_at')) count++;
+    
+    // keywords 열은 keyword1, keyword2, keyword3 중 하나라도 보이면 표시
+    if (!isHidden('keyword1') || !isHidden('keyword2') || !isHidden('keyword3')) count++;
     return count;
   };
 
@@ -436,6 +456,36 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 검색
               </button>
             </form>
+            {selectedKeywordIds.length > 0 && (
+              <>
+                <Button
+                  onClick={() => {
+                    if (selectedKeywordIds.length === keywords.length) {
+                      onSelectionChange?.([]);
+                    } else {
+                      onSelectionChange?.(keywords.map(k => k.id));
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <KeenIcon icon={selectedKeywordIds.length === keywords.length ? "cross-circle" : "check-circle"} className="size-3 mr-1" />
+                  {selectedKeywordIds.length === keywords.length ? '전체 해제' : '전체 선택'}
+                </Button>
+                {onMoveKeywords && (
+                  <Button
+                    onClick={() => onMoveKeywords()}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <KeenIcon icon="arrow-right-left" className="size-3 mr-1" />
+                    이동/복사 ({selectedKeywordIds.length})
+                  </Button>
+                )}
+              </>
+            )}
             {onOpenUploadModal && (
               <button 
                 onClick={onOpenUploadModal}
@@ -454,27 +504,29 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       {/* 새 키워드 추가 폼 */}
       <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30">
         <form onSubmit={handleAddKeyword} className="flex flex-wrap items-end gap-2 w-full">
-          <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[100px] sm:max-w-[130px]">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {getFieldLabel('main_keyword', '메인 키워드')} {(isRequired('main_keyword') || !selectedGroup?.campaignType) && '*'}
-            </label>
-            <input
-              type="text"
-              value={newKeywordData.mainKeyword}
-              onChange={(e) => handleNewKeywordChange(e, 'mainKeyword')}
-              placeholder={getFieldPlaceholder('main_keyword', '메인 키워드')}
-              className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-              disabled={isLoading}
-              required
-              ref={mainKeywordRef}
-              onKeyDown={e => {
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  midRef.current?.focus();
-                }
-              }}
-            />
-          </div>
+          {!isHidden('main_keyword') && (
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[100px] sm:max-w-[130px]">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {getFieldLabel('main_keyword', '메인 키워드')} {(isRequired('main_keyword') || !selectedGroup?.campaignType) && '*'}
+              </label>
+              <input
+                type="text"
+                value={newKeywordData.mainKeyword}
+                onChange={(e) => handleNewKeywordChange(e, 'mainKeyword')}
+                placeholder={getFieldPlaceholder('main_keyword', '메인 키워드')}
+                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                disabled={isLoading}
+                required={!isHidden('main_keyword')}
+                ref={mainKeywordRef}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    midRef.current?.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
           {!isHidden('mid') && (
             <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -593,22 +645,24 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           
           <div className="w-full sm:w-auto sm:flex-grow-0 flex-shrink-0 sm:flex-shrink-0 mt-1 sm:mt-0">
             <div className="flex items-end gap-2 w-full">
-              <div className="flex-grow sm:max-w-[180px] sm:min-w-[100px]">
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">설명 (선택사항)</label>
-                <input
-                  type="text"
-                  value={newKeywordData.description}
-                  onChange={(e) => handleNewKeywordChange(e, 'description')}
-                  placeholder="설명 (선택사항)"
-                  className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-                  disabled={isLoading}
-                  ref={descriptionRef}
-                />
-              </div>
+              {!isHidden('description') && (
+                <div className="flex-grow sm:max-w-[180px] sm:min-w-[100px]">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{getFieldLabel('description', '설명')} (선택사항)</label>
+                  <input
+                    type="text"
+                    value={newKeywordData.description}
+                    onChange={(e) => handleNewKeywordChange(e, 'description')}
+                    placeholder={getFieldPlaceholder('description', '설명 (선택사항)')}
+                    className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                    disabled={isLoading}
+                    ref={descriptionRef}
+                  />
+                </div>
+              )}
               <button
                 type="submit"
                 className="h-[24px] bg-green-600 hover:bg-green-700 text-white text-xs px-3 rounded-md disabled:opacity-50 disabled:bg-gray-400 whitespace-nowrap"
-                disabled={isLoading || !newKeywordData.mainKeyword.trim()}
+                disabled={isLoading || (!isHidden('main_keyword') && !newKeywordData.mainKeyword.trim())}
               >
                 추가
               </button>
@@ -646,23 +700,43 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </tr>
             ) : (
               keywords.map((keyword) => (
-                <tr key={keyword.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 h-8">
+                <tr 
+                  key={keyword.id} 
+                  className={`h-8 cursor-pointer transition-colors ${
+                    selectedKeywordIds.includes(keyword.id) 
+                      ? 'bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 border-l-4 border-purple-500' 
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'
+                  }`}
+                  onClick={(e) => {
+                    // 작업 버튼 영역 클릭은 제외
+                    const target = e.target as HTMLElement;
+                    if (target.closest('.actions-cell') || target.closest('button') || target.closest('input')) return;
+                    
+                    if (selectedKeywordIds.includes(keyword.id)) {
+                      onSelectionChange?.(selectedKeywordIds.filter(id => id !== keyword.id));
+                    } else {
+                      onSelectionChange?.([...selectedKeywordIds, keyword.id]);
+                    }
+                  }}
+                >
                   {/* 메인 키워드 */}
-                  <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
-                    {editingKeywordId === keyword.id ? (
-                      <input
-                        type="text"
-                        value={editingKeywordData.mainKeyword}
-                        onChange={(e) => handleEditingKeywordChange(e, 'mainKeyword')}
-                        className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        autoFocus
-                      />
-                    ) : (
-                      <div className="text-xs font-medium text-gray-900 dark:text-white">
-                        {keyword.mainKeyword}
-                      </div>
-                    )}
-                  </td>
+                  {!isHidden('main_keyword') && (
+                    <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
+                      {editingKeywordId === keyword.id ? (
+                        <input
+                          type="text"
+                          value={editingKeywordData.mainKeyword}
+                          onChange={(e) => handleEditingKeywordChange(e, 'mainKeyword')}
+                          className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="text-xs font-medium text-gray-900 dark:text-white">
+                          {keyword.mainKeyword}
+                        </div>
+                      )}
+                    </td>
+                  )}
                   
                   {/* MID */}
                   {!isHidden('mid') && (
@@ -712,8 +786,9 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   )}
                   
                   {/* 키워드 */}
-                  <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                    {editingKeywordId === keyword.id ? (
+                  {(!isHidden('keyword1') || !isHidden('keyword2') || !isHidden('keyword3')) && (
+                    <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
+                      {editingKeywordId === keyword.id ? (
                       <div className="space-y-1">
                         {!isHidden('keyword1') && (
                           <input
@@ -754,10 +829,12 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                         })()}
                       </div>
                     )}
-                  </td>
+                    </td>
+                  )}
                   
                   {/* 상태 (스위치 버튼으로 변경) */}
-                  <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">
+                  {!isHidden('status') && (
+                    <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">
                     <div className="relative inline-block w-10 mr-2 align-middle select-none">
                       <input
                         type="checkbox"
@@ -779,7 +856,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                         />
                       </label>
                     </div>
-                  </td>
+                    </td>
+                  )}
                   
                   {/* 설명 */}
                   {!isHidden('description') && (
@@ -801,17 +879,19 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   )}
 
                   {/* 등록일 */}
-                  <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">
-                    <div className="text-xs text-gray-700 dark:text-gray-300">
-                      {keyword.createdAt ? new Date(keyword.createdAt).toLocaleDateString() : '-'}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {keyword.createdAt ? new Date(keyword.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
-                    </div>
-                  </td>
+                  {!isHidden('created_at') && (
+                    <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        {keyword.createdAt ? new Date(keyword.createdAt).toLocaleDateString() : '-'}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {keyword.createdAt ? new Date(keyword.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                      </div>
+                    </td>
+                  )}
 
                   {/* 작업 버튼 */}
-                  <td className="px-2 py-1 text-right text-xs font-medium whitespace-nowrap">
+                  <td className="px-2 py-1 text-right text-xs font-medium whitespace-nowrap actions-cell">
                     {editingKeywordId === keyword.id ? (
                       <div className="flex justify-end space-x-2">
                         <button

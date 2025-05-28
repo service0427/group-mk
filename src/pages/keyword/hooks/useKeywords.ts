@@ -46,8 +46,8 @@ export const useKeywords = () => {
         
         // 선택된 그룹이 없고 그룹이 있으면 첫 번째 그룹 선택
         if (!selectedGroupId && response.data.length > 0) {
-          const defaultGroup = response.data.find((g: KeywordGroup) => g.isDefault);
-          setSelectedGroupId(defaultGroup?.id || response.data[0].id);
+          // 기본 그룹이 아닌 첫 번째 그룹을 선택
+          setSelectedGroupId(response.data[0].id);
         }
       } else {
         throw new Error(response.message || '그룹을 로드하는데 실패했습니다.');
@@ -57,7 +57,7 @@ export const useKeywords = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedGroupId]);
+  }, []); // selectedGroupId 의존성 제거
 
   // 키워드 목록 로드
   const loadKeywords = useCallback(async () => {
@@ -90,7 +90,7 @@ export const useKeywords = () => {
   // 초기 로드
   useEffect(() => {
     loadGroups();
-  }, [loadGroups]);
+  }, []); // loadGroups는 의존성이 없으므로 한 번만 실행
 
   // 그룹 선택 또는 필터 변경 시 키워드 로드
   useEffect(() => {
@@ -99,27 +99,8 @@ export const useKeywords = () => {
     }
   }, [selectedGroupId, filter, pagination, sort, loadKeywords]);
 
-  // 기본 그룹 생성 핸들러
-  const createDefaultGroup = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await keywordGroupService.getOrCreateDefaultGroup();
-      
-      if (response.success && response.data) {
-        await loadGroups();
-        return true;
-      } else {
-        throw new Error(response.message || '기본 그룹을 생성하는데 실패했습니다.');
-      }
-    } catch (err: any) {
-      setError(err.message || '기본 그룹을 생성하는데 실패했습니다.');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadGroups]);
+  // 기본 그룹 생성 핸들러 - 제거됨
+  // 사용자가 직접 그룹을 생성해야 함
 
   // 그룹 생성 핸들러
   const createGroup = useCallback(async (
@@ -304,7 +285,6 @@ export const useKeywords = () => {
     totalKeywords,
     pagination,
     loadKeywords,
-    createDefaultGroup,
     createGroup,
     updateGroup,
     deleteGroup,

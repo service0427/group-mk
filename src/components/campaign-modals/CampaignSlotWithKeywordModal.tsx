@@ -1751,7 +1751,23 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                   </div>
                                 </th>
                                 <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
-                                <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
+                                {(() => {
+                                  // 보이는 필드들을 체크하여 정보 헤더 표시 여부 결정
+                                  const hasVisibleInfoFields = 
+                                    !isHidden('mid') || 
+                                    !isHidden('url') || 
+                                    !isHidden('description') ||
+                                    !isHidden('keyword1') ||
+                                    !isHidden('keyword2') ||
+                                    !isHidden('keyword3');
+                                  
+                                  if (hasVisibleInfoFields) {
+                                    return (
+                                      <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                                 <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
                                 <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업일</th>
                                 {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
@@ -1813,13 +1829,29 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="w-[25%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
-                                      <div className="text-xs">
-                                        {keyword.mid && !isHidden('mid') && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getFieldLabel('mid', 'MID')}</span> {keyword.mid}</p>}
-                                        {keyword.url && !isHidden('url') && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
-                                        {keyword.description && !isHidden('description') && <p className="text-gray-500 text-xs mt-1">{keyword.description}</p>}
-                                      </div>
-                                    </td>
+                                    {(() => {
+                                      // 보이는 필드들을 체크하여 정보 열 표시 여부 결정
+                                      const hasVisibleInfoFields = 
+                                        !isHidden('mid') || 
+                                        !isHidden('url') || 
+                                        !isHidden('description') ||
+                                        !isHidden('keyword1') ||
+                                        !isHidden('keyword2') ||
+                                        !isHidden('keyword3');
+                                      
+                                      if (hasVisibleInfoFields) {
+                                        return (
+                                          <td className="w-[25%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                            <div className="text-xs">
+                                              {keyword.mid && !isHidden('mid') && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getFieldLabel('mid', 'MID')}</span> {keyword.mid}</p>}
+                                              {keyword.url && !isHidden('url') && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
+                                              {keyword.description && !isHidden('description') && <p className="text-gray-500 text-xs mt-1">{keyword.description}</p>}
+                                            </div>
+                                          </td>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                     <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
                                       <input
                                         type="text"

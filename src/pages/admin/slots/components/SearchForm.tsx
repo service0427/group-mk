@@ -19,6 +19,9 @@ interface SearchFormProps {
   onSearchDateFromChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSearchDateToChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSearch: () => void;
+  onExcelExport?: () => void;
+  selectedCount?: number;
+  totalCount?: number;
 }
 
 const SearchForm: React.FC<SearchFormProps> = ({
@@ -36,7 +39,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
   onSearchStatusChange,
   onSearchDateFromChange,
   onSearchDateToChange,
-  onSearch
+  onSearch,
+  onExcelExport,
+  selectedCount = 0,
+  totalCount = 0
 }) => {
   return (
     <div className="card shadow-sm mb-5">
@@ -99,6 +105,27 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="col-span-3">
+              {onExcelExport && totalCount > 0 && (
+                <div className="flex items-center h-9 justify-end">
+                  <button
+                    className="btn btn-success btn-sm px-4"
+                    onClick={onExcelExport}
+                    disabled={loading}
+                    title={selectedCount > 0 ? `${selectedCount}개 선택된 항목 다운로드` : `전체 ${totalCount}개 항목 다운로드`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      엑셀 다운로드
+                      {selectedCount > 0 && <span className="badge badge-sm badge-primary">{selectedCount}</span>}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
@@ -260,6 +287,23 @@ const SearchForm: React.FC<SearchFormProps> = ({
               />
             </div>
           </div>
+
+          {onExcelExport && totalCount > 0 && (
+            <button
+              className="btn btn-success btn-sm w-full mb-2"
+              onClick={onExcelExport}
+              disabled={loading}
+              title={selectedCount > 0 ? `${selectedCount}개 선택된 항목 다운로드` : `전체 ${totalCount}개 항목 다운로드`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                엑셀 다운로드
+                {selectedCount > 0 && <span className="badge badge-sm badge-primary ml-1">{selectedCount}</span>}
+              </span>
+            </button>
+          )}
 
           <button
             className="btn btn-primary btn-sm w-full"

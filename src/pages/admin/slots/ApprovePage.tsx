@@ -19,6 +19,7 @@ import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat } from './se
 // 모달 컴포넌트 import
 // ApproveModal 제거
 import RejectModal from './components/RejectModal';
+import ExcelExportModal, { ExcelTemplate } from './components/ExcelExportModal';
 
 // 컴포넌트 가져오기
 import SearchForm from './components/SearchForm';
@@ -27,6 +28,9 @@ import LoadingState from './components/LoadingState';
 import AuthRequired from './components/AuthRequired';
 import SlotMemoModal from './components/SlotMemoModal';
 import ApprovalConfirmModal from './components/ApprovalConfirmModal';
+
+// 엑셀 내보내기 서비스 import
+import { exportFilteredSlotsToExcel, exportSelectedSlotsToExcel } from './services/excelExportService';
 
 // 화면 상태를 열거형으로 명확하게 정의
 enum ViewState {
@@ -79,6 +83,9 @@ const ApprovePage: React.FC = () => {
   const [actionType, setActionType] = useState<string | undefined>(undefined);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  
+  // 엑셀 내보내기 모달 상태
+  const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
   
   // 필터링된 슬롯들을 useMemo로 계산
   const filteredSlots = useMemo(() => {
@@ -359,31 +366,25 @@ const ApprovePage: React.FC = () => {
 
 
 
-        // slots 테이블에서 필요한 필드만 선택 + users 테이블을 조인하여 사용자 정보를 한번에 가져옴
+        // slots 테이블에서 필요한 필드만 선택 + users 테이블과 campaigns 테이블을 조인하여 정보를 한번에 가져옴
         let query = supabase
           .from('slots')
           .select(`
-            id,
-            mat_id,
-            user_id,
-            product_id,
-            status,
-            created_at,
-            submitted_at,
-            processed_at,
-            input_data,
-            rejection_reason,
-            user_reason,
-            mat_reason,
-            updated_at,
-            start_date,
-            end_date,
-            quantity,
-            keyword_id,
-            users:user_id (
+            *,
+            users!user_id (
               id,
               full_name,
               email
+            ),
+            campaigns!product_id (
+              id,
+              campaign_name,
+              service_type,
+              unit_price,
+              min_quantity,
+              deadline,
+              logo,
+              add_info
             )
           `);
 
@@ -479,47 +480,60 @@ const ApprovePage: React.FC = () => {
 
 
 
-        if (data && data.length > 0) {
-          
-          // 조인된 데이터 형식 변환 (users 객체를 user 필드로 변경)
+        if (data) {
+          // 모든 데이터에 대해 조인된 데이터 형식 변환 (빈 배열이어도 처리)
           const enrichedSlots = data.map(slot => {
-            // users 필드에서 사용자 정보 추출
-            const usersArray = slot.users as any[];
-            // 배열에서 첫 번째 사용자 정보를 user로 변환
-            const user = usersArray && usersArray.length > 0 ? {
-              id: usersArray[0].id,
-              full_name: usersArray[0].full_name,
-              email: usersArray[0].email
-            } : undefined;
+            // users 처리 - 배열 또는 단일 객체일 수 있음
+            let user;
+            if (Array.isArray(slot.users)) {
+              const usersArray = slot.users;
+              user = usersArray.length > 0 ? {
+                id: usersArray[0].id,
+                full_name: usersArray[0].full_name,
+                email: usersArray[0].email
+              } : undefined;
+            } else if (slot.users && typeof slot.users === 'object') {
+              // 단일 객체인 경우
+              user = {
+                id: slot.users.id,
+                full_name: slot.users.full_name,
+                email: slot.users.email
+              };
+            }
 
-            // 기존 users 필드 제거하고 user 필드 추가
-            const { users, ...slotWithoutUsers } = slot;
+            // campaigns 처리 - 배열 또는 단일 객체일 수 있음
+            let campaign;
+            if (Array.isArray(slot.campaigns)) {
+              const campaignsArray = slot.campaigns;
+              campaign = campaignsArray.length > 0 ? campaignsArray[0] : null;
+            } else if (slot.campaigns && typeof slot.campaigns === 'object') {
+              // 단일 객체인 경우
+              campaign = slot.campaigns;
+            }
 
-            // 캠페인 정보 설정 - 현재 선택된 캠페인 리스트에서 추출
-            let campaignName;
+            // 기존 users, campaigns 필드 제거하고 정리된 필드 추가
+            const { users, campaigns, ...slotWithoutJoins } = slot;
+
+            // 캠페인 정보 설정
+            let campaignName = campaign?.campaign_name;
             let campaignLogo;
-            if (slot.product_id) {
-              // 현재 캠페인 목록에서 캠페인 정보 찾기
-              const campaignId = parseInt(String(slot.product_id));
-              const campaign = campaigns.find(c => parseInt(String(c.id)) === campaignId);
-              if (campaign) {
-                campaignName = campaign.campaign_name;
-                
-                // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
-                if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
-                  campaignLogo = campaign.add_info.logo_url;
-                } else {
-                  // 업로드된 로고가 없으면 동물 아이콘 사용
-                  campaignLogo = campaign.logo;
-                }
+            
+            if (campaign) {
+              // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
+              if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
+                campaignLogo = campaign.add_info.logo_url;
+              } else {
+                // 업로드된 로고가 없으면 동물 아이콘 사용
+                campaignLogo = campaign.logo;
               }
             }
 
             const enrichedSlot = {
-              ...slotWithoutUsers,
+              ...slotWithoutJoins,
               user,
               campaign_name: campaignName,
-              campaign_logo: campaignLogo
+              campaign_logo: campaignLogo,
+              campaign // 전체 캠페인 정보도 포함
             };
             
             return enrichedSlot;
@@ -527,10 +541,10 @@ const ApprovePage: React.FC = () => {
 
           setSlots(enrichedSlots as Slot[]);
         } else {
-          setSlots(data || [] as Slot[]);
-          // 데이터가 없는 경우에도 error는 null 상태로 유지
-          setError(null);
+          setSlots([]);
         }
+        // 데이터가 없는 경우에도 error는 null 상태로 유지
+        setError(null);
       } catch (err: any) {
         setError('슬롯 데이터 조회 중 오류가 발생했습니다.');
       } finally {
@@ -1166,6 +1180,23 @@ const ApprovePage: React.FC = () => {
     // 검색 버튼 클릭 시 특별한 동작 없음 (useMemo로 자동 필터링됨)
     // 필요시 검색 이벤트 로깅 등 추가 가능
   };
+  
+  // 엑셀 내보내기 처리
+  const handleExcelExport = (template: ExcelTemplate) => {
+    try {
+      if (selectedSlots.length > 0) {
+        // 선택된 슬롯만 내보내기
+        exportSelectedSlotsToExcel(filteredSlots, selectedSlots, template);
+        showSuccess(`${selectedSlots.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
+      } else {
+        // 필터링된 전체 슬롯 내보내기
+        exportFilteredSlotsToExcel(filteredSlots, template);
+        showSuccess(`${filteredSlots.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
+      }
+    } catch (error: any) {
+      showError(error.message || '엑셀 내보내기 중 오류가 발생했습니다.');
+    }
+  };
 
   // 초기 로딩 중에는 간소화된 템플릿 반환
   if (authLoading && !initialized) {
@@ -1211,6 +1242,9 @@ const ApprovePage: React.FC = () => {
           onSearchDateFromChange={handleSearchDateFromChange}
           onSearchDateToChange={handleSearchDateToChange}
           onSearch={handleSearch}
+          onExcelExport={() => setExcelModalOpen(true)}
+          selectedCount={selectedSlots.length}
+          totalCount={filteredSlots.length}
         />
 
 
@@ -1284,6 +1318,13 @@ const ApprovePage: React.FC = () => {
                   setActionSlotId(null);
                 }}
                 count={selectedSlots.length}
+              />
+              
+              {/* 엑셀 내보내기 모달 */}
+              <ExcelExportModal
+                isOpen={excelModalOpen}
+                onClose={() => setExcelModalOpen(false)}
+                onExport={handleExcelExport}
               />
             </>
           )}

@@ -8,6 +8,9 @@ export interface Campaign {
   description: string;
   logo?: string;
   add_info?: any;
+  unit_price?: number;
+  min_quantity?: number;
+  deadline?: string;
 }
 
 export interface User {
@@ -20,6 +23,7 @@ export interface Slot {
   id: string;
   mat_id: string;
   user_id: string;
+  user_slot_number?: number; // 슬롯 번호
   product_id?: number; // 캠페인 ID
   campaign_name?: string; // 캠페인 이름 (UI 표시용)
   campaign_logo?: string; // 캠페인 로고 (UI 표시용)
@@ -55,6 +59,7 @@ export interface Slot {
   start_date?: string; // 작업 시작일
   end_date?: string; // 작업 종료일
   user?: User; // 사용자 정보 (조인된 데이터)
+  campaign?: Campaign; // 캠페인 정보 (조인된 데이터)
 }
 
 export interface SearchParams {

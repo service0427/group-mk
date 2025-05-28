@@ -273,7 +273,7 @@ export const keywordGroupService = {
             is_default: isDefault 
           },
         ])
-        .select();
+        .select('*');
 
       if (error) throw error;
 
@@ -419,7 +419,7 @@ export const keywordGroupService = {
         })
         .eq('id', groupId)
         .eq('user_id', user.id)
-        .select();
+        .select('*');
 
       if (error) throw error;
 
@@ -645,24 +645,27 @@ export const keywordService = {
         };
       }
 
+      // 삽입할 데이터 준비
+      const insertData = {
+        group_id: groupId,
+        main_keyword: keywordData.mainKeyword.substring(0, 100), // 최대 100자
+        mid: keywordData.mid ? Number(keywordData.mid) : null,  // 숫자로 변환하거나 null
+        url: keywordData.url ? keywordData.url.substring(0, 500) : null, // 최대 500자
+        keyword1: keywordData.keyword1 ? keywordData.keyword1.substring(0, 100) : null,
+        keyword2: keywordData.keyword2 ? keywordData.keyword2.substring(0, 100) : null,
+        keyword3: keywordData.keyword3 ? keywordData.keyword3.substring(0, 100) : null,
+        description: keywordData.description || null,
+        is_active: keywordData.isActive !== undefined ? keywordData.isActive : true
+      };
+
       const { data, error } = await supabase
         .from('keywords')
-        .insert([
-          {
-            group_id: groupId,
-            main_keyword: keywordData.mainKeyword,
-            mid: keywordData.mid,
-            url: keywordData.url,
-            keyword1: keywordData.keyword1,
-            keyword2: keywordData.keyword2,
-            keyword3: keywordData.keyword3,
-            description: keywordData.description,
-            is_active: keywordData.isActive !== undefined ? keywordData.isActive : true
-          },
-        ])
-        .select();
+        .insert([insertData])
+        .select('*');
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       // 스네이크 케이스에서 카멜 케이스로 데이터 변환
       const transformedData = {
@@ -742,7 +745,7 @@ export const keywordService = {
         .from('keywords')
         .update(snakeCaseData)
         .eq('id', keywordId)
-        .select();
+        .select('*');
 
       if (error) throw error;
 
@@ -868,19 +871,19 @@ export const keywordService = {
       const keywordsToInsert = keywordsData.map(kw => ({
         group_id: groupId,
         main_keyword: kw.mainKeyword,
-        mid: kw.mid,
-        url: kw.url,
-        keyword1: kw.keyword1,
-        keyword2: kw.keyword2,
-        keyword3: kw.keyword3,
-        description: kw.description,
+        mid: kw.mid ? Number(kw.mid) : null,  // 숫자로 변환하거나 null
+        url: kw.url || null,
+        keyword1: kw.keyword1 || null,
+        keyword2: kw.keyword2 || null,
+        keyword3: kw.keyword3 || null,
+        description: kw.description || null,
         is_active: kw.isActive !== undefined ? kw.isActive : true
       }));
 
       const { data, error } = await supabase
         .from('keywords')
         .insert(keywordsToInsert)
-        .select();
+        .select('*');
 
       if (error) throw error;
 

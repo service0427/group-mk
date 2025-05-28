@@ -96,7 +96,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
           >
             <MenuIcon className={clsx('items-start text-gray-500 dark:text-gray-400', iconWidth)}>
               {item.iconImage ? (
-                <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
               ) : item.icon && (
                 <KeenIcon icon={item.icon} className={iconSize} />
               )}
@@ -139,7 +139,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
               )}
             >
               {item.iconImage ? (
-                <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
               ) : item.icon && (
                 <KeenIcon icon={item.icon} className={iconSize} />
               )}

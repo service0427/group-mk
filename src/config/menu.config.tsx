@@ -116,8 +116,30 @@ export const MENU_SIDEBAR: TMenuConfig = [
     authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
   },
   {
-    title: '순위 분석',
+    title: '순위 검색',
     icon: 'ranking text-info',
+    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+    children: [
+      {
+        title: 'N 쇼핑 순위 검색',
+        iconImage: '/media/ad-brand/naver-shopping.png',
+        path: '/search-shop'
+      },
+      {
+        title: 'N 플레이스 순위 검색',
+        iconImage: '/media/ad-brand/naver-place.png',
+        path: '/search-place'
+      },
+      {
+        title: '검색 히스토리',
+        icon: 'search-list text-primary',
+        path: '/search-history'
+      }
+    ]
+  },
+  {
+    title: '순위 분석',
+    icon: 'graph-up text-warning',
     authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
     disabled: true
   },
@@ -261,6 +283,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: '캐시 설정',
             icon: 'dollar text-warning',
             path: '/admin/cash_setting'
+          },
+          {
+            title: '검색 제한 설정',
+            icon: 'search-list text-info',
+            path: '/admin/site/search-limits'
           },
         ]
       },
@@ -435,18 +462,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'code text-info',
     authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
-      {
-        title: 'N 쇼핑 순위 검색',
-        iconImage: '/media/ad-brand/naver-shopping.png',
-        path: '/search-shop',
-        authCheck: (role) => true,  // 모든 사용자가 접근 가능
-      },
-      {
-        title: 'N 플레이스 순위 검색',
-        iconImage: '/media/ad-brand/naver-place.png',
-        path: '/search-place',
-        authCheck: (role) => true,  // 모든 사용자가 접근 가능
-      },
       {
         title: '역할별 대시보드',
         icon: 'element-11 text-primary',

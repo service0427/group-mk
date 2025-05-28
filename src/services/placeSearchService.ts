@@ -24,6 +24,7 @@ export interface PlaceInfo {
   categoryCodeList: string;
   rank?: number;
   isAdDup?: boolean;
+  link?: string;
 }
 
 /**

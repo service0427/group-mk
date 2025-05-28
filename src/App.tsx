@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
-import SearchPlaceInfo from './pages/SearchPlaceInfo';
-import SearchShopInfo from './pages/SearchShopInfo';
 import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
@@ -89,12 +87,6 @@ const App = () => {
 
         {/* 라우팅 구조 */}
         <Routes>
-          {/* 인증 없이 접근 가능한 라우트 */}
-          <Route element={<StandLayout />}>
-            <Route path="/search-place" element={<SearchPlaceInfo />} />
-            <Route path="/search-shop" element={<SearchShopInfo />} />
-          </Route>
-
           {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
           {!isLoggingOut && <Route path="/*" element={<AppRouting />} />}
         </Routes>

@@ -49,6 +49,14 @@ export const FAQPage = lazyWithPreload(() => import('@/pages/faq'));
 // 키워드 페이지 lazy loading with preload
 export const KeywordPage = lazyWithPreload(() => import('@/pages/keyword'));
 
+// 검색 페이지 lazy loading with preload
+export const SearchShopInfo = lazyWithPreload(() => import('@/pages/SearchShopInfo'));
+export const SearchPlaceInfo = lazyWithPreload(() => import('@/pages/SearchPlaceInfo'));
+export const SearchHistoryPage = lazyWithPreload(() => import('@/pages/search').then(m => ({ default: m.SearchHistoryPage })));
+
+// 검색 제한 관리 페이지 lazy loading with preload
+export const SearchLimitsPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.SearchLimitsPage })));
+
 // 출금 페이지 lazy loading with preload
 export const WithdrawRequestPage = lazyWithPreload(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
 export const WithdrawApprovePage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
@@ -122,6 +130,11 @@ const AppRoutingSetup = (): ReactElement => {
         <Route element={<StandLayout />}>
           {/* 내 키워드 */}
           <Route path="/keyword" element={<SuspenseWrapper><KeywordPage /></SuspenseWrapper>} />
+
+          {/* 검색 관련 라우트 */}
+          <Route path="/search-shop" element={<SuspenseWrapper><SearchShopInfo /></SuspenseWrapper>} />
+          <Route path="/search-place" element={<SuspenseWrapper><SearchPlaceInfo /></SuspenseWrapper>} />
+          <Route path="/search-history" element={<SuspenseWrapper><SearchHistoryPage /></SuspenseWrapper>} />
 
           {/* 캐쉬 관련 라우트 */}
           <Route path="/cash/charge" element={<SuspenseWrapper><ChargePage /></SuspenseWrapper>} />
@@ -226,6 +239,7 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
           <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
           <Route path="/admin/site/chat" element={<SuspenseWrapper><ChatManagePage /></SuspenseWrapper>} />
+          <Route path="/admin/site/search-limits" element={<SuspenseWrapper><SearchLimitsPage /></SuspenseWrapper>} />
 
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<SuspenseWrapper><ManageCashPage /></SuspenseWrapper>} />
@@ -276,6 +290,7 @@ initializeComponentMap({
   '/admin/withdraw_setting': WithdrawSettingPage,
   '/admin/withdraw_approve': WithdrawApprovePage,
   '/admin/work-input': WorkInputPage,
+  '/admin/site/search-limits': SearchLimitsPage,
   
   // 광고 페이지
   '/advertise/campaigns/info/*': InfoPage,
@@ -306,6 +321,11 @@ initializeComponentMap({
   
   // 키워드 페이지
   '/keyword': KeywordPage,
+  
+  // 검색 페이지
+  '/search-shop': SearchShopInfo,
+  '/search-place': SearchPlaceInfo,
+  '/search-history': SearchHistoryPage,
   
   // 출금 페이지
   '/withdraw': WithdrawRequestPage,

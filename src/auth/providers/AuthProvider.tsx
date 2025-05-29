@@ -57,22 +57,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }, []);
 
-    // saveAuth 함수 정의
+    // saveAuth 함수 정의 - 메모리에만 저장
     const saveAuth = useCallback((auth: AuthModel | undefined) => {
         setAuth(auth);
-        if (auth) {
-            authHelper.setAuth(auth);
-        } else {
-            authHelper.removeAuth();
-        }
+        // localStorage에는 저장하지 않음 (authHelper.setAuth/removeAuth 호출 제거)
     }, []);
 
     // 토큰 새로고침 함수
     const refreshToken = useCallback(async (): Promise<boolean> => {
         try {
-            const storeAuth = authHelper.getAuth();
-            if (!storeAuth) return false;
-
             // 현재 세션 가져오기
             const { data, error } = await supabase.auth.getSession();
 
@@ -230,10 +223,16 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         const initAuth = async () => {
             try {
                 setLoading(true);
-                const storeAuth = authHelper.getAuth();
+                // localStorage를 사용하지 않으므로 Supabase 세션에서 직접 확인
+                const { data: { session } } = await supabase.auth.getSession();
 
-                if (storeAuth) {
-                    setAuth(storeAuth);
+                if (session) {
+                    const authData: AuthModel = {
+                        access_token: session.access_token,
+                        refreshToken: session.refresh_token,
+                        api_token: session.access_token
+                    };
+                    setAuth(authData);
 
                     // 세션 스토리지에서 임시 사용자 정보 복원
                     try {
@@ -246,39 +245,25 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         // 캐시 복원 실패 시 무시
                     }
 
-                    // 백그라운드에서 토큰 갱신 및 사용자 정보 업데이트
+                    // 백그라운드에서 사용자 정보 업데이트
                     setTimeout(async () => {
                         try {
-                            // 토큰 새로고침 시도
-                            const isRefreshed = await refreshToken();
+                            // 사용자 정보 가져오기
+                            const user = await getUser();
 
-                            if (isRefreshed) {
-                                // 사용자 정보 가져오기
-                                const user = await getUser();
+                            if (user) {
+                                setCurrentUser(user);
+                                setAuthVerified(true);
 
-                                if (user) {
-                                    setCurrentUser(user);
-                                    setAuthVerified(true);
-
-                                    // 검증된 사용자 정보 캐싱
-                                    try {
-                                        sessionStorage.setItem('currentUser', JSON.stringify(user));
-                                        sessionStorage.setItem('lastAuthCheck', Date.now().toString());
-                                    } catch (e) {
-                                        // 캐시 저장 실패 시 무시
-                                    }
-                                } else {
-                                    // 사용자 정보가 없으면 인증 정보 제거
-                                    authHelper.removeAuth();
-                                    setAuth(undefined);
-                                    setCurrentUser(null);
-                                    setAuthVerified(false);
-                                    sessionStorage.removeItem('currentUser');
-                                    sessionStorage.removeItem('lastAuthCheck');
+                                // 검증된 사용자 정보 캐싱
+                                try {
+                                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                                    sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+                                } catch (e) {
+                                    // 캐시 저장 실패 시 무시
                                 }
                             } else {
-                                // 토큰 갱신 실패 시 인증 정보 제거
-                                authHelper.removeAuth();
+                                // 사용자 정보가 없으면 인증 정보 제거
                                 setAuth(undefined);
                                 setCurrentUser(null);
                                 setAuthVerified(false);
@@ -292,7 +277,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 }
             } catch (error) {
                 // 오류 발생 시 인증 정보 제거
-                authHelper.removeAuth();
                 setAuth(undefined);
                 setCurrentUser(null);
                 setAuthVerified(false);
@@ -305,7 +289,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         };
 
         initAuth();
-    }, []);
+    }, [getUser]);
 
     // 주기적인 토큰 유효성 검사 및 갱신 - 최적화된 버전
     useEffect(() => {
@@ -357,7 +341,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         };
 
                         setAuth(authData);
-                        authHelper.setAuth(authData);
                     }
                     return;
                 }
@@ -370,7 +353,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     };
 
                     setAuth(authData);
-                    authHelper.setAuth(authData);
 
                     // 사용자 정보 가져오기
                     const user = await getUser();
@@ -379,7 +361,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     // 로그아웃 이벤트 처리
                     setAuth(undefined);
                     setCurrentUser(null);
-                    authHelper.removeAuth();
                 }
             }
         );
@@ -650,7 +631,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 // 클라이언트측 인증 상태 초기화
                 setAuth(undefined);
                 setCurrentUser(null);
-                authHelper.removeAuth();
 
                 // Supabase 세션 로그아웃 처리
                 try {
@@ -805,7 +785,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 setAuth(undefined);
                 setCurrentUser(null);
                 setAuthVerified(false);
-                authHelper.removeAuth();
 
                 // Supabase 로그아웃 (비동기이지만 결과를 기다리지 않음)
                 try {
@@ -855,7 +834,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             setAuth(undefined);
             setCurrentUser(null);
             setAuthVerified(false);
-            authHelper.removeAuth();
 
             // 로그인 페이지로 이동 시도
             try {

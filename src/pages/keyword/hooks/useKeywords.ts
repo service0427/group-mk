@@ -58,7 +58,7 @@ export const useKeywords = () => {
             const campaignName = getCampaignNameByServiceType(serviceType);
             
             const createResponse = await keywordGroupService.createGroup(
-              `${serviceName}`,
+              '기본그룹',
               campaignName,
               serviceType,
               true

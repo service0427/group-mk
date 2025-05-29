@@ -505,7 +505,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30">
         <form onSubmit={handleAddKeyword} className="flex flex-wrap items-end gap-2 w-full">
           {!isHidden('main_keyword') && (
-            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[100px] sm:max-w-[130px]">
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[120px] sm:max-w-[180px]">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {getFieldLabel('main_keyword', '메인 키워드')} {(isRequired('main_keyword') || !selectedGroup?.campaignType) && '*'}
               </label>
@@ -528,7 +528,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             </div>
           )}
           {!isHidden('mid') && (
-            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[50px] sm:max-w-[80px]">
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[80px] sm:max-w-[120px]">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {getFieldLabel('mid', 'MID')} {isRequired('mid') && '*'}
               </label>

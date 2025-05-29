@@ -2,7 +2,7 @@ import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useKeywords } from './hooks/useKeywords';
 import { KeywordTable, KeywordMoveModal } from './components';
 import { KeywordInput } from './types';
-import { getTypeNameByCode } from '../../config/campaign.config';
+import { getTypeNameByCode, getCampaignNameByServiceType } from '../../config/campaign.config';
 import { DashboardTemplate } from '@/components/pageTemplate';
 import KeywordUploadModal from './components/KeywordUploadModal';
 import { TestKeywordFieldConfig } from './components/TestKeywordFieldConfig';
@@ -457,9 +457,10 @@ const KeywordPage: React.FC = () => {
                         onChange={(e) => setNewGroupName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newGroupName.trim()) {
+                            const campaignName = getCampaignNameByServiceType(selectedServiceType);
                             handleCreateGroup(
                               newGroupName.trim(),
-                              selectedGroup?.campaignName || null,
+                              campaignName,
                               selectedServiceType,
                               false
                             );
@@ -479,9 +480,10 @@ const KeywordPage: React.FC = () => {
                         variant="ghost"
                         onClick={() => {
                           if (newGroupName.trim()) {
+                            const campaignName = getCampaignNameByServiceType(selectedServiceType);
                             handleCreateGroup(
                               newGroupName.trim(),
-                              selectedGroup?.campaignName || null,
+                              campaignName,
                               selectedServiceType,
                               false
                             );
@@ -520,11 +522,12 @@ const KeywordPage: React.FC = () => {
                     onClick={() => {
                       const groupName = prompt('새 그룹 이름을 입력하세요:');
                       if (groupName) {
+                        const campaignName = getCampaignNameByServiceType(selectedServiceType);
                         handleCreateGroup(
                           groupName,
-                          null,
-                          selectedServiceType,
-                          false
+                          campaignName,  // 서비스 타입에 맞는 캠페인 이름
+                          selectedServiceType,  // campaignType
+                          false  // isDefault
                         );
                       }
                     }}

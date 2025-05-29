@@ -650,24 +650,6 @@ export const DashboardContent: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 mr-3">
-                    <span className="font-bold">4</span>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-medium mb-1">메뉴 구조 확인하기</h4>
-                    <p className="text-sm text-gray-600">사이트맵에서 전체 메뉴 구조와 이용 가능한 서비스를 확인하세요.</p>
-                    <Button
-                      variant="link"
-                      className="text-amber-600 p-0 h-auto mt-1"
-                      onClick={() => navigate('/sitemap')}
-                    >
-                      사이트맵 보기 &rarr;
-                    </Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </Card>

@@ -676,7 +676,8 @@ export const keywordService = {
   // 새 키워드 추가
   async createKeyword(
     groupId: number, 
-    keywordData: KeywordInput
+    keywordData: KeywordInput,
+    keywordType?: 'shop' | 'place'
   ): Promise<KeywordResponse> {
     try {
       // 현재 로그인한 사용자 가져오기
@@ -721,7 +722,8 @@ export const keywordService = {
         keyword2: keywordData.keyword2 ? keywordData.keyword2.substring(0, 100) : null,
         keyword3: keywordData.keyword3 ? keywordData.keyword3.substring(0, 100) : null,
         description: keywordData.description || null,
-        is_active: keywordData.isActive !== undefined ? keywordData.isActive : true
+        is_active: keywordData.isActive !== undefined ? keywordData.isActive : true,
+        additional_info: keywordData.additionalInfo || null  // JSON 형태로 저장
       };
 
       const { data, error } = await supabase
@@ -730,6 +732,14 @@ export const keywordService = {
         .select('*');
 
       if (error) {
+        // 409 Conflict - 중복 키 에러 처리
+        if (error.code === '23505') {  // PostgreSQL unique violation
+          const idType = keywordType === 'place' ? 'PID' : 'MID';
+          return {
+            success: false,
+            message: `이미 동일한 키워드와 ${idType} 조합이 존재합니다.`
+          };
+        }
         throw error;
       }
 

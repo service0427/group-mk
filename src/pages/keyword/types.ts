@@ -37,6 +37,7 @@ export interface KeywordInput {
   keyword3?: string;
   description?: string;
   isActive?: boolean;
+  additionalInfo?: any;  // JSON 형태로 저장될 추가 정보
 }
 
 // 그룹과 키워드 함께 요청하는 응답 타입

@@ -74,10 +74,17 @@ export const syncedLogout = async (
     
     // 4. 주요 함수: 하드 리디렉션 사용 - React 라우터 완전히 우회
     const timestamp = new Date().getTime();
-    const loginPath = `/#/auth/login?t=${timestamp}`;
+    const loginPath = `/auth/login?t=${timestamp}`;
     
-    // window.location.href 사용 - React Router 우회하여 즉시 URL 변경
-    window.location.href = window.location.origin + loginPath;
+    // 모바일과 PC 모두에서 안전하게 작동하도록 해시 처리 개선
+    // window.location.hash를 사용하여 해시 라우터 경로 직접 설정
+    if (window.location.hash) {
+      // 기존 해시가 있는 경우 해시만 변경
+      window.location.hash = `#${loginPath}`;
+    } else {
+      // 해시가 없는 경우 전체 URL 설정
+      window.location.href = window.location.origin + '/#' + loginPath;
+    }
     
     // 5. 백그라운드에서 추가 정리 작업 (필요한 경우)
     // 이 시점에서는 이미 페이지 전환이 시작됨

@@ -35,6 +35,7 @@ const SearchShopInfo: React.FC = () => {
     mid?: string;
     url?: string;
     description?: string;
+    additionalInfo?: any;
   } | null>(null);
 
   // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인
@@ -181,11 +182,36 @@ const SearchShopInfo: React.FC = () => {
   };
 
   const handleAddKeyword = (item: ShopItem) => {
+    // 설명란에는 간단한 정보만
+    const description = `${item.title}${item.mallName ? ` - ${item.mallName}` : ''}`;
+    
+    // 추가 정보는 별도 객체로 (새로운 JSON 포맷)
+    const additionalInfo = {
+      type: 'shop',
+      mainKeyword: searchTerm,
+      mid: item.productId,
+      productName: item.title,
+      rank: item.rank,
+      price: {
+        low: item.lprice,
+        high: item.hprice
+      },
+      shop: {
+        name: item.mallName || null,
+        brand: item.brand || null,
+        maker: item.maker || null
+      },
+      category: [item.category1, item.category2, item.category3, item.category4].filter(Boolean),
+      image: item.image || null,
+      capturedAt: new Date().toISOString()
+    };
+    
     setSelectedItemForKeyword({
       mainKeyword: searchTerm,  // 검색한 키워드를 메인 키워드로
       mid: item.productId,
       url: item.link,
-      description: item.title  // 상품명을 설명에 추가
+      description: description,
+      additionalInfo: additionalInfo  // 추가 정보
     });
     setIsKeywordModalOpen(true);
   };

@@ -47,7 +47,7 @@ export const useKeywords = () => {
         let groups = response.data;
         
         // 현재 존재하는 서비스 타입들을 확인
-        const existingServiceTypes = new Set(groups.map(g => g.campaignType).filter(Boolean));
+        const existingServiceTypes = new Set(groups.map((g: KeywordGroup) => g.campaignType).filter(Boolean));
         const allServiceTypes = Object.values(CampaignServiceType);
         
         // 없는 서비스 타입에 대해 기본 그룹 생성
@@ -82,7 +82,7 @@ export const useKeywords = () => {
         }
         
         // 기본 그룹을 맨 앞으로 정렬
-        const sortedGroups = groups.sort((a, b) => {
+        const sortedGroups = groups.sort((a: KeywordGroup, b: KeywordGroup) => {
           // 기본 그룹을 먼저 배치
           if (a.isDefault && !b.isDefault) return -1;
           if (!a.isDefault && b.isDefault) return 1;

@@ -33,6 +33,7 @@ const SearchPlaceInfo: React.FC = () => {
     mid?: string;
     url?: string;
     description?: string;
+    additionalInfo?: any;
   } | null>(null);
 
   // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인
@@ -167,11 +168,38 @@ const SearchPlaceInfo: React.FC = () => {
     // 네이버 플레이스 링크 생성
     const placeLink = item.link || `https://map.naver.com/v5/entry/place/${item.id}`;
     
+    // 설명란에는 간단한 정보만
+    const description = item.name;
+    
+    // 추가 정보는 별도 객체로 (새로운 JSON 포맷)
+    const additionalInfo = {
+      type: 'place',
+      mainKeyword: searchTerm,
+      pid: item.id,
+      placeName: item.name,
+      rank: item.rank || results.indexOf(item) + 1,
+      category: {
+        main: item.category,
+        business: item.businessCategory || null
+      },
+      stats: {
+        visitorReviews: item.visit,
+        blogReviews: item.blog,
+        images: item.imageCount
+      },
+      features: {
+        booking: item.booking === 'Y',
+        npay: item.npay === 'Y'
+      },
+      capturedAt: new Date().toISOString()
+    };
+    
     setSelectedItemForKeyword({
       mainKeyword: searchTerm,  // 검색한 키워드를 메인 키워드로
       mid: item.id,
       url: placeLink,
-      description: item.name  // 업체명을 설명에 추가
+      description: description,
+      additionalInfo: additionalInfo  // 추가 정보
     });
     setIsKeywordModalOpen(true);
   };
@@ -359,7 +387,7 @@ const SearchPlaceInfo: React.FC = () => {
                   results.map((place, index) => (
                     <tr
                       key={place.id || index}
-                      className={`border-b border-border hover:bg-muted/40 ${place.isAdDup ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                      className="border-b border-border hover:bg-muted/40"
                     >
                       <td className="py-3 px-3 text-center">
                         <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium bg-primary/10 text-primary rounded-full">
@@ -454,7 +482,7 @@ const SearchPlaceInfo: React.FC = () => {
                 {results.map((place, index) => (
                   <div
                     key={place.id || index}
-                    className={`p-4 ${place.isAdDup ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                    className="p-4 hover:bg-muted/40"
                   >
                     <div className="flex items-start gap-3">
                       <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium bg-primary/10 text-primary rounded-full flex-shrink-0 mt-1">

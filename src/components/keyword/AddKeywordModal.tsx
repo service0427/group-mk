@@ -23,6 +23,7 @@ interface AddKeywordModalProps {
     url?: string;
     type: 'shop' | 'place';
     description?: string;
+    additionalInfo?: any;
   };
 }
 
@@ -31,17 +32,16 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   // 폼 데이터
   const [formData, setFormData] = useState<KeywordInput>({
     mainKeyword: '',
     mid: undefined,
     url: '',
-    keyword1: '',
-    keyword2: '',
-    keyword3: '',
     description: '',
-    isActive: true
+    isActive: true,
+    additionalInfo: undefined
   });
 
   // 그룹 목록 불러오기
@@ -78,7 +78,8 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
         mainKeyword: defaultData.mainKeyword,
         mid: defaultData.mid ? parseInt(defaultData.mid) : undefined,
         url: defaultData.url || '',
-        description: defaultData.description || ''
+        description: defaultData.description || '',
+        additionalInfo: defaultData.additionalInfo || undefined
       }));
     }
   }, [defaultData]);
@@ -91,27 +92,34 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
   };
 
   const handleSave = async () => {
+    setSaveError(null); // 이전 에러 초기화
+    
     if (!selectedGroupId) {
-      toast.error('키워드 그룹을 선택해주세요.');
+      setSaveError('키워드 그룹을 선택해주세요.');
       return;
     }
 
     if (!formData.mainKeyword.trim()) {
-      toast.error('메인 키워드를 입력해주세요.');
+      setSaveError('메인 키워드를 입력해주세요.');
+      return;
+    }
+
+    if (!formData.mid) {
+      setSaveError(`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력해주세요.`);
       return;
     }
 
     setIsSaving(true);
     try {
-      const response = await keywordService.createKeyword(selectedGroupId, formData);
+      const response = await keywordService.createKeyword(selectedGroupId, formData, defaultData?.type);
       if (response.success) {
         toast.success('키워드가 추가되었습니다.');
         onClose();
       } else {
-        toast.error(response.message || '키워드 추가에 실패했습니다.');
+        setSaveError(response.message || '키워드 추가에 실패했습니다.');
       }
     } catch (error) {
-      toast.error('키워드 저장 중 오류가 발생했습니다.');
+      setSaveError('키워드 저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -189,35 +197,51 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 </select>
               </div>
 
-              {/* 메인 키워드 */}
-              <div>
-                <Label htmlFor="main-keyword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  메인 키워드 <span className="text-red-500">*</span>
-                </Label>
-                <input
-                  id="main-keyword"
-                  type="text"
-                  value={formData.mainKeyword}
-                  onChange={(e) => handleInputChange('mainKeyword', e.target.value)}
-                  placeholder="메인 키워드를 입력하세요"
-                  className="input w-full"
-                  required
-                />
-              </div>
+              {/* 메인 키워드와 MID/PID 같은 라인 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 메인 키워드 */}
+                <div>
+                  <Label htmlFor="main-keyword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    메인 키워드 <span className="text-red-500">*</span>
+                  </Label>
+                  <input
+                    id="main-keyword"
+                    type="text"
+                    value={formData.mainKeyword}
+                    onChange={(e) => handleInputChange('mainKeyword', e.target.value)}
+                    placeholder="메인 키워드를 입력하세요"
+                    className="input w-full"
+                    required
+                  />
+                </div>
 
-              {/* MID */}
-              <div>
-                <Label htmlFor="mid" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  MID
-                </Label>
-                <input
-                  id="mid"
-                  type="number"
-                  value={formData.mid || ''}
-                  onChange={(e) => handleInputChange('mid', e.target.value ? parseInt(e.target.value) : undefined)}
-                  placeholder="MID를 입력하세요"
-                  className="input w-full"
-                />
+                {/* MID/PID */}
+                <div>
+                  <Label htmlFor="mid" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {defaultData?.type === 'place' ? 'PID' : 'MID'} <span className="text-red-500">*</span>
+                  </Label>
+                  <input
+                    id="mid"
+                    type="number"
+                    value={formData.mid || ''}
+                    onChange={(e) => handleInputChange('mid', e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder={`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력하세요`}
+                    className="input w-full"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {/* 안내 문구 - 전체 너비로 표시 */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-xs text-amber-800 dark:text-amber-200 font-medium flex items-start">
+                  <span className="mr-1">⚠️</span>
+                  <span>
+                    {defaultData?.type === 'shop' ? '쇼핑' : '플레이스'} 순위 확인을 위한 키워드와{' '}
+                    {defaultData?.type === 'place' ? 'PID' : 'MID'}이니 입력에 유의하세요. 
+                    순위 확인이 되지 않을 수 있습니다.
+                  </span>
+                </p>
               </div>
 
               {/* URL */}
@@ -225,71 +249,47 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 <Label htmlFor="url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   URL
                 </Label>
-                <input
-                  id="url"
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => handleInputChange('url', e.target.value)}
-                  placeholder="URL을 입력하세요"
-                  className="input w-full"
-                />
-              </div>
-
-              {/* 서브 키워드들 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="keyword1" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    키워드 1
-                  </Label>
+                <div className="input pr-0 flex items-center [&[readonly]]:opacity-70 [&[readonly]]:bg-gray-50 dark:[&[readonly]]:bg-gray-900/50">
                   <input
-                    id="keyword1"
-                    type="text"
-                    value={formData.keyword1}
-                    onChange={(e) => handleInputChange('keyword1', e.target.value)}
-                    placeholder="키워드 1"
-                    className="input w-full"
+                    id="url"
+                    type="url"
+                    value={formData.url}
+                    readOnly
+                    placeholder="URL이 자동으로 입력됩니다"
+                    className="flex-1 bg-transparent border-0 outline-none p-0 placeholder:text-muted-foreground disabled:cursor-not-allowed"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="keyword2" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    키워드 2
-                  </Label>
-                  <input
-                    id="keyword2"
-                    type="text"
-                    value={formData.keyword2}
-                    onChange={(e) => handleInputChange('keyword2', e.target.value)}
-                    placeholder="키워드 2"
-                    className="input w-full"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="keyword3" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    키워드 3
-                  </Label>
-                  <input
-                    id="keyword3"
-                    type="text"
-                    value={formData.keyword3}
-                    onChange={(e) => handleInputChange('keyword3', e.target.value)}
-                    placeholder="키워드 3"
-                    className="input w-full"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (formData.url) {
+                        navigator.clipboard.writeText(formData.url);
+                        toast.success('URL이 복사되었습니다.');
+                      }
+                    }}
+                    disabled={!formData.url}
+                    className="flex-shrink-0 cursor-pointer group inline-flex items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50 transition-colors rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title="URL 복사"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
-              {/* 설명 */}
+
+              {/* 메모 */}
               <div>
                 <Label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  설명
+                  메모
                 </Label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  rows={3}
-                  placeholder="키워드에 대한 설명을 입력하세요"
+                  placeholder="추가 정보나 필요한 정보를 입력하세요"
                   className="textarea w-full"
+                  rows={2}
                 />
               </div>
 
@@ -319,33 +319,174 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                   </div>
                 </div>
               </div>
+
+              {/* 추가 정보 표시 */}
+              {defaultData?.additionalInfo && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-3 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {defaultData.type === 'shop' ? '상품 정보' : '플레이스 정보'}
+                  </h4>
+                  
+                  {defaultData.type === 'shop' && defaultData.additionalInfo && (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">상품명</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.productName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">순위</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.rank}위</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">가격</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {(() => {
+                            const lowPrice = parseInt(defaultData.additionalInfo.price.low);
+                            const highPrice = parseInt(defaultData.additionalInfo.price.high);
+                            
+                            // 가격이 없거나 0인 경우
+                            if (!lowPrice || isNaN(lowPrice)) {
+                              return '가격 정보 없음';
+                            }
+                            
+                            // 최저가만 있거나 최저가와 최고가가 같은 경우
+                            if (!highPrice || isNaN(highPrice) || lowPrice === highPrice) {
+                              return `${lowPrice.toLocaleString()}원`;
+                            }
+                            
+                            // 최저가와 최고가가 다른 경우
+                            return `${lowPrice.toLocaleString()}원 ~ ${highPrice.toLocaleString()}원`;
+                          })()}
+                        </span>
+                      </div>
+                      {defaultData.additionalInfo.shop?.brand && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">브랜드</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.shop.brand}</span>
+                        </div>
+                      )}
+                      {defaultData.additionalInfo.shop?.maker && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">제조사</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.shop.maker}</span>
+                        </div>
+                      )}
+                      {defaultData.additionalInfo.category?.length > 0 && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">카테고리</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 text-right">
+                            {defaultData.additionalInfo.category.join(' > ')}
+                          </span>
+                        </div>
+                      )}
+                      {defaultData.additionalInfo.image && (
+                        <div className="mt-3">
+                          <img 
+                            src={defaultData.additionalInfo.image} 
+                            alt="상품 이미지" 
+                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {defaultData.type === 'place' && defaultData.additionalInfo && (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">플레이스명</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.placeName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">순위</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.rank}위</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">카테고리</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.category.main}</span>
+                      </div>
+                      {defaultData.additionalInfo.category.business && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">업종</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.category.business}</span>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="bg-white dark:bg-gray-700 rounded p-2 text-center">
+                          <div className="text-xs text-gray-600 dark:text-gray-400">방문자 리뷰</div>
+                          <div className="font-semibold text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.stats.visitorReviews.toLocaleString()}</div>
+                        </div>
+                        <div className="bg-white dark:bg-gray-700 rounded p-2 text-center">
+                          <div className="text-xs text-gray-600 dark:text-gray-400">블로그 리뷰</div>
+                          <div className="font-semibold text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.stats.blogReviews.toLocaleString()}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${defaultData.additionalInfo.features.booking
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                        }`}>
+                          예약 {defaultData.additionalInfo.features.booking ? '가능' : '불가'}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${defaultData.additionalInfo.features.npay
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                        }`}>
+                          N페이 {defaultData.additionalInfo.features.npay ? '가능' : '불가'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* 버튼 영역 */}
-        <div className="flex justify-end items-center gap-3 py-4 px-6 bg-gray-50 dark:bg-gray-800/50 border-t shrink-0">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !selectedGroupId || !formData.mainKeyword.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isSaving ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                저장 중...
-              </>
-            ) : (
-              '저장'
+        <div className="flex justify-between items-center py-4 px-6 bg-gray-50 dark:bg-gray-800/50 border-t shrink-0">
+          {/* 에러 메시지 */}
+          <div className="flex-1 mr-4">
+            {saveError && (
+              <div className="flex items-center text-sm text-red-600 dark:text-red-400">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                {saveError}
+              </div>
             )}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            취소
-          </Button>
+          </div>
+          
+          {/* 버튼들 */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !selectedGroupId || !formData.mainKeyword.trim() || !formData.mid}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  저장 중...
+                </>
+              ) : (
+                '저장'
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              취소
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

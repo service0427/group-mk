@@ -8,6 +8,8 @@ import {
   PaginationParams, 
   SortParams 
 } from '../types';
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { getCampaignNameByServiceType } from '@/config/campaign.config';
 
 export const useKeywords = () => {
   // 그룹 관련 상태
@@ -42,12 +44,66 @@ export const useKeywords = () => {
       const response = await keywordGroupService.getUserGroups();
       
       if (response.success && response.data) {
-        setGroups(response.data);
+        let groups = response.data;
+        
+        // 현재 존재하는 서비스 타입들을 확인
+        const existingServiceTypes = new Set(groups.map((g: KeywordGroup) => g.campaignType).filter(Boolean));
+        const allServiceTypes = Object.values(CampaignServiceType);
+        
+        // 없는 서비스 타입에 대해 기본 그룹 생성
+        let groupsCreated = false;
+        for (const serviceType of allServiceTypes) {
+          if (!existingServiceTypes.has(serviceType)) {
+            const serviceName = SERVICE_TYPE_LABELS[serviceType] || serviceType;
+            const campaignName = getCampaignNameByServiceType(serviceType);
+            
+            const createResponse = await keywordGroupService.createGroup(
+              `${serviceName}`,
+              campaignName,
+              serviceType,
+              true
+            );
+            
+            if (createResponse.success && createResponse.data) {
+              console.log(`Created default group: ${serviceName}`);
+              groupsCreated = true;
+            } else {
+              console.error(`Failed to create group for ${serviceType}:`, createResponse.message);
+            }
+          }
+        }
+        
+        // 새 그룹이 생성되었다면 목록 다시 로드
+        if (groupsCreated) {
+          const refreshResponse = await keywordGroupService.getUserGroups();
+          if (refreshResponse.success && refreshResponse.data) {
+            groups = refreshResponse.data;
+          }
+        }
+        
+        // 기본 그룹을 맨 앞으로 정렬
+        const sortedGroups = groups.sort((a: KeywordGroup, b: KeywordGroup) => {
+          // 기본 그룹을 먼저 배치
+          if (a.isDefault && !b.isDefault) return -1;
+          if (!a.isDefault && b.isDefault) return 1;
+          
+          // 기본 그룹들끼리는 서비스 타입 순서대로
+          if (a.isDefault && b.isDefault) {
+            const aIndex = allServiceTypes.indexOf(a.campaignType as CampaignServiceType);
+            const bIndex = allServiceTypes.indexOf(b.campaignType as CampaignServiceType);
+            return aIndex - bIndex;
+          }
+          
+          // 일반 그룹들은 생성 시간 순
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
+        setGroups(sortedGroups);
         
         // 선택된 그룹이 없고 그룹이 있으면 첫 번째 그룹 선택
-        if (!selectedGroupId && response.data.length > 0) {
-          // 기본 그룹이 아닌 첫 번째 그룹을 선택
-          setSelectedGroupId(response.data[0].id);
+        if (!selectedGroupId && sortedGroups.length > 0) {
+          // 첫 번째 그룹을 선택
+          setSelectedGroupId(sortedGroups[0].id);
         }
       } else {
         throw new Error(response.message || '그룹을 로드하는데 실패했습니다.');
@@ -276,6 +332,12 @@ export const useKeywords = () => {
     setPagination(prev => ({ ...prev, page: 1 })); // 페이지 초기화
   }, []);
 
+  // 키워드 목록 초기화 핸들러
+  const clearKeywords = useCallback(() => {
+    setKeywords([]);
+    setTotalKeywords(0);
+  }, []);
+
   return {
     groups,
     keywords,
@@ -296,5 +358,6 @@ export const useKeywords = () => {
     handleLimitChange,
     handleSortChange,
     handleSearchChange,
+    clearKeywords,
   };
 };

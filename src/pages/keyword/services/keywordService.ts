@@ -246,13 +246,7 @@ export const keywordGroupService = {
         };
       }
 
-      // 기본 그룹 생성 방지 - 사용자가 직접 그룹을 생성해야 함
-      if (isDefault) {
-        return {
-          success: false,
-          message: '기본 그룹 기능은 더 이상 지원되지 않습니다. 일반 그룹을 생성해주세요.',
-        };
-      }
+      // 기본 그룹 생성 허용 - 각 서비스별 기본 그룹 자동 생성을 위해
 
       // 새 그룹 생성
       const { data, error } = await supabase

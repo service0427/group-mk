@@ -355,51 +355,38 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
         
         <div className="p-4 space-y-4">
           {/* 그룹 선택 */}
-            <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">업로드할 그룹 선택</label>
-            <select 
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                value={uploadGroupId}
-                onChange={(e) => setUploadGroupId(e.target.value)}
-                disabled={isUploading}
-            >
-                <option value="">그룹을 선택하세요</option>
-                {groups.map(group => {
-                // 캠페인 타입이 있는 경우 레이블 가져오기
-                let typeLabel = group.campaignType;
-                
-                if (group.campaignName && group.campaignType) {
-                    // 먼저 campaignType이 이미 CampaignServiceType 값인지 확인
-                    if (Object.values(CampaignServiceType).includes(group.campaignType as CampaignServiceType)) {
-                    // 이미 CampaignServiceType이면 바로 SERVICE_TYPE_LABELS 사용
-                    typeLabel = SERVICE_TYPE_LABELS[group.campaignType as CampaignServiceType];
-                    } else {
-                    // 아니면 getServiceTypeFromPath 사용하여 변환
-                    try {
-                        // 플랫폼과 타입으로 서비스 타입 코드 추출
-                        const serviceType = getServiceTypeFromPath(
-                        group.campaignName.toLowerCase(), 
-                        group.campaignType.toLowerCase()
-                        );
-                        typeLabel = SERVICE_TYPE_LABELS[serviceType];
-                    } catch (error) {
-                        console.error('서비스 타입 변환 오류:', error);
-                        // 오류 시 원래 값 사용
-                        typeLabel = group.campaignType;
-                    }
-                    }
-                }
-                
-                return (
-                    <option key={group.id} value={group.id}>
-                    {group.campaignName && group.campaignType 
-                        ? `${group.campaignName} > ${typeLabel} > ${group.name}` 
-                        : group.name}
-                    </option>
-                );
-                })}
-            </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">업로드할 그룹 선택</label>
+            {groups.length > 0 ? (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                    {/* 첫 번째 그룹의 서비스 타입 라벨 표시 */}
+                    {groups[0] && groups[0].campaignType && SERVICE_TYPE_LABELS[groups[0].campaignType as CampaignServiceType] 
+                      ? SERVICE_TYPE_LABELS[groups[0].campaignType as CampaignServiceType]
+                      : '기타'}
+                  </span>
+                  <select
+                    className="flex-1 border border-gray-300 dark:border-gray-600 rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    value={uploadGroupId}
+                    onChange={(e) => setUploadGroupId(e.target.value)}
+                    disabled={isUploading}
+                  >
+                    <option value="">그룹을 선택하세요</option>
+                    {groups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                선택한 서비스 타입에 그룹이 없습니다. 먼저 그룹을 생성해주세요.
+              </div>
+            )}
+          </div>
 
           {/* 샘플 파일 다운로드 버튼 */}
           <div className="mb-3">

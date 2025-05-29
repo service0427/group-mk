@@ -597,7 +597,7 @@ const KeywordPage: React.FC = () => {
       <KeywordUploadModal 
         isOpen = {showUploadModal}
         onClose={ () => setShowUploadModal(false)}
-        groups={groups}
+        groups={filteredGroups}
         onSuccess={loadKeywords}
       />
       

@@ -689,7 +689,7 @@ const FAQPageComponent = () => {
   const toolbarActions = (
     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="outline" size="sm" className="bg-primary-600 text-white hover:bg-primary-700">
           <KeenIcon icon="plus" className="md:me-2 flex-none" />
           <span className="hidden md:inline">새 FAQ 등록</span>
         </Button>

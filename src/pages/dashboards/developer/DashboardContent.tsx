@@ -201,7 +201,7 @@ export const DashboardContent: React.FC = () => {
           {/* 순위 변화 차트 테스트 버튼 */}
           <Button
             variant="outline"
-            className="ml-2 bg-primary-600 text-white hover:bg-primary-700"
+            className="bg-primary-600 text-white hover:bg-primary-700"
             onClick={() => setIsChartModalOpen(true)}
           >
             <svg

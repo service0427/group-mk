@@ -80,8 +80,14 @@ const AuthRequired: React.FC = () => (
   </div>
 );
 
-const CampaignPage: React.FC = () => {
-  const { serviceType } = useParams<{ serviceType: string }>();
+interface CampaignPageProps {
+  serviceType?: string;
+  embedded?: boolean;
+}
+
+const CampaignPage: React.FC<CampaignPageProps> = ({ serviceType: propServiceType, embedded = false }) => {
+  const { serviceType: urlServiceType } = useParams<{ serviceType: string }>();
+  const serviceType = propServiceType || urlServiceType;
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
@@ -275,91 +281,139 @@ const CampaignPage: React.FC = () => {
     </>
   );
 
+  // 메인 콘텐츠 렌더링 함수
+  const renderContent = () => (
+    <>
+      <Toaster position="top-right" richColors closeButton />
+
+      <div className="grid gap-5 lg:gap-7.5">
+        {/* 검색 및 필터 영역 */}
+        <SearchForm
+          loading={isLoading}
+          campaignList={campaignList}
+          selectedCampaignId={selectedCampaignId}
+          statusFilter={statusFilter}
+          searchInput={searchInput}
+          searchDateFrom={searchDateFrom}
+          searchDateTo={searchDateTo}
+          onCampaignChange={(value) => setSelectedCampaignId(value === 'all' ? 'all' : parseInt(value))}
+          onStatusChange={setStatusFilter}
+          onSearchChange={setSearchInput}
+          onDateFromChange={setSearchDateFrom}
+          onDateToChange={setSearchDateTo}
+          onSearch={handleSearch}
+        />
+
+
+        {/* viewState에 따라 적절한 컴포넌트 표시 */}
+        {viewState === ViewState.LOADING && <LoadingState />}
+
+        {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
+
+        {viewState === ViewState.DATA && (
+          <>
+            <SlotList
+              filteredSlots={filteredSlots}
+              isLoading={isLoading}
+              error={error}
+              serviceType={serviceType || ''}
+              editingCell={editingCell}
+              editingValue={editingValue}
+              onEditStart={handleEditStart}
+              onEditChange={handleEditChange}
+              onEditSave={saveEdit}
+              onEditCancel={handleEditCancel}
+              onDeleteSlot={handleDeleteSlot}
+              onOpenMemoModal={handleOpenMemoModal}
+              onConfirmTransaction={handleConfirmTransaction}
+              userRole={userRole}
+              hasFilters={!!searchInput || statusFilter !== 'all' || !!searchDateFrom || !!searchDateTo}
+              isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
+            />
+
+            {/* 메모 모달 */}
+            <MemoModal
+              isOpen={memoModalOpen}
+              onClose={() => setMemoModalOpen(false)}
+              memoText={memoText}
+              setMemoText={setMemoText}
+              onSave={handleSaveMemo}
+            />
+          </>
+        )}
+      </div>
+    </>
+  );
+
   // 초기 로딩 중
   if (authLoading && !initialized) {
-    return (
-      <CommonTemplate
-        title={`${serviceCategoryLabel} 캠페인 관리`}
-        description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
-        showPageMenu={false}
-        showBreadcrumb={true}
-        toolbarActions={toolbarActions}
-      >
-        <LoadingState />
-      </CommonTemplate>
+    const loadingContent = <LoadingState />;
+    
+    return embedded ? (
+      <>
+        {loadingContent}
+        {/* 슬롯 추가 모달 */}
+        <CampaignSlotWithKeywordModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          category={serviceCategoryLabel}
+          campaign={campaignList.length > 0 ? {
+            id: campaignList[0]?.id || '',
+            campaign_name: campaignList[0]?.campaignName || '',
+            status: campaignList[0]?.status || '',
+            service_type: serviceType
+          } : null}
+          serviceCode={serviceType}
+          onSave={() => fetchSlots()}
+        />
+      </>
+    ) : (
+      <>
+        <CommonTemplate
+          title={`${serviceCategoryLabel} 캠페인 관리`}
+          description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
+          showPageMenu={false}
+          showBreadcrumb={true}
+          toolbarActions={toolbarActions}
+        >
+          {loadingContent}
+        </CommonTemplate>
+        {/* 슬롯 추가 모달 */}
+        <CampaignSlotWithKeywordModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          category={serviceCategoryLabel}
+          campaign={campaignList.length > 0 ? {
+            id: campaignList[0]?.id || '',
+            campaign_name: campaignList[0]?.campaignName || '',
+            status: campaignList[0]?.status || '',
+            service_type: serviceType
+          } : null}
+          serviceCode={serviceType}
+          onSave={() => fetchSlots()}
+        />
+      </>
     );
   }
 
+  // 메인 렌더링
   return (
     <>
-      <CommonTemplate
-        title={`${serviceCategoryLabel} 캠페인 관리`}
-        description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
-        showPageMenu={false}
-        showBreadcrumb={true}
-        toolbarActions={toolbarActions}
-      >
-        <Toaster position="top-right" richColors closeButton />
+      {embedded ? (
+        renderContent()
+      ) : (
+        <CommonTemplate
+          title={`${serviceCategoryLabel} 캠페인 관리`}
+          description={`내 정보 관리 > 내 서비스 관리 > ${serviceCategoryLabel}`}
+          showPageMenu={false}
+          showBreadcrumb={true}
+          toolbarActions={toolbarActions}
+        >
+          {renderContent()}
+        </CommonTemplate>
+      )}
 
-        <div className="grid gap-5 lg:gap-7.5">
-          {/* 검색 및 필터 영역 */}
-          <SearchForm
-            loading={isLoading}
-            campaignList={campaignList}
-            selectedCampaignId={selectedCampaignId}
-            statusFilter={statusFilter}
-            searchInput={searchInput}
-            searchDateFrom={searchDateFrom}
-            searchDateTo={searchDateTo}
-            onCampaignChange={(value) => setSelectedCampaignId(value === 'all' ? 'all' : parseInt(value))}
-            onStatusChange={setStatusFilter}
-            onSearchChange={setSearchInput}
-            onDateFromChange={setSearchDateFrom}
-            onDateToChange={setSearchDateTo}
-            onSearch={handleSearch}
-          />
-
-
-          {/* viewState에 따라 적절한 컴포넌트 표시 */}
-          {viewState === ViewState.LOADING && <LoadingState />}
-
-          {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
-
-          {viewState === ViewState.DATA && (
-            <>
-              <SlotList
-                filteredSlots={filteredSlots}
-                isLoading={isLoading}
-                error={error}
-                serviceType={serviceType || ''}
-                editingCell={editingCell}
-                editingValue={editingValue}
-                onEditStart={handleEditStart}
-                onEditChange={handleEditChange}
-                onEditSave={saveEdit}
-                onEditCancel={handleEditCancel}
-                onDeleteSlot={handleDeleteSlot}
-                onOpenMemoModal={handleOpenMemoModal}
-                onConfirmTransaction={handleConfirmTransaction}
-                userRole={userRole}
-                hasFilters={!!searchInput || statusFilter !== 'all' || !!searchDateFrom || !!searchDateTo}
-                isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
-              />
-
-              {/* 메모 모달 */}
-              <MemoModal
-                isOpen={memoModalOpen}
-                onClose={() => setMemoModalOpen(false)}
-                memoText={memoText}
-                setMemoText={setMemoText}
-                onSave={handleSaveMemo}
-              />
-            </>
-          )}
-        </div>
-      </CommonTemplate>
-
-      {/* 슬롯 추가 모달 */}
+      {/* 슬롯 추가 모달 - 항상 CommonTemplate 밖에 위치 */}
       <CampaignSlotWithKeywordModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { SlotItem, Campaign } from './types';
 import { KeenIcon } from '@/components';
 import EditableCell from './EditableCell';
@@ -92,6 +93,8 @@ const SlotList: React.FC<SlotListProps> = ({
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
+  const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
 
 
   // 캠페인 상태에 따른 닷 색상과 메시지
@@ -210,50 +213,51 @@ const SlotList: React.FC<SlotListProps> = ({
     <>
       <style>{tooltipStyles}</style>
       <div className="card shadow-sm">
-        <div className="card-header px-6 py-4">
-          <h3 className="card-title">슬롯 목록</h3>
-          <div className="card-toolbar">
-            <div className="flex flex-wrap justify-between items-center gap-2">
-              <h3 className="card-title font-medium text-sm">
-                전체 <span className="text-primary font-medium">{filteredSlots.length}</span> 건
-              </h3>
-              {hasFilters && <span className="text-gray-500 text-sm ml-2">(필터 적용됨)</span>}
-              {isAllData && <span className="text-info text-sm ml-2">(전체 데이터)</span>}
+        <div className="card-header px-6 py-3.5" style={{ minHeight: '60px' }}>
+          <div className="flex items-center justify-between w-full h-full">
+            <div className="flex items-center gap-3">
+              <h3 className="card-title text-base">슬롯 목록</h3>
+              {selectedSlots.length > 0 && (
+                <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                  {selectedSlots.length}개 선택됨
+                </span>
+              )}
+            </div>
+            <div className="card-toolbar">
+              {selectedSlots.length > 0 ? (
+                <div className="flex gap-2 items-center">
+                  <button
+                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+                  >
+                    일괄 승인
+                  </button>
+                  <button
+                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  >
+                    일괄 반려
+                  </button>
+                  <button
+                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 transition-colors"
+                    onClick={() => {
+                      setSelectedSlots([]);
+                      setSelectAll(false);
+                    }}
+                  >
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    전체 <span className="text-primary font-medium">{filteredSlots.length}</span> 건
+                  </span>
+                  {hasFilters && <span className="text-gray-500 text-xs">(필터 적용됨)</span>}
+                  {isAllData && <span className="text-info text-xs">(전체 데이터)</span>}
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        {/* 선택된 슬롯에 대한 일괄 작업 버튼 */}
-        {selectedSlots.length > 0 && (
-          <div className="px-6 pb-2">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedSlots.length}개 선택됨
-              </span>
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
-                >
-                  일괄 승인
-                </button>
-                <button
-                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
-                >
-                  일괄 반려
-                </button>
-                <button
-                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 transition-colors"
-                  onClick={() => {
-                    setSelectedSlots([]);
-                    setSelectAll(false);
-                  }}
-                >
-                  취소
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Desktop View - 테이블 형식 (md 이상) */}
         <div className="hidden md:block">
@@ -277,8 +281,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
                     <th className="py-2 px-3 text-start font-medium text-xs w-[20%]">상품명</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">메인키워드</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">서브키워드</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[15%]">키워드</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">등록일</th>
@@ -352,61 +355,134 @@ const SlotList: React.FC<SlotListProps> = ({
                         </div>
                       </td>
 
-                      {/* 메인키워드 */}
-                      <td className="py-2 px-3 w-[10%]">
-                        <EditableCell
-                          id={item.id}
-                          field="mainKeyword"
-                          value={item.inputData.mainKeyword || ''}
-                          editingCell={editingCell}
-                          editingValue={editingValue}
-                          onEditStart={onEditStart}
-                          onEditChange={onEditChange}
-                          onEditSave={onEditSave}
-                          onEditCancel={onEditCancel}
-                          placeholder="메인키워드"
-                          disabled={item.status !== 'pending'}
-                        >
-                          <div className="flex justify-center">
-                            {item.inputData.mainKeyword ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary dark:bg-primary/20 border border-primary/20">
-                                <KeenIcon icon="star" className="size-3 mr-1" />
-                                {item.inputData.mainKeyword}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 text-sm">-</span>
-                            )}
-                          </div>
-                        </EditableCell>
-                      </td>
+                      {/* 키워드 */}
+                      <td className="py-2 px-3 w-[15%]">
+                        <div className="flex items-center justify-center gap-1 relative">
+                          {(() => {
+                            // 키워드 배열 생성 (메인키워드 + 서브키워드)
+                            const keywordArray = [];
+                            if (item.inputData.mainKeyword) {
+                              keywordArray.push(item.inputData.mainKeyword);
+                            }
+                            if (Array.isArray(item.inputData.keywords)) {
+                              keywordArray.push(...item.inputData.keywords);
+                            }
+                            
+                            if (keywordArray.length === 0) {
+                              return <span className="text-gray-400 text-sm">-</span>;
+                            }
 
-                      {/* 서브키워드 */}
-                      <td className="py-2 px-3 w-[12%]">
-                        <EditableCell
-                          id={item.id}
-                          field="keywords"
-                          value={Array.isArray(item.inputData.keywords) ? item.inputData.keywords.join(',') : ''}
-                          editingCell={editingCell}
-                          editingValue={editingValue}
-                          onEditStart={onEditStart}
-                          onEditChange={onEditChange}
-                          onEditSave={onEditSave}
-                          onEditCancel={onEditCancel}
-                          placeholder="서브1,서브2,서브3"
-                          disabled={item.status !== 'pending'}
-                        >
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 ? (
-                              item.inputData.keywords.slice(0, 3).map((keyword, index) => (
-                                <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                  {keyword}
+                            const mainKeyword = keywordArray[0];
+                            const additionalCount = keywordArray.length - 1;
+
+                            return (
+                              <>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                  {mainKeyword}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="text-gray-400 text-sm">-</span>
-                            )}
-                          </div>
-                        </EditableCell>
+                                {additionalCount > 0 && (
+                                  <>
+                                    <button
+                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setPopoverPosition({
+                                          top: rect.top - 10,
+                                          left: rect.left + rect.width / 2
+                                        });
+                                        setOpenKeywordTooltipId(openKeywordTooltipId === item.id ? null : item.id);
+                                      }}
+                                    >
+                                      +{additionalCount}
+                                    </button>
+                                    {/* Tooltip */}
+                                    {openKeywordTooltipId === item.id && ReactDOM.createPortal(
+                                      <>
+                                        {/* 배경 클릭 시 닫기 */}
+                                        <div 
+                                          className="fixed inset-0" 
+                                          style={{zIndex: 9998}}
+                                          onClick={() => setOpenKeywordTooltipId(null)}
+                                        />
+                                        <div 
+                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                          style={{
+                                            zIndex: 99999,
+                                            left: `${popoverPosition.left}px`,
+                                            top: `${popoverPosition.top}px`,
+                                            transform: 'translate(-50%, -100%)'
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="font-medium text-gray-100">전체 키워드</div>
+                                            <button
+                                              className="text-gray-400 hover:text-gray-200 transition-colors"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenKeywordTooltipId(null);
+                                              }}
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                              </svg>
+                                            </button>
+                                          </div>
+                                          <div className="space-y-2">
+                                            {/* 메인 키워드 */}
+                                            <div>
+                                              <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                              <div className="flex flex-wrap gap-1">
+                                                <span
+                                                  className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                                >
+                                                  {item.inputData.mainKeyword}
+                                                </span>
+                                              </div>
+                                            </div>
+                                            
+                                            {/* 서브 키워드 */}
+                                            {additionalCount > 0 && (
+                                              <>
+                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                                <div>
+                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {keywordArray.slice(1).map((keyword, index) => (
+                                                      <span
+                                                        key={index}
+                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                          index % 4 === 0
+                                                          ? 'bg-green-500/20 text-green-200'
+                                                          : index % 4 === 1
+                                                          ? 'bg-purple-500/20 text-purple-200'
+                                                          : index % 4 === 2
+                                                          ? 'bg-orange-500/20 text-orange-200'
+                                                          : 'bg-pink-500/20 text-pink-200'
+                                                        }`}
+                                                      >
+                                                        {keyword}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                          {/* Arrow */}
+                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                          </div>
+                                        </div>
+                                      </>,
+                                      document.body
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </td>
 
                       {/* 캠페인 */}
@@ -660,53 +736,134 @@ const SlotList: React.FC<SlotListProps> = ({
 
                     <div>
                       <span className="text-gray-600">키워드:</span>
-                      <EditableCell
-                        id={item.id}
-                        field="keywords"
-                        value={Array.isArray(item.inputData.keywords) ? item.inputData.keywords.join(',') : ''}
-                        editingCell={editingCell}
-                        editingValue={editingValue}
-                        onEditStart={onEditStart}
-                        onEditChange={onEditChange}
-                        onEditSave={onEditSave}
-                        onEditCancel={onEditCancel}
-                        placeholder="메인키워드,서브1,서브2,서브3"
-                        disabled={item.status !== 'pending'}
-                      >
-                        <div className="space-y-2 mt-1">
-                          {/* 메인 키워드 영역 */}
-                          {item.inputData.mainKeyword && (
-                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                              <div className="text-[10px] text-gray-500 font-medium mb-1">메인키워드</div>
-                              <div className="flex">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary dark:bg-primary/20 border border-primary/20">
-                                  <KeenIcon icon="star" className="size-3 mr-1" />
-                                  {item.inputData.mainKeyword}
+                      <div className="mt-1">
+                        <div className="flex items-center gap-1 relative">
+                          {(() => {
+                            // 키워드 배열 생성 (메인키워드 + 서브키워드)
+                            const keywordArray = [];
+                            if (item.inputData.mainKeyword) {
+                              keywordArray.push(item.inputData.mainKeyword);
+                            }
+                            if (Array.isArray(item.inputData.keywords)) {
+                              keywordArray.push(...item.inputData.keywords);
+                            }
+                            
+                            if (keywordArray.length === 0) {
+                              return <span className="text-gray-400 text-sm">-</span>;
+                            }
+
+                            const mainKeyword = keywordArray[0];
+                            const additionalCount = keywordArray.length - 1;
+
+                            return (
+                              <>
+                                <span className="text-sm text-gray-900 dark:text-white font-medium">
+                                  {mainKeyword}
                                 </span>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* 서브 키워드 영역 */}
-                          {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 && (
-                            <div>
-                              <div className="text-[10px] text-gray-500 font-medium mb-1">서브키워드</div>
-                              <div className="flex flex-wrap gap-1">
-                                {item.inputData.keywords.map((keyword, index) => (
-                                  <span key={index} className="badge badge-sm badge-light">
-                                    {keyword}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* 키워드가 없는 경우 */}
-                          {!item.inputData.mainKeyword && (!Array.isArray(item.inputData.keywords) || item.inputData.keywords.length === 0) && (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
+                                {additionalCount > 0 && (
+                                  <>
+                                    <button
+                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setPopoverPosition({
+                                          top: rect.top - 10,
+                                          left: rect.left + rect.width / 2
+                                        });
+                                        setOpenKeywordTooltipId(openKeywordTooltipId === item.id ? null : item.id);
+                                      }}
+                                    >
+                                      +{additionalCount}
+                                    </button>
+                                    {/* Tooltip - 모바일에서도 동일하게 사용 */}
+                                    {openKeywordTooltipId === item.id && ReactDOM.createPortal(
+                                      <>
+                                        <div 
+                                          className="fixed inset-0" 
+                                          style={{zIndex: 9998}}
+                                          onClick={() => setOpenKeywordTooltipId(null)}
+                                        />
+                                        <div 
+                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                          style={{
+                                            zIndex: 99999,
+                                            left: `${popoverPosition.left}px`,
+                                            top: `${popoverPosition.top}px`,
+                                            transform: 'translate(-50%, -100%)'
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="font-medium text-gray-100">전체 키워드</div>
+                                            <button
+                                              className="text-gray-400 hover:text-gray-200 transition-colors"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenKeywordTooltipId(null);
+                                              }}
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                              </svg>
+                                            </button>
+                                          </div>
+                                          <div className="space-y-2">
+                                            {/* 메인 키워드 */}
+                                            {item.inputData.mainKeyword && (
+                                              <div>
+                                                <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                                <div className="flex flex-wrap gap-1">
+                                                  <span
+                                                    className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                                  >
+                                                    {item.inputData.mainKeyword}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {/* 서브 키워드 */}
+                                            {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 && (
+                                              <>
+                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                                <div>
+                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {item.inputData.keywords.map((keyword, index) => (
+                                                      <span
+                                                        key={index}
+                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                          index % 4 === 0
+                                                          ? 'bg-green-500/20 text-green-200'
+                                                          : index % 4 === 1
+                                                          ? 'bg-purple-500/20 text-purple-200'
+                                                          : index % 4 === 2
+                                                          ? 'bg-orange-500/20 text-orange-200'
+                                                          : 'bg-pink-500/20 text-pink-200'
+                                                        }`}
+                                                      >
+                                                        {keyword}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                          </div>
+                                        </div>
+                                      </>,
+                                      document.body
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
-                      </EditableCell>
+                      </div>
                     </div>
                   </div>
 

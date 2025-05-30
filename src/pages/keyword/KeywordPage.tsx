@@ -299,8 +299,26 @@ const KeywordPage: React.FC = () => {
           <div className="flex flex-wrap gap-2 mb-4">
             {availableServiceTypes.map(serviceType => {
               const isNaver = serviceType.toLowerCase().includes('naver');
+              const isCoupang = serviceType.toLowerCase().includes('coupang');
+              
+              // 서비스별 이미지 매핑
+              const getServiceImage = (type: string) => {
+                const lowerType = type.toLowerCase();
+                if (lowerType.includes('naver')) {
+                  if (lowerType.includes('shopping')) return '/media/ad-brand/naver-shopping.png';
+                  if (lowerType.includes('place')) {
+                    if (lowerType.includes('share')) return '/media/ad-brand/naver-blog.png';
+                    return '/media/ad-brand/naver-place.png';
+                  }
+                  return '/media/ad-brand/naver.png';
+                }
+                if (lowerType.includes('coupang')) return '/media/ad-brand/coupang-app.png';
+                return null;
+              };
+              
+              const serviceImage = getServiceImage(serviceType);
               const buttonClass = selectedServiceType === serviceType 
-                ? (isNaver ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700')
+                ? (isNaver ? 'bg-green-600 hover:bg-green-700' : isCoupang ? 'bg-yellow-600 hover:bg-yellow-700' : '')
                 : '';
               
               return (
@@ -311,19 +329,28 @@ const KeywordPage: React.FC = () => {
                   onClick={() => handleServiceTypeChange(serviceType)}
                   className={`relative ${buttonClass}`}
                 >
-                  {getServiceTypeLabel(serviceType)}
-                  {serviceTypeCounts[serviceType] && (
-                    <Badge 
-                      variant="outline" 
-                      className={`ml-2 ${
-                        selectedServiceType === serviceType 
-                          ? 'bg-white border-white text-gray-900' 
-                          : ''
-                      }`}
-                    >
-                      {serviceTypeCounts[serviceType]}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {serviceImage && (
+                      <img 
+                        src={serviceImage} 
+                        alt="" 
+                        className="w-4 h-4 object-contain"
+                      />
+                    )}
+                    <span>{getServiceTypeLabel(serviceType)}</span>
+                    {serviceTypeCounts[serviceType] && (
+                      <Badge 
+                        variant="outline" 
+                        className={`ml-1 ${
+                          selectedServiceType === serviceType 
+                            ? 'bg-white border-white text-gray-900' 
+                            : ''
+                        }`}
+                      >
+                        {serviceTypeCounts[serviceType]}
+                      </Badge>
+                    )}
+                  </div>
                 </Button>
               );
             })}

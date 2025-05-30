@@ -12,6 +12,7 @@ import UserSelectModal from './components/UserSelectModal';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
 import { ScreenLoader } from '@/components/loaders';
+import { Button } from '@/components/ui/button';
 import { useNotifications } from './hooks/useNotifications';
 import { useNotificationStats } from './hooks/useNotificationStats';
 import NotificationFilter from './components/NotificationFilter';
@@ -298,22 +299,26 @@ const NotificationManagePage: React.FC = () => {
   // 툴바 액션 버튼
   const toolbarActions = (
     <div className="flex gap-3">
-      <button
-        className="btn btn-primary"
+      <Button
+        variant="outline"
+        size="sm"
+        className="bg-primary-600 text-white hover:bg-primary-700"
         onClick={() => handleOpenSendModal('role')}
         title="권한별 알림 전송"
       >
         <KeenIcon icon="briefcase" className="md:me-2 flex-none" />
         <span className="hidden md:inline">권한별 알림 전송</span>
-      </button>
-      <button
-        className="btn btn-info"
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="bg-primary-600 text-white hover:bg-primary-700"
         onClick={() => handleOpenSendModal('user')}
         title="회원별 알림 전송"
       >
         <KeenIcon icon="user" className="md:me-2 flex-none" />
         <span className="hidden md:inline">회원별 알림 전송</span>
-      </button>
+      </Button>
     </div>
   );
 

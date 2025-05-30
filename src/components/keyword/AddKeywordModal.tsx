@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { keywordService, keywordGroupService } from '@/pages/keyword/services/keywordService';
 import { KeywordGroup, KeywordInput } from '@/pages/keyword/types';
+import { getTypeNameByCode } from '@/config/campaign.config';
 
 interface AddKeywordModalProps {
   isOpen: boolean;
@@ -34,13 +36,17 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // 폼 데이터
+  // 이미지 확대 모달 상태
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; title: string } | null>(null);
+
+  // 폼 데이터 - 활성화 상태를 항상 true로 설정
   const [formData, setFormData] = useState<KeywordInput>({
     mainKeyword: '',
     mid: undefined,
     url: '',
     description: '',
-    isActive: true,
+    isActive: true, // 항상 true로 고정
     additionalInfo: undefined
   });
 
@@ -93,7 +99,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
 
   const handleSave = async () => {
     setSaveError(null); // 이전 에러 초기화
-    
+
     if (!selectedGroupId) {
       setSaveError('키워드 그룹을 선택해주세요.');
       return;
@@ -124,10 +130,52 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
       setIsSaving(false);
     }
   };
+  
+  const handleImageClick = (src: string, title: string) => {
+    setSelectedImage({ src, title });
+    setIsImageModalOpen(true);
+  };
+  
+  // ESC 키 핸들러
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isImageModalOpen) {
+        setIsImageModalOpen(false);
+        setSelectedImage(null);
+      }
+    };
+    
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isImageModalOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:max-w-2xl p-0 overflow-hidden flex flex-col h-[85vh] sm:h-[80vh]">
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        // 이미지 모달이 열려있을 때는 Dialog가 닫히지 않도록 방지
+        if (!open && isImageModalOpen) {
+          return;
+        }
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent 
+        className="w-[95vw] sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
+        onEscapeKeyDown={(e) => {
+          // 이미지 모달이 열려있을 때는 Dialog의 ESC 동작 방지
+          if (isImageModalOpen) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 py-4 px-6 border-b shrink-0">
           <div className="flex items-center">
             <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
@@ -135,9 +183,20 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
               </svg>
             </div>
-            <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="flex-1">
+              <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 내 키워드에 추가
+                {defaultData && (
+                  <>
+                    {defaultData.type === 'shop' ? (
+                      <Badge variant="default" className="text-xs font-normal">N 쇼핑</Badge>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                        N 플레이스
+                      </span>
+                    )}
+                  </>
+                )}
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 검색 결과를 키워드로 저장하여 관리할 수 있습니다
@@ -145,7 +204,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="p-6 bg-background overflow-y-auto flex-1">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
@@ -153,52 +212,41 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
             </div>
           ) : (
             <div className="space-y-4">
-              {/* 타입 표시 */}
-              {defaultData && (
-                <div className="bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                    </svg>
-                    검색 정보
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">검색 타입:</span>
-                    {defaultData.type === 'shop' ? (
-                      <Badge variant="default">N 쇼핑</Badge>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                        N 플레이스
-                      </span>
-                    )}
-                  </div>
+
+              {/* 그룹 선택, 메인 키워드, MID/PID 같은 라인 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 그룹 선택 */}
+                <div>
+                  <Label htmlFor="keyword-group" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    키워드 그룹 <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    id="keyword-group"
+                    value={selectedGroupId || ''}
+                    onChange={(e) => setSelectedGroupId(Number(e.target.value))}
+                    className="select w-full"
+                    required
+                  >
+                    <option value="">그룹을 선택하세요</option>
+                    {groups.map(group => {
+                      // 캠페인 타입 라벨 가져오기
+                      let campaignLabel = '';
+                      if (group.campaignName && group.campaignType) {
+                        const typeName = getTypeNameByCode(group.campaignName, group.campaignType);
+                        campaignLabel = typeName || group.campaignName;
+                      } else if (group.campaignName) {
+                        campaignLabel = group.campaignName;
+                      }
+                      
+                      return (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                          {campaignLabel && ` (${campaignLabel})`}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
-              )}
-
-              {/* 그룹 선택 */}
-              <div>
-                <Label htmlFor="keyword-group" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  키워드 그룹 <span className="text-red-500">*</span>
-                </Label>
-                <select
-                  id="keyword-group"
-                  value={selectedGroupId || ''}
-                  onChange={(e) => setSelectedGroupId(Number(e.target.value))}
-                  className="select w-full"
-                  required
-                >
-                  <option value="">그룹을 선택하세요</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                      {group.campaignName && ` (${group.campaignName})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 메인 키워드와 MID/PID 같은 라인 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 메인 키워드 */}
                 <div>
                   <Label htmlFor="main-keyword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -227,19 +275,19 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                     onChange={(e) => handleInputChange('mid', e.target.value ? parseInt(e.target.value) : undefined)}
                     placeholder={`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력하세요`}
                     className="input w-full"
+                    disabled
                     required
                   />
                 </div>
               </div>
-              
+
               {/* 안내 문구 - 전체 너비로 표시 */}
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                 <p className="text-xs text-amber-800 dark:text-amber-200 font-medium flex items-start">
                   <span className="mr-1">⚠️</span>
                   <span>
-                    {defaultData?.type === 'shop' ? '쇼핑' : '플레이스'} 순위 확인을 위한 키워드와{' '}
-                    {defaultData?.type === 'place' ? 'PID' : 'MID'}이니 입력에 유의하세요. 
-                    순위 확인이 되지 않을 수 있습니다.
+                    {defaultData?.type === 'shop' ? '쇼핑' : '플레이스'} 순위 확인을 위한 키워드이니 입력에 유의하세요.
+                    순위가 확인되지 않을 수 있습니다.
                   </span>
                 </p>
               </div>
@@ -255,6 +303,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                     type="url"
                     value={formData.url}
                     readOnly
+                    disabled
                     placeholder="URL이 자동으로 입력됩니다"
                     className="flex-1 bg-transparent border-0 outline-none p-0 placeholder:text-muted-foreground disabled:cursor-not-allowed"
                   />
@@ -283,42 +332,16 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 <Label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   메모
                 </Label>
-                <textarea
+                <input
                   id="description"
+                  type="text"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="추가 정보나 필요한 정보를 입력하세요"
-                  className="textarea w-full"
-                  rows={2}
+                  className="input w-full"
                 />
               </div>
 
-              {/* 활성화 상태 */}
-              <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800/50 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h5 className="text-sm font-medium text-sky-900 dark:text-sky-300 mb-1">
-                      활성화 상태
-                    </h5>
-                    <p className="text-xs text-sky-700 dark:text-sky-200">
-                      키워드를 활성화하면 작업에 사용할 수 있습니다
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isActive"
-                      checked={formData.isActive}
-                      onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                    />
-                    <Label 
-                      htmlFor="isActive" 
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {formData.isActive ? '활성' : '비활성'}
-                    </Label>
-                  </div>
-                </div>
-              </div>
 
               {/* 추가 정보 표시 */}
               {defaultData?.additionalInfo && (
@@ -329,74 +352,63 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                     </svg>
                     {defaultData.type === 'shop' ? '상품 정보' : '플레이스 정보'}
                   </h4>
-                  
+
                   {defaultData.type === 'shop' && defaultData.additionalInfo && (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">상품명</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.productName}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">순위</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.rank}위</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">가격</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {(() => {
-                            const lowPrice = parseInt(defaultData.additionalInfo.price.low);
-                            const highPrice = parseInt(defaultData.additionalInfo.price.high);
-                            
-                            // 가격이 없거나 0인 경우
-                            if (!lowPrice || isNaN(lowPrice)) {
-                              return '가격 정보 없음';
-                            }
-                            
-                            // 최저가만 있거나 최저가와 최고가가 같은 경우
-                            if (!highPrice || isNaN(highPrice) || lowPrice === highPrice) {
-                              return `${lowPrice.toLocaleString()}원`;
-                            }
-                            
-                            // 최저가와 최고가가 다른 경우
-                            return `${lowPrice.toLocaleString()}원 ~ ${highPrice.toLocaleString()}원`;
-                          })()}
-                        </span>
-                      </div>
-                      {defaultData.additionalInfo.shop?.brand && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">브랜드</span>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.shop.brand}</span>
-                        </div>
-                      )}
-                      {defaultData.additionalInfo.shop?.maker && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">제조사</span>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.shop.maker}</span>
-                        </div>
-                      )}
-                      {defaultData.additionalInfo.category?.length > 0 && (
-                        <div className="flex items-start justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">카테고리</span>
-                          <span className="font-medium text-gray-900 dark:text-gray-100 text-right">
-                            {defaultData.additionalInfo.category.join(' > ')}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex gap-4">
+                      {/* 이미지 */}
                       {defaultData.additionalInfo.image && (
-                        <div className="mt-3">
-                          <img 
-                            src={defaultData.additionalInfo.image} 
-                            alt="상품 이미지" 
-                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600"
+                        <div className="flex-shrink-0">
+                          <img
+                            src={defaultData.additionalInfo.image}
+                            alt="상품 이미지"
+                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => handleImageClick(defaultData.additionalInfo.image, defaultData.additionalInfo.productName || '상품 이미지')}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                         </div>
                       )}
+
+                      {/* 상품 정보 */}
+                      <div className="flex-1 space-y-2">
+                        {/* 상품명 - 전체 너비 사용 */}
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400 text-xs block mb-0.5">상품명</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 text-sm block leading-snug">
+                            {defaultData.additionalInfo.productName}
+                          </span>
+                        </div>
+
+                        {/* 나머지 정보들 - 3개 컬럼 */}
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400 text-xs block mb-0.5">순위</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{defaultData.additionalInfo.rank}위</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400 text-xs block mb-0.5">쇼핑몰</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100 truncate block">
+                              {defaultData.additionalInfo.shop?.name || '-'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400 text-xs block mb-0.5">가격</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100 text-xs">
+                              {(() => {
+                                const lowPrice = parseInt(defaultData.additionalInfo.price.low);
+                                if (!lowPrice || isNaN(lowPrice)) {
+                                  return '정보 없음';
+                                }
+                                return `${lowPrice.toLocaleString()}원`;
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  
+
                   {defaultData.type === 'place' && defaultData.additionalInfo && (
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
@@ -431,13 +443,13 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                         <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${defaultData.additionalInfo.features.booking
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                        }`}>
+                          }`}>
                           예약 {defaultData.additionalInfo.features.booking ? '가능' : '불가'}
                         </span>
                         <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${defaultData.additionalInfo.features.npay
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                        }`}>
+                          }`}>
                           N페이 {defaultData.additionalInfo.features.npay ? '가능' : '불가'}
                         </span>
                       </div>
@@ -462,7 +474,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
               </div>
             )}
           </div>
-          
+
           {/* 버튼들 */}
           <div className="flex gap-3">
             <Button
@@ -479,8 +491,8 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 '저장'
               )}
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={onClose}
               className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
@@ -489,6 +501,44 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
           </div>
         </div>
       </DialogContent>
+      
+      {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
+      {isImageModalOpen && selectedImage && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => {
+            setIsImageModalOpen(false);
+            setSelectedImage(null);
+          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.title}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
+              onClick={() => {
+                setIsImageModalOpen(false);
+                setSelectedImage(null);
+              }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+                {selectedImage.title}
+              </p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </Dialog>
   );
 };

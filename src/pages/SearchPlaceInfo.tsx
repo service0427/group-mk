@@ -25,7 +25,7 @@ const SearchPlaceInfo: React.FC = () => {
   const [isCheckingLimit, setIsCheckingLimit] = useState<boolean>(true);
   const [limitError, setLimitError] = useState<string | null>(null);
   const [hasAutoSearched, setHasAutoSearched] = useState<boolean>(false);
-  
+
   // 키워드 추가 모달 상태
   const [isKeywordModalOpen, setIsKeywordModalOpen] = useState<boolean>(false);
   const [selectedItemForKeyword, setSelectedItemForKeyword] = useState<{
@@ -41,7 +41,7 @@ const SearchPlaceInfo: React.FC = () => {
     const initialize = async () => {
       setIsChecking(true);
       setIsCheckingLimit(true);
-      
+
       // API 상태 확인
       const status = await searchPlaceService.checkApiStatus();
       setApiStatus(status);
@@ -74,7 +74,7 @@ const SearchPlaceInfo: React.FC = () => {
         const query = location.state.searchQuery;
         setSearchTerm(query);
         setHasAutoSearched(true);
-        
+
         // 검색 제한 확인
         if (!searchLimitStatus.canSearch) {
           setError(searchLimitStatus.message);
@@ -90,10 +90,10 @@ const SearchPlaceInfo: React.FC = () => {
           if (searchResult && searchResult.normalList) {
             setResults(searchResult.normalList);
             setError(null);
-            
+
             // 검색 로그 추가
             await searchLimitService.addSearchLog('place', query, searchResult.normalList.length);
-            
+
             // 검색 제한 상태 업데이트
             await updateSearchLimit();
           } else {
@@ -139,10 +139,10 @@ const SearchPlaceInfo: React.FC = () => {
       if (searchResult && searchResult.normalList) {
         setResults(searchResult.normalList);
         setError(null);
-        
+
         // 검색 로그 추가
         await searchLimitService.addSearchLog('place', searchTerm, searchResult.normalList.length);
-        
+
         // 검색 제한 상태 업데이트
         await updateSearchLimit();
       } else {
@@ -167,10 +167,10 @@ const SearchPlaceInfo: React.FC = () => {
   const handleAddKeyword = (item: PlaceInfo) => {
     // 네이버 플레이스 링크 생성
     const placeLink = item.link || `https://map.naver.com/v5/entry/place/${item.id}`;
-    
+
     // 설명란에는 간단한 정보만
     const description = item.name;
-    
+
     // 추가 정보는 별도 객체로 (새로운 JSON 포맷)
     const additionalInfo = {
       type: 'place',
@@ -193,7 +193,7 @@ const SearchPlaceInfo: React.FC = () => {
       },
       capturedAt: new Date().toISOString()
     };
-    
+
     setSelectedItemForKeyword({
       mainKeyword: searchTerm,  // 검색한 키워드를 메인 키워드로
       mid: item.id,
@@ -232,7 +232,7 @@ const SearchPlaceInfo: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">월간 검색 횟수</span>
                       <Badge className={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" : ""}
-                             variant={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "outline" : "destructive"}>
+                        variant={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "outline" : "destructive"}>
                         {searchLimitStatus.monthlyUsed} / {searchLimitStatus.monthlyLimit}
                         {searchLimitStatus.purchasedQuota > 0 && ` (+${searchLimitStatus.purchasedQuota})`}
                       </Badge>
@@ -241,7 +241,7 @@ const SearchPlaceInfo: React.FC = () => {
                 </div>
                 {searchLimitStatus.dailyLimit !== -1 && (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${Math.min(100, (searchLimitStatus.dailyUsed / searchLimitStatus.dailyLimit) * 100)}%` }}
                     />
@@ -357,15 +357,15 @@ const SearchPlaceInfo: React.FC = () => {
               <thead>
                 <tr className="bg-muted dark:bg-gray-800/60">
                   <th className="py-3 px-3 text-center font-medium w-[60px]">순위</th>
-                  <th className="py-3 px-3 text-center font-medium w-[120px]">유형</th>
                   <th className="py-3 px-3 text-start font-medium">업체명</th>
+                  <th className="py-3 px-3 text-center font-medium w-[120px]">PID</th>
                   <th className="py-3 px-3 text-start font-medium w-[180px]">카테고리</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">방문</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">블로그</th>
                   <th className="py-3 px-3 text-center font-medium w-[120px]">이미지</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">예약</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">페이</th>
-                  <th className="py-3 px-3 text-center font-medium w-[80px]">작업</th>
+                  <th className="py-3 px-3 text-center font-medium w-[160px]">내키워드로 추가</th>
                 </tr>
               </thead>
               <tbody>
@@ -394,24 +394,18 @@ const SearchPlaceInfo: React.FC = () => {
                           {place.rank || index + 1}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${place.type === 'ad'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                          : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                          }`}>
-                          {place.type === 'ad' ? '광고' : '일반'}
-                        </span>
-                      </td>
                       <td className="py-3 px-3">
-                        <a 
-                          href={place.link} 
-                          target="_blank" 
+                        <a
+                          href={place.link}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="hover:text-primary cursor-pointer"
                         >
                           <div className="font-medium text-foreground">{place.name}</div>
-                          <div className="text-xs text-muted-foreground">ID: {place.id}</div>
                         </a>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="font-medium text-success">{place.id}</span>
                       </td>
                       <td className="py-3 px-3">
                         <div className="text-sm">{place.category}</div>
@@ -490,22 +484,14 @@ const SearchPlaceInfo: React.FC = () => {
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <a 
-                              href={place.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="hover:text-primary"
-                            >
-                              <h3 className="font-medium text-foreground text-sm">{place.name}</h3>
-                            </a>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${place.type === 'ad'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                              : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                              }`}>
-                              {place.type === 'ad' ? '광고' : '일반'}
-                            </span>
-                          </div>
+                          <a
+                            href={place.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary flex-1"
+                          >
+                            <h3 className="font-medium text-foreground text-sm">{place.name}</h3>
+                          </a>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -515,11 +501,12 @@ const SearchPlaceInfo: React.FC = () => {
                             title="내 키워드에 추가"
                           >
                             <KeenIcon icon="plus" className="text-sm me-1" />
-                            추가
+                            내키워드로 추가
                           </button>
                         </div>
-                        <div className="text-xs text-muted-foreground mb-1">{place.category}</div>
-                        <div className="text-xs text-muted-foreground mb-2">ID: {place.id}</div>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {place.category} • PID: <span className="text-success font-medium">{place.id}</span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">방문:</span>
@@ -557,7 +544,7 @@ const SearchPlaceInfo: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 키워드 추가 모달 */}
       <AddKeywordModal
         isOpen={isKeywordModalOpen}

@@ -1,19 +1,40 @@
 import { User as Auth0UserModel } from '@auth0/auth0-spa-js';
 
+import { getData, setData } from '@/utils';
 import { type AuthModel } from './_models';
 
-// 더 이상 localStorage에 저장하지 않음
+const AUTH_LOCAL_STORAGE_KEY = `${import.meta.env.VITE_APP_NAME}-auth-v${
+  import.meta.env.VITE_APP_VERSION
+}`;
+
 const getAuth = (): AuthModel | undefined => {
-  // 항상 undefined 반환 (메모리에서만 관리)
-  return undefined;
+  try {
+    const auth = getData(AUTH_LOCAL_STORAGE_KEY) as AuthModel | undefined;
+
+    if (auth) {
+      return auth;
+    } else {
+      return undefined;
+    }
+  } catch (error) {
+    
+  }
 };
 
 const setAuth = (auth: AuthModel | Auth0UserModel) => {
-  // localStorage에 저장하지 않음 (no-op)
+  setData(AUTH_LOCAL_STORAGE_KEY, auth);
 };
 
 const removeAuth = () => {
-  // localStorage에서 제거할 것이 없음 (no-op)
+  if (!localStorage) {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(AUTH_LOCAL_STORAGE_KEY);
+  } catch (error) {
+    
+  }
 };
 
 export function setupAxios(axios: any) {
@@ -32,4 +53,4 @@ export function setupAxios(axios: any) {
   );
 }
 
-export { getAuth, removeAuth, setAuth };
+export { AUTH_LOCAL_STORAGE_KEY, getAuth, removeAuth, setAuth };

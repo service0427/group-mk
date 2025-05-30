@@ -116,17 +116,17 @@ export const MENU_SIDEBAR: TMenuConfig = [
     authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
   },
   {
-    title: '순위 검색',
+    title: '상품 및 플레이스 검색',
     icon: 'ranking text-info',
     authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
     children: [
       {
-        title: 'N 쇼핑 순위 검색',
+        title: 'N 쇼핑 상품 검색',
         iconImage: '/media/ad-brand/naver-shopping.png',
         path: '/search-shop'
       },
       {
-        title: 'N 플레이스 순위 검색',
+        title: 'N 플레이스 검색',
         iconImage: '/media/ad-brand/naver-place.png',
         path: '/search-place'
       },
@@ -234,33 +234,33 @@ export const MENU_SIDEBAR: TMenuConfig = [
       },
     ]
   },
-  {
-    title: '캐쉬/포인트 관리',
-    icon: 'dollar text-warning',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
-    children: [
-      {
-        title: '캐쉬/포인트 이용안내',
-        icon: 'information text-info',
-        path: '/cash/guide'
-      },
-      {
-        title: '캐쉬 충전 요청 확인',
-        icon: 'dollar text-success',
-        path: '/myinfo/cash-requests'
-      },
-      {
-        title: '캐쉬 충전/사용내역',
-        icon: 'document text-primary',
-        path: '/cash/history'
-      },
-      {
-        title: '포인트 사용내역',
-        icon: 'document text-primary',
-        path: '/point/history'
-      },
-    ]
-  },
+  // {
+  //   title: '캐쉬/포인트 관리',
+  //   icon: 'dollar text-warning',
+  //   authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+  //   children: [
+  //     {
+  //       title: '캐쉬/포인트 이용안내',
+  //       icon: 'information text-info',
+  //       path: '/cash/guide'
+  //     },
+  //     {
+  //       title: '캐쉬 충전 요청 확인',
+  //       icon: 'dollar text-success',
+  //       path: '/myinfo/cash-requests'
+  //     },
+  //     {
+  //       title: '캐쉬 충전/사용내역',
+  //       icon: 'document text-primary',
+  //       path: '/cash/history'
+  //     },
+  //     {
+  //       title: '포인트 사용내역',
+  //       icon: 'document text-primary',
+  //       path: '/point/history'
+  //     },
+  //   ]
+  // },
   {
     heading: '관리자 메뉴',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,12 +23,12 @@ const SearchShopInfo: React.FC = () => {
   const [results, setResults] = useState<ShopItem[]>([]);
   const [totalResults, setTotalResults] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
-  const [limit, setLimit] = useState<number>(100);
+  const limit = 100; // 검색 개수 100개로 고정
   const [searchLimitStatus, setSearchLimitStatus] = useState<SearchLimitStatus | null>(null);
   const [isCheckingLimit, setIsCheckingLimit] = useState<boolean>(true);
   const [limitError, setLimitError] = useState<string | null>(null);
   const [hasAutoSearched, setHasAutoSearched] = useState<boolean>(false);
-  
+
   // 키워드 추가 모달 상태
   const [isKeywordModalOpen, setIsKeywordModalOpen] = useState<boolean>(false);
   const [selectedItemForKeyword, setSelectedItemForKeyword] = useState<{
@@ -38,12 +39,16 @@ const SearchShopInfo: React.FC = () => {
     additionalInfo?: any;
   } | null>(null);
 
+  // 이미지 확대 모달 상태
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; title: string } | null>(null);
+
   // 컴포넌트 마운트 시 API 상태 및 검색 제한 확인
   useEffect(() => {
     const initialize = async () => {
       setIsChecking(true);
       setIsCheckingLimit(true);
-      
+
       // API 상태 확인
       const status = await shopSearchService.checkApiStatus();
       setApiStatus(status);
@@ -76,7 +81,7 @@ const SearchShopInfo: React.FC = () => {
         const query = location.state.searchQuery;
         setSearchTerm(query);
         setHasAutoSearched(true);
-        
+
         // 검색 제한 확인
         if (!searchLimitStatus.canSearch) {
           setError(searchLimitStatus.message);
@@ -93,10 +98,10 @@ const SearchShopInfo: React.FC = () => {
             setResults(searchResult.items);
             setTotalResults(searchResult.total);
             setError(null);
-            
+
             // 검색 로그 추가
             await searchLimitService.addSearchLog('shop', query, searchResult.total);
-            
+
             // 검색 제한 상태 업데이트
             await updateSearchLimit();
           } else {
@@ -145,10 +150,10 @@ const SearchShopInfo: React.FC = () => {
         setResults(searchResult.items);
         setTotalResults(searchResult.total);
         setError(null);
-        
+
         // 검색 로그 추가
         await searchLimitService.addSearchLog('shop', searchTerm, searchResult.total);
-        
+
         // 검색 제한 상태 업데이트
         await updateSearchLimit();
       } else {
@@ -184,7 +189,7 @@ const SearchShopInfo: React.FC = () => {
   const handleAddKeyword = (item: ShopItem) => {
     // 설명란에는 간단한 정보만
     const description = `${item.title}${item.mallName ? ` - ${item.mallName}` : ''}`;
-    
+
     // 추가 정보는 별도 객체로 (새로운 JSON 포맷)
     const additionalInfo = {
       type: 'shop',
@@ -205,7 +210,7 @@ const SearchShopInfo: React.FC = () => {
       image: item.image || null,
       capturedAt: new Date().toISOString()
     };
-    
+
     setSelectedItemForKeyword({
       mainKeyword: searchTerm,  // 검색한 키워드를 메인 키워드로
       mid: item.productId,
@@ -215,6 +220,29 @@ const SearchShopInfo: React.FC = () => {
     });
     setIsKeywordModalOpen(true);
   };
+
+  const handleImageClick = (src: string, title: string) => {
+    setSelectedImage({ src, title });
+    setIsImageModalOpen(true);
+  };
+  
+  // ESC 키 핸들러
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isImageModalOpen) {
+        setIsImageModalOpen(false);
+        setSelectedImage(null);
+      }
+    };
+    
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isImageModalOpen]);
 
   return (
     <CommonTemplate
@@ -244,7 +272,7 @@ const SearchShopInfo: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">월간 검색 횟수</span>
                       <Badge className={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" : ""}
-                             variant={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "outline" : "destructive"}>
+                        variant={searchLimitStatus.monthlyUsed < searchLimitStatus.monthlyLimit ? "outline" : "destructive"}>
                         {searchLimitStatus.monthlyUsed} / {searchLimitStatus.monthlyLimit}
                         {searchLimitStatus.purchasedQuota > 0 && ` (+${searchLimitStatus.purchasedQuota})`}
                       </Badge>
@@ -253,7 +281,7 @@ const SearchShopInfo: React.FC = () => {
                 </div>
                 {searchLimitStatus.dailyLimit !== -1 && (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${Math.min(100, (searchLimitStatus.dailyUsed / searchLimitStatus.dailyLimit) * 100)}%` }}
                     />
@@ -310,35 +338,23 @@ const SearchShopInfo: React.FC = () => {
                       />
                     </label>
                   </div>
-                  <div className="flex gap-2">
-                    <select
-                      value={limit}
-                      onChange={(e) => setLimit(Number(e.target.value))}
-                      className="select w-24"
-                    >
-                      <option value={50}>50개</option>
-                      <option value={100}>100개</option>
-                      <option value={200}>200개</option>
-                      <option value={300}>300개</option>
-                    </select>
-                    <button
-                      onClick={handleSearch}
-                      disabled={isLoading || (searchLimitStatus !== null && !searchLimitStatus.canSearch)}
-                      className="btn btn-primary"
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          검색 중...
-                        </>
-                      ) : (
-                        <>
-                          <KeenIcon icon="magnifier" className="mr-2" />
-                          검색
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleSearch}
+                    disabled={isLoading || (searchLimitStatus !== null && !searchLimitStatus.canSearch)}
+                    className="btn btn-primary"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        검색 중...
+                      </>
+                    ) : (
+                      <>
+                        <KeenIcon icon="magnifier" className="mr-2" />
+                        검색
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -366,39 +382,28 @@ const SearchShopInfo: React.FC = () => {
           </div>
         </div>
 
-        {/* 검색 결과 영역 - 항상 노출 */}
         <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
           <div className="p-5 border-b">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-card-foreground">검색 결과</h3>
-              {results.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  총 {totalResults.toLocaleString()}개 중 {results.length}개 표시
-                </span>
-              )}
-            </div>
+            <h3 className="text-lg font-medium text-card-foreground">검색 결과</h3>
           </div>
 
-          {/* 데스크톱용 테이블 헤더 - 항상 표시 */}
+          {/* 데스크톱용 테이블 헤더 */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
               <thead>
                 <tr className="bg-muted dark:bg-gray-800/60">
                   <th className="py-3 px-3 text-center font-medium w-[60px]">순위</th>
-                  <th className="py-3 px-3 text-start font-medium">상품명</th>
-                  <th className="py-3 px-3 text-center font-medium w-[120px]">최저가</th>
-                  <th className="py-3 px-3 text-center font-medium w-[120px]">최고가</th>
-                  <th className="py-3 px-3 text-start font-medium w-[120px]">쇼핑몰</th>
-                  <th className="py-3 px-3 text-start font-medium w-[120px]">브랜드</th>
-                  <th className="py-3 px-3 text-start font-medium w-[120px]">제조사</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">이미지</th>
-                  <th className="py-3 px-3 text-center font-medium w-[80px]">작업</th>
+                  <th className="py-3 px-3 text-start font-medium">상품명</th>
+                  <th className="py-3 px-3 text-center font-medium w-[120px]">MID</th>
+                  <th className="py-3 px-3 text-start font-medium w-[180px]">쇼핑몰</th>
+                  <th className="py-3 px-3 text-center font-medium w-[160px]">내키워드로 추가</th>
                 </tr>
               </thead>
               <tbody>
                 {results.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center">
+                    <td colSpan={6} className="py-12 text-center">
                       <h4 className="text-lg font-medium text-foreground mb-2">
                         {searchTerm.trim() === '' ? '검색어를 입력하세요' : '조회된 상품이 없습니다'}
                       </h4>
@@ -421,31 +426,13 @@ const SearchShopInfo: React.FC = () => {
                           {item.rank}
                         </span>
                       </td>
-                      <td className="py-3 px-3 cursor-pointer" onClick={() => handleProductClick(item.link)}>
-                        <div className="font-medium text-foreground line-clamp-2">{item.title}</div>
-                        <div className="text-xs text-muted-foreground">ID: {item.productId}</div>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="font-medium text-green-600">{formatPrice(item.lprice)}</span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="font-medium">{formatPrice(item.hprice)}</span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="text-sm">{item.mallName || '-'}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="text-sm">{item.brand || '-'}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="text-sm">{item.maker || '-'}</div>
-                      </td>
                       <td className="py-3 px-3 text-center">
                         {item.image ? (
                           <img
                             src={item.image}
                             alt={item.title}
-                            className="w-8 h-8 object-cover rounded mx-auto"
+                            className="w-8 h-8 object-cover rounded mx-auto cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => handleImageClick(item.image, item.title)}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
@@ -453,6 +440,15 @@ const SearchShopInfo: React.FC = () => {
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
+                      </td>
+                      <td className="py-3 px-3 cursor-pointer" onClick={() => handleProductClick(item.link)}>
+                        <div className="font-medium text-foreground line-clamp-2">{item.title}</div>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="font-medium text-success">{item.productId}</span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="text-sm">{item.mallName || '-'}</div>
                       </td>
                       <td className="py-3 px-3 text-center">
                         <button
@@ -495,45 +491,28 @@ const SearchShopInfo: React.FC = () => {
                     className="p-4 hover:bg-muted/40"
                   >
                     <div className="flex items-start gap-3">
-                      <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium bg-primary/10 text-primary rounded-full flex-shrink-0 mt-1">
+                      <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium bg-primary/10 text-primary rounded-full flex-shrink-0">
                         {item.rank}
                       </span>
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-12 h-12 object-cover rounded flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                          onClick={() => handleImageClick(item.image, item.title)}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3 mb-2">
-                          <div className="flex-1 cursor-pointer" onClick={() => handleProductClick(item.link)}>
-                            <h3 className="font-medium text-foreground text-sm line-clamp-2 mb-1">{item.title}</h3>
-                            <div className="text-xs text-muted-foreground mb-2">
-                              {item.mallName} • {item.brand || '브랜드 없음'}
-                            </div>
-                          </div>
-                          {item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              className="w-12 h-12 object-cover rounded flex-shrink-0"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">최저가:</span>
-                            <span className="font-medium text-green-600">{formatPrice(item.lprice)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">최고가:</span>
-                            <span className="font-medium">{formatPrice(item.hprice)}</span>
+                        <div className="cursor-pointer" onClick={() => handleProductClick(item.link)}>
+                          <h3 className="font-medium text-foreground text-sm line-clamp-2 mb-1">{item.title}</h3>
+                          <div className="text-xs text-muted-foreground">
+                            MID: <span className="text-success font-medium">{item.productId}</span> • {item.mallName}
                           </div>
                         </div>
-                        {item.maker && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            제조사: {item.maker}
-                          </div>
-                        )}
-                        <div className="mt-3 flex justify-between items-center">
-                          <div className="text-xs text-muted-foreground">ID: {item.productId}</div>
+                        <div className="mt-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -543,7 +522,7 @@ const SearchShopInfo: React.FC = () => {
                             title="내 키워드에 추가"
                           >
                             <KeenIcon icon="plus" className="text-sm me-1" />
-                            키워드 추가
+                            내키워드로 추가
                           </button>
                         </div>
                       </div>
@@ -555,7 +534,7 @@ const SearchShopInfo: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 키워드 추가 모달 */}
       <AddKeywordModal
         isOpen={isKeywordModalOpen}
@@ -568,6 +547,42 @@ const SearchShopInfo: React.FC = () => {
           type: 'shop'
         } : undefined}
       />
+
+      {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
+      {isImageModalOpen && selectedImage && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => {
+            setIsImageModalOpen(false);
+            setSelectedImage(null);
+          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.title}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
+              onClick={() => {
+                setIsImageModalOpen(false);
+                setSelectedImage(null);
+              }}
+            >
+              <KeenIcon icon="cross" className="text-lg" />
+            </button>
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+                {selectedImage.title}
+              </p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </CommonTemplate>
   );
 };

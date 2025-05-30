@@ -155,27 +155,29 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
   }, [isImageModalOpen]);
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        // 이미지 모달이 열려있을 때는 Dialog가 닫히지 않도록 방지
-        if (!open && isImageModalOpen) {
-          return;
-        }
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <DialogContent 
-        className="w-[95vw] sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
-        onEscapeKeyDown={(e) => {
-          // 이미지 모달이 열려있을 때는 Dialog의 ESC 동작 방지
-          if (isImageModalOpen) {
-            e.preventDefault();
+    <>
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          // 이미지 모달이 열려있을 때는 Dialog가 닫히지 않도록 방지
+          if (!open && isImageModalOpen) {
+            return;
+          }
+          if (!open) {
+            onClose();
           }
         }}
+        modal={!isImageModalOpen}
       >
+        <DialogContent 
+          className="w-[95vw] sm:max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
+          onEscapeKeyDown={(e) => {
+            // 이미지 모달이 열려있을 때는 Dialog의 ESC 동작 방지
+            if (isImageModalOpen) {
+              e.preventDefault();
+            }
+          }}
+        >
         <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 py-4 px-6 border-b shrink-0">
           <div className="flex items-center">
             <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
@@ -501,44 +503,54 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
           </div>
         </div>
       </DialogContent>
-      
-      {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
-      {isImageModalOpen && selectedImage && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
-          onClick={() => {
-            setIsImageModalOpen(false);
-            setSelectedImage(null);
-          }}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <img
-              src={selectedImage.src}
-              alt={selectedImage.title}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
-              onClick={() => {
-                setIsImageModalOpen(false);
-                setSelectedImage(null);
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="absolute bottom-4 left-0 right-0 text-center">
-              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
-                {selectedImage.title}
-              </p>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </Dialog>
+    
+    {/* 이미지 확대 모달 - Dialog 외부에서 Portal로 렌더링 */}
+    {isImageModalOpen && selectedImage && createPortal(
+      <div 
+        className="fixed inset-0 flex items-center justify-center bg-black/80 p-4"
+        onClick={() => {
+          setIsImageModalOpen(false);
+          setSelectedImage(null);
+        }}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}
+      >
+        <div className="relative max-w-4xl max-h-[90vh]">
+          <img
+            src={selectedImage.src}
+            alt={selectedImage.title}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full shadow-lg cursor-pointer pointer-events-auto"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsImageModalOpen(false);
+              setSelectedImage(null);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            style={{ zIndex: 10001, pointerEvents: 'auto' }}
+            tabIndex={0}
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+              {selectedImage.title}
+            </p>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   );
 };

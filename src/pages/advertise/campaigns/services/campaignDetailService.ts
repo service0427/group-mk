@@ -42,9 +42,6 @@ export const getServiceTypeCode = (serviceType: string | CampaignServiceType): s
   if (serviceType === 'coupang-fakesale') {
     return CampaignServiceType.COUPANG_FAKESALE;
   }
-  if (serviceType === 'ohouse-traffic') {
-    return CampaignServiceType.OHOUSE_TRAFFIC;
-  }
   
   return capitalizedCamelCase;
 };

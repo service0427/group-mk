@@ -87,3 +87,14 @@ export function getAllCampaignTypeCombinations(): {
     }))
   );
 }
+
+// 서비스 타입 코드로 캠페인 이름 조회
+export function getCampaignNameByServiceType(serviceType: string): string | null {
+  for (const campaign of CAMPAIGNS) {
+    const hasType = campaign.types.some(type => type.code === serviceType);
+    if (hasType) {
+      return campaign.name;
+    }
+  }
+  return null;
+}

@@ -90,8 +90,7 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
     if (!config) {
       // field_mapping이 없으면 해당 필드는 숨김 처리
       // 즉, field_mapping에 정의된 필드만 표시
-      console.log(`No config for field ${fieldName}, hiding by default`);
-      
+     
       // 기본 필드는 항상 표시 (main_keyword, status, created_at, actions)
       const defaultFields = ['main_keyword', 'status', 'created_at', 'actions'];
       if (defaultFields.includes(fieldName)) {
@@ -106,7 +105,6 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
     const fieldConfig = getFieldConfig(fieldName);
     if (!fieldConfig) {
       // field_mapping에 정의되지 않은 필드는 숨김
-      console.log(`Field ${fieldName} not in field_mapping, hiding`);
       return true;
     }
     

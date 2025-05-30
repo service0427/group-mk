@@ -2,7 +2,7 @@ import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useKeywords } from './hooks/useKeywords';
 import { KeywordTable, KeywordMoveModal } from './components';
 import { KeywordInput } from './types';
-import { getTypeNameByCode } from '../../config/campaign.config';
+import { getTypeNameByCode, getCampaignNameByServiceType } from '../../config/campaign.config';
 import { DashboardTemplate } from '@/components/pageTemplate';
 import KeywordUploadModal from './components/KeywordUploadModal';
 import { TestKeywordFieldConfig } from './components/TestKeywordFieldConfig';
@@ -44,6 +44,7 @@ const KeywordPage: React.FC = () => {
     handleLimitChange,
     handleSortChange,
     handleSearchChange,
+    clearKeywords,
   } = useKeywords();
 
   // 현재 선택된 그룹 가져오기
@@ -133,12 +134,12 @@ const KeywordPage: React.FC = () => {
     });
   }, [serviceTypeCounts]);
   
-  // 초기 서비스 타입 설정
-  useEffect(() => {
-    if (!selectedServiceType && availableServiceTypes.length > 0) {
-      setSelectedServiceType(availableServiceTypes[0]);
-    }
-  }, [availableServiceTypes, selectedServiceType]);
+  // 초기 서비스 타입 설정 - 자동 선택하지 않음
+  // useEffect(() => {
+  //   if (!selectedServiceType && availableServiceTypes.length > 0) {
+  //     setSelectedServiceType(availableServiceTypes[0]);
+  //   }
+  // }, [availableServiceTypes, selectedServiceType]);
   
   // 서비스 타입 라벨 가져오기
   const getServiceTypeLabel = (serviceType: string): string => {
@@ -163,6 +164,8 @@ const KeywordPage: React.FC = () => {
   // 서비스 타입 변경 핸들러
   const handleServiceTypeChange = (serviceType: string) => {
     setSelectedServiceType(serviceType);
+    // 서비스 타입 변경 시 키워드 목록 초기화
+    clearKeywords();
     // 서비스 타입 변경 시 첫 번째 그룹 선택 또는 null
     const filteredGroups = groups.filter(g => g.campaignType === serviceType);
     if (filteredGroups.length > 0) {
@@ -326,12 +329,15 @@ const KeywordPage: React.FC = () => {
             })}
           </div>
           
-          {/* 구분선 */}
-          <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
+          {/* 구분선 - 서비스 타입이 선택된 경우에만 표시 */}
+          {selectedServiceType && (
+            <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
+          )}
           
-          {/* 그룹 선택 버튼들 */}
-          <div className="space-y-2">
-            {filteredGroups.length > 0 ? (
+          {/* 그룹 선택 버튼들 - 서비스 타입이 선택된 경우에만 표시 */}
+          {selectedServiceType && (
+            <div className="space-y-2">
+              {filteredGroups.length > 0 ? (
               <>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -457,9 +463,10 @@ const KeywordPage: React.FC = () => {
                         onChange={(e) => setNewGroupName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newGroupName.trim()) {
+                            const campaignName = getCampaignNameByServiceType(selectedServiceType);
                             handleCreateGroup(
                               newGroupName.trim(),
-                              selectedGroup?.campaignName || null,
+                              campaignName,
                               selectedServiceType,
                               false
                             );
@@ -479,9 +486,10 @@ const KeywordPage: React.FC = () => {
                         variant="ghost"
                         onClick={() => {
                           if (newGroupName.trim()) {
+                            const campaignName = getCampaignNameByServiceType(selectedServiceType);
                             handleCreateGroup(
                               newGroupName.trim(),
-                              selectedGroup?.campaignName || null,
+                              campaignName,
                               selectedServiceType,
                               false
                             );
@@ -520,11 +528,12 @@ const KeywordPage: React.FC = () => {
                     onClick={() => {
                       const groupName = prompt('새 그룹 이름을 입력하세요:');
                       if (groupName) {
+                        const campaignName = getCampaignNameByServiceType(selectedServiceType);
                         handleCreateGroup(
                           groupName,
-                          null,
-                          selectedServiceType,
-                          false
+                          campaignName,  // 서비스 타입에 맞는 캠페인 이름
+                          selectedServiceType,  // campaignType
+                          false  // isDefault
                         );
                       }
                     }}
@@ -536,6 +545,7 @@ const KeywordPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -546,31 +556,48 @@ const KeywordPage: React.FC = () => {
         </div>
       )*/}
 
-      {/* 키워드 테이블 */}
-      <KeywordTable
-        keywords={keywords}
-        totalKeywords={totalKeywords}
-        selectedGroup={selectedGroup}
-        pagination={pagination}
-        isLoading={isLoading}
-        onUpdateKeyword={updateKeyword}
-        onDeleteKeyword={deleteKeyword}
-        onCreateKeyword={handleCreateKeyword}
-        onPageChange={handlePageChange}
-        onLimitChange={handleLimitChange}
-        onSearch={handleSearchChange}
-        onSort={handleSortChange}
-        onOpenUploadModal={handleOpenUploadModal}
-        selectedKeywordIds={selectedKeywordIds}
-        onSelectionChange={setSelectedKeywordIds}
-        onMoveKeywords={() => setIsMoveModalOpen(true)}
-      />
+      {/* 키워드 테이블 또는 가이드 메시지 */}
+      {selectedServiceType ? (
+        <KeywordTable
+          keywords={keywords}
+          totalKeywords={totalKeywords}
+          selectedGroup={selectedGroup}
+          pagination={pagination}
+          isLoading={isLoading}
+          onUpdateKeyword={updateKeyword}
+          onDeleteKeyword={deleteKeyword}
+          onCreateKeyword={handleCreateKeyword}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          onSearch={handleSearchChange}
+          onSort={handleSortChange}
+          onOpenUploadModal={handleOpenUploadModal}
+          selectedKeywordIds={selectedKeywordIds}
+          onSelectionChange={setSelectedKeywordIds}
+          onMoveKeywords={() => setIsMoveModalOpen(true)}
+        />
+      ) : (
+        <Card className="p-12 text-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                <KeenIcon icon="information-2" className="size-6 text-gray-300" />
+                서비스 타입을 선택해주세요
+              </h3>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md">
+              상단의 서비스 타입 버튼을 클릭하여 관리할 키워드 그룹을 선택하세요.
+              서비스 타입별로 키워드를 분류하여 효율적으로 관리할 수 있습니다.
+            </p>
+          </div>
+        </Card>
+      )}
       
       {/* 엑셀 업로드 모달 */}
       <KeywordUploadModal 
         isOpen = {showUploadModal}
         onClose={ () => setShowUploadModal(false)}
-        groups={groups}
+        groups={filteredGroups}
         onSuccess={loadKeywords}
       />
       

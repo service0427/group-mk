@@ -1,5 +1,6 @@
 import { CampaignPage } from './CampaignPage';
 import { AllCampaignsPage } from './AllCampaignsPage';
+import CampaignManagePage from './CampaignManagePage';
 
 /**
  * 캠페인 관련 컴포넌트 export
@@ -10,8 +11,12 @@ import { AllCampaignsPage } from './AllCampaignsPage';
  * 
  * - AllCampaignsPage: 모든 캠페인 통합 관리 페이지 
  *   - 경로: /admin/campaigns/all
+ * 
+ * - CampaignManagePage: 새로운 캠페인 관리 페이지
+ *   - 경로: /admin/campaigns/manage
  */
 export {
   CampaignPage,
-  AllCampaignsPage
+  AllCampaignsPage,
+  CampaignManagePage
 };

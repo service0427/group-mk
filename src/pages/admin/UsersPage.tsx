@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
@@ -283,21 +284,21 @@ const UsersPage = () => {
     // 툴바 액션 버튼
     const toolbarActions = (
         <div className="flex gap-2">
-            <button className="btn btn-light btn-sm">
+            <Button variant="outline" size="sm" className="bg-primary-600 text-white hover:bg-primary-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 <span className="hidden md:inline">내보내기</span>
-            </button>
-            <button className="btn btn-primary btn-sm">
+            </Button>
+            <Button variant="outline" size="sm" className="bg-primary-600 text-white hover:bg-primary-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:me-2 flex-none">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 <span className="hidden md:inline">회원 추가</span>
-            </button>
+            </Button>
         </div>
     );
 

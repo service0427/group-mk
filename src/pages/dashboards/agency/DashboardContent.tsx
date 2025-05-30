@@ -857,7 +857,7 @@ export const DashboardContent: React.FC = () => {
             <Button
               variant="outline"
               className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
-              onClick={() => navigate('/advertise/naver/traffic/desc')}
+              onClick={() => navigate('/advertise/campaigns/info/naver-traffic')}
             >
               캠페인 소개 페이지로 이동
             </Button>

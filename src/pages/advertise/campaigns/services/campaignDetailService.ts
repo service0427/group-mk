@@ -1,6 +1,50 @@
 import { supabase } from '@/supabase';
 import { CampaignServiceType } from '@/components/campaign-modals/types';
-import { getServiceTypeCode } from '@/pages/admin/campaigns/services/campaignService';
+
+/**
+ * 서비스 타입을 데이터베이스에서 사용하는 코드로 변환
+ */
+export const getServiceTypeCode = (serviceType: string | CampaignServiceType): string => {
+  // CampaignServiceType enum 값을 그대로 반환
+  if (Object.values(CampaignServiceType).includes(serviceType as CampaignServiceType)) {
+    return serviceType as string;
+  }
+  
+  // kebab-case를 CamelCase로 변환
+  const camelCase = serviceType.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  const capitalizedCamelCase = camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
+  
+  // 특별 케이스 처리
+  if (serviceType === 'naver-shopping-traffic') {
+    return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+  }
+  if (serviceType === 'naver-shopping-fakesale') {
+    return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
+  }
+  if (serviceType === 'naver-place-traffic') {
+    return CampaignServiceType.NAVER_PLACE_TRAFFIC;
+  }
+  if (serviceType === 'naver-place-save') {
+    return CampaignServiceType.NAVER_PLACE_SAVE;
+  }
+  if (serviceType === 'naver-place-share') {
+    return CampaignServiceType.NAVER_PLACE_SHARE;
+  }
+  if (serviceType === 'naver-traffic') {
+    return CampaignServiceType.NAVER_TRAFFIC;
+  }
+  if (serviceType === 'naver-auto') {
+    return CampaignServiceType.NAVER_AUTO;
+  }
+  if (serviceType === 'coupang-traffic') {
+    return CampaignServiceType.COUPANG_TRAFFIC;
+  }
+  if (serviceType === 'coupang-fakesale') {
+    return CampaignServiceType.COUPANG_FAKESALE;
+  }
+  
+  return capitalizedCamelCase;
+};
 
 /**
  * 캠페인 상세 정보를 가져오는 서비스 함수

@@ -49,6 +49,11 @@ export const FAQPage = lazyWithPreload(() => import('@/pages/faq'));
 // 키워드 페이지 lazy loading with preload
 export const KeywordPage = lazyWithPreload(() => import('@/pages/keyword'));
 
+// 캠페인 페이지 lazy loading with preload
+export const IntegratedCampaignPage = lazyWithPreload(() => import('@/pages/campaign').then(m => ({ default: m.IntegratedCampaignPage })));
+export const MyServicesPage = lazyWithPreload(() => import('@/pages/campaign').then(m => ({ default: m.MyServicesPage })));
+export const CampaignManagePage = lazyWithPreload(() => import('@/pages/admin/campaigns').then(m => ({ default: m.CampaignManagePage })));
+
 // 검색 페이지 lazy loading with preload
 export const SearchShopInfo = lazyWithPreload(() => import('@/pages/SearchShopInfo'));
 export const SearchPlaceInfo = lazyWithPreload(() => import('@/pages/SearchPlaceInfo'));
@@ -192,6 +197,7 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 내 서비스 관리 라우트 */}
           <Route path="/myinfo/services" element={<SuspenseWrapper><ServicesPage /></SuspenseWrapper>} />
+          <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -207,8 +213,11 @@ const AppRoutingSetup = (): ReactElement => {
           
           {/* 총판 작업 입력 라우트 */}
           <Route path="/admin/work-input" element={<SuspenseWrapper><WorkInputPage /></SuspenseWrapper>} />
+          
+          {/* 캠페인 관리 페이지 */}
+          <Route path="/admin/campaigns/manage" element={<SuspenseWrapper><CampaignManagePage /></SuspenseWrapper>} />
 
-          {/* 총판 캠페인 관리 - 통합 캠페인 페이지 */}
+          {/* 총판 캠페인 관리 */}
 
           {/* 서비스 타입별 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/admin/campaigns/:serviceType" element={<Campaigns.CampaignPage />} />
@@ -228,9 +237,6 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 사용자 관리 라우트 - Lazy Loading */}
           <Route path="/admin/users" element={<SuspenseWrapper><UsersPage /></SuspenseWrapper>} />
           <Route path="/admin/levelup-requests" element={<SuspenseWrapper><LevelUpRequestsPage /></SuspenseWrapper>} />
-
-          {/* 캠페인 관리 라우트 */}
-          <Route path="/admin/campaigns/all" element={<Campaigns.AllCampaignsPage />} />
 
           {/* 사이트 관리 라우트 */}
           <Route path="/admin/site/notice" element={<Site.NoticePage />} />
@@ -291,12 +297,14 @@ initializeComponentMap({
   '/admin/withdraw_approve': WithdrawApprovePage,
   '/admin/work-input': WorkInputPage,
   '/admin/site/search-limits': SearchLimitsPage,
+  '/admin/campaigns/manage': CampaignManagePage,
   
   // 광고 페이지
   '/advertise/campaigns/info/*': InfoPage,
   '/advertise/campaigns/my/*': CampaignPage,
   
   // 마이페이지
+  '/my-services': MyServicesPage,
   '/myinfo/profile': ProfilePage,
   '/myinfo/services': ServicesPage,
   '/myinfo/cash-requests': CashRequestsPage,

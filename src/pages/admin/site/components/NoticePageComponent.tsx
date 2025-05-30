@@ -730,7 +730,12 @@ const NoticePageComponent = () => {
   
   // 툴바 액션 버튼 (새 페이지 이동 방식)
   const toolbarActions = (
-    <Button onClick={handleCreateNewNotice}>
+    <Button 
+      variant="outline"
+      size="sm"
+      className="bg-primary-600 text-white hover:bg-primary-700"
+      onClick={handleCreateNewNotice}
+    >
       <KeenIcon icon="plus" className="md:me-2 flex-none" />
       <span className="hidden md:inline">새 공지사항</span>
     </Button>

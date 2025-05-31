@@ -66,7 +66,6 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   // 컴포넌트 마운트 시 초기화
   useEffect(() => {
     // 초기 캠페인 데이터 설정
-    console.log('CampaignContent - Initial campaigns:', initialCampaigns);
     setCampaigns(initialCampaigns);
   }, [initialCampaigns]);
 
@@ -79,8 +78,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       return;
     }
 
-    // 현재 상태 확인
-    const currentStatus = campaign.originalData?.status || '';
+    // 현재 상태 확인 - status 객체에서 원본 status 값 사용
+    const currentStatus = campaign.status.status || campaign.originalData?.status || '';
 
     // 승인/미승인 상태인 경우 관리자만 변경 가능
     if ((currentStatus === 'waiting_approval' || currentStatus === 'rejected') && !isAdmin) {
@@ -160,8 +159,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
     // 관리자는 모든 상태 변경 가능
     if (isAdmin) return true;
 
-    // 현재 상태 체크
-    const currentStatus = campaign.originalData?.status || '';
+    // 현재 상태 체크 - status 객체에서 원본 status 값 사용
+    const currentStatus = campaign.status.status || campaign.originalData?.status || '';
 
     // 승인 대기 중이거나 반려된 캠페인은 관리자만 상태 변경 가능
     if (currentStatus === 'waiting_approval' || currentStatus === 'rejected') {
@@ -419,15 +418,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
   // 필터링 적용
   const filteredData = useMemo(() => {
-    console.log('CampaignContent - Filtering campaigns:', campaigns);
-    console.log('CampaignContent - Search input:', searchInput);
-    console.log('CampaignContent - Status filter:', statusFilter);
-
-    // 캠페인 데이터 확인
-    if (campaigns.length > 0) {
-      // 필터링 전 캠페인 데이터 확인
-      console.log('CampaignContent - First campaign data:', campaigns[0]);
-    }
+    
 
     return campaigns.filter(campaign => {
       // 검색어 필터링
@@ -450,13 +441,13 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
   return (
     <>
-      <div className="card bg-card">
-        <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5">
-          <h3 className="card-title font-medium text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
+      <div className="card bg-card overflow-hidden">
+        <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5 sticky top-0 bg-card z-10 shadow-sm">
+          <h3 className="card-title font-medium text-xs lg:text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
             전체 {campaigns.length}개 {serviceTitle} 캠페인
           </h3>
 
-          <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-3 lg:gap-5">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-2 lg:gap-3">
             <div className="flex w-full sm:w-auto">
               <label className="input input-sm w-full sm:w-auto">
                 <KeenIcon icon="magnifier" className="text-muted-foreground" />
@@ -465,17 +456,17 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   placeholder="캠페인명 검색"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full"
+                  className="w-full text-xs lg:text-sm"
                 />
               </label>
             </div>
 
-            <div className="flex items-center justify-between sm:justify-start gap-2.5">
+            <div className="flex items-center justify-between sm:justify-start gap-2">
               <Select
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value)}
               >
-                <SelectTrigger className="w-28 h-9" size="sm">
+                <SelectTrigger className="w-24 lg:w-28 h-8 lg:h-9" size="sm">
                   <SelectValue placeholder="상태" />
                 </SelectTrigger>
                 <SelectContent className="w-44">
@@ -490,7 +481,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
               {onAddCampaign && (
                 <button
-                  className="btn btn-sm btn-primary h-9 px-3 sm:px-4"
+                  className="btn btn-sm btn-primary h-8 lg:h-9 px-2 lg:px-4 text-xs lg:text-sm"
                   onClick={() => {
                     if (onAddCampaign) {
                       onAddCampaign();
@@ -500,7 +491,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     }
                   }}
                 >
-                  <KeenIcon icon="plus" className="me-1" />
+                  <KeenIcon icon="plus" className="me-1 size-3 lg:size-4" />
                   <span className="whitespace-nowrap">캠페인 추가</span>
                 </button>
               )}
@@ -510,7 +501,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
         <div className="card-body px-0">
           {/* 모바일에서는 카드 형태로 표시 */}
-          <div className="md:hidden px-4">
+          <div className="md:hidden px-4 max-h-[calc(100vh-300px)] overflow-y-auto">
             {filteredData.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {filteredData.map((campaign, index) => (
@@ -615,7 +606,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                       ) : (
                         /* 그 외에는 상태 변경 가능 Select 표시 */
                         <Select
-                          value={getStatusValue(campaign.status.label)}
+                          value={campaign.status.status || getStatusValue(campaign.status.label)}
                           onValueChange={(value) => handleStatusChange(campaign.id, value)}
                           disabled={loadingStatus[campaign.id]}
                         >
@@ -672,32 +663,32 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           </div>
 
           {/* 데스크톱에서는 테이블 형태로 표시 */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto max-h-[calc(100vh-350px)] overflow-y-auto">
             <table className="w-full min-w-full divide-y divide-border">
-              <thead className="bg-muted">
+              <thead className="bg-muted sticky top-0 z-10">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
                     No
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[200px]">
                     캠페인명
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
                     캠페인 설명
                   </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     상승효율
                   </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                     최소수량
                   </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                     접수마감시간
                   </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ minWidth: '140px' }}>
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ minWidth: '140px' }}>
                     상태
                   </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     상세설정
                   </th>
                 </tr>
@@ -705,16 +696,16 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
               <tbody className="bg-background divide-y divide-border">
                 {filteredData.map((campaign, index) => (
                   <tr key={campaign.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
                       <span className="text-sm font-medium text-foreground">
                         {index + 1}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-4">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 lg:gap-4">
                         <img
                           src={getLogoPath(campaign)}
-                          className="rounded-full size-10 shrink-0"
+                          className="rounded-full size-8 lg:size-10 shrink-0"
                           alt={campaign.campaignName || '캠페인'}
                           onError={(e) => {
 
@@ -759,32 +750,32 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                             }
                           }}
                         />
-                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-sm font-medium text-foreground hover:text-primary-active">
+                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-xs lg:text-sm font-medium text-foreground hover:text-primary-active line-clamp-2">
                           {campaign.campaignName}
                         </Link>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 lg:px-6 py-4 hidden xl:table-cell">
                       <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
                         {campaign.description || '-'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="text-base font-medium text-primary">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-sm lg:text-base font-medium text-primary">
                         {campaign.efficiency}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center hidden lg:table-cell">
                       <span className="text-sm text-foreground">
                         {campaign.minQuantity}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center hidden lg:table-cell">
                       <span className="text-sm text-gray-900">
                         {campaign.deadline}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center" style={{ minWidth: '140px' }}>
                       <div className="flex flex-col items-center gap-1">
                         {/* 승인 대기 중이거나 반려된 캠페인은 총판에게는 라벨로 표시 - Select와 동일한 높이/너비로 설정 */}
                         {!canChangeStatus(campaign) ? (
@@ -798,7 +789,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         ) : (
                           /* 그 외에는 상태 변경 가능 Select 표시 */
                           <Select
-                            value={getStatusValue(campaign.status.label)}
+                            value={campaign.status.status || getStatusValue(campaign.status.label)}
                             onValueChange={(value) => handleStatusChange(campaign.id, value)}
                             disabled={loadingStatus[campaign.id]}
                           >
@@ -847,7 +838,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex justify-center gap-2">
                         <button
                           className="btn btn-sm btn-icon btn-info"

@@ -728,10 +728,9 @@ export const keywordService = {
       if (error) {
         // 409 Conflict - 중복 키 에러 처리
         if (error.code === '23505') {  // PostgreSQL unique violation
-          const idType = keywordType === 'place' ? 'PID' : 'MID';
           return {
             success: false,
-            message: `이미 동일한 키워드와 ${idType} 조합이 존재합니다.`
+            message: `이 그룹에 동일한 메인 키워드가 이미 존재합니다.`
           };
         }
         throw error;

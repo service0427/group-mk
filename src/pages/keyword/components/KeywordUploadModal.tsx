@@ -2,6 +2,8 @@ import React, { ChangeEvent, useDebugValue, useState } from "react";
 import { KeywordGroup, KeywordInput } from "../types";
 import { getServiceTypeFromPath, SERVICE_TYPE_LABELS, CampaignServiceType } from '@/components/campaign-modals/types';
 import { keywordService } from "../services/keywordService";
+import { fieldMappingService } from "../services/fieldMappingService";
+import { KEYWORD_SAMPLE_DATA, getColumnWidth } from "../config/sampleData.config";
 
 // 엑셀업로드 모달에 대한 props 설정
 interface KeywordUploadModalProps {
@@ -9,13 +11,15 @@ interface KeywordUploadModalProps {
     onClose: () => void;
     groups: KeywordGroup[];
     onSuccess: () => void;          // 업로드 성공 후 키워드 리로드 함수
+    selectedServiceType?: string;   // 현재 선택된 서비스 타입
 }
 
 const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
     isOpen,
     onClose,
     groups,
-    onSuccess
+    onSuccess,
+    selectedServiceType
 }) => {
 
     // 엑셀 업로드 관련 상태값들
@@ -59,7 +63,9 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                         setTotalRows(jsonData.length);
 
                         // 데이터 기본 유효성 검사
-                        validateExcelData(jsonData);
+                        if (uploadGroupId) {
+                            validateExcelData(jsonData);
+                        }
                     
                     } catch (error) {
                         console.error('엑셀 파일 파싱 오류:', error);
@@ -79,7 +85,7 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
         }
     }
 
-    const validateExcelData = (data: any[]): boolean => {
+    const validateExcelData = async (data: any[]): Promise<boolean> => {
         // 데이터 있는지 확인
         if (data.length === 0) {
             alert('업로드한 파일에 데이터가 없습니다.');
@@ -87,16 +93,60 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
             return false;
         }
 
-        // 필수 컬럼이 있는지 확인
-        // 필수 컬럼은 나중에 따로 다른 파일로 빼든지 해야함, 일단 "메인 키워드" 와 "MID" 만 필수로 설정
+        // 선택된 그룹의 서비스 타입 확인
+        const selectedGroup = groups.find(g => g.id === Number(uploadGroupId));
+        if (!selectedGroup || !selectedGroup.campaignType) {
+            // 기본 검증 로직 사용
+            return validateExcelDataDefault(data);
+        }
+
+        // 서비스 타입별 필드 매핑 가져오기
+        let fieldMapping = await fieldMappingService.getFieldMapping(selectedGroup.campaignType);
+        
+        if (!fieldMapping || !fieldMapping.field_mapping) {
+            // DB에 필드 매핑이 없으면 기본 매핑 사용
+            fieldMapping = {
+                id: 'default',
+                service_type: selectedGroup.campaignType,
+                field_mapping: fieldMappingService.getDefaultFieldMapping(selectedGroup.campaignType),
+                ui_config: {
+                    listHeaders: ['메인 키워드', 'MID', 'URL', '키워드1', '키워드2', '키워드3'],
+                    listFieldOrder: ['main_keyword', 'mid', 'url', 'keyword1', 'keyword2', 'keyword3'],
+                    hiddenFields: [],
+                    requiredFields: ['main_keyword']
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+        }
+
+        // 필수 필드 확인
+        const requiredFields = fieldMappingService.getRequiredFields(fieldMapping.field_mapping);
         const firstRow = data[0];
-        const requiredColumns = ['메인 키워드', 'MID'];    // 한글도 가능
+        
+        for (const fieldName of requiredFields) {
+            const fieldConfig = fieldMapping.field_mapping[fieldName as keyof typeof fieldMapping.field_mapping];
+            if (!fieldConfig || fieldConfig.hidden) continue;
+            
+            const label = fieldConfig.label;
+            if (!Object.keys(firstRow).includes(label)) {
+                alert(`필수 컬럼이 누락되었습니다: ${label}`);
+                setUploadFile(null);
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    // 기본 엑셀 검증 로직 (필드 매핑이 없는 경우)
+    const validateExcelDataDefault = (data: any[]): boolean => {
+        const firstRow = data[0];
+        const requiredColumns = ['메인 키워드'];    // 기본적으로 메인 키워드만 필수
 
         for (const col of requiredColumns) {
-            // 컬럼에 띄어쓰기 넣을수도 있기 때문에 제거 하고 비교
             const normalizedCol = col.toLowerCase().replace(/\s+/g, '');
         
-            // 실제로 normalizedCol 사용
             if (!Object.keys(firstRow).some(key => {
                 const normalizedKey = key.toLowerCase().replace(/\s+/g, '');
                 return normalizedKey === normalizedCol || normalizedKey.includes(normalizedCol);
@@ -142,7 +192,7 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                             const jsonData = XLSX.utils.sheet_to_json(sheet);
 
                             // 엑셀 데이터를 키워드 형식으로 변환
-                            const keywordsData = convertExcelToKeyword(jsonData);
+                            const keywordsData = await convertExcelToKeyword(jsonData, uploadGroupId);
 
                             // progressbar도 있을꺼라서 chunk 단위로 나눠서 supabase에 업로드
                             const CHUNK_THRESHOLD = 500;
@@ -219,7 +269,81 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
         }
     };
 
-    const convertExcelToKeyword = (data:any[]): KeywordInput[] => {
+    const convertExcelToKeyword = async (data:any[], groupId: number | string): Promise<KeywordInput[]> => {
+        // 그룹의 서비스 타입 확인
+        const selectedGroup = groups.find(g => g.id === Number(groupId));
+        if (!selectedGroup || !selectedGroup.campaignType) {
+            // 기본 파싱 로직 사용
+            return convertExcelToKeywordDefault(data);
+        }
+
+        // 서비스 타입별 필드 매핑 가져오기
+        let fieldMapping = await fieldMappingService.getFieldMapping(selectedGroup.campaignType);
+        
+        if (!fieldMapping || !fieldMapping.field_mapping) {
+            // DB에 필드 매핑이 없으면 기본 매핑 사용
+            fieldMapping = {
+                id: 'default',
+                service_type: selectedGroup.campaignType,
+                field_mapping: fieldMappingService.getDefaultFieldMapping(selectedGroup.campaignType),
+                ui_config: {
+                    listHeaders: ['메인 키워드', 'MID', 'URL', '키워드1', '키워드2', '키워드3'],
+                    listFieldOrder: ['main_keyword', 'mid', 'url', 'keyword1', 'keyword2', 'keyword3'],
+                    hiddenFields: [],
+                    requiredFields: ['main_keyword']
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+        }
+
+        // 필드 매핑에 따른 데이터 변환
+        return data.map(row => {
+            const keywordData: KeywordInput = {
+                mainKeyword: '',
+                isActive: true
+            };
+
+            // 각 필드별로 엑셀 데이터에서 값 찾기
+            Object.entries(fieldMapping.field_mapping).forEach(([fieldName, config]) => {
+                if (!config || config.hidden) return; // config가 없거나 숨김 필드는 스킵
+                
+                const label = config.label;
+                const value = row[label];
+                
+                if (value !== undefined && value !== null && value !== '') {
+                    switch (fieldName) {
+                        case 'main_keyword':
+                            keywordData.mainKeyword = String(value);
+                            break;
+                        case 'mid':
+                            keywordData.mid = Number(value) || undefined;
+                            break;
+                        case 'url':
+                            keywordData.url = String(value);
+                            break;
+                        case 'keyword1':
+                            keywordData.keyword1 = String(value);
+                            break;
+                        case 'keyword2':
+                            keywordData.keyword2 = String(value);
+                            break;
+                        case 'keyword3':
+                            keywordData.keyword3 = String(value);
+                            break;
+                        case 'description':
+                            keywordData.description = String(value);
+                            break;
+                    }
+                }
+            });
+
+            return keywordData;
+        });
+    };
+
+    // 기본 엑셀 파싱 로직 (필드 매핑이 없는 경우)
+    const convertExcelToKeywordDefault = (data:any[]): KeywordInput[] => {
         return data.map(row => {
             // 컬럼명 정규화 함수 (공백제거, 소문자 변환)
             const normalizeKey = (key: string) => key.toLowerCase().replace(/\s+/g, '');
@@ -239,24 +363,14 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                 return undefined;
             }
 
-            // 키워드에 대한 컬럼명 처리 
-            /*
-             * 나중에 typed 또는 다른 곳에서 관리가 필요하다고 생각되나
-             * 지금은 일단 일단 트래픽에 대한 키워드만
-             */
             const mainKeyword = findValue(['메인키워드', '메인 키워드', 'mainKeyword', 'mainkeyword']) || '';
             const mid = findValue(['MID', 'mid', '엠아이디', '미드']) || '';
-
-            // mid값이 존재한다면 number 형으로 변환 한다.
-            const midNum =mid ? Number(mid) : undefined;
+            const midNum = mid ? Number(mid) : undefined;
             const url = findValue(['URL', 'url', '주소', '링크']) || '';
             const keyword1 = findValue(['키워드1', '키워드 1', 'keyword1', 'keyword 1', '검색어1', '검색어 1',]) || '';
             const keyword2 = findValue(['키워드2', '키워드 2', 'keyword2', 'keyword 2', '검색어2', '검색어 2',]) || '';
             const keyword3 = findValue(['키워드3', '키워드 3', 'keyword3', 'keyword 3', '검색어3', '검색어 3',]) || '';
             const description = findValue(['설명', 'description', '비고', '메모']) || '';
-
-            // isActive는 무조건 true
-            //const isActiveStr = findValue(['활성화', '상태', 'isActive', 'active', '작동']) || '';
 
             return {
                 mainKeyword: mainKeyword,
@@ -273,52 +387,92 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
 
     // 업로드 샘플 다운로드 함수 추가
     const handleDownloadSample = async () => {
-        // XLSX 동적 import
-        const XLSX = await import('xlsx');
-        
-        // 샘플 데이터 정의 (키워드 형식에 맞게)
-        const sampleData = [
-            {
-                '메인 키워드' : '메인키워드1',
-                'MID': '12345',
-                'URL': 'https://mks-guide.com/12345',
-                '키워드1' : '키워드11',
-                '키워드2' : '키워드12',
-                '키워드3' : '키워드13',
-                '설명': '설명이 필요하면 입력'
-            }, 
-            {
-                '메인 키워드' : '메인키워드2',
-                'MID': '23456',
-                'URL': 'https://mks-guide.com/23456',
-                '키워드1' : '키워드21',
-                '키워드2' : '키워드22',
-                '키워드3' : '키워드23',
-                '설명': '설명이 필요하면 입력'
+        try {
+
+            // XLSX 동적 import
+            const XLSX = await import('xlsx');
+            
+            // 선택된 그룹의 서비스 타입 확인 (선택되지 않았으면 현재 서비스 타입 또는 기본값 사용)
+            const selectedGroup = groups.find(g => g.id === Number(uploadGroupId));
+            
+            // 우선순위: 선택된 그룹의 campaignType > 전달받은 selectedServiceType > 기본값
+            const serviceType = selectedGroup?.campaignType || selectedServiceType || 'default';
+            
+            // 서비스 타입별 필드 매핑 가져오기
+            let fieldMapping = null;
+            if (serviceType !== 'default') {
+                fieldMapping = await fieldMappingService.getFieldMapping(serviceType);
             }
-        ];
+            
+            // 필드 매핑이 없으면 기본 매핑 사용
+            if (!fieldMapping || !fieldMapping.field_mapping) {
+                fieldMapping = {
+                    id: 'default',
+                    service_type: serviceType,
+                    field_mapping: fieldMappingService.getDefaultFieldMapping(serviceType),
+                    ui_config: {
+                        listHeaders: ['메인 키워드', 'MID', 'URL', '키워드1', '키워드2', '키워드3'],
+                        listFieldOrder: ['main_keyword', 'mid', 'url', 'keyword1', 'keyword2', 'keyword3'],
+                        hiddenFields: [],
+                        requiredFields: ['main_keyword']
+                    },
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+            }
+            
+            let sampleData: any[] = [];
+            let wcols: any[] = [];
+            
+            if (fieldMapping.field_mapping) {
+                // 필드 매핑에 따른 샘플 데이터 생성
+                const excelFields = fieldMappingService.getExcelFields(fieldMapping.field_mapping);
+                
+                // 샘플 행 데이터 생성
+                const sampleRow1: any = {};
+                const sampleRow2: any = {};
+                
+                excelFields.forEach((field, index) => {
+                    // 서비스 타입별 맞춤 샘플 데이터
+                    const sampleConfig = KEYWORD_SAMPLE_DATA[serviceType] || KEYWORD_SAMPLE_DATA.default;
+                    const fieldSample = sampleConfig[field.fieldName];
+                    
+                    if (fieldSample) {
+                        sampleRow1[field.label] = fieldSample.sample1;
+                        sampleRow2[field.label] = fieldSample.sample2;
+                    } else {
+                        // 기본값 사용
+                        sampleRow1[field.label] = `샘플 ${field.label} 1`;
+                        sampleRow2[field.label] = `샘플 ${field.label} 2`;
+                    }
+                    
+                    // 열 너비 설정
+                    wcols.push({ wch: getColumnWidth(field.fieldName) });
+                });
+                
+                sampleData = [sampleRow1, sampleRow2];
+            }
 
-        // 엑셀 워크시트 생성
-        const ws = XLSX.utils.json_to_sheet(sampleData);
+            // 엑셀 워크시트 생성
+            const ws = XLSX.utils.json_to_sheet(sampleData);
+            ws['!cols'] = wcols;
 
-        // 열 너비 설정 (옵션)
-        const wcols = [
-            { wch: 15},     // 메인 키워드
-            { wch: 10},     // MID
-            { wch: 25},     // URL
-            { wch: 15},     // 키워드1
-            { wch: 15},     // 키워드2
-            { wch: 15},     // 키워드3
-            { wch: 30},     // 설명
-        ];
-        ws['!cols'] = wcols;
+            // 워크북 생성
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
-        // 워크북 생성
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            // 서비스 타입 라벨 가져오기
+            const serviceLabel = SERVICE_TYPE_LABELS[serviceType as CampaignServiceType] || serviceType;
 
-        // 엑셀 파일로 내보내기
-        XLSX.writeFile(wb, '키워드_샘플.xlsx');
+            
+            // 엑셀 파일로 내보내기
+            const fileName = `${serviceLabel}_샘플.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+        } catch (error) {
+            console.error('샘플 다운로드 중 오류 발생:', error);
+            alert('샘플 파일 다운로드 중 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.');
+        }
     }
 
     // 상태 초기화

@@ -113,15 +113,10 @@ const CampaignManagePage: React.FC = () => {
     setLoading(true);
     try {
       const dbServiceType = getServiceTypeCode(selectedService);
-      console.log('Selected service:', selectedService);
-      console.log('DB service type:', dbServiceType);
-      console.log('Is Operator:', isOperator);
-      console.log('Current User ID:', currentUser?.id);
       
       // 운영자가 아니면 본인 캠페인만 조회
       const userId = isOperator ? undefined : currentUser?.id;
       const rawData = await fetchCampaigns(dbServiceType, userId);
-      console.log('Fetched campaigns:', rawData);
       
       // fetchCampaigns가 이미 ICampaign 형식으로 변환해서 반환하므로 그대로 사용
       setCampaigns(rawData);
@@ -168,9 +163,9 @@ const CampaignManagePage: React.FC = () => {
       toolbarActions={toolbarActions}
     >
       {/* 서비스 목록 */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-2">
+      <Card className="mb-4 lg:mb-6">
+        <CardContent className="p-4 lg:p-6">
+          <div className="flex flex-wrap gap-1.5 lg:gap-2">
             {allServices.map((service) => (
               <Button
                 key={service.path}
@@ -178,7 +173,7 @@ const CampaignManagePage: React.FC = () => {
                 size="sm"
                 onClick={() => handleServiceClick(service.path)}
                 disabled={service.disabled}
-                className={`relative ${selectedService === service.path
+                className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
                   ? 'bg-primary hover:bg-primary/90'
                   : ''
                   }`}
@@ -187,10 +182,10 @@ const CampaignManagePage: React.FC = () => {
                   <img
                     src={service.icon}
                     alt={service.name}
-                    className="size-4 mr-2"
+                    className="size-3 lg:size-4 mr-1 lg:mr-2"
                   />
                 )}
-                {service.name}
+                <span className="whitespace-nowrap">{service.name}</span>
               </Button>
             ))}
           </div>
@@ -199,12 +194,12 @@ const CampaignManagePage: React.FC = () => {
 
       {/* 캠페인 목록 */}
       {!selectedService ? (
-        <Card className="mt-6">
-          <CardContent className="p-6">
-            <div className="text-center py-8">
-              <KeenIcon icon="information-3" className="text-5xl text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">서비스를 선택해주세요</p>
-              <p className="text-sm text-muted-foreground mt-2">선택한 서비스의 캠페인 목록이 표시됩니다</p>
+        <Card>
+          <CardContent className="p-4 lg:p-6">
+            <div className="text-center py-6 lg:py-8">
+              <KeenIcon icon="information-3" className="text-4xl lg:text-5xl text-muted-foreground mb-3 lg:mb-4" />
+              <p className="text-base lg:text-lg text-muted-foreground">서비스를 선택해주세요</p>
+              <p className="text-xs lg:text-sm text-muted-foreground mt-1 lg:mt-2">선택한 서비스의 캠페인 목록이 표시됩니다</p>
             </div>
           </CardContent>
         </Card>

@@ -1218,21 +1218,58 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 {/* 운영자 모드 상태 변경 버튼 (단순화) */}
                 <Button
                   variant="default"
-                  onClick={() => {
-                    // 승인 시 준비중 상태로 변경
-                    const statusValue = 'pending';
-                    setNewCampaign(prev => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        status: {
-                          label: getStatusLabel(statusValue),
-                          color: getStatusColor(statusValue),
-                          status: statusValue
+                  onClick={async () => {
+                    // 승인 시 준비중 상태로 변경하고 바로 저장
+                    setLoading(true);
+                    setError(null);
+                    
+                    try {
+                      if (campaign && updateCampaign) {
+                        // 승인 상태로 직접 업데이트
+                        const updateData = {
+                          campaignName: newCampaign.campaignName,
+                          description: newCampaign.description,
+                          detailedDescription: newCampaign.detailedDescription,
+                          add_field: newCampaign.userInputFields,
+                          unitPrice: newCampaign.unitPrice,
+                          deadline: newCampaign.deadline,
+                          logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
+                          uploadedLogo: previewUrl,
+                          bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
+                          uploadedBannerImage: bannerImagePreviewUrl,
+                          status: 'pending', // 승인 시 준비중 상태로
+                          additionalFields: additionalFields,
+                        };
+                        
+                        const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
+                        const success = await updateCampaign(campaignId, updateData);
+                        
+                        if (success) {
+                          // 성공 시 UI 업데이트
+                          const updatedCampaign = {
+                            ...newCampaign,
+                            status: {
+                              label: getStatusLabel('pending'),
+                              color: getStatusColor('pending'),
+                              status: 'pending'
+                            }
+                          };
+                          
+                          if (onSave) {
+                            onSave(updatedCampaign as ExtendedCampaign);
+                          }
+                          
+                          onClose();
+                        } else {
+                          setError('캠페인 승인에 실패했습니다.');
                         }
-                      };
-                    });
-                    setTimeout(() => handleSave(), 100);
+                      }
+                    } catch (error) {
+                      console.error('캠페인 승인 중 오류:', error);
+                      setError('캠페인 승인 중 오류가 발생했습니다.');
+                    } finally {
+                      setLoading(false);
+                    }
                   }}
                   className="bg-green-500 hover:bg-green-600 text-white"
                   disabled={loading}

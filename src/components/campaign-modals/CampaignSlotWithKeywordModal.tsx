@@ -1779,9 +1779,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       }}
                                       className="size-3 sm:size-4 cursor-pointer rounded"
                                     />
-                                    <div className="absolute hidden group-hover:block z-20 bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
-                                      {selectedKeywords.length === keywords.length ? '선택 초기화' : '전체 선택'}
-                                    </div>
                                   </div>
                                 </th>
                                 <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>

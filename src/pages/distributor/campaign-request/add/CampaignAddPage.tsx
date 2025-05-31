@@ -35,7 +35,6 @@ const CampaignAddPage: React.FC = () => {
     userInputFields: [], // 사용자 입력 필드 추가
     logo: '',
     unitPrice: '100',
-    deadline: '18:00',
     bannerImage: '',
     minQuantity: '10',
   });
@@ -121,6 +120,11 @@ const CampaignAddPage: React.FC = () => {
     setBannerImagePreviewUrl(null);
     setUploadedBannerImage(null);
   };
+  
+  // 폼 데이터 업데이트 핸들러
+  const handleFormDataChange = (newFormData: CampaignFormData) => {
+    setFormData(newFormData);
+  };
 
   // 저장 핸들러
   const handleSave = async () => {
@@ -146,7 +150,6 @@ const CampaignAddPage: React.FC = () => {
         bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null,
         uploadedBannerImage: bannerImagePreviewUrl,
         unitPrice: formData.unitPrice,
-        deadline: formData.deadline,
         status: 'waiting_approval', // 항상 '승인 대기중' 상태로 제출
         serviceType: serviceType,
         // 서비스 유형별 추가 필드
@@ -185,7 +188,7 @@ const CampaignAddPage: React.FC = () => {
         <div className="p-6">
           <CampaignForm
             formData={formData}
-            onFormDataChange={setFormData}
+            onFormDataChange={handleFormDataChange}
             additionalFields={additionalFields}
             onAdditionalFieldsChange={setAdditionalFields}
             serviceType={serviceType}
@@ -423,7 +426,7 @@ const CampaignAddPage: React.FC = () => {
             <div className="flex-grow overflow-y-auto p-6">
               <div className="space-y-6">
                 {/* 상단: 주요 정보 요약 카드 */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="bg-white p-4 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-1">
                       <KeenIcon icon="wallet" className="text-primary size-5" />
@@ -449,15 +452,6 @@ const CampaignAddPage: React.FC = () => {
                     </div>
                     <div className="text-xl font-bold text-green-600">
                       60%
-                    </div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <KeenIcon icon="timer" className="text-blue-500 size-5" />
-                      <div className="text-sm text-muted-foreground">접수마감시간</div>
-                    </div>
-                    <div className="text-xl font-bold text-foreground">
-                      {formData.deadline || '18:00'}
                     </div>
                   </div>
                 </div>
@@ -515,7 +509,6 @@ const CampaignAddPage: React.FC = () => {
                     <ul className="list-disc list-inside space-y-1.5">
                       <li>해당 캠페인 건당 단가는 {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}입니다.</li>
                       <li>최소 구매 수량은 {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}입니다.</li>
-                      <li>캠페인 접수 시간은 {formData.deadline || '18:00'}까지 입니다.</li>
                       <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
                     </ul>
                   </div>

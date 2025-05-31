@@ -64,7 +64,8 @@ export const STATUS_OPTIONS = [
   {value: 'active', label: '진행중'},
   {value: 'paused', label: '일시중단'},
   {value: 'pending_user_confirm', label: '거래확인대기'},
-  {value: 'completed', label: '완료'}
+  {value: 'completed', label: '완료'},
+  {value: 'cancelled', label: '취소'}
 ];
 
 // 날짜 포맷팅 함수
@@ -98,6 +99,8 @@ export const getStatusBadge = (status: string): JSX.Element => {
       return <span className="badge badge-dark whitespace-nowrap">완료</span>;
     case 'pending_user_confirm':
       return <span className="badge badge-info whitespace-nowrap">거래확인대기</span>;
+    case 'cancelled':
+      return <span className="badge badge-secondary whitespace-nowrap">취소</span>;
     default:
       return <span className="badge badge-light whitespace-nowrap">대기중</span>;
   }

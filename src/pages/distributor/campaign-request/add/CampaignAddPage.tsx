@@ -37,6 +37,7 @@ const CampaignAddPage: React.FC = () => {
     unitPrice: '100',
     deadline: '18:00',
     bannerImage: '',
+    minQuantity: '10',
   });
 
   // 서비스 유형별 추가 필드
@@ -154,7 +155,7 @@ const CampaignAddPage: React.FC = () => {
         add_field: formData.userInputFields,
         // 기본값 설정
         efficiency: '0',
-        minQuantity: '10',
+        minQuantity: formData.minQuantity || '10',
         additionalLogic: '0'
       });
 
@@ -422,7 +423,7 @@ const CampaignAddPage: React.FC = () => {
             <div className="flex-grow overflow-y-auto p-6">
               <div className="space-y-6">
                 {/* 상단: 주요 정보 요약 카드 */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-white p-4 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-1">
                       <KeenIcon icon="wallet" className="text-primary size-5" />
@@ -430,6 +431,15 @@ const CampaignAddPage: React.FC = () => {
                     </div>
                     <div className="text-xl font-bold text-primary">
                       {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <KeenIcon icon="basket" className="text-orange-500 size-5" />
+                      <div className="text-sm text-muted-foreground">최소 수량</div>
+                    </div>
+                    <div className="text-xl font-bold text-orange-600">
+                      {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}
                     </div>
                   </div>
                   <div className="bg-white p-4 rounded-xl border border-border">
@@ -481,7 +491,12 @@ const CampaignAddPage: React.FC = () => {
                           <div className="space-y-2">
                             {formData.userInputFields.map((field, index) => (
                               <div key={index} className="flex gap-2 items-center text-sm">
-                                <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
+                                  {field.isRequired && (
+                                    <span className="text-red-500 text-xs font-bold">*</span>
+                                  )}
+                                </span>
                                 <span className="text-gray-400">→</span>
                                 <span className="text-gray-700">{field.description || "(설명 없음)"}</span>
                               </div>
@@ -499,6 +514,7 @@ const CampaignAddPage: React.FC = () => {
                   <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border">
                     <ul className="list-disc list-inside space-y-1.5">
                       <li>해당 캠페인 건당 단가는 {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}입니다.</li>
+                      <li>최소 구매 수량은 {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}입니다.</li>
                       <li>캠페인 접수 시간은 {formData.deadline || '18:00'}까지 입니다.</li>
                       <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
                     </ul>

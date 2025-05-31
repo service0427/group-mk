@@ -23,6 +23,11 @@ interface SlotListProps {
   userRole?: string;
   hasFilters?: boolean;
   isAllData?: boolean;
+  onCancelSlot?: (id: string | string[]) => void;
+  showBulkActions?: boolean;
+  selectedSlots?: string[];
+  onSelectedSlotsChange?: (selectedSlots: string[]) => void;
+  showBulkCancel?: boolean;
 }
 
 // CSS for tooltip
@@ -88,9 +93,24 @@ const SlotList: React.FC<SlotListProps> = ({
   onConfirmTransaction,
   userRole,
   hasFilters = false,
-  isAllData = false
+  isAllData = false,
+  onCancelSlot,
+  showBulkActions = false,
+  selectedSlots: externalSelectedSlots,
+  onSelectedSlotsChange,
+  showBulkCancel = false
 }) => {
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
+  const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
+  const selectedSlots = externalSelectedSlots !== undefined ? externalSelectedSlots : internalSelectedSlots;
+  const updateSelectedSlots = (newSelectedSlots: string[]) => {
+    if (onSelectedSlotsChange) {
+      onSelectedSlotsChange(newSelectedSlots);
+    } else {
+      setInternalSelectedSlots(newSelectedSlots);
+    }
+  };
+  
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
@@ -150,24 +170,31 @@ const SlotList: React.FC<SlotListProps> = ({
   // 슬롯 선택 처리
   const handleSlotSelect = (slotId: string) => {
     if (selectedSlots.includes(slotId)) {
-      setSelectedSlots(selectedSlots.filter(id => id !== slotId));
+      updateSelectedSlots(selectedSlots.filter(id => id !== slotId));
     } else {
-      setSelectedSlots([...selectedSlots, slotId]);
+      updateSelectedSlots([...selectedSlots, slotId]);
     }
   };
 
   // 전체 선택/해제 처리
   const handleSelectAll = () => {
     if (selectAll) {
-      setSelectedSlots([]);
+      updateSelectedSlots([]);
     } else {
       // 선택 가능한 슬롯만 필터링 (pending 또는 submitted 상태)
       const selectableSlots = filteredSlots
         .filter(slot => slot.status === 'pending' || slot.status === 'submitted')
         .map(slot => slot.id);
-      setSelectedSlots(selectableSlots);
+      updateSelectedSlots(selectableSlots);
     }
     setSelectAll(!selectAll);
+  };
+
+  // 일괄 취소 처리
+  const handleBulkCancel = () => {
+    if (selectedSlots.length > 0 && onCancelSlot) {
+      onCancelSlot(selectedSlots);
+    }
   };
 
   if (isLoading) {
@@ -224,26 +251,24 @@ const SlotList: React.FC<SlotListProps> = ({
               )}
             </div>
             <div className="card-toolbar">
-              {selectedSlots.length > 0 ? (
+              {showBulkActions && selectedSlots.length > 0 ? (
                 <div className="flex gap-2 items-center">
-                  <button
-                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
-                  >
-                    일괄 승인
-                  </button>
-                  <button
-                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
-                  >
-                    일괄 반려
-                  </button>
+                  {showBulkCancel && (
+                    <button
+                      className="px-2.5 py-1 text-xs font-medium rounded-md bg-warning hover:bg-warning/80 text-white transition-colors"
+                      onClick={handleBulkCancel}
+                    >
+                      일괄 취소
+                    </button>
+                  )}
                   <button
                     className="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 transition-colors"
                     onClick={() => {
-                      setSelectedSlots([]);
+                      updateSelectedSlots([]);
                       setSelectAll(false);
                     }}
                   >
-                    취소
+                    선택 해제
                   </button>
                 </div>
               ) : (
@@ -266,17 +291,19 @@ const SlotList: React.FC<SlotListProps> = ({
               <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0 table-fixed slot-list-table">
                 <thead>
                   <tr className="bg-muted dark:bg-gray-800/60">
-                    <th className="py-2 px-1 text-center w-[5%]">
-                      <div className="flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm checkbox-primary"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          title="전체 선택/해제"
-                        />
-                      </div>
-                    </th>
+                    {showBulkActions && (
+                      <th className="py-2 px-1 text-center w-[5%]">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            title="전체 선택/해제"
+                          />
+                        </div>
+                      </th>
+                    )}
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
@@ -291,18 +318,20 @@ const SlotList: React.FC<SlotListProps> = ({
                 <tbody>
                   {filteredSlots.map((item) => (
                     <tr key={item.id} className="border-b border-border hover:bg-muted/40">
-                      <td className="py-2 px-1 text-center w-[5%]">
-                        <div className="flex items-center justify-center">
-                          {(item.status === 'pending' || item.status === 'submitted') && (
-                            <input
-                              type="checkbox"
-                              className="checkbox checkbox-sm checkbox-primary"
-                              checked={selectedSlots.includes(item.id)}
-                              onChange={() => handleSlotSelect(item.id)}
-                            />
-                          )}
-                        </div>
-                      </td>
+                      {showBulkActions && (
+                        <td className="py-2 px-1 text-center w-[5%]">
+                          <div className="flex items-center justify-center">
+                            {(item.status === 'pending' || item.status === 'submitted') && (
+                              <input
+                                type="checkbox"
+                                className="checkbox checkbox-sm checkbox-primary"
+                                checked={selectedSlots.includes(item.id)}
+                                onChange={() => handleSlotSelect(item.id)}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      )}
 
                       {/* 사용자 */}
                       {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
@@ -590,6 +619,19 @@ const SlotList: React.FC<SlotListProps> = ({
                           >
                             <KeenIcon icon="notepad-edit" />
                           </button>
+                          {/* 승인 전 상태일 때만 취소 버튼 표시 */}
+                          {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                            <button
+                              className="btn btn-sm btn-icon btn-clear btn-warning"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCancelSlot(item.id);
+                              }}
+                              title="취소"
+                            >
+                              <KeenIcon icon="cross-circle" />
+                            </button>
+                          )}
                           <button
                             className="btn btn-sm btn-icon btn-clear btn-danger"
                             onClick={(e) => {
@@ -878,6 +920,16 @@ const SlotList: React.FC<SlotListProps> = ({
                     >
                       <KeenIcon icon="notepad-edit" />
                     </button>
+                    {/* 승인 전 상태일 때만 취소 버튼 표시 */}
+                    {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                      <button
+                        className="btn btn-sm btn-icon btn-clear btn-warning"
+                        onClick={() => onCancelSlot(item.id)}
+                        title="취소"
+                      >
+                        <KeenIcon icon="cross-circle" />
+                      </button>
+                    )}
                     <button
                       className="btn btn-sm btn-icon btn-clear btn-danger"
                       onClick={() => {

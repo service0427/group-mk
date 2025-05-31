@@ -19,7 +19,7 @@ export const Sidebar = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [scrollableHeight, setScrollableHeight] = useState<number>(0);
-  const [dynamicOffset, setDynamicOffset] = useState<number>(40);
+  const dynamicOffsetRef = useRef<number>(40);
   const [viewportHeight] = useViewport();
   const { pathname, prevPathname } = usePathname();
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -30,16 +30,20 @@ export const Sidebar = () => {
       const headerHeight = getHeight(headerRef.current);
       
       // 콘텐츠의 실제 높이를 기반으로 동적 오프셋 계산
+      let currentOffset = 40;
       if (contentRef.current) {
         const contentHeight = contentRef.current.scrollHeight;
         const visibleHeight = contentRef.current.clientHeight;
         
         // 콘텐츠가 넘치는 경우 추가 오프셋 적용
         const additionalOffset = contentHeight > visibleHeight ? 20 : 0;
-        setDynamicOffset(40 + additionalOffset);
+        currentOffset = 40 + additionalOffset;
+        
+        // ref 값 업데이트
+        dynamicOffsetRef.current = currentOffset;
       }
       
-      const availableHeight = viewportHeight - headerHeight - dynamicOffset;
+      const availableHeight = viewportHeight - headerHeight - currentOffset;
       setScrollableHeight(availableHeight);
       
       // CSS 변수로 높이 값 공유
@@ -47,7 +51,7 @@ export const Sidebar = () => {
     } else {
       setScrollableHeight(viewportHeight);
     }
-  }, [viewportHeight, dynamicOffset]);
+  }, [viewportHeight]); // dynamicOffset을 의존성에서 제거
 
   // ResizeObserver 설정
   useLayoutEffect(() => {
@@ -77,7 +81,7 @@ export const Sidebar = () => {
   // 뷰포트 변경 시 높이 재계산
   useEffect(() => {
     calculateHeight();
-  }, [viewportHeight, calculateHeight]);
+  }, [viewportHeight]); // calculateHeight는 이미 viewportHeight에 의존하므로 제거
 
   const desktopMode = useResponsive('up', 'lg');
   const { mobileSidebarOpen, setMobileSidebarOpen } = useStandLayout();

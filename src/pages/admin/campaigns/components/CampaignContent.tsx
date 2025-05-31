@@ -66,6 +66,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
   // 컴포넌트 마운트 시 초기화
   useEffect(() => {
     // 초기 캠페인 데이터 설정
+    console.log('CampaignContent - Initial campaigns:', initialCampaigns);
+    setCampaigns(initialCampaigns);
   }, [initialCampaigns]);
 
   // 캠페인 상태 변경 처리 함수
@@ -417,16 +419,19 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
   // 필터링 적용
   const filteredData = useMemo(() => {
-
+    console.log('CampaignContent - Filtering campaigns:', campaigns);
+    console.log('CampaignContent - Search input:', searchInput);
+    console.log('CampaignContent - Status filter:', statusFilter);
 
     // 캠페인 데이터 확인
     if (campaigns.length > 0) {
       // 필터링 전 캠페인 데이터 확인
+      console.log('CampaignContent - First campaign data:', campaigns[0]);
     }
 
     return campaigns.filter(campaign => {
       // 검색어 필터링
-      const matchesSearch = campaign.campaignName.toLowerCase().includes(searchInput.toLowerCase()) ||
+      const matchesSearch = (campaign.campaignName?.toLowerCase().includes(searchInput.toLowerCase()) || false) ||
         (campaign.description?.toLowerCase().includes(searchInput.toLowerCase()) || false);
 
       // 상태 필터링
@@ -621,10 +626,10 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                                 처리중...
                               </span>
                             ) : (
-                              <>
+                              <span className="flex items-center">
                                 <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                                <SelectValue>{campaign.status.label}</SelectValue>
-                              </>
+                                <SelectValue />
+                              </span>
                             )}
                           </SelectTrigger>
                           <SelectContent>
@@ -804,10 +809,10 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                                   처리중...
                                 </span>
                               ) : (
-                                <>
+                                <span className="flex items-center">
                                   <span className={`size-1.5 rounded-full bg-${getBgColorClass(campaign.status.color)} me-1.5`}></span>
-                                  <SelectValue>{campaign.status.label}</SelectValue>
-                                </>
+                                  <SelectValue />
+                                </span>
                               )}
                             </SelectTrigger>
                             <SelectContent>

@@ -22,7 +22,6 @@ interface CampaignFormInputData {
   userInputFields: Array<{ fieldName: string; description: string; isRequired?: boolean; order?: number }>;
   logo: string;
   unitPrice: string;
-  deadline: string;
   bannerImage?: string;
   minQuantity?: string;
 }
@@ -274,8 +273,12 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        handleChange('campaignName', `${koreanAnimalName}-${randomNum}`);
-                        handleChange('logo', e.target.value);
+                        // 두 필드를 한 번에 업데이트
+                        onFormDataChange({ 
+                          ...formData, 
+                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                          logo: e.target.value 
+                        });
                       }
                     }}
                     className="select w-full h-10 px-3 py-2 border border-gray-200 bg-white focus:border-blue-500 rounded-md text-foreground"
@@ -324,12 +327,16 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         };
 
                         const animalNameWithPath = selectedAnimal.split('/').pop() || '';
-                        const englishAnimalName = animalNameWithPath.replace('.svg', '');
+                        const englishAnimalName = animalNameWithPath.replace('.svg', '').replace('animal/svg/', '');
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        handleChange('campaignName', `${koreanAnimalName}-${randomNum}`);
-                        handleChange('logo', value);
+                        // 두 필드를 한 번에 업데이트
+                        onFormDataChange({ 
+                          ...formData, 
+                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                          logo: value 
+                        });
                       }
                     }}
                     disabled={loading}
@@ -407,7 +414,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     <input
                       type="number"
                       min="0"
-                      step="100"
+                      step="10"
                       value={formData.unitPrice}
                       onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
                       className="w-24 h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
@@ -417,7 +424,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     <Input
                       type="number"
                       min="0"
-                      step="100"
+                      step="10"
                       value={formData.unitPrice}
                       onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
                       className="w-24"
@@ -426,31 +433,6 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                   )}
                   <span className="ml-2 text-md font-medium text-foreground">원</span>
                 </div>
-              </td>
-            </tr>
-            
-            <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                접수마감시간
-              </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                {isModal ? (
-                  <input
-                    type="time"
-                    value={formData.deadline}
-                    onChange={(e) => handleChange('deadline', e.target.value)}
-                    className="w-36 h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                    disabled={loading}
-                  />
-                ) : (
-                  <Input
-                    type="time"
-                    value={formData.deadline}
-                    onChange={(e) => handleChange('deadline', e.target.value)}
-                    className="w-36"
-                    disabled={loading}
-                  />
-                )}
               </td>
             </tr>
             

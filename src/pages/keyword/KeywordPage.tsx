@@ -626,6 +626,7 @@ const KeywordPage: React.FC = () => {
         onClose={ () => setShowUploadModal(false)}
         groups={filteredGroups}
         onSuccess={loadKeywords}
+        selectedServiceType={selectedServiceType}
       />
       
       {/* 키워드 이동/복사 모달 */}

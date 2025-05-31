@@ -304,6 +304,8 @@ const Login = () => {
             )}
           </div>
 
+          {/*
+          // 로그인 상태 유지 제거 - 일단 주석 처리
           <label className="checkbox-group">
             <input
               className="checkbox checkbox-sm"
@@ -312,6 +314,7 @@ const Login = () => {
             />
             <span className="checkbox-label">로그인 상태 유지</span>
           </label>
+          */}
 
           <button
             type="submit"

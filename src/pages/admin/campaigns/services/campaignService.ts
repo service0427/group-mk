@@ -158,7 +158,7 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
     console.error('fetchCampaigns 오류:', error);
     return [];
   }
-
+  
   // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
   return data.map(item => {
     // add_info가 문자열로 저장되어 있으면 JSON으로 파싱
@@ -190,7 +190,8 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
       deadline: parsedItem.deadline || '22:00', // 이미 HH:MM 형식으로 저장됨
       status: {
         label: getStatusLabel(parsedItem.status),
-        color: getStatusColor(parsedItem.status)
+        color: getStatusColor(parsedItem.status),
+        status: parsedItem.status // 원본 status 값 추가
       },
       additionalLogic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
       // 상세 설명을 분리해서 명시적으로 가져오기
@@ -265,14 +266,18 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
       return false;
     }
 
-    // DB에 상태 업데이트
-    const { error } = await supabase
+    // DB에 상태 업데이트 (RLS 우회를 위해 supabaseAdmin 사용)
+    console.log('DB 업데이트 시도:', { campaignId, newStatus });
+    const { data: updateData, error } = await supabaseAdmin
       .from('campaigns')
       .update({ 
         status: newStatus,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       })
-      .eq('id', campaignId);
+      .eq('id', campaignId)
+      .select();
+    
+    console.log('업데이트 결과:', { updateData, error });
 
     if (error) {
       console.error('캠페인 상태 업데이트 오류:', error);

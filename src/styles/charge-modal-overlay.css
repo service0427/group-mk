@@ -1,0 +1,9 @@
+/* 충전 확인 모달의 배경 오버레이 제거 */
+[data-radix-dialog-overlay] + [data-radix-dialog-overlay] {
+  display: none !important;
+}
+
+/* 또는 두 번째 다이얼로그의 오버레이를 투명하게 */
+body > div[data-radix-portal]:last-of-type [data-radix-dialog-overlay] {
+  background-color: transparent !important;
+}

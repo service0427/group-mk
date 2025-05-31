@@ -31,76 +31,6 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
-// Supabase 세션 캐싱을 위한 변수
-let cachedSession: any = null;
-let sessionCacheTime = 0;
-const SESSION_CACHE_DURATION = 60000; // 1분
-
-// 전역 토큰 갱신 매니저
-const tokenRefreshManager = (() => {
-    let isRefreshing = false;
-    let refreshPromise: Promise<boolean> | null = null;
-    
-    return {
-        refresh: async (refreshFn: () => Promise<boolean>) => {
-            if (isRefreshing && refreshPromise) {
-                return refreshPromise;
-            }
-            
-            isRefreshing = true;
-            refreshPromise = refreshFn().finally(() => {
-                isRefreshing = false;
-                refreshPromise = null;
-            });
-            
-            return refreshPromise;
-        }
-    };
-})();
-
-// 성능 모니터링 유틸리티
-const performanceMonitor = {
-    mark: (name: string) => {
-        if (process.env.NODE_ENV === 'development') {
-            try {
-                performance.mark(name);
-            } catch (e) {
-                // 무시
-            }
-        }
-    },
-    
-    measure: (name: string, startMark: string, endMark: string) => {
-        if (process.env.NODE_ENV === 'development') {
-            try {
-                performance.measure(name, startMark, endMark);
-                const measure = performance.getEntriesByName(name)[0];
-                console.log(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
-            } catch (e) {
-                // 무시
-            }
-        }
-    },
-    
-    measureAsync: async function<T>(name: string, fn: () => Promise<T>): Promise<T> {
-        if (process.env.NODE_ENV === 'development') {
-            const start = performance.now();
-            try {
-                const result = await fn();
-                const end = performance.now();
-                console.log(`[Performance] ${name}: ${(end - start).toFixed(2)}ms`);
-                return result;
-            } catch (error) {
-                const end = performance.now();
-                console.error(`[Performance] ${name} failed after ${(end - start).toFixed(2)}ms`);
-                throw error;
-            }
-        } else {
-            return fn();
-        }
-    }
-};
-
 const AuthProvider = ({ children }: PropsWithChildren) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [auth, setAuth] = useState<AuthModel | undefined>();
@@ -109,47 +39,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const [lastTokenCheck, setLastTokenCheck] = useState<number>(0);
     const [authVerified, setAuthVerified] = useState<boolean>(false);
     const { setIsLoggingOut } = useLogoutContext();
-
-    // 비동기 캐시 검증 함수
-    const validateCache = useCallback(async (): Promise<CustomUser | null> => {
-        return new Promise((resolve) => {
-            const cachedUserStr = sessionStorage.getItem('currentUser');
-            if (!cachedUserStr) {
-                resolve(null);
-                return;
-            }
-            
-            // requestAnimationFrame을 사용하여 다음 프레임에서 처리
-            requestAnimationFrame(() => {
-                try {
-                    const user = JSON.parse(cachedUserStr);
-                    resolve(user);
-                } catch (e) {
-                    console.warn('캐시 파싱 실패:', e);
-                    resolve(null);
-                }
-            });
-        });
-    }, []);
-
-    // 캐시된 세션 가져오기 함수
-    const getCachedSession = useCallback(async () => {
-        const now = Date.now();
-        
-        // 캐시가 유효한 경우
-        if (cachedSession && (now - sessionCacheTime) < SESSION_CACHE_DURATION) {
-            return { data: { session: cachedSession }, error: null };
-        }
-        
-        // 새로 조회
-        const result = await supabase.auth.getSession();
-        if (result.data.session) {
-            cachedSession = result.data.session;
-            sessionCacheTime = now;
-        }
-        
-        return result;
-    }, []);
 
     // 토큰 디코딩 함수
     const decodeToken = useCallback((token: string) => {
@@ -180,13 +69,12 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
     // 토큰 새로고침 함수
     const refreshToken = useCallback(async (): Promise<boolean> => {
-        return performanceMonitor.measureAsync('Token Refresh', async () => {
-            try {
+        try {
             const storeAuth = authHelper.getAuth();
             if (!storeAuth) return false;
 
-            // 캐시된 세션 사용
-            const { data, error } = await getCachedSession();
+            // 현재 세션 가져오기
+            const { data, error } = await supabase.auth.getSession();
 
             if (error || !data.session) {
                 return false;
@@ -202,11 +90,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             saveAuth(authData);
             setLastTokenCheck(Date.now());
             return true;
-            } catch (error: any) {
-                return false;
-            }
-        });
-    }, [saveAuth, getCachedSession]);
+        } catch (error: any) {
+            return false;
+        }
+    }, [saveAuth]);
 
     // 토큰 유효성 확인 함수 - 간소화된 버전
     const checkTokenValidity = useCallback(async (): Promise<boolean> => {
@@ -234,10 +121,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
     // 사용자 정보를 가져오는 함수 - 병렬 처리 최적화
     const getUser = useCallback(async (): Promise<CustomUser | null> => {
-        return performanceMonitor.measureAsync('Get User', async () => {
-            try {
-            // 캐시된 세션 사용
-            const { data: sessionData, error: sessionError } = await getCachedSession();
+        try {
+            // 세션 정보만 먼저 확인 (사용자 정보는 이미 세션에 포함되어 있음)
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
             if (sessionError || !sessionData.session || !sessionData.session.user) {
                 return null;
@@ -297,11 +183,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 return basicUserData;
             }
 
-            } catch (error: any) {
-                return null;
-            }
-        });
-    }, [getCachedSession]);
+        } catch (error: any) {
+            return null;
+        }
+    }, []);
 
     // 캐싱을 활용한 사용자 정보 조회 함수
     const getUserWithCache = useCallback(async (): Promise<CustomUser | null> => {
@@ -339,7 +224,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     // 초기 로드 시 인증 상태 확인 - 최적화된 버전
     useEffect(() => {
         const initAuth = async () => {
-            performanceMonitor.mark('auth-init-start');
             try {
                 const storeAuth = authHelper.getAuth();
 
@@ -351,13 +235,18 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
                 setAuth(storeAuth);
 
-                // 1단계: 비동기 캐시 검증으로 즉시 UI 표시
-                const cachedUser = await validateCache();
-                
+                // 1단계: 캐시된 데이터로 즉시 UI 표시 (홀딩 방지)
+                const cachedUser = sessionStorage.getItem('currentUser');
                 if (cachedUser) {
-                    setCurrentUser(cachedUser);
-                    setLoading(false);
-                    setAuthVerified(true);
+                    try {
+                        const parsedUser = JSON.parse(cachedUser);
+                        setCurrentUser(parsedUser);
+                        setLoading(false); // 즉시 로딩 해제
+                        setAuthVerified(true); // 캐시가 있으면 일단 검증된 것으로 처리
+                    } catch (e) {
+                        console.warn('캐시 파싱 실패:', e);
+                        setLoading(false); // 실패해도 로딩 해제
+                    }
                 } else {
                     setLoading(false); // 캐시가 없어도 로딩 해제
                 }
@@ -365,30 +254,27 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 // 2단계: 백그라운드에서 데이터 갱신 (UI 블로킹 없음)
                 const updateAuthData = async () => {
                     try {
-                        // 순차적 실행으로 경쟁 조건 해결
-                        // 1. 먼저 토큰 갱신
-                        const isTokenValid = await refreshToken();
-                        
-                        if (!isTokenValid) {
+                        // 병렬로 토큰 갱신과 사용자 정보 조회
+                        const [isTokenValid, userData] = await Promise.all([
+                            refreshToken(),
+                            getUser()
+                        ]);
+
+                        if (isTokenValid && userData) {
+                            setCurrentUser(userData);
+                            setAuthVerified(true);
+                            // 갱신된 데이터 캐싱
+                            sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                            sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+                        } else if (!isTokenValid) {
                             // 토큰이 유효하지 않으면 로그아웃 처리
+                            // logout 함수가 아직 정의되지 않았으므로 직접 처리
                             setAuth(undefined);
                             setCurrentUser(null);
                             setAuthVerified(false);
                             authHelper.removeAuth();
                             sessionStorage.removeItem('currentUser');
                             sessionStorage.removeItem('lastAuthCheck');
-                            return;
-                        }
-                        
-                        // 2. 토큰이 유효한 경우에만 사용자 정보 조회
-                        const userData = await getUser();
-                        
-                        if (userData) {
-                            setCurrentUser(userData);
-                            setAuthVerified(true);
-                            // 갱신된 데이터 캐싱
-                            sessionStorage.setItem('currentUser', JSON.stringify(userData));
-                            sessionStorage.setItem('lastAuthCheck', Date.now().toString());
                         }
                     } catch (error) {
                         console.error('백그라운드 인증 업데이트 실패:', error);
@@ -396,12 +282,12 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     }
                 };
 
-                // 마이크로태스크 큐 활용으로 성능 최적화
+                // requestIdleCallback으로 성능 최적화
                 if ('requestIdleCallback' in window) {
                     (window as any).requestIdleCallback(() => updateAuthData());
                 } else {
-                    // Promise.resolve()를 사용하여 마이크로태스크로 실행
-                    Promise.resolve().then(() => updateAuthData());
+                    // 폴백: requestIdleCallback이 없으면 setTimeout 사용
+                    setTimeout(updateAuthData, 0);
                 }
 
             } catch (error) {
@@ -414,19 +300,18 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 setAuthVerified(false);
             } finally {
                 setAuthInitialized(true);
-                performanceMonitor.mark('auth-init-end');
-                performanceMonitor.measure('Auth Initialization', 'auth-init-start', 'auth-init-end');
             }
         };
 
         initAuth();
-    }, [refreshToken, getUser, validateCache]);
+    }, [refreshToken, getUser]);
 
     // 스마트한 토큰 갱신 스케줄러
     useEffect(() => {
         if (!auth?.access_token) return;
 
         let refreshTimer: NodeJS.Timeout;
+        let isRefreshing = false;
 
         const scheduleNextRefresh = () => {
             try {
@@ -457,8 +342,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         };
 
         const performRefresh = async () => {
+            if (isRefreshing) return;
+            
+            isRefreshing = true;
             try {
-                const success = await tokenRefreshManager.refresh(refreshToken);
+                const success = await refreshToken();
                 if (success) {
                     // 성공하면 다음 갱신 스케줄링
                     scheduleNextRefresh();
@@ -478,6 +366,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 console.error('토큰 갱신 중 오류:', error);
                 // 오류 시 1분 후 재시도
                 refreshTimer = setTimeout(performRefresh, 60000);
+            } finally {
+                isRefreshing = false;
             }
         };
 

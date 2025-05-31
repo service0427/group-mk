@@ -6,6 +6,7 @@ import { formatImageUrl } from '@/utils/CampaignFormat';
 import { toAbsoluteUrl } from '@/utils';
 import { CampaignModal } from '@/components/campaign-modals';
 import { updateCampaign } from '../services/campaignService';
+import { useCustomToast } from '@/hooks/useCustomToast';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // 페이지네이션 컴포넌트
 const Pagination = ({
@@ -97,6 +106,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
   campaigns,
   onCampaignUpdated
 }) => {
+  const { showSuccess, showError } = useCustomToast();
   // 상태 필터
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -117,6 +127,10 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
   // 상세 모달
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
+  
+  // 승인 확인 모달
+  const [approvalModalOpen, setApprovalModalOpen] = useState<boolean>(false);
+  const [campaignToApprove, setCampaignToApprove] = useState<string | null>(null);
 
   // 필터링된 캠페인
   const filteredCampaigns = campaigns.filter(campaign => {
@@ -201,6 +215,12 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
     setDetailModalOpen(false);
     setSelectedCampaign(null);
   };
+  
+  // 승인 확인 모달 열기
+  const handleOpenApprovalModal = (campaignId: string) => {
+    setCampaignToApprove(campaignId);
+    setApprovalModalOpen(true);
+  };
 
   // 모달에서 저장 성공 시 처리
   const handleCampaignUpdated = () => {
@@ -210,10 +230,17 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
   // 빠른 상태 변경 핸들러
   const handleQuickStatusChange = async (campaignId: string, newStatus: string) => {
     try {
-      await updateCampaignStatus(parseInt(campaignId), newStatus);
-      onCampaignUpdated();
+      const result = await updateCampaignStatus(parseInt(campaignId), newStatus);
+      if (result) {
+        onCampaignUpdated();
+        // 성공 메시지를 표시하기 위해 toast 훅 추가 필요
+        showSuccess(`캠페인이 성공적으로 승인되었습니다.`);
+      } else {
+        showError('캠페인 상태 변경에 실패했습니다.');
+      }
     } catch (error) {
-
+      console.error('캠페인 상태 변경 오류:', error);
+      showError('캠페인 상태 변경 중 오류가 발생했습니다.');
     }
   };
 
@@ -434,7 +461,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                                 variant="default"
                                 size="sm"
                                 className="bg-green-500 hover:bg-green-600"
-                                onClick={() => handleQuickStatusChange(campaign.id, 'pending')}
+                                onClick={() => handleOpenApprovalModal(campaign.id)}
                               >
                                 승인
                               </Button>
@@ -490,6 +517,45 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
           serviceType={selectedCampaign?.serviceType}
         />
       )}
+      
+      {/* 캠페인 승인 확인 모달 */}
+      <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>캠페인 승인 확인</DialogTitle>
+            <DialogDescription>
+              이 캠페인을 승인하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setApprovalModalOpen(false);
+                setCampaignToApprove(null);
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              className="bg-green-500 hover:bg-green-600"
+              onClick={async () => {
+                if (campaignToApprove) {
+                  await handleQuickStatusChange(campaignToApprove, 'pending');
+                  setApprovalModalOpen(false);
+                  setCampaignToApprove(null);
+                  // 성공 모달 표시
+                  setTimeout(() => {
+                    alert('캠페인이 성공적으로 승인되었습니다.');
+                  }, 100);
+                }
+              }}
+            >
+              승인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -57,9 +57,29 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
       try {
         const response = await keywordGroupService.getUserGroups();
         if (response.success && response.data) {
-          setGroups(response.data as KeywordGroup[]);
+          let filteredGroups = response.data as KeywordGroup[];
+          
+          // defaultData에 type이 있으면 해당 서비스 타입의 그룹만 필터링
+          if (defaultData?.type) {
+            // shop -> NaverShopping, place -> NaverPlace로 매핑
+            const searchPattern = defaultData.type === 'shop' ? 'NaverShopping' : 'NaverPlace';
+            
+            filteredGroups = filteredGroups.filter(group => {
+              // 기본 그룹은 항상 포함 (다른 ㄱ)
+              //if (group.isDefault) return true;
+              
+              // 캠페인 타입이 없는 일반 그룹도 포함
+              //if (!group.campaignType) return true;
+              
+              // 해당 서비스 타입을 포함하는 그룹만 포함 (like 연산)
+              return group.campaignType && group.campaignType.includes(searchPattern);
+            });
+          }
+          
+          setGroups(filteredGroups);
+          
           // 기본 그룹 자동 선택
-          const defaultGroup = response.data.find((g: KeywordGroup) => g.isDefault);
+          const defaultGroup = filteredGroups.find((g: KeywordGroup) => g.isDefault);
           if (defaultGroup) {
             setSelectedGroupId(defaultGroup.id);
           }
@@ -74,7 +94,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
     if (isOpen) {
       loadGroups();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultData]);
 
   // defaultData가 있으면 폼 데이터 설정
   useEffect(() => {

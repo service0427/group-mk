@@ -19,6 +19,7 @@ import { supabase } from '@/supabase';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { toast } from 'sonner';
+import { CashService } from '@/pages/cash/CashService';
 
 // 비기너 대시보드 통계 데이터 인터페이스
 interface BeginnerStats {
@@ -81,9 +82,13 @@ export const DashboardContent: React.FC = () => {
   
   // 충전 관련 상태
   const [chargeAmount, setChargeAmount] = useState<string>('');
-  const [bonusPercentage, setBonusPercentage] = useState<number>(5);
   const [koreanAmount, setKoreanAmount] = useState<string>('');
+  const [depositorName, setDepositorName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [cashSetting, setCashSetting] = useState<any>(null);
+  const [bonusAmount, setBonusAmount] = useState<number>(0);
+  const [isEligibleForBonus, setIsEligibleForBonus] = useState<boolean>(false);
+  const [showPointInfo, setShowPointInfo] = useState<boolean>(false);
   
   // 통계 데이터 로드 함수 - 비기너 역할 특별 처리
   const loadStats = async () => {
@@ -377,84 +382,65 @@ export const DashboardContent: React.FC = () => {
   // 캐시 충전 함수 - 비기너 역할 특별 처리
   const handleCashCharge = async () => {
     try {
+      setError(null);
+      
+      console.log('=== 캐시 충전 요청 시작 (비기너) ===');
+      console.log('현재 사용자:', currentUser);
+      console.log('충전 금액:', chargeAmount);
+      console.log('입금자명:', depositorName);
+      
       if (!currentUser) {
-        toast.error('로그인이 필요한 서비스입니다.');
+        setError('로그인이 필요합니다.');
         return;
       }
-      
+
+      if (!chargeAmount || Number(chargeAmount) <= 0) {
+        setError('충전할 금액을 입력해주세요.');
+        return;
+      }
+
+      if (!depositorName.trim()) {
+        setError('입금자명을 입력해주세요.');
+        return;
+      }
+
       setIsLoading(true);
-      
-      // 충전 금액 파싱 및 검증
-      let amount = 0;
-      if (chargeAmount) {
-        amount = parseInt(chargeAmount.replace(/[^0-9]/g, ''));
-      }
-      
-      if (isNaN(amount) || amount <= 0) {
-        toast.error('유효한 충전 금액을 입력해주세요.');
-        return;
-      }
-      
-      // 최소 충전 금액 검증 (예시: 10,000원)
-      if (amount < 10000) {
-        toast.error('최소 충전 금액은 10,000원입니다.');
-        return;
-      }
-      
-      // 비기너 역할 확인 - 비기너일 경우 fake API 사용
-      const isBeginner = currentUser.role === 'beginner';
-      
-      if (isBeginner) {
-        // 비기너는 실제 API 호출 없이 성공한 것처럼 처리
-        // 지연 효과를 위해 setTimeout 사용
-        setTimeout(() => {
-          toast.success('캐시 충전 신청이 완료되었습니다. 입금 확인 후 충전됩니다.');
-          setChargeAmount('');
-          setIsLoading(false);
-        }, 800);
-        return;
-      }
-      
-      // 비기너가 아닌 경우 실제 API 호출
-      try {
-        // 충전 요청 생성
-        const { data, error } = await supabase
-          .from('cash_charge_requests')
-          .insert({
-            user_id: currentUser.id || '',
-            amount: amount,
-            status: 'pending',
-            requested_at: new Date().toISOString(),
-            free_cash_percentage: bonusPercentage
-            // 결제 방법은 서버에서 기본값 사용
-          })
-          .select();
-          
-        // 요청 실패 시 상세 오류 로깅 및 폴백 처리
-        if (error) {
-          // 충전 요청 생성 오류 발생
-          // 오류가 있지만 사용자에게는 성공한 것처럼 표시
-          toast.success('캐시 충전 신청이 완료되었습니다. 입금 확인 후 충전됩니다.');
-          setChargeAmount('');
-          return; // 오류 발생 시 여기서 종료
-        }
-      } catch (unexpectedError) {
-        // 예상치 못한 충전 요청 오류 발생
-        // 예상치 못한 오류가 있어도 사용자에게는 성공한 것처럼 표시
-        toast.success('캐시 충전 신청이 완료되었습니다. 입금 확인 후 충전됩니다.');
+
+      console.log('CashService.createChargeRequest 호출 전');
+      console.log('매개변수:', {
+        userId: currentUser.id || '',
+        amount: Number(chargeAmount),
+        depositorName: depositorName.trim()
+      });
+
+      const result = await CashService.createChargeRequest(
+        currentUser.id || '',
+        Number(chargeAmount),
+        depositorName.trim()
+      );
+
+      console.log('CashService.createChargeRequest 결과:', result);
+
+      if (result.success) {
+        toast.success('충전 요청이 완료되었습니다. 관리자 승인 후 충전됩니다.');
+        // 폼 초기화
         setChargeAmount('');
-        return; // 오류 발생 시 여기서 종료
+        setDepositorName('');
+        setKoreanAmount('');
+        console.log('충전 요청 성공 - 폼 초기화 완료');
+      } else {
+        console.error('충전 요청 실패:', result.message);
+        setError(result.message);
+        toast.error(result.message);
       }
-      
-      // 충전 성공 시 메시지
-      toast.success('캐시 충전 신청이 완료되었습니다. 입금 확인 후 충전됩니다.');
-      setChargeAmount('');
-      
-    } catch (error) {
-      // 오류 발생 시 사용자에게 알림
-      toast.error('캐시 충전 요청 중 오류가 발생했습니다.');
+    } catch (err: any) {
+      console.error('캐시 충전 중 예외 발생:', err);
+      const errorMessage = err.message || '충전 요청 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      console.log('=== 캐시 충전 요청 종료 (비기너) ===');
     }
   };
   
@@ -489,24 +475,71 @@ export const DashboardContent: React.FC = () => {
     return result.trim();
   };
   
+  // 캐시 설정 불러오기
+  const fetchCashSetting = async () => {
+    if (!currentUser) return;
+
+    try {
+      const result = await CashService.getCashSetting(currentUser.id || '');
+
+      if (result.success && result.data) {
+        const settingData = result.data;
+        setCashSetting(settingData);
+        
+        // 포인트 표시 여부 설정
+        const showPoints = settingData.free_cash_percentage > 0;
+        setShowPointInfo(showPoints);
+      } else {
+        setShowPointInfo(false);
+      }
+    } catch (err) {
+      setShowPointInfo(false);
+    }
+  };
+
+  // 보너스(무료캐시) 금액 계산
+  const calculateBonusAmount = () => {
+    if (!cashSetting || !chargeAmount) {
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
+      return;
+    }
+
+    const amount = parseInt(chargeAmount);
+
+    // 최소 충전 금액 이상인지 확인
+    if (amount >= cashSetting.min_request_amount) {
+      const bonus = Math.floor((amount * cashSetting.free_cash_percentage) / 100);
+      setBonusAmount(bonus);
+      setIsEligibleForBonus(true);
+    } else {
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
+    }
+  };
+
   // 금액이 변경될 때마다 한글 단위 표시 업데이트 및 보너스 금액 계산
   useEffect(() => {
     if (chargeAmount) {
       setKoreanAmount(formatToKorean(chargeAmount));
+      calculateBonusAmount();
     } else {
       setKoreanAmount('');
+      setBonusAmount(0);
+      setIsEligibleForBonus(false);
     }
 
     // 입력값이 '0'일 때 특별 처리
     if (chargeAmount === '0') {
       setKoreanAmount('0');
     }
-  }, [chargeAmount]);
+  }, [chargeAmount, cashSetting]);
 
   // 컴포넌트 마운트 시 데이터 로드 - 비기너 역할에 맞게 수정
   useEffect(() => {
     // 처음 데이터 로드
     loadStats();
+    fetchCashSetting(); // 캐시 설정 불러오기 추가
     
     // 자동 갱신 간격 설정 - 비기너는 더 긴 간격 사용
     const refreshInterval = setInterval(
@@ -726,25 +759,33 @@ export const DashboardContent: React.FC = () => {
               <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
               
               {/* 보너스 캐시 정보 표시 */}
-              {chargeAmount && parseInt(chargeAmount) >= 10000 && (
+              {chargeAmount && cashSetting && showPointInfo && (
                 <div className="mt-3 p-3 bg-muted/40 rounded-md">
-                  <div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-foreground">충전 금액:</span>
-                      <span className="font-medium">{formatNumberWithCommas(parseInt(chargeAmount))}원</span>
+                  {isEligibleForBonus ? (
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-foreground">충전 금액:</span>
+                        <span className="font-medium">{formatNumberWithCommas(parseInt(chargeAmount))}원</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-foreground">무료 보너스 캐시 ({cashSetting.free_cash_percentage}%):</span>
+                        <span className="font-medium text-green-600">+{formatNumberWithCommas(bonusAmount)}원</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-foreground">총 충전 금액:</span>
+                        <span className="font-medium text-lg">{formatNumberWithCommas(parseInt(chargeAmount) + bonusAmount)}원</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        * 무료 캐시는 {cashSetting.expiry_months > 0 ? `${cashSetting.expiry_months}개월` : '무기한'}
+                        {cashSetting.min_usage_amount > 0 && `, ${formatNumberWithCommas(cashSetting.min_usage_amount)}원 이상 결제`} 시 사용 가능합니다.
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-sm text-foreground">무료 보너스 캐시 ({bonusPercentage}%):</span>
-                      <span className="font-medium text-green-600">+{formatNumberWithCommas(Math.floor((parseInt(chargeAmount) * bonusPercentage) / 100))}원</span>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      {formatNumberWithCommas(cashSetting.min_request_amount)}원 이상 충전 시
+                      <span className="text-green-600 font-medium"> {cashSetting.free_cash_percentage}% 무료 캐시</span>를 추가로 받을 수 있습니다.
                     </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-sm text-foreground">총 충전 금액:</span>
-                      <span className="font-medium text-lg">{formatNumberWithCommas(parseInt(chargeAmount) + Math.floor((parseInt(chargeAmount) * bonusPercentage) / 100))}원</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-2">
-                      * 무료 캐시는 최소 10,000원 이상 충전 시 사용 가능합니다.
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -781,6 +822,36 @@ export const DashboardContent: React.FC = () => {
               </button>
             </div>
             
+            {/* 입금 계좌 정보 및 입금자명 */}
+            {cashSetting && (cashSetting.bank_name || cashSetting.account_number || cashSetting.account_holder) && (
+              <div className="mb-4">
+                {/* 입금 계좌 정보 - 간략한 한 줄 표시 */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md text-sm mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">입금계좌</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {cashSetting.bank_name} {cashSetting.account_number} ({cashSetting.account_holder})
+                    </span>
+                  </div>
+                </div>
+                
+                {/* 입금자명 입력 필드 */}
+                <div>
+                  <label htmlFor="depositor-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    입금자명 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="depositor-name"
+                    type="text"
+                    value={depositorName}
+                    onChange={(e) => setDepositorName(e.target.value)}
+                    placeholder="실제 입금하실 이름을 입력해주세요"
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+            )}
+            
             <Button 
               onClick={handleCashCharge}
               disabled={isLoading || !chargeAmount || parseInt(chargeAmount) < 10000}
@@ -790,12 +861,12 @@ export const DashboardContent: React.FC = () => {
                 : 'bg-gray-200 text-gray-600'
               } font-medium rounded-md transition-colors mt-5 ${isLoading ? 'cursor-not-allowed opacity-70' : ''}`}
             >
-              {isLoading ? '처리 중...' : '충전하기'}
+              {isLoading ? '처리 중...' : '요청하기'}
             </Button>
             
-            {parseInt(chargeAmount) >= 10000 && (
+            {showPointInfo && isEligibleForBonus && (
               <div className="text-center text-sm mt-2 text-green-600">
-                {formatNumberWithCommas(Math.floor((parseInt(chargeAmount) * bonusPercentage) / 100))}원 무료 캐시가 추가로 지급됩니다!
+                {formatNumberWithCommas(bonusAmount)}원 무료 캐시가 추가로 지급됩니다!
               </div>
             )}
           </div>

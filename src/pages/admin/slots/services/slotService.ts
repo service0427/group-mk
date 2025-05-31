@@ -415,7 +415,6 @@ const approveSingleSlot = async (
           title: notificationTitle,
           message: notificationMessage,
           link: `/myinfo/services`,
-          reference_id: slotId,
           status: 'unread',
           priority: 'medium', // 필수 필드 추가
           created_at: now

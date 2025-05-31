@@ -26,6 +26,10 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
     const [progressPercent, setProgressPercent] = useState<number>(0);
     const [totalRows, setTotalRows] = useState<number>(0);
     
+    // 결과 모달 관련 상태
+    const [showResultModal, setShowResultModal] = useState<boolean>(false);
+    const [uploadedCount, setUploadedCount] = useState<number>(0);
+    
     // 엑셀 업로드 파일 선택 핸들러 - 및 바로 파싱
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -199,16 +203,13 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
             // 파일 처리 작업 실행
             await processFile();
             
-            // 성공 메시지 표시 (모든 비동기 작업 완료 후에 실행됨)
-            alert('파일이 성공적으로 업로드되었습니다.');
-            setShowUploadModal(false);
+            // 성공 메시지를 모달로 표시
+            setUploadedCount(totalRows);
+            setShowResultModal(true);
             setUploadFile(null);
             setUploadGroupId('');
             setProgressPercent(0);
             setTotalRows(0);
-            
-            // 데이터 리로드 - onSuccess 콜백 호출 추가
-            onSuccess();
             
         } catch (error) {
             console.error('파일 업로드 중 오류가 발생했습니다:', error);
@@ -333,10 +334,53 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
         resetState();
         onClose();
     }
+    
+    // 결과 모달 닫기 핸들러
+    const handleCloseResultModal = () => {
+        setShowResultModal(false);
+        onClose();
+        // 데이터 리로드 - onSuccess 콜백 호출
+        onSuccess();
+    }
 
     if (!isOpen) return null;
 
     return (
+        <>
+        {/* 결과 모달 */}
+        {showResultModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm">
+                    <div className="p-6 text-center">
+                        <div className="flex justify-center mb-4">
+                            <div className="bg-green-100 dark:bg-green-900 rounded-full p-3">
+                                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            업로드 완료
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300">
+                            {uploadedCount.toLocaleString()}건의 키워드가<br />
+                            성공적으로 업로드되었습니다.
+                        </p>
+                    </div>
+                    <div className="px-6 pb-6">
+                        <button
+                            type="button"
+                            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={handleCloseResultModal}
+                        >
+                            확인
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        
+        {/* 메인 업로드 모달 */}
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -485,6 +529,7 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
         </div>
       </div>
     </div>
+    </>
     )
 }
 

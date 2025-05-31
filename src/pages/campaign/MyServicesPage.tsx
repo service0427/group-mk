@@ -138,7 +138,7 @@ const MyServicesPage: React.FC = () => {
   } = useCampaignSlots(selectedService || '', currentUser?.id, userRole);
 
   // 권한 체크 - 운영자 이상인지 확인
-  const isOperatorOrAbove = userRole && hasPermission(userRole, PERMISSION_GROUPS.OPERATORS);
+  const isOperatorOrAbove = userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
 
   // 편집 관련 훅
   const {

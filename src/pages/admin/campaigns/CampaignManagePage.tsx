@@ -89,7 +89,7 @@ const CampaignManagePage: React.FC = () => {
 
   // 권한 확인
   const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
-  const isOperator = hasPermission(userRole, PERMISSION_GROUPS.OPERATORS);
+  const isOperator = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
 
   // 모든 서비스를 하나의 배열로 통합
   const allServices = useMemo(() => {

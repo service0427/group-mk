@@ -72,7 +72,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
               //if (!group.campaignType) return true;
               
               // 해당 서비스 타입을 포함하는 그룹만 포함 (like 연산)
-              return group.campaignType.includes(searchPattern);
+              return group.campaignType && group.campaignType.includes(searchPattern);
             });
           }
           

@@ -451,6 +451,9 @@ const ApprovePage: React.FC = () => {
           }
         }
 
+        // 취소된 슬롯 제외
+        query = query.neq('status', 'cancelled');
+        
         // 상태 필터 적용
         if (searchStatus) {
           query = query.eq('status', searchStatus);
@@ -662,6 +665,8 @@ const ApprovePage: React.FC = () => {
 
   // 승인 처리 함수 (actionType 매개변수 추가)
   const handleApproveSlot = async (slotId: string | string[], actionType?: string) => {
+    console.log('handleApproveSlot 호출됨:', { slotId, actionType });
+    
     // 처리할 슬롯 ID 설정
     let slotIdsToProcess: string[] = [];
     if (Array.isArray(slotId)) {
@@ -735,6 +740,8 @@ const ApprovePage: React.FC = () => {
 
   // 실제 승인 처리 함수
   const processApproval = async (slotIdsToProcess: string[], actionType?: string) => {
+    console.log('processApproval 호출됨:', { slotIdsToProcess, actionType });
+    
     // 로딩 상태 표시
     setLoading(true);
 
@@ -747,7 +754,24 @@ const ApprovePage: React.FC = () => {
       }
 
       // 해당 슬롯 정보 가져오기
-      const slotsToProcess = slots.filter(slot => slotIdsToProcess.includes(slot.id));
+      let slotsToProcess = slots.filter(slot => slotIdsToProcess.includes(slot.id));
+      console.log('처리할 슬롯:', slotsToProcess);
+      
+      if (slotsToProcess.length === 0) {
+        // filteredSlots에서도 찾아보기
+        const filteredSlotsToProcess = filteredSlots.filter(slot => slotIdsToProcess.includes(slot.id));
+        console.log('filteredSlots에서 찾은 슬롯:', filteredSlotsToProcess);
+        
+        if (filteredSlotsToProcess.length > 0) {
+          slotsToProcess = filteredSlotsToProcess;
+        }
+      }
+      
+      if (slotsToProcess.length === 0) {
+        showError('처리할 슬롯을 찾을 수 없습니다.');
+        setLoading(false);
+        return;
+      }
 
       // 각 슬롯에 대해 처리
       const results = [];
@@ -774,7 +798,15 @@ const ApprovePage: React.FC = () => {
         const endDate = endDateObj.toISOString().split('T')[0];
 
         // API 호출 처리
+        console.log('approveSlot 호출 전:', { 
+          slotId: slot.id, 
+          userId: currentUser.id, 
+          actionType, 
+          status: slot.status 
+        });
+        
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
+        console.log('approveSlot 결과:', result);
         results.push(result);
 
         if (result.success) {

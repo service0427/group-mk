@@ -117,7 +117,7 @@ interface SupabaseCampaign {
   add_info?: {
     logo_url?: string;
     banner_url?: string;
-    add_field?: Array<{ fieldName: string; description: string }>; // 추가 입력 필드 목록
+    add_field?: Array<{ fieldName: string; description: string; isRequired?: boolean }>; // 추가 입력 필드 목록
     [key: string]: any;
   } | string; // 배너 URL 등의 추가 정보
 }
@@ -222,7 +222,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     setCampaigns([]);
     setBannerUrl(null);
     
-    // 키워드 선택 초기화
+    // 키워드 그룹 및 선택 초기화
+    setKeywordGroups([]);
+    setSelectedGroupId(null);
+    setKeywords([]);
     setSelectedKeywords([]);
     
     // 새로운 서비스에 맞는 캠페인 목록 불러오기
@@ -355,12 +358,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
-  // 선택된 캠페인이 변경될 때 로고 업데이트
+  // 선택된 캠페인이 변경될 때 로고 업데이트 및 키워드 그룹 다시 불러오기
   useEffect(() => {
     if (selectedCampaignId && campaigns.length > 0) {
       const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
       if (selectedCampaign) {
         fetchCampaignBanner(selectedCampaign);
+        // 캠페인이 변경되면 해당 서비스 타입의 키워드 그룹만 다시 불러오기
+        fetchKeywordGroups();
       }
     }
   }, [selectedCampaignId, campaigns]);
@@ -536,11 +541,22 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         return;
       }
 
-      const { data, error } = await supabase
+      // 선택된 캠페인의 service_type 가져오기
+      const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+      const campaignServiceType = selectedCampaign?.service_type;
+
+      let query = supabase
         .from('keyword_groups')
         .select('*')
         .eq('user_id', user.id)
         .order('name');
+
+      // 캠페인의 service_type이 있으면 campaign_type으로 필터링
+      if (campaignServiceType) {
+        query = query.eq('campaign_type', campaignServiceType);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         setKeywordError("키워드 그룹을 불러오지 못했습니다");
@@ -904,10 +920,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   };
 
   // 캠페인의 추가 입력 필드 가져오기
-  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ fieldName: string; description: string }> => {
+  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ fieldName: string; description: string; isRequired?: boolean }> => {
     if (!campaign || !campaign.add_info) return [];
     
-    let addFields: Array<{ fieldName: string; description: string }> = [];
+    let addFields: Array<{ fieldName: string; description: string; isRequired?: boolean }> = [];
     
     try {
       // 문자열인 경우 파싱 시도
@@ -969,7 +985,28 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       return false;
     }
     
-    // 추가 입력 필드는 필수값 아님 - 빈 값으로 허용
+    // 필수 입력 필드 검증
+    if (selectedCampaign) {
+      const additionalFields = getAdditionalFields(selectedCampaign);
+      const requiredFields = additionalFields.filter(field => field.isRequired);
+      
+      if (requiredFields.length > 0) {
+        // 선택된 키워드들의 필수 필드 값 검사
+        for (const keywordId of selectedKeywords) {
+          const keyword = keywords.find(k => k.id === keywordId);
+          if (keyword) {
+            for (const field of requiredFields) {
+              const value = keyword.inputData?.[field.fieldName];
+              if (!value || value.trim() === '') {
+                showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+    
     return true;
   };
 
@@ -1777,6 +1814,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                   >
                                     <div className="flex items-center justify-center">
                                       <span>{field.fieldName}</span>
+                                      {field.isRequired && (
+                                        <span className="ml-0.5 text-red-500 font-bold">*</span>
+                                      )}
                                       {field.description && (
                                         <span className="ml-1 inline-flex items-center justify-center">
                                           <KeenIcon icon="information" className="size-3 text-blue-300" />
@@ -1924,11 +1964,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                           <div className="relative">
                                             <input
                                               type="text"
-                                              placeholder={`${field.fieldName} 입력`}
+                                              placeholder={`${field.fieldName} 입력${field.isRequired ? ' (필수)' : ''}`}
                                               value={keyword.inputData?.[field.fieldName] || ''}
                                               onChange={(e) => handleInputDataChange(keyword.id, field.fieldName, e.target.value)}
-                                              className="w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800"
+                                              className={`w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800 ${
+                                                field.isRequired && (!keyword.inputData?.[field.fieldName] || keyword.inputData[field.fieldName].trim() === '')
+                                                  ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                                  : ''
+                                              }`}
                                               onClick={e => e.stopPropagation()}
+                                              required={field.isRequired}
                                             />
                                             {field.description && (
                                               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-help">

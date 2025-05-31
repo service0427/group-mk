@@ -3,6 +3,7 @@ import { KeenIcon } from '@/components';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -18,11 +19,12 @@ interface CampaignFormInputData {
   campaignName: string;
   description: string;
   detailedDescription: string;
-  userInputFields: Array<{ fieldName: string; description: string }>;
+  userInputFields: Array<{ fieldName: string; description: string; isRequired?: boolean; order?: number }>;
   logo: string;
   unitPrice: string;
   deadline: string;
   bannerImage?: string;
+  minQuantity?: string;
 }
 
 // 서비스 타입별 필드 정보
@@ -516,6 +518,43 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                최소수량
+              </th>
+              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+                <div className="flex items-center gap-2">
+                  {isModal ? (
+                    <input
+                      type="text"
+                      value={formData.minQuantity || '10'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleChange('minQuantity', value);
+                      }}
+                      className="w-32 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
+                      placeholder="10"
+                      disabled={loading}
+                    />
+                  ) : (
+                    <Input
+                      type="text"
+                      value={formData.minQuantity || '10'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleChange('minQuantity', value);
+                      }}
+                      className="w-32"
+                      placeholder="10"
+                      disabled={loading}
+                    />
+                  )}
+                  <span className="text-sm text-muted-foreground">개</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
+              </td>
+            </tr>
+            
+            <tr>
+              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
                 캠페인 소개
               </th>
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
@@ -576,6 +615,39 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 <div className="space-y-3">
                   {(formData.userInputFields || []).map((field, index) => (
                     <div key={index} className="flex items-center gap-2 border border-gray-200 rounded-md p-2 bg-gray-50 hover:bg-gray-100">
+                      {/* 순서 변경 버튼 */}
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            if (index === 0) return;
+                            const updatedFields = [...(formData.userInputFields || [])];
+                            [updatedFields[index - 1], updatedFields[index]] = [updatedFields[index], updatedFields[index - 1]];
+                            handleChange('userInputFields', updatedFields);
+                          }}
+                          disabled={loading || index === 0}
+                        >
+                          <KeenIcon icon="arrow-up" className="size-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            if (index === (formData.userInputFields || []).length - 1) return;
+                            const updatedFields = [...(formData.userInputFields || [])];
+                            [updatedFields[index], updatedFields[index + 1]] = [updatedFields[index + 1], updatedFields[index]];
+                            handleChange('userInputFields', updatedFields);
+                          }}
+                          disabled={loading || index === (formData.userInputFields || []).length - 1}
+                        >
+                          <KeenIcon icon="arrow-down" className="size-3" />
+                        </Button>
+                      </div>
                       <div className="flex-1 flex items-center gap-2">
                         <div className="flex-shrink-0 w-1/3">
                           {isModal ? (
@@ -635,6 +707,25 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           )}
                         </div>
                       </div>
+                      {/* 필수값 체크박스 */}
+                      <div className="flex items-center gap-1">
+                        <Checkbox
+                          id={`required-${index}`}
+                          checked={field.isRequired || false}
+                          onCheckedChange={(checked) => {
+                            const updatedFields = [...(formData.userInputFields || [])];
+                            updatedFields[index] = { ...updatedFields[index], isRequired: !!checked };
+                            handleChange('userInputFields', updatedFields);
+                          }}
+                          disabled={loading}
+                        />
+                        <label 
+                          htmlFor={`required-${index}`} 
+                          className="text-sm text-gray-600 whitespace-nowrap cursor-pointer select-none"
+                        >
+                          필수
+                        </label>
+                      </div>
                       <Button
                         type="button"
                         variant="outline"
@@ -657,7 +748,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
                     onClick={() => {
                       const updatedFields = [...(formData.userInputFields || [])];
-                      updatedFields.push({ fieldName: '', description: '' });
+                      updatedFields.push({ fieldName: '', description: '', isRequired: false });
                       handleChange('userInputFields', updatedFields);
                     }}
                     disabled={loading}
@@ -670,6 +761,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 <div className="text-sm text-muted-foreground mt-3">
                   <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
+                  <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>
+                  <p className="mt-1">• '필수' 체크 시 사용자가 반드시 입력해야 하는 필드가 됩니다.</p>
                 </div>
               </td>
             </tr>

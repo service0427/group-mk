@@ -89,6 +89,7 @@ const CampaignManagePage: React.FC = () => {
 
   // 권한 확인
   const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
+  const isOperator = hasPermission(userRole, PERMISSION_GROUPS.OPERATORS);
 
   // 모든 서비스를 하나의 배열로 통합
   const allServices = useMemo(() => {
@@ -112,31 +113,18 @@ const CampaignManagePage: React.FC = () => {
     setLoading(true);
     try {
       const dbServiceType = getServiceTypeCode(selectedService);
-      const rawData = await fetchCampaigns(dbServiceType);
+      console.log('Selected service:', selectedService);
+      console.log('DB service type:', dbServiceType);
+      console.log('Is Operator:', isOperator);
+      console.log('Current User ID:', currentUser?.id);
       
-      // 데이터 형식 변환 (CampaignContent가 기대하는 형식으로)
-      const formattedData = rawData.map((item: any) => ({
-        id: item.id.toString(),
-        campaignName: item.campaign_name,
-        description: item.description || '',
-        logo: item.logo,
-        efficiency: item.efficiency ? `${item.efficiency}%` : '-',
-        minQuantity: item.min_quantity ? `${item.min_quantity}개` : '-',
-        deadline: item.deadline || '22:00',
-        status: {
-          label: item.status === 'active' ? '활성' : item.status === 'inactive' ? '비활성' : item.status,
-          color: item.status === 'active' ? 'success' : 'secondary',
-          status: item.status
-        },
-        additionalLogic: item.additional_logic?.toString() || '',
-        detailedDescription: item.detailed_description || '',
-        originalData: item,
-        serviceType: item.service_type,
-        matId: item.mat_id,
-        updatedAt: item.updated_at
-      }));
+      // 운영자가 아니면 본인 캠페인만 조회
+      const userId = isOperator ? undefined : currentUser?.id;
+      const rawData = await fetchCampaigns(dbServiceType, userId);
+      console.log('Fetched campaigns:', rawData);
       
-      setCampaigns(formattedData);
+      // fetchCampaigns가 이미 ICampaign 형식으로 변환해서 반환하므로 그대로 사용
+      setCampaigns(rawData);
       setError(null);
     } catch (err) {
       console.error('캠페인 데이터 조회 오류:', err);
@@ -158,8 +146,8 @@ const CampaignManagePage: React.FC = () => {
     navigate('/admin/campaigns/all');
   };
 
-  // 툴바 액션 버튼
-  const toolbarActions = isAdmin ? (
+  // 툴바 액션 버튼 - 운영자만 새 캠페인 추가 가능
+  const toolbarActions = isOperator ? (
     <Button
       variant="outline"
       size="sm"
@@ -231,7 +219,14 @@ const CampaignManagePage: React.FC = () => {
         </div>
       ) : campaigns.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">등록된 캠페인이 없습니다.</p>
+          <p className="text-muted-foreground">
+            {isOperator ? '등록된 캠페인이 없습니다.' : '내가 등록한 캠페인이 없습니다.'}
+          </p>
+          {!isOperator && (
+            <p className="text-sm text-muted-foreground mt-2">
+              운영자에게 캠페인 등록을 요청하세요.
+            </p>
+          )}
         </div>
       ) : (
         <CampaignContent
@@ -239,6 +234,7 @@ const CampaignManagePage: React.FC = () => {
           onCampaignUpdated={loadCampaigns}
           serviceType={selectedService}
           isAdmin={isAdmin}
+          isOperator={isOperator}
         />
       )}
 

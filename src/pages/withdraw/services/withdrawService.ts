@@ -303,7 +303,8 @@ export const createWithdrawRequest = async (
         transaction_type: 'withdrawal',
         amount: amount * -1, // 출금은 음수로 기록
         description: `${bankName} ${accountNumber} 계좌로 출금`,
-        reference_id: requestData[0].id
+        reference_id: requestData[0].id,
+        reference_type: 'withdraw_request' // reference_id가 참조하는 테이블 타입 명시
       });
     
     if (historyError) {

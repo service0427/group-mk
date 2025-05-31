@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { keywordGroupService, keywordService } from '../services/keywordService';
 import { 
   KeywordGroup, 
@@ -34,6 +34,9 @@ export const useKeywords = () => {
   // 로딩 및 에러 상태
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 초기화 플래그 (StrictMode 중복 실행 방지)
+  const isInitializedRef = useRef(false);
 
   // 그룹 목록 로드
   const loadGroups = useCallback(async () => {
@@ -50,25 +53,37 @@ export const useKeywords = () => {
         const existingServiceTypes = new Set(groups.map((g: KeywordGroup) => g.campaignType).filter(Boolean));
         const allServiceTypes = Object.values(CampaignServiceType);
         
-        // 없는 서비스 타입에 대해 기본 그룹 생성
+        // 초기화가 이미 실행되지 않았고, 없는 서비스 타입이 있을 때만 기본 그룹 생성
         let groupsCreated = false;
-        for (const serviceType of allServiceTypes) {
-          if (!existingServiceTypes.has(serviceType)) {
-            const serviceName = SERVICE_TYPE_LABELS[serviceType] || serviceType;
-            const campaignName = getCampaignNameByServiceType(serviceType);
+        if (!isInitializedRef.current) {
+          const missingServiceTypes = allServiceTypes.filter(st => !existingServiceTypes.has(st));
+          
+          if (missingServiceTypes.length > 0) {
+            // 기본 그룹 생성 전에 플래그 설정 (중복 실행 방지)
+            isInitializedRef.current = true;
             
-            const createResponse = await keywordGroupService.createGroup(
-              '기본그룹',
-              campaignName,
-              serviceType,
-              true
-            );
-            
-            if (createResponse.success && createResponse.data) {
-              console.log(`Created default group: ${serviceName}`);
-              groupsCreated = true;
-            } else {
-              console.error(`Failed to create group for ${serviceType}:`, createResponse.message);
+            for (const serviceType of missingServiceTypes) {
+              const serviceName = SERVICE_TYPE_LABELS[serviceType] || serviceType;
+              const campaignName = getCampaignNameByServiceType(serviceType);
+              
+              try {
+                const createResponse = await keywordGroupService.createGroup(
+                  '기본그룹',
+                  campaignName,
+                  serviceType,
+                  true
+                );
+                
+                if (createResponse.success && createResponse.data) {
+                  console.log(`Created default group: ${serviceName}`);
+                  groupsCreated = true;
+                } else {
+                  console.error(`Failed to create group for ${serviceType}:`, createResponse.message);
+                }
+              } catch (error) {
+                // 409 에러는 이미 존재하는 경우이므로 무시
+                console.warn(`Group creation skipped for ${serviceType} - may already exist`);
+              }
             }
           }
         }
@@ -146,6 +161,11 @@ export const useKeywords = () => {
   // 초기 로드
   useEffect(() => {
     loadGroups();
+    
+    // cleanup 함수 - 컴포넌트 언마운트 시 플래그 리셋
+    return () => {
+      isInitializedRef.current = false;
+    };
   }, []); // loadGroups는 의존성이 없으므로 한 번만 실행
 
   // 그룹 선택 또는 필터 변경 시 키워드 로드

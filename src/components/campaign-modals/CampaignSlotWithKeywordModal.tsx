@@ -1278,8 +1278,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     userId: string,
     title: string,
     message: string,
-    link: string,
-    referenceId: string | null
+    link: string
   ) => {
     try {
       const now = new Date().toISOString();
@@ -1293,7 +1292,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           title: title,
           message: message,
           link: link,
-          reference_id: referenceId,
           status: 'unread', // 기본 상태는 읽지 않음
           created_at: now,
           priority: 'medium' // 우선순위 추가
@@ -1417,8 +1415,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           currentUser?.id || '',
           '키워드 구매 신청 완료',
           `${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드 구매 신청이 완료되었습니다.`,
-          '/myinfo/services',
-          result.slots[0].id
+          '/myinfo/services'
         );
       }
 

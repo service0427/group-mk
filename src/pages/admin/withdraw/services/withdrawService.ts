@@ -316,6 +316,7 @@ export async function rejectWithdrawRequest(id: string, rejected_reason: string)
                     description: `출금 반려 (사유: ${rejected_reason})`,
                     transaction_at: now,
                     reference_id: id,
+                    reference_type: 'withdraw_request', // reference_id가 참조하는 테이블 타입 명시
                     balance_type: null // balance_type을 null로 설정 (제약 조건에 맞게)
                 });
                 

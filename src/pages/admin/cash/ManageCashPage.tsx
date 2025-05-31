@@ -11,85 +11,6 @@ import {
   DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useDialog } from '@/providers';
-
-// 다이얼로그 z-index 스타일 오버라이드
-const rejectDialogStyles = `
-  .dialog-overlay {
-    z-index: 9000 !important;
-  }
-  
-  .dialog-content {
-    z-index: 9001 !important;
-  }
-`;
-
-// 거부 사유 입력 다이얼로그 컴포넌트
-interface RejectReasonDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (reason: string) => void;
-}
-
-const RejectReasonDialog: React.FC<RejectReasonDialogProps> = ({ isOpen, onClose, onConfirm }) => {
-  const [reason, setReason] = useState<string>("");
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (reason.trim()) {
-      onConfirm(reason);
-      setReason(""); // 입력 내용 초기화
-    }
-  };
-  
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: rejectDialogStyles }} />
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="dialog-content sm:max-w-[400px]">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>거부 사유 입력</DialogTitle>
-            </DialogHeader>
-            <DialogBody className="py-4">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="reason">
-                  거부 사유
-                </label>
-                <textarea
-                  id="reason"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  rows={4}
-                  placeholder="거부 사유를 입력하세요"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  required
-                />
-              </div>
-            </DialogBody>
-            <DialogFooter className="space-x-2">
-              <Button
-                type="submit"
-                className="bg-danger hover:bg-danger/90 text-white"
-                disabled={!reason.trim()}
-              >
-                거부 확인
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
-                취소
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
 
 const ManageCashPage = () => {
   const [cashRequests, setCashRequests] = useState<any[]>([]);
@@ -103,82 +24,77 @@ const ManageCashPage = () => {
   const [searchDateTo, setSearchDateTo] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   
-  // 알림 다이얼로그 상태 관리
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-  const [dialogTitle, setDialogTitle] = useState<string>("");
-  const [dialogDescription, setDialogDescription] = useState<string>("");
-  const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  // 모달 관련 상태 관리
+  const [modalType, setModalType] = useState<'confirm' | 'reject' | 'result' | null>(null);
+  const [modalData, setModalData] = useState<any>(null);
+  const [rejectReason, setRejectReason] = useState<string>('');
   
-  // 거부 사유 다이얼로그 상태 관리
-  const [rejectDialogOpen, setRejectDialogOpen] = useState<boolean>(false);
-  const [currentRequestId, setCurrentRequestId] = useState<string>("");
-  
-  // 알림 다이얼로그 표시 함수
-  const showDialog = (title: string, description: string, success: boolean = true) => {
-    setDialogTitle(title);
-    setDialogDescription(description);
-    setIsSuccess(success);
-    setDialogOpen(true);
-  };
-
-  // 캐시 요청 승인 처리 함수
-  const { showConfirm } = useDialog();
-  
-  const handleApproveRequest = async (requestId: string) => {
-    showConfirm(
-      '캐시 충전 승인',
-      '이 요청을 승인하시겠습니까?',
-      async (confirmed) => {
-        if (!confirmed) return;
-        
-        setLoading(true);
-        try {
-          const result = await CashManageService.approveChargeRequest(requestId);
-          
-          if (result.success) {
-            showDialog("충전 요청 승인 완료", result.message, true);
-            getCashRequestList(currentPage);
-          } else {
-            throw new Error(result.message);
-          }
-        } catch (error: any) {
-          showDialog("승인 처리 오류", error.message, false);
-        } finally {
-          setLoading(false);
-        }
-      },
-      {
-        confirmText: '승인',
-        cancelText: '취소',
-        confirmButtonClass: 'bg-success hover:bg-success/90 text-white'
-      }
-    );
+  // 모달 열기 함수들
+  const openConfirmModal = (requestId: string) => {
+    setModalType('confirm');
+    setModalData({ requestId });
   };
   
-  // 캐시 요청 거부 다이얼로그 표시 함수
-  const handleRejectRequest = (requestId: string) => {
-    setCurrentRequestId(requestId);
-    setRejectDialogOpen(true);
+  const openRejectModal = (requestId: string) => {
+    setModalType('reject');
+    setModalData({ requestId });
+    setRejectReason('');
   };
   
-  // 캐시 요청 거부 처리 함수
-  const processRejectRequest = async (reason: string) => {
-    setRejectDialogOpen(false);
+  const openResultModal = (title: string, message: string, isSuccess: boolean) => {
+    setModalType('result');
+    setModalData({ title, message, isSuccess });
+  };
+  
+  // 모달 닫기
+  const closeModal = () => {
+    setModalType(null);
+    setModalData(null);
+    setRejectReason('');
+  };
+  
+  // 승인 처리
+  const handleConfirmApprove = async () => {
+    if (!modalData?.requestId) return;
     
-    if (!reason.trim()) return;
-    
+    closeModal();
     setLoading(true);
+    
     try {
-      const result = await CashManageService.rejectChargeRequest(currentRequestId, reason);
+      const result = await CashManageService.approveChargeRequest(modalData.requestId);
       
       if (result.success) {
-        showDialog("충전 요청 거부 완료", result.message, true);
         getCashRequestList(currentPage);
+        openResultModal("충전 요청 승인 완료", result.message, true);
       } else {
         throw new Error(result.message);
       }
     } catch (error: any) {
-      showDialog("거부 처리 오류", error.message, false);
+      openResultModal("승인 처리 오류", error.message, false);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 거부 처리
+  const handleConfirmReject = async () => {
+    if (!modalData?.requestId || !rejectReason.trim()) return;
+    
+    const requestId = modalData.requestId;
+    closeModal();
+    setLoading(true);
+    
+    try {
+      const result = await CashManageService.rejectChargeRequest(requestId, rejectReason);
+      
+      if (result.success) {
+        getCashRequestList(currentPage);
+        openResultModal("충전 요청 거부 완료", result.message, true);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      openResultModal("거부 처리 오류", error.message, false);
     } finally {
       setLoading(false);
     }
@@ -199,11 +115,10 @@ const ManageCashPage = () => {
         setCashRequests(result.data || []);
         setTotalItems(result.totalItems || 0);
       } else {
-        showDialog("데이터 로딩 실패", result.message, false);
+        openResultModal("데이터 로딩 실패", result.message, false);
       }
     } catch (error:any) {
-      
-      showDialog("데이터 로딩 오류", error.message, false);
+      openResultModal("데이터 로딩 오류", error.message, false);
     } finally {
       setLoading(false);
     }
@@ -213,9 +128,7 @@ const ManageCashPage = () => {
   const handleChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLimit = parseInt(e.target.value);
     setLimit(newLimit);
-    // 페이지도 1로 초기화
     setCurrentPage(1);
-    // useEffect에서 처리하므로 여기서는 getCashRequestList 호출하지 않음
   }
   
   // 페이지 이동 처리
@@ -253,7 +166,6 @@ const ManageCashPage = () => {
     {"code":"rejected", "name": "거절됨"},
   ];
 
-  // 다른 방식: 개별 행마다 모달을 렌더링하는 대신, 중앙에서 단일 모달 관리
   const renderStatusBadge = (status: string) => {
     let badgeClass = '';
     let statusText = '';
@@ -313,29 +225,91 @@ const ManageCashPage = () => {
       toolbarActions={toolbarActions}
       showPageMenu={false}
     >
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent 
-          className="max-w-md mx-auto text-center" 
-          onPointerDownOutside={() => setDialogOpen(false)} // 모달 외부 클릭 시 닫기
-        >
-          <DialogHeader className="text-center">
-            <DialogTitle className={`text-center mb-2 ${isSuccess ? "text-green-600" : "text-red-600"}`}>
-              {dialogTitle}
-            </DialogTitle>
-            <DialogDescription className="whitespace-pre-line text-center">
-              {dialogDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex justify-center mt-6 sm:justify-center">
-            <Button 
-              onClick={() => setDialogOpen(false)}
-              className={`min-w-[100px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}`}
-            >
-              확인
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* 승인 확인 모달 */}
+      {modalType === 'confirm' && (
+        <Dialog open={true} onOpenChange={closeModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>캐시 충전 승인</DialogTitle>
+              <DialogDescription>
+                이 요청을 승인하시겠습니까?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={closeModal}>
+                취소
+              </Button>
+              <Button 
+                className="bg-success hover:bg-success/90 text-white"
+                onClick={handleConfirmApprove}
+                disabled={loading}
+              >
+                승인
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* 거부 사유 입력 모달 */}
+      {modalType === 'reject' && (
+        <Dialog open={true} onOpenChange={closeModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>거부 사유 입력</DialogTitle>
+            </DialogHeader>
+            <DialogBody className="py-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                거부 사유
+              </label>
+              <textarea
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={4}
+                placeholder="거부 사유를 입력하세요"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </DialogBody>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={closeModal}>
+                취소
+              </Button>
+              <Button 
+                className="bg-danger hover:bg-danger/90 text-white"
+                onClick={handleConfirmReject}
+                disabled={!rejectReason.trim() || loading}
+              >
+                거부 확인
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* 결과 알림 모달 */}
+      {modalType === 'result' && (
+        <Dialog open={true} onOpenChange={closeModal}>
+          <DialogContent className="max-w-md text-center">
+            <DialogHeader className="text-center">
+              <DialogTitle className={`text-center ${modalData?.isSuccess ? "text-green-600" : "text-red-600"}`}>
+                {modalData?.title}
+              </DialogTitle>
+              <DialogDescription className="text-center">
+                {modalData?.message}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="justify-center">
+              <Button 
+                onClick={closeModal}
+                className={modalData?.isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}
+              >
+                확인
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
       <div className="grid gap-5 lg:gap-7.5">
         <div className="card p-6 mb-5 shadow-sm bg-card">
           <div className="card-header pb-5">
@@ -546,13 +520,15 @@ const ManageCashPage = () => {
                                     <>
                                       <button 
                                         className="btn btn-sm btn-success"
-                                        onClick={() => handleApproveRequest(request.id)}
+                                        onClick={() => openConfirmModal(request.id)}
+                                        disabled={loading}
                                       >
                                         승인
                                       </button>
                                       <button 
                                         className="btn btn-sm btn-danger"
-                                        onClick={() => handleRejectRequest(request.id)}
+                                        onClick={() => openRejectModal(request.id)}
+                                        disabled={loading}
                                       >
                                         거부
                                       </button>
@@ -631,13 +607,15 @@ const ManageCashPage = () => {
                               <>
                                 <button 
                                   className="btn btn-sm btn-success"
-                                  onClick={() => handleApproveRequest(request.id)}
+                                  onClick={() => openConfirmModal(request.id)}
+                                  disabled={loading}
                                 >
                                   승인
                                 </button>
                                 <button 
                                   className="btn btn-sm btn-danger"
-                                  onClick={() => handleRejectRequest(request.id)}
+                                  onClick={() => openRejectModal(request.id)}
+                                  disabled={loading}
                                 >
                                   거부
                                 </button>
@@ -704,13 +682,6 @@ const ManageCashPage = () => {
           </div>
         </div>
       </div>
-      
-      {/* 거부 사유 입력 다이얼로그 */}
-      <RejectReasonDialog
-        isOpen={rejectDialogOpen}
-        onClose={() => setRejectDialogOpen(false)}
-        onConfirm={processRejectRequest}
-      />
     </CommonTemplate>
   );
 };

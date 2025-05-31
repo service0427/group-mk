@@ -138,6 +138,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
             }
 
             // 역할이 변경되었다면 알림 전송
+            // auth.users 테이블은 데이터베이스 트리거가 자동으로 업데이트함
             if (isRoleChanged) {
                 // 역할 표시 이름 객체 생성
                 const roleDisplayNames: Record<string, string> = {};

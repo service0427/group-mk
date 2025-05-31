@@ -121,7 +121,8 @@ const approveSingleSlot = async (
       throw new Error('해당 슬롯이 존재하지 않습니다.');
     }
 
-    if (slotData.status !== 'pending') {
+    // actionType이 없는 경우에만 pending 체크 (일반 승인)
+    if (!actionType && slotData.status !== 'pending') {
       throw new Error(`대기 중인 슬롯만 승인할 수 있습니다. (현재 상태: ${slotData.status})`);
     }
 
@@ -190,21 +191,24 @@ const approveSingleSlot = async (
     let newStatus = 'approved';
     let userRefund = false; // 사용자에게 환불 플래그
     
-    // actionType이 있으면 기존 슬롯 상태 확인
+    // actionType이 있으면 액션 타입별로 처리
     if (actionType) {
-      // 이미 승인된 상태인지 확인 (승인 이후 추가 작업)
-      if (slotData.status !== 'approved') {
-        throw new Error(`상태 변경을 위해서는 먼저 슬롯이 승인되어야 합니다. (현재 상태: ${slotData.status})`);
-      }
-      
       // actionType에 따라 새 상태 설정
       switch (actionType) {
         case 'success':
+          // success는 approved 상태에서만 가능
+          if (slotData.status !== 'approved') {
+            throw new Error(`작업 완료 처리는 승인된 슬롯만 가능합니다. (현재 상태: ${slotData.status})`);
+          }
           newStatus = 'success';
           // success 상태는 총판이 작업 완료했음을 의미함
           // 사용자가 나중에 complete로 바꿔야 총판에게 캐시 지급
           break;
         case 'refund':
+          // refund는 pending 또는 approved 상태에서 가능
+          if (slotData.status !== 'pending' && slotData.status !== 'approved') {
+            throw new Error(`환불은 대기 중이거나 승인된 슬롯만 가능합니다. (현재 상태: ${slotData.status})`);
+          }
           newStatus = 'refund';
           // 환불 시에는 사용자에게 환불 처리
           userRefund = true;
@@ -219,41 +223,72 @@ const approveSingleSlot = async (
     if (newStatus === 'refund' && userRefund) {
       // 환불 로직 - rejectSlot 함수의 환불 코드와 유사
       try {
+        // slot_pending_balances에서 결제 정보 확인
+        const { data: pendingBalance } = await supabase
+          .from('slot_pending_balances')
+          .select('amount, notes')
+          .eq('slot_id', slotId)
+          .maybeSingle();
+
+        let freeBalanceUsed = 0;
+        let paidBalanceUsed = 0;
+        
+        if (pendingBalance && pendingBalance.notes) {
+          try {
+            const notesObj = JSON.parse(pendingBalance.notes);
+            if (notesObj?.payment_details) {
+              freeBalanceUsed = parseFloat(String(notesObj.payment_details.free_balance_used || 0));
+              paidBalanceUsed = parseFloat(String(notesObj.payment_details.paid_balance_used || 0));
+            }
+          } catch (e) {
+            console.log('결제 정보 파싱 실패, 기본값 사용');
+          }
+        }
+        
+        // 결제 정보가 없으면 유료 캐시로 환불
+        if (freeBalanceUsed + paidBalanceUsed === 0) {
+          paidBalanceUsed = unitPrice;
+        }
+
         // 사용자의 잔액 조회
-        const { data: userBalance } = await supabase
+        const { data: userBalance, error: balanceError } = await supabase
           .from('user_balances')
           .select('paid_balance, free_balance, total_balance')
           .eq('user_id', slotData.user_id)
           .single();
         
-        if (userBalance) {
-          // 잔액 업데이트 (환불 처리)
-          // 이 부분은 간략화 버전입니다. 실제로는 더 복잡한 로직이 필요할 수 있습니다.
-          const newPaidBalance = parseFloat(String(userBalance.paid_balance || 0)) + unitPrice;
-          const newTotalBalance = newPaidBalance + parseFloat(String(userBalance.free_balance || 0));
-          
-          await supabase
-            .from('user_balances')
-            .update({
-              paid_balance: newPaidBalance,
-              total_balance: newTotalBalance,
-              updated_at: now
-            })
-            .eq('user_id', slotData.user_id);
-            
-          // 환불 내역 기록
-          await supabase
-            .from('user_cash_history')
-            .insert({
-              user_id: slotData.user_id,
-              amount: unitPrice, // 양수로 표시하여 환불 표시
-              transaction_type: 'refund', // refund 타입으로 사용자에게 환불
-              reference_id: slotId,
-              description: `슬롯 환불: [${slotData.input_data?.productName || '상품'}]`,
-              transaction_at: now,
-              balance_type: null // 환불이지만 타입 구분이 필요 없는 경우 null
-            });
+        if (balanceError || !userBalance) {
+          throw new Error('사용자 잔액 정보를 찾을 수 없습니다.');
         }
+
+        // 잔액 업데이트 (환불 처리)
+        const newPaidBalance = parseFloat(String(userBalance.paid_balance || 0)) + paidBalanceUsed;
+        const newFreeBalance = parseFloat(String(userBalance.free_balance || 0)) + freeBalanceUsed;
+        const newTotalBalance = newPaidBalance + newFreeBalance;
+        
+        await supabase
+          .from('user_balances')
+          .update({
+            paid_balance: newPaidBalance,
+            free_balance: newFreeBalance,
+            total_balance: newTotalBalance,
+            updated_at: now
+          })
+          .eq('user_id', slotData.user_id);
+          
+        // 환불 내역 기록
+        await supabase
+          .from('user_cash_history')
+          .insert({
+            user_id: slotData.user_id,
+            amount: unitPrice, // 양수로 표시하여 환불 표시
+            transaction_type: 'refund', // refund 타입으로 사용자에게 환불
+            reference_id: slotId,
+            description: `슬롯 환불: [${slotData.input_data?.productName || '상품'}]`,
+            transaction_at: now,
+            balance_type: paidBalanceUsed > 0 && freeBalanceUsed > 0 ? 'mixed' : 
+                         paidBalanceUsed > 0 ? 'paid' : 'free'
+          });
       } catch (refundError) {
         console.error('환불 처리 중 오류:', refundError);
         // 환불 실패는 치명적이므로 예외 발생
@@ -262,14 +297,20 @@ const approveSingleSlot = async (
     }
     
     // 슬롯 상태 업데이트
+    const updateData: any = {
+      status: newStatus,
+      processed_at: now
+    };
+    
+    // 환불이 아닌 경우에만 날짜 업데이트
+    if (newStatus !== 'refund') {
+      updateData.start_date = finalStartDate;
+      updateData.end_date = finalEndDate;
+    }
+    
     const { data: updatedSlot, error: updateError } = await supabase
       .from('slots')
-      .update({
-        status: newStatus,
-        processed_at: now,
-        start_date: finalStartDate,
-        end_date: finalEndDate
-      })
+      .update(updateData)
       .eq('id', slotId)
       .select();
 

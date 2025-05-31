@@ -10,10 +10,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogPortal,
 } from "@/components/ui/dialog";
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from "@/components/ui/button";
 import { createNotificationForRole } from '@/utils/notification';
 import { NotificationType, NotificationPriority } from '@/types/notification';
+import '@/styles/charge-modal-overlay.css';
 
 // 충전 요청 타입 정의
 interface ChargeRequest {
@@ -222,6 +225,9 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
   const [dialogTitle, setDialogTitle] = useState<string>("");
   const [dialogDescription, setDialogDescription] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
+  
+  // 충전 확인 모달 상태 관리
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
 
   // 컴포넌트 마운트 시 캐시 설정 먼저 가져오기
   useEffect(() => {
@@ -279,10 +285,9 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
     setResultDialogOpen(true);
   };
 
-  // 충전 버튼 핸들러
-  const handleCharge = async () => {
-    setError(null);
-
+  // 충전 버튼 클릭 시 확인 모달 표시
+  const handleChargeClick = () => {
+    // 유효성 검사
     if (!currentUser) {
       setError('로그인이 필요합니다.');
       return;
@@ -293,10 +298,26 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
       return;
     }
 
-    setIsLoading(true);
-
     if (!depositorName.trim()) {
       setError('입금자명을 입력해주세요.');
+      return;
+    }
+
+    // 에러가 없으면 확인 모달 표시
+    setError(null);
+    setConfirmDialogOpen(true);
+  };
+
+  // 실제 충전 요청 처리
+  const handleCharge = async () => {
+    // 확인 모달 닫기
+    setConfirmDialogOpen(false);
+    setError(null);
+    setIsLoading(true);
+
+    if (!currentUser) {
+      setError('로그인이 필요합니다.');
+      setIsLoading(false);
       return;
     }
 
@@ -365,21 +386,21 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
         }}
       >
         <DialogContent
-          className="max-w-lg p-0 mx-auto rounded-lg overflow-hidden bg-card"
+          className="max-w-lg p-0 mx-auto rounded-lg bg-card flex flex-col max-h-[90vh]"
           style={{ zIndex: 9999 }}
           onPointerDownOutside={(e) => {
             e.preventDefault();
             handleModalClose();
           }}
         >
-          <DialogHeader className="flex items-center py-5 px-6 border-b">
+          <DialogHeader className="flex items-center py-5 px-6 border-b flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white mr-3">
               <span className="font-bold">W</span>
             </div>
             <DialogTitle className="text-lg font-medium">캐시 충전 신청</DialogTitle>
           </DialogHeader>
 
-          <div className="bg-background p-10 flex-1 overflow-auto">
+          <div className="bg-background p-10 flex-1 overflow-y-auto min-h-0">
             {/* 에러 메시지 표시 */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
@@ -620,9 +641,9 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
           </div>
 
           {/* 충전 버튼 - 푸터 */}
-          <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
+          <DialogFooter className="px-6 py-4 border-t flex-shrink-0 bg-background">
             <button
-              onClick={handleCharge}
+              onClick={handleChargeClick}
               disabled={isLoading || !customAmount}
               type="button"
               className={`w-full py-4 ${customAmount && !isLoading
@@ -640,6 +661,68 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
             )}
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+
+      {/* 충전 확인 다이얼로그 */}
+      <Dialog 
+        open={confirmDialogOpen} 
+        onOpenChange={setConfirmDialogOpen}
+      >
+        <DialogPortal>
+          <DialogPrimitive.Content
+            className="fixed left-[50%] top-[50%] z-[10000] max-w-md w-full translate-x-[-50%] translate-y-[-50%] rounded-lg border-2 border-blue-200 dark:border-blue-300 bg-white dark:bg-gray-900 p-0 shadow-2xl text-center"
+            onPointerDownOutside={(e) => {
+              e.preventDefault();
+              setConfirmDialogOpen(false);
+            }}
+          >
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-t-[4px] p-6 border-b-2 border-yellow-200 dark:border-yellow-700">
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-center text-lg mb-2 text-yellow-700 dark:text-yellow-400">
+                충전 요청 확인
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="p-6">
+            <div className="space-y-3 mb-6">
+              <div className="text-2xl font-bold text-foreground">
+                {formatNumberWithCommas(parseInt(customAmount || '0'))}원
+              </div>
+              {showPointInfo && isEligibleForBonus && (
+                <div className="text-sm text-green-600">
+                  + {formatNumberWithCommas(bonusAmount)}원 무료 캐시
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                입금자명: <span className="font-medium text-foreground">{depositorName}</span>
+              </div>
+            </div>
+            
+            <DialogDescription className="text-center text-sm mb-6">
+              위 금액으로 캐시 충전을 요청하시겠습니까?<br/>
+              충전 요청 후 입금 계좌로 송금해주세요.
+            </DialogDescription>
+
+            <DialogFooter className="flex gap-3 justify-center mt-4 sm:justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDialogOpen(false)}
+                className="min-w-[100px]"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleCharge}
+                className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? '처리 중...' : '예, 충전 요청'}
+              </Button>
+            </DialogFooter>
+          </div>
+          </DialogPrimitive.Content>
+        </DialogPortal>
       </Dialog>
 
       {/* 결과 알림 다이얼로그 */}

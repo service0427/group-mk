@@ -219,15 +219,15 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 
   // 편집 저장 핸들러
   const handleSaveEditing = async (keywordId: number) => {
-    if (!editingKeywordData.mainKeyword.trim()) return;
-    
     const success = await onUpdateKeyword(keywordId, {
+      /*
       mainKeyword: editingKeywordData.mainKeyword.trim(),
       mid: editingKeywordData.mid,
       url: editingKeywordData.url ? editingKeywordData.url.trim() : undefined,
       keyword1: editingKeywordData.keyword1 ? editingKeywordData.keyword1.trim() : undefined,
       keyword2: editingKeywordData.keyword2 ? editingKeywordData.keyword2.trim() : undefined,
       keyword3: editingKeywordData.keyword3 ? editingKeywordData.keyword3.trim() : undefined,
+      */
       description: editingKeywordData.description ? editingKeywordData.description.trim() : undefined
     });
     
@@ -551,7 +551,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             </div>
           )}
           {!isHidden('url') && (
-            <div className="w-full md:w-[300px] sm:w-auto sm:flex-grow sm:min-w-[250px] sm:max-w-none">
+            <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[350px] sm:max-w-[400px]">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {getFieldLabel('url', 'URL')} {isRequired('url') && '*'}
               </label>
@@ -643,10 +643,10 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             </div>
           )}
           
-          <div className="w-full sm:w-auto sm:flex-grow-0 flex-shrink-0 sm:flex-shrink-0 mt-1 sm:mt-0">
+          <div className="w-full sm:w-auto sm:flex-grow flex-shrink-0 sm:flex-shrink-0 mt-1 sm:mt-0">
             <div className="flex items-end gap-2 w-full">
               {!isHidden('description') && (
-                <div className="flex-grow sm:max-w-[180px] sm:min-w-[100px]">
+                <div className="flex-grow sm:min-w-[200px]">
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{getFieldLabel('description', '설명')} (선택사항)</label>
                   <input
                     type="text"
@@ -722,103 +722,44 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   {/* 메인 키워드 */}
                   {!isHidden('main_keyword') && (
                     <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
-                      {editingKeywordId === keyword.id ? (
-                        <input
-                          type="text"
-                          value={editingKeywordData.mainKeyword}
-                          onChange={(e) => handleEditingKeywordChange(e, 'mainKeyword')}
-                          className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                          autoFocus
-                        />
-                      ) : (
-                        <div className="text-xs font-medium text-gray-900 dark:text-white">
-                          {keyword.mainKeyword}
-                        </div>
-                      )}
+                      <div className="text-xs font-medium text-gray-900 dark:text-white">
+                        {keyword.mainKeyword}
+                      </div>
                     </td>
                   )}
                   
                   {/* MID */}
                   {!isHidden('mid') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                      {editingKeywordId === keyword.id ? (
-                        <input
-                          type="number"
-                          value={editingKeywordData.mid || ''}
-                          onChange={(e) => handleEditingKeywordChange(e, 'mid')}
-                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      ) : (
-                        <div className="text-xs text-gray-700 dark:text-gray-300">
-                          {keyword.mid || '-'}
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        {keyword.mid || '-'}
+                      </div>
                     </td>
                   )}
                   
                   {/* URL */}
                   {!isHidden('url') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                      {editingKeywordId === keyword.id ? (
-                        <input
-                          type="text"
-                          value={editingKeywordData.url}
-                          onChange={(e) => handleEditingKeywordChange(e, 'url')}
-                          className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      ) : (
-                        <div className="text-xs text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                          {keyword.url ? (
-                            <a
-                              href={keyword.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {keyword.url}
-                            </a>
-                          ) : (
-                            '-'
-                          )}
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                        {keyword.url ? (
+                          <a
+                            href={keyword.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {keyword.url}
+                          </a>
+                        ) : (
+                          '-'
+                        )}
+                      </div>
                     </td>
                   )}
                   
                   {/* 키워드 */}
                   {(!isHidden('keyword1') || !isHidden('keyword2') || !isHidden('keyword3')) && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
-                      {editingKeywordId === keyword.id ? (
-                      <div className="space-y-1">
-                        {!isHidden('keyword1') && (
-                          <input
-                            type="text"
-                            value={editingKeywordData.keyword1}
-                            onChange={(e) => handleEditingKeywordChange(e, 'keyword1')}
-                            placeholder={getFieldPlaceholder('keyword1', '키워드1')}
-                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                          />
-                        )}
-                        {!isHidden('keyword2') && (
-                          <input
-                            type="text"
-                            value={editingKeywordData.keyword2}
-                            onChange={(e) => handleEditingKeywordChange(e, 'keyword2')}
-                            placeholder={getFieldPlaceholder('keyword2', '키워드2')}
-                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                          />
-                        )}
-                        {!isHidden('keyword3') && (
-                          <input
-                            type="text"
-                            value={editingKeywordData.keyword3}
-                            onChange={(e) => handleEditingKeywordChange(e, 'keyword3')}
-                            placeholder={getFieldPlaceholder('keyword3', '키워드3')}
-                            className="w-full px-3 py-1 border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                          />
-                        )}
-                      </div>
-                    ) : (
                       <div className="text-xs text-gray-700 dark:text-gray-300">
                         {(() => {
                           const keywords = [];
@@ -828,7 +769,6 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                           return keywords.length > 0 ? keywords.join(' / ') : '-';
                         })()}
                       </div>
-                    )}
                     </td>
                   )}
                   
@@ -842,7 +782,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                         checked={keyword.isActive}
                         onChange={() => handleToggleActive(keyword.id, keyword.isActive)}
                         className="sr-only peer"
-                        disabled={isLoading || editingKeywordId === keyword.id}
+                        disabled={isLoading}
                       />
                       <label 
                         htmlFor={`status-${keyword.id}`}

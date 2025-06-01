@@ -664,45 +664,41 @@ export const keywordService = {
             campaignsData.forEach(c => campaignMap.set(c.id, c));
           }
           
-          slotsData.forEach(slot => {
-            const campaign = campaignMap.get(slot.product_id);
-            slot.campaigns = campaign;
-          });
-        }
-        
-        if (slotsData) {
+          // 슬롯 데이터 처리
           console.log('[Keyword Service] Active slots data:', slotsData);
           slotsData.forEach(slot => {
             if (!activeSlotsByKeyword[slot.keyword_id]) {
               activeSlotsByKeyword[slot.keyword_id] = [];
             }
-            if (slot.campaigns) {
+            
+            const campaign = campaignMap.get(slot.product_id);
+            if (campaign) {
               // 로고 URL 처리: add_info.logo_url을 우선 사용, 없으면 logo 필드 사용
               let logoUrl = null;
               
               // add_info에서 logo_url 확인
-              if (slot.campaigns.add_info && slot.campaigns.add_info.logo_url) {
-                logoUrl = slot.campaigns.add_info.logo_url;
-              } else if (slot.campaigns.logo) {
+              if (campaign.add_info && campaign.add_info.logo_url) {
+                logoUrl = campaign.add_info.logo_url;
+              } else if (campaign.logo) {
                 // logo 필드 사용 (상대 경로인 경우 전체 경로로 변환)
-                logoUrl = slot.campaigns.logo;
+                logoUrl = campaign.logo;
                 if (!logoUrl.startsWith('http')) {
                   logoUrl = `/media/${logoUrl}`;
                 }
               }
               
-              console.log(`[Keyword Service] Campaign ${slot.campaigns.campaign_name} logo:`, {
-                logo: slot.campaigns.logo,
-                add_info: slot.campaigns.add_info,
+              console.log(`[Keyword Service] Campaign ${campaign.campaign_name} logo:`, {
+                logo: campaign.logo,
+                add_info: campaign.add_info,
                 finalLogoUrl: logoUrl
               });
               
               activeSlotsByKeyword[slot.keyword_id].push({
                 id: slot.id,
-                campaignId: slot.campaigns.id,
-                campaignName: slot.campaigns.campaign_name,
+                campaignId: campaign.id,
+                campaignName: campaign.campaign_name,
                 campaignLogo: logoUrl,
-                serviceType: slot.campaigns.service_type,
+                serviceType: campaign.service_type,
                 status: slot.status
               });
             }

@@ -594,13 +594,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
     try {
       // 현재 사용자가 같은 캠페인에 이미 등록한 키워드 슬롯 조회
-      // 1. slots 테이블에서 keyword_id 직접 조회
+      // 진행중인 슬롯만 확인 (pending, submitted, approved 상태)
       const { data: slotData, error: slotError } = await supabase
         .from('slots')
-        .select('keyword_id, input_data')
+        .select('keyword_id, input_data, status')
         .eq('user_id', currentUser.id)
         .eq('product_id', campaignId)
-        .neq('status', 'rejected') // 반려된 슬롯은 제외
+        .in('status', ['pending', 'submitted', 'approved']) // 진행중인 슬롯만
         .order('created_at', { ascending: false });
 
       if (slotError) {
@@ -943,6 +943,33 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
     
     return addFields;
+  };
+
+  // 예상 작업기간 계산 함수
+  const calculateExpectedDate = (dueDays: number): { startDate: string; endDate: string } => {
+    const today = new Date();
+    const startDateObj = new Date(today);
+    const endDateObj = new Date(today);
+    
+    // 시작일은 오늘 + 1일 (총판 승인 후 다음날부터 작업 시작)
+    startDateObj.setDate(startDateObj.getDate() + 1);
+    
+    // 종료일은 시작일 + 작업기간
+    endDateObj.setDate(endDateObj.getDate() + 1 + dueDays - 1);
+    
+    // 시작일 포맷
+    const startYear = startDateObj.getFullYear();
+    const startMonth = String(startDateObj.getMonth() + 1).padStart(2, '0');
+    const startDay = String(startDateObj.getDate()).padStart(2, '0');
+    const startDate = `${startYear}-${startMonth}-${startDay}`;
+    
+    // 종료일 포맷
+    const endYear = endDateObj.getFullYear();
+    const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
+    const endDay = String(endDateObj.getDate()).padStart(2, '0');
+    const endDate = `${endYear}-${endMonth}-${endDay}`;
+    
+    return { startDate, endDate };
   };
 
   // 마감 일수 변경 핸들러
@@ -1701,6 +1728,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     </div>
                   </div>
 
+                  {/* 작업 시작일 안내 */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <KeenIcon icon="information-circle" className="text-blue-600 dark:text-blue-400 size-4 shrink-0" />
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        <span className="font-semibold">작업 시작일:</span> 총판 승인 다음날부터 (오늘 승인 시, 내일부터 시작)
+                      </p>
+                    </div>
+                  </div>
+
                   {/* 키워드 목록 - 테이블 구역 최적화 */}
                   <div className="border rounded-md overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
                     {keywordLoading ? (
@@ -1739,12 +1776,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             <span className="font-semibold text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
                           </div>
                         </div>
-                        <div className="flex-1 overflow-hidden sm:overflow-visible bg-white dark:bg-slate-900 min-h-0">
-                          <div className="h-full overflow-y-auto custom-scrollbar -mr-3 pr-3 sm:-mr-1 sm:pr-1">
-                            <table className="w-full table-fixed border-separate border-spacing-0">
+                        <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900 min-h-0">
+                          <div className="h-full overflow-x-auto overflow-y-auto custom-scrollbar">
+                            <table className="min-w-[1200px] w-full border-separate border-spacing-0">
                             <thead className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white shadow-lg backdrop-blur-sm">
                               <tr className="text-left">
-                                <th className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 text-[10px] sm:text-sm font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
+                                <th className="min-w-[50px] w-[50px] px-2 py-3 text-xs font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
                                   <div className="flex items-center justify-center relative group">
                                     <input
                                       type="checkbox"
@@ -1781,7 +1818,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     />
                                   </div>
                                 </th>
-                                <th className="w-[25%] sm:w-[26%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
+                                <th className="min-w-[200px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
                                 {(() => {
                                   // 보이는 필드들을 체크하여 정보 헤더 표시 여부 결정
                                   const hasVisibleInfoFields = 
@@ -1794,13 +1831,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                   
                                   if (hasVisibleInfoFields) {
                                     return (
-                                      <th className="w-[25%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
+                                      <th className="min-w-[250px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
                                     );
                                   }
                                   return null;
                                 })()}
-                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
-                                <th className="w-[8%] px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업일</th>
+                                <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
+                                <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
+                                <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
                                 {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
                                   <th
                                     key={index}
@@ -1843,7 +1881,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         : 'bg-white dark:bg-slate-800'
                                     }`}
                                   >
-                                    <td className="w-[5%] px-1 sm:px-2 py-2 sm:py-3 border border-gray-200 align-middle text-center">
+                                    <td className="min-w-[50px] w-[50px] px-2 py-3 border border-gray-200 align-middle text-center">
                                       <div className="flex justify-center">
                                         <input
                                           type="checkbox"
@@ -1853,7 +1891,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         />
                                       </div>
                                     </td>
-                                    <td className="w-[25%] sm:w-[26%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 group" onClick={() => handleKeywordToggle(keyword.id)}>
+                                    <td className="min-w-[200px] px-3 py-3 border border-gray-200 group" onClick={() => handleKeywordToggle(keyword.id)}>
                                       <div className="cursor-pointer transition-all">
                                         <p className="font-semibold text-xs sm:text-sm text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 line-clamp-1 antialiased">{keyword.mainKeyword}</p>
                                         <div className="flex flex-wrap gap-1 mt-1.5 text-xs">
@@ -1875,7 +1913,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       
                                       if (hasVisibleInfoFields) {
                                         return (
-                                          <td className="w-[25%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                          <td className="min-w-[250px] px-3 py-3 border border-gray-200 align-middle">
                                             <div className="text-xs">
                                               {keyword.mid && !isHidden('mid') && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getFieldLabel('mid', 'MID')}</span> {keyword.mid}</p>}
                                               {keyword.url && !isHidden('url') && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
@@ -1886,7 +1924,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       }
                                       return null;
                                     })()}
-                                    <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                    <td className="min-w-[80px] px-3 py-3 border border-gray-200 align-middle">
                                       <input
                                         type="text"
                                         placeholder="타수"
@@ -1906,14 +1944,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                           }
                                         }}
                                         onBlur={() => handleWorkCountBlur(keyword.id)}
-                                        className="w-full min-w-[30px] sm:min-w-[40px] px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+                                        className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
                                         onClick={e => e.stopPropagation()}
                                       />
                                     </td>
-                                    <td className="w-[8%] px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle">
+                                    <td className="min-w-[100px] px-3 py-3 border border-gray-200 align-middle">
                                       <input
                                         type="text"
-                                        placeholder="작업일"
+                                        placeholder="작업기간"
                                         value={keyword.dueDays === null ? '' : keyword.dueDays}
                                         onChange={(e) => {
                                           // 빈 문자열이거나 숫자가 아니면 null로 처리
@@ -1945,10 +1983,25 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                             setTimeout(() => calculateTotalPayment(), 0);
                                           }
                                         }}
-                                        className="w-full px-0 sm:px-2 py-0.5 sm:py-1.5 text-[9px] sm:text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
-                                        style={{ minWidth: '40px' }}
+                                        className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
                                         onClick={e => e.stopPropagation()}
                                       />
+                                    </td>
+                                    <td className="min-w-[150px] px-3 py-3 border border-gray-200 align-middle">
+                                      {keyword.dueDays > 0 && (
+                                        <div className="text-xs text-gray-700 dark:text-gray-300">
+                                          <div className="flex flex-col gap-1.5">
+                                            <div className="whitespace-nowrap">
+                                              <span className="font-semibold text-gray-600 dark:text-gray-400">시작:</span>
+                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays).startDate}</span>
+                                            </div>
+                                            <div className="whitespace-nowrap">
+                                              <span className="font-semibold text-gray-600 dark:text-gray-400">완료:</span>
+                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays).endDate}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
                                     </td>
                                     {/* 각 추가 필드를 별도의 td로 분리 */}
                                     {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (

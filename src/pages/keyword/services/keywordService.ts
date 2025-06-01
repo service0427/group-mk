@@ -635,6 +635,78 @@ export const keywordService = {
 
       if (error) throw error;
 
+      // 키워드별로 진행중인 슬롯 정보 가져오기
+      const keywordIds = data.map(k => k.id);
+      let activeSlotsByKeyword: Record<number, any[]> = {};
+      
+      if (keywordIds.length > 0) {
+        const { data: slotsData } = await supabase
+          .from('slots')
+          .select(`
+            id,
+            keyword_id,
+            product_id,
+            status
+          `)
+          .in('keyword_id', keywordIds)
+          .in('status', ['pending', 'submitted', 'approved']); // 진행중인 슬롯들만
+        
+        // 캠페인 정보 가져오기
+        if (slotsData && slotsData.length > 0) {
+          const productIds = [...new Set(slotsData.map(s => s.product_id))];
+          const { data: campaignsData } = await supabase
+            .from('campaigns')
+            .select('id, campaign_name, logo, service_type, add_info')
+            .in('id', productIds);
+          
+          const campaignMap = new Map();
+          if (campaignsData) {
+            campaignsData.forEach(c => campaignMap.set(c.id, c));
+          }
+          
+          // 슬롯 데이터 처리
+          console.log('[Keyword Service] Active slots data:', slotsData);
+          slotsData.forEach(slot => {
+            if (!activeSlotsByKeyword[slot.keyword_id]) {
+              activeSlotsByKeyword[slot.keyword_id] = [];
+            }
+            
+            const campaign = campaignMap.get(slot.product_id);
+            if (campaign) {
+              // 로고 URL 처리: add_info.logo_url을 우선 사용, 없으면 logo 필드 사용
+              let logoUrl = null;
+              
+              // add_info에서 logo_url 확인
+              if (campaign.add_info && campaign.add_info.logo_url) {
+                logoUrl = campaign.add_info.logo_url;
+              } else if (campaign.logo) {
+                // logo 필드 사용 (상대 경로인 경우 전체 경로로 변환)
+                logoUrl = campaign.logo;
+                if (!logoUrl.startsWith('http')) {
+                  logoUrl = `/media/${logoUrl}`;
+                }
+              }
+              
+              console.log(`[Keyword Service] Campaign ${campaign.campaign_name} logo:`, {
+                logo: campaign.logo,
+                add_info: campaign.add_info,
+                finalLogoUrl: logoUrl
+              });
+              
+              activeSlotsByKeyword[slot.keyword_id].push({
+                id: slot.id,
+                campaignId: campaign.id,
+                campaignName: campaign.campaign_name,
+                campaignLogo: logoUrl,
+                serviceType: campaign.service_type,
+                status: slot.status
+              });
+            }
+          });
+          console.log('[Keyword Service] Active slots by keyword:', activeSlotsByKeyword);
+        }
+      }
+
       // 스네이크 케이스에서 카멜 케이스로 데이터 변환
       const transformedData = data.map(item => ({
         id: item.id,
@@ -648,7 +720,8 @@ export const keywordService = {
         description: item.description,
         isActive: item.is_active,
         createdAt: item.created_at,
-        updatedAt: item.updated_at
+        updatedAt: item.updated_at,
+        activeSlots: activeSlotsByKeyword[item.id] || []
       }));
 
       return {

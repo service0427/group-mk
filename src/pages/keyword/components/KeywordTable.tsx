@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types';
 import { useKeywordFieldConfig } from '../hooks/useKeywordFieldConfig';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   
   // 입력 상태 관리
   const [newKeywordData, setNewKeywordData] = useState<KeywordInput>({
@@ -97,6 +100,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   const renderTableHeaders = () => {
     const headers = [
       { field: 'main_keyword', defaultLabel: '메인 키워드', sortable: true, align: 'left' },
+      { field: 'service', defaultLabel: '사용중', sortable: false, align: 'center', alwaysShow: true },
       { field: 'mid', defaultLabel: 'MID', sortable: true, align: 'left' },
       { field: 'url', defaultLabel: 'URL', sortable: false, align: 'left' },
       { field: 'keywords', defaultLabel: '키워드', sortable: false, align: 'left' },
@@ -153,7 +157,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 
   // 보이는 열의 개수 계산
   const getVisibleColumnCount = () => {
-    let count = 1; // 기본: actions (작업 열은 항상 표시)
+    let count = 2; // 기본: service(사용중) + actions (사용중과 작업 열은 항상 표시)
     if (!isHidden('main_keyword')) count++;
     if (!isHidden('mid')) count++;
     if (!isHidden('url')) count++;
@@ -728,6 +732,54 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                     </td>
                   )}
                   
+                  {/* 사용중 (서비스) */}
+                  <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
+                    {keyword.activeSlots && keyword.activeSlots.length > 0 ? (
+                      <div className="flex items-center gap-1 justify-center">
+                        {keyword.activeSlots.map((slot, index) => (
+                          <div 
+                            key={slot.id} 
+                            className="relative"
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setTooltipPosition({
+                                top: rect.top - 30,
+                                left: rect.left + rect.width / 2
+                              });
+                              setHoveredSlotId(slot.id);
+                            }}
+                            onMouseLeave={() => setHoveredSlotId(null)}
+                          >
+                            {slot.campaignLogo ? (
+                              <img 
+                                src={slot.campaignLogo} 
+                                alt={slot.campaignName}
+                                className="w-5 h-5 object-contain rounded border border-gray-200 dark:border-gray-600"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (nextElement) {
+                                    nextElement.style.display = 'flex';
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <div 
+                              className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center"
+                              style={{ display: slot.campaignLogo ? 'none' : 'flex' }}
+                            >
+                              <span className="text-[8px] font-bold text-gray-600 dark:text-gray-400">
+                                {slot.campaignName?.charAt(0) || '?'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
                   {/* MID */}
                   {!isHidden('mid') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
@@ -897,6 +949,30 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           </div>
         )}
       </div>
+      
+      {/* 툴팁 Portal */}
+      {hoveredSlotId && keywords.map(keyword => 
+        keyword.activeSlots?.map(slot => 
+          slot.id === hoveredSlotId ? ReactDOM.createPortal(
+            <div 
+              className="fixed z-[99999] pointer-events-none"
+              style={{
+                top: `${tooltipPosition.top}px`,
+                left: `${tooltipPosition.left}px`,
+                transform: 'translateX(-50%)'
+              }}
+            >
+              <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                {slot.campaignName}
+              </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                <div className="border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>,
+            document.body
+          ) : null
+        )
+      )}
     </div>
   );
 };

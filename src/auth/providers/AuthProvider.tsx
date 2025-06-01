@@ -27,6 +27,7 @@ interface AuthContextProps {
     requestPasswordResetLink: (email: string) => Promise<void>; // 비밀번호 재설정 링크 요청
     changePassword: (email: string, token: string, newPassword: string, confirmPassword: string) => Promise<void>; // 비밀번호 변경
     checkEmailExists: (email: string) => Promise<boolean>; // 이메일 중복 체크 함수 추가
+    refreshUserRole: () => Promise<void>; // role 강제 새로고침 함수
 }
 
 const AuthContext = createContext<AuthContextProps | null>(null);
@@ -1023,6 +1024,26 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }
     }, [setIsLoggingOut]);
 
+    // role 강제 새로고침 함수
+    const refreshUserRole = useCallback(async () => {
+        try {
+            // 캐시 삭제
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('lastAuthCheck');
+            
+            // DB에서 새로 가져오기
+            const freshUser = await getUser();
+            if (freshUser) {
+                setCurrentUser(freshUser);
+                // 새 데이터 캐싱
+                sessionStorage.setItem('currentUser', JSON.stringify(freshUser));
+                sessionStorage.setItem('lastAuthCheck', Date.now().toString());
+            }
+        } catch (error) {
+            console.error('Failed to refresh user role:', error);
+        }
+    }, [getUser]);
+
     // 계산된 값들
     const isAuthenticated = !!auth && !!currentUser;
     // 여러 역할 형태 지원 (role, raw_user_meta_data.role 등)
@@ -1030,8 +1051,29 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         (currentUser?.raw_user_meta_data?.role) ||
         'guest';
 
+    // role 변경 주기적 확인 (5분마다)
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        // 초기 5초 후에 한 번 확인 (관리자가 role 변경 직후 빠른 반영을 위해)
+        const initialCheck = setTimeout(() => {
+            refreshUserRole();
+        }, 5000);
+
+        // 이후 5분마다 주기적으로 확인
+        const interval = setInterval(() => {
+            refreshUserRole();
+        }, 5 * 60 * 1000); // 5분
+
+        return () => {
+            clearTimeout(initialCheck);
+            clearInterval(interval);
+        };
+    }, [isAuthenticated, refreshUserRole]);
+
     // 비활성 시간 기반 자동 로그아웃 - 최적화된 버전
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30분 (밀리초)
+    // const INACTIVITY_TIMEOUT = 2 * 60 * 1000; // 테스트용: 2분
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -1048,7 +1090,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
             if (inactivityTimer) clearTimeout(inactivityTimer);
 
+            console.log('[Auto Logout] Timer reset, will logout in 30 minutes');
+            
             inactivityTimer = window.setTimeout(() => {
+                console.log('[Auto Logout] Inactivity timeout reached, logging out...');
                 logout();
             }, INACTIVITY_TIMEOUT);
         };
@@ -1069,16 +1114,26 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         const throttledReset = throttle(resetInactivityTimer, 1000);
 
         // 초기 타이머 설정
+        console.log('[Auto Logout] Setting up inactivity timer...');
         resetInactivityTimer();
 
         // 사용자 활동 이벤트 리스너 - 중요한 이벤트만 선택
-        const events = ['mousedown', 'keypress', 'touchstart'];
+        const events = ['mousedown', 'keypress', 'touchstart', 'mousemove', 'scroll', 'click'];
+        console.log('[Auto Logout] Adding event listeners:', events);
+        
         events.forEach(event => {
-            window.addEventListener(event, throttledReset);
+            window.addEventListener(event, throttledReset, { passive: true });
         });
 
+        // 디버깅을 위한 타이머 상태 확인 (5분마다)
+        const debugInterval = setInterval(() => {
+            console.log('[Auto Logout] Timer is active, last activity:', new Date(lastActivity).toLocaleTimeString());
+        }, 5 * 60 * 1000);
+
         return () => {
+            console.log('[Auto Logout] Cleaning up inactivity timer...');
             if (inactivityTimer) clearTimeout(inactivityTimer);
+            clearInterval(debugInterval);
             events.forEach(event => {
                 window.removeEventListener(event, throttledReset);
             });
@@ -1110,11 +1165,12 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         resetPassword,
         requestPasswordResetLink,
         changePassword,
-        checkEmailExists
+        checkEmailExists,
+        refreshUserRole // role 강제 새로고침 함수 추가
     }), [
         loading, auth, currentUser, saveAuth,
         logout, verify, isAuthenticated, userRole,
-        authVerified, refreshToken, getUserWithCache
+        authVerified, refreshToken, getUserWithCache, refreshUserRole
     ]);
 
     return (

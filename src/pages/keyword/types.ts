@@ -25,6 +25,14 @@ export interface Keyword {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  activeSlots?: {
+    id: string;
+    campaignId: number;
+    campaignName: string;
+    campaignLogo?: string;
+    serviceType: string;
+    status: string;
+  }[];
 }
 
 // 키워드 생성/수정을 위한 입력 타입

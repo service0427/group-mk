@@ -150,17 +150,8 @@ export const getUserCashBalance = async (userId: string, userRole?: string): Pro
     // 여러 필드명 시도를 위한 쿼리 구성
     let query = supabase.from('user_balances').select('*');
     
-    // user_id로 먼저 시도
-    try {
-      query = query.eq('user_id', userId);
-    } catch (err1) {
-      // userid로 시도
-      try {
-        query = query.eq('userid', userId);
-      } catch (err2) {
-        // 계속 진행
-      }
-    }
+    // user_id 필드 사용
+    query = query.eq('user_id', userId);
     
     // 쿼리 실행
     const { data, error } = await query.maybeSingle();
@@ -194,17 +185,8 @@ export const getLastWithdrawAccount = async (userId: string): Promise<LastWithdr
       .from('withdraw_requests')
       .select('bank_name, account_number, account_holder, requested_at');
     
-    try {
-      // 사용자 ID로 필터링 시도
-      query = query.eq('user_id', userId);
-    } catch (filterErr) {
-      // 컬럼 이름 다를 경우 대비하여 다른 필드명으로 시도
-      try {
-        query = query.eq('userid', userId);
-      } catch (err2) {
-        // 계속 진행
-      }
-    }
+    // 사용자 ID로 필터링
+    query = query.eq('user_id', userId);
     
     // 완성된 쿼리 실행
     const result = await query
@@ -273,10 +255,9 @@ export const createWithdrawRequest = async (
 
     // 2. withdraw_requests 테이블에 출금 요청 데이터 삽입
     
-    // 기본 필드와 대체 필드 모두 포함하여 삽입 시도
+    // 출금 요청 데이터 생성
     const insertData = {
       user_id: userId,
-      userid: userId, // 대체 필드명 추가
       amount: amount,
       status: 'pending',
       bank_name: bankName,
@@ -303,8 +284,7 @@ export const createWithdrawRequest = async (
         transaction_type: 'withdrawal',
         amount: amount * -1, // 출금은 음수로 기록
         description: `${bankName} ${accountNumber} 계좌로 출금`,
-        reference_id: requestData[0].id,
-        reference_type: 'withdraw_request' // reference_id가 참조하는 테이블 타입 명시
+        reference_id: requestData[0].id
       });
     
     if (historyError) {

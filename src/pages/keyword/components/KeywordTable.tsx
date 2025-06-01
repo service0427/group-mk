@@ -757,7 +757,10 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                                 className="w-5 h-5 object-contain rounded border border-gray-200 dark:border-gray-600"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (nextElement) {
+                                    nextElement.style.display = 'flex';
+                                  }
                                 }}
                               />
                             ) : null}

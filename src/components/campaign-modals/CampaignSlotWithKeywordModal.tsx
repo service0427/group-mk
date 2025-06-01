@@ -1988,16 +1988,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       />
                                     </td>
                                     <td className="min-w-[150px] px-3 py-3 border border-gray-200 align-middle">
-                                      {keyword.dueDays > 0 && (
+                                      {keyword.dueDays && keyword.dueDays > 0 && (
                                         <div className="text-xs text-gray-700 dark:text-gray-300">
                                           <div className="flex flex-col gap-1.5">
                                             <div className="whitespace-nowrap">
                                               <span className="font-semibold text-gray-600 dark:text-gray-400">시작:</span>
-                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays).startDate}</span>
+                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).startDate}</span>
                                             </div>
                                             <div className="whitespace-nowrap">
                                               <span className="font-semibold text-gray-600 dark:text-gray-400">완료:</span>
-                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays).endDate}</span>
+                                              <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).endDate}</span>
                                             </div>
                                           </div>
                                         </div>

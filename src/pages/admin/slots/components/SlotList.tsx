@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Slot, User, Campaign } from './types';
-import SlotDetails from './SlotDetails';
 import { formatDate } from './constants';
 import { supabase } from '@/supabase';
-// 모달 컴포넌트는 부모에서 사용하므로 import 제거
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -63,6 +61,7 @@ interface SlotListProps {
   onReject: (slotId: string | string[], reason?: string) => void;
   onComplete?: (slotId: string | string[]) => void; // 완료 처리 함수 추가
   onMemo: (slotId: string) => void;
+  onDetail: (slotId: string) => void; // 상세 보기 함수 추가
   selectedSlots?: string[]; // 부모로부터 전달받을 선택된 슬롯 ID 배열 (옵션)
   onSelectedSlotsChange?: (selectedSlots: string[]) => void; // 선택된 슬롯 상태가 변경될 때 호출될 콜백
 }
@@ -75,6 +74,7 @@ const SlotList: React.FC<SlotListProps> = ({
   onReject,
   onComplete,
   onMemo,
+  onDetail,
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange
 }) => {
@@ -583,7 +583,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     {slot.status === 'submitted' && 
                       <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">검토중</span>}
                     {slot.status === 'approved' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">승인</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">승인</span>}
                     {slot.status === 'rejected' && (
                       <div className="inline-flex items-center gap-1">
                         <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">반려</span>
@@ -728,11 +728,10 @@ const SlotList: React.FC<SlotListProps> = ({
                     {/* 상세 버튼 */}
                     <button
                       className="btn btn-icon btn-sm btn-ghost text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
-                      data-bs-toggle="modal"
-                      data-bs-target={`#slotDetailsModal-${slot.id}`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        onDetail(slot.id);
                       }}
                       title="상세 보기"
                     >
@@ -835,7 +834,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 {slot.status === 'submitted' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">검토중</span>}
                 {slot.status === 'approved' && 
-                  <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">승인</span>}
+                  <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">승인</span>}
                 {slot.status === 'rejected' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">반려</span>}
                 {slot.status === 'success' && 
@@ -993,11 +992,10 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 상세 버튼 */}
                 <button
                   className="btn btn-icon btn-sm btn-ghost text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
-                  data-bs-toggle="modal"
-                  data-bs-target={`#slotDetailsModal-${slot.id}`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    onDetail(slot.id);
                   }}
                   title="상세 보기"
                 >
@@ -1194,4 +1192,18 @@ const SlotList: React.FC<SlotListProps> = ({
   );
 };
 
-export default SlotList;
+export default React.memo(SlotList, (prevProps, nextProps) => {
+  // props가 실제로 변경되었을 때만 리렌더링
+  return (
+    prevProps.slots === nextProps.slots &&
+    prevProps.selectedServiceType === nextProps.selectedServiceType &&
+    prevProps.campaigns === nextProps.campaigns &&
+    prevProps.selectedSlots === nextProps.selectedSlots &&
+    prevProps.onApprove === nextProps.onApprove &&
+    prevProps.onReject === nextProps.onReject &&
+    prevProps.onComplete === nextProps.onComplete &&
+    prevProps.onMemo === nextProps.onMemo &&
+    prevProps.onDetail === nextProps.onDetail &&
+    prevProps.onSelectedSlotsChange === nextProps.onSelectedSlotsChange
+  );
+});

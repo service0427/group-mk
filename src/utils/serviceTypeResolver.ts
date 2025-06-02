@@ -43,6 +43,14 @@ export const getServiceTypeFromUrl = (pathname: string): CampaignServiceType | n
           return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
         }
         
+        if (serviceTypeStr === 'naver-shopping-rank') {
+          return CampaignServiceType.NAVER_SHOPPING_RANK;
+        }
+        
+        if (serviceTypeStr === 'naver-place-rank') {
+          return CampaignServiceType.NAVER_PLACE_RANK;
+        }
+        
         if (serviceTypeStr === 'naver-auto') {
           return CampaignServiceType.NAVER_AUTO;
         }
@@ -57,6 +65,12 @@ export const getServiceTypeFromUrl = (pathname: string): CampaignServiceType | n
           // 세 부분으로 나눠진 URL (예: naver-shopping-traffic)
           if (parts[0] === 'naver' && parts[1] === 'shopping' && parts[2] === 'traffic') {
             return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+          }
+          if (parts[0] === 'naver' && parts[1] === 'shopping' && parts[2] === 'rank') {
+            return CampaignServiceType.NAVER_SHOPPING_RANK;
+          }
+          if (parts[0] === 'naver' && parts[1] === 'place' && parts[2] === 'rank') {
+            return CampaignServiceType.NAVER_PLACE_RANK;
           }
           
           // 일반적인 3단계 구조 처리
@@ -94,7 +108,7 @@ export const normalizeServiceType = (
   serviceCode: string | CampaignServiceType | undefined | null
 ): CampaignServiceType => {
   if (!serviceCode) {
-    return CampaignServiceType.NAVER_TRAFFIC; // 기본값
+    return CampaignServiceType.NAVER_SHOPPING_RANK; // 기본값
   }
   
   // 이미 CampaignServiceType 열거형이면 그대로 반환
@@ -138,7 +152,7 @@ export const normalizeServiceType = (
   }
   
   // 그 외의 경우 기본값
-  return CampaignServiceType.NAVER_TRAFFIC;
+  return CampaignServiceType.NAVER_SHOPPING_RANK;
 };
 
 /**
@@ -160,7 +174,7 @@ export const resolveServiceType = ({
 }): CampaignServiceType => {
   // 디버깅 위한 결정 과정 기록
   const decisionPath: string[] = [];
-  let result: CampaignServiceType = CampaignServiceType.NAVER_TRAFFIC;
+  let result: CampaignServiceType = CampaignServiceType.NAVER_SHOPPING_RANK;
   let decided = false;
   
   // 1. URL 경로에서 추출 (최우선 - 모든 결정은 URL 기반으로만 수행)
@@ -168,6 +182,12 @@ export const resolveServiceType = ({
     // 특별 케이스: URL에 naver-shopping-traffic이 명시적으로 포함
     if (pathname.includes('naver-shopping-traffic')) {
       result = CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
+      decided = true;
+    } else if (pathname.includes('naver-shopping-rank')) {
+      result = CampaignServiceType.NAVER_SHOPPING_RANK;
+      decided = true;
+    } else if (pathname.includes('naver-place-rank')) {
+      result = CampaignServiceType.NAVER_PLACE_RANK;
       decided = true;
     } else {
       // 일반적인 URL 경로 파싱
@@ -193,7 +213,7 @@ export const resolveServiceType = ({
   
   // 4. 모든 시도 실패 시 기본값
   if (!decided) {
-    result = CampaignServiceType.NAVER_TRAFFIC;
+    result = CampaignServiceType.NAVER_SHOPPING_RANK;
   }
   
   return result;

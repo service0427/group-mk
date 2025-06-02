@@ -26,6 +26,11 @@ const CampaignPage: React.FC = () => {
   const normalizeServiceType = (type: string): string => {
     // 소문자 변환 및 앞뒤 공백 제거
     const normalized = type.toLowerCase().trim();
+    
+    // 'all' 타입은 그대로 반환
+    if (normalized === 'all') {
+      return 'all';
+    }
 
     // 매핑 테이블
     const serviceTypeMap: Record<string, string> = {
@@ -73,11 +78,23 @@ const CampaignPage: React.FC = () => {
       'nplaceshare': 'nplace-share',
       'nplace-share': 'nplace-share',
       'naver-place-share': 'nplace-share',
+      
+      // 네이버 쇼핑 순위확인
+      'naver-shopping-rank': 'naver-shopping-rank',
+      'nshopping-rank': 'naver-shopping-rank',
+      'nshop-rank': 'naver-shopping-rank',
+      
+      // 네이버 플레이스 순위확인
+      'naver-place-rank': 'naver-place-rank',
+      'nplace-rank': 'naver-place-rank',
 
       // 쿠팡 관련
       'coupang': 'coupangtraffic', // 소문자로 통일
       'coupangtraffic': 'coupangtraffic',
       'coupang-traffic': 'coupangtraffic',
+      
+      // 전체 캠페인
+      'all': 'all',
 
     };
 
@@ -119,6 +136,11 @@ const CampaignPage: React.FC = () => {
       'naverfakesale': 'NS 가구매 캠페인 관리',
       'naver-fakesale': 'NS 가구매 캠페인 관리',
       'naver-shopping-fakesale': 'NS 가구매 캠페인 관리',
+      
+      // 네이버 쇼핑 순위확인
+      'naver-shopping-rank': 'NS 순위확인 캠페인 관리',
+      'nshopping-rank': 'NS 순위확인 캠페인 관리',
+      'nshop-rank': 'NS 순위확인 캠페인 관리',
 
       // 네이버 플레이스
       'nplace': 'N 플레이스 캠페인 관리',
@@ -136,6 +158,10 @@ const CampaignPage: React.FC = () => {
       'nplaceshare': 'N 플레이스 블로그공유 캠페인 관리',
       'nplace-share': 'N 플레이스 블로그공유 캠페인 관리',
       'naver-place-share': 'N 플레이스 블로그공유 캠페인 관리',
+      
+      // 네이버 플레이스 순위확인
+      'naver-place-rank': 'NP 순위확인 캠페인 관리',
+      'nplace-rank': 'NP 순위확인 캠페인 관리',
 
       // 네이버 카페
       'ncafe': 'N 카페 캠페인 관리',
@@ -145,6 +171,9 @@ const CampaignPage: React.FC = () => {
       'coupangtraffic': '쿠팡 트래픽 캠페인 관리',
       'coupang': '쿠팡 트래픽 캠페인 관리',
       'coupang-traffic': '쿠팡 트래픽 캠페인 관리',
+      
+      // 전체 캠페인
+      'all': '모든 캠페인 통합 관리',
     };
 
     // 매핑된 제목이 있으면 반환, 없으면 기본 제목 반환

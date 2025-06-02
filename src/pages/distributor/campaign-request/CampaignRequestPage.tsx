@@ -17,12 +17,6 @@ const CampaignRequestPage: React.FC = () => {
   // 서비스 유형 목록
   const serviceTypes = [
     {
-      id: CampaignServiceType.NAVER_TRAFFIC,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC],
-      icon: '/media/ad-brand/naver.png',
-      description: '네이버 검색을 통한 사이트 방문 트래픽'
-    },
-    {
       id: CampaignServiceType.NAVER_AUTO,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],
       icon: '/media/ad-brand/naver.png',

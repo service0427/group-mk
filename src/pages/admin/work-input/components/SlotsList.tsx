@@ -206,8 +206,6 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                 label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
               } else if (upperType.includes('PLACE')) {
                 label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC];
-              } else {
-                label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
               }
             } else if (upperType.includes('COUPANG')) {
               label = SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC];
@@ -327,8 +325,6 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                 label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
               } else if (upperType.includes('PLACE')) {
                 label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC];
-              } else {
-                label = SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
               }
             } else if (upperType.includes('COUPANG')) {
               label = SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC];

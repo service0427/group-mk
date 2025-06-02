@@ -30,7 +30,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   onClose,
   onSave,
   createCampaign,
-  serviceType = CampaignServiceType.NAVER_TRAFFIC,
+  serviceType = CampaignServiceType.NAVER_SHOPPING_RANK,
   campaign = null, // 편집 모드일 때 캠페인 데이터
   isDetailMode = false, // 상세 설정 모드 
   isOperator = false, // 운영자 모드 여부
@@ -334,13 +334,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   // 새로운 타입과 레거시 타입을 분리해 TypeScript 중복 오류 방지
   const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
     // 새로운 타입 (Enum 값)
-    [CampaignServiceType.NAVER_TRAFFIC]: {
-      name: 'N 트래픽',
-      additionalFields: {
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://example.com', required: true },
-      }
-    },
     [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
       name: 'NS 트래픽',
       additionalFields: {
@@ -367,6 +360,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
       }
     },
+    [CampaignServiceType.NAVER_SHOPPING_RANK]: {
+      name: 'NS 순위확인',
+      additionalFields: {
+        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
+        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '순위 확인할 키워드를 입력하세요', required: true },
+      }
+    },
     [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
       name: 'NP 트래픽',
       additionalFields: {
@@ -387,6 +387,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
         shareTarget: { label: '공유 목표 수', type: 'number', defaultValue: '10', required: true },
         targetBlog: { label: '타겟 블로그 정보', type: 'text', defaultValue: '', placeholder: '블로그 정보를 입력하세요 (선택사항)' },
+      }
+    },
+    [CampaignServiceType.NAVER_PLACE_RANK]: {
+      name: 'NP 순위확인',
+      additionalFields: {
+        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
+        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '순위 확인할 키워드를 입력하세요', required: true },
       }
     },
     [CampaignServiceType.NAVER_AUTO]: {
@@ -442,7 +449,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     }
     
     // 해당하는 서비스 타입이 없으면 기본 타입 반환
-    return serviceTypeInfoMap[CampaignServiceType.NAVER_TRAFFIC];
+    return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_RANK];
   };
 
   // 서비스 유형에 따른 이름 반환

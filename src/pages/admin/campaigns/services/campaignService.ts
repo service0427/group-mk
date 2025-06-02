@@ -141,8 +141,8 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   // 기본 쿼리 생성
   let query = supabase.from('campaigns').select('*');
 
-  // 서비스 타입이 있을 때만 필터링 추가
-  if (serviceType && serviceType.trim() !== '') {
+  // 서비스 타입이 'all'이 아닌 경우에만 필터링 추가
+  if (serviceType && serviceType.trim() !== '' && serviceType.toLowerCase() !== 'all') {
     query = query.eq('service_type', serviceType);
   }
 
@@ -572,6 +572,11 @@ export const getServiceTypeCode = (uiCode: string): string => {
     console.warn('getServiceTypeCode: 빈 UI 코드가 전달되었습니다.');
     return '';
   }
+  
+  // 'all' 타입은 그대로 반환
+  if (uiCode.toLowerCase() === 'all') {
+    return 'all';
+  }
 
   // CampaignServiceType enum 값인 경우 그대로 사용
   if (Object.values(CampaignServiceType).includes(uiCode as CampaignServiceType)) {
@@ -583,10 +588,10 @@ export const getServiceTypeCode = (uiCode: string): string => {
 
   // UI 코드와 DB 코드 매핑 객체 (CampaignServiceType enum 값으로 통일)
   const codeMap: Record<string, string> = {
-    // 네이버 트래픽
-    'ntraffic': CampaignServiceType.NAVER_TRAFFIC,              // → 'NaverTraffic'
-    'naver-traffic': CampaignServiceType.NAVER_TRAFFIC,
-    'navertraffic': CampaignServiceType.NAVER_TRAFFIC,
+    // 네이버 트래픽 (제거됨 - NAVER_SHOPPING_TRAFFIC으로 대체)
+    'ntraffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'naver-traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'navertraffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
 
     // 네이버 자동완성
     'naver-auto': CampaignServiceType.NAVER_AUTO,               // → 'NaverAuto'
@@ -606,6 +611,11 @@ export const getServiceTypeCode = (uiCode: string): string => {
     'nshoppingfakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
     'naver-shopping-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
 
+    // 네이버 쇼핑 순위확인
+    'nshop-rank': CampaignServiceType.NAVER_SHOPPING_RANK,
+    'nshoppingrank': CampaignServiceType.NAVER_SHOPPING_RANK,
+    'naver-shopping-rank': CampaignServiceType.NAVER_SHOPPING_RANK,
+
     // 네이버 플레이스 트래픽
     'nplace': CampaignServiceType.NAVER_PLACE_TRAFFIC,           // → 'NaverPlaceTraffic'
     'nplace-traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
@@ -622,6 +632,11 @@ export const getServiceTypeCode = (uiCode: string): string => {
     'nplace-share': CampaignServiceType.NAVER_PLACE_SHARE,       // → 'NaverPlaceShare'
     'naver-place-share': CampaignServiceType.NAVER_PLACE_SHARE,
     'nplaceshare': CampaignServiceType.NAVER_PLACE_SHARE,
+
+    // 네이버 플레이스 순위확인
+    'nplace-rank': CampaignServiceType.NAVER_PLACE_RANK,
+    'nplacerank': CampaignServiceType.NAVER_PLACE_RANK,
+    'naver-place-rank': CampaignServiceType.NAVER_PLACE_RANK,
 
     // 쿠팡 트래픽
     'coupang': CampaignServiceType.COUPANG_TRAFFIC,              // → 'CoupangTraffic'

@@ -1,12 +1,13 @@
 // 캠페인 서비스 타입 정의
 export enum CampaignServiceType {
-  NAVER_TRAFFIC = 'NaverTraffic',
   NAVER_AUTO = 'NaverAuto',
   NAVER_SHOPPING_TRAFFIC = 'NaverShoppingTraffic',
   NAVER_SHOPPING_FAKESALE = 'NaverShoppingFakeSale',
+  NAVER_SHOPPING_RANK = 'NaverShoppingRank',
   NAVER_PLACE_TRAFFIC = 'NaverPlaceTraffic',
   NAVER_PLACE_SAVE = 'NaverPlaceSave',
   NAVER_PLACE_SHARE = 'NaverPlaceShare',
+  NAVER_PLACE_RANK = 'NaverPlaceRank',
   COUPANG_TRAFFIC = 'CoupangTraffic',
   COUPANG_FAKESALE = 'CoupangFakeSale'
 }
@@ -14,13 +15,14 @@ export enum CampaignServiceType {
 // 서비스 타입 설명 (CampaignServiceType enum 기준으로 통일)
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
   // 표준 enum 형태
-  [CampaignServiceType.NAVER_TRAFFIC]: 'N 트래픽',
   [CampaignServiceType.NAVER_AUTO]: 'N 자동완성',
   [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'NS 트래픽',
   [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: 'NS 가구매',
+  [CampaignServiceType.NAVER_SHOPPING_RANK]: 'NS 순위확인',
   [CampaignServiceType.NAVER_PLACE_TRAFFIC]: 'NP 트래픽',
   [CampaignServiceType.NAVER_PLACE_SAVE]: 'NP 저장하기',
   [CampaignServiceType.NAVER_PLACE_SHARE]: 'NP 블로그공유',
+  [CampaignServiceType.NAVER_PLACE_RANK]: 'NP 순위확인',
   [CampaignServiceType.COUPANG_TRAFFIC]: 'CP 트래픽',
   [CampaignServiceType.COUPANG_FAKESALE]: 'CP 가구매'
 };
@@ -29,20 +31,22 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
 export const getServiceTypeFromPath = (platform: string, type: string, subservice?: string): CampaignServiceType => {
   // 새로운 URL 구조 파라미터 처리 (platform, type, subservice)
   if (platform === 'naver') {
-    if (type === 'traffic') {
-      return CampaignServiceType.NAVER_TRAFFIC;
-    } else if (type === 'auto') {
+    if (type === 'auto') {
       return CampaignServiceType.NAVER_AUTO;
     } else if (type === 'shopping-traffic' || (subservice === 'shopping' && type === 'traffic')) {
       return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
     } else if (type === 'shopping-fakesale' || (subservice === 'shopping' && type === 'fakesale')) {
       return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
+    } else if (type === 'shopping-rank' || (subservice === 'shopping' && type === 'rank')) {
+      return CampaignServiceType.NAVER_SHOPPING_RANK;
     } else if (type === 'place-traffic' || (subservice === 'place' && type === 'traffic')) {
       return CampaignServiceType.NAVER_PLACE_TRAFFIC;
     } else if (type === 'place-save' || (subservice === 'place' && type === 'save')) {
       return CampaignServiceType.NAVER_PLACE_SAVE;
     } else if (type === 'place-share' || (subservice === 'place' && type === 'share')) {
       return CampaignServiceType.NAVER_PLACE_SHARE;
+    } else if (type === 'place-rank' || (subservice === 'place' && type === 'rank')) {
+      return CampaignServiceType.NAVER_PLACE_RANK;
     }
   } else if (platform === 'coupang') {
     if (type === 'traffic') {
@@ -51,11 +55,14 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
       return CampaignServiceType.COUPANG_FAKESALE;
     }
   }
-  
+
   // URL 패턴 처리 (기존 호환성 유지)
   const pathname = `${platform}/${subservice ? subservice + '/' : ''}${type}`;
   if (pathname.includes('naver/shopping/fakesale') || pathname === 'naver-shopping-fakesale') {
     return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
+  }
+  if (pathname.includes('naver/shopping/rank') || pathname === 'naver-shopping-rank') {
+    return CampaignServiceType.NAVER_SHOPPING_RANK;
   }
   if (pathname.includes('naver/shopping') || pathname === 'naver-shopping-traffic') {
     return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
@@ -66,14 +73,14 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
   if (pathname.includes('naver/place/share') || pathname === 'naver-place-share') {
     return CampaignServiceType.NAVER_PLACE_SHARE;
   }
+  if (pathname.includes('naver/place/rank') || pathname === 'naver-place-rank') {
+    return CampaignServiceType.NAVER_PLACE_RANK;
+  }
   if (pathname.includes('naver/place') || pathname === 'naver-place-traffic') {
     return CampaignServiceType.NAVER_PLACE_TRAFFIC;
   }
   if (pathname.includes('naver/auto') || pathname === 'naver-auto') {
     return CampaignServiceType.NAVER_AUTO;
-  }
-  if (pathname.includes('naver/traffic') || pathname === 'naver-traffic') {
-    return CampaignServiceType.NAVER_TRAFFIC;
   }
   if (pathname.includes('coupang/fakesale') || pathname === 'coupang-fakesale') {
     return CampaignServiceType.COUPANG_FAKESALE;
@@ -81,9 +88,9 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
   if (pathname.includes('coupang') || pathname === 'coupang-traffic') {
     return CampaignServiceType.COUPANG_TRAFFIC;
   }
-  
+
   // 기본값
-  return CampaignServiceType.NAVER_TRAFFIC;
+  return CampaignServiceType.NAVER_SHOPPING_RANK;
 };
 
 // 캠페인 모달 관련 공통 타입 정의

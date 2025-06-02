@@ -132,10 +132,10 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
     loadTemplates();
   }, [isOpen, showError]);
 
-  // 템플릿 상태 변경 감지
-  useEffect(() => {
-    console.log('Templates state updated:', templates);
-  }, [templates]);
+  // 템플릿 상태 변경 감지 - 디버그용 로그 제거
+  // useEffect(() => {
+  //   console.log('Templates state updated:', templates);
+  // }, [templates]);
 
   // 템플릿 선택 시
   const handleTemplateSelect = (templateId: string) => {

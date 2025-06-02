@@ -1,4 +1,4 @@
-eximport React from 'react';
+import React from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { Slot } from './types';
 import { formatDate } from './constants';

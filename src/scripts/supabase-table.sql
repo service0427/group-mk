@@ -379,3 +379,33 @@ where
   (name is not null);
 
 create index IF not exists idx_keyword_groups_campaign on public.keyword_groups using btree (campaign_name, campaign_type) TABLESPACE pg_default;
+
+create table public.keyword_groups (
+  id serial not null,
+  user_id uuid not null,
+  name character varying(100) not null,
+  is_default boolean null default false,
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  campaign_name character varying(50) null,
+  campaign_type character varying(50) not null,
+  constraint keyword_groups_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_keyword_groups_user_id on public.keyword_groups using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists idx_keyword_groups_campaign on public.keyword_groups using btree (campaign_name, campaign_type) TABLESPACE pg_default;
+
+create unique INDEX IF not exists idx_unique_group_name_per_user on public.keyword_groups using btree (user_id, name, campaign_type) TABLESPACE pg_default;
+
+
+create table public.service_keyword_field_mappings (
+  id uuid not null default gen_random_uuid (),
+  service_type text not null,
+  field_mapping jsonb not null,
+  ui_config jsonb not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint service_keyword_field_mappings_pkey primary key (id),
+  constraint service_keyword_field_mappings_service_type_key unique (service_type)
+) TABLESPACE pg_default;

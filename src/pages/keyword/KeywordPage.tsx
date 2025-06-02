@@ -78,20 +78,31 @@ const KeywordPage: React.FC = () => {
 
   // 필터링된 그룹 목록 (선택된 서비스 타입에 따라)
   const filteredGroups = useMemo(() => {
+    console.log('=== 그룹 필터링 디버그 ===');
+    console.log('selectedServiceType:', selectedServiceType);
+    console.log('all groups:', groups);
+    console.log('groups with campaignType:', groups.map(g => ({ id: g.id, name: g.name, campaignType: g.campaignType })));
+    
     if (!selectedServiceType) {
       return [];
     }
-    return groups.filter(group => group.campaignType === selectedServiceType);
+    
+    const filtered = groups.filter(group => group.campaignType === selectedServiceType);
+    console.log('filtered groups:', filtered);
+    return filtered;
   }, [groups, selectedServiceType]);
 
   // 서비스 타입별 그룹 수 계산
   const serviceTypeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
+    console.log('=== 서비스 타입 카운트 디버그 ===');
     groups.forEach(group => {
       if (group.campaignType) {
+        console.log(`group ${group.id}: campaignType = "${group.campaignType}"`);
         counts[group.campaignType] = (counts[group.campaignType] || 0) + 1;
       }
     });
+    console.log('final counts:', counts);
     return counts;
   }, [groups]);
 
@@ -165,7 +176,29 @@ const KeywordPage: React.FC = () => {
   };
 
   // 서비스 타입 변경 핸들러
-  const handleServiceTypeChange = (serviceType: string) => {
+  const handleServiceTypeChange = (servicePath: string) => {
+    console.log('handleServiceTypeChange received path:', servicePath);
+    
+    // kebab-case path를 CampaignServiceType enum 값으로 변환
+    // 동적으로 변환 맵 생성
+    const pathToServiceType: Record<string, string> = {};
+    Object.entries(CampaignServiceType).forEach(([key, value]) => {
+      // enum 값을 kebab-case로 변환
+      // 예: NaverPlaceTraffic -> naver-place-traffic
+      const kebabCase = value
+        .replace(/([A-Z])/g, (match, p1, offset) => {
+          return offset > 0 ? '-' + p1 : p1;
+        })
+        .toLowerCase();
+      pathToServiceType[kebabCase] = value;
+    });
+    
+    console.log('pathToServiceType map:', pathToServiceType);
+    
+    // 변환된 서비스 타입 또는 원본 유지
+    const serviceType = pathToServiceType[servicePath] || servicePath;
+    console.log('Converted serviceType:', serviceType);
+    
     setSelectedServiceType(serviceType);
     // 서비스 타입 변경 시 키워드 목록 초기화
     clearKeywords();

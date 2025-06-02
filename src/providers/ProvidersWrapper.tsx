@@ -1,6 +1,5 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/auth/providers/AuthProvider';
 import { SettingsProvider } from './SettingsProvider';
 import { TranslationProvider } from './TranslationProvider';
 import { UIProvider } from './UIProvider';
@@ -24,7 +23,7 @@ const queryClient = new QueryClient({
  * - LayoutProvider, LoadersProvider, MenusProvider, ToastProvider, DialogProvider가 UIProvider로 통합됨
  * - Context 분할 패턴을 통해 선택적 구독 가능
  * - 메모이제이션을 통해 불필요한 리렌더링 방지
- * - 선택적 상태 구독을 위한 특화된 훅 제공
+ * - AuthProvider는 Router 내부에서 초기화되도록 변경됨
  */
 const ProvidersWrapper = ({ children }: PropsWithChildren) => {
   return (
@@ -33,11 +32,9 @@ const ProvidersWrapper = ({ children }: PropsWithChildren) => {
         <SettingsProvider>
           <TranslationProvider>
             <LogoutProvider>
-              <AuthProvider>
-                <UIProvider>
-                  {children}
-                </UIProvider>
-              </AuthProvider>
+              <UIProvider>
+                {children}
+              </UIProvider>
             </LogoutProvider>
           </TranslationProvider>
         </SettingsProvider>

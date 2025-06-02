@@ -78,6 +78,7 @@ const Login = () => {
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
   const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('beginner');
   const [showPassword, setShowPassword] = useState(false);
+  const [showErrorHelp, setShowErrorHelp] = useState(false);
   const { login, resetPassword } = useAuthContext();
   const { currentLayout } = useLayout();
   const navigate = useNavigate();
@@ -88,21 +89,21 @@ const Login = () => {
   useEffect(() => {
     // localStorage 완전 초기화
     localStorage.clear();
-    
+
     // sessionStorage 완전 초기화
     sessionStorage.clear();
-    
+
     // 개발 환경에서는 로그 출력
     if (import.meta.env.MODE === 'development') {
       // 로그인 페이지 진입: localStorage 및 sessionStorage 초기화 완료
     }
   }, []);
-  
+
   // 회원가입 완료 메시지 표시
   useEffect(() => {
     // 회원가입으로부터 전달된 이메일 확인
     const registeredEmail = location.state?.registeredEmail;
-    
+
     if (registeredEmail) {
       // 회원가입 완료 메시지 표시
       toast.success('회원가입이 완료되었습니다. 로그인해주세요.');
@@ -113,7 +114,7 @@ const Login = () => {
   const getInitialValues = () => {
     // 회원가입으로부터 전달된 이메일 확인
     const registeredEmail = location.state?.registeredEmail;
-    
+
     // 전달된 이메일이 있으면 이메일만 설정
     if (registeredEmail) {
       return {
@@ -121,7 +122,7 @@ const Login = () => {
         email: registeredEmail
       };
     }
-    
+
     // 개발 환경 체크 (Vite)
     const isDevelopment = import.meta.env.MODE === 'development';
     return isDevelopment ? {
@@ -155,7 +156,7 @@ const Login = () => {
         navigate(from, { replace: true });
 
       } catch (error: any) {
-        
+
         setStatus('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
         setSubmitting(false);
         setLoading(false);
@@ -189,7 +190,7 @@ const Login = () => {
       toast.success('비밀번호 재설정 이메일이 전송되었습니다. 이메일을 확인해주세요.');
       setShowResetPasswordForm(false);
     } catch (error: any) {
-      
+
       toast.error(`비밀번호 재설정 요청에 실패했습니다: ${error.message}`);
     } finally {
       setResetPasswordLoading(false);
@@ -216,7 +217,7 @@ const Login = () => {
                 회원가입
               </Link>
             </div>
-            
+
             {/* 개발 환경에서만 테스트 계정 정보 안내 표시 */}
             {import.meta.env.MODE === "development" && (
               <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-xs">
@@ -224,7 +225,7 @@ const Login = () => {
                 <p>테스트 계정 정보가 자동으로 입력되었습니다</p>
                 <p className="mt-1">이메일: {testCredentials[selectedRole].email}</p>
                 <p>비밀번호: {testCredentials[selectedRole].password}</p>
-                
+
                 {/* 역할 선택 버튼 그룹 */}
                 <div className="mt-3">
                   <p className="font-semibold mb-1">역할 선택:</p>
@@ -233,11 +234,10 @@ const Login = () => {
                       <button
                         key={role}
                         type="button"
-                        className={`px-2 py-1 rounded text-xs ${
-                          selectedRole === role
+                        className={`px-2 py-1 rounded text-xs ${selectedRole === role
                             ? 'bg-blue-600 text-white font-semibold'
                             : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                        }`}
+                          }`}
                         onClick={() => setSelectedRole(role as keyof typeof testCredentials)}
                       >
                         {data.label}
@@ -323,6 +323,51 @@ const Login = () => {
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
+
+          {/* 로그인 오류 해결 도움말 - 확장 가능한 텍스트 */}
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              className="text-xs text-gray-500 hover:text-gray-700 transition-colors inline-flex items-center gap-1"
+              onClick={() => setShowErrorHelp(!showErrorHelp)}
+            >
+              <span>로그인 오류가 발생하나요?</span>
+              <KeenIcon
+                icon={showErrorHelp ? "arrow-up" : "arrow-down"}
+                className="text-2xs"
+              />
+            </button>
+
+            {/* 확장 영역 */}
+            {showErrorHelp && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-3">
+                  브라우저 캐시 문제로 로그인이 안 될 수 있습니다.
+                  <br />
+                  아래 버튼을 클릭하여 문제를 해결해보세요.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-sm bg-blue-100 hover:bg-blue-200 text-blue-700 border-0 px-4 py-2 transition-colors"
+                  onClick={() => {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    toast.success('문제가 해결되었습니다. 다시 로그인해주세요.');
+                    // 폼 초기화
+                    formik.resetForm();
+                    setShowErrorHelp(false);
+                    // 페이지 새로고침
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 1000);
+                  }}
+                >
+                  <KeenIcon icon="arrows-loop" className="text-blue-600 me-1.5" />
+                  <span className="text-blue-700 font-medium">문제 해결하기</span>
+                </button>
+              </div>
+            )}
+          </div>
         </form>
       ) : (
         // 비밀번호 재설정 폼

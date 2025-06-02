@@ -38,8 +38,11 @@ export const LogoutTransition: React.FC = () => {
 
   // 로그아웃 중일 때만 오버레이 요소 렌더링
   return isLoggingOut ? (
-    <div ref={overlayRef} className="logout-transition-overlay">
-      {/* 선택적으로 로딩 아이콘 추가 가능 */}
+    <div ref={overlayRef} className="logout-transition-overlay with-fade">
+      <div className="logout-loading-content">
+        <div className="logout-spinner"></div>
+        <p className="logout-message">로그아웃 중...</p>
+      </div>
     </div>
   ) : null;
 };

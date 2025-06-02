@@ -1,4 +1,4 @@
-import { UserInfoDisplay } from './UserInfoDisplay';
+import { UserInfoDisplayV2 as UserInfoDisplay } from './UserInfoDisplayV2';
 
 const HeaderTopbar = () => {
   return (

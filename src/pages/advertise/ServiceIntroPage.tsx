@@ -30,6 +30,11 @@ const ServiceIntroPage: React.FC = () => {
 
   // 두 번째 useEffect는 데이터 로딩 처리
   useEffect(() => {
+    // 상태 초기화
+    setError(null);
+    setServiceData(null);
+    setLoading(true);
+    
     if (!platform || !type) {
       setError('필수 파라미터가 없습니다.');
       setLoading(false);
@@ -41,14 +46,17 @@ const ServiceIntroPage: React.FC = () => {
 
       if (!data) {
         setError('서비스 데이터를 찾을 수 없습니다.');
+        setServiceData(null);
         setLoading(false);
         return;
       }
 
       setServiceData(data);
+      setError(null);
       setLoading(false);
     } catch (err) {
       setError('서비스 정보를 불러오는 중 오류가 발생했습니다.');
+      setServiceData(null);
       setLoading(false);
     }
   }, [platform, subservice, type]);

@@ -166,31 +166,31 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 네이버 쇼핑 트래픽 */}
           <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/campaigns/info/naver-shopping-traffic" replace />} />
           <Route path="/advertise/naver/shopping/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-shopping-traffic" replace />} />
-          
+
           {/* 네이버 플레이스 저장 */}
           <Route path="/advertise/naver/place/save" element={<Navigate to="/advertise/campaigns/info/naver-place-save" replace />} />
           <Route path="/advertise/naver/place/save/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-save" replace />} />
-          
+
           {/* 네이버 플레이스 공유 */}
           <Route path="/advertise/naver/place/share" element={<Navigate to="/advertise/campaigns/info/naver-place-share" replace />} />
           <Route path="/advertise/naver/place/share/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-share" replace />} />
-          
+
           {/* 네이버 플레이스 트래픽 */}
           <Route path="/advertise/naver/place/traffic" element={<Navigate to="/advertise/campaigns/info/naver-place-traffic" replace />} />
           <Route path="/advertise/naver/place/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-traffic" replace />} />
-          
+
           {/* 네이버 자동완성 */}
           <Route path="/advertise/naver/auto" element={<Navigate to="/advertise/campaigns/info/naver-auto" replace />} />
           <Route path="/advertise/naver/auto/campaign" element={<Navigate to="/advertise/campaigns/my/naver-auto" replace />} />
-          
+
           {/* 네이버 트래픽 */}
           <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/campaigns/info/naver-traffic" replace />} />
           <Route path="/advertise/naver/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-traffic" replace />} />
-          
+
           {/* 쿠팡 트래픽 */}
           <Route path="/advertise/coupang/traffic" element={<Navigate to="/advertise/campaigns/info/coupang-traffic" replace />} />
           <Route path="/advertise/coupang/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/coupang-traffic" replace />} />
-          
+
           {/* 오늘의집 트래픽 */}
           <Route path="/advertise/ohouse/traffic" element={<Navigate to="/advertise/campaigns/info/ohouse-traffic" replace />} />
           <Route path="/advertise/ohouse/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/ohouse-traffic" replace />} />
@@ -210,10 +210,10 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 총판 캠페인 신청 라우트 */}
           <Route path="/campaign-request" element={<SuspenseWrapper><CampaignRequestPage /></SuspenseWrapper>} />
           <Route path="/campaign-request/add" element={<SuspenseWrapper><CampaignAddPage /></SuspenseWrapper>} />
-          
+
           {/* 총판 작업 입력 라우트 */}
           <Route path="/admin/work-input" element={<SuspenseWrapper><WorkInputPage /></SuspenseWrapper>} />
-          
+
           {/* 캠페인 관리 페이지 */}
           <Route path="/admin/campaigns/manage" element={<SuspenseWrapper><CampaignManagePage /></SuspenseWrapper>} />
 
@@ -286,7 +286,7 @@ initializeComponentMap({
   '/dashboard/agency': AgencyDashboardPage,
   '/dashboard/advertiser': AdvertiserDashboardPage,
   '/dashboard/beginner': BeginnerDashboardPage,
-  
+
   // 관리자 페이지
   '/admin/users': UsersPage,
   '/admin/chat': ChatManagePage,
@@ -298,46 +298,46 @@ initializeComponentMap({
   '/admin/work-input': WorkInputPage,
   '/admin/site/search-limits': SearchLimitsPage,
   '/admin/campaigns/manage': CampaignManagePage,
-  
+
   // 광고 페이지
   '/advertise/campaigns/info/*': InfoPage,
   '/advertise/campaigns/my/*': CampaignPage,
-  
+
   // 마이페이지
   '/my-services': MyServicesPage,
   '/myinfo/profile': ProfilePage,
   '/myinfo/services': ServicesPage,
   '/myinfo/cash-requests': CashRequestsPage,
   '/myinfo/notifications': NotificationsPage,
-  
+
   // 캐시 페이지
   '/cash/guide': GuidePage,
   '/cash/charge': ChargePage,
   '/cash/history': CashHistoryPage,
-  
+
   // 포인트 페이지
   '/point/history': PointHistoryPage,
-  
+
   // 공지사항 페이지
   '/notice': NoticePage,
   '/notice/*': NoticeDetailPage,
   '/admin/site/notice/new': NoticeEditorPage,
   '/admin/site/notice/edit/*': NoticeEditorPage,
-  
+
   // FAQ 페이지
   '/faq': FAQPage,
-  
+
   // 키워드 페이지
   '/keyword': KeywordPage,
-  
+
   // 검색 페이지
   '/search-shop': SearchShopInfo,
   '/search-place': SearchPlaceInfo,
   '/search-history': SearchHistoryPage,
-  
+
   // 출금 페이지
   '/withdraw': WithdrawRequestPage,
-  
+
   // 총판 캠페인 요청 페이지
   '/campaign-request': CampaignRequestPage,
   '/campaign-request/add': CampaignAddPage,

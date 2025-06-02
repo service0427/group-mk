@@ -43,16 +43,16 @@ interface ServiceTypeInfo {
 
 // 서비스 유형별 정보 정의 (추가 필드 제거됨)
 const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
-  [CampaignServiceType.NAVER_TRAFFIC]: {
-    name: 'N 트래픽',
-    additionalFields: {}
-  },
   [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
     name: 'NS 트래픽',
     additionalFields: {}
   },
   [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: {
     name: 'NS 가구매',
+    additionalFields: {}
+  },
+  [CampaignServiceType.NAVER_SHOPPING_RANK]: {
+    name: 'NS 순위확인',
     additionalFields: {}
   },
   [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
@@ -65,6 +65,10 @@ const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
   },
   [CampaignServiceType.NAVER_PLACE_SHARE]: {
     name: 'NP 블로그공유',
+    additionalFields: {}
+  },
+  [CampaignServiceType.NAVER_PLACE_RANK]: {
+    name: 'NP 순위확인',
     additionalFields: {}
   },
   [CampaignServiceType.NAVER_AUTO]: {
@@ -105,7 +109,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
   onFormDataChange,
   additionalFields,
   onAdditionalFieldsChange,
-  serviceType = CampaignServiceType.NAVER_TRAFFIC,
+  serviceType = CampaignServiceType.NAVER_SHOPPING_RANK,
   loading = false,
   error = null,
   onBannerPreview,
@@ -180,7 +184,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       return serviceTypeInfoMap[serviceType as any];
     }
     
-    return serviceTypeInfoMap[CampaignServiceType.NAVER_TRAFFIC];
+    return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_RANK];
   };
 
   // 추가 필드 값 변경 핸들러

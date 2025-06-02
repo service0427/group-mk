@@ -20,13 +20,14 @@ export const CAMPAIGNS: CampaignConfig[] = [
     serviceType: '검색엔진',
     logo: '/media/ad-brand/naver.png',
     types: [
-      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC], code: CampaignServiceType.NAVER_TRAFFIC },
-      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO], code: CampaignServiceType.NAVER_AUTO },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_RANK], code: CampaignServiceType.NAVER_SHOPPING_RANK },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC], code: CampaignServiceType.NAVER_SHOPPING_TRAFFIC },
-      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE], code: CampaignServiceType.NAVER_SHOPPING_FAKESALE },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_RANK], code: CampaignServiceType.NAVER_PLACE_RANK },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC], code: CampaignServiceType.NAVER_PLACE_TRAFFIC },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE], code: CampaignServiceType.NAVER_PLACE_SAVE },
-      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE], code: CampaignServiceType.NAVER_PLACE_SHARE }
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE], code: CampaignServiceType.NAVER_PLACE_SHARE },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO], code: CampaignServiceType.NAVER_AUTO },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE], code: CampaignServiceType.NAVER_SHOPPING_FAKESALE }
     ]
   },
   {

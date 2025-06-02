@@ -81,13 +81,14 @@ const IntegratedCampaignPage: React.FC = () => {
 
     // 서비스 타입에서 URL 경로 추출
     const typeMap: Record<CampaignServiceType, string> = {
-      [CampaignServiceType.NAVER_TRAFFIC]: 'traffic',
       [CampaignServiceType.NAVER_AUTO]: 'auto',
       [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'shopping-traffic',
       [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: 'shopping-fakesale',
+      [CampaignServiceType.NAVER_SHOPPING_RANK]: 'shopping-rank',
       [CampaignServiceType.NAVER_PLACE_TRAFFIC]: 'place-traffic',
       [CampaignServiceType.NAVER_PLACE_SAVE]: 'place-save',
       [CampaignServiceType.NAVER_PLACE_SHARE]: 'place-share',
+      [CampaignServiceType.NAVER_PLACE_RANK]: 'place-rank',
       [CampaignServiceType.COUPANG_TRAFFIC]: 'traffic',
       [CampaignServiceType.COUPANG_FAKESALE]: 'fakesale'
     };

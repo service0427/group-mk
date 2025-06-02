@@ -7,6 +7,9 @@ export const STATUS_OPTIONS = [
   {"code": "pending", "name": "대기중"},
   {"code": "approved", "name": "승인됨"},
   {"code": "rejected", "name": "반려됨"},
+  {"code": "completed", "name": "완료"},
+  {"code": "pending_user_confirm", "name": "완료대기"},
+  {"code": "refund", "name": "환불"},
 ];
 
 // 날짜 포맷 함수

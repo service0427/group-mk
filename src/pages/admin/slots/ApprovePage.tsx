@@ -28,6 +28,7 @@ import LoadingState from './components/LoadingState';
 import AuthRequired from './components/AuthRequired';
 import SlotMemoModal from './components/SlotMemoModal';
 import ApprovalConfirmModal from './components/ApprovalConfirmModal';
+import SlotDetailModal from './components/SlotDetailModal';
 
 // 엑셀 내보내기 서비스 import
 import { exportFilteredSlotsToExcel, exportSelectedSlotsToExcel } from './services/excelExportService';
@@ -86,6 +87,16 @@ const ApprovePage: React.FC = () => {
   
   // 엑셀 내보내기 모달 상태
   const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
+  
+  
+  // 슬롯 상세 모달 상태 - 하나의 객체로 관리
+  const [detailModalState, setDetailModalState] = useState<{
+    isOpen: boolean;
+    slot: Slot | null;
+  }>({
+    isOpen: false,
+    slot: null
+  });
   
   // 필터링된 슬롯들을 useMemo로 계산
   const filteredSlots = useMemo(() => {
@@ -1092,20 +1103,24 @@ const ApprovePage: React.FC = () => {
     }
   };
 
-  // 메모 모달 열기 함수
-  const handleOpenMemoModal = (slotId: string) => {
-    // 현재 슬롯의 메모 정보 가져오기
-
-
-
-
+  // 상세 보기 모달 열기 함수
+  const handleOpenDetailModal = useCallback((slotId: string) => {
     const slot = [...slots, ...filteredSlots].find(s => s.id === slotId);
+    if (slot) {
+      setDetailModalState({
+        isOpen: true,
+        slot: slot
+      });
+    }
+  }, [slots, filteredSlots]);
 
+  // 메모 모달 열기 함수
+  const handleOpenMemoModal = useCallback((slotId: string) => {
+    // 현재 슬롯의 메모 정보 가져오기
+    const slot = [...slots, ...filteredSlots].find(s => s.id === slotId);
 
     if (slot) {
       const currentMemo = slot.mat_reason || '';
-
-
 
       // 로그에 input_data의 구조 출력
       if (slot.input_data) {
@@ -1119,7 +1134,7 @@ const ApprovePage: React.FC = () => {
     } else {
 
     }
-  };
+  }, [slots, filteredSlots]);
 
   // 메모 모달 닫기 함수
   const handleCloseMemoModal = () => {
@@ -1214,7 +1229,7 @@ const ApprovePage: React.FC = () => {
   };
   
   // 엑셀 내보내기 처리
-  const handleExcelExport = (template: ExcelTemplate) => {
+  const handleExcelExport = useCallback((template: ExcelTemplate) => {
     try {
       if (selectedSlots.length > 0) {
         // 선택된 슬롯만 내보내기
@@ -1228,7 +1243,7 @@ const ApprovePage: React.FC = () => {
     } catch (error: any) {
       showError(error.message || '엑셀 내보내기 중 오류가 발생했습니다.');
     }
-  };
+  }, [filteredSlots, selectedSlots, showSuccess, showError]);
 
   // 초기 로딩 중에는 간소화된 템플릿 반환
   if (authLoading && !initialized) {
@@ -1258,6 +1273,7 @@ const ApprovePage: React.FC = () => {
     >
       <Toaster position="top-right" richColors closeButton />
         
+
         {/* 작업 시작일 안내 */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
@@ -1315,6 +1331,7 @@ const ApprovePage: React.FC = () => {
                 onReject={handleRejectSlot}
                 onComplete={handleCompleteSlot}
                 onMemo={handleOpenMemoModal}
+                onDetail={handleOpenDetailModal}
                 selectedSlots={selectedSlots}
                 onSelectedSlotsChange={setSelectedSlots}
               />
@@ -1372,10 +1389,25 @@ const ApprovePage: React.FC = () => {
               />
               
               {/* 엑셀 내보내기 모달 */}
-              <ExcelExportModal
-                isOpen={excelModalOpen}
-                onClose={() => setExcelModalOpen(false)}
-                onExport={handleExcelExport}
+              {excelModalOpen && (
+                <ExcelExportModal
+                  isOpen={excelModalOpen}
+                  onClose={() => setExcelModalOpen(false)}
+                  onExport={handleExcelExport}
+                />
+              )}
+              
+              {/* 슬롯 상세 모달 */}
+              <SlotDetailModal
+                isOpen={detailModalState.isOpen}
+                onClose={() => {
+                  setDetailModalState({
+                    isOpen: false,
+                    slot: null
+                  });
+                }}
+                slot={detailModalState.slot}
+                selectedServiceType={selectedServiceType}
               />
             </>
           )}

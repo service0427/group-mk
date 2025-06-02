@@ -76,7 +76,7 @@ const performanceMonitor = {
             try {
                 performance.measure(name, startMark, endMark);
                 const measure = performance.getEntriesByName(name)[0];
-                console.log(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
+                // console.log(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
             } catch (e) {
                 // 무시
             }
@@ -89,11 +89,11 @@ const performanceMonitor = {
             try {
                 const result = await fn();
                 const end = performance.now();
-                console.log(`[Performance] ${name}: ${(end - start).toFixed(2)}ms`);
+                // console.log(`[Performance] ${name}: ${(end - start).toFixed(2)}ms`);
                 return result;
             } catch (error) {
                 const end = performance.now();
-                console.error(`[Performance] ${name} failed after ${(end - start).toFixed(2)}ms`);
+                // console.error(`[Performance] ${name} failed after ${(end - start).toFixed(2)}ms`);
                 throw error;
             }
         } else {
@@ -999,8 +999,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             cleanupAppStorage();
 
             // 4단계: 페이지 리다이렉트
-            // React Router를 사용하고 있으므로 해시 기반 라우팅 경로로 이동
-            window.location.href = '/#/auth/login';
+            // HashRouter를 사용하므로 해시 변경으로 리다이렉션
+            const timestamp = new Date().getTime();
+            window.location.hash = `#/auth/login?t=${timestamp}`;
 
             return true;
         } catch (error) {
@@ -1013,7 +1014,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             authHelper.removeAuth();
 
             // 강제 리다이렉트
-            window.location.href = '/#/auth/login';
+            const timestamp = new Date().getTime();
+            window.location.hash = `#/auth/login?t=${timestamp}`;
             
             return false;
         } finally {
@@ -1081,21 +1083,23 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         let inactivityTimer: number;
         let lastActivity = Date.now();
 
-        const resetInactivityTimer = () => {
+        const resetInactivityTimer = (isInitial = false) => {
             const now = Date.now();
-            // 마지막 활동으로부터 1초 이상 지났을 때만 타이머 리셋
-            if (now - lastActivity < 1000) return;
+            // 초기 설정이 아닌 경우, 마지막 활동으로부터 1초 이상 지났을 때만 타이머 리셋
+            if (!isInitial && now - lastActivity < 1000) return;
 
             lastActivity = now;
 
             if (inactivityTimer) clearTimeout(inactivityTimer);
 
-            console.log('[Auto Logout] Timer reset, will logout in 30 minutes');
+            // console.log(`[Auto Logout] Timer reset, will logout in ${INACTIVITY_TIMEOUT / 60000} minutes`);
             
             inactivityTimer = window.setTimeout(() => {
                 console.log('[Auto Logout] Inactivity timeout reached, logging out...');
                 logout();
             }, INACTIVITY_TIMEOUT);
+            
+            // 타이머 설정 완료
         };
 
         // throttle 함수 구현 (lodash 대신 간단한 구현)
@@ -1114,12 +1118,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         const throttledReset = throttle(resetInactivityTimer, 1000);
 
         // 초기 타이머 설정
-        console.log('[Auto Logout] Setting up inactivity timer...');
-        resetInactivityTimer();
+        resetInactivityTimer(true); // 초기 설정임을 명시
 
         // 사용자 활동 이벤트 리스너 - 중요한 이벤트만 선택
         const events = ['mousedown', 'keypress', 'touchstart', 'mousemove', 'scroll', 'click'];
-        console.log('[Auto Logout] Adding event listeners:', events);
+        // 이벤트 리스너 등록
         
         events.forEach(event => {
             window.addEventListener(event, throttledReset, { passive: true });
@@ -1131,7 +1134,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         }, 5 * 60 * 1000);
 
         return () => {
-            console.log('[Auto Logout] Cleaning up inactivity timer...');
+            // console.log('[Auto Logout] Cleaning up inactivity timer...');
             if (inactivityTimer) clearTimeout(inactivityTimer);
             clearInterval(debugInterval);
             events.forEach(event => {

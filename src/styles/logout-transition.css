@@ -15,11 +15,13 @@ body.logout-transition-active {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   /* 매우 높은 z-index 값 사용 - 모든 요소보다 앞에 표시 */
   z-index: 99999;
-  /* 애니메이션 없이 즉시 완전 불투명하게 표시 */
-  opacity: 1;
+  /* 기본적으로 투명 */
+  opacity: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -29,6 +31,13 @@ body.logout-transition-active {
   will-change: opacity;
   /* 포인터 이벤트 차단 */
   pointer-events: all;
+  /* 부드러운 전환 효과 */
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* 페이드 애니메이션 적용 */
+.logout-transition-overlay.with-fade {
+  opacity: 1;
 }
 
 /* 다크 모드에서는 어두운 배경 사용 */
@@ -36,7 +45,51 @@ body.logout-transition-active {
 .dark .logout-transition-overlay,
 html.dark .logout-transition-overlay,
 body.dark .logout-transition-overlay {
-  background-color: #1a1a1a;
+  background-color: rgba(26, 26, 26, 0.98);
+}
+
+/* 로딩 컨텐츠 컨테이너 */
+.logout-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* 로딩 스피너 */
+.logout-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: logout-spin 0.8s linear infinite;
+}
+
+/* 다크모드 스피너 */
+.dark .logout-spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+}
+
+/* 로딩 메시지 */
+.logout-message {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 다크모드 메시지 */
+.dark .logout-message {
+  color: #9ca3af;
+}
+
+/* 스피너 회전 애니메이션 */
+@keyframes logout-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 선택적으로 사용할 페이드 인 애니메이션 */

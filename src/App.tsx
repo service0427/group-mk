@@ -8,6 +8,7 @@ import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { Dialog } from '@/components/dialog';
 import { StandLayout } from '@/layouts/stand';
+import { AuthProviderV2 } from '@/auth/providers/AuthProviderV2';
 
 const App = () => {
   const { settings } = useSettings();
@@ -79,24 +80,19 @@ const App = () => {
       {/* 가장 먼저 로그아웃 전환 컴포넌트 렌더링 - 최상위 우선순위 */}
       <LogoutTransition />
 
-      <PathnameProvider>
-        <ScrollToTop />
+      <AuthProviderV2>
+        <PathnameProvider>
+          <ScrollToTop />
 
-        {/* 전역 다이얼로그 컴포넌트 */}
-        <Dialog />
+          {/* 전역 다이얼로그 컴포넌트 */}
+          <Dialog />
 
-        {/* 라우팅 구조 */}
-        <Routes>
-          {/* AppRouting은 로그아웃 중이 아닐 때만 의미가 있음 */}
-          {!isLoggingOut && <Route path="/*" element={<AppRouting />} />}
-        </Routes>
-        {/* 로그아웃 중이면 라우팅 렌더링 방지 */}
-        {isLoggingOut && (
-          <div style={{ display: 'none' }}>
-            {/* 의도적으로 비워둠 - 로그아웃 중 다른 컨텐츠 차단 */}
-          </div>
-        )}
-      </PathnameProvider>
+          {/* 라우팅 구조 */}
+          <Routes>
+            <Route path="/*" element={<AppRouting />} />
+          </Routes>
+        </PathnameProvider>
+      </AuthProviderV2>
     </HashRouter>
   );
 };

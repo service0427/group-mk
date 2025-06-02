@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import AuthMiddleware from '@/auth/middleware/AuthMiddleware';
+import AuthMiddlewareV2 from '@/auth/middleware/AuthMiddlewareV2';
 import { AppRoutingSetup } from '.';
 
 /**
@@ -8,9 +8,9 @@ import { AppRoutingSetup } from '.';
  */
 const AppRouting = (): ReactElement => {
   return (
-    <AuthMiddleware>
+    <AuthMiddlewareV2>
       <AppRoutingSetup />
-    </AuthMiddleware>
+    </AuthMiddlewareV2>
   );
 };
 

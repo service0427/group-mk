@@ -21,6 +21,9 @@ export const getServiceTypeCode = (serviceType: string | CampaignServiceType): s
   if (serviceType === 'naver-shopping-fakesale') {
     return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
   }
+  if (serviceType === 'naver-shopping-rank') {
+    return CampaignServiceType.NAVER_SHOPPING_RANK;
+  }
   if (serviceType === 'naver-place-traffic') {
     return CampaignServiceType.NAVER_PLACE_TRAFFIC;
   }
@@ -30,8 +33,11 @@ export const getServiceTypeCode = (serviceType: string | CampaignServiceType): s
   if (serviceType === 'naver-place-share') {
     return CampaignServiceType.NAVER_PLACE_SHARE;
   }
+  if (serviceType === 'naver-place-rank') {
+    return CampaignServiceType.NAVER_PLACE_RANK;
+  }
   if (serviceType === 'naver-traffic') {
-    return CampaignServiceType.NAVER_TRAFFIC;
+    return CampaignServiceType.NAVER_SHOPPING_RANK;
   }
   if (serviceType === 'naver-auto') {
     return CampaignServiceType.NAVER_AUTO;

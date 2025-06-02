@@ -139,6 +139,27 @@ export const serviceData: Record<string, any> = {
             icon: "refresh-cw"
           }
         ]
+      },
+      rank: {
+        name: "네이버 플레이스 순위확인",
+        description: "네이버 플레이스에서 매장의 검색 순위를 실시간으로 확인하고 모니터링",
+        features: [
+          {
+            title: "지역별 순위 추적",
+            description: "지역별, 카테고리별 매장 순위를 실시간으로 모니터링",
+            icon: "map-pin"
+          },
+          {
+            title: "경쟁업체 분석",
+            description: "동일 지역 경쟁업체의 순위 변동을 추적",
+            icon: "users"
+          },
+          {
+            title: "리뷰 영향도 분석",
+            description: "리뷰와 평점이 순위에 미치는 영향을 분석",
+            icon: "message-circle"
+          }
+        ]
       }
     },
     shopping: {
@@ -155,6 +176,43 @@ export const serviceData: Record<string, any> = {
             title: "검색 알고리즘 최적화",
             description: "네이버 쇼핑 검색 결과에서 상위 노출을 위한 최적화",
             icon: "search"
+          }
+        ]
+      },
+      fakesale: {
+        name: "네이버 쇼핑 가구매",
+        description: "네이버 쇼핑에서 가상 구매를 통한 인기도 상승 마케팅",
+        features: [
+          {
+            title: "인기도 상승",
+            description: "상품의 판매량과 인기도를 높여 노출 증가",
+            icon: "trending-up"
+          },
+          {
+            title: "신뢰도 향상",
+            description: "구매 후기와 평점을 통한 상품 신뢰도 향상",
+            icon: "star"
+          }
+        ]
+      },
+      rank: {
+        name: "네이버 쇼핑 순위확인",
+        description: "네이버 쇼핑에서 상품의 검색 순위를 실시간으로 확인하고 모니터링",
+        features: [
+          {
+            title: "실시간 순위 추적",
+            description: "주요 키워드별 상품 순위를 실시간으로 모니터링",
+            icon: "activity"
+          },
+          {
+            title: "경쟁사 분석",
+            description: "경쟁 상품의 순위 변동을 추적하여 전략 수립",
+            icon: "bar-chart"
+          },
+          {
+            title: "순위 변동 알림",
+            description: "순위 변동시 즉시 알림을 받아 빠른 대응 가능",
+            icon: "bell"
           }
         ]
       }
@@ -228,16 +286,20 @@ export const getServiceTypeFromPath = (
     return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
   } else if (platform === 'naver' && subservice === 'shopping' && type === 'fakesale') {
     return CampaignServiceType.NAVER_SHOPPING_FAKESALE;
+  } else if (platform === 'naver' && subservice === 'shopping' && type === 'rank') {
+    return CampaignServiceType.NAVER_SHOPPING_RANK;
   } else if (platform === 'naver' && subservice === 'place' && type === 'traffic') {
     return CampaignServiceType.NAVER_PLACE_TRAFFIC;
   } else if (platform === 'naver' && subservice === 'place' && type === 'save') {
     return CampaignServiceType.NAVER_PLACE_SAVE;
   } else if (platform === 'naver' && subservice === 'place' && type === 'share') {
     return CampaignServiceType.NAVER_PLACE_SHARE;
+  } else if (platform === 'naver' && subservice === 'place' && type === 'rank') {
+    return CampaignServiceType.NAVER_PLACE_RANK;
   } else if (platform === 'naver' && type === 'auto') {
     return CampaignServiceType.NAVER_AUTO;
   } else if (platform === 'naver' && type === 'traffic') {
-    return CampaignServiceType.NAVER_TRAFFIC;
+    return CampaignServiceType.NAVER_SHOPPING_RANK;
   } else if (platform === 'coupang' && type === 'traffic') {
     return CampaignServiceType.COUPANG_TRAFFIC;
   } else if (platform === 'coupang' && type === 'fakesale') {
@@ -245,7 +307,7 @@ export const getServiceTypeFromPath = (
   }
 
   // 일치하는 서비스 타입이 없는 경우 기본값 반환
-  return CampaignServiceType.NAVER_TRAFFIC;
+  return CampaignServiceType.NAVER_SHOPPING_RANK;
 };
 
 // 캠페인 데이터 조회 함수

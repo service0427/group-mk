@@ -68,21 +68,25 @@ const CampaignAddPage: React.FC = () => {
     // 레거시 타입 매핑
     switch (type) {
       case 'ntraffic':
-        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
       case 'NaverShopTraffic':
         return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
+      case 'NaverShoppingRank':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_RANK];
       case 'NaverPlaceTraffic':
         return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC];
       case 'NaverPlaceSave':
         return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE];
       case 'NaverPlaceShare':
         return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE];
+      case 'NaverPlaceRank':
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_RANK];
       case 'NaverAuto':
         return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO];
       case 'CoupangTraffic':
         return SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC];
       default:
-        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_TRAFFIC];
+        return SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_RANK];
     }
   };
 

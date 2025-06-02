@@ -12,70 +12,12 @@ import { CampaignContent } from './components';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { CAMPAIGNS } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { ServiceSelector } from '@/components/service-selector';
 
-// 서비스 타입 정보를 campaign.config.ts 기반으로 생성
-const getServiceTypes = () => {
-  // CAMPAIGNS 설정을 기반으로 서비스 타입 생성
-  const campaignServices = CAMPAIGNS.map(campaign => ({
-    platform: campaign.name,
-    logo: campaign.logo || '',
-    services: campaign.types.map(type => {
-      // 서비스별 아이콘 매핑
-      let icon = campaign.logo || '';
-      if (type.code === CampaignServiceType.NAVER_SHOPPING_TRAFFIC || 
-          type.code === CampaignServiceType.NAVER_SHOPPING_FAKESALE) {
-        icon = '/media/ad-brand/naver-shopping.png';
-      } else if (type.code === CampaignServiceType.NAVER_PLACE_TRAFFIC || 
-                 type.code === CampaignServiceType.NAVER_PLACE_SAVE) {
-        icon = '/media/ad-brand/naver-place.png';
-      } else if (type.code === CampaignServiceType.NAVER_PLACE_SHARE) {
-        icon = '/media/ad-brand/naver-blog.png';
-      }
-      
-      // URL 경로 생성 (서비스 타입 코드를 kebab-case로 변환)
-      const path = type.code.replace(/([A-Z])/g, '-$1').toLowerCase().slice(1);
-      
-      return {
-        name: type.name,
-        path: path,
-        icon: icon,
-        // 가구매 서비스는 비활성화
-        disabled: type.code === CampaignServiceType.NAVER_SHOPPING_FAKESALE || 
-                  type.code === CampaignServiceType.COUPANG_FAKESALE
-      };
-    })
-  }));
-  
-  // 추가 플랫폼들 (미구현)
-  const additionalPlatforms = [
-    {
-      platform: '인스타그램',
-      logo: '/media/ad-brand/instagram.png',
-      services: [],
-      disabled: true
-    },
-    {
-      platform: '포토&영상 제작',
-      logo: '/media/brand-logos/vimeo.svg',
-      services: [],
-      disabled: true
-    },
-    {
-      platform: '라이브방송',
-      logo: '/media/ad-brand/youtube.png',
-      services: [],
-      disabled: true
-    }
-  ];
-  
-  return [...campaignServices, ...additionalPlatforms];
-};
 
 const CampaignManagePage: React.FC = () => {
   const navigate = useNavigate();
-  
-  // 서비스 타입 정보를 campaign.config.ts 기반으로 생성
-  const SERVICE_TYPES = useMemo(() => getServiceTypes(), []);
+
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const { currentUser, userRole } = useAuthContext();
 
@@ -91,16 +33,6 @@ const CampaignManagePage: React.FC = () => {
   const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
   const isOperator = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
 
-  // 모든 서비스를 하나의 배열로 통합
-  const allServices = useMemo(() => {
-    return SERVICE_TYPES.flatMap(platform =>
-      platform.services.map(service => ({
-        ...service,
-        platform: platform.platform,
-        platformLogo: platform.logo
-      }))
-    );
-  }, []);
 
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
@@ -113,11 +45,11 @@ const CampaignManagePage: React.FC = () => {
     setLoading(true);
     try {
       const dbServiceType = getServiceTypeCode(selectedService);
-      
+
       // 운영자가 아니면 본인 캠페인만 조회
       const userId = isOperator ? undefined : currentUser?.id;
       const rawData = await fetchCampaigns(dbServiceType, userId);
-      
+
       // fetchCampaigns가 이미 ICampaign 형식으로 변환해서 반환하므로 그대로 사용
       setCampaigns(rawData);
       setError(null);
@@ -165,30 +97,12 @@ const CampaignManagePage: React.FC = () => {
       {/* 서비스 목록 */}
       <Card className="mb-4 lg:mb-6">
         <CardContent className="p-4 lg:p-6">
-          <div className="flex flex-wrap gap-1.5 lg:gap-2">
-            {allServices.map((service) => (
-              <Button
-                key={service.path}
-                variant={selectedService === service.path ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleServiceClick(service.path)}
-                disabled={service.disabled}
-                className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
-                  ? 'bg-primary hover:bg-primary/90'
-                  : ''
-                  }`}
-              >
-                {service.icon && (
-                  <img
-                    src={service.icon}
-                    alt={service.name}
-                    className="size-3 lg:size-4 mr-1 lg:mr-2"
-                  />
-                )}
-                <span className="whitespace-nowrap">{service.name}</span>
-              </Button>
-            ))}
-          </div>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">서비스</h3>
+          <ServiceSelector
+            selectedService={selectedService}
+            onServiceSelect={handleServiceClick}
+            showDisabled={true}
+          />
         </CardContent>
       </Card>
 
@@ -235,13 +149,13 @@ const CampaignManagePage: React.FC = () => {
 
       {/* 캠페인 추가 모달 */}
       <CampaignModal
-            open={addCampaignModalOpen}
-            onClose={() => {
-              setAddCampaignModalOpen(false);
-              loadCampaigns();
-            }}
-            serviceType={selectedService || ''}
-          />
+        open={addCampaignModalOpen}
+        onClose={() => {
+          setAddCampaignModalOpen(false);
+          loadCampaigns();
+        }}
+        serviceType={selectedService || ''}
+      />
     </DashboardTemplate>
   );
 };

@@ -128,7 +128,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   category,
   campaign,
   onSave,
-  serviceCode = CampaignServiceType.NAVER_SHOPPING_TRAFFIC, // 기본값 설정
+  serviceCode = CampaignServiceType.NAVER_SHOPPING_RANK, // 기본값 설정
   initialCampaignId,
   sourcePageInfo
 }) => {
@@ -337,6 +337,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         return CampaignServiceType.NAVER_SHOPPING_TRAFFIC;
       }
       
+      if (location.pathname.includes('naver-shopping-rank')) {
+        return CampaignServiceType.NAVER_SHOPPING_RANK;
+      }
+      
+      if (location.pathname.includes('naver-place-rank')) {
+        return CampaignServiceType.NAVER_PLACE_RANK;
+      }
+      
       return resolveServiceType({
         campaign,
         serviceCode,
@@ -345,7 +353,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       });
     } catch (e) {
       // 오류 발생 시 기본값 사용
-      return CampaignServiceType.NAVER_TRAFFIC;
+      return CampaignServiceType.NAVER_SHOPPING_RANK;
     }
   }, [campaign, serviceCode, location.pathname, category]);
 

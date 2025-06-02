@@ -191,13 +191,14 @@ const getServiceTypeUrlPath = (serviceType?: string): string => {
   // CampaignServiceType 열거형 타입을 사용하는 경우 매핑
   // 타입에 따른 URL 경로 매핑
   const typeToPathMap: Record<string, string> = {
-    [CampaignServiceType.NAVER_TRAFFIC]: 'naver-traffic',
     [CampaignServiceType.NAVER_AUTO]: 'naver-auto',
     [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'naver-shopping-traffic',
     [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: 'naver-shopping-fakesale',
+    [CampaignServiceType.NAVER_SHOPPING_RANK]: 'naver-shopping-rank',
     [CampaignServiceType.NAVER_PLACE_TRAFFIC]: 'naver-place-traffic',
     [CampaignServiceType.NAVER_PLACE_SAVE]: 'naver-place-save',
     [CampaignServiceType.NAVER_PLACE_SHARE]: 'naver-place-share',
+    [CampaignServiceType.NAVER_PLACE_RANK]: 'naver-place-rank',
     [CampaignServiceType.COUPANG_TRAFFIC]: 'coupang-traffic',
     [CampaignServiceType.COUPANG_FAKESALE]: 'coupang-fakesale'
   };

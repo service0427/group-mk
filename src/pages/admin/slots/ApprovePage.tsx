@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -29,6 +29,7 @@ import AuthRequired from './components/AuthRequired';
 import SlotMemoModal from './components/SlotMemoModal';
 import ApprovalConfirmModal from './components/ApprovalConfirmModal';
 import SlotDetailModal from './components/SlotDetailModal';
+import MonthlyStatistics, { MonthlyStatisticsRef } from './components/MonthlyStatistics';
 
 // 엑셀 내보내기 서비스 import
 import { exportFilteredSlotsToExcel, exportSelectedSlotsToExcel } from './services/excelExportService';
@@ -97,6 +98,9 @@ const ApprovePage: React.FC = () => {
     isOpen: false,
     slot: null
   });
+  
+  // MonthlyStatistics 컴포넌트 ref
+  const monthlyStatisticsRef = useRef<MonthlyStatisticsRef>(null);
   
   // 필터링된 슬롯들을 useMemo로 계산
   const filteredSlots = useMemo(() => {
@@ -722,23 +726,17 @@ const ApprovePage: React.FC = () => {
           
           confirmMessage += `\n이 슬롯을 승인하시겠습니까?`;
           
-          const confirmed = await new Promise<boolean>((resolve) => {
-            showConfirm(
-              '슬롯 승인 확인',
-              confirmMessage,
-              (confirmed) => resolve(confirmed),
-              {
-                confirmText: '승인',
-                cancelText: '취소'
-              }
-            );
+          // showConfirm 대신 ApprovalConfirmModal 사용
+          setApprovalModalData({
+            slotId: slotIdsToProcess[0],
+            campaignName,
+            dailyQuantity: slot.quantity || 0,
+            progress,
+            actionType: 'approve'
           });
-          
-          if (confirmed) {
-            await processApproval(slotIdsToProcess, actionType);
-          }
-          
+          setApprovalModalOpen(true);
           return;
+          
         }
       } catch (error) {
         console.error('작업 진행률 확인 오류:', error);
@@ -848,6 +846,11 @@ const ApprovePage: React.FC = () => {
         showSuccess(slotsToProcess.length > 1
           ? `${successResults.length}/${slotsToProcess.length}개의 슬롯이 성공적으로 처리되었습니다.`
           : '슬롯이 성공적으로 처리되었습니다.');
+          
+        // 통계 새로고침
+        if (monthlyStatisticsRef.current) {
+          monthlyStatisticsRef.current.refresh();
+        }
       }
 
       // 실패한 결과가 있는 경우
@@ -947,6 +950,12 @@ const ApprovePage: React.FC = () => {
 
         // 성공 메시지 표시
         showSuccess(result.message);
+        
+        // 통계 새로고침
+        if (monthlyStatisticsRef.current) {
+          monthlyStatisticsRef.current.refresh();
+        }
+        
         return true;
       } else {
         // 실패 시 오류 메시지 표시
@@ -1090,6 +1099,11 @@ const ApprovePage: React.FC = () => {
       // 결과 메시지 표시
       if (successCount > 0) {
         showSuccess(`${successCount}개의 슬롯이 완료 처리되었습니다.`);
+        
+        // 통계 새로고침
+        if (monthlyStatisticsRef.current) {
+          monthlyStatisticsRef.current.refresh();
+        }
       }
 
       if (errors.length > 0) {
@@ -1273,6 +1287,13 @@ const ApprovePage: React.FC = () => {
     >
       <Toaster position="top-right" richColors closeButton />
         
+
+        {/* 월간 통계 */}
+        <MonthlyStatistics 
+          ref={monthlyStatisticsRef}
+          selectedServiceType={selectedServiceType}
+          selectedCampaign={selectedCampaign}
+        />
 
         {/* 작업 시작일 안내 */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">

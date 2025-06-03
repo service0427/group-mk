@@ -76,7 +76,6 @@ const performanceMonitor = {
             try {
                 performance.measure(name, startMark, endMark);
                 const measure = performance.getEntriesByName(name)[0];
-                // console.log(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
             } catch (e) {
                 // 무시
             }
@@ -89,11 +88,9 @@ const performanceMonitor = {
             try {
                 const result = await fn();
                 const end = performance.now();
-                // console.log(`[Performance] ${name}: ${(end - start).toFixed(2)}ms`);
                 return result;
             } catch (error) {
                 const end = performance.now();
-                // console.error(`[Performance] ${name} failed after ${(end - start).toFixed(2)}ms`);
                 throw error;
             }
         } else {
@@ -1091,11 +1088,8 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             lastActivity = now;
 
             if (inactivityTimer) clearTimeout(inactivityTimer);
-
-            // console.log(`[Auto Logout] Timer reset, will logout in ${INACTIVITY_TIMEOUT / 60000} minutes`);
             
             inactivityTimer = window.setTimeout(() => {
-                console.log('[Auto Logout] Inactivity timeout reached, logging out...');
                 logout();
             }, INACTIVITY_TIMEOUT);
             
@@ -1130,11 +1124,9 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
         // 디버깅을 위한 타이머 상태 확인 (5분마다)
         const debugInterval = setInterval(() => {
-            console.log('[Auto Logout] Timer is active, last activity:', new Date(lastActivity).toLocaleTimeString());
         }, 5 * 60 * 1000);
 
         return () => {
-            // console.log('[Auto Logout] Cleaning up inactivity timer...');
             if (inactivityTimer) clearTimeout(inactivityTimer);
             clearInterval(debugInterval);
             events.forEach(event => {

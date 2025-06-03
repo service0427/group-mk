@@ -75,7 +75,6 @@ export const useKeywords = () => {
                 );
                 
                 if (createResponse.success && createResponse.data) {
-                  console.log(`Created default group: ${serviceName}`);
                   groupsCreated = true;
                 } else {
                   console.error(`Failed to create group for ${serviceType}:`, createResponse.message);

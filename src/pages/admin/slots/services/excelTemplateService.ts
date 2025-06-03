@@ -15,7 +15,7 @@ export interface DBExcelTemplate {
 export const getExcelTemplates = async (): Promise<ExcelTemplate[]> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
@@ -52,12 +52,10 @@ export const createExcelTemplate = async (
 ): Promise<ExcelTemplate> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
-
-    console.log('Creating template with:', { user_id: user.id, name, columns });
 
     const { data, error } = await supabase
       .from('excel_export_templates')
@@ -69,14 +67,12 @@ export const createExcelTemplate = async (
       })
       .select();
 
-    console.log('Insert result:', { data, error });
-
     if (error) throw error;
-    
+
     if (!data || data.length === 0) {
       throw new Error('템플릿 생성에 실패했습니다.');
     }
-    
+
     const insertedData = data[0];
 
     return {
@@ -100,12 +96,10 @@ export const updateExcelTemplate = async (
 ): Promise<ExcelTemplate> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
-
-    console.log('Updating template:', { templateId, name, columns });
 
     const { data, error } = await supabase
       .from('excel_export_templates')
@@ -118,14 +112,12 @@ export const updateExcelTemplate = async (
       .eq('user_id', user.id)
       .select();
 
-    console.log('Update result:', { data, error });
-
     if (error) throw error;
-    
+
     if (!data || data.length === 0) {
       throw new Error('템플릿을 찾을 수 없습니다.');
     }
-    
+
     const updatedData = data[0];
 
     return {
@@ -145,7 +137,7 @@ export const updateExcelTemplate = async (
 export const deleteExcelTemplate = async (templateId: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
@@ -167,7 +159,7 @@ export const deleteExcelTemplate = async (templateId: string): Promise<void> => 
 export const createDefaultTemplateIfNotExists = async (): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('로그인이 필요합니다.');
     }

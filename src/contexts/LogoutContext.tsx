@@ -36,7 +36,6 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     const unsubscribeStart = logoutService.onLogoutStart(() => {
       setIsLoggingOut(true);
       setLogoutProgress(0);
-      // console.log('[LogoutContext] 로그아웃 시작됨');
     });
     
     // 로그아웃 완료 이벤트
@@ -51,8 +50,6 @@ export const LogoutProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       
       if (!result.success) {
         // console.error('[LogoutContext] 로그아웃 실패:', result.error);
-      } else {
-        // console.log('[LogoutContext] 로그아웃 성공');
       }
     });
     

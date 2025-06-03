@@ -30,18 +30,18 @@ export interface LogoutResult {
 export class LogoutService {
   private static instance: LogoutService;
   private isProcessing = false;
-  
+
   // 이벤트 리스너를 위한 타입
   private eventListeners: {
     start: Array<() => void>;
     complete: Array<(result: LogoutResult) => void>;
   } = {
-    start: [],
-    complete: []
-  };
-  
-  private constructor() {}
-  
+      start: [],
+      complete: []
+    };
+
+  private constructor() { }
+
   /**
    * 싱글톤 인스턴스 가져오기
    */
@@ -51,7 +51,7 @@ export class LogoutService {
     }
     return LogoutService.instance;
   }
-  
+
   /**
    * 메인 로그아웃 함수
    */
@@ -67,13 +67,12 @@ export class LogoutService {
         }
       };
     }
-    
+
     this.isProcessing = true;
-    // console.log('[LogoutService] 로그아웃 시작');
-    
+
     // 1. 로그아웃 시작 이벤트 발생
     this.emitLogoutStart();
-    
+
     try {
       // 2. 로컬 인증 상태 정리 (실패해도 계속 진행)
       try {
@@ -82,14 +81,14 @@ export class LogoutService {
         // console.warn('[LogoutService] 로컬 상태 정리 실패:', e);
         // 계속 진행
       }
-      
+
       // 3. Supabase 로그아웃 (중요)
       try {
         const { error } = await supabase.auth.signOut();
         if (error) {
           throw error;
         }
-        // console.log('[LogoutService] Supabase 로그아웃 성공');
+
       } catch (e) {
         // Supabase 로그아웃 실패
         // Supabase 로그아웃 실패는 중요한 에러
@@ -104,17 +103,16 @@ export class LogoutService {
         this.emitLogoutComplete(result);
         return result;
       }
-      
+
       // 4. 라우팅 처리
       await this.redirectToLogin(navigate);
-      
+
       // 5. 성공 결과 반환
       const result: LogoutResult = { success: true };
       this.emitLogoutComplete(result);
-      
-      // console.log('[LogoutService] 로그아웃 완료');
+
       return result;
-      
+
     } catch (e) {
       // 예상치 못한 오류
       const result: LogoutResult = {
@@ -134,7 +132,7 @@ export class LogoutService {
       }, 500);
     }
   }
-  
+
   /**
    * 모든 인증 관련 스토리지 정리
    */
@@ -142,7 +140,7 @@ export class LogoutService {
     // localStorage 정리
     const localStorageKeys = [
       'auth',
-      'currentUser', 
+      'currentUser',
       'lastAuthCheck',
       'auth_redirect',
       'logout_timestamp',
@@ -150,7 +148,7 @@ export class LogoutService {
       'force_logout_timestamp',
       'force_logout_error'
     ];
-    
+
     localStorageKeys.forEach(key => {
       try {
         localStorage.removeItem(key);
@@ -158,7 +156,7 @@ export class LogoutService {
         // console.warn(`[LogoutService] localStorage.removeItem(${key}) 실패:`, e);
       }
     });
-    
+
     // sessionStorage 정리
     const sessionStorageKeys = [
       'currentUser',
@@ -169,7 +167,7 @@ export class LogoutService {
       'logout_timestamp',
       'logout_error'
     ];
-    
+
     sessionStorageKeys.forEach(key => {
       try {
         sessionStorage.removeItem(key);
@@ -177,7 +175,7 @@ export class LogoutService {
         // console.warn(`[LogoutService] sessionStorage.removeItem(${key}) 실패:`, e);
       }
     });
-    
+
     // 쿠키 정리
     try {
       document.cookie = "fallback_logout=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -185,11 +183,11 @@ export class LogoutService {
     } catch (e) {
       // console.warn('[LogoutService] 쿠키 정리 실패:', e);
     }
-    
+
     // Supabase 관련 스토리지 정리 (선택적)
     try {
       const supabaseKeyPattern = /^(sb-|supabase\.auth)/;
-      
+
       // localStorage의 Supabase 키 정리
       Object.keys(localStorage)
         .filter(key => supabaseKeyPattern.test(key))
@@ -200,7 +198,7 @@ export class LogoutService {
             // console.warn(`[LogoutService] Supabase localStorage 정리 실패:`, e);
           }
         });
-        
+
       // sessionStorage의 Supabase 키 정리
       Object.keys(sessionStorage)
         .filter(key => supabaseKeyPattern.test(key))
@@ -215,7 +213,7 @@ export class LogoutService {
       // console.warn('[LogoutService] Supabase 스토리지 정리 중 오류:', e);
     }
   }
-  
+
   /**
    * 로그인 페이지로 리다이렉트
    */
@@ -226,7 +224,7 @@ export class LogoutService {
       withTransition: true
     });
   }
-  
+
   /**
    * 로그아웃 시작 이벤트 발생
    */
@@ -239,7 +237,7 @@ export class LogoutService {
       }
     });
   }
-  
+
   /**
    * 로그아웃 완료 이벤트 발생
    */
@@ -252,13 +250,13 @@ export class LogoutService {
       }
     });
   }
-  
+
   /**
    * 로그아웃 시작 이벤트 리스너 등록
    */
   onLogoutStart(listener: () => void): () => void {
     this.eventListeners.start.push(listener);
-    
+
     // 리스너 제거 함수 반환
     return () => {
       const index = this.eventListeners.start.indexOf(listener);
@@ -267,13 +265,13 @@ export class LogoutService {
       }
     };
   }
-  
+
   /**
    * 로그아웃 완료 이벤트 리스너 등록
    */
   onLogoutComplete(listener: (result: LogoutResult) => void): () => void {
     this.eventListeners.complete.push(listener);
-    
+
     // 리스너 제거 함수 반환
     return () => {
       const index = this.eventListeners.complete.indexOf(listener);
@@ -282,7 +280,7 @@ export class LogoutService {
       }
     };
   }
-  
+
   /**
    * 로그아웃 처리 중인지 확인
    */

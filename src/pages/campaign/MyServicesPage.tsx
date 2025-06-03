@@ -147,7 +147,7 @@ const MyServicesPage: React.FC = () => {
   // 거래 확정 핸들러 (필요한 경우)
   const handleConfirmTransaction = useCallback(async (slotId: string) => {
     // 거래 확정 로직 구현
-    console.log('거래 확정:', slotId);
+    
   }, []);
 
   // 다중 선택 상태
@@ -211,11 +211,8 @@ const MyServicesPage: React.FC = () => {
         throw fetchError;
       }
 
-      console.log('조회된 pending_balances:', pendingBalances);
-
       // 총 환불 금액 계산
       const totalAmount = pendingBalances?.reduce((sum, pb) => sum + Number(pb.amount), 0) || 0;
-      console.log('총 환불 금액:', totalAmount);
 
       if (totalAmount > 0 && currentUser?.id) {
         // 3-1. user_balances 테이블 업데이트
@@ -244,9 +241,6 @@ const MyServicesPage: React.FC = () => {
         } else if (currentBalance) {
           const newTotalBalance = Number(currentBalance.total_balance || 0) + totalAmount;
           const newPaidBalance = Number(currentBalance.paid_balance || 0) + totalAmount;
-
-          console.log('현재 잔액:', currentBalance);
-          console.log('새로운 잔액:', { total: newTotalBalance, paid: newPaidBalance });
 
           const { error: updateError } = await supabase
             .from('user_balances')
@@ -279,9 +273,6 @@ const MyServicesPage: React.FC = () => {
           throw historyError;
         }
 
-        console.log('환불 처리 완료');
-      } else {
-        console.log('환불할 금액이 없음 또는 사용자 ID 없음');
       }
 
       showSuccess(`${slotsToCancel.length}개의 슬롯이 취소되었습니다. 캐시가 환불되었습니다.`);

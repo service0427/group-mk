@@ -12,11 +12,11 @@ export class ActivityMonitor {
   private isActive = false;
   private eventHandlers: Map<string, EventListener> = new Map();
   private currentTimeoutCallback?: () => void;
-  
+
   constructor(timeoutMinutes: number = 30) {
     this.timeoutMinutes = timeoutMinutes;
   }
-  
+
   /**
    * 활동 모니터링 시작
    */
@@ -25,36 +25,32 @@ export class ActivityMonitor {
       // 이미 모니터링 중입니다
       return;
     }
-    
+
     this.currentTimeoutCallback = onTimeout;
     this.isActive = true;
     this.lastActivity = Date.now();
-    
+
     const timeoutMs = this.timeoutMinutes * 60 * 1000;
-    // console.log(`[ActivityMonitor] 활동 모니터링 시작 (${this.timeoutMinutes}분 타임아웃)`);
-    
+
     // 중요한 이벤트만 감지 (성능 최적화)
     const criticalEvents = ['mousedown', 'keydown', 'touchstart'];
-    
+
     // 디바운스된 활동 핸들러
     const handleActivity = this.debounce(() => {
       this.lastActivity = Date.now();
-      // if (process.env.NODE_ENV === 'development') {
-      //   console.log('[ActivityMonitor] 사용자 활동 감지됨');
-      // }
     }, this.DEBOUNCE_DELAY);
-    
+
     // 이벤트 리스너 등록
     criticalEvents.forEach(event => {
       this.eventHandlers.set(event, handleActivity);
       window.addEventListener(event, handleActivity, { passive: true });
     });
-    
+
     // 주기적으로 타임아웃 체크 (이벤트 리스너 대신 인터벌 사용)
     this.checkInterval = window.setInterval(() => {
       const inactiveTime = Date.now() - this.lastActivity;
       const remainingTime = timeoutMs - inactiveTime;
-      
+
       if (remainingTime <= 0) {
         // Inactivity timeout reached
         onTimeout();
@@ -64,16 +60,8 @@ export class ActivityMonitor {
         // 자동 로그아웃까지 X분 남음
       }
     }, this.CHECK_INTERVAL);
-    
-    // 개발 환경 디버깅 로그 비활성화
-    // if (process.env.NODE_ENV === 'development') {
-    //   this.activityTimer = window.setInterval(() => {
-    //     const inactiveTime = Date.now() - this.lastActivity;
-    //     console.log(`[ActivityMonitor] 비활성 시간: ${Math.floor(inactiveTime / 1000)}초`);
-    //   }, 30 * 1000); // 30초마다
-    // }
   }
-  
+
   /**
    * 활동 모니터링 중지
    */
@@ -81,29 +69,27 @@ export class ActivityMonitor {
     if (!this.isActive) {
       return;
     }
-    
-    // console.log('[ActivityMonitor] 활동 모니터링 중지');
-    
+
     this.isActive = false;
-    
+
     // 타이머 정리
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = undefined;
     }
-    
+
     if (this.activityTimer) {
       clearInterval(this.activityTimer);
       this.activityTimer = undefined;
     }
-    
+
     // 이벤트 리스너 제거
     this.eventHandlers.forEach((handler, event) => {
       window.removeEventListener(event, handler);
     });
     this.eventHandlers.clear();
   }
-  
+
   /**
    * 활동 타이머 리셋 (수동으로 활동 기록)
    */
@@ -111,11 +97,10 @@ export class ActivityMonitor {
     if (!this.isActive) {
       return;
     }
-    
+
     this.lastActivity = Date.now();
-    // console.log('[ActivityMonitor] 수동 활동 기록됨');
   }
-  
+
   /**
    * 남은 시간 가져오기 (밀리초)
    */
@@ -123,19 +108,19 @@ export class ActivityMonitor {
     if (!this.isActive) {
       return 0;
     }
-    
+
     const inactiveTime = Date.now() - this.lastActivity;
     const timeoutMs = this.timeoutMinutes * 60 * 1000;
     return Math.max(0, timeoutMs - inactiveTime);
   }
-  
+
   /**
    * 모니터링 중인지 확인
    */
   isMonitoring(): boolean {
     return this.isActive;
   }
-  
+
   /**
    * 효율적인 디바운스 구현
    */
@@ -144,38 +129,36 @@ export class ActivityMonitor {
     wait: number
   ): T {
     let timeout: number | undefined;
-    
+
     return ((...args: Parameters<T>) => {
       const later = () => {
         timeout = undefined;
         func(...args);
       };
-      
+
       if (timeout !== undefined) {
         clearTimeout(timeout);
       }
-      
+
       timeout = window.setTimeout(later, wait);
     }) as T;
   }
-  
+
   /**
    * 타임아웃 설정 변경
    */
   setTimeoutMinutes(minutes: number): void {
     const wasActive = this.isActive;
     const onTimeout = this.currentTimeoutCallback;
-    
+
     this.timeoutMinutes = minutes;
-    
+
     if (wasActive && onTimeout) {
       this.stop();
       this.start(onTimeout);
     }
-    
-    // console.log(`[ActivityMonitor] 타임아웃 변경: ${minutes}분`);
   }
-  
+
   /**
    * 현재 타임아웃 분 가져오기
    */

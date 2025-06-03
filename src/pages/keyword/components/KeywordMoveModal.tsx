@@ -34,15 +34,13 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleConfirm = async () => {
-    console.log('handleConfirm called', { selectedTargetId, actionType });
+
     if (!selectedTargetId) {
-      console.log('No target group selected');
       return;
     }
     
     setIsProcessing(true);
     try {
-      console.log('Calling onConfirm with:', parseInt(selectedTargetId), actionType === 'copy');
       await onConfirm(parseInt(selectedTargetId), actionType === 'copy');
       onClose();
     } catch (error) {

@@ -4,6 +4,8 @@ import { CampaignInfoTemplate } from '../components';
 import { getServiceData, ServiceData } from '@/data/advertiseServices';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { SERVICE_TYPE_TO_CATEGORY } from '../components/campaign-components';
+import { useAuthContext } from '@/auth';
+import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 
 const InfoPage: React.FC = () => {
   const { serviceType } = useParams<{
@@ -11,9 +13,13 @@ const InfoPage: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { userRole } = useAuthContext();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 비기너가 접근 가능한 순위 확인 서비스
+  const rankServices = ['naver-shopping-rank', 'naver-place-rank'];
 
   useEffect(() => {
     try {
@@ -21,6 +27,18 @@ const InfoPage: React.FC = () => {
       if (!serviceType) {
         // 파라미터가 없는 경우 기본값 설정 (ex: naver-traffic)
         navigate('/advertise/campaigns/info/naver-traffic', { replace: true });
+        return;
+      }
+      
+      // 권한 체크: 비기너는 순위 확인 서비스만 접근 가능
+      if (userRole === USER_ROLES.BEGINNER) {
+        if (!rankServices.includes(serviceType)) {
+          navigate('/error/404', { replace: true });
+          return;
+        }
+      } else if (!hasPermission(userRole, PERMISSION_GROUPS.ADVERTISEMENT)) {
+        // 비기너가 아닌데 광고주 권한도 없으면 접근 불가
+        navigate('/error/404', { replace: true });
         return;
       }
 
@@ -64,7 +82,7 @@ const InfoPage: React.FC = () => {
       setError('서비스 정보를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }
-  }, [serviceType, pathname, navigate]);
+  }, [serviceType, pathname, navigate, userRole]);
 
   // 캠페인 페이지 경로 생성 (캠페인 소개 페이지 -> 내 서비스 페이지로 변환)
   const getCampaignPath = (): string => {

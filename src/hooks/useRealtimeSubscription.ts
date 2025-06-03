@@ -82,10 +82,7 @@ export function useRealtimeSubscription({
           }
         )
         .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log(`채널 ${channelName} 구독 성공`);
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error(`채널 ${channelName} 구독 오류`);
+          if (status === 'CHANNEL_ERROR') {
             onError?.(new Error('채널 구독 실패'));
           }
         });

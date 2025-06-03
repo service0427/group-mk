@@ -37,7 +37,7 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
       try {
         setLoading(true);
         setError(null);
-        
+
         const { data, error: fetchError } = await supabase
           .from('service_keyword_field_mappings')
           .select('*')
@@ -70,7 +70,7 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
   };
 
   // 순서대로 정렬된 필드 목록
-  const orderedFields = config ? 
+  const orderedFields = config ?
     Object.entries(config.field_mapping)
       .filter(([, fieldConfig]) => !fieldConfig.hidden)
       .sort((a, b) => (a[1].order || 999) - (b[1].order || 999))
@@ -90,46 +90,33 @@ export const useKeywordFieldConfig = (campaignType: string | null | undefined) =
     if (!config) {
       // field_mapping이 없으면 해당 필드는 숨김 처리
       // 즉, field_mapping에 정의된 필드만 표시
-     
+
       // 기본 필드는 항상 표시 (main_keyword, status, created_at, actions)
       const defaultFields = ['main_keyword', 'status', 'created_at', 'actions'];
       if (defaultFields.includes(fieldName)) {
         return false;
       }
-      
+
       // 나머지 필드는 숨김
       return true;
     }
-    
+
     // field_mapping에 없는 필드는 숨김 처리
     const fieldConfig = getFieldConfig(fieldName);
     if (!fieldConfig) {
       // field_mapping에 정의되지 않은 필드는 숨김
       return true;
     }
-    
+
     const isHiddenInFieldConfig = fieldConfig?.hidden || false;
     const isHiddenInUIConfig = config?.ui_config?.hiddenFields?.includes(fieldName) || false;
-    
-    // 디버그 로그
-    if (fieldName === 'keyword3') {
-      console.log('=== keyword3 hidden check ===');
-      console.log('campaignType:', campaignType);
-      console.log('config:', config);
-      console.log('fieldName:', fieldName);
-      console.log('fieldConfig:', fieldConfig);
-      console.log('ui_config.hiddenFields:', config?.ui_config?.hiddenFields);
-      console.log('isHiddenInFieldConfig:', isHiddenInFieldConfig);
-      console.log('isHiddenInUIConfig:', isHiddenInUIConfig);
-      console.log('최종 결과 (hidden?):', isHiddenInFieldConfig || isHiddenInUIConfig);
-    }
-    
+
     return isHiddenInFieldConfig || isHiddenInUIConfig;
   };
 
-  return { 
-    config, 
-    loading, 
+  return {
+    config,
+    loading,
     error,
     getFieldConfig,
     orderedFields,

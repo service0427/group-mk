@@ -34,53 +34,47 @@ let debugLogged = false;
 const convertSlotToRow = (slot: Slot, columns: ExcelColumn[]): any => {
   // 첫 번째 슬롯만 디버깅
   if (!debugLogged) {
-    console.log('=== 슬롯 데이터 구조 확인 ===');
-    console.log('slot.id:', slot.id);
-    console.log('slot.user:', slot.user);
-    console.log('slot.campaign:', slot.campaign);
-    console.log('slot.campaign_name:', slot.campaign_name);
-    console.log('전체 슬롯 데이터:', slot);
     debugLogged = true;
   }
-  
+
   const row: any = {};
 
   columns.forEach(column => {
     if (!column.enabled) return;
-    
+
     // 기본값 설정
     let value = '';
-    
+
     switch (column.field) {
       case 'id':
         value = slot.id;
         break;
-      
+
       case 'status':
         value = getStatusText(slot.status);
         break;
-      
+
       case 'campaign_name':
         // campaign 객체에서 먼저 찾고, 없으면 slot에 직접 저장된 값 사용
         value = slot.campaign?.campaign_name || slot.campaign_name || '';
         break;
-      
+
       case 'user.email':
         value = slot.user?.email || '';
         break;
-      
+
       case 'user.full_name':
         value = slot.user?.full_name || '';
         break;
-      
+
       case 'input_data.productName':
         value = slot.input_data?.productName || slot.input_data?.product_name || '';
         break;
-      
+
       case 'input_data.keywords':
         // 키워드 처리 - 여러 형태의 키워드 필드 확인
         let keywords = '';
-        
+
         if (slot.input_data?.keywords) {
           if (typeof slot.input_data.keywords === 'string') {
             try {
@@ -102,105 +96,105 @@ const convertSlotToRow = (slot: Slot, columns: ExcelColumn[]): any => {
             slot.input_data.keyword3
           ].filter(Boolean).join(', ');
         }
-        
+
         value = keywords;
         break;
-      
+
       case 'input_data.mainKeyword':
         value = slot.input_data?.mainKeyword || '';
         break;
-      
+
       case 'input_data.keyword1':
         value = slot.input_data?.keyword1 || '';
         break;
-      
+
       case 'input_data.keyword2':
         value = slot.input_data?.keyword2 || '';
         break;
-      
+
       case 'input_data.keyword3':
         value = slot.input_data?.keyword3 || '';
         break;
-      
+
       case 'input_data.url':
-        value = slot.input_data?.url || 
-                slot.input_data?.product_url || 
-                slot.input_data?.ohouse_url || '';
+        value = slot.input_data?.url ||
+          slot.input_data?.product_url ||
+          slot.input_data?.ohouse_url || '';
         break;
-      
+
       case 'input_data.mid':
         value = slot.input_data?.mid || '';
         break;
-      
+
       case 'quantity':
-        value = String(slot.quantity || 
-                slot.input_data?.quantity || 
-                slot.input_data?.타수 || 
-                slot.input_data?.['일일 타수'] || 
-                slot.input_data?.['작업량'] || 0);
+        value = String(slot.quantity ||
+          slot.input_data?.quantity ||
+          slot.input_data?.타수 ||
+          slot.input_data?.['일일 타수'] ||
+          slot.input_data?.['작업량'] || 0);
         break;
-      
+
       case 'input_data.dueDays':
-        value = String(slot.input_data?.dueDays || 
-                slot.input_data?.workCount || 1);
+        value = String(slot.input_data?.dueDays ||
+          slot.input_data?.workCount || 1);
         break;
-      
+
       case 'start_date':
         value = slot.start_date ? formatDate(slot.start_date) : '';
         break;
-      
+
       case 'end_date':
         value = slot.end_date ? formatDate(slot.end_date) : '';
         break;
-      
+
       case 'created_at':
         value = formatDate(slot.created_at);
         break;
-      
+
       case 'submitted_at':
         value = formatDate(slot.submitted_at);
         break;
-      
+
       case 'processed_at':
         value = formatDate(slot.processed_at);
         break;
-      
+
       case 'mat_reason':
         value = slot.mat_reason || '';
         break;
-      
+
       case 'rejection_reason':
         value = slot.rejection_reason || '';
         break;
-      
+
       case 'user_reason':
         value = slot.user_reason || '';
         break;
-      
+
       case 'service_type':
         value = slot.campaign?.service_type || '';
         break;
-      
+
       case 'unit_price':
         value = slot.campaign?.unit_price ? String(slot.campaign.unit_price) : '';
         break;
-      
+
       case 'min_quantity':
         value = slot.campaign?.min_quantity ? String(slot.campaign.min_quantity) : '';
         break;
-      
+
       case 'deadline':
         value = slot.campaign?.deadline || '';
         break;
-      
+
       case 'user_slot_number':
         value = slot.user_slot_number ? String(slot.user_slot_number) : '';
         break;
-      
+
       default:
         value = '';
     }
-    
+
     // 값을 row에 할당
     row[column.label] = value;
   });
@@ -217,39 +211,28 @@ export const exportSlotsToExcel = (
   try {
     // 활성화된 컬럼만 필터링
     const enabledColumns = template.columns.filter(col => col.enabled);
-    
-    // 디버깅: 첫 번째 슬롯의 데이터 구조 확인
-    if (slots.length > 0) {
-      console.log('=== EXCEL EXPORT DEBUG ===');
-      console.log('첫 번째 슬롯 전체 데이터:', slots[0]);
-      console.log('campaign 객체:', slots[0].campaign);
-      console.log('user 객체:', slots[0].user);
-      console.log('campaign_name 직접 필드:', slots[0].campaign_name);
-      console.log('활성화된 컬럼:', enabledColumns.map(col => col.field));
-      console.log('========================');
-    }
-    
+
     // 슬롯 데이터를 엑셀 행 데이터로 변환
     const rows = slots.map(slot => convertSlotToRow(slot, enabledColumns));
-    
+
     // 워크시트 생성
     const worksheet = XLSX.utils.json_to_sheet(rows);
-    
+
     // 컬럼 너비 설정
     const columnWidths = enabledColumns.map(col => ({ wch: col.width || 20 }));
     worksheet['!cols'] = columnWidths;
-    
+
     // 워크북 생성
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '슬롯 목록');
-    
+
     // 파일명 생성 (기본값: 슬롯목록_YYYYMMDD_HHMMSS.xlsx)
     const defaultFileName = `슬롯목록_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
     const finalFileName = fileName || defaultFileName;
-    
+
     // 엑셀 파일 다운로드
     XLSX.writeFile(workbook, finalFileName);
-    
+
   } catch (error) {
     console.error('엑셀 내보내기 오류:', error);
     throw new Error('엑셀 파일 생성 중 오류가 발생했습니다.');
@@ -264,11 +247,11 @@ export const exportSelectedSlotsToExcel = (
   fileName?: string
 ): void => {
   const selectedSlots = allSlots.filter(slot => selectedSlotIds.includes(slot.id));
-  
+
   if (selectedSlots.length === 0) {
     throw new Error('선택된 슬롯이 없습니다.');
   }
-  
+
   exportSlotsToExcel(selectedSlots, template, fileName);
 };
 
@@ -281,6 +264,6 @@ export const exportFilteredSlotsToExcel = (
   if (filteredSlots.length === 0) {
     throw new Error('내보낼 슬롯이 없습니다.');
   }
-  
+
   exportSlotsToExcel(filteredSlots, template, fileName);
 };

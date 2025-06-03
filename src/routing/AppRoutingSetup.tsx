@@ -151,16 +151,15 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 내 서비스 관리 라우트 */}
           <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
+          
+          {/* 캠페인 소개 페이지 - 비기너도 접근 가능 (내부에서 권한 체크) */}
+          <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
       {/* 광고주 이상만 접근 가능한 페이지 */}
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADVERTISEMENT} />}>
         <Route element={<StandLayout />}>
-          {/* 캠페인 관련 경로는 URL 파라미터 방식으로 통일 */}
-
-          {/* 캠페인 소개 페이지 - URL 파라미터 사용 */}
-          <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
 
           {/* 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/advertise/campaigns/my/:serviceType" element={<SuspenseWrapper><CampaignPage /></SuspenseWrapper>} />

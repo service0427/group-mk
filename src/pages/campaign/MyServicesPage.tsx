@@ -331,6 +331,7 @@ const MyServicesPage: React.FC = () => {
             selectedService={selectedService}
             onServiceSelect={handleServiceClick}
             showDisabled={true}
+            userRole={userRole}
           />
         </CardContent>
       </Card>

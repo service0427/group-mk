@@ -102,31 +102,31 @@ const MonthlyStatistics = forwardRef<MonthlyStatisticsRef, MonthlyStatisticsProp
       if (previousResult.error) throw previousResult.error;
 
       // 디버깅용 로그 (필요시 주석 해제)
-      console.log('최근 30일 통계 데이터:', currentResult.data);
+      // console.log('최근 30일 통계 데이터:', currentResult.data);
       // console.log('이전 30일 통계 데이터:', previousResult.data);
       
       // 매출 계산 검증
       if (currentResult.data && currentResult.data.length > 0) {
         const sampleData = currentResult.data[0];
-        console.log('샘플 데이터 (첫 번째 레코드):', {
-          stat_date: sampleData.stat_date,
-          total_quantity: sampleData.total_quantity,
-          actual_worked_quantity: sampleData.actual_worked_quantity,
-          total_revenue: sampleData.total_revenue,
-          expected_revenue: sampleData.expected_revenue,
-          slot_count: sampleData.slot_count,
-          difference: sampleData.expected_revenue ? sampleData.expected_revenue - sampleData.total_revenue : 0
-        });
+        // console.log('샘플 데이터 (첫 번째 레코드):', {
+        //   stat_date: sampleData.stat_date,
+        //   total_quantity: sampleData.total_quantity,
+        //   actual_worked_quantity: sampleData.actual_worked_quantity,
+        //   total_revenue: sampleData.total_revenue,
+        //   expected_revenue: sampleData.expected_revenue,
+        //   slot_count: sampleData.slot_count,
+        //   difference: sampleData.expected_revenue ? sampleData.expected_revenue - sampleData.total_revenue : 0
+        // });
         
         // 전체 데이터의 매출 차이 계산
         const totalExpected = currentResult.data.reduce((sum: number, stat: DailyStats) => sum + (stat.expected_revenue || 0), 0);
         const totalActual = currentResult.data.reduce((sum: number, stat: DailyStats) => sum + stat.total_revenue, 0);
-        console.log('매출 비교:', {
-          예상_매출: totalExpected.toLocaleString(),
-          실제_매출: totalActual.toLocaleString(),
-          차이: (totalExpected - totalActual).toLocaleString(),
-          차이_비율: totalExpected > 0 ? ((totalActual / totalExpected) * 100).toFixed(2) + '%' : '0%'
-        });
+        // console.log('매출 비교:', {
+        //   예상_매출: totalExpected.toLocaleString(),
+        //   실제_매출: totalActual.toLocaleString(),
+        //   차이: (totalExpected - totalActual).toLocaleString(),
+        //   차이_비율: totalExpected > 0 ? ((totalActual / totalExpected) * 100).toFixed(2) + '%' : '0%'
+        // });
       }
       
       // 직접 슬롯 상태 확인 (디버깅용)

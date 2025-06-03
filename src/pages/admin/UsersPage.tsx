@@ -6,7 +6,7 @@ import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
-const MakeUserRow = (user: any) => {
+const MakeUserRow = ({ user, getUserList, currentPage }: { user: any, getUserList: (page: number) => Promise<void>, currentPage: number }) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
     const [insertModalOpen, setInsertModalOpen] = useState<boolean>(false);
 
@@ -84,36 +84,36 @@ const MakeUserRow = (user: any) => {
                     </div>
                 </td>
                 <td className="py-4 px-5">
-                    <span className="text-gray-800 font-medium">{user.user.email}</span>
+                    <span className="text-gray-800 font-medium">{user.email}</span>
                 </td>
                 <td className="py-4 px-5">
                     <div className="flex items-center">
                         <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                            {user.user.full_name ? user.user.full_name.charAt(0) : '?'}
+                            {user.full_name ? user.full_name.charAt(0) : '?'}
                         </div>
-                        <span className="text-gray-800">{user.user.full_name}</span>
+                        <span className="text-gray-800">{user.full_name}</span>
                     </div>
                 </td>
                 <td className="py-4 px-5">
                     <span
-                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.user.role)?.class}`}
-                        style={renderRoleBadge(user.user.role)?.style}
+                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${renderRoleBadge(user.role)?.class}`}
+                        style={renderRoleBadge(user.role)?.style}
                     >
-                        {renderRoleBadge(user.user.role)?.name}
+                        {renderRoleBadge(user.role)?.name}
                     </span>
                 </td>
                 <td className="py-4 px-5">
-                    {renderStatusBadge(user.user.status)}
+                    {renderStatusBadge(user.status)}
                 </td>
                 <td className="py-4 px-5">
                     <span className="text-gray-800 font-medium">
-                        ₩{user.user.paid_balance ? user.user.paid_balance.toLocaleString() : '0'}
-                        {user.user.free_balance > 0 ? ` (+${user.user.free_balance.toLocaleString()})` : ''}
+                        ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
+                        {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
                     </span>
                 </td>
                 <td className="py-4 px-5 text-end">
                     <div className="flex justify-end gap-2">
-                        <button className="btn btn-icon btn-sm btn-light" onClick={openUserModalOpen} data-user-id={user.user.id}>
+                        <button className="btn btn-icon btn-sm btn-light" onClick={openUserModalOpen} data-user-id={user.id}>
                             <KeenIcon icon="setting-2" className='text-gray-900' />
                         </button>
                         <button className="btn btn-icon btn-sm btn-light">
@@ -125,8 +125,9 @@ const MakeUserRow = (user: any) => {
 
             <AdminUserModal
                 open={userModalOpen}
-                user_id={user.user.id}
+                user_id={user.id}
                 onClose={closeUserModalOpen}
+                onUpdate={() => getUserList(currentPage)}
             />
         </>
     )
@@ -272,6 +273,7 @@ const UsersPage = () => {
         { "code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR) },
         { "code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY) },
         { "code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER) },
+        { "code": USER_ROLES.BEGINNER, "name": getRoleDisplayName(USER_ROLES.BEGINNER) },
     ];
 
     const status_array = [
@@ -440,7 +442,7 @@ const UsersPage = () => {
                                         <tbody>
                                             {
                                                 users.map((user, index) => (
-                                                    <MakeUserRow key={index} user={user} />
+                                                    <MakeUserRow key={index} user={user} getUserList={getUserList} currentPage={currentPage} />
                                                 ))
                                             }
                                         </tbody>

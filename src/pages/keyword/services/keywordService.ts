@@ -686,11 +686,6 @@ export const keywordService = {
                 }
               }
               
-                logo: campaign.logo,
-                add_info: campaign.add_info,
-                finalLogoUrl: logoUrl
-              });
-              
               activeSlotsByKeyword[slot.keyword_id].push({
                 id: slot.id,
                 campaignId: campaign.id,

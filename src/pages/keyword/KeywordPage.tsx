@@ -615,3 +615,4 @@ const KeywordPage: React.FC = () => {
 };
 
 export default KeywordPage;
+export { KeywordPage };

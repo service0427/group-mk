@@ -267,7 +267,6 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
     }
 
     // DB에 상태 업데이트 (RLS 우회를 위해 supabaseAdmin 사용)
-    console.log('DB 업데이트 시도:', { campaignId, newStatus });
     const { data: updateData, error } = await supabaseAdmin
       .from('campaigns')
       .update({ 
@@ -276,8 +275,6 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
       })
       .eq('id', campaignId)
       .select();
-    
-    console.log('업데이트 결과:', { updateData, error });
 
     if (error) {
       console.error('캠페인 상태 업데이트 오류:', error);

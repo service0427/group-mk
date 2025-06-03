@@ -148,56 +148,21 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 포인트 관련 라우트 */}
           <Route path="/point/history" element={<SuspenseWrapper><PointHistoryPage /></SuspenseWrapper>} />
           <Route path="/myinfo/cash-requests" element={<SuspenseWrapper><CashRequestsPage /></SuspenseWrapper>} />
+
+          {/* 내 서비스 관리 라우트 */}
+          <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
+          
+          {/* 캠페인 소개 페이지 - 비기너도 접근 가능 (내부에서 권한 체크) */}
+          <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
       {/* 광고주 이상만 접근 가능한 페이지 */}
       <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADVERTISEMENT} />}>
         <Route element={<StandLayout />}>
-          {/* 캠페인 관련 경로는 URL 파라미터 방식으로 통일 */}
-
-          {/* 캠페인 소개 페이지 - URL 파라미터 사용 */}
-          <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
 
           {/* 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/advertise/campaigns/my/:serviceType" element={<SuspenseWrapper><CampaignPage /></SuspenseWrapper>} />
-
-          {/* 구형 URL 패턴에서 새로운 URL 패턴으로 리다이렉트 처리 */}
-          {/* 네이버 쇼핑 트래픽 */}
-          <Route path="/advertise/naver/shopping/traffic" element={<Navigate to="/advertise/campaigns/info/naver-shopping-traffic" replace />} />
-          <Route path="/advertise/naver/shopping/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-shopping-traffic" replace />} />
-
-          {/* 네이버 플레이스 저장 */}
-          <Route path="/advertise/naver/place/save" element={<Navigate to="/advertise/campaigns/info/naver-place-save" replace />} />
-          <Route path="/advertise/naver/place/save/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-save" replace />} />
-
-          {/* 네이버 플레이스 공유 */}
-          <Route path="/advertise/naver/place/share" element={<Navigate to="/advertise/campaigns/info/naver-place-share" replace />} />
-          <Route path="/advertise/naver/place/share/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-share" replace />} />
-
-          {/* 네이버 플레이스 트래픽 */}
-          <Route path="/advertise/naver/place/traffic" element={<Navigate to="/advertise/campaigns/info/naver-place-traffic" replace />} />
-          <Route path="/advertise/naver/place/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-place-traffic" replace />} />
-
-          {/* 네이버 자동완성 */}
-          <Route path="/advertise/naver/auto" element={<Navigate to="/advertise/campaigns/info/naver-auto" replace />} />
-          <Route path="/advertise/naver/auto/campaign" element={<Navigate to="/advertise/campaigns/my/naver-auto" replace />} />
-
-          {/* 네이버 트래픽 */}
-          <Route path="/advertise/naver/traffic" element={<Navigate to="/advertise/campaigns/info/naver-traffic" replace />} />
-          <Route path="/advertise/naver/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/naver-traffic" replace />} />
-
-          {/* 쿠팡 트래픽 */}
-          <Route path="/advertise/coupang/traffic" element={<Navigate to="/advertise/campaigns/info/coupang-traffic" replace />} />
-          <Route path="/advertise/coupang/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/coupang-traffic" replace />} />
-
-          {/* 오늘의집 트래픽 */}
-          <Route path="/advertise/ohouse/traffic" element={<Navigate to="/advertise/campaigns/info/ohouse-traffic" replace />} />
-          <Route path="/advertise/ohouse/traffic/campaign" element={<Navigate to="/advertise/campaigns/my/ohouse-traffic" replace />} />
-
-          {/* 내 서비스 관리 라우트 */}
-          <Route path="/myinfo/services" element={<SuspenseWrapper><ServicesPage /></SuspenseWrapper>} />
-          <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 

@@ -525,11 +525,6 @@ export const DashboardContent: React.FC = () => {
     try {
       setError(null);
       
-      console.log('=== 캐시 충전 요청 시작 ===');
-      console.log('현재 사용자:', currentUser);
-      console.log('충전 금액:', chargeAmount);
-      console.log('입금자명:', depositorName);
-      
       if (!currentUser) {
         setError('로그인이 필요합니다.');
         return;
@@ -547,20 +542,11 @@ export const DashboardContent: React.FC = () => {
 
       setIsLoading(true);
 
-      console.log('CashService.createChargeRequest 호출 전');
-      console.log('매개변수:', {
-        userId: currentUser.id || '',
-        amount: Number(chargeAmount),
-        depositorName: depositorName.trim()
-      });
-
       const result = await CashService.createChargeRequest(
         currentUser.id || '',
         Number(chargeAmount),
         depositorName.trim()
       );
-
-      console.log('CashService.createChargeRequest 결과:', result);
 
       if (result.success) {
         toast.success('충전 요청이 완료되었습니다. 관리자 승인 후 충전됩니다.');
@@ -568,7 +554,7 @@ export const DashboardContent: React.FC = () => {
         setChargeAmount('');
         setDepositorName('');
         setKoreanAmount('');
-        console.log('충전 요청 성공 - 폼 초기화 완료');
+        
       } else {
         console.error('충전 요청 실패:', result.message);
         setError(result.message);
@@ -581,7 +567,6 @@ export const DashboardContent: React.FC = () => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
-      console.log('=== 캐시 충전 요청 종료 ===');
     }
   };
   

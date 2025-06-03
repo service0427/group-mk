@@ -665,7 +665,6 @@ export const keywordService = {
           }
           
           // 슬롯 데이터 처리
-          console.log('[Keyword Service] Active slots data:', slotsData);
           slotsData.forEach(slot => {
             if (!activeSlotsByKeyword[slot.keyword_id]) {
               activeSlotsByKeyword[slot.keyword_id] = [];
@@ -687,12 +686,6 @@ export const keywordService = {
                 }
               }
               
-              console.log(`[Keyword Service] Campaign ${campaign.campaign_name} logo:`, {
-                logo: campaign.logo,
-                add_info: campaign.add_info,
-                finalLogoUrl: logoUrl
-              });
-              
               activeSlotsByKeyword[slot.keyword_id].push({
                 id: slot.id,
                 campaignId: campaign.id,
@@ -703,7 +696,6 @@ export const keywordService = {
               });
             }
           });
-          console.log('[Keyword Service] Active slots by keyword:', activeSlotsByKeyword);
         }
       }
 

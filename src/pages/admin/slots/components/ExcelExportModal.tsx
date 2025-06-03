@@ -105,7 +105,6 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
         // 템플릿 목록 불러오기 (기본 템플릿 생성하지 않음)
         const loadedTemplates = await getExcelTemplates();
         setTemplates(loadedTemplates);
-        console.log('Loaded templates:', loadedTemplates);
         
         // 템플릿이 없으면 새 템플릿 생성 모드로
         if (loadedTemplates.length === 0) {
@@ -131,11 +130,6 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
 
     loadTemplates();
   }, [isOpen, showError]);
-
-  // 템플릿 상태 변경 감지 - 디버그용 로그 제거
-  // useEffect(() => {
-  //   console.log('Templates state updated:', templates);
-  // }, [templates]);
 
   // 템플릿 선택 시
   const handleTemplateSelect = (templateId: string) => {

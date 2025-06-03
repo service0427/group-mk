@@ -241,7 +241,7 @@ const approveSingleSlot = async (
               paidBalanceUsed = parseFloat(String(notesObj.payment_details.paid_balance_used || 0));
             }
           } catch (e) {
-            console.log('결제 정보 파싱 실패, 기본값 사용');
+            console.warn('결제 정보 파싱 실패, 기본값 사용');
           }
         }
         

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CAMPAIGNS } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import { SERVICE_METADATA } from '@/config/service-metadata';
+import { USER_ROLES } from '@/config/roles.config';
 
 interface ServiceSelectorProps {
   selectedService: string | null;
@@ -13,6 +14,7 @@ interface ServiceSelectorProps {
   serviceCounts?: Record<string, number>;
   className?: string;
   requiresKeyword?: boolean;  // 키워드가 필요한 서비스만 표시할지 여부
+  userRole?: string;  // 사용자 역할
 }
 
 export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
@@ -22,7 +24,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   showCount = false,
   serviceCounts = {},
   className = '',
-  requiresKeyword
+  requiresKeyword,
+  userRole
 }) => {
   // 모든 서비스를 menu.config.tsx 순서대로 정렬
   const allServices = useMemo(() => {
@@ -114,6 +117,14 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const filteredServices = useMemo(() => {
     let services = allServices;
 
+    // 비기너 역할인 경우 NS 순위확인과 NP 순위확인만 표시
+    if (userRole === USER_ROLES.BEGINNER) {
+      services = services.filter(service => 
+        service.code === CampaignServiceType.NAVER_SHOPPING_RANK ||
+        service.code === CampaignServiceType.NAVER_PLACE_RANK
+      );
+    }
+
     // 키워드 필터 적용
     if (requiresKeyword !== undefined) {
       services = services.filter(service => {
@@ -132,7 +143,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     }
 
     return services;
-  }, [allServices, showDisabled, requiresKeyword]);
+  }, [allServices, showDisabled, requiresKeyword, userRole]);
 
   return (
     <div className={`flex flex-wrap gap-1.5 lg:gap-2 ${className}`}>

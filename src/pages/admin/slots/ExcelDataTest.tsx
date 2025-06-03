@@ -13,7 +13,6 @@ const ExcelDataTest: React.FC = () => {
 
   const fetchTestData = async () => {
     if (!currentUser) {
-      console.log('No user logged in');
       return;
     }
 
@@ -49,24 +48,13 @@ const ExcelDataTest: React.FC = () => {
         return;
       }
 
-      console.log('Raw data from Supabase:', data);
       setRawData(data);
 
       if (data) {
-        // 첫 번째 슬롯의 구조 자세히 확인
-        if (data.length > 0) {
-          console.log('첫 번째 슬롯 원본 데이터:', data[0]);
-          console.log('users 필드:', data[0].users);
-          console.log('campaigns 필드:', data[0].campaigns);
-        }
-        
+
         // ApprovePage와 동일한 데이터 변환
         const enrichedSlots = data.map((slot, index) => {
-          console.log(`슬롯 ${index} 변환 전:`, {
-            users: slot.users,
-            campaigns: slot.campaigns
-          });
-          
+
           // users 처리 - 배열 또는 단일 객체일 수 있음
           let user;
           if (Array.isArray(slot.users)) {
@@ -99,7 +87,7 @@ const ExcelDataTest: React.FC = () => {
 
           let campaignName = campaign?.campaign_name;
           let campaignLogo;
-          
+
           if (campaign) {
             if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
               campaignLogo = campaign.add_info.logo_url;
@@ -115,17 +103,10 @@ const ExcelDataTest: React.FC = () => {
             campaign_logo: campaignLogo,
             campaign
           };
-          
-          console.log(`슬롯 ${index} 변환 후:`, {
-            user: enrichedSlot.user,
-            campaign: enrichedSlot.campaign,
-            campaign_name: enrichedSlot.campaign_name
-          });
-          
+
           return enrichedSlot;
         });
 
-        console.log('Enriched slots:', enrichedSlots);
         setSlots(enrichedSlots as Slot[]);
       }
     } catch (err) {
@@ -137,7 +118,6 @@ const ExcelDataTest: React.FC = () => {
 
   const testExcelData = () => {
     if (slots.length === 0) {
-      console.log('No slots data');
       return;
     }
 
@@ -152,16 +132,12 @@ const ExcelDataTest: React.FC = () => {
       'unit_price'
     ];
 
-    console.log('=== 엑셀 데이터 테스트 ===');
-    
     slots.forEach((slot, index) => {
-      console.log(`\n--- 슬롯 ${index + 1} ---`);
-      console.log('전체 데이터:', slot);
-      
+
       testFields.forEach(field => {
         let value = '';
-        
-        switch(field) {
+
+        switch (field) {
           case 'id':
             value = slot.id;
             break;
@@ -184,8 +160,6 @@ const ExcelDataTest: React.FC = () => {
             value = slot.campaign?.unit_price ? String(slot.campaign.unit_price) : '';
             break;
         }
-        
-        console.log(`${field}: ${value}`);
       });
     });
   };
@@ -200,9 +174,9 @@ const ExcelDataTest: React.FC = () => {
           <Button onClick={fetchTestData} disabled={loading}>
             {loading ? '로딩 중...' : '데이터 가져오기'}
           </Button>
-          
-          <Button 
-            onClick={testExcelData} 
+
+          <Button
+            onClick={testExcelData}
             disabled={slots.length === 0}
             variant="outline"
           >

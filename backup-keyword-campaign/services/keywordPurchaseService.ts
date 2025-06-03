@@ -142,8 +142,6 @@ export const keywordPurchaseService = {
         // 슬롯 ID 생성
         const slotId = uuidv4();
         const now = new Date().toISOString();
-
-        console.log('keyword:', keyword);
         
         // 슬롯 항목 생성 (타입 매칭을 위해 명확한 인터페이스 사용)
         const slotEntry: DbSlot = {

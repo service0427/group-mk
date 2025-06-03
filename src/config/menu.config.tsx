@@ -15,12 +15,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     heading: '서비스',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
   },
   {
     title: '캠페인 소개',
     icon: 'document text-primary',
     path: '/advertise/ntraffic/desc',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
     children: [
       {
         title: '네이버',
@@ -30,6 +31,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NS 순위확인',
             path: '/advertise/campaigns/info/naver-shopping-rank',
             iconImage: '/media/ad-brand/naver-shopping.png',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
           },
           {
             title: 'NS 트래픽',
@@ -41,6 +43,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NP 순위확인',
             path: '/advertise/campaigns/info/naver-place-rank',
             iconImage: '/media/ad-brand/naver-place.png',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
           },
           {
             title: 'NP 트래픽',
@@ -162,7 +165,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
     title: '이용 중인 서비스',
     icon: 'setting-4 text-info',
     path: '/my-services',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),
   },
   {
     title: '내 키워드',

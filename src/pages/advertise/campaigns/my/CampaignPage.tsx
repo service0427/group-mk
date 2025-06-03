@@ -284,7 +284,6 @@ const CampaignPage: React.FC<CampaignPageProps> = ({ serviceType: propServiceTyp
   // 메인 콘텐츠 렌더링 함수
   const renderContent = () => (
     <>
-      <Toaster position="top-right" richColors closeButton />
 
       <div className="grid gap-5 lg:gap-7.5">
         {/* 검색 및 필터 영역 */}

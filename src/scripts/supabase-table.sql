@@ -409,3 +409,46 @@ create table public.service_keyword_field_mappings (
   constraint service_keyword_field_mappings_pkey primary key (id),
   constraint service_keyword_field_mappings_service_type_key unique (service_type)
 ) TABLESPACE pg_default;
+
+
+create table public.user_activities (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  action text not null,
+  occurred_at timestamp with time zone not null default now(),
+  ip_address inet null,
+  details jsonb null,
+  constraint user_activities_pkey primary key (id),
+  constraint user_activities_user_id_fkey foreign KEY (user_id) references users (id),
+  constraint user_activities_action_check check (
+    (
+      action = any (
+        array[
+          'signup'::text,
+          'login_success'::text,
+          'login_failure'::text,
+          'logout'::text,
+          'deposit'::text,
+          'withdrawal'::text,
+          'profile_updated'::text,
+          'password_changed'::text,
+          'email_verification'::text,
+          'password_reset_requested'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create table public.system_logs (
+  id uuid not null default gen_random_uuid (),
+  log_type text not null,
+  message text not null,
+  details jsonb null,
+  created_at timestamp with time zone not null default now(),
+  constraint system_logs_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_system_logs_created_at on public.system_logs using btree (created_at) TABLESPACE pg_default;
+
+create index IF not exists idx_system_logs_log_type on public.system_logs using btree (log_type) TABLESPACE pg_default;

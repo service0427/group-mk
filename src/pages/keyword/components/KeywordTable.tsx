@@ -4,6 +4,14 @@ import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types'
 import { useKeywordFieldConfig } from '../hooks/useKeywordFieldConfig';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface KeywordTableProps {
   keywords: Keyword[];
@@ -48,6 +56,16 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   // 상태 관리
   const [searchText, setSearchText] = useState('');
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
+  
+  // 알림 모달 상태
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogDescription, setDialogDescription] = useState('');
+  const [dialogType, setDialogType] = useState<'error' | 'success'>('error');
+  
+  // 삭제 확인 모달 상태
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null);
@@ -247,10 +265,40 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     await onUpdateKeyword(keywordId, { isActive: !currentStatus });
   };
 
+  // 알림 다이얼로그 표시 함수
+  const showDialog = (title: string, description: string, type: 'error' | 'success' = 'error') => {
+    setDialogTitle(title);
+    setDialogDescription(description);
+    setDialogType(type);
+    setDialogOpen(true);
+  };
+
   // 키워드 삭제 핸들러
-  const handleDeleteKeyword = async (keywordId: number) => {
-    if (window.confirm('이 키워드를 삭제하시겠습니까?')) {
-      await onDeleteKeyword(keywordId);
+  const handleDeleteKeyword = (keywordId: number) => {
+    setDeleteTargetId(keywordId);
+    setDeleteConfirmOpen(true);
+  };
+
+  // 삭제 확인 핸들러
+  const confirmDelete = async () => {
+    if (deleteTargetId) {
+      await onDeleteKeyword(deleteTargetId);
+      setDeleteConfirmOpen(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  // URL 유효성 검사 함수
+  const isValidUrl = (urlString: string): boolean => {
+    if (!urlString) return true; // 빈 문자열은 허용 (선택 필드)
+    
+    try {
+      const url = new URL(urlString);
+      // http 또는 https 프로토콜만 허용
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (error) {
+      // URL 구조가 잘못된 경우
+      return false;
     }
   };
 
@@ -259,6 +307,12 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     e.preventDefault();
 
     if (!newKeywordData.mainKeyword.trim()) return;
+
+    // URL 유효성 검사
+    if (newKeywordData.url && !isValidUrl(newKeywordData.url)) {
+      showDialog('URL 형식 오류', '올바른 URL 형식이 아닙니다.\n예: https://example.com', 'error');
+      return;
+    }
 
     // isActive 속성이 있는지 확인하고, 없으면 true로 설정
     const keywordToAdd = {
@@ -539,9 +593,13 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 {getFieldLabel('mid', 'MID')} {isRequired('mid') && '*'}
               </label>
               <input
-                type="number"
+                type="text"
                 value={newKeywordData.mid || ''}
-                onChange={(e) => handleNewKeywordChange(e, 'mid')}
+                onChange={(e) => {
+                  // 숫자만 입력 가능하도록 필터링
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  handleNewKeywordChange({ ...e, target: { ...e.target, value } }, 'mid');
+                }}
                 placeholder={getFieldPlaceholder('mid', 'MID')}
                 className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
                 disabled={isLoading}
@@ -558,15 +616,24 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           )}
           {!isHidden('url') && (
             <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[350px] sm:max-w-[400px]">
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {getFieldLabel('url', 'URL')} {isRequired('url') && '*'}
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <span>{getFieldLabel('url', 'URL')} {isRequired('url') && '*'}</span>
+                {newKeywordData.url && !isValidUrl(newKeywordData.url) && (
+                  <span className="text-red-500 text-xs font-normal ml-auto">
+                    올바른 URL 형식이 아닙니다
+                  </span>
+                )}
               </label>
               <input
                 type="text"
                 value={newKeywordData.url}
                 onChange={(e) => handleNewKeywordChange(e, 'url')}
                 placeholder={getFieldPlaceholder('url', 'URL')}
-                className="w-full px-2 py-1 text-xs border border-green-300 dark:border-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                className={`w-full px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800 ${
+                  newKeywordData.url && !isValidUrl(newKeywordData.url) 
+                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500' 
+                    : 'border-green-300 dark:border-green-700 focus:ring-green-500'
+                }`}
                 disabled={isLoading}
                 required={isRequired('url')}
                 ref={urlRef}
@@ -975,6 +1042,125 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           ) : null
         )
       )}
+
+      {/* 알림 다이얼로그 */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+          {/* 헤더 영역 */}
+          <div className={`px-6 py-4 ${
+            dialogType === 'success' 
+              ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20' 
+              : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+          }`}>
+            <DialogHeader className="flex flex-row items-center gap-3">
+              {/* 아이콘 */}
+              <div className={`flex-shrink-0 p-3 rounded-full ${
+                dialogType === 'success' 
+                  ? 'bg-green-100 dark:bg-green-800/30' 
+                  : 'bg-red-100 dark:bg-red-800/30'
+              }`}>
+                {dialogType === 'success' ? (
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <DialogTitle className={`text-lg font-semibold ${
+                dialogType === 'success' ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
+              }`}>
+                {dialogTitle}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+          
+          {/* 내용 영역 */}
+          <div className="px-6 py-4">
+            <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+              {dialogDescription}
+            </DialogDescription>
+          </div>
+          
+          {/* 버튼 영역 */}
+          <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3">
+            <Button
+              onClick={() => setDialogOpen(false)}
+              className={`w-full sm:w-auto ${
+                dialogType === 'success' 
+                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800' 
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+              } text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md`}
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+          {/* 헤더 영역 */}
+          <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 px-6 py-4">
+            <DialogHeader className="flex flex-row items-center gap-3">
+              {/* 삭제 아이콘 */}
+              <div className="flex-shrink-0 p-3 rounded-full bg-red-100 dark:bg-red-800/30">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <DialogTitle className="text-lg font-semibold text-red-800 dark:text-red-300">
+                키워드 삭제 확인
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+          
+          {/* 내용 영역 */}
+          <div className="px-6 py-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <DialogDescription className="text-sm text-gray-600 dark:text-gray-400">
+                  이 키워드를 삭제하시겠습니까?
+                </DialogDescription>
+                <p className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
+                  이 작업은 되돌릴 수 없습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* 버튼 영역 */}
+          <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setDeleteTargetId(null);
+              }}
+              className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              삭제
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

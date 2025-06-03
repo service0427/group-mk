@@ -35,6 +35,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [urlError, setUrlError] = useState<boolean>(false);
   
   // 이미지 확대 모달 상태
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
@@ -115,6 +116,25 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
       ...prev,
       [field]: value
     }));
+    
+    // URL 필드가 변경되면 유효성 검사
+    if (field === 'url' && typeof value === 'string') {
+      setUrlError(value !== '' && !isValidUrl(value));
+    }
+  };
+
+  // URL 유효성 검사 함수
+  const isValidUrl = (urlString: string): boolean => {
+    if (!urlString) return true; // 빈 문자열은 허용 (선택 필드)
+    
+    try {
+      const url = new URL(urlString);
+      // http 또는 https 프로토콜만 허용
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (error) {
+      // URL 구조가 잘못된 경우
+      return false;
+    }
   };
 
   const handleSave = async () => {
@@ -132,6 +152,12 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
 
     if (!formData.mid) {
       setSaveError(`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력해주세요.`);
+      return;
+    }
+
+    // URL 유효성 검사
+    if (formData.url && !isValidUrl(formData.url)) {
+      setSaveError('올바른 URL 형식이 아닙니다. (예: https://example.com)');
       return;
     }
 
@@ -292,9 +318,13 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                   </Label>
                   <input
                     id="mid"
-                    type="number"
+                    type="text"
                     value={formData.mid || ''}
-                    onChange={(e) => handleInputChange('mid', e.target.value ? parseInt(e.target.value) : undefined)}
+                    onChange={(e) => {
+                      // 숫자만 입력 가능하도록 필터링
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      handleInputChange('mid', value ? parseInt(value) : undefined);
+                    }}
                     placeholder={`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력하세요`}
                     className="input w-full"
                     disabled

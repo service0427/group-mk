@@ -11,6 +11,7 @@ interface ChargeHistoryModalProps {
     open: boolean;
     user_id: string;
     onClose: () => void;
+    onUpdate?: () => void; // 업데이트 후 콜백 추가
 }
 
 interface UserData {
@@ -23,7 +24,7 @@ interface UserData {
     created_at?: string;
 }
 
-const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => {
+const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModalProps) => {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedRole, setSelectedRole] = useState<string>('');
@@ -38,6 +39,7 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
         {"code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR)},
         {"code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY)},
         {"code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER)},
+        {"code": USER_ROLES.BEGINNER, "name": getRoleDisplayName(USER_ROLES.BEGINNER)},
     ];
 
     const status_array = [
@@ -157,6 +159,9 @@ const AdminUserModal = ({ open, user_id, onClose }: ChargeHistoryModalProps) => 
 
             setUserData(prev => prev ? {...prev, status: selectedStatus, role: selectedRole} : null);
             success('회원 정보가 수정되었습니다.');
+            
+            // 리스트 새로고침 콜백 호출
+            onUpdate?.();
         } catch (error: any) {
             console.error('회원 정보 수정 중 오류 발생:', error.message);
             showError('회원 정보 수정 중 오류가 발생했습니다: ' + error.message);

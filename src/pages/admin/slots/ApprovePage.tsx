@@ -4,7 +4,6 @@ import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useLocation } from 'react-router-dom';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { Toaster } from 'sonner';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { getServiceTypeFromUrl } from '@/utils/serviceTypeResolver';
 import { useDialog } from '@/providers';
@@ -1286,7 +1285,6 @@ const ApprovePage: React.FC = () => {
       description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
       showPageMenu={false}
     >
-      <Toaster position="top-right" richColors closeButton />
         
 
         {/* 월간 통계 */}

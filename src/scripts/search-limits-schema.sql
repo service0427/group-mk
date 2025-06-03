@@ -75,12 +75,12 @@ CREATE TABLE monthly_search_stats (
 INSERT INTO search_limits_config (user_role, search_type, daily_limit, monthly_limit) VALUES
     ('beginner', 'shop', 100, 3000),
     ('beginner', 'place', 100, 3000),
-    ('advertiser', 'shop', 500, 15000),
-    ('advertiser', 'place', 500, 15000),
-    ('agency', 'shop', 1000, 30000),
-    ('agency', 'place', 1000, 30000),
-    ('distributor', 'shop', 2000, NULL),
-    ('distributor', 'place', 2000, NULL),
+    ('advertiser', 'shop', 100, 3000),
+    ('advertiser', 'place', 100, 3000),
+    ('agency', 'shop', 100, 3000),
+    ('agency', 'place', 100, 3000),
+    ('distributor', 'shop', 100, 3000),
+    ('distributor', 'place', 100, 3000),
     ('operator', 'shop', -1, NULL), -- -1은 무제한
     ('operator', 'place', -1, NULL),
     ('developer', 'shop', -1, NULL),

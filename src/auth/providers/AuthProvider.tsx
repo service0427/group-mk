@@ -41,19 +41,19 @@ const SESSION_CACHE_DURATION = 60000; // 1분
 const tokenRefreshManager = (() => {
     let isRefreshing = false;
     let refreshPromise: Promise<boolean> | null = null;
-    
+
     return {
         refresh: async (refreshFn: () => Promise<boolean>) => {
             if (isRefreshing && refreshPromise) {
                 return refreshPromise;
             }
-            
+
             isRefreshing = true;
             refreshPromise = refreshFn().finally(() => {
                 isRefreshing = false;
                 refreshPromise = null;
             });
-            
+
             return refreshPromise;
         }
     };
@@ -70,7 +70,7 @@ const performanceMonitor = {
             }
         }
     },
-    
+
     measure: (name: string, startMark: string, endMark: string) => {
         if (process.env.NODE_ENV === 'development') {
             try {
@@ -81,8 +81,8 @@ const performanceMonitor = {
             }
         }
     },
-    
-    measureAsync: async function<T>(name: string, fn: () => Promise<T>): Promise<T> {
+
+    measureAsync: async function <T>(name: string, fn: () => Promise<T>): Promise<T> {
         if (process.env.NODE_ENV === 'development') {
             const start = performance.now();
             try {
@@ -116,7 +116,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 resolve(null);
                 return;
             }
-            
+
             // requestAnimationFrame을 사용하여 다음 프레임에서 처리
             requestAnimationFrame(() => {
                 try {
@@ -133,19 +133,19 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     // 캐시된 세션 가져오기 함수
     const getCachedSession = useCallback(async () => {
         const now = Date.now();
-        
+
         // 캐시가 유효한 경우
         if (cachedSession && (now - sessionCacheTime) < SESSION_CACHE_DURATION) {
             return { data: { session: cachedSession }, error: null };
         }
-        
+
         // 새로 조회
         const result = await supabase.auth.getSession();
         if (result.data.session) {
             cachedSession = result.data.session;
             sessionCacheTime = now;
         }
-        
+
         return result;
     }, []);
 
@@ -180,26 +180,26 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const refreshToken = useCallback(async (): Promise<boolean> => {
         return performanceMonitor.measureAsync('Token Refresh', async () => {
             try {
-            const storeAuth = authHelper.getAuth();
-            if (!storeAuth) return false;
+                const storeAuth = authHelper.getAuth();
+                if (!storeAuth) return false;
 
-            // 캐시된 세션 사용
-            const { data, error } = await getCachedSession();
+                // 캐시된 세션 사용
+                const { data, error } = await getCachedSession();
 
-            if (error || !data.session) {
-                return false;
-            }
+                if (error || !data.session) {
+                    return false;
+                }
 
-            // 세션이 유효하면 auth 정보 업데이트
-            const authData: AuthModel = {
-                access_token: data.session.access_token,
-                refreshToken: data.session.refresh_token,
-                api_token: data.session.access_token
-            };
+                // 세션이 유효하면 auth 정보 업데이트
+                const authData: AuthModel = {
+                    access_token: data.session.access_token,
+                    refreshToken: data.session.refresh_token,
+                    api_token: data.session.access_token
+                };
 
-            saveAuth(authData);
-            setLastTokenCheck(Date.now());
-            return true;
+                saveAuth(authData);
+                setLastTokenCheck(Date.now());
+                return true;
             } catch (error: any) {
                 return false;
             }
@@ -234,40 +234,55 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const getUser = useCallback(async (): Promise<CustomUser | null> => {
         return performanceMonitor.measureAsync('Get User', async () => {
             try {
-            // 캐시된 세션 사용
-            const { data: sessionData, error: sessionError } = await getCachedSession();
+                // 캐시된 세션 사용
+                const { data: sessionData, error: sessionError } = await getCachedSession();
 
-            if (sessionError || !sessionData.session || !sessionData.session.user) {
-                return null;
-            }
+                if (sessionError || !sessionData.session || !sessionData.session.user) {
+                    return null;
+                }
 
-            const user = sessionData.session.user;
-            const metadataRole = user.user_metadata?.role;
+                const user = sessionData.session.user;
+                const metadataRole = user.user_metadata?.role;
 
-            // 비기너 역할 최적화 - users 테이블 조회 스킵
-            if (metadataRole === USER_ROLES.BEGINNER) {
-                const beginnerUserData: CustomUser = {
-                    id: user.id,
-                    email: user.email || '',
-                    full_name: user.user_metadata?.full_name || '',
-                    phone_number: '',
-                    role: USER_ROLES.BEGINNER,
-                    status: 'active',
-                    raw_user_meta_data: user.user_metadata
-                };
-                return beginnerUserData;
-            }
+                // 비기너 역할 최적화 - users 테이블 조회 스킵
+                if (metadataRole === USER_ROLES.BEGINNER) {
+                    const beginnerUserData: CustomUser = {
+                        id: user.id,
+                        email: user.email || '',
+                        full_name: user.user_metadata?.full_name || '',
+                        phone_number: '',
+                        role: USER_ROLES.BEGINNER,
+                        status: 'active',
+                        raw_user_meta_data: user.user_metadata
+                    };
+                    return beginnerUserData;
+                }
 
-            // 비기너가 아닌 경우에만 users 테이블 조회
-            try {
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select("*")
-                    .eq('id', user.id)
-                    .single();
+                // 비기너가 아닌 경우에만 users 테이블 조회
+                try {
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .select("*")
+                        .eq('id', user.id)
+                        .single();
 
-                if (userError) {
-                    // 기본 사용자 정보 반환
+                    if (userError) {
+                        // 기본 사용자 정보 반환
+                        const basicUserData: CustomUser = {
+                            id: user.id,
+                            email: user.email || '',
+                            full_name: user.user_metadata?.full_name || '',
+                            phone_number: '',
+                            role: metadataRole || USER_ROLES.BEGINNER,
+                            status: 'active',
+                            raw_user_meta_data: user.user_metadata
+                        };
+                        return basicUserData;
+                    }
+
+                    return userData as CustomUser;
+                } catch (error: any) {
+                    // 오류 시 기본 사용자 정보 반환
                     const basicUserData: CustomUser = {
                         id: user.id,
                         email: user.email || '',
@@ -279,21 +294,6 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     };
                     return basicUserData;
                 }
-
-                return userData as CustomUser;
-            } catch (error: any) {
-                // 오류 시 기본 사용자 정보 반환
-                const basicUserData: CustomUser = {
-                    id: user.id,
-                    email: user.email || '',
-                    full_name: user.user_metadata?.full_name || '',
-                    phone_number: '',
-                    role: metadataRole || USER_ROLES.BEGINNER,
-                    status: 'active',
-                    raw_user_meta_data: user.user_metadata
-                };
-                return basicUserData;
-            }
 
             } catch (error: any) {
                 return null;
@@ -351,7 +351,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
 
                 // 1단계: 비동기 캐시 검증으로 즉시 UI 표시
                 const cachedUser = await validateCache();
-                
+
                 if (cachedUser) {
                     setCurrentUser(cachedUser);
                     setLoading(false);
@@ -366,7 +366,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         // 순차적 실행으로 경쟁 조건 해결
                         // 1. 먼저 토큰 갱신
                         const isTokenValid = await refreshToken();
-                        
+
                         if (!isTokenValid) {
                             // 토큰이 유효하지 않으면 로그아웃 처리
                             setAuth(undefined);
@@ -377,10 +377,10 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                             sessionStorage.removeItem('lastAuthCheck');
                             return;
                         }
-                        
+
                         // 2. 토큰이 유효한 경우에만 사용자 정보 조회
                         const userData = await getUser();
-                        
+
                         if (userData) {
                             setCurrentUser(userData);
                             setAuthVerified(true);
@@ -649,8 +649,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
     const requestPasswordResetLink = async (email: string) => {
         setLoading(true);
         try {
+            // 프로덕션 환경에서는 환경변수 사용, 없으면 현재 도메인 사용
+            const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/reset-password`,
+                redirectTo: `${baseUrl}/#/auth/reset-password`,
             });
 
             if (error) {
@@ -968,7 +971,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const cleanupAppStorage = () => {
                 // 우리 앱의 데이터만 삭제
                 const appKeys = ['auth', 'currentUser', 'lastAuthCheck'];
-                
+
                 appKeys.forEach(key => {
                     try {
                         localStorage.removeItem(key);
@@ -1013,7 +1016,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 강제 리다이렉트
             const timestamp = new Date().getTime();
             window.location.hash = `#/auth/login?t=${timestamp}`;
-            
+
             return false;
         } finally {
             // 로그아웃 완료 후 플래그 해제
@@ -1029,7 +1032,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             // 캐시 삭제
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('lastAuthCheck');
-            
+
             // DB에서 새로 가져오기
             const freshUser = await getUser();
             if (freshUser) {
@@ -1088,11 +1091,11 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             lastActivity = now;
 
             if (inactivityTimer) clearTimeout(inactivityTimer);
-            
+
             inactivityTimer = window.setTimeout(() => {
                 logout();
             }, INACTIVITY_TIMEOUT);
-            
+
             // 타이머 설정 완료
         };
 
@@ -1117,7 +1120,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         // 사용자 활동 이벤트 리스너 - 중요한 이벤트만 선택
         const events = ['mousedown', 'keypress', 'touchstart', 'mousemove', 'scroll', 'click'];
         // 이벤트 리스너 등록
-        
+
         events.forEach(event => {
             window.addEventListener(event, throttledReset, { passive: true });
         });

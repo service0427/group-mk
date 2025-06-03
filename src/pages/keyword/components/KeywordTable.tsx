@@ -183,7 +183,9 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     setSortDirection(newDirection);
 
     if (onSort) {
-      onSort(field, newDirection);
+      // status 필드로 정렬 요청 시 is_active로 변환
+      const actualField = field === 'status' ? 'is_active' : field;
+      onSort(actualField, newDirection);
     }
   };
 
@@ -714,7 +716,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   onClick={(e) => {
                     // 작업 버튼 영역 클릭은 제외
                     const target = e.target as HTMLElement;
-                    if (target.closest('.actions-cell') || target.closest('button') || target.closest('input')) return;
+                    if (target.closest('.actions-cell') || target.closest('.status-cell') || target.closest('button') || target.closest('input') || target.closest('label')) return;
                     
                     if (selectedKeywordIds.includes(keyword.id)) {
                       onSelectionChange?.(selectedKeywordIds.filter(id => id !== keyword.id));
@@ -826,7 +828,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   
                   {/* 상태 (스위치 버튼으로 변경) */}
                   {!isHidden('status') && (
-                    <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600">
+                    <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600 status-cell">
                     <div className="relative inline-block w-10 mr-2 align-middle select-none">
                       <input
                         type="checkbox"

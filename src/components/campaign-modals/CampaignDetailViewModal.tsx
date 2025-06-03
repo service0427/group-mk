@@ -595,7 +595,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 <div className="absolute inset-0 overflow-hidden">
                   {/* 배경 이미지(블러용) */}
                   <img
-                    src={bannerUrl || toAbsoluteUrl('/media/app/default-logo.svg')}
+                    src={bannerUrl || toAbsoluteUrl('/media/brand-logos/marketing-standard-icon.svg')}
                     alt=""
                     className="w-full h-full object-cover"
                     style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
@@ -606,12 +606,12 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 {/* 실제 이미지 (블러 없음) */}
                 <div className="relative z-10 flex justify-center items-center h-full">
                   <img
-                    src={bannerUrl || toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
+                    src={bannerUrl || toAbsoluteUrl('/media/brand-logos/marketing-standard-icon.svg')}
                     alt="캠페인 배너"
                     className="object-contain max-h-[180px] max-w-[90%] shadow-lg rounded-md"
                     onError={(e) => {
                       // 이미지 로드 실패 시 기본 배경으로 대체
-                      e.currentTarget.src = toAbsoluteUrl('/media/app/mini-logo-primary.svg');
+                      e.currentTarget.src = toAbsoluteUrl('/media/brand-logos/marketing-standard-icon.svg');
                     }}
                   />
                 </div>

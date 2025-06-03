@@ -74,8 +74,8 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
 
   const buildMenuItemRoot = (item: IMenuItemConfig, index: number) => {
     // 캠페인 소개 메뉴인지 확인
-    const isCampaignIntroMenu = item.title === '캠페인 소개';
-    
+    const isCampaignIntroMenu = item.title === '캠페인 소개' || item.title === '쇼핑/플레이스 검색';
+
     if (item.children) {
       return (
         <MenuItem
@@ -178,7 +178,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
     return items.map((item, idx) => {
       // 상위 메뉴가 캠페인 소개 메뉴인 경우 표시
       const shouldAlwaysShow = isParentCampaignIntro;
-      
+
       if (item.disabled) {
         return buildMenuItemChildDisabled(item, idx, level);
       } else {
@@ -190,7 +190,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
   const buildMenuItemChild = (item: IMenuItemConfig, index: number, level: number = 0, alwaysShow: boolean = false) => {
     // 네이버 메뉴인지 확인 (캠페인 소개 > 네이버)
     const isNaverMenu = item.title === '네이버';
-    
+
     if (item.children) {
       return (
         <MenuItem
@@ -354,7 +354,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
     };
 
     window.addEventListener('menuStateChange', handleMenuStateChange);
-    
+
     return () => {
       window.removeEventListener('menuStateChange', handleMenuStateChange);
     };
@@ -394,12 +394,12 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
   const filteredMenuConfig = filterMenuByRole(menuConfig || []);
 
   return (
-    <Menu 
-      highlight={true} 
-      multipleExpand={true} 
+    <Menu
+      highlight={true}
+      multipleExpand={true}
       className={clsx(
-        'flex flex-col grow sidebar-menu', 
-        itemsGap, 
+        'flex flex-col grow sidebar-menu',
+        itemsGap,
         'h-full w-full',
         isMobile && 'mobile-sidebar-menu' // 모바일에서 추가 스타일 (CSS에서 처리)
       )}

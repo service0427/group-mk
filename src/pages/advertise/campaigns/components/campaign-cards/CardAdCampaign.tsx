@@ -7,6 +7,8 @@ import {
   getStatusColorClass,
   formatCampaignDetailData
 } from '@/utils/CampaignFormat';
+import { useAuthContext } from '@/auth';
+import { USER_ROLES } from '@/config/roles.config';
 
 interface IAdCampaignItem {
   total: string;
@@ -53,6 +55,9 @@ const CardAdCampaign = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // 사용자 역할 가져오기
+  const { userRole } = useAuthContext();
 
   // 이제 props로 받은 rawData와 ID만 사용
   // 원본 데이터는 더 이상 확인하지 않음, 모달에서 직접 조회
@@ -110,16 +115,19 @@ const CardAdCampaign = ({
                 상세보기
               </button>
 
-              <button
-                className="btn btn-sm btn-primary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSlotModalOpen(true);
-                }}
-              >
-                <KeenIcon icon="purchase" className="me-1.5" />
-                구매하기
-              </button>
+              {/* distributor 역할이 아닌 경우에만 구매하기 버튼 표시 */}
+              {userRole !== USER_ROLES.DISTRIBUTOR && (
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSlotModalOpen(true);
+                  }}
+                >
+                  <KeenIcon icon="purchase" className="me-1.5" />
+                  구매하기
+                </button>
+              )}
             </div>
           </div>
 

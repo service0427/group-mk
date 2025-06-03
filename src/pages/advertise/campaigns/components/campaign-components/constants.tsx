@@ -3,11 +3,13 @@ import React from 'react';
 // 서비스 카테고리와 서비스 타입 코드 매핑
 export const SERVICE_TYPE_MAP = {
   'NS 트래픽': 'NaverShoppingTraffic',   // 기존 ntraffic에서 정확한 타입 코드로 변경
+  'NS 순위확인': 'NaverShoppingRank',
   'NP 저장하기': 'NaverPlaceSave',
   'NP 저장': 'NaverPlaceSave',           // 약식 명칭 지원
   'NP 블로그공유': 'NaverPlaceShare',
   'NP 공유': 'NaverPlaceShare',          // 약식 명칭 지원
   'NP 트래픽': 'NaverPlaceTraffic',
+  'NP 순위확인': 'NaverPlaceRank',
   'N 자동완성': 'NaverAuto',
   'N 트래픽': 'NaverTraffic',            // 기존 ntraffic에서 정확한 타입 코드로 변경
   'CP 트래픽': 'CoupangTraffic',
@@ -24,9 +26,11 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'NaverTraffic': 'N 트래픽',
   'NaverShoppingTraffic': 'NS 트래픽',
   'NaverShoppingFakeSale': 'NS 가짜매출',
+  'NaverShoppingRank': 'NS 순위확인',
   'NaverPlaceSave': 'NP 저장하기',
   'NaverPlaceShare': 'NP 블로그공유',
   'NaverPlaceTraffic': 'NP 트래픽',
+  'NaverPlaceRank': 'NP 순위확인',
   'NaverAuto': 'N 자동완성',
   'CoupangTraffic': 'CP 트래픽',
   'OhouseTraffic': 'OH 트래픽',
@@ -34,9 +38,11 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   // URL 매핑 (새 URL 구조 지원)
   'naver-traffic': 'N 트래픽',
   'naver-shopping-traffic': 'NS 트래픽',
+  'naver-shopping-rank': 'NS 순위확인',
   'naver-place-save': 'NP 저장하기',
   'naver-place-share': 'NP 블로그공유',
   'naver-place-traffic': 'NP 트래픽',
+  'naver-place-rank': 'NP 순위확인',
   'naver-auto': 'N 자동완성',
   'coupang-traffic': 'CP 트래픽',
   'ohouse-traffic': 'OH 트래픽'
@@ -46,9 +52,11 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
 export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
   'naver-traffic': 'NaverTraffic',
   'naver-shopping-traffic': 'NaverShoppingTraffic',
+  'naver-shopping-rank': 'NaverShoppingRank',
   'naver-place-save': 'NaverPlaceSave',
   'naver-place-share': 'NaverPlaceShare',
   'naver-place-traffic': 'NaverPlaceTraffic',
+  'naver-place-rank': 'NaverPlaceRank',
   'naver-auto': 'NaverAuto',
   'coupang-traffic': 'CoupangTraffic',
   'ohouse-traffic': 'OhouseTraffic'

@@ -318,7 +318,6 @@ const KeywordPage: React.FC = () => {
           {/* 서비스 타입 탭 */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">서비스</h3>
-            <div className="mb-4">
             <ServiceSelector
               selectedService={selectedServiceType}
               onServiceSelect={handleServiceTypeChange}
@@ -328,7 +327,6 @@ const KeywordPage: React.FC = () => {
               requiresKeyword={true}
               userRole={userRole}
             />
-            </div>
           </div>
 
           {/* 구분선 - 서비스 타입이 선택된 경우에만 표시 */}

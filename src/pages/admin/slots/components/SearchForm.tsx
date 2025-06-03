@@ -2,6 +2,7 @@ import React from 'react';
 import { Campaign } from './types';
 import { STATUS_OPTIONS } from './constants';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { USER_ROLES } from '@/config/roles.config';
 
 interface SearchFormProps {
   loading: boolean;
@@ -22,6 +23,8 @@ interface SearchFormProps {
   onExcelExport?: () => void;
   selectedCount?: number;
   totalCount?: number;
+  availableServiceTypes?: string[];
+  userRole?: string;
 }
 
 const SearchForm: React.FC<SearchFormProps> = ({
@@ -42,8 +45,16 @@ const SearchForm: React.FC<SearchFormProps> = ({
   onSearch,
   onExcelExport,
   selectedCount = 0,
-  totalCount = 0
+  totalCount = 0,
+  availableServiceTypes,
+  userRole
 }) => {
+  // 총판이고 사용 가능한 서비스 타입이 있는지 확인
+  const isDistributor = userRole === USER_ROLES.DISTRIBUTOR;
+  const hasAvailableServices = availableServiceTypes && availableServiceTypes.length > 0;
+  
+  // 실제로 표시할 서비스 타입들
+  const serviceTypesToDisplay = availableServiceTypes || Object.keys(SERVICE_TYPE_LABELS);
   return (
     <div className="card shadow-sm mb-5">
       <div className="card-header px-6 py-4">
@@ -57,18 +68,24 @@ const SearchForm: React.FC<SearchFormProps> = ({
             <div className="col-span-3">
               <div className="flex items-center h-9">
                 <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">서비스</label>
-                <select
-                  className="select select-bordered select-sm w-full"
-                  value={selectedServiceType}
-                  onChange={onServiceTypeChange}
-                  disabled={loading || Object.keys(SERVICE_TYPE_LABELS).length === 0}
-                >
-                  {Object.keys(SERVICE_TYPE_LABELS).map((serviceType) => (
-                    <option key={serviceType} value={serviceType}>
-                      {SERVICE_TYPE_LABELS[serviceType] || serviceType}
-                    </option>
-                  ))}
-                </select>
+                {isDistributor && !hasAvailableServices ? (
+                  <div className="flex-1 text-sm text-gray-500 dark:text-gray-400 italic">
+                    등록된 캠페인이 없습니다
+                  </div>
+                ) : (
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={selectedServiceType}
+                    onChange={onServiceTypeChange}
+                    disabled={loading || serviceTypesToDisplay.length === 0}
+                  >
+                    {serviceTypesToDisplay.map((serviceType) => (
+                      <option key={serviceType} value={serviceType}>
+                        {SERVICE_TYPE_LABELS[serviceType] || serviceType}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
@@ -79,7 +96,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   className="select select-bordered select-sm w-full"
                   value={selectedCampaign}
                   onChange={onCampaignChange}
-                  disabled={loading || filteredCampaigns.length <= 1}
+                  disabled={loading || filteredCampaigns.length <= 1 || (isDistributor && !hasAvailableServices)}
                 >
                   {filteredCampaigns.map((campaign) => (
                     <option key={campaign.id} value={campaign.id}>
@@ -210,18 +227,24 @@ const SearchForm: React.FC<SearchFormProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">서비스 타입</label>
-              <select
-                className="select select-bordered select-sm w-full"
-                value={selectedServiceType}
-                onChange={onServiceTypeChange}
-                disabled={loading || Object.keys(SERVICE_TYPE_LABELS).length === 0}
-              >
-                {Object.keys(SERVICE_TYPE_LABELS).map((serviceType) => (
-                  <option key={serviceType} value={serviceType}>
-                    {SERVICE_TYPE_LABELS[serviceType] || serviceType}
-                  </option>
-                ))}
-              </select>
+              {isDistributor && !hasAvailableServices ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400 italic p-2 border border-gray-200 dark:border-gray-700 rounded h-9 flex items-center">
+                  등록된 캠페인 없음
+                </div>
+              ) : (
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={selectedServiceType}
+                  onChange={onServiceTypeChange}
+                  disabled={loading || serviceTypesToDisplay.length === 0}
+                >
+                  {serviceTypesToDisplay.map((serviceType) => (
+                    <option key={serviceType} value={serviceType}>
+                      {SERVICE_TYPE_LABELS[serviceType] || serviceType}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -246,7 +269,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               className="select select-bordered select-sm w-full"
               value={selectedCampaign}
               onChange={onCampaignChange}
-              disabled={loading || filteredCampaigns.length <= 1}
+              disabled={loading || filteredCampaigns.length <= 1 || (isDistributor && !hasAvailableServices)}
             >
               {filteredCampaigns.map((campaign) => (
                 <option key={campaign.id} value={campaign.id}>

@@ -30,6 +30,7 @@ import SlotMemoModal from './components/SlotMemoModal';
 import ApprovalConfirmModal from './components/ApprovalConfirmModal';
 import SlotDetailModal from './components/SlotDetailModal';
 import MonthlyStatistics, { MonthlyStatisticsRef } from './components/MonthlyStatistics';
+import { USER_ROLES } from '@/config/roles.config';
 
 // 엑셀 내보내기 서비스 import
 import { exportFilteredSlotsToExcel, exportSelectedSlotsToExcel } from './services/excelExportService';
@@ -101,6 +102,24 @@ const ApprovePage: React.FC = () => {
   
   // MonthlyStatistics 컴포넌트 ref
   const monthlyStatisticsRef = useRef<MonthlyStatisticsRef>(null);
+  
+  // 총판 사용자가 가진 서비스 타입들을 계산
+  const availableServiceTypes = useMemo(() => {
+    // 총판이 아닌 경우 전체 서비스 타입 반환
+    if (!currentUser || currentUser.role !== USER_ROLES.DISTRIBUTOR) {
+      return Object.keys(SERVICE_TYPE_LABELS);
+    }
+    
+    // 총판인 경우 자신의 캠페인이 있는 서비스 타입만 반환
+    const distributorCampaigns = campaigns.filter(campaign => 
+      campaign.mat_id === currentUser.id
+    );
+    
+    // 중복 제거하여 고유한 서비스 타입만 추출
+    const uniqueServiceTypes = [...new Set(distributorCampaigns.map(c => c.service_type))];
+    
+    return uniqueServiceTypes;
+  }, [campaigns, currentUser]);
   
   // 필터링된 슬롯들을 useMemo로 계산
   const filteredSlots = useMemo(() => {
@@ -284,7 +303,6 @@ const ApprovePage: React.FC = () => {
               try {
                 campaign.add_info = JSON.parse(campaign.add_info);
               } catch (e) {
-                console.error('add_info 파싱 오류:', e);
                 campaign.add_info = null;
               }
             }
@@ -422,7 +440,6 @@ const ApprovePage: React.FC = () => {
             .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('빈 결과 쿼리 오류:', error);
             setError('슬롯 정보를 가져오는데 실패했습니다.');
           } else {
             setSlots([]);
@@ -585,8 +602,7 @@ const ApprovePage: React.FC = () => {
         .eq('slot_id', slotId);
 
       if (workError) {
-        console.error('작업 내역 조회 오류:', workError);
-        return null;
+          return null;
       }
 
       // 해당 슬롯 정보 가져오기
@@ -601,7 +617,6 @@ const ApprovePage: React.FC = () => {
           .single();
           
         if (slotError || !slotInfo) {
-          console.error('슬롯 직접 조회 실패:', slotError);
           return null;
         }
         
@@ -673,14 +688,12 @@ const ApprovePage: React.FC = () => {
         isEarlyCompletion: workedDays < dueDays && completionRate < 100
       };
     } catch (error) {
-      console.error('작업 진행률 계산 오류:', error);
       return null;
     }
   };
 
   // 승인 처리 함수 (actionType 매개변수 추가)
   const handleApproveSlot = async (slotId: string | string[], actionType?: string) => {
-    console.log('handleApproveSlot 호출됨:', { slotId, actionType });
     
     // 처리할 슬롯 ID 설정
     let slotIdsToProcess: string[] = [];
@@ -739,7 +752,6 @@ const ApprovePage: React.FC = () => {
           
         }
       } catch (error) {
-        console.error('작업 진행률 확인 오류:', error);
       }
     }
     
@@ -749,7 +761,6 @@ const ApprovePage: React.FC = () => {
 
   // 실제 승인 처리 함수
   const processApproval = async (slotIdsToProcess: string[], actionType?: string) => {
-    console.log('processApproval 호출됨:', { slotIdsToProcess, actionType });
     
     // 로딩 상태 표시
     setLoading(true);
@@ -764,12 +775,10 @@ const ApprovePage: React.FC = () => {
 
       // 해당 슬롯 정보 가져오기
       let slotsToProcess = slots.filter(slot => slotIdsToProcess.includes(slot.id));
-      console.log('처리할 슬롯:', slotsToProcess);
       
       if (slotsToProcess.length === 0) {
         // filteredSlots에서도 찾아보기
         const filteredSlotsToProcess = filteredSlots.filter(slot => slotIdsToProcess.includes(slot.id));
-        console.log('filteredSlots에서 찾은 슬롯:', filteredSlotsToProcess);
         
         if (filteredSlotsToProcess.length > 0) {
           slotsToProcess = filteredSlotsToProcess;
@@ -807,15 +816,8 @@ const ApprovePage: React.FC = () => {
         const endDate = endDateObj.toISOString().split('T')[0];
 
         // API 호출 처리
-        console.log('approveSlot 호출 전:', { 
-          slotId: slot.id, 
-          userId: currentUser.id, 
-          actionType, 
-          status: slot.status 
-        });
         
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
-        console.log('approveSlot 결과:', result);
         results.push(result);
 
         if (result.success) {
@@ -1054,7 +1056,6 @@ const ApprovePage: React.FC = () => {
 
       await processCompleteSlot(slotIds);
     } catch (err: any) {
-      console.error('슬롯 완료 처리 오류:', err);
       showError(err.message || '슬롯 완료 처리 중 오류가 발생했습니다.');
     }
   };
@@ -1333,6 +1334,8 @@ const ApprovePage: React.FC = () => {
           onExcelExport={() => setExcelModalOpen(true)}
           selectedCount={selectedSlots.length}
           totalCount={filteredSlots.length}
+          availableServiceTypes={availableServiceTypes}
+          userRole={currentUser?.role}
         />
 
 

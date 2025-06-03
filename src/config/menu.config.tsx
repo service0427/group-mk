@@ -35,7 +35,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NS 트래픽',
             path: '/advertise/campaigns/info/naver-shopping-traffic',
             iconImage: '/media/ad-brand/naver-shopping.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 순위확인',
@@ -46,32 +46,32 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NP 트래픽',
             path: '/advertise/campaigns/info/naver-place-traffic',
             iconImage: '/media/ad-brand/naver-place.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 저장하기',
             path: '/advertise/campaigns/info/naver-place-save',
             iconImage: '/media/ad-brand/naver-place.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 블로그공유',
             path: '/advertise/campaigns/info/naver-place-share',
             iconImage: '/media/ad-brand/naver-blog.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'N 자동완성',
             path: '/advertise/campaigns/info/naver-auto',
             iconImage: '/media/ad-brand/naver.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NS 가구매',
             disabled: true,
             path: '/advertise/campaigns/info/naver-shopping-fakesale',
             iconImage: '/media/ad-brand/naver-shopping.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
       },
@@ -83,14 +83,14 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'CP 트래픽',
             path: '/advertise/campaigns/info/coupang-traffic',
             iconImage: '/media/ad-brand/coupang-app.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'CP 가구매',
             disabled: true,
             path: '/advertise/campaigns/info/coupang-fakesale',
             iconImage: '/media/ad-brand/coupang-app.png',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
       },
@@ -98,19 +98,19 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '인스타그램',
         disabled: true,
         iconImage: '/media/ad-brand/instagram.png',
-        authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       },
       {
         title: '포토&영상 제작',
         disabled: true,
         iconImage: '/media/brand-logos/vimeo.svg',
-        authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       },
       {
         title: '라이브방송',
         disabled: true,
         iconImage: '/media/ad-brand/youtube.png',
-        authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       }
     ]
   },

@@ -22,8 +22,12 @@ import { X } from 'lucide-react';
 import { keywordGroupService, keywordService } from './services/keywordService';
 import { toast } from 'sonner';
 import { ServiceSelector } from '@/components/service-selector';
+import { useAuthContext } from '@/auth';
 
 const KeywordPage: React.FC = () => {
+  // 사용자 정보 가져오기
+  const { userRole } = useAuthContext();
+  
   // 키워드 관리 훅 사용
   const {
     groups,
@@ -78,31 +82,21 @@ const KeywordPage: React.FC = () => {
 
   // 필터링된 그룹 목록 (선택된 서비스 타입에 따라)
   const filteredGroups = useMemo(() => {
-    console.log('=== 그룹 필터링 디버그 ===');
-    console.log('selectedServiceType:', selectedServiceType);
-    console.log('all groups:', groups);
-    console.log('groups with campaignType:', groups.map(g => ({ id: g.id, name: g.name, campaignType: g.campaignType })));
-    
     if (!selectedServiceType) {
       return [];
     }
     
-    const filtered = groups.filter(group => group.campaignType === selectedServiceType);
-    console.log('filtered groups:', filtered);
-    return filtered;
+    return groups.filter(group => group.campaignType === selectedServiceType);
   }, [groups, selectedServiceType]);
 
   // 서비스 타입별 그룹 수 계산
   const serviceTypeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    console.log('=== 서비스 타입 카운트 디버그 ===');
     groups.forEach(group => {
       if (group.campaignType) {
-        console.log(`group ${group.id}: campaignType = "${group.campaignType}"`);
         counts[group.campaignType] = (counts[group.campaignType] || 0) + 1;
       }
     });
-    console.log('final counts:', counts);
     return counts;
   }, [groups]);
 
@@ -177,7 +171,6 @@ const KeywordPage: React.FC = () => {
 
   // 서비스 타입 변경 핸들러
   const handleServiceTypeChange = (servicePath: string) => {
-    console.log('handleServiceTypeChange received path:', servicePath);
     
     // kebab-case path를 CampaignServiceType enum 값으로 변환
     // 동적으로 변환 맵 생성
@@ -193,11 +186,8 @@ const KeywordPage: React.FC = () => {
       pathToServiceType[kebabCase] = value;
     });
     
-    console.log('pathToServiceType map:', pathToServiceType);
-    
     // 변환된 서비스 타입 또는 원본 유지
     const serviceType = pathToServiceType[servicePath] || servicePath;
-    console.log('Converted serviceType:', serviceType);
     
     setSelectedServiceType(serviceType);
     // 서비스 타입 변경 시 키워드 목록 초기화
@@ -270,15 +260,11 @@ const KeywordPage: React.FC = () => {
 
   // 키워드 이동/복사 핸들러
   const handleMoveKeywords = async (targetGroupId: number, copy: boolean) => {
-    console.log('handleMoveKeywords called', { targetGroupId, copy, selectedKeywordIds });
     try {
       const selectedKeywords = keywords.filter(k => selectedKeywordIds.includes(k.id));
-      console.log('Selected keywords:', selectedKeywords);
 
       if (copy) {
-        console.log('Copying keywords...');
         const response = await keywordService.copyKeywords(selectedKeywordIds, targetGroupId);
-        console.log('Copy response:', response);
         if (response.success) {
           toast.success(`${selectedKeywords.length}개의 키워드를 복사했습니다.`);
           setSelectedKeywordIds([]);
@@ -288,9 +274,7 @@ const KeywordPage: React.FC = () => {
           toast.error(response.message || '키워드 복사에 실패했습니다.');
         }
       } else {
-        console.log('Moving keywords...');
         const response = await keywordService.moveKeywords(selectedKeywordIds, targetGroupId);
-        console.log('Move response:', response);
         if (response.success) {
           toast.success(`${selectedKeywords.length}개의 키워드를 이동했습니다.`);
           setSelectedKeywordIds([]);
@@ -342,6 +326,7 @@ const KeywordPage: React.FC = () => {
               showCount={true}
               serviceCounts={serviceTypeCounts}
               requiresKeyword={true}
+              userRole={userRole}
             />
             </div>
           </div>

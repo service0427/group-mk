@@ -398,6 +398,9 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
               <span className="font-bold">W</span>
             </div>
             <DialogTitle className="text-lg font-medium">캐시 충전 신청</DialogTitle>
+            <DialogDescription className="sr-only">
+              캐시 충전을 위한 금액 입력 및 결제 정보 입력 화면입니다.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="bg-background p-10 flex-1 overflow-y-auto min-h-0">
@@ -437,13 +440,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
                     </button>
                   )}
                 </div>
-                {(koreanAmount || customAmount === '0') && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {customAmount === '0' ? '0원' : `${koreanAmount}원`}
-                  </div>
-                )}
               </div>
-              <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
 
               {/* 보너스 캐시 정보 표시 */}
               {customAmount && cashSetting && showPointInfo && (

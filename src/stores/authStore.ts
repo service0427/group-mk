@@ -141,7 +141,14 @@ export const useAuthStore = create<AuthState>()(
           } catch (error: any) {
             // 로그인 실패
             
+            // 인증 정보 완전 제거
+            authHelper.removeAuth();
+            
             set({
+              auth: undefined,
+              currentUser: null,
+              isAuthenticated: false,
+              authVerified: false,
               error: {
                 code: error.code || 'LOGIN_ERROR',
                 message: error.message || '로그인 중 오류가 발생했습니다',

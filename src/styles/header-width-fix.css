@@ -1,0 +1,48 @@
+/* Header width fix CSS */
+
+/* Ensure header topbar maintains proper width constraints */
+.header-topbar {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Prevent UserInfoDisplay from causing layout shifts */
+.user-info-display-container {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+/* Ensure cash balance text doesn't cause overflow */
+.cash-balance-text {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Prevent flex containers from expanding beyond their bounds */
+.header .flex {
+  min-width: 0;
+}
+
+/* Ensure the charge button section maintains fixed width */
+.charge-button-container {
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Additional safety for preventing header overflow */
+.header > div {
+  overflow: hidden;
+}
+
+/* Ensure menu dropdowns don't affect header width */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+}
+
+/* Prevent loading states from causing layout shifts */
+.animate-pulse {
+  display: inline-block;
+  min-width: 60px; /* Minimum width for loading text */
+}

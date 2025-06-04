@@ -78,7 +78,7 @@ const CampaignManagePage: React.FC = () => {
     <Button
       variant="outline"
       size="sm"
-      className="bg-primary-600 text-white hover:bg-primary-700"
+      className="bg-primary-600 text-white hover:bg-primary-700 flex items-center"
       onClick={() => setAddCampaignModalOpen(true)}
       disabled={!selectedService}
     >

@@ -7,7 +7,7 @@ const SnackbarProvider = ({ children }: PropsWithChildren) => {
     <CustomSnackbarProvider
       autoHideDuration={2000}
       maxSnack={3}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       Components={{
         solid: SolidSnackbar
       }}

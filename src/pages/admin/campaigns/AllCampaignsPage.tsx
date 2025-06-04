@@ -1,31 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { CommonTemplate } from '@/components/pageTemplate';
-import { useAuthContext } from '@/auth/useAuthContext';
-import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DashboardTemplate } from '@/components/pageTemplate';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { KeenIcon } from '@/components';
+import { useAuthContext } from '@/auth';
+import { CampaignModal } from '@/components/campaign-modals';
+import { AllCampaignsContent } from './components';
+import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { supabase } from '@/supabase';
-import { ICampaign } from './components/CampaignContent';
-import { formatCampaignData } from '@/utils/CampaignFormat';
-import { AllCampaignsContent } from './components/AllCampaignsContent';
-import { useMenus } from '@/providers';
-import { useLocation } from 'react-router-dom';
 
 const AllCampaignsPage: React.FC = () => {
-  const { pathname } = useLocation();
-  const { getMenuConfig } = useMenus();
-  const menuConfig = getMenuConfig('primary');
+  const navigate = useNavigate();
 
-  // 인증 컨텍스트
   const { userRole } = useAuthContext();
 
   // 캠페인 데이터 상태
-  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 운영자 권한 확인
-  const isOperator = userRole === USER_ROLES.OPERATOR || userRole === USER_ROLES.DEVELOPER;
+  // 캠페인 추가 모달 상태
+  const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
 
-  // 데이터 로드 함수
+  // 권한 확인
+  const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
+  const isOperator = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
+
+
+  // 모든 캠페인 데이터 로드 (서비스 타입 무관)
   const loadAllCampaigns = async () => {
     if (!isOperator) {
       setError('이 페이지는 최고 운영자만 접근할 수 있습니다.');
@@ -43,11 +47,11 @@ const AllCampaignsPage: React.FC = () => {
         .order('updated_at', { ascending: false });
 
       if (fetchError) {
-
         setError('캠페인 데이터를 불러오는 중 오류가 발생했습니다.');
         setCampaigns([]);
         return;
       }
+
 
       // 데이터 변환
       const formattedCampaigns = data.map((item, index) => {
@@ -59,7 +63,6 @@ const AllCampaignsPage: React.FC = () => {
           try {
             parsedItem.add_info = JSON.parse(parsedItem.add_info);
           } catch (error) {
-
             // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
             const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
             if (logoUrlMatch && logoUrlMatch[1]) {
@@ -114,8 +117,24 @@ const AllCampaignsPage: React.FC = () => {
           logo: parsedItem.logo,
           serviceName: getServiceName(parsedItem.service_type),
           serviceType: parsedItem.service_type,
-          createdAt: parsedItem.created_at ? new Date(parsedItem.created_at).toLocaleString() : '-',
-          updatedAt: parsedItem.updated_at ? new Date(parsedItem.updated_at).toLocaleString() : '-',
+          createdAt: parsedItem.created_at ? (() => {
+            const date = new Date(parsedItem.created_at);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+          })() : '-',
+          updatedAt: parsedItem.updated_at ? (() => {
+            const date = new Date(parsedItem.updated_at);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+          })() : '-',
           matId: parsedItem.mat_id || '-',
           efficiency: parsedItem.efficiency ? `${parsedItem.efficiency}%` : '-',
           minQuantity: parsedItem.min_quantity ? `${parsedItem.min_quantity}개` : '-',
@@ -135,7 +154,6 @@ const AllCampaignsPage: React.FC = () => {
       setCampaigns(formattedCampaigns);
       setError(null);
     } catch (err) {
-
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       setCampaigns([]);
     } finally {
@@ -143,37 +161,65 @@ const AllCampaignsPage: React.FC = () => {
     }
   };
 
-  // 페이지 로드시 데이터 가져오기
+  // 페이지 로드시 모든 캠페인 데이터 가져오기
   useEffect(() => {
     loadAllCampaigns();
   }, []);
 
-  return (
-    <CommonTemplate
-      title="모든 캠페인 통합 관리"
-      description="관리자 메뉴 > 모든 캠페인 통합 관리"
-      showPageMenu={false}
+  // 툴바 액션 버튼 - 운영자만 새 캠페인 추가 가능
+  const toolbarActions = isOperator ? (
+    <Button
+      variant="outline"
+      size="sm"
+      className="bg-primary-600 text-white hover:bg-primary-700 flex items-center"
+      onClick={() => setAddCampaignModalOpen(true)}
     >
-      <div className="grid gap-5 lg:gap-7.5">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : error ? (
-          <div className="alert alert-danger p-5 rounded-lg">
-            <div className="flex items-center">
-              <span className="i-keenicon-warning-triangle text-2xl mr-2"></span>
-              <p className="font-medium">{error}</p>
-            </div>
-          </div>
-        ) : (
-          <AllCampaignsContent
-            campaigns={campaigns}
-            onCampaignUpdated={loadAllCampaigns}
-          />
-        )}
-      </div>
-    </CommonTemplate>
+      <KeenIcon icon="plus" className="size-4 mr-2" />
+      새 캠페인 추가
+    </Button>
+  ) : null;
+
+  return (
+    <DashboardTemplate
+      title="모든 캠페인 통합 관리"
+      description="모든 서비스의 캠페인을 통합적으로 관리할 수 있습니다."
+      headerTextClass="text-white"
+      toolbarActions={toolbarActions}
+    >
+
+      {/* 캠페인 목록 */}
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">데이터를 불러오는 중...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-destructive">{error}</p>
+        </div>
+      ) : campaigns.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">등록된 캠페인이 없습니다.</p>
+        </div>
+      ) : (
+        <AllCampaignsContent
+          campaigns={campaigns}
+          onCampaignUpdated={loadAllCampaigns}
+          isOperator={isOperator}
+        />
+      )}
+
+      {/* 캠페인 추가 모달 */}
+      <CampaignModal
+        open={addCampaignModalOpen}
+        onClose={() => {
+          setAddCampaignModalOpen(false);
+          loadAllCampaigns();
+        }}
+        serviceType=""
+        isOperator={isOperator}
+      />
+    </DashboardTemplate>
   );
 };
 

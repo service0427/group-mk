@@ -439,8 +439,8 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       deadline: formatTimeHHMM(data.deadline), // 시:분 형식만 저장
       updated_at: new Date(),
       add_info: additionalInfo, // 여기에 이미 add_field가 포함됨
-      // 로고 이미지 경로 변경 (업로드된 로고가 있을 경우만)
-      ...(data.uploadedLogo ? { logo: data.logo } : {})
+      // 로고 이미지 경로 변경 (업로드된 로고가 있거나 로고 값이 있을 경우)
+      ...(data.uploadedLogo || data.logo ? { logo: data.logo } : {})
     };
 
     // 상태 변경 플래그와 이전 상태 저장
@@ -729,7 +729,7 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       unit_price: data.unitPrice || 100,
       deadline: formatTimeHHMM(data.deadline || '22:00'), // 시:분 형식으로 저장
       additional_logic: data.additionalLogic ? parseInt(data.additionalLogic) : 0,
-      logo: data.logo || 'animal-default.svg',
+      logo: data.logo || '',  // 로고가 없으면 빈 문자열로 설정
       status: data.status || 'waiting_approval', // 기본적으로 승인 대기 상태로 설정
       created_at: new Date(),
       updated_at: new Date(),

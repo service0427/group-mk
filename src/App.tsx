@@ -6,8 +6,6 @@ import { PathnameProvider } from '@/providers';
 import { ScrollToTop } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
-import { Dialog } from '@/components/dialog';
-import { StandLayout } from '@/layouts/stand';
 import { AuthProviderV2 } from '@/auth/providers/AuthProviderV2';
 
 const App = () => {
@@ -83,9 +81,6 @@ const App = () => {
       <AuthProviderV2>
         <PathnameProvider>
           <ScrollToTop />
-
-          {/* 전역 다이얼로그 컴포넌트 */}
-          <Dialog />
 
           {/* 라우팅 구조 */}
           <Routes>

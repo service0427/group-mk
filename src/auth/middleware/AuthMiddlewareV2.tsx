@@ -86,8 +86,11 @@ const AuthMiddlewareV2: React.FC<React.PropsWithChildren> = ({ children }) => {
     const currentPath = SafeHashNavigation.getCurrentHashPath();
     const isAuthPage = currentPath.startsWith('/auth');
     
-    if (!initialCheck && !loading && isAuthenticated && isAuthPage && !isLoggingOut) {
-      // 인증된 사용자가 인증 페이지 접근, 홈으로 리다이렉션
+    // 비밀번호 재설정 관련 페이지는 인증된 사용자도 접근 가능
+    const isPasswordResetPath = currentPath.includes('/reset-password');
+    
+    if (!initialCheck && !loading && isAuthenticated && isAuthPage && !isPasswordResetPath && !isLoggingOut) {
+      // 인증된 사용자가 인증 페이지 접근, 홈으로 리다이렉션 (비밀번호 재설정 페이지 제외)
       navigate('/', { replace: true });
     }
   }, [initialCheck, loading, isAuthenticated, navigate, isLoggingOut]);

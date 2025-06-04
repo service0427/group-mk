@@ -56,7 +56,10 @@ export const useKeywords = () => {
         // 초기화가 이미 실행되지 않았고, 없는 서비스 타입이 있을 때만 기본 그룹 생성
         let groupsCreated = false;
         if (!isInitializedRef.current) {
-          const missingServiceTypes = allServiceTypes.filter(st => !existingServiceTypes.has(st));
+          // 키워드가 필요한 서비스만 필터링
+          const { requiresKeyword } = await import('@/config/service-metadata');
+          const keywordRequiredServiceTypes = allServiceTypes.filter(st => requiresKeyword(st));
+          const missingServiceTypes = keywordRequiredServiceTypes.filter(st => !existingServiceTypes.has(st));
           
           if (missingServiceTypes.length > 0) {
             // 기본 그룹 생성 전에 플래그 설정 (중복 실행 방지)
@@ -65,6 +68,11 @@ export const useKeywords = () => {
             for (const serviceType of missingServiceTypes) {
               const serviceName = SERVICE_TYPE_LABELS[serviceType] || serviceType;
               const campaignName = getCampaignNameByServiceType(serviceType);
+              
+              // 캠페인 이름이 없으면 스킵 (새로운 서비스들)
+              if (!campaignName) {
+                continue;
+              }
               
               try {
                 const createResponse = await keywordGroupService.createGroup(

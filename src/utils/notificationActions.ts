@@ -1,9 +1,9 @@
-import { 
-  NotificationType, 
-  NotificationPriority 
+import {
+  NotificationType,
+  NotificationPriority
 } from '@/types/notification';
-import { 
-  createNotification, 
+import {
+  createNotification,
   createBulkNotifications,
   createSystemNotificationForAll,
   createNotificationForRole
@@ -33,16 +33,16 @@ export const createCashChargeNotification = async (userId: string, amount: numbe
  * @param reason 사유 (선택 사항)
  */
 export const createSlotStatusChangeNotification = async (
-  userId: string, 
-  slotId: string, 
+  userId: string,
+  slotId: string,
   status: string,
   reason?: string
 ) => {
   const title = `슬롯 ${status} 안내`;
-  const message = reason 
+  const message = reason
     ? `슬롯(${slotId})이 ${status}되었습니다. 사유: ${reason}`
     : `슬롯(${slotId})이 ${status}되었습니다.`;
-    
+
   return await createNotification({
     userId,
     type: NotificationType.SLOT,
@@ -107,7 +107,7 @@ export const notifyAllAdvertisers = async (title: string, message: string, link?
  */
 export const createWithdrawApprovedNotification = async (userId: string, amount: number, feeAmount: number) => {
   const netAmount = amount - feeAmount;
-  
+
   return await createNotification({
     userId,
     type: NotificationType.TRANSACTION,
@@ -182,12 +182,12 @@ import { CampaignServiceType } from '@/components/campaign-modals/types';
 // 서비스 타입을 URL 경로 형식으로 변환하는 함수
 const getServiceTypeUrlPath = (serviceType?: string): string => {
   if (!serviceType) return '';
-  
+
   // serviceType이 이미 kebab-case 형식이면 그대로 반환
   if (serviceType.includes('-')) {
     return serviceType;
   }
-  
+
   // CampaignServiceType 열거형 타입을 사용하는 경우 매핑
   // 타입에 따른 URL 경로 매핑
   const typeToPathMap: Record<string, string> = {
@@ -202,12 +202,12 @@ const getServiceTypeUrlPath = (serviceType?: string): string => {
     [CampaignServiceType.COUPANG_TRAFFIC]: 'coupang-traffic',
     [CampaignServiceType.COUPANG_FAKESALE]: 'coupang-fakesale'
   };
-  
+
   const mappedPath = typeToPathMap[serviceType];
   if (mappedPath) {
     return mappedPath;
   }
-  
+
   // 직접 매핑이 없는 경우, CamelCase를 kebab-case로 변환 (새로운 타입이 추가될 경우 대비)
   return serviceType
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
@@ -220,21 +220,15 @@ export const createCampaignApprovedNotification = async (
   campaignName: string,
   serviceType?: string
 ) => {
-  // 서비스 타입에 따른 경로 결정 - 관리자 경로 사용
-  let campaignPath = '/admin/campaigns'; // 기본 관리자 캠페인 경로
+  // 총판이 접근 가능한 캠페인 관리 페이지로 변경
+  const campaignPath = '/manage/campaign';
 
-  // 서비스 타입이 있으면 해당 서비스 타입에 맞는 경로 생성
-  const serviceTypePath = getServiceTypeUrlPath(serviceType);
-  if (serviceTypePath) {
-    campaignPath = `${campaignPath}/${serviceTypePath}`;
-  }
 
-  
   return await createNotification({
     userId: matId,
     type: NotificationType.SERVICE,
     title: '캠페인 승인 완료',
-    message: `[${campaignName}] 캠페인이 승인되었습니다.`,
+    message: `[${campaignName}] 캠페인이 승인되어 '준비중' 상태가 되었습니다. 캠페인 관리에서 '진행중'으로 변경하시면 캠페인 소개 페이지에 노출됩니다.`,
     link: campaignPath,
     priority: NotificationPriority.HIGH
   });
@@ -254,16 +248,10 @@ export const createCampaignRejectedNotification = async (
   reason: string,
   serviceType?: string
 ) => {
-  // 서비스 타입에 따른 경로 결정 - 관리자 경로 사용
-  let campaignPath = '/admin/campaigns'; // 기본 관리자 캠페인 경로
-  
-  // 서비스 타입이 있으면 해당 서비스 타입에 맞는 경로 생성
-  const serviceTypePath = getServiceTypeUrlPath(serviceType);
-  if (serviceTypePath) {
-    campaignPath = `${campaignPath}/${serviceTypePath}`;
-  }
-  
-  
+  // 총판이 접근 가능한 캠페인 관리 페이지로 변경
+  const campaignPath = '/manage/campaign';
+
+
   return await createNotification({
     userId: matId,
     type: NotificationType.SERVICE,

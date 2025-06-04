@@ -53,6 +53,7 @@ export const KeywordPage = lazyWithPreload(() => import('@/pages/keyword'));
 export const IntegratedCampaignPage = lazyWithPreload(() => import('@/pages/campaign').then(m => ({ default: m.IntegratedCampaignPage })));
 export const MyServicesPage = lazyWithPreload(() => import('@/pages/campaign').then(m => ({ default: m.MyServicesPage })));
 export const CampaignManagePage = lazyWithPreload(() => import('@/pages/admin/campaigns').then(m => ({ default: m.CampaignManagePage })));
+export const AllCampaignsPage = lazyWithPreload(() => import('@/pages/admin/campaigns').then(m => ({ default: m.AllCampaignsPage })));
 
 // 검색 페이지 lazy loading with preload
 export const SearchShopInfo = lazyWithPreload(() => import('@/pages/SearchShopInfo'));
@@ -151,7 +152,7 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 내 서비스 관리 라우트 */}
           <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
-          
+
           {/* 캠페인 소개 페이지 - 비기너도 접근 가능 (내부에서 권한 체크) */}
           <Route path="/advertise/campaigns/info/:serviceType" element={<SuspenseWrapper><InfoPage /></SuspenseWrapper>} />
         </Route>
@@ -177,10 +178,10 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/campaign-request/add" element={<SuspenseWrapper><CampaignAddPage /></SuspenseWrapper>} />
 
           {/* 총판 작업 입력 라우트 */}
-          <Route path="/admin/work-input" element={<SuspenseWrapper><WorkInputPage /></SuspenseWrapper>} />
+          <Route path="/manage/work-input" element={<SuspenseWrapper><WorkInputPage /></SuspenseWrapper>} />
 
           {/* 캠페인 관리 페이지 */}
-          <Route path="/admin/campaigns/manage" element={<SuspenseWrapper><CampaignManagePage /></SuspenseWrapper>} />
+          <Route path="/manage/campaign" element={<SuspenseWrapper><CampaignManagePage /></SuspenseWrapper>} />
 
           {/* 총판 캠페인 관리 */}
 
@@ -191,8 +192,8 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/campaigns" element={<Campaigns.CampaignPage />} />
 
           {/* 슬롯 관리 라우트 */}
-          <Route path="/admin/slots/info" element={<Slots.InfoPage />} />
-          <Route path="/admin/slots/approve" element={<Slots.ApprovePage />} />
+          <Route path="/manage/slots/info" element={<Slots.InfoPage />} />
+          <Route path="/manage/slots/approve" element={<Slots.ApprovePage />} />
         </Route>
       </Route>
 
@@ -217,6 +218,9 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/cash_setting" element={<SuspenseWrapper><ManageSettingPage /></SuspenseWrapper>} />
           <Route path="/admin/withdraw_setting" element={<SuspenseWrapper><WithdrawSettingPage /></SuspenseWrapper>} />
           <Route path="/admin/withdraw_approve" element={<SuspenseWrapper><WithdrawApprovePage /></SuspenseWrapper>} />
+
+          {/* 캠페인 통합 관리 페이지 - 운영자 전용 */}
+          <Route path="/admin/campaigns/all" element={<SuspenseWrapper><AllCampaignsPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -260,9 +264,10 @@ initializeComponentMap({
   '/admin/cash_setting': ManageSettingPage,
   '/admin/withdraw_setting': WithdrawSettingPage,
   '/admin/withdraw_approve': WithdrawApprovePage,
-  '/admin/work-input': WorkInputPage,
+  '/manage/work-input': WorkInputPage,
   '/admin/site/search-limits': SearchLimitsPage,
-  '/admin/campaigns/manage': CampaignManagePage,
+  '/manage/campaign': CampaignManagePage,
+  '/admin/campaigns/all': AllCampaignsPage,
 
   // 광고 페이지
   '/advertise/campaigns/info/*': InfoPage,

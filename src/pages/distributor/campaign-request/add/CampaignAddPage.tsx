@@ -27,6 +27,25 @@ const CampaignAddPage: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const serviceType = queryParams.get('type') || 'ntraffic'; // 기본값: 네이버 트래픽
 
+  // 비활성화된 서비스 타입 체크
+  const disabledServices = [
+    CampaignServiceType.NAVER_AUTO,
+    CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+    CampaignServiceType.COUPANG_FAKESALE,
+    CampaignServiceType.INSTAGRAM,
+    CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
+    CampaignServiceType.LIVE_BROADCASTING
+  ];
+
+  // 비활성화된 서비스 타입으로 접근 시 리다이렉트
+  useEffect(() => {
+    if (disabledServices.includes(serviceType as CampaignServiceType)) {
+      toast.error('해당 서비스는 아직 준비 중입니다.');
+      navigate('/campaign-request');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceType, navigate]);
+
   // 캠페인 폼 데이터 상태
   const [formData, setFormData] = useState<CampaignFormData>({
     campaignName: '',
@@ -57,6 +76,9 @@ const CampaignAddPage: React.FC = () => {
   // 캠페인 전체 미리보기 모달 상태
   const [campaignPreviewModalOpen, setCampaignPreviewModalOpen] = useState<boolean>(false);
 
+  // 확인 모달 상태
+  const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+
 
   // 서비스 유형에 따른 이름 반환
   const getServiceTypeName = (type: string): string => {
@@ -64,7 +86,7 @@ const CampaignAddPage: React.FC = () => {
     if (SERVICE_TYPE_LABELS[type as CampaignServiceType]) {
       return SERVICE_TYPE_LABELS[type as CampaignServiceType];
     }
-    
+
     // 레거시 타입 매핑
     switch (type) {
       case 'ntraffic':
@@ -124,24 +146,29 @@ const CampaignAddPage: React.FC = () => {
     setBannerImagePreviewUrl(null);
     setUploadedBannerImage(null);
   };
-  
+
   // 폼 데이터 업데이트 핸들러
   const handleFormDataChange = (newFormData: CampaignFormData) => {
     setFormData(newFormData);
   };
 
-  // 저장 핸들러
-  const handleSave = async () => {
+  // validation 체크 함수
+  const validateForm = () => {
     // 필수 필드 검증
     if (!formData.campaignName.trim()) {
       setError('캠페인 이름은 필수입니다.');
-      return;
+      return false;
     }
 
-    // 서비스 유형별 필수 필드 검증은 CampaignForm 컴포넌트에서 처리됨
-
-    setLoading(true);
+    // 에러가 없으면 초기화
     setError(null);
+    return true;
+  };
+
+  // 저장 핸들러 (실제 저장 처리)
+  const handleConfirmSave = async () => {
+    setConfirmModalOpen(false);
+    setLoading(true);
 
     try {
       // 1. DB에 새 캠페인 생성
@@ -182,6 +209,17 @@ const CampaignAddPage: React.FC = () => {
     }
   };
 
+  // 등록 신청 버튼 클릭 핸들러
+  const handleSave = () => {
+    // validation 체크
+    if (!validateForm()) {
+      return;
+    }
+
+    // validation 통과 시 확인 모달 열기
+    setConfirmModalOpen(true);
+  };
+
   return (
     <DashboardTemplate
       title={`${getServiceTypeName(serviceType)} 캠페인 등록 신청`}
@@ -197,7 +235,7 @@ const CampaignAddPage: React.FC = () => {
             onAdditionalFieldsChange={setAdditionalFields}
             serviceType={serviceType}
             loading={loading}
-            error={error}
+            error={null} // CampaignForm에서는 에러를 표시하지 않음
             onBannerPreview={() => setBannerPreviewModalOpen(true)}
             previewUrl={previewUrl}
             onLogoUpload={handleLogoUpload}
@@ -209,41 +247,52 @@ const CampaignAddPage: React.FC = () => {
         </div>
 
         {/* 버튼 - 푸터 영역 */}
-        <div className="flex justify-end items-center gap-3 py-5 px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-          {/* 미리보기 버튼 */}
-          <Button
-            onClick={() => setCampaignPreviewModalOpen(true)}
-            variant="outline"
-            className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
-            disabled={loading}
-          >
-            <KeenIcon icon="eye" className="me-1.5 size-4" />
-            미리보기
-          </Button>
+        <div className="flex justify-end items-center py-5 px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="flex items-center text-red-600 text-sm mr-3">
+              <KeenIcon icon="information-circle" className="size-4 mr-1.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
-          {/* 캠페인 등록 신청 버튼 */}
-          <Button
-            onClick={handleSave}
-            className="bg-success hover:bg-success/90 text-white"
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="flex items-center">
-                <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                신청 중...
-              </span>
-            ) : '캠페인 등록 신청'}
-          </Button>
+          {/* 버튼 그룹 */}
+          <div className="flex items-center gap-3">
+            {/* 미리보기 버튼 */}
+            <Button
+              onClick={() => setCampaignPreviewModalOpen(true)}
+              variant="outline"
+              className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
+              disabled={loading}
+            >
+              <KeenIcon icon="eye" className="me-1.5 size-4" />
+              미리보기
+            </Button>
 
-          {/* 취소 버튼 */}
-          <Button
-            onClick={() => navigate('/campaign-request')}
-            variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            disabled={loading}
-          >
-            취소
-          </Button>
+            {/* 캠페인 등록 신청 버튼 */}
+            <Button
+              onClick={handleSave}
+              className="bg-success hover:bg-success/90 text-white"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                  신청 중...
+                </span>
+              ) : '캠페인 등록 신청'}
+            </Button>
+
+            {/* 취소 버튼 */}
+            <Button
+              onClick={() => navigate('/campaign-request')}
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              disabled={loading}
+            >
+              취소
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -397,7 +446,7 @@ const CampaignAddPage: React.FC = () => {
                         return toAbsoluteUrl(`/media/${formData.logo}`);
                       }
 
-                      // 아무것도 선택되지 않았으면 랜덤 동물 SVG 사용
+                      // 아무것도 선택되지 않았으면 랜덤 동물 PNG 사용
                       const animalLogos = [
                         'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
                         'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
@@ -405,12 +454,20 @@ const CampaignAddPage: React.FC = () => {
                         'sheep', 'teddy-bear', 'turtle'
                       ];
                       const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
-                      return toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
+                      return toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
                     })()}
                     className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
                     alt="캠페인 로고"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
+                      // 에러 발생시 다른 랜덤 동물로 재시도
+                      const animalLogos = [
+                        'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+                        'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+                        'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
+                        'sheep', 'teddy-bear', 'turtle'
+                      ];
+                      const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
+                      (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
                     }}
                   />
                   <div>
@@ -481,7 +538,7 @@ const CampaignAddPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {formData.userInputFields && formData.userInputFields.length > 0 && (
                       <div>
                         <h4 className="font-medium text-primary mb-2">사용자 입력 필드</h4>
@@ -558,6 +615,102 @@ const CampaignAddPage: React.FC = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 캠페인 등록 확인 모달 */}
+      <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <KeenIcon icon="add-files" className="text-primary size-5 mr-2" />
+              캠페인 등록 신청 확인
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-6">
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                입력하신 내용으로 캠페인 등록을 신청하시겠습니까?
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                신청 후에는 관리자 검토를 거쳐 승인됩니다.
+              </p>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    캠페인 이름
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">{formData.campaignName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    서비스 유형
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">{getServiceTypeName(serviceType)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    건당 단가
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">{formData.unitPrice}원</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    최소 수량
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">{formData.minQuantity}개</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    로고 이미지
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">
+                    {previewUrl ? '업로드됨' : formData.logo ? '기본 제공 로고' : '미등록'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center text-blue-700 dark:text-blue-300">
+                    <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                    배너 이미지
+                  </span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">
+                    {bannerImagePreviewUrl ? '업로드됨' : '미등록'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={handleConfirmSave}
+              className="bg-success hover:bg-success/90 text-white"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                  신청 중...
+                </span>
+              ) : '신청하기'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmModalOpen(false)}
+              disabled={loading}
+            >
+              취소
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

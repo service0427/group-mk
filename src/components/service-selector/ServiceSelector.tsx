@@ -40,7 +40,10 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       CampaignServiceType.NAVER_AUTO,             // N 자동완성
       CampaignServiceType.NAVER_SHOPPING_FAKESALE,// NS 가구매
       CampaignServiceType.COUPANG_TRAFFIC,        // CP 트래픽
-      CampaignServiceType.COUPANG_FAKESALE        // CP 가구매
+      CampaignServiceType.COUPANG_FAKESALE,       // CP 가구매
+      CampaignServiceType.INSTAGRAM,              // 인스타그램
+      CampaignServiceType.PHOTO_VIDEO_PRODUCTION, // 포토&영상 제작
+      CampaignServiceType.LIVE_BROADCASTING       // 라이브방송
     ];
 
     // 모든 서비스를 플랫폼별로 매핑
@@ -70,11 +73,45 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           code: type.code,
           icon: icon,
           platform: campaign.name,
-          // 가구매 서비스는 비활성화
+          // 가구매 서비스와 N 자동완성은 비활성화
           disabled: type.code === CampaignServiceType.NAVER_SHOPPING_FAKESALE ||
-            type.code === CampaignServiceType.COUPANG_FAKESALE
+            type.code === CampaignServiceType.COUPANG_FAKESALE ||
+            type.code === CampaignServiceType.NAVER_AUTO
         });
       });
+    });
+
+    // 추가 서비스들을 수동으로 serviceMap에 추가
+    const additionalServices = [
+      {
+        code: CampaignServiceType.INSTAGRAM,
+        name: '인스타그램',
+        path: 'instagram',
+        icon: '/media/ad-brand/instagram.png',
+        platform: '인스타그램',
+        disabled: true
+      },
+      {
+        code: CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
+        name: '포토&영상 제작',
+        path: 'photo-video-production',
+        icon: '/media/brand-logos/vimeo.svg',
+        platform: '포토&영상 제작',
+        disabled: true
+      },
+      {
+        code: CampaignServiceType.LIVE_BROADCASTING,
+        name: '라이브방송',
+        path: 'live-broadcasting',
+        icon: '/media/ad-brand/youtube.png',
+        platform: '라이브방송',
+        disabled: true
+      }
+    ];
+
+    // 추가 서비스들을 serviceMap에 추가
+    additionalServices.forEach(service => {
+      serviceMap.set(service.path, service);
     });
 
     // 순서대로 서비스 배열 생성
@@ -85,32 +122,11 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       })
       .filter(Boolean);
 
-    // 추가 서비스 (인스타그램, 포토&영상 제작, 라이브방송)
-    const additionalServices = [
-      {
-        name: '인스타그램',
-        path: 'instagram',
-        icon: '/media/ad-brand/instagram.png',
-        platform: '인스타그램',
-        disabled: true
-      },
-      {
-        name: '포토&영상 제작',
-        path: 'photo-video',
-        icon: '/media/brand-logos/vimeo.svg',
-        platform: '포토&영상 제작',
-        disabled: true
-      },
-      {
-        name: '라이브방송',
-        path: 'live-broadcast',
-        icon: '/media/ad-brand/youtube.png',
-        platform: '라이브방송',
-        disabled: true
-      }
-    ];
+    // 활성화된 서비스를 먼저, 비활성화된 서비스를 나중에 정렬
+    const enabledServices = orderedServices.filter(service => !service.disabled);
+    const disabledServices = orderedServices.filter(service => service.disabled);
 
-    return [...orderedServices, ...additionalServices];
+    return [...enabledServices, ...disabledServices];
   }, []);
 
   // 서비스를 필터링 (비활성화된 서비스 표시 여부 및 키워드 필터)
@@ -122,6 +138,14 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       services = services.filter(service => 
         service.code === CampaignServiceType.NAVER_SHOPPING_RANK ||
         service.code === CampaignServiceType.NAVER_PLACE_RANK
+      );
+    }
+
+    // 총판(Distributor) 역할인 경우 NS 순위확인과 NP 순위확인 제외
+    if (userRole === USER_ROLES.DISTRIBUTOR) {
+      services = services.filter(service => 
+        service.code !== CampaignServiceType.NAVER_SHOPPING_RANK &&
+        service.code !== CampaignServiceType.NAVER_PLACE_RANK
       );
     }
 

@@ -35,6 +35,15 @@ export const SERVICE_METADATA: Record<string, ServiceMetadata> = {
   },
   [CampaignServiceType.COUPANG_FAKESALE]: {
     requiresKeyword: false
+  },
+  [CampaignServiceType.INSTAGRAM]: {
+    requiresKeyword: false
+  },
+  [CampaignServiceType.PHOTO_VIDEO_PRODUCTION]: {
+    requiresKeyword: false
+  },
+  [CampaignServiceType.LIVE_BROADCASTING]: {
+    requiresKeyword: false
   }
 };
 

@@ -431,13 +431,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
               </button>
             )}
           </div>
-          {koreanAmount && (
-            <div className="text-sm text-gray-500 mt-1">
-              {koreanAmount}원
-            </div>
-          )}
         </div>
-        <div className="h-[1px] w-full bg-gray-200 mt-1"></div>
         
         {/* 수수료 정보 표시 - 항상 노출 */}
         <div className="mt-3 p-3 bg-muted/40 rounded-md">

@@ -1,11 +1,8 @@
-// CardAdCampaign은 pages/advertise/components/campaign-cards로 이동됨
-// CardAdCampaignRow는 pages/advertise/components/campaign-cards로 이동됨
+// Campaign 관련 카드들은 pages/advertise/components/campaign-cards로 이동됨
 export * from './CardAddNew';
 export * from './CardAddNewRow';
 export * from './CardAuthor';
 export * from './CardAuthorRow';
-export * from './CardCampaign';
-export * from './CardCampaignRow';
 export * from './CardConnection';
 export * from './CardConnectionRow';
 export * from './CardIntegration';

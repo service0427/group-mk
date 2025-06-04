@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { KeenIcon } from '@/components';
 import {
   Select,
@@ -491,8 +491,8 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     }
                   }}
                 >
-                  <KeenIcon icon="plus" className="me-1 size-3 lg:size-4" />
-                  <span className="whitespace-nowrap">캠페인 추가</span>
+                  <KeenIcon icon="plus" />
+                  캠페인 추가
                 </button>
               )}
             </div>
@@ -501,7 +501,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
         <div className="card-body px-0">
           {/* 모바일에서는 카드 형태로 표시 */}
-          <div className="md:hidden px-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+          <div className="md:hidden px-4">
             {filteredData.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {filteredData.map((campaign, index) => (
@@ -556,9 +556,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                           }}
                         />
                         <div>
-                          <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-base font-medium text-foreground hover:text-primary-active line-clamp-1">
+                          <button
+                            onClick={() => openDetailModal(campaign)}
+                            className="text-base font-medium text-foreground hover:text-primary-active line-clamp-1 text-left"
+                          >
                             {campaign.campaignName}
-                          </Link>
+                          </button>
                           <div className="text-xs text-muted-foreground mt-1">#{index + 1}</div>
                         </div>
                       </div>
@@ -663,7 +666,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
           </div>
 
           {/* 데스크톱에서는 테이블 형태로 표시 */}
-          <div className="hidden md:block overflow-x-auto max-h-[calc(100vh-350px)] overflow-y-auto">
+          <div className="hidden md:block">
             <table className="w-full min-w-full divide-y divide-border">
               <thead className="bg-muted sticky top-0 z-10">
                 <tr>
@@ -750,9 +753,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                             }
                           }}
                         />
-                        <Link to={`/admin/slots/approve?campaign=${campaign.id}&service_type=${serviceType === 'naver-traffic' ? 'ntraffic' : serviceType}`} className="text-xs lg:text-sm font-medium text-foreground hover:text-primary-active line-clamp-2">
+                        <button
+                          onClick={() => openDetailModal(campaign)}
+                          className="text-xs lg:text-sm font-medium text-foreground hover:text-primary-active line-clamp-2 text-left"
+                        >
                           {campaign.campaignName}
-                        </Link>
+                        </button>
                       </div>
                     </td>
                     <td className="px-3 lg:px-6 py-4 hidden xl:table-cell">

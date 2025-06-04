@@ -138,14 +138,25 @@ const Login = () => {
     enableReinitialize: true,
     onSubmit: async (values, { setStatus, setSubmitting }) => {
       setLoading(true);
+      setStatus(''); // 이전 에러 메시지 초기화
 
       try {
         if (!login) {
           throw new Error('인증 제공자가 초기화되지 않았습니다.');
         }
 
-        await login(values.email, values.password);
+        // login 함수는 성공 시 true, 실패 시 false를 반환
+        const success = await login(values.email, values.password);
 
+        if (!success) {
+          // 로그인 실패
+          setStatus('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+          setSubmitting(false);
+          setLoading(false);
+          return; // 여기서 중단
+        }
+
+        // 로그인 성공 시에만 실행
         if (values.remember) {
           localStorage.setItem('email', values.email);
         } else {
@@ -156,8 +167,7 @@ const Login = () => {
         navigate(from, { replace: true });
 
       } catch (error: any) {
-
-        setStatus('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+        setStatus('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         setSubmitting(false);
         setLoading(false);
       }
@@ -276,7 +286,7 @@ const Login = () => {
                 className="text-sm link shrink-0"
                 onClick={() => setShowResetPasswordForm(true)}
               >
-                비밀번호 찾기
+                비밀번호 재설정
               </button>
             </div>
             <div className="input" data-toggle-password="true">
@@ -393,19 +403,19 @@ const Login = () => {
 
           <div className="flex gap-3 mt-4">
             <button
+              type="submit"
+              className="btn btn-primary flex-1 py-3"
+              disabled={resetPasswordLoading}
+            >
+              {resetPasswordLoading ? '처리 중...' : '전송'}
+            </button>
+            <button
               type="button"
               className="btn btn-secondary flex-1 py-3"
               onClick={() => setShowResetPasswordForm(false)}
               disabled={resetPasswordLoading}
             >
               취소
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary flex-1 py-3"
-              disabled={resetPasswordLoading}
-            >
-              {resetPasswordLoading ? '처리 중...' : '전송'}
             </button>
           </div>
         </form>

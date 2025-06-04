@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { createCampaign as defaultCreateCampaign } from '@/pages/admin/campaigns/services/campaignService';
+import { createCampaignReapprovalRequestNotification } from '@/utils/notificationActions';
 
 interface CampaignModalProps {
   open: boolean;
@@ -52,11 +53,20 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     minQuantity: '10'
   });
 
-  // 서비스 유형별 추가 필드
-  const [additionalFields, setAdditionalFields] = useState<{ [key: string]: string }>({});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // 에러 메시지 자동 제거
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000); // 5초 후 에러 메시지 제거
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // 로고 업로드 관련 상태
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
@@ -77,6 +87,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   // 반려 사유 입력 모달 상태
   const [rejectionModalOpen, setRejectionModalOpen] = useState<boolean>(false);
   const [rejectionReason, setRejectionReason] = useState<string>('');
+
+  // 승인 확인 모달 상태
+  const [approvalModalOpen, setApprovalModalOpen] = useState<boolean>(false);
+  
+  // 변경사항 저장 확인 모달 상태
+  const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState<boolean>(false);
+  const [pendingSaveData, setPendingSaveData] = useState<any>(null);
 
   // 시간 포맷팅 함수 
   function formatTimeHHMM(timeStr: string): string {
@@ -121,17 +138,17 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       // add_info 객체 확인
       const addInfo = campaign.originalData?.add_info || {};
-      
+
       // 사용자 입력 필드 설정
       let userInputFieldsValue = [];
-      
+
       // 기존 데이터는 add_info.add_field에 저장되어 있음
       if (campaign.originalData?.add_info?.add_field && Array.isArray(campaign.originalData.add_info.add_field)) {
         userInputFieldsValue = campaign.originalData.add_info.add_field.map((field: any) => ({
           fieldName: field.fieldName || field.name || '',
           description: field.description || field.desc || ''
         }));
-      } 
+      }
       // 이전 버전과의 호환성을 위한 처리 (userInputFields가 문자열 형태로 저장된 경우)
       else if (addInfo.userInputFields) {
         try {
@@ -160,13 +177,23 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       // 로고 이미지 설정 (add_info에서 로고 URL을 확인)
       if (addInfo.logo_url) {
         setPreviewUrl(addInfo.logo_url);
+        setInitialLogoUrl(addInfo.logo_url);  // 초기 URL 저장
         setUploadedLogo('기존 로고 이미지');
+      } else {
+        setPreviewUrl(null);
+        setInitialLogoUrl(null);
+        setUploadedLogo(null);
       }
 
       // 배너 이미지 설정 (add_info에서 배너 URL을 확인)
       if (addInfo.banner_url) {
         setBannerImagePreviewUrl(addInfo.banner_url);
+        setInitialBannerUrl(addInfo.banner_url);  // 초기 URL 저장
         setUploadedBannerImage('기존 배너 이미지');
+      } else {
+        setBannerImagePreviewUrl(null);
+        setInitialBannerUrl(null);
+        setUploadedBannerImage(null);
       }
 
       // 반려 사유 확인 (rejected_reason 필드 우선, 없으면 add_info에서 확인)
@@ -198,39 +225,35 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       // 캠페인 데이터로 newCampaign 상태 업데이트
       setNewCampaign({
-        ...campaign,
-        additionalLogic: additionalLogicValue,
+        id: campaign.id,
+        campaignName: campaign.campaignName || campaign.originalData?.campaign_name || '',
+        description: campaign.description || campaign.originalData?.description || '',
         detailedDescription: detailedDescValue,
+        logo: campaign.logo || '',
+        additionalLogic: additionalLogicValue,
         userInputFields: userInputFieldsValue, // 사용자 입력 필드 값 설정
         unitPrice: unitPrice,
         minQuantity: minQuantity,
         efficiency: efficiency,
-        deadline: formatTimeHHMM(campaign.deadline), // 시분 형식 확보
-        bannerImage: addInfo.banner_url ? 'banner-image.png' : undefined,
+        deadline: formatTimeHHMM(campaign.originalData?.deadline || campaign.deadline || '18:00'), // 원본 데이터의 deadline 사용
+        bannerImage: addInfo.banner_url ? 'banner-image.png' : '',
         rejectionReason: rejectionReasonValue, // 반려 사유 설정
         status: {
           label: getStatusLabel(finalStatus),
           color: getStatusColor(finalStatus),
           status: finalStatus
-        }
+        },
+        originalData: campaign.originalData // originalData 보존
       });
 
-      // 서비스 타입에 따른 추가 필드 설정
-      if (campaign.originalData?.add_info?.additional_fields) {
-        try {
-          let additionalFieldsData = {};
-
-          if (typeof campaign.originalData.add_info.additional_fields === 'string') {
-            additionalFieldsData = JSON.parse(campaign.originalData.add_info.additional_fields);
-          } else {
-            additionalFieldsData = campaign.originalData.add_info.additional_fields;
-          }
-
-          setAdditionalFields(additionalFieldsData);
-        } catch (e) {
-          // 파싱 오류 무시
-        }
-      }
+    } else {
+      // 새 캠페인 모드일 때 초기화
+      setInitialLogoUrl(null);
+      setInitialBannerUrl(null);
+      setPreviewUrl(null);
+      setBannerImagePreviewUrl(null);
+      setUploadedLogo(null);
+      setUploadedBannerImage(null);
     }
   }, [campaign]);
 
@@ -327,127 +350,43 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   // 서비스 유형에 따른 이름 및 필드 정보
   interface ServiceTypeInfo {
     name: string;
-    additionalFields: { [key: string]: { label: string; type: string; defaultValue: string; placeholder?: string; required?: boolean; options?: Array<{ value: string, label: string }> } };
   }
 
   // 서비스 유형별 정보 정의 
   // 새로운 타입과 레거시 타입을 분리해 TypeScript 중복 오류 방지
   const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
-    // 새로운 타입 (Enum 값)
-    [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: {
-      name: 'NS 트래픽',
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        productCategory: {
-          label: '상품 카테고리', type: 'select', defaultValue: '', required: true,
-          options: [
-            { value: 'fashion', label: '패션의류/잡화' },
-            { value: 'beauty', label: '화장품/미용' },
-            { value: 'food', label: '식품' },
-            { value: 'home', label: '가구/인테리어' },
-            { value: 'digital', label: '디지털/가전' },
-            { value: 'sports', label: '스포츠/레저' },
-          ]
-        }
-      }
-    },
-    [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: {
-      name: 'NS 가구매',
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_SHOPPING_RANK]: {
-      name: 'NS 순위확인',
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '네이버 쇼핑 상품 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '순위 확인할 키워드를 입력하세요', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_TRAFFIC]: {
-      name: 'NP 트래픽',
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_SAVE]: {
-      name: 'NP 저장하기',
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        saveTarget: { label: '저장 목표 수', type: 'number', defaultValue: '10', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_SHARE]: {
-      name: 'NP 블로그공유',
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        shareTarget: { label: '공유 목표 수', type: 'number', defaultValue: '10', required: true },
-        targetBlog: { label: '타겟 블로그 정보', type: 'text', defaultValue: '', placeholder: '블로그 정보를 입력하세요 (선택사항)' },
-      }
-    },
-    [CampaignServiceType.NAVER_PLACE_RANK]: {
-      name: 'NP 순위확인',
-      additionalFields: {
-        placeId: { label: '장소 ID', type: 'text', defaultValue: '', placeholder: '네이버 플레이스 ID를 입력하세요', required: true },
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '순위 확인할 키워드를 입력하세요', required: true },
-      }
-    },
-    [CampaignServiceType.NAVER_AUTO]: {
-      name: 'N 자동완성',
-      additionalFields: {
-        targetKeywords: { label: '타겟 키워드', type: 'text', defaultValue: '', placeholder: '타겟 키워드를 입력하세요 (쉼표로 구분)', required: true },
-        searchFrequency: {
-          label: '검색 빈도 (일)', type: 'select', defaultValue: '7', required: true,
-          options: [
-            { value: '3', label: '3일' },
-            { value: '7', label: '7일' },
-            { value: '14', label: '14일' },
-            { value: '30', label: '30일' },
-          ]
-        },
-      }
-    },
-    [CampaignServiceType.COUPANG_TRAFFIC]: {
-      name: 'CP 트래픽',
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
-      }
-    },
-    [CampaignServiceType.COUPANG_FAKESALE]: {
-      name: 'CP 가구매',
-      additionalFields: {
-        productId: { label: '상품 ID', type: 'text', defaultValue: '', placeholder: '쿠팡 상품 ID를 입력하세요', required: true },
-        targetUrl: { label: '타겟 URL', type: 'url', defaultValue: '', placeholder: 'https://www.coupang.com/...', required: true },
-        purchaseCount: { label: '구매 수량', type: 'number', defaultValue: '1', required: true },
-      }
-    },
+    [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: { name: 'NS 트래픽' },
+    [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: { name: 'NS 가구매' },
+    [CampaignServiceType.NAVER_SHOPPING_RANK]: { name: 'NS 순위확인' },
+    [CampaignServiceType.NAVER_PLACE_TRAFFIC]: { name: 'NP 트래픽' },
+    [CampaignServiceType.NAVER_PLACE_SAVE]: { name: 'NP 저장하기' },
+    [CampaignServiceType.NAVER_PLACE_SHARE]: { name: 'NP 블로그공유' },
+    [CampaignServiceType.NAVER_PLACE_RANK]: { name: 'NP 순위확인' },
+    [CampaignServiceType.NAVER_AUTO]: { name: 'N 자동완성' },
+    [CampaignServiceType.COUPANG_TRAFFIC]: { name: 'CP 트래픽' },
+    [CampaignServiceType.COUPANG_FAKESALE]: { name: 'CP 가구매' }
   };
-  
+
   // 레거시 문자열 서비스 타입 정보는 getServiceFieldInfo 함수로 이동
   const getServiceFieldInfo = (serviceType: string | CampaignServiceType): ServiceTypeInfo => {
     // CampaignServiceType 타입이면 직접 사용
     if (Object.values(CampaignServiceType).includes(serviceType as CampaignServiceType)) {
       return serviceTypeInfoMap[serviceType as CampaignServiceType];
     }
-    
+
     // 문자열 타입이 serviceTypeInfoMap에 있는 경우 사용
     if (typeof serviceType === 'string' && serviceTypeInfoMap[serviceType as any]) {
       return serviceTypeInfoMap[serviceType as any];
     }
-    
+
     // 레거시 문자열 지원 (필요한 경우만 남김)
     if (typeof serviceType === 'string') {
       // 레거시 문자열을 표준화된 타입으로 변환
       if (serviceType === 'NaverShopTraffic') {
         return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_TRAFFIC];
-      } 
+      }
     }
-    
+
     // 해당하는 서비스 타입이 없으면 기본 타입 반환
     return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_RANK];
   };
@@ -457,189 +396,225 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     return getServiceFieldInfo(type)?.name || '네이버 트래픽';
   };
 
-  // 서비스 유형에 따른 추가 필드 초기화
-  useEffect(() => {
-    if (serviceType && serviceTypeInfoMap[serviceType]) {
-      const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-      const initialValues: { [key: string]: string } = {};
 
-      // 각 필드의 기본값으로 초기화
-      Object.keys(fieldInfo).forEach(key => {
-        initialValues[key] = fieldInfo[key].defaultValue;
-      });
 
-      setAdditionalFields(initialValues);
+  // 초기 로고/배너 URL 저장 (변경 감지용)
+  const [initialLogoUrl, setInitialLogoUrl] = useState<string | null>(null);
+  const [initialBannerUrl, setInitialBannerUrl] = useState<string | null>(null);
+
+  // 변경사항 감지 함수를 컴포넌트 레벨로 이동
+  const hasDataChanged = () => {
+    if (!campaign || !campaign.originalData) return false;
+    
+    const orig = campaign.originalData || {};
+    
+    // 주요 필드 변경 확인
+    if (newCampaign.campaignName !== orig.campaign_name) return true;
+    if (newCampaign.description !== orig.description) return true;
+    if (newCampaign.detailedDescription !== orig.detailed_description) return true;
+    if (parseFloat(newCampaign.unitPrice || '0') !== orig.unit_price) return true;
+    if (formatTimeHHMM(newCampaign.deadline) !== formatTimeHHMM(orig.deadline)) return true;
+    
+    // 로고 변경 확인 (초기 URL과 현재 URL이 다른 경우)
+    if (previewUrl !== initialLogoUrl) return true;
+    
+    // 배너 이미지 변경 확인 (초기 URL과 현재 URL이 다른 경우)
+    if (bannerImagePreviewUrl !== initialBannerUrl) return true;
+    
+    // 사용자 입력 필드 변경 확인
+    const origAddField = orig.add_info?.add_field || [];
+    if (JSON.stringify(newCampaign.userInputFields) !== JSON.stringify(origAddField)) return true;
+    
+    return false;
+  };
+
+  // 실제 저장 처리 함수
+  const performSave = async (skipConfirm = false) => {
+    if (!campaign || !updateCampaign) return;
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      let statusValue;
+      if (typeof newCampaign.status === 'string') {
+        statusValue = newCampaign.status;
+      } else if (typeof newCampaign.status === 'object' && newCampaign.status !== null) {
+        statusValue = newCampaign.status.status || 'pending';
+      } else {
+        statusValue = newCampaign.originalData?.status || 'pending';
+      }
+
+      // 반려 상태에서 반려 사유가 비어있는지 확인
+      if (statusValue === 'rejected' && (!newCampaign.rejectionReason || newCampaign.rejectionReason.trim() === '')) {
+        setError('반려 사유를 입력해 주세요.');
+        setLoading(false);
+        return;
+      }
+
+      // 원본 캠페인 상태 확인
+      const originalStatus = campaign.originalData?.status || 'pending';
+      const dataChanged = hasDataChanged();
+
+      // 운영자 모드가 아닌 경우(총판) 상태 처리 로직
+      let finalStatus = statusValue;
+      let willChangeToWaitingApproval = false;
+      
+      if (!isOperator) {
+        if (originalStatus === 'waiting_approval') {
+          finalStatus = 'waiting_approval';
+        } else if (originalStatus === 'rejected') {
+          if (dataChanged) {
+            finalStatus = 'waiting_approval';
+            willChangeToWaitingApproval = true;
+          } else {
+            finalStatus = 'rejected';
+          }
+        } else if (['pending', 'active', 'pause'].includes(originalStatus)) {
+          if (dataChanged) {
+            finalStatus = 'waiting_approval';
+            willChangeToWaitingApproval = true;
+          } else {
+            finalStatus = statusValue;
+          }
+        } else {
+          finalStatus = originalStatus;
+        }
+      }
+      
+      // 확인 모달을 표시해야 하는 경우 (skipConfirm이 false일 때만)
+      if (!skipConfirm && willChangeToWaitingApproval && !isOperator) {
+        setSaveConfirmModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // 로고가 없는 경우 랜덤 동물 지정
+      let logoValue = previewUrl ? 'uploaded-logo.png' : newCampaign.logo;
+      if (!previewUrl && (!newCampaign.logo || newCampaign.logo === '')) {
+        const animalLogos = [
+          'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+          'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+          'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
+          'sheep', 'teddy-bear', 'turtle'
+        ];
+        const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
+        logoValue = `animal/svg/${randomAnimal}.svg`;
+      }
+
+      // 업데이트할 데이터 준비
+      let updateData = {
+        campaignName: newCampaign.campaignName,
+        description: newCampaign.description,
+        detailedDescription: newCampaign.detailedDescription,
+        add_field: newCampaign.userInputFields,
+        unitPrice: newCampaign.unitPrice,
+        deadline: newCampaign.deadline,
+        logo: logoValue,
+        uploadedLogo: previewUrl,
+        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
+        uploadedBannerImage: bannerImagePreviewUrl,
+        status: finalStatus,
+      };
+
+      // 반려 사유가 있으면 항상 전달
+      if ('rejectionReason' in newCampaign && newCampaign.rejectionReason) {
+        const campaign = newCampaign as any;
+        if (campaign.rejectionReason) {
+          const updatedData: any = {
+            ...updateData
+          };
+          updatedData.rejectionReason = campaign.rejectionReason;
+          updatedData.rejected_reason = campaign.rejectionReason;
+          updateData = updatedData;
+        }
+      }
+
+      // DB 업데이트
+      const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
+      const success = await updateCampaign(campaignId, updateData);
+
+      if (!success) {
+        throw new Error('캠페인 업데이트에 실패했습니다.');
+      }
+
+      // 재승인 상태로 변경된 경우 운영자에게 알림 전송
+      if (willChangeToWaitingApproval && !isOperator) {
+        try {
+          // mat_id가 있으면 사용, 없으면 빈 문자열 (운영자 알림이므로 상관없음)
+          const matId = newCampaign.originalData?.mat_id || '';
+          await createCampaignReapprovalRequestNotification(
+            campaignId.toString(),
+            newCampaign.campaignName,
+            matId
+          );
+        } catch (notificationError) {
+          console.error('운영자 알림 전송 중 오류:', notificationError);
+          // 알림 전송 실패는 무시하고 계속 진행
+        }
+      }
+
+      // UI 업데이트를 위해 형식 변환
+      let addInfo = newCampaign.originalData?.add_info || {};
+      if (typeof addInfo === 'string') {
+        try {
+          addInfo = JSON.parse(addInfo);
+        } catch (e) {
+          addInfo = {};
+        }
+      }
+
+      const statusObject = {
+        label: getStatusLabel(finalStatus),
+        color: getStatusColor(finalStatus),
+        status: finalStatus
+      };
+
+      const updatedCampaign: ExtendedCampaign = {
+        ...newCampaign,
+        logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
+        status: statusObject,
+        originalData: {
+          ...newCampaign.originalData,
+          unit_price: parseFloat(newCampaign.unitPrice || '0'),
+          deadline: formatTimeHHMM(newCampaign.deadline || ''),
+          description: newCampaign.description,
+          detailed_description: newCampaign.detailedDescription,
+          userInputFields: newCampaign.userInputFields,
+          status: finalStatus,
+          logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
+          uploaded_logo_data: previewUrl,
+          banner_image: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
+          uploaded_banner_image_data: bannerImagePreviewUrl,
+          add_info: {
+            ...addInfo,
+            add_field: newCampaign.userInputFields,
+          },
+          ...(finalStatus === 'rejected' ? { rejected_reason: newCampaign.rejectionReason } : {})
+        }
+      };
+
+      if (onSave) {
+        onSave(updatedCampaign);
+      }
+
+      onClose();
+    } catch (err) {
+      setError('캠페인 정보 저장에 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
-  }, [serviceType]);
-
-  // 추가 필드 값 변경 핸들러
-  const handleAdditionalFieldChange = (field: string, value: string) => {
-    setAdditionalFields(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   const handleSave = async () => {
-    
     // 편집 모드(기존 캠페인이 있는 경우)와 새 캠페인 생성 모드를 구분
     if (campaign && updateCampaign) {
-      // 수정 모드
-      if (!newCampaign) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        let statusValue;
-        if (typeof newCampaign.status === 'string') {
-          statusValue = newCampaign.status;
-
-        } else if (typeof newCampaign.status === 'object' && newCampaign.status !== null) {
-          // status.status가 있고 유효한 값인지 확인
-          statusValue = newCampaign.status.status || 'pending';
-
-        } else {
-          // 기본값 사용 전에 originalData에서 확인
-          statusValue = newCampaign.originalData?.status || 'pending';
-        }
-
-        // 반려 상태에서 반려 사유가 비어있는지 확인
-        if (statusValue === 'rejected' && (!newCampaign.rejectionReason || newCampaign.rejectionReason.trim() === '')) {
-          setError('반려 사유를 입력해 주세요.');
-          setLoading(false);
-          return;
-        }
-
-        // 원본 캠페인 상태 확인
-        const originalStatus = campaign.originalData?.status || 'pending';
-        const isStatusChanged = statusValue !== originalStatus;
-
-        // 운영자 모드가 아닌 경우(총판) 상태 처리 로직
-        let finalStatus = statusValue;
-        if (!isOperator) {
-          // 1. 승인 요청중 상태인 경우 - 무조건 waiting_approval로 유지
-          if (originalStatus === 'waiting_approval') {
-            finalStatus = 'waiting_approval';
-          }
-          // 2. 반려됨 상태인 경우 - 무조건 waiting_approval로 변경 (재승인 요청)
-          else if (originalStatus === 'rejected') {
-            finalStatus = 'waiting_approval';
-          }
-          // 3. 준비중, 진행중, 표시안함 상태인 경우 - 사용자가 선택한 상태로 변경
-          else if (['pending', 'active', 'pause'].includes(originalStatus)) {
-            finalStatus = statusValue; // 사용자가 선택한 상태 사용
-          }
-          // 4. 그 외의 경우는 원래 상태 유지
-          else {
-            finalStatus = originalStatus;
-          }
-        }
-
-        // 업데이트할 데이터 준비 (let으로 변경하여 나중에 수정 가능하게 함)
-        let updateData = {
-          campaignName: newCampaign.campaignName,
-          description: newCampaign.description,
-          detailedDescription: newCampaign.detailedDescription,
-          add_field: newCampaign.userInputFields, // 서버에서 이 이름으로 찾음
-          unitPrice: newCampaign.unitPrice,
-          deadline: newCampaign.deadline,
-          logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
-          uploadedLogo: previewUrl,
-          bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
-          uploadedBannerImage: bannerImagePreviewUrl,
-          status: finalStatus,
-          additionalFields: additionalFields, // 서비스 유형별 추가 필드
-        };
-        
-        // 반려 사유가 있으면 항상 전달 (상태와 무관하게)
-        if ('rejectionReason' in newCampaign && newCampaign.rejectionReason) {
-          // TypeScript 안전을 위한 타입 단언
-          const campaign = newCampaign as any; // 타입 오류를 우회하기 위해 any 사용
-          
-          if (campaign.rejectionReason) {
-            // 추가적인 속성들을 가진 객체로 변환
-            const updatedData: any = {
-              ...updateData
-            };
-            
-            // 반려 사유 필드 추가
-            updatedData.rejectionReason = campaign.rejectionReason;
-            updatedData.rejected_reason = campaign.rejectionReason;
-            
-            updateData = updatedData;
-          }
-        }
-
-        // DB 업데이트
-        const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
-        const success = await updateCampaign(campaignId, updateData);
-
-        if (!success) {
-          throw new Error('캠페인 업데이트에 실패했습니다.');
-        }
-
-        // UI 업데이트를 위해 형식 변환 및 originalData 업데이트
-        let addInfo = newCampaign.originalData?.add_info || {};
-        if (typeof addInfo === 'string') {
-          try {
-            addInfo = JSON.parse(addInfo);
-          } catch (e) {
-            addInfo = {};
-          }
-        }
-
-        // 상태 객체 생성
-        const statusObject = {
-          label: getStatusLabel(finalStatus),
-          color: getStatusColor(finalStatus),
-          status: finalStatus
-        };
-
-        const updatedCampaign: ExtendedCampaign = {
-          ...newCampaign,
-          logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
-          // 상태를 일관된 형식으로 업데이트
-          status: statusObject,
-          // originalData 업데이트
-          originalData: {
-            ...newCampaign.originalData,
-            unit_price: parseFloat(newCampaign.unitPrice || '0'),
-            deadline: formatTimeHHMM(newCampaign.deadline || ''),
-            description: newCampaign.description,
-            detailed_description: newCampaign.detailedDescription,
-            userInputFields: newCampaign.userInputFields,
-            status: finalStatus,
-            logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
-            uploaded_logo_data: previewUrl,
-            banner_image: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
-            uploaded_banner_image_data: bannerImagePreviewUrl,
-            add_info: {
-              ...addInfo,
-              additional_fields: additionalFields,
-              add_field: newCampaign.userInputFields, // 사용자 입력 필드 정보를 add_info.add_field에 저장
-            },
-            // 반려 상태일 때 rejected_reason 필드 업데이트
-            ...(finalStatus === 'rejected' ? { rejected_reason: newCampaign.rejectionReason } : {})
-          }
-        };
-
-        // 부모 컴포넌트에 업데이트 알림
-        if (onSave) {
-          onSave(updatedCampaign);
-        }
-
-        onClose();
-      } catch (err) {
-        setError('캠페인 정보 저장에 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
+      await performSave(false);
     } else {
       // 신규 캠페인 생성 모드
       // 제공된 createCampaign 함수가 없으면 기본 함수 사용
       const campaignCreator = createCampaign || defaultCreateCampaign;
-      
+
       // 개발 모드에서 로그 표시
       if (!createCampaign) {
         //
@@ -651,47 +626,47 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         return;
       }
 
-      // 서비스 유형별 필수 필드 검증
-      if (serviceType && serviceTypeInfoMap[serviceType]) {
-        const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
-
-        for (const [fieldKey, info] of Object.entries(fieldInfo)) {
-          if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
-            setError(`${info.label}은(는) 필수 입력 항목입니다.`);
-            return;
-          }
-        }
-      }
 
       setLoading(true);
       setError(null);
 
       try {
+        // 로고가 없는 경우 랜덤 동물 지정
+        let logoValue = previewUrl ? 'uploaded-logo.png' : newCampaign.logo;
+        if (!previewUrl && (!newCampaign.logo || newCampaign.logo === '')) {
+          const animalLogos = [
+            'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+            'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+            'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
+            'sheep', 'teddy-bear', 'turtle'
+          ];
+          const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
+          logoValue = `animal/svg/${randomAnimal}.svg`;
+        }
+
         // 디버깅: 서버로 전송되는 데이터 확인
-      const dataToSend = {
-        campaignName: newCampaign.campaignName,
-        description: newCampaign.description,
-        detailedDescription: newCampaign.detailedDescription,
-        logo: previewUrl ? 'uploaded-logo.png' : newCampaign.logo, // 실제 구현에서는 업로드된 파일 경로로 변경
-        uploadedLogo: previewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
-        uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
-        unitPrice: newCampaign.unitPrice,
-        deadline: newCampaign.deadline,
-        status: 'waiting_approval', // 캠페인 신청 시 항상 '승인 대기중' 상태로 제출
-        serviceType: serviceType,
-        // 서비스 유형별 추가 필드
-        additionalFields: additionalFields,
-        // 사용자 입력 필드 정보를 add_field로 전달
-        add_field: newCampaign.userInputFields,
-        // 기본값 설정
-        efficiency: '0',
-        minQuantity: '10',
-        additionalLogic: '0'
-      };
-      
-      // 1. DB에 새 캠페인 생성
-      const result = await campaignCreator(dataToSend);
+        const dataToSend = {
+          campaignName: newCampaign.campaignName,
+          description: newCampaign.description,
+          detailedDescription: newCampaign.detailedDescription,
+          logo: logoValue,
+          uploadedLogo: previewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
+          bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
+          uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
+          unitPrice: newCampaign.unitPrice,
+          deadline: newCampaign.deadline,
+          status: 'waiting_approval', // 캠페인 신청 시 항상 '승인 대기중' 상태로 제출
+          serviceType: serviceType,
+          // 사용자 입력 필드 정보를 add_field로 전달
+          add_field: newCampaign.userInputFields,
+          // 기본값 설정
+          efficiency: '0',
+          minQuantity: '10',
+          additionalLogic: '0'
+        };
+
+        // 1. DB에 새 캠페인 생성
+        const result = await campaignCreator(dataToSend);
 
         if (!result.success) {
           throw new Error(result.error || '캠페인 생성에 실패했습니다.');
@@ -711,9 +686,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             ...newCampaign,
             id: String(Date.now()), // 임시 ID (실제로는 서버에서 생성된 ID를 받아야 함)
             status: statusObject,
-            // 추가 필드 및 서비스 타입 정보 추가
+            // 서비스 타입 정보 추가
             serviceType,
-            additionalFields,
           };
 
           onSave(savedCampaign);
@@ -740,14 +714,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           </DialogHeader>
 
           <DialogBody className="py-5 px-5 overflow-y-auto" style={{ maxHeight: '70vh' }}>
-            {/* 오류 메시지 */}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 mb-5 rounded-md flex items-center shadow-sm border border-red-200 dark:border-red-800/50">
-                <KeenIcon icon="warning-triangle" className="size-5 mr-3 flex-shrink-0" />
-                <span className="font-medium">{error}</span>
-              </div>
-            )}
-
             {/* 헤더 정보 - 표 스타일로 통일 */}
             <div className="overflow-hidden border border-border rounded-lg mb-6 shadow-sm bg-white dark:bg-gray-800/20">
               <div className="flex items-center p-6">
@@ -757,10 +723,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                       src={previewUrl || toAbsoluteUrl(`/media/${newCampaign.logo}`)}
                       className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
                       alt="캠페인 로고"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 기본 이미지 사용
-                        (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
-                      }}
                     />
                   ) : (
                     <div className="rounded-full size-16 bg-gray-100 flex items-center justify-center text-gray-400 font-medium border border-gray-200 shadow-sm">
@@ -1079,7 +1041,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                             </Button>
                           </div>
                         ))}
-                        
+
                         <Button
                           type="button"
                           className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
@@ -1094,7 +1056,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           입력 필드 추가
                         </Button>
                       </div>
-                      
+
                       <div className="text-sm text-muted-foreground mt-3">
                         <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                         <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
@@ -1103,85 +1065,38 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   </tr>
 
                   {/* 반려 상태일 때 반려 사유 표시 */}
-                  {newCampaign.status && 
-                   (typeof newCampaign.status === 'string' 
-                    ? newCampaign.status === 'rejected' 
-                    : newCampaign.status.status === 'rejected') && (
-                    <tr>
-                      <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider w-1/4">
-                        반려 사유
-                      </th>
-                      <td className="px-6 py-4 bg-red-50 dark:bg-red-900/20">
-                        <div className="flex flex-col gap-2">
-                          <div className="text-red-600 dark:text-red-400 whitespace-pre-line">
-                            {newCampaign.rejectionReason || '(반려 사유가 입력되지 않았습니다)'}
-                          </div>
-                          {isOperator && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="self-start bg-red-500 hover:bg-red-600 text-white"
-                              onClick={() => {
-                                setRejectionReason(newCampaign.rejectionReason || '');
-                                setRejectionModalOpen(true);
-                              }}
-                            >
-                              <KeenIcon icon="pencil" className="me-1.5 size-4" />
-                              반려 사유 수정
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 서비스 유형별 추가 필드 */}
-                  {serviceType && serviceTypeInfoMap[serviceType] &&
-                    Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
-                      <tr key={fieldKey}>
-                        <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                          {fieldInfo.label}
-                          {fieldInfo.required && <span className="text-red-500 ml-1">*</span>}
+                  {newCampaign.status &&
+                    (typeof newCampaign.status === 'string'
+                      ? newCampaign.status === 'rejected'
+                      : newCampaign.status.status === 'rejected') && (
+                      <tr>
+                        <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider w-1/4">
+                          반려 사유
                         </th>
-                        <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                          {fieldInfo.type === 'select' ? (
-                            <select
-                              value={additionalFields[fieldKey] || fieldInfo.defaultValue || 'none'}
-                              onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                              className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                              disabled={loading}
-                            >
-                              <option value="none">선택하세요</option>
-                              {fieldInfo.options?.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : fieldInfo.type === 'textarea' ? (
-                            <textarea
-                              value={additionalFields[fieldKey] || ''}
-                              onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                              className="w-full h-[60px] px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                              placeholder={fieldInfo.placeholder}
-                              disabled={loading}
-                              required={fieldInfo.required}
-                            />
-                          ) : (
-                            <input
-                              type={fieldInfo.type}
-                              value={additionalFields[fieldKey] || ''}
-                              onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                              className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                              placeholder={fieldInfo.placeholder}
-                              disabled={loading}
-                              required={fieldInfo.required}
-                            />
-                          )}
+                        <td className="px-6 py-4 bg-red-50 dark:bg-red-900/20">
+                          <div className="flex flex-col gap-2">
+                            <div className="text-red-600 dark:text-red-400 whitespace-pre-line">
+                              {newCampaign.rejectionReason || '(반려 사유가 입력되지 않았습니다)'}
+                            </div>
+                            {isOperator && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="self-start bg-red-500 hover:bg-red-600 text-white"
+                                onClick={() => {
+                                  setRejectionReason(newCampaign.rejectionReason || '');
+                                  setRejectionModalOpen(true);
+                                }}
+                              >
+                                <KeenIcon icon="pencil" className="me-1.5 size-4" />
+                                반려 사유 수정
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  }
+                    )}
+
                 </tbody>
               </table>
             </div>
@@ -1191,7 +1106,15 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           <DialogFooter className="py-4 px-5 border-t bg-gray-50 dark:bg-gray-800/50 sticky bottom-0 z-10 shadow-sm">
             {/* 운영자 모드일 때 표시되는 푸터 */}
             {isOperator && campaign ? (
-              <div className="flex justify-end items-center gap-3 w-full">
+              <div className="flex items-center justify-end w-full gap-3">
+                {/* 에러 메시지 - 미리보기 버튼 바로 왼쪽에 위치 */}
+                {error && (
+                  <div className="flex items-center text-red-600 text-sm">
+                    <KeenIcon icon="information-circle" className="size-4 mr-1.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                
                 <Button
                   onClick={() => setCampaignPreviewModalOpen(true)}
                   variant="default"
@@ -1201,7 +1124,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   <KeenIcon icon="eye" className="me-1.5 size-4" />
                   미리보기
                 </Button>
-                
+
                 {/* 캠페인 내용 수정 저장 버튼 */}
                 <Button
                   onClick={handleSave}
@@ -1225,59 +1148,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 {/* 운영자 모드 상태 변경 버튼 (단순화) */}
                 <Button
                   variant="default"
-                  onClick={async () => {
-                    // 승인 시 준비중 상태로 변경하고 바로 저장
-                    setLoading(true);
-                    setError(null);
-                    
-                    try {
-                      if (campaign && updateCampaign) {
-                        // 승인 상태로 직접 업데이트
-                        const updateData = {
-                          campaignName: newCampaign.campaignName,
-                          description: newCampaign.description,
-                          detailedDescription: newCampaign.detailedDescription,
-                          add_field: newCampaign.userInputFields,
-                          unitPrice: newCampaign.unitPrice,
-                          deadline: newCampaign.deadline,
-                          logo: previewUrl ? 'updated-logo.png' : newCampaign.logo,
-                          uploadedLogo: previewUrl,
-                          bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
-                          uploadedBannerImage: bannerImagePreviewUrl,
-                          status: 'pending', // 승인 시 준비중 상태로
-                          additionalFields: additionalFields,
-                        };
-                        
-                        const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
-                        const success = await updateCampaign(campaignId, updateData);
-                        
-                        if (success) {
-                          // 성공 시 UI 업데이트
-                          const updatedCampaign = {
-                            ...newCampaign,
-                            status: {
-                              label: getStatusLabel('pending'),
-                              color: getStatusColor('pending'),
-                              status: 'pending'
-                            }
-                          };
-                          
-                          if (onSave) {
-                            onSave(updatedCampaign as ExtendedCampaign);
-                          }
-                          
-                          onClose();
-                        } else {
-                          setError('캠페인 승인에 실패했습니다.');
-                        }
-                      }
-                    } catch (error) {
-                      console.error('캠페인 승인 중 오류:', error);
-                      setError('캠페인 승인 중 오류가 발생했습니다.');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
+                  onClick={() => setApprovalModalOpen(true)}
                   className="bg-green-500 hover:bg-green-600 text-white"
                   disabled={loading}
                 >
@@ -1311,41 +1182,86 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 </Button>
               </div>
             ) : (
-              <div className="flex justify-end items-center gap-3">
-                {/* 미리보기 버튼 */}
-                <Button
-                  onClick={() => setCampaignPreviewModalOpen(true)}
-                  variant="outline"
-                  className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
-                  disabled={loading}
-                >
-                  <KeenIcon icon="eye" className="me-1.5 size-4" />
-                  미리보기
-                </Button>
+              <div className="flex items-center justify-between w-full">
+                {/* 왼쪽: 변경사항 안내 메시지 */}
+                <div className="flex-1">
+                  {campaign && !isOperator && (() => {
+                    const orig = campaign.originalData || {};
+                    const hasChanges = hasDataChanged();
+                    const currentStatus = orig.status || 'pending';
+                    
+                    // 상태별 메시지 표시
+                    if (currentStatus === 'rejected' && hasChanges) {
+                      return (
+                        <div className="flex items-center text-blue-600 text-sm">
+                          <KeenIcon icon="information-2" className="size-4 mr-1.5" />
+                          <span>변경사항이 감지되었습니다. 저장 시 재승인 요청이 됩니다.</span>
+                        </div>
+                      );
+                    } else if (['pending', 'active', 'pause'].includes(currentStatus) && hasChanges) {
+                      return (
+                        <div className="flex items-center text-orange-600 text-sm">
+                          <KeenIcon icon="shield-cross" className="size-4 mr-1.5" />
+                          <span>변경사항이 감지되었습니다. 저장 시 승인 대기 상태로 변경됩니다.</span>
+                        </div>
+                      );
+                    } else if (currentStatus === 'waiting_approval') {
+                      return (
+                        <div className="flex items-center text-yellow-600 text-sm">
+                          <KeenIcon icon="timer" className="size-4 mr-1.5" />
+                          <span>현재 승인 대기 중입니다.</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  {/* 에러 메시지 */}
+                  {error && (
+                    <div className="flex items-center text-red-600 text-sm mt-1">
+                      <KeenIcon icon="information" className="size-4 mr-1.5" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 오른쪽: 버튼들 */}
+                <div className="flex items-center gap-3">
+                  {/* 미리보기 버튼 */}
+                  <Button
+                    onClick={() => setCampaignPreviewModalOpen(true)}
+                    variant="outline"
+                    className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
+                    disabled={loading}
+                  >
+                    <KeenIcon icon="eye" className="me-1.5 size-4" />
+                    미리보기
+                  </Button>
 
-                {/* 캠페인 등록/수정 버튼 */}
-                <Button
-                  onClick={handleSave}
-                  className="bg-success hover:bg-success/90 text-white"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <span className="flex items-center">
-                      <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                      {campaign ? '저장 중...' : '신청 중...'}
-                    </span>
-                  ) : campaign ? '저장' : '캠페인 등록 신청'}
-                </Button>
+                  {/* 캠페인 등록/수정 버튼 */}
+                  <Button
+                    onClick={handleSave}
+                    className="bg-success hover:bg-success/90 text-white"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="flex items-center">
+                        <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                        {campaign ? '저장 중...' : '신청 중...'}
+                      </span>
+                    ) : campaign ? '저장' : '캠페인 등록 신청'}
+                  </Button>
 
-                {/* 취소 버튼 */}
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                  disabled={loading}
-                >
-                  취소
-                </Button>
+                  {/* 취소 버튼 */}
+                  <Button
+                    onClick={onClose}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    disabled={loading}
+                  >
+                    취소
+                  </Button>
+                </div>
               </div>
             )}
           </DialogFooter>
@@ -1399,7 +1315,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 캠페인 상세정보(미리보기)
               </DialogTitle>
             </DialogHeader>
-            
+
             <div className="bg-background flex flex-col max-h-[80vh] w-full">
               <div className="flex-shrink-0">
                 {/* 배너 이미지 영역 - 이미지가 없으면 표시하지 않음 */}
@@ -1470,7 +1386,15 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                       className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
                       alt="캠페인 로고"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
+                        // 에러 발생 시 다른 랜덤 동물로 재시도
+                        const animalLogos = [
+                          'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+                          'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+                          'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
+                          'sheep', 'teddy-bear', 'turtle'
+                        ];
+                        const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
+                        (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/svg/${randomAnimal}.svg`);
                       }}
                     />
                     <div>
@@ -1541,7 +1465,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           </p>
                         </div>
                       </div>
-                      
+
                       {newCampaign.userInputFields && newCampaign.userInputFields.length > 0 && (
                         <div>
                           <h4 className="font-medium text-primary mb-2">사용자 입력 필드</h4>
@@ -1573,27 +1497,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     </div>
                   </div>
 
-                  {/* 서비스 유형별 추가 정보 */}
-                  {serviceType && serviceTypeInfoMap[serviceType] &&
-                    Object.keys(serviceTypeInfoMap[serviceType].additionalFields).length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
-                        <div className="bg-white p-5 rounded-xl border border-border">
-                          <div className="grid gap-4">
-                            {Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
-                              <div key={fieldKey} className="flex flex-col">
-                                <span className="font-medium text-muted-foreground text-sm mb-1">{fieldInfo.label}</span>
-                                <span className="text-foreground">
-                                  {fieldInfo.type === 'select' && fieldInfo.options
-                                    ? fieldInfo.options.find(opt => opt.value === additionalFields[fieldKey])?.label || additionalFields[fieldKey] || '-'
-                                    : additionalFields[fieldKey] || '-'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                   {/* 미리보기 알림 */}
                   <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300">
@@ -1627,7 +1530,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           <DialogContent className="w-[95vw] sm:max-w-md p-0 overflow-hidden flex flex-col max-h-[90vh]" aria-describedby={undefined}>
             <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10 shadow-sm">
               <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
-                <KeenIcon icon="warning-circle" className="mr-2 text-red-500 size-5" />
+                <KeenIcon icon="shield-cross" className="mr-2 text-red-500 size-5" />
                 캠페인 반려 사유 입력
               </DialogTitle>
             </DialogHeader>
@@ -1635,7 +1538,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             <DialogBody className="p-6 bg-background overflow-y-auto">
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-4 rounded-md flex items-center mb-4">
-                  <KeenIcon icon="warning-triangle" className="size-4 mr-2 flex-shrink-0" />
+                  <KeenIcon icon="shield-cross" className="size-4 mr-2 flex-shrink-0" />
                   <span className="text-sm">{error}</span>
                 </div>
               )}
@@ -1678,7 +1581,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     try {
                       // 모달 닫기
                       setRejectionModalOpen(false);
-                      
+
                       // 상태 업데이트 대신 직접 handleSave 호출 시 반려 사유 전달
                       // 직접 업데이트 객체 생성 및 저장 요청
                       if (campaign && updateCampaign) {
@@ -1696,21 +1599,20 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                             bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
                             uploadedBannerImage: bannerImagePreviewUrl,
                             status: 'rejected',
-                            additionalFields: additionalFields,
                             // 중요: 새로 입력한 반려 사유 사용
                             rejectionReason: rejectionReason,
                             rejected_reason: rejectionReason
                           };
-                          
+
                           // DB 직접 업데이트
                           const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
                           const success = await updateCampaign(campaignId, updateData);
-                          
+
                           if (success) {
                             // 성공 시 상태 업데이트 (UI 반영용)
                             setNewCampaign(prev => {
                               if (!prev) return prev;
-                              
+
                               return {
                                 ...prev,
                                 status: {
@@ -1726,7 +1628,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                                 }
                               };
                             });
-                            
+
                             // 부모 컴포넌트에 업데이트 알림
                             if (onSave) {
                               const updatedCampaign = {
@@ -1740,7 +1642,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                               };
                               onSave(updatedCampaign as ExtendedCampaign);
                             }
-                            
+
                             onClose();
                           } else {
                             setError('반려 사유 저장에 실패했습니다.');
@@ -1788,6 +1690,281 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   취소
                 </Button>
               </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* 승인 확인 모달 */}
+      {approvalModalOpen && (
+        <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
+          <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <KeenIcon icon="check-circle" className="text-green-500 size-5 mr-2" />
+                캠페인 승인 확인
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  선택한 캠페인을 승인하시겠습니까?
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  승인 시 캠페인이 준비중 상태로 변경됩니다.
+                </p>
+              </div>
+
+              {/* 캠페인 정보 표시 */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      캠페인 이름
+                    </span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {newCampaign.campaignName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      서비스 유형
+                    </span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {getServiceTypeName(serviceType || '')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      건당 단가
+                    </span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {newCampaign.unitPrice}원
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      마감 시간
+                    </span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {newCampaign.deadline || '18:00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      현재 상태
+                    </span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {getStatusLabel(typeof newCampaign.status === 'object' ? newCampaign.status?.status : newCampaign.status || (campaign?.originalData?.status || 'waiting_approval'))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center text-blue-700 dark:text-blue-300">
+                      <KeenIcon icon="check-circle" className="size-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+                      변경될 상태
+                    </span>
+                    <span className="font-medium text-green-600 dark:text-green-400">
+                      준비중
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end gap-2">
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    setApprovalModalOpen(false);
+
+                    if (updateCampaign) {
+                      // 로고가 없는 경우 랜덤 동물 지정
+                      let logoValue = previewUrl ? 'uploaded-logo.png' : newCampaign.logo;
+                      // 빈 문자열도 로고가 없는 것으로 처리
+                      if (!previewUrl && (!newCampaign.logo || newCampaign.logo === '')) {
+                        const animalLogos = [
+                          'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
+                          'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
+                          'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
+                          'sheep', 'teddy-bear', 'turtle'
+                        ];
+                        const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
+                        logoValue = `animal/svg/${randomAnimal}.svg`;
+                      }
+
+                      // 승인 상태로 직접 업데이트
+                      const updateData = {
+                        campaignName: newCampaign.campaignName,
+                        description: newCampaign.description,
+                        detailedDescription: newCampaign.detailedDescription,
+                        add_field: newCampaign.userInputFields,
+                        unitPrice: newCampaign.unitPrice,
+                        deadline: newCampaign.deadline,
+                        logo: logoValue,
+                        uploadedLogo: previewUrl,
+                        bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
+                        uploadedBannerImage: bannerImagePreviewUrl,
+                        status: 'pending', // 승인 시 준비중 상태로
+                      };
+
+                      const campaignId = typeof newCampaign.id === 'string' ? parseInt(newCampaign.id) : newCampaign.id;
+                      const success = await updateCampaign(campaignId, updateData);
+
+                      if (success) {
+                        // 성공 시 UI 업데이트
+                        const updatedCampaign = {
+                          ...newCampaign,
+                          status: {
+                            label: getStatusLabel('pending'),
+                            color: getStatusColor('pending'),
+                            status: 'pending'
+                          }
+                        };
+
+                        if (onSave) {
+                          onSave(updatedCampaign as ExtendedCampaign);
+                        }
+
+                        onClose();
+                      } else {
+                        setError('캠페인 승인에 실패했습니다.');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('캠페인 승인 중 오류:', error);
+                    setError('캠페인 승인 중 오류가 발생했습니다.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center">
+                    <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                    승인 중...
+                  </span>
+                ) : (
+                  <>
+                    승인하기
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setApprovalModalOpen(false)}
+                disabled={loading}
+              >
+                취소
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* 변경사항 저장 확인 모달 */}
+      {saveConfirmModalOpen && (
+        <Dialog open={saveConfirmModalOpen} onOpenChange={setSaveConfirmModalOpen}>
+          <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <KeenIcon icon="shield-cross" className="text-yellow-500 size-5 mr-2" />
+                캠페인 재승인 요청 확인
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  캠페인 정보가 변경되어 운영자의 재승인이 필요합니다.
+                </p>
+                
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg mb-4">
+                  <div className="flex items-start">
+                    <KeenIcon icon="information-2" className="text-yellow-600 dark:text-yellow-400 size-5 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                        저장 시 다음과 같이 변경됩니다:
+                      </p>
+                      <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
+                        <li>• 현재 상태가 <span className="font-semibold">승인 대기중</span>으로 변경됩니다</li>
+                        <li>• 운영자가 검토 후 승인/반려를 결정합니다</li>
+                        <li>• 승인 전까지 캠페인이 비활성화됩니다</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 캠페인 정보 표시 */}
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 w-20">캠페인명:</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {newCampaign.campaignName}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 w-20">현재 상태:</span>
+                      <span className={`badge badge-${
+                        typeof campaign?.status === 'object' ? campaign.status.color : 'info'
+                      } badge-outline text-xs`}>
+                        {typeof campaign?.status === 'object' 
+                          ? campaign.status.label 
+                          : getStatusLabel(campaign?.originalData?.status || 'pending')}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 w-20">변경 후:</span>
+                      <span className="badge badge-warning badge-outline text-xs">
+                        승인 대기중
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                계속 진행하시겠습니까?
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end gap-2">
+              <Button
+                className="bg-primary hover:bg-primary/90 text-white"
+                onClick={async () => {
+                  setSaveConfirmModalOpen(false);
+                  // 확인 후 실제 저장 수행
+                  await performSave(true); // skipConfirm = true
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center">
+                    <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                    저장 중...
+                  </span>
+                ) : (
+                  <>
+                    저장하고 재승인 요청
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSaveConfirmModalOpen(false)}
+                disabled={loading}
+              >
+                취소
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

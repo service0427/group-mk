@@ -6,6 +6,7 @@
 @import "z-index-fix.css";
 @import "dialog.css";
 @import "logout-transition.css";
+@import "header-width-fix.css";
 
 /* 폰트 크기 전역 조정 - 기본 폰트 크기를 10% 증가 */
 html {

@@ -26,8 +26,8 @@ interface NotificationDropdownProps {
   inlineCounterOnly?: boolean; // 인라인 카운터만 표시 여부 (내부 컴포넌트에서 사용)
 }
 
-const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ 
-  containerClassName, 
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
+  containerClassName,
   hideTextOnMobile = false,
   inlineCounterOnly = false
 }) => {
@@ -40,16 +40,28 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const toast = useToast();
   const { showConfirm, showAlert } = useDialog();
 
+  // 화면 높이가 작은지 확인
+  const [isSmallHeight, setIsSmallHeight] = useState(window.innerHeight < 700);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallHeight(window.innerHeight < 700);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 컴포넌트 마운트 시 알림 데이터 가져오기 및 주기적 갱신
   useEffect(() => {
     // 컴포넌트 마운트 시 알림 데이터 가져오기
     fetchNotifications();
-    
+
     // 30초마다 알림 데이터 새로고침 (HeaderTopbar의 10초와 중복되지 않도록 30초로 설정)
     const interval = setInterval(() => {
       fetchNotifications();
     }, 30000); // 30초
-    
+
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -68,8 +80,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     // 읽지 않은 알림인 경우 읽음 처리
     if (notification.status === NotificationStatus.UNREAD) {
       markAsRead(notification.id);
-      // 읽음 처리 시 토스트 메시지 표시
-      toast.info('알림을 읽음으로 표시했습니다');
     }
 
     // 자세히 보기 모달 표시
@@ -112,8 +122,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   // 알림 읽음 상태에 따른 스타일 클래스
   const getNotificationStatusClass = (status: NotificationStatus) => {
-    return status === NotificationStatus.UNREAD 
-      ? 'bg-blue-50 dark:bg-blue-900/20' 
+    return status === NotificationStatus.UNREAD
+      ? 'bg-blue-50 dark:bg-blue-900/20'
       : '';
   };
 
@@ -134,7 +144,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
     }
   };
-  
+
   // 알림 타입에 따른 도트 스타일 클래스
   const getTypeDotClass = (type: NotificationType) => {
     switch (type) {
@@ -177,12 +187,28 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           toggle="dropdown"
           trigger="click"
           dropdownProps={{
-            placement: isRTL() ? 'bottom-start' : 'bottom-end',
+            placement: isSmallHeight
+              ? (isRTL() ? 'top-start' : 'top-end')
+              : (isRTL() ? 'bottom-start' : 'bottom-end'),
             modifiers: [
               {
                 name: 'offset',
                 options: {
-                  offset: isRTL() ? [0, -10] : [0, 10] // [skid, distance]
+                  offset: isRTL() ? [0, isSmallHeight ? 10 : -10] : [0, 10] // [skid, distance]
+                }
+              },
+              {
+                name: 'preventOverflow',
+                options: {
+                  boundary: 'viewport',
+                  padding: 10
+                }
+              },
+              {
+                name: 'flip',
+                enabled: true,
+                options: {
+                  fallbackPlacements: ['top', 'bottom', 'left', 'right']
                 }
               }
             ]
@@ -210,31 +236,45 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               <span className="text-sm font-medium whitespace-nowrap">알림</span>
             </MenuToggle>
           )}
-          <MenuSub className="menu-default" rootClassName="w-full max-w-[400px] z-40">
+          <MenuSub className="menu-default overflow-hidden flex flex-col" rootClassName="w-full max-w-[400px] z-40">
             {/* 헤더 영역 */}
             <div className="py-2 px-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
                 <h3 className="text-base font-medium text-card-foreground dark:text-white">알림</h3>
                 <div className="flex items-center">
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      
+
                       if (unreadCount > 0) {
-                        showConfirm(
-                          '알림 읽음 처리',
-                          `${unreadCount}개의 모든 읽지 않은 알림을 읽음으로 표시하시겠습니까?`,
-                          async (confirmed) => {
-                            if (confirmed) {
-                              await markAllAsRead();
-                              // 상태 갱신을 위해 명시적으로 알림 데이터 다시 가져오기
-                              fetchNotifications();
-                              // 모든 알림 읽음 처리 시 토스트 메시지 표시
-                              toast.success('모든 알림을 읽음으로 표시했습니다');
-                            }
-                          }
-                        );
+                        try {
+                          // 드롭다운 메뉴를 먼저 닫기
+                          itemRef.current?.hide();
+
+                          // 약간의 지연 후 확인 모달 표시
+                          setTimeout(() => {
+                            showConfirm(
+                              '알림 처리',
+                              `${unreadCount}개의 알림을 모두 읽음으로 표시하시겠습니까?`,
+                              async (confirmed) => {
+                                if (confirmed) {
+                                  await markAllAsRead();
+                                  // 모든 알림 읽음 처리 시 토스트 메시지 표시
+                                  toast.success('모든 알림을 읽음으로 표시했습니다');
+
+                                  // 상태 갱신을 위해 약간의 지연 후 알림 데이터 다시 가져오기
+                                  setTimeout(() => {
+                                    fetchNotifications();
+                                  }, 100);
+                                }
+                              }
+                            );
+                          }, 100);
+                        } catch (error) {
+                          console.error('모두 읽음 처리 중 오류:', error);
+                          toast.error('알림 읽음 처리 중 오류가 발생했습니다');
+                        }
                       }
                     }}
                     className={`text-sm font-medium ${unreadCount > 0
@@ -249,265 +289,262 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               </div>
             </div>
 
-            {/* 로딩 상태 */}
-            {loading && (
-              <div className="p-4 text-center text-muted-foreground">
-                <div className="flex justify-center items-center space-x-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+            {/* 스크롤 가능한 컨텐츠 영역 */}
+            <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+              {/* 로딩 상태 */}
+              {loading && (
+                <div className="p-4 text-center text-muted-foreground">
+                  <div className="flex justify-center items-center space-x-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                  <div className="mt-2 dark:text-gray-300">알림을 불러오는 중...</div>
                 </div>
-                <div className="mt-2 dark:text-gray-300">알림을 불러오는 중...</div>
-              </div>
-            )}
+              )}
 
-            {/* 알림 없음 상태 */}
-            {!loading && notifications.length === 0 && (
-              <div className="p-4 text-center text-muted-foreground dark:text-gray-300">
-                새로운 알림이 없습니다
-              </div>
-            )}
-
-            {/* 읽지 않은 알림 섹션 */}
-            {!loading && unreadCount > 0 && (
-              <>
-                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
-                  읽지 않은 알림 ({unreadCount})
+              {/* 알림 없음 상태 */}
+              {!loading && notifications.length === 0 && (
+                <div className="p-4 text-center text-muted-foreground dark:text-gray-300">
+                  새로운 알림이 없습니다
                 </div>
+              )}
 
-                {notifications
-                  .filter(notification => notification.status === NotificationStatus.UNREAD)
-                  .slice(0, 5)
-                  .map(notification => (
-                    <MenuItem 
-                      key={notification.id}
-                      className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        notification.status === NotificationStatus.UNREAD ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                      } ${
-                        // 마지막 아이템이 아닌 경우에만 border 추가
-                        (notifications.filter(n => n.status === NotificationStatus.UNREAD).indexOf(notification) < 
-                         notifications.filter(n => n.status === NotificationStatus.UNREAD).length - 1) 
-                        ? 'border-b border-gray-200 dark:border-gray-700' 
-                        : ''
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <MenuLabel className="py-1.5 px-3">
-                        <div className="flex gap-3 w-full">
-                          <div className="mt-1 relative flex-shrink-0">
-                            <NotificationIcon type={notification.type} size="sm" />
-                            {renderPriorityIcon(notification.priority)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-sm font-medium text-card-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
-                              <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
-                                <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
-                                  <span className={`inline-block w-1 h-1 rounded-full ${getTypeDotClass(notification.type)}`}></span>
-                                  {notification.type === NotificationType.SYSTEM
-                                    ? '시스템'
-                                    : notification.type === NotificationType.TRANSACTION
-                                      ? '결제/캐시'
-                                      : notification.type === NotificationType.SERVICE
-                                        ? '서비스'
-                                        : notification.type === NotificationType.SLOT
-                                          ? '슬롯'
-                                          : notification.type === NotificationType.MARKETING
-                                            ? '마케팅'
-                                            : '기타'}
-                                </span>
+              {/* 읽지 않은 알림 섹션 */}
+              {!loading && unreadCount > 0 && (
+                <>
+                  <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
+                    읽지 않은 알림 ({unreadCount})
+                  </div>
 
-                                {notification.priority === NotificationPriority.HIGH && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-                                    <span className="mr-0.5 flex-shrink-0">
-                                      <i className="ki-notification-bing text-[8px]"></i>
-                                    </span>
-                                    중요
-                                  </span>
-                                )}
-                                {notification.priority === NotificationPriority.MEDIUM && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
-                                    <span className="mr-0.5 flex-shrink-0">
-                                      <i className="ki-notification text-[8px]"></i>
-                                    </span>
-                                    중간
-                                  </span>
-                                )}
-                              </div>
+                  {notifications
+                    .filter(notification => notification.status === NotificationStatus.UNREAD)
+                    .slice(0, 5)
+                    .map(notification => (
+                      <MenuItem
+                        key={notification.id}
+                        className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${notification.status === NotificationStatus.UNREAD ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          } ${
+                          // 마지막 아이템이 아닌 경우에만 border 추가
+                          (notifications.filter(n => n.status === NotificationStatus.UNREAD).indexOf(notification) <
+                            notifications.filter(n => n.status === NotificationStatus.UNREAD).length - 1)
+                            ? 'border-b border-gray-200 dark:border-gray-700'
+                            : ''
+                          }`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <MenuLabel className="py-1.5 px-3">
+                          <div className="flex gap-3 w-full">
+                            <div className="mt-1 relative flex-shrink-0">
+                              <NotificationIcon type={notification.type} size="sm" />
+                              {renderPriorityIcon(notification.priority)}
                             </div>
-
-                            <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
-
-                            {notification.link && (
-                              <div className="mt-1.5">
-                                <button
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // 부모 클릭 이벤트 방지
-                                    
-                                    // 읽지 않은 알림이면 읽음 처리
-                                    if (notification.status === NotificationStatus.UNREAD) {
-                                      markAsRead(notification.id);
-                                      toast.info('알림을 읽음으로 표시했습니다');
-                                    }
-                                    
-                                    // 드롭다운 닫기
-                                    itemRef.current?.hide();
-                                    
-                                    // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
-                                    setTimeout(() => {
-                                      // 경로 정리 후 navigate 사용
-                                      let path = notification.link || '';
-                                      // 이미 #이 포함된 경로 처리
-                                      if (path.startsWith('#')) {
-                                        path = path.substring(1); // # 제거
-                                      }
-                                      // 슬래시로 시작하지 않으면 추가
-                                      if (!path.startsWith('/') && path.length > 0) {
-                                        path = '/' + path;
-                                      }
-                                      
-                                      navigate(path);
-                                      // 페이지 이동 시 토스트 메시지 표시
-                                      toast.info('관련 페이지로 이동합니다');
-                                    }, 10);
-                                  }}
-                                >
-                                  <i className="ki-arrow-right text-[8px] mr-0.5"></i>
-                                  바로가기
-                                </button>
-                              </div>
-                            )}
-
-                            <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
-                              {formatDate(notification.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                      </MenuLabel>
-                    </MenuItem>
-                  ))}
-              </>
-            )}
-
-            {/* 이전 알림 섹션 */}
-            {!loading && notifications.filter(notification => notification.status === NotificationStatus.READ).length > 0 && (
-              <>
-                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
-                  이전 알림
-                </div>
-
-                {notifications
-                  .filter(notification => notification.status === NotificationStatus.READ)
-                  .slice(0, 5 - Math.min(5, notifications.filter(n => n.status === NotificationStatus.UNREAD).length))
-                  .map(notification => (
-                    <MenuItem 
-                      key={notification.id} 
-                      className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        // 마지막 아이템이 아닌 경우에만 border 추가
-                        (notifications.filter(n => n.status === NotificationStatus.READ).indexOf(notification) < 
-                         notifications.filter(n => n.status === NotificationStatus.READ).length - 1) 
-                        ? 'border-b border-gray-200 dark:border-gray-700' 
-                        : ''
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <MenuLabel className="py-1.5 px-3">
-                        <div className="flex gap-3 w-full">
-                          <div className="mt-1 relative flex-shrink-0">
-                            <NotificationIcon type={notification.type} size="sm" className="opacity-60" />
-                            {renderPriorityIcon(notification.priority)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-sm font-medium text-muted-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
-
-                              <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
-                                <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
-                                  <span className={`inline-block w-1 h-1 rounded-full ${getTypeDotClass(notification.type)}`}></span>
-                                  {notification.type === NotificationType.SYSTEM
-                                    ? '시스템'
-                                    : notification.type === NotificationType.TRANSACTION
-                                      ? '결제/캐시'
-                                      : notification.type === NotificationType.SERVICE
-                                        ? '서비스'
-                                        : notification.type === NotificationType.SLOT
-                                          ? '슬롯'
-                                          : notification.type === NotificationType.MARKETING
-                                            ? '마케팅'
-                                            : '기타'}
-                                </span>
-
-                                {notification.priority === NotificationPriority.HIGH && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-                                    <span className="mr-0.5 flex-shrink-0">
-                                      <i className="ki-notification-bing text-[8px]"></i>
-                                    </span>
-                                    중요
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="text-sm font-medium text-card-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
+                                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                                  <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
+                                    <span className={`inline-block w-1 h-1 rounded-full ${getTypeDotClass(notification.type)}`}></span>
+                                    {notification.type === NotificationType.SYSTEM
+                                      ? '시스템'
+                                      : notification.type === NotificationType.TRANSACTION
+                                        ? '결제/캐시'
+                                        : notification.type === NotificationType.SERVICE
+                                          ? '서비스'
+                                          : notification.type === NotificationType.SLOT
+                                            ? '슬롯'
+                                            : notification.type === NotificationType.MARKETING
+                                              ? '마케팅'
+                                              : '기타'}
                                   </span>
-                                )}
-                                {notification.priority === NotificationPriority.MEDIUM && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
-                                    <span className="mr-0.5 flex-shrink-0">
-                                      <i className="ki-notification text-[8px]"></i>
+
+                                  {notification.priority === NotificationPriority.HIGH && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                      <span className="mr-0.5 flex-shrink-0">
+                                        <i className="ki-notification-bing text-[8px]"></i>
+                                      </span>
+                                      중요
                                     </span>
-                                    중간
-                                  </span>
-                                )}
+                                  )}
+                                  {notification.priority === NotificationPriority.MEDIUM && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                                      <span className="mr-0.5 flex-shrink-0">
+                                        <i className="ki-notification text-[8px]"></i>
+                                      </span>
+                                      중간
+                                    </span>
+                                  )}
+                                </div>
                               </div>
+
+                              <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
+
+                              {notification.link && (
+                                <div className="mt-1.5">
+                                  <button
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // 부모 클릭 이벤트 방지
+
+                                      // 읽지 않은 알림이면 읽음 처리
+                                      if (notification.status === NotificationStatus.UNREAD) {
+                                        markAsRead(notification.id);
+                                      }
+
+                                      // 드롭다운 닫기
+                                      itemRef.current?.hide();
+
+                                      // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
+                                      setTimeout(() => {
+                                        // 경로 정리 후 navigate 사용
+                                        let path = notification.link || '';
+                                        // 이미 #이 포함된 경로 처리
+                                        if (path.startsWith('#')) {
+                                          path = path.substring(1); // # 제거
+                                        }
+                                        // 슬래시로 시작하지 않으면 추가
+                                        if (!path.startsWith('/') && path.length > 0) {
+                                          path = '/' + path;
+                                        }
+
+                                        navigate(path);
+                                      }, 10);
+                                    }}
+                                  >
+                                    <i className="ki-arrow-right text-[8px] mr-0.5"></i>
+                                    바로가기
+                                  </button>
+                                </div>
+                              )}
+
+                              <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
+                                {formatDate(notification.createdAt)}
+                              </span>
                             </div>
-
-                            <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
-
-                            {notification.link && (
-                              <div className="mt-1.5">
-                                <button
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // 부모 클릭 이벤트 방지
-                                    
-                                    // 드롭다운 닫기
-                                    itemRef.current?.hide();
-                                    
-                                    // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
-                                    setTimeout(() => {
-                                      // 경로 정리 후 navigate 사용
-                                      let path = notification.link || '';
-                                      // 이미 #이 포함된 경로 처리
-                                      if (path.startsWith('#')) {
-                                        path = path.substring(1); // # 제거
-                                      }
-                                      // 슬래시로 시작하지 않으면 추가
-                                      if (!path.startsWith('/') && path.length > 0) {
-                                        path = '/' + path;
-                                      }
-                                      
-                                      navigate(path);
-                                      // 페이지 이동 시 토스트 메시지 표시
-                                      toast.info('관련 페이지로 이동합니다');
-                                    }, 10);
-                                  }}
-                                >
-                                  <i className="ki-arrow-right text-[8px] mr-0.5"></i>
-                                  바로가기
-                                </button>
-                              </div>
-                            )}
-
-                            <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
-                              {formatDate(notification.createdAt)}
-                            </span>
                           </div>
-                        </div>
-                      </MenuLabel>
-                    </MenuItem>
-                  ))}
-              </>
-            )}
+                        </MenuLabel>
+                      </MenuItem>
+                    ))}
+                </>
+              )}
+
+              {/* 이전 알림 섹션 */}
+              {!loading && notifications.filter(notification => notification.status === NotificationStatus.READ).length > 0 && (
+                <>
+                  <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
+                    이전 알림
+                  </div>
+
+                  {notifications
+                    .filter(notification => notification.status === NotificationStatus.READ)
+                    .slice(0, 5 - Math.min(5, notifications.filter(n => n.status === NotificationStatus.UNREAD).length))
+                    .map(notification => (
+                      <MenuItem
+                        key={notification.id}
+                        className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          // 마지막 아이템이 아닌 경우에만 border 추가
+                          (notifications.filter(n => n.status === NotificationStatus.READ).indexOf(notification) <
+                            notifications.filter(n => n.status === NotificationStatus.READ).length - 1)
+                            ? 'border-b border-gray-200 dark:border-gray-700'
+                            : ''
+                          }`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <MenuLabel className="py-1.5 px-3">
+                          <div className="flex gap-3 w-full">
+                            <div className="mt-1 relative flex-shrink-0">
+                              <NotificationIcon type={notification.type} size="sm" className="opacity-60" />
+                              {renderPriorityIcon(notification.priority)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="text-sm font-medium text-muted-foreground dark:text-white truncate max-w-[240px]">{notification.title}</h4>
+
+                                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                                  <span className={`text-2xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${getTypeBadgeClass(notification.type)}`}>
+                                    <span className={`inline-block w-1 h-1 rounded-full ${getTypeDotClass(notification.type)}`}></span>
+                                    {notification.type === NotificationType.SYSTEM
+                                      ? '시스템'
+                                      : notification.type === NotificationType.TRANSACTION
+                                        ? '결제/캐시'
+                                        : notification.type === NotificationType.SERVICE
+                                          ? '서비스'
+                                          : notification.type === NotificationType.SLOT
+                                            ? '슬롯'
+                                            : notification.type === NotificationType.MARKETING
+                                              ? '마케팅'
+                                              : '기타'}
+                                  </span>
+
+                                  {notification.priority === NotificationPriority.HIGH && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                      <span className="mr-0.5 flex-shrink-0">
+                                        <i className="ki-notification-bing text-[8px]"></i>
+                                      </span>
+                                      중요
+                                    </span>
+                                  )}
+                                  {notification.priority === NotificationPriority.MEDIUM && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-2xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                                      <span className="mr-0.5 flex-shrink-0">
+                                        <i className="ki-notification text-[8px]"></i>
+                                      </span>
+                                      중간
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-muted-foreground dark:text-white line-clamp-2">{notification.message}</p>
+
+                              {notification.link && (
+                                <div className="mt-1.5">
+                                  <button
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // 부모 클릭 이벤트 방지
+
+                                      // 드롭다운 닫기
+                                      itemRef.current?.hide();
+
+                                      // 약간의 지연 후 페이지 이동 (드롭다운이 닫히는 시간 고려)
+                                      setTimeout(() => {
+                                        // 경로 정리 후 navigate 사용
+                                        let path = notification.link || '';
+                                        // 이미 #이 포함된 경로 처리
+                                        if (path.startsWith('#')) {
+                                          path = path.substring(1); // # 제거
+                                        }
+                                        // 슬래시로 시작하지 않으면 추가
+                                        if (!path.startsWith('/') && path.length > 0) {
+                                          path = '/' + path;
+                                        }
+
+                                        navigate(path);
+                                      }, 10);
+                                    }}
+                                  >
+                                    <i className="ki-arrow-right text-[8px] mr-0.5"></i>
+                                    바로가기
+                                  </button>
+                                </div>
+                              )}
+
+                              <span className="text-2xs text-muted-foreground dark:text-white/80 mt-1 block">
+                                {formatDate(notification.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </MenuLabel>
+                      </MenuItem>
+                    ))}
+                </>
+              )}
+            </div>
 
             {/* 바닥글 - 알림 센터 바로가기 */}
-            <div className="border-t border-gray-200 dark:border-gray-700">
-              <button 
+            <div className="border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <button
                 className="w-full h-10 flex items-center justify-center bg-transparent hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors"
                 onClick={(e) => {
                   e.preventDefault();

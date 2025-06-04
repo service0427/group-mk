@@ -11,6 +11,8 @@ import {
   getServiceTypeFromPath
 } from '@/components/campaign-modals/types';
 import { CAMPAIGNS } from '@/config/campaign.config';
+import { useAuthContext } from '@/auth';
+import { USER_ROLES } from '@/config/roles.config';
 
 // 모드 타입 정의
 type CampaignMode = 'my' | 'manage';
@@ -18,6 +20,7 @@ type CampaignMode = 'my' | 'manage';
 const IntegratedCampaignPage: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
+  const { userRole } = useAuthContext();
 
   // 현재 모드 상태 (my: 내 서비스, manage: 캠페인 관리)
   const [currentMode, setCurrentMode] = useState<CampaignMode>((params.mode as CampaignMode) || 'my');
@@ -90,7 +93,10 @@ const IntegratedCampaignPage: React.FC = () => {
       [CampaignServiceType.NAVER_PLACE_SHARE]: 'place-share',
       [CampaignServiceType.NAVER_PLACE_RANK]: 'place-rank',
       [CampaignServiceType.COUPANG_TRAFFIC]: 'traffic',
-      [CampaignServiceType.COUPANG_FAKESALE]: 'fakesale'
+      [CampaignServiceType.COUPANG_FAKESALE]: 'fakesale',
+      [CampaignServiceType.INSTAGRAM]: 'instagram',
+      [CampaignServiceType.PHOTO_VIDEO_PRODUCTION]: 'photo-video',
+      [CampaignServiceType.LIVE_BROADCASTING]: 'live'
     };
 
     const urlType = typeMap[serviceType];
@@ -211,7 +217,20 @@ const IntegratedCampaignPage: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {availableServiceTypes.map(type => {
-                    const isDisabled = type.name.includes('가구매'); // 가구매는 비활성화
+                    // 가구매, N 자동완성, 인스타그램, 포토&영상 제작, 라이브방송은 비활성화
+                    const isDisabled = type.name.includes('가구매') || 
+                                     type.code === CampaignServiceType.NAVER_AUTO ||
+                                     type.code === CampaignServiceType.INSTAGRAM ||
+                                     type.code === CampaignServiceType.PHOTO_VIDEO_PRODUCTION ||
+                                     type.code === CampaignServiceType.LIVE_BROADCASTING;
+                    
+                    // 총판(Distributor)인 경우 NS 순위확인과 NP 순위확인은 숨김
+                    if (userRole === USER_ROLES.DISTRIBUTOR && 
+                        (type.code === CampaignServiceType.NAVER_SHOPPING_RANK || 
+                         type.code === CampaignServiceType.NAVER_PLACE_RANK)) {
+                      return null;
+                    }
+                    
                     return (
                       <Button
                         key={type.code}

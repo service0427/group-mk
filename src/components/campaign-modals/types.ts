@@ -9,7 +9,10 @@ export enum CampaignServiceType {
   NAVER_PLACE_SHARE = 'NaverPlaceShare',
   NAVER_PLACE_RANK = 'NaverPlaceRank',
   COUPANG_TRAFFIC = 'CoupangTraffic',
-  COUPANG_FAKESALE = 'CoupangFakeSale'
+  COUPANG_FAKESALE = 'CoupangFakeSale',
+  INSTAGRAM = 'Instagram',
+  PHOTO_VIDEO_PRODUCTION = 'PhotoVideoProduction',
+  LIVE_BROADCASTING = 'LiveBroadcasting'
 }
 
 // 서비스 타입 설명 (CampaignServiceType enum 기준으로 통일)
@@ -24,7 +27,10 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   [CampaignServiceType.NAVER_PLACE_SHARE]: 'NP 블로그공유',
   [CampaignServiceType.NAVER_PLACE_RANK]: 'NP 순위확인',
   [CampaignServiceType.COUPANG_TRAFFIC]: 'CP 트래픽',
-  [CampaignServiceType.COUPANG_FAKESALE]: 'CP 가구매'
+  [CampaignServiceType.COUPANG_FAKESALE]: 'CP 가구매',
+  [CampaignServiceType.INSTAGRAM]: '인스타그램',
+  [CampaignServiceType.PHOTO_VIDEO_PRODUCTION]: '포토&영상 제작',
+  [CampaignServiceType.LIVE_BROADCASTING]: '라이브방송'
 };
 
 // URL 경로에서 서비스 타입을 결정하는 헬퍼 함수

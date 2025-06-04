@@ -51,10 +51,10 @@ const UserInfoDisplayV2 = () => {
   useEffect(() => {
     // 로그아웃 중이면 실행하지 않음
     if (isLoggingOut) return;
-    
+
     const fetchCashBalance = async () => {
       if (!currentUser?.id) return;
-      
+
       setIsLoading(true);
       try {
         // 비기너 사용자는 기본값 0으로 처리
@@ -93,19 +93,19 @@ const UserInfoDisplayV2 = () => {
 
     // 비기너 역할이 아닌 경우이고 로그아웃 중이 아닌 경우에만 실시간 구독 설정
     let balanceChannel: any = null;
-    
+
     if (currentUser?.role !== 'beginner' && !isLoggingOut) {
       // 실시간 잔액 업데이트를 위한 구독 설정
       try {
         balanceChannel = supabase
           .channel('user_balances_changes')
-          .on('postgres_changes', 
-            { 
-              event: '*', 
-              schema: 'public', 
+          .on('postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
               table: 'user_balances',
-              filter: `user_id=eq.${currentUser?.id}` 
-            }, 
+              filter: `user_id=eq.${currentUser?.id}`
+            },
             () => {
               // 로그아웃 중이 아닐 때만 호출
               if (!isLoggingOut) {
@@ -141,13 +141,13 @@ const UserInfoDisplayV2 = () => {
   // 로그아웃 버튼 클릭 핸들러
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault(); // 기본 이벤트 방지
-    
+
     // 이미 로그아웃 중이면 무시
     if (isLogoutLoading || isLoggingOut) {
       // 이미 로그아웃 처리 중
       return;
     }
-    
+
     // 모바일에서는 즉시 로그아웃, 데스크톱에서는 확인 모달 표시
     if (window.innerWidth < 768) {
       performLogout();
@@ -156,21 +156,21 @@ const UserInfoDisplayV2 = () => {
       setShowLogoutModal(true);
     }
   };
-  
+
   // 실제 로그아웃 처리 함수 - AuthStore 사용
   const performLogout = async () => {
     if (isLogoutLoading) return;
-    
+
     setIsLogoutLoading(true);
     setShowLogoutModal(false); // 모달 즉시 닫기
-    
+
     // 로그아웃 시작
-    
+
     try {
       // AuthStore를 통한 로그아웃
       const authStore = useAuthStore.getState();
       const success = await authStore.logout(navigate);
-      
+
       if (!success) {
         // 에러 메시지 표시
         toast.error('로그아웃 중 오류가 발생했습니다');
@@ -187,21 +187,21 @@ const UserInfoDisplayV2 = () => {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
-  
+
   // 외부 클릭 감지를 위한 이벤트 리스너
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (mobileMenuRef.current && 
-          !mobileMenuRef.current.contains(event.target as Node) && 
-          !(event.target as Element).closest('button[data-mobile-menu-trigger="true"]')) {
+      if (mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        !(event.target as Element).closest('button[data-mobile-menu-trigger="true"]')) {
         setMobileMenuOpen(false);
       }
     };
-    
+
     if (mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -227,17 +227,17 @@ const UserInfoDisplayV2 = () => {
             </div>
           </DialogBody>
           <DialogFooter className="flex justify-center gap-3 sm:justify-center">
-            <button 
-              type="button" 
-              className="btn bg-red-600 hover:bg-red-700 text-white px-5" 
+            <button
+              type="button"
+              className="btn bg-red-600 hover:bg-red-700 text-white px-5"
               onClick={performLogout}
               disabled={isLogoutLoading || isLoggingOut}
             >
               {isLogoutLoading || isLoggingOut ? '처리 중...' : '로그아웃'}
             </button>
-            <button 
-              type="button" 
-              className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-5" 
+            <button
+              type="button"
+              className="btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-5"
               onClick={() => setShowLogoutModal(false)}
               disabled={isLogoutLoading || isLoggingOut}
             >
@@ -246,277 +246,108 @@ const UserInfoDisplayV2 = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* 모바일 전용 간소화된 사용자 메뉴 */}
       {isMobile ? (
-        <div className="relative">
-          {/* 모바일 버튼 */}
-          <button 
-            onClick={toggleMobileMenu}
-            className="flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2"
-            data-mobile-menu-trigger="true"
+        <>
+          {/* 캐시 충전 버튼 - 모바일 */}
+          <button
+            onClick={() => setChargeModalOpen(true)}
+            className="flex items-center justify-center bg-green-50 dark:bg-green-900/20 rounded-lg p-2"
             disabled={isLoggingOut}
+            title="캐시 충전"
           >
-            <div className="flex-shrink-0 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
-              <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
-            </div>
+            <KeenIcon icon="plus-circle" className="text-green-600 dark:text-green-300 text-lg" />
           </button>
 
-          {/* 모바일 드롭다운 메뉴 */}
-          {mobileMenuOpen && !isLoggingOut && (
-            <div 
-              ref={mobileMenuRef}
-              className="absolute right-0 top-full mt-1 bg-white dark:bg-coal-600 rounded-lg shadow-lg border border-gray-200 dark:border-coal-600 w-[280px] z-50">
-              {/* 사용자 정보 헤더 */}
-              <div className="p-3 border-b border-gray-200 dark:border-coal-600">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
-                    <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {currentUser.full_name || '사용자'}
-                    </div>
-                    <div className="text-sm text-gray-900 dark:text-gray-500">
-                      {currentUser.email}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 캐시 잔액 */}
-              <div className="p-3 border-b border-gray-200 dark:border-coal-600">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-800 dark:text-white">캐시 잔액</div>
-                  <div className="flex items-center text-success dark:text-green-300 font-medium">
-                    <KeenIcon icon="dollar" className="mr-1" />
-                    {isLoading ? (
-                      <span className="animate-pulse">로딩중...</span>
-                    ) : (
-                      new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 알림 카운터 */}
-              <div className="p-3 border-b border-gray-200 dark:border-coal-600">
-                <Link 
-                  to="/myinfo/notifications"
-                  className="flex items-center justify-between w-full"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <div className="text-sm text-gray-800 dark:text-white">알림</div>
-                  <div className="flex items-center">
-                    <KeenIcon icon="notification" className="text-pink-500 dark:text-pink-400 mr-2" />
-                    <NotificationDropdown containerClassName="h-auto" inlineCounterOnly />
-                  </div>
-                </Link>
-              </div>
-
-              {/* 메뉴 항목들 */}
-              <div className="py-1">
-                <Link
-                  to="/myinfo/profile"
-                  className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 mr-3" />
-                  내 정보 관리
-                </Link>
-                <Link
-                  to="/cash/history"
-                  className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 mr-3" />
-                  캐시 내역
-                </Link>
-                <button
-                  className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setChargeModalOpen(true);
-                    if (userMenuRef.current?.hide) {
-                      userMenuRef.current.hide();
-                    }
-                  }}
-                >
-                  <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 mr-3" />
-                  캐시 충전
-                </button>
-                <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600">
-                  <div className="flex items-center">
-                    <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 mr-3" />
-                    다크 모드
-                  </div>
-                  <Switch
-                    checked={settings.themeMode === 'dark'}
-                    onCheckedChange={(checked) => {
-                      const newThemeMode = checked ? 'dark' : 'light';
-                      storeSettings({ themeMode: newThemeMode });
-                    }}
-                    className="bg-blue-500 data-[state=unchecked]:bg-gray-300"
-                  />
-                </div>
-                <button
-                  className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
-                  onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    handleLogoutClick(e);
-                  }}
-                  disabled={isLogoutLoading || isLoggingOut}
-                >
-                  <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 mr-3" />
-                  {isLogoutLoading || isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        // 태블릿/데스크톱 버전 - 기존 레이아웃 개선
-        <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12">
-          {/* 알림 드롭다운 - 태블릿에서는 아이콘만 표시 */}
-          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800">
-            <NotificationDropdown 
-              containerClassName="flex items-center h-full" 
-              hideTextOnMobile={isTablet}
-            />
-          </div>
-          
-          {/* 사용자 정보 드롭다운 */}
-          <Menu>
-            <MenuItem
-              ref={userMenuRef}
-              toggle="dropdown"
-              trigger="click"
-              dropdownProps={{
-                placement: isRTL() ? 'bottom-start' : 'bottom-end',
-                modifiers: [
-                  {
-                    name: 'offset',
-                    options: {
-                      offset: isRTL() ? [-20, 10] : [20, 10] // [skid, distance]
-                    }
-                  }
-                ]
-              }}
+          <div className="relative">
+            {/* 모바일 버튼 */}
+            <button
+              onClick={toggleMobileMenu}
+              className="flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2"
+              data-mobile-menu-trigger="true"
+              disabled={isLoggingOut}
             >
-              <MenuToggle className="flex items-center px-3 hover:bg-blue-100/80 dark:hover:bg-blue-800/50 transition-colors rounded-md cursor-pointer h-9">
-                <div className="flex items-center">
-                  {/* 사용자 아이콘 */}
-                  <div className="flex-shrink-0 mr-2 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
-                    <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
-                  </div>
-                  
-                  {/* 사용자 정보 - 태블릿에서는 간소화 */}
-                  {isTablet ? (
-                    <></>
-                  ) : (
-                    <div className="flex flex-col justify-center">
-                      {/* 1줄: 사용자 이름 */}
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className="flex-shrink-0 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
+                <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
+              </div>
+            </button>
+
+            {/* 모바일 드롭다운 메뉴 */}
+            {mobileMenuOpen && !isLoggingOut && (
+              <div
+                ref={mobileMenuRef}
+                className="absolute right-0 top-full mt-1 bg-white dark:bg-coal-600 rounded-lg shadow-lg border border-gray-200 dark:border-coal-600 w-[280px] z-50">
+                {/* 사용자 정보 헤더 */}
+                <div className="p-3 border-b border-gray-200 dark:border-coal-600">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
+                      <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
                         {currentUser.full_name || '사용자'}
                       </div>
-                      
-                      {/* 2줄: 캐시 잔액 */}
-                      <div className="flex items-center">
-                        <KeenIcon icon="dollar" className="text-success dark:text-green-300 mr-1 text-xs" />
-                        <div className="text-xs font-medium text-success dark:text-green-300 whitespace-nowrap">
-                          {isLoading ? (
-                            <span className="animate-pulse">로딩중...</span>
-                          ) : (
-                            new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
-                          )}
-                        </div>
+                      <div className="text-sm text-gray-900 dark:text-gray-500">
+                        {currentUser.email}
                       </div>
                     </div>
-                  )}
-                </div>
-              </MenuToggle>
-              
-              {/* 사용자 드롭다운 메뉴 - 태블릿에서는 추가 정보 포함 */}
-              <MenuSub className="menu-default dark:bg-coal-600 dark:border-coal-600 light:border-gray-300 w-[250px]">
-                {isTablet && (
-                  <>
-                    {/* 태블릿용 사용자 정보 헤더 */}
-                    <div className="p-3 border-b border-gray-200 dark:border-coal-600">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
-                          <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {currentUser.full_name || '사용자'}
-                          </div>
-                          <div className="text-sm text-gray-900 dark:text-gray-500">
-                            {currentUser.email}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 캐시 잔액 */}
-                    <div className="p-3 border-b border-gray-200 dark:border-coal-600">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600 dark:text-gray-300">캐시 잔액</div>
-                        <div className="flex items-center text-success dark:text-green-300 font-medium">
-                          <KeenIcon icon="dollar" className="mr-1" />
-                          {isLoading ? (
-                            <span className="animate-pulse">로딩중...</span>
-                          ) : (
-                            new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="menu-item">
-                  <Link to="/myinfo/profile" className="menu-link dark:hover:bg-coal-600">
-                    <span className="menu-icon">
-                      <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 !text-purple-500 dark:!text-purple-400" />
-                    </span>
-                    <span className="menu-title dark:text-white font-medium">내 정보 관리</span>
-                  </Link>
+                  </div>
                 </div>
 
-                <div className="menu-item">
-                  <button
-                    onClick={() => {
-                      setChargeModalOpen(true);
-                      if (userMenuRef.current?.hide) {
-                        userMenuRef.current.hide();
-                      }
-                    }}
-                    className="menu-link dark:hover:bg-coal-600 w-full text-left"
+                {/* 캐시 잔액 */}
+                <div className="p-3 border-b border-gray-200 dark:border-coal-600">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-800 dark:text-white">캐시 잔액</div>
+                    <div className="flex items-center text-success dark:text-green-300 font-medium">
+                      <KeenIcon icon="dollar" className="mr-1" />
+                      {isLoading ? (
+                        <span className="animate-pulse">로딩중...</span>
+                      ) : (
+                        new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 알림 카운터 */}
+                <div className="p-3 border-b border-gray-200 dark:border-coal-600">
+                  <Link
+                    to="/myinfo/notifications"
+                    className="flex items-center justify-between w-full"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="menu-icon">
-                      <KeenIcon icon="plus-circle" className="text-green-500 dark:text-green-400 !text-green-500 dark:!text-green-400" />
-                    </span>
-                    <span className="menu-title dark:text-white font-medium">캐시 충전</span>
-                  </button>
-                </div>
-
-                <div className="menu-item">
-                  <Link to="/cash/history" className="menu-link dark:hover:bg-coal-600">
-                    <span className="menu-icon">
-                      <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 !text-amber-500 dark:!text-amber-400" />
-                    </span>
-                    <span className="menu-title dark:text-white font-medium">캐시 내역</span>
+                    <div className="text-sm text-gray-800 dark:text-white">알림</div>
+                    <div className="flex items-center">
+                      <KeenIcon icon="notification" className="text-pink-500 dark:text-pink-400 mr-2" />
+                      <NotificationDropdown containerClassName="h-auto" inlineCounterOnly />
+                    </div>
                   </Link>
                 </div>
 
-                <div className="menu-item mb-0.5">
-                  <div className="menu-link dark:hover:bg-coal-600">
-                    <span className="menu-icon">
-                      <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 !text-indigo-500 dark:!text-indigo-400" />
-                    </span>
-                    <span className="menu-title dark:text-white font-medium">
+                {/* 메뉴 항목들 */}
+                <div className="py-1">
+                  <Link
+                    to="/myinfo/profile"
+                    className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 mr-3" />
+                    내 정보 관리
+                  </Link>
+                  <Link
+                    to="/cash/history"
+                    className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 mr-3" />
+                    캐시 내역
+                  </Link>
+                  <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600">
+                    <div className="flex items-center">
+                      <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 mr-3" />
                       다크 모드
-                    </span>
+                    </div>
                     <Switch
                       checked={settings.themeMode === 'dark'}
                       onCheckedChange={(checked) => {
@@ -526,41 +357,206 @@ const UserInfoDisplayV2 = () => {
                       className="bg-blue-500 data-[state=unchecked]:bg-gray-300"
                     />
                   </div>
-                </div>
-
-                <div className="menu-item border-t border-gray-200 dark:border-coal-600 mt-1 pt-1">
                   <button
-                    className="menu-link dark:hover:bg-coal-600 text-red-600 dark:text-red-400 w-full text-left"
-                    onClick={handleLogoutClick}
+                    className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
+                    onClick={(e) => {
+                      setMobileMenuOpen(false);
+                      handleLogoutClick(e);
+                    }}
                     disabled={isLogoutLoading || isLoggingOut}
                   >
-                    <span className="menu-icon">
-                      <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 !text-red-500 dark:!text-red-400" />
-                    </span>
-                    <span className="menu-title">
-                      {isLogoutLoading || isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-                    </span>
+                    <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 mr-3 text-base" />
+                    {isLogoutLoading || isLoggingOut ? '로그아웃 중...' : '로그아웃'}
                   </button>
                 </div>
-              </MenuSub>
-            </MenuItem>
-          </Menu>
-          
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        // 태블릿/데스크톱 버전 - 기존 레이아웃 개선
+        <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12 min-w-0">
+          {/* 알림 드롭다운 - 태블릿에서는 아이콘만 표시 */}
+          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+            <NotificationDropdown
+              containerClassName="flex items-center h-full"
+              hideTextOnMobile={isTablet}
+            />
+          </div>
+
+          {/* 캐시 충전 버튼 - 태블릿/데스크톱 */}
+          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+            <button
+              onClick={() => setChargeModalOpen(true)}
+              className="flex items-center gap-2 px-2 py-1 hover:bg-green-100/80 dark:hover:bg-green-800/50 transition-colors rounded-md"
+              disabled={isLoggingOut}
+              title="캐시 충전"
+            >
+              <KeenIcon icon="plus-circle" className="text-green-600 dark:text-green-300 text-lg flex-shrink-0" />
+              {!isTablet && (
+                <span className="text-sm font-medium text-green-600 dark:text-green-300 whitespace-nowrap">충전</span>
+              )}
+            </button>
+          </div>
+
+          {/* 사용자 정보 드롭다운 */}
+          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+            <Menu className="flex-1">
+              <MenuItem
+                ref={userMenuRef}
+                toggle="dropdown"
+                trigger="click"
+                dropdownProps={{
+                  placement: isRTL() ? 'bottom-start' : 'bottom-end',
+                  modifiers: [
+                    {
+                      name: 'offset',
+                      options: {
+                        offset: isRTL() ? [-20, 10] : [20, 10] // [skid, distance]
+                      }
+                    }
+                  ]
+                }}
+              >
+                <MenuToggle className="flex items-center pl-3 pr-3 hover:bg-blue-100/80 dark:hover:bg-blue-800/50 transition-colors rounded-md cursor-pointer h-9">
+                  <div className="flex items-center min-w-0">
+                    {/* 사용자 아이콘 */}
+                    <div className="flex-shrink-0 mr-2 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
+                      <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
+                    </div>
+
+                    {/* 사용자 정보 - 태블릿에서는 간소화 */}
+                    {isTablet ? (
+                      <></>
+                    ) : (
+                      <div className="flex flex-col justify-center min-w-0 max-w-[180px]">
+                        {/* 1줄: 사용자 이름 */}
+                        <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {currentUser.full_name || '사용자'}
+                        </div>
+
+                        {/* 2줄: 캐시 잔액 */}
+                        <div className="flex items-center min-w-0">
+                          <KeenIcon icon="dollar" className="text-success dark:text-green-300 mr-1 text-xs flex-shrink-0" />
+                          <div className="text-xs font-medium text-success dark:text-green-300 truncate">
+                            {isLoading ? (
+                              <span className="animate-pulse">로딩중...</span>
+                            ) : (
+                              new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </MenuToggle>
+
+                {/* 사용자 드롭다운 메뉴 - 태블릿에서는 추가 정보 포함 */}
+                <MenuSub className="menu-default dark:bg-coal-600 dark:border-coal-600 light:border-gray-300 w-[250px]">
+                  {isTablet && (
+                    <>
+                      {/* 태블릿용 사용자 정보 헤더 */}
+                      <div className="p-3 border-b border-gray-200 dark:border-coal-600">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
+                            <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              {currentUser.full_name || '사용자'}
+                            </div>
+                            <div className="text-sm text-gray-900 dark:text-gray-500">
+                              {currentUser.email}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 캐시 잔액 */}
+                      <div className="p-3 border-b border-gray-200 dark:border-coal-600">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-600 dark:text-gray-300">캐시 잔액</div>
+                          <div className="flex items-center text-success dark:text-green-300 font-medium">
+                            <KeenIcon icon="dollar" className="mr-1" />
+                            {isLoading ? (
+                              <span className="animate-pulse">로딩중...</span>
+                            ) : (
+                              new Intl.NumberFormat('ko-KR').format(cashBalance) + '원'
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="menu-item">
+                    <Link to="/myinfo/profile" className="menu-link dark:hover:bg-coal-600">
+                      <span className="menu-icon">
+                        <KeenIcon icon="profile-circle" className="text-purple-500 dark:text-purple-400 !text-purple-500 dark:!text-purple-400" />
+                      </span>
+                      <span className="menu-title dark:text-white font-medium">내 정보 관리</span>
+                    </Link>
+                  </div>
+
+                  <div className="menu-item">
+                    <Link to="/cash/history" className="menu-link dark:hover:bg-coal-600">
+                      <span className="menu-icon">
+                        <KeenIcon icon="dollar" className="text-amber-500 dark:text-amber-400 !text-amber-500 dark:!text-amber-400" />
+                      </span>
+                      <span className="menu-title dark:text-white font-medium">캐시 내역</span>
+                    </Link>
+                  </div>
+
+                  <div className="menu-item mb-0.5">
+                    <div className="menu-link dark:hover:bg-coal-600">
+                      <span className="menu-icon">
+                        <KeenIcon icon="moon" className="text-indigo-500 dark:text-indigo-400 !text-indigo-500 dark:!text-indigo-400" />
+                      </span>
+                      <span className="menu-title dark:text-white font-medium">
+                        다크 모드
+                      </span>
+                      <Switch
+                        checked={settings.themeMode === 'dark'}
+                        onCheckedChange={(checked) => {
+                          const newThemeMode = checked ? 'dark' : 'light';
+                          storeSettings({ themeMode: newThemeMode });
+                        }}
+                        className="bg-blue-500 data-[state=unchecked]:bg-gray-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="menu-item border-t border-gray-200 dark:border-coal-600 mt-1 pt-1">
+                    <button
+                      className="menu-link dark:hover:bg-coal-600 text-red-600 dark:text-red-400 w-full text-left"
+                      onClick={handleLogoutClick}
+                      disabled={isLogoutLoading || isLoggingOut}
+                    >
+                      <span className="menu-icon">
+                        <KeenIcon icon="exit-right" className="text-red-500 dark:text-red-400 !text-red-500 dark:!text-red-400 text-base" />
+                      </span>
+                      <span className="menu-title">
+                        {isLogoutLoading || isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+                      </span>
+                    </button>
+                  </div>
+                </MenuSub>
+              </MenuItem>
+            </Menu>
+          </div>
+
           {/* 로그아웃 버튼 (태블릿에서는 숨김) */}
           {!isTablet && (
             <>
-              {/* 구분선 */}
-              <div className="h-7 mx-1 border-l border-blue-200 dark:border-blue-800 self-center"></div>
-              
               <div className="px-2 flex items-center h-9">
-                <button 
-                  className="btn btn-icon btn-outline-danger dark:border-red-600 dark:text-red-400 transition-all hover:bg-danger dark:hover:bg-red-600 hover:text-white dark:hover:text-white size-8 rounded-full flex items-center justify-center"
+                <button
+                  className="btn btn-icon btn-outline-danger dark:border-red-600 dark:text-red-400 transition-all hover:bg-danger dark:hover:bg-red-600 hover:text-white dark:hover:text-white w-9 h-9 rounded-full flex items-center justify-center"
                   onClick={handleLogoutClick}
                   title="로그아웃"
                   disabled={isLogoutLoading || isLoggingOut}
                 >
                   {isLogoutLoading || isLoggingOut ? (
-                    <span className="animate-spin">⊝</span>
+                    <span className="animate-spin text-sm">⊝</span>
                   ) : (
                     <KeenIcon icon="exit-right" className="text-base" />
                   )}
@@ -570,7 +566,7 @@ const UserInfoDisplayV2 = () => {
           )}
         </div>
       )}
-      
+
       {/* 캐시 충전 모달 */}
       <ChargeModal
         open={chargeModalOpen}

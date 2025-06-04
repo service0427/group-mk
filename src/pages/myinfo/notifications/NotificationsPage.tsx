@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
@@ -16,6 +17,7 @@ import { ko } from 'date-fns/locale';
 type ExtendedStatus = NotificationStatus | 'all';
 
 const NotificationsPage = () => {
+  const navigate = useNavigate();
   const {
     notifications,
     markAsRead,
@@ -674,21 +676,33 @@ const NotificationsPage = () => {
 
                               {/* 링크가 있으면 링크 액션 버튼으로 표시 */}
                               {notification.link && (
-                                <a
-                                  href={notification.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   className="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation(); // 이벤트 전파 중단
+                                    
+                                    // 읽지 않은 알림이면 읽음 처리
                                     if (notification.status === NotificationStatus.UNREAD) {
                                       markAsRead(notification.id);
                                     }
+                                    
+                                    // 경로 정리 후 navigate 사용
+                                    let path = notification.link || '';
+                                    // 이미 #이 포함된 경로 처리
+                                    if (path.startsWith('#')) {
+                                      path = path.substring(1); // # 제거
+                                    }
+                                    // 슬래시로 시작하지 않으면 추가
+                                    if (!path.startsWith('/') && path.length > 0) {
+                                      path = '/' + path;
+                                    }
+                                    
+                                    navigate(path);
                                   }}
                                 >
                                   <i className="ki-filled ki-arrow-right fs-7 mr-1"></i>
                                   바로가기
-                                </a>
+                                </button>
                               )}
                             </div>
 

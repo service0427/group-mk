@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
@@ -351,7 +352,9 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                       </DialogHeader>
                     )}
                     <DialogBody className="p-6 bg-background">
-                      <p className="text-foreground">{dialogOptions.message}</p>
+                      <DialogDescription className="text-foreground">
+                        {dialogOptions.message}
+                      </DialogDescription>
                     </DialogBody>
                     <DialogFooter className="bg-background space-x-2">
                       {dialogOptions.cancelText && (

@@ -123,14 +123,17 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
           {/* 캠페인 헤더 정보 - 스크롤 시 고정 */}
           <div className="bg-background p-4 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <div className="flex items-center gap-4 mb-6">
-              <img
-                src={logoUrl}
-                className="rounded-full size-16 shrink-0 object-cover"
-                alt="캠페인 로고"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
-                }}
-              />
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  className="rounded-full size-16 shrink-0 object-cover"
+                  alt="캠페인 로고"
+                />
+              ) : (
+                <div className="rounded-full size-16 bg-gray-100 flex items-center justify-center text-gray-400 font-medium border border-gray-200 shadow-sm shrink-0">
+                  로고
+                </div>
+              )}
               <div>
                 <h2 className="text-2xl font-bold text-foreground">
                   {campaign.campaignName}

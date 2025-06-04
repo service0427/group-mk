@@ -130,10 +130,6 @@
         src={logoUrl}
         className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
         alt="캠페인 로고"
-        onError={(e) => {
-          // 이미지 로드 실패 시 기본 이미지 사용
-          (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
-        }}
       />
     </div>
     <div className="flex-1 flex flex-col gap-2">

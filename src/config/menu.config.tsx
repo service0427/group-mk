@@ -31,7 +31,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NS 순위확인',
             path: '/advertise/campaigns/info/naver-shopping-rank',
             iconImage: '/media/ad-brand/naver-shopping.png',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
+            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
           },
           {
             title: 'NS 트래픽',
@@ -43,7 +43,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NP 순위확인',
             path: '/advertise/campaigns/info/naver-place-rank',
             iconImage: '/media/ad-brand/naver-place.png',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
+            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
           },
           {
             title: 'NP 트래픽',
@@ -65,6 +65,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
           },
           {
             title: 'N 자동완성',
+            disabled: true,
             path: '/advertise/campaigns/info/naver-auto',
             iconImage: '/media/ad-brand/naver.png',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
@@ -298,7 +299,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
-    path: '/admin/campaigns/manage',
+    path: '/manage/campaign',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
   },
   {
@@ -309,17 +310,17 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: '슬롯 정보 관리',
         icon: 'cube-2 text-primary',
-        path: '/admin/slots/info'
+        path: '/manage/slots/info'
       },
       {
         title: '슬롯 승인 관리',
         icon: 'verify text-success',
-        path: '/admin/slots/approve'
+        path: '/manage/slots/approve'
       },
       {
         title: '총판 작업 입력',
         icon: 'dollar text-warning',
-        path: '/admin/work-input'
+        path: '/manage/work-input'
       }
     ]
   },
@@ -670,12 +671,12 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: '슬롯 정보 관리',
             icon: 'cube-2 text-primary',
-            path: '/admin/slots/info'
+            path: '/manage/slots/info'
           },
           {
             title: '슬롯 승인 관리',
             icon: 'verify text-success',
-            path: '/admin/slots/approve'
+            path: '/manage/slots/approve'
           }
         ]
       }

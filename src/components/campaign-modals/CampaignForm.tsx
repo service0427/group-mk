@@ -83,6 +83,18 @@ const serviceTypeInfoMap: { [key: string]: ServiceTypeInfo } = {
     name: 'CP 가구매',
     additionalFields: {}
   },
+  [CampaignServiceType.INSTAGRAM]: {
+    name: '인스타그램',
+    additionalFields: {}
+  },
+  [CampaignServiceType.PHOTO_VIDEO_PRODUCTION]: {
+    name: '포토&영상 제작',
+    additionalFields: {}
+  },
+  [CampaignServiceType.LIVE_BROADCASTING]: {
+    name: '라이브방송',
+    additionalFields: {}
+  },
 };
 
 interface CampaignFormProps {
@@ -219,9 +231,6 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 src={previewUrl || toAbsoluteUrl(`/media/${formData.logo}`)}
                 className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
                 alt="캠페인 로고"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/animal-default.svg');
-                }}
               />
             ) : (
               <div className="rounded-full size-16 bg-gray-100 flex items-center justify-center text-gray-400 font-medium border border-gray-200 shadow-sm">

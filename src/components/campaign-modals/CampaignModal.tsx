@@ -412,7 +412,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     if (newCampaign.campaignName !== orig.campaign_name) return true;
     if (newCampaign.description !== orig.description) return true;
     if (newCampaign.detailedDescription !== orig.detailed_description) return true;
-    if (parseFloat(newCampaign.unitPrice) !== orig.unit_price) return true;
+    if (parseFloat(newCampaign.unitPrice || '0') !== orig.unit_price) return true;
     if (formatTimeHHMM(newCampaign.deadline) !== formatTimeHHMM(orig.deadline)) return true;
     
     // 로고 변경 확인 (초기 URL과 현재 URL이 다른 경우)
@@ -1914,8 +1914,12 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     </div>
                     <div className="flex items-center">
                       <span className="text-sm text-gray-500 dark:text-gray-400 w-20">현재 상태:</span>
-                      <span className={`badge badge-${campaign?.status?.color || 'info'} badge-outline text-xs`}>
-                        {campaign?.status?.label || getStatusLabel(campaign?.originalData?.status || 'pending')}
+                      <span className={`badge badge-${
+                        typeof campaign?.status === 'object' ? campaign.status.color : 'info'
+                      } badge-outline text-xs`}>
+                        {typeof campaign?.status === 'object' 
+                          ? campaign.status.label 
+                          : getStatusLabel(campaign?.originalData?.status || 'pending')}
                       </span>
                     </div>
                     <div className="flex items-center">

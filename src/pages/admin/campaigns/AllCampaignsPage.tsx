@@ -104,6 +104,7 @@ const AllCampaignsPage: React.FC = () => {
             case 'nweb': return 'N 웹';
             case 'nplace': return 'N 플레이스';
             case 'ncafe': return 'N 카페';
+            case 'NaverPlaceTraffic': return 'N 플레이스';
             case 'CoupangTraffic': return '쿠팡 트래픽';
             case 'OhouseTraffic': return '오늘의집 트래픽';
             default: return serviceType;

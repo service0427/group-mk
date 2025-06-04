@@ -10,6 +10,7 @@ import { CampaignModal } from '@/components/campaign-modals';
 import { AllCampaignsContent } from './components';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { supabase } from '@/supabase';
+import { getStatusLabel, getStatusColor } from '@/components/campaign-modals/types';
 
 const AllCampaignsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -71,41 +72,24 @@ const AllCampaignsPage: React.FC = () => {
           }
         }
 
-        // 상태 값에 따른 라벨과 색상
-        const getStatusLabel = (status: string): string => {
-          switch (status) {
-            case 'active': return '진행중';
-            case 'pending': return '준비중';
-            case 'pause': return '표시안함';
-            case 'waiting_approval': return '승인 대기중';
-            case 'rejected': return '반려됨';
-            default: return '준비중';
-          }
-        };
-
-        const getStatusColor = (status: string): string => {
-          switch (status) {
-            case 'active': return 'success';
-            case 'pause': return 'warning';
-            case 'pending': return 'info';
-            case 'completed': return 'primary';
-            case 'rejected': return 'danger';
-            case 'waiting_approval': return 'primary';
-            default: return 'info';
-          }
-        };
 
         // 서비스 타입에 따른 서비스 이름
         const getServiceName = (serviceType: string): string => {
           switch (serviceType) {
-            case 'ntraffic': return 'N 트래픽';
-            case 'nfakesale': return 'N 자동완성';
-            case 'nblog': return 'N 블로그';
-            case 'nweb': return 'N 웹';
-            case 'nplace': return 'N 플레이스';
-            case 'ncafe': return 'N 카페';
-            case 'CoupangTraffic': return '쿠팡 트래픽';
-            case 'OhouseTraffic': return '오늘의집 트래픽';
+            case 'NaverAuto': return 'N 자동완성';
+            case 'NaverShoppingTraffic': return 'NS 트래픽';
+            case 'NaverShoppingFakeSale': return 'NS 가구매';
+            case 'NaverShoppingRank': return 'NS 순위확인';
+            case 'NaverPlaceTraffic': return 'NP 트래픽';
+            case 'NaverPlaceSave': return 'NP 저장하기';
+            case 'NaverPlaceShare': return 'NP 블로그공유';
+            case 'NaverPlaceRank': return 'NP 순위확인';
+            case 'CoupangTraffic': return 'CP 트래픽';
+            case 'CoupangFakeSale': return 'CP 가구매';
+            case 'Instagram': return '인스타그램';
+            case 'PhotoVideoProduction': return '포토&영상 제작';
+            case 'LiveBroadcasting': return '라이브방송';
+
             default: return serviceType;
           }
         };

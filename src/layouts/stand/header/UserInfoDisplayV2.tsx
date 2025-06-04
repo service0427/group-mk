@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components/keenicons';
 import { getUserCashBalance } from '@/pages/withdraw/services/withdrawService';
@@ -190,7 +191,7 @@ const UserInfoDisplayV2 = () => {
 
   // 외부 클릭 감지를 위한 이벤트 리스너
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (mobileMenuRef.current &&
         !mobileMenuRef.current.contains(event.target as Node) &&
         !(event.target as Element).closest('button[data-mobile-menu-trigger="true"]')) {
@@ -199,11 +200,14 @@ const UserInfoDisplayV2 = () => {
     };
 
     if (mobileMenuOpen) {
+      // 모바일 터치 이벤트와 마우스 이벤트 모두 처리
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [mobileMenuOpen]);
 
@@ -263,10 +267,15 @@ const UserInfoDisplayV2 = () => {
           <div className="relative">
             {/* 모바일 버튼 */}
             <button
-              onClick={toggleMobileMenu}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileMenu();
+              }}
               className="flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2"
               data-mobile-menu-trigger="true"
               disabled={isLoggingOut}
+              type="button"
             >
               <div className="flex-shrink-0 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
                 <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
@@ -274,10 +283,11 @@ const UserInfoDisplayV2 = () => {
             </button>
 
             {/* 모바일 드롭다운 메뉴 */}
-            {mobileMenuOpen && !isLoggingOut && (
+            {mobileMenuOpen && !isLoggingOut && createPortal(
               <div
                 ref={mobileMenuRef}
-                className="absolute right-0 top-full mt-1 bg-white dark:bg-coal-600 rounded-lg shadow-lg border border-gray-200 dark:border-coal-600 w-[280px] z-50">
+                className="fixed right-2 bg-white dark:bg-coal-600 rounded-lg shadow-lg border border-gray-200 dark:border-coal-600 w-[280px] z-[9999] overflow-hidden"
+                style={{ top: '60px' }}>
                 {/* 사용자 정보 헤더 */}
                 <div className="p-3 border-b border-gray-200 dark:border-coal-600">
                   <div className="flex items-center">
@@ -326,7 +336,7 @@ const UserInfoDisplayV2 = () => {
                 </div>
 
                 {/* 메뉴 항목들 */}
-                <div className="py-1">
+                <div className="py-1 max-h-[300px] overflow-y-auto">
                   <Link
                     to="/myinfo/profile"
                     className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
@@ -369,7 +379,8 @@ const UserInfoDisplayV2 = () => {
                     {isLogoutLoading || isLoggingOut ? '로그아웃 중...' : '로그아웃'}
                   </button>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </>

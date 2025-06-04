@@ -181,7 +181,7 @@ const AllCampaignsPage: React.FC = () => {
 
   return (
     <DashboardTemplate
-      title="모든 캠페인 통합 관리"
+      title="캠페인 통합 관리"
       description="모든 서비스의 캠페인을 통합적으로 관리할 수 있습니다."
       headerTextClass="text-white"
       toolbarActions={toolbarActions}

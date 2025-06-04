@@ -12,7 +12,7 @@ import { toAbsoluteUrl } from '@/utils';
 import { CampaignModal } from '@/components/campaign-modals';
 import { updateCampaignStatus, updateCampaign } from '../services/campaignService';
 import { useToast } from '@/providers';
-import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { SERVICE_TYPE_LABELS, getStatusLabel, getStatusColor } from '@/components/campaign-modals/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -279,17 +279,6 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
     onCampaignUpdated();
   };
 
-  // 상태값에 따른 라벨 반환
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'active': return '진행중';
-      case 'pending': return '준비중';
-      case 'pause': return '표시안함';
-      case 'waiting_approval': return '승인 대기중';
-      case 'rejected': return '반려됨';
-      default: return '준비중';
-    }
-  };
 
   // 상태 변경 가능 여부 확인 (권한 및 상태 체크)
   const canChangeStatus = (campaign: ICampaign): boolean => {
@@ -301,18 +290,6 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
     return true;
   };
 
-  // 상태값에 따른 색상 반환
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'pause': return 'warning';
-      case 'pending': return 'info';
-      case 'completed': return 'primary';
-      case 'rejected': return 'danger';
-      case 'waiting_approval': return 'primary';
-      default: return 'info';
-    }
-  };
 
   // 배경색 클래스 반환
   const getBgColorClass = (color: string): string => {

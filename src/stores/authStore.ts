@@ -407,7 +407,7 @@ export const useAuthStore = create<AuthState>()(
         resetPassword: async (email: string) => {
           try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: `${window.location.origin}/#/auth/reset-password`
+              redirectTo: `${window.location.origin}/#/auth/reset-password/change`
             });
             
             if (error) {
@@ -424,7 +424,7 @@ export const useAuthStore = create<AuthState>()(
         requestPasswordResetLink: async (email: string) => {
           try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: `${window.location.origin}/#/auth/reset-password/confirm`
+              redirectTo: `${window.location.origin}/#/auth/reset-password/change`
             });
             
             if (error) {
@@ -444,13 +444,31 @@ export const useAuthStore = create<AuthState>()(
               throw new Error('비밀번호가 일치하지 않습니다');
             }
             
+            // 토큰으로 세션 설정 (비밀번호 재설정 토큰 사용)
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: token,
+              refresh_token: token
+            });
+
+            if (sessionError) {
+              console.error('세션 설정 오류:', sessionError);
+              throw new Error('인증 토큰이 유효하지 않습니다. 비밀번호 재설정 링크를 다시 요청해주세요.');
+            }
+            
             const { error } = await supabase.auth.updateUser({
               password: newPassword
             });
             
             if (error) {
-              throw error;
+              console.error('비밀번호 변경 오류:', error);
+              if (error.message.includes('expired')) {
+                throw new Error('토큰이 만료되었습니다. 비밀번호 재설정을 다시 요청해주세요.');
+              }
+              throw new Error(error.message);
             }
+            
+            // 세션 정리 (비밀번호 변경 후 재로그인 필요)
+            await supabase.auth.signOut();
             
           } catch (error: any) {
             // 비밀번호 변경 실패

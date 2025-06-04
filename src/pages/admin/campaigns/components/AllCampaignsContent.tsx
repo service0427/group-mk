@@ -1132,7 +1132,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       서비스 유형
                     </span>
                     <span className="font-medium text-red-900 dark:text-red-100">
-                      {getServiceLabel(campaigns.find(c => c.id === campaignToReject)?.serviceType || '')}
+                      {campaigns.find(c => c.id === campaignToReject)?.serviceName}
                     </span>
                   </div>
                 </div>

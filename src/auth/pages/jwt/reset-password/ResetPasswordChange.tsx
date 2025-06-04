@@ -36,19 +36,34 @@ const ResetPasswordChange = () => {
       setLoading(true);
       setHasErrors(undefined);
 
-      const token = new URLSearchParams(window.location.search).get('token');
-      const email = new URLSearchParams(window.location.search).get('email');
+      // URL 해시에서 파라미터 추출 (Supabase는 #access_token=... 형태로 전달)
+      const hashParams = new URLSearchParams(window.location.hash.split('#').pop() || '');
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+      
+      // 쿼리 파라미터에서도 확인 (fallback)
+      const queryParams = new URLSearchParams(window.location.search);
+      const token = accessToken || queryParams.get('token');
+      const email = queryParams.get('email');
 
-      if (!token || !email) {
+      if (!token) {
         setHasErrors(true);
-        setStatus('토큰과 이메일 정보가 필요합니다');
+        setStatus('유효한 토큰이 필요합니다. 이메일의 링크를 다시 확인해주세요.');
+        setLoading(false);
+        setSubmitting(false);
+        return;
+      }
+
+      if (type !== 'recovery' && !email) {
+        setHasErrors(true);
+        setStatus('비밀번호 재설정을 위한 정보가 부족합니다.');
         setLoading(false);
         setSubmitting(false);
         return;
       }
 
       try {
-        await changePassword(email, token, values.newPassword, values.confirmPassword);
+        await changePassword(email || '', token, values.newPassword, values.confirmPassword);
         setHasErrors(false);
         navigate(
           currentLayout?.name === 'auth-branded'

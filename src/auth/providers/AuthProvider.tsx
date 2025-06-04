@@ -653,7 +653,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
             const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
 
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${baseUrl}/#/auth/reset-password`,
+                redirectTo: `${baseUrl}/#/auth/reset-password/change`,
             });
 
             if (error) {
@@ -679,14 +679,32 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 throw new Error("비밀번호가 일치하지 않습니다.");
             }
 
+            // 토큰으로 세션 설정 (비밀번호 재설정 토큰 사용)
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                access_token: token,
+                refresh_token: token
+            });
+
+            if (sessionError) {
+                console.error('세션 설정 오류:', sessionError);
+                throw new Error('인증 토큰이 유효하지 않습니다. 비밀번호 재설정 링크를 다시 요청해주세요.');
+            }
+
             // Supabase API로 비밀번호 변경
             const { error } = await supabase.auth.updateUser({
                 password: newPassword
             });
 
             if (error) {
+                console.error('비밀번호 변경 오류:', error);
+                if (error.message.includes('expired')) {
+                    throw new Error('토큰이 만료되었습니다. 비밀번호 재설정을 다시 요청해주세요.');
+                }
                 throw new Error(error.message);
             }
+
+            // 세션 정리 (비밀번호 변경 후 재로그인 필요)
+            await supabase.auth.signOut();
         } catch (error: any) {
             throw error;
         } finally {

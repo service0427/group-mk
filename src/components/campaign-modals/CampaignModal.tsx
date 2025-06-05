@@ -56,6 +56,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [additionalFields, setAdditionalFields] = useState<{ [key: string]: string }>({});
   
   // 에러 메시지 자동 제거
   useEffect(() => {
@@ -633,16 +634,17 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       }
 
       // 서비스 유형별 필수 필드 검증
-      if (serviceType && serviceTypeInfoMap[serviceType]) {
-        const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
+      // 현재 additionalFields가 사용되지 않으므로 주석 처리
+      // if (serviceType && serviceTypeInfoMap[serviceType]) {
+      //   const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
 
-        for (const [fieldKey, info] of Object.entries(fieldInfo)) {
-          if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
-            setError(`${info.label}은(는) 필수 입력 항목입니다.`);
-            return;
-          }
-        }
-      }
+      //   for (const [fieldKey, info] of Object.entries(fieldInfo)) {
+      //     if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
+      //       setError(`${info.label}은(는) 필수 입력 항목입니다.`);
+      //       return;
+      //     }
+      //   }
+      // }
 
       setLoading(true);
       setError(null);

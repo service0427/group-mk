@@ -311,10 +311,17 @@ const ApprovePage: React.FC = () => {
           setCampaigns(parsedCampaigns);
           
           // selectedServiceType이 아직 설정되지 않은 경우에만 기본값 설정
-          if (!selectedServiceType && data.length > 0) {
-            // SERVICE_TYPE_LABELS의 첫 번째 키를 기본값으로 사용
-            const firstServiceType = Object.keys(SERVICE_TYPE_LABELS)[0];
-            setSelectedServiceType(firstServiceType);
+          if (!selectedServiceType && parsedCampaigns.length > 0) {
+            // 사용자가 가진 캠페인의 서비스 타입 중 첫 번째를 선택
+            const userServiceTypes = [...new Set(parsedCampaigns.map(c => c.service_type))];
+            if (userServiceTypes.length > 0) {
+              // 사용자가 실제로 가진 서비스 타입 중 첫 번째 선택
+              setSelectedServiceType(userServiceTypes[0]);
+            } else {
+              // 캠페인이 없는 경우 SERVICE_TYPE_LABELS의 첫 번째 키를 기본값으로 사용
+              const firstServiceType = Object.keys(SERVICE_TYPE_LABELS)[0];
+              setSelectedServiceType(firstServiceType);
+            }
           }
         }
       } catch (err: any) {
@@ -389,6 +396,12 @@ const ApprovePage: React.FC = () => {
         // 서비스 타입이 선택되지 않았으면 종료
         if (!selectedServiceType) {
           setSlots([]);
+          return;
+        }
+
+        // 캠페인 데이터가 아직 로드되지 않았으면 대기
+        // 초기 로드 시 campaigns가 비어있을 때 -999 검색을 방지
+        if (!initialized || (campaigns.length === 0 && loading)) {
           return;
         }
 
@@ -705,8 +718,8 @@ const ApprovePage: React.FC = () => {
       slotIdsToProcess = [slotId];
     }
 
-    // 단일 슬롯 승인이고 actionType이 없는 경우 (일반 승인)
-    if (slotIdsToProcess.length === 1 && !actionType) {
+    // 단일 슬롯 처리이고 (일반 승인 또는 환불)
+    if (slotIdsToProcess.length === 1) {
       try {
         // 작업 진행률 확인
         const progress = await calculateWorkProgress(slotIdsToProcess[0]);
@@ -719,8 +732,29 @@ const ApprovePage: React.FC = () => {
 
         const campaignName = slot.campaign_name || slot.input_data?.productName || '캠페인';
         
-        // 작업 진행률이 있으면 확인 다이얼로그 표시
-        if (progress && progress.totalRequestedQuantity > 0) {
+        // 환불 처리인 경우
+        if (actionType === 'refund') {
+          // 환불 확인 모달 표시
+          setApprovalModalData({
+            slotId: slotIdsToProcess[0],
+            campaignName,
+            dailyQuantity: slot.quantity || 0,
+            progress: progress || {
+              totalRequestedQuantity: 0,
+              totalWorkedQuantity: 0,
+              requestedDays: 0,
+              workedDays: 0,
+              completionRate: 0,
+              isEarlyCompletion: false
+            },
+            actionType: 'refund'
+          });
+          setApprovalModalOpen(true);
+          return;
+        }
+        
+        // 일반 승인인 경우 작업 진행률이 있으면 확인 다이얼로그 표시
+        if (!actionType && progress && progress.totalRequestedQuantity > 0) {
           const completionRate = Math.min(100, progress.completionRate);
           
           let confirmMessage = `캠페인: ${campaignName}\n\n`;
@@ -1060,7 +1094,7 @@ const ApprovePage: React.FC = () => {
   };
 
   // 실제 완료 처리 함수
-  const processCompleteSlot = async (slotIds: string[]) => {
+  const processCompleteSlot = async (slotIds: string[], workMemo?: string) => {
     setLoading(true);
 
     try {
@@ -1070,7 +1104,7 @@ const ApprovePage: React.FC = () => {
 
       for (const id of slotIds) {
         try {
-          const result = await completeSlotByMat(id, currentUser?.id || '');
+          const result = await completeSlotByMat(id, currentUser?.id || '', workMemo);
           
           if (result.success) {
             successCount++;
@@ -1378,10 +1412,10 @@ const ApprovePage: React.FC = () => {
                     setApprovalModalOpen(false);
                     setApprovalModalData(null);
                   }}
-                  onConfirm={async () => {
+                  onConfirm={async (workMemo?: string) => {
                     setApprovalModalOpen(false);
                     if (approvalModalData.actionType === 'complete') {
-                      await processCompleteSlot([approvalModalData.slotId]);
+                      await processCompleteSlot([approvalModalData.slotId], workMemo);
                     } else {
                       await processApproval([approvalModalData.slotId], approvalModalData.actionType);
                     }

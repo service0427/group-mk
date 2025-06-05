@@ -5,6 +5,7 @@ import { KeenIcon } from '@/components';
 import EditableCell from './EditableCell';
 import { formatDate, getStatusBadge } from './constants';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import TransactionConfirmModal from './TransactionConfirmModal';
 
 interface SlotListProps {
   filteredSlots: SlotItem[];
@@ -115,6 +116,8 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
 
 
   // 캠페인 상태에 따른 닷 색상과 메시지
@@ -197,6 +200,21 @@ const SlotList: React.FC<SlotListProps> = ({
     }
   };
 
+  // 거래 완료 클릭 핸들러
+  const handleTransactionClick = (slot: SlotItem) => {
+    setSelectedTransactionSlot(slot);
+    setTransactionModalOpen(true);
+  };
+
+  // 거래 완료 확인 핸들러
+  const handleConfirmTransaction = () => {
+    if (selectedTransactionSlot && onConfirmTransaction) {
+      onConfirmTransaction(selectedTransactionSlot.id);
+      setTransactionModalOpen(false);
+      setSelectedTransactionSlot(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="card">
@@ -240,6 +258,27 @@ const SlotList: React.FC<SlotListProps> = ({
     <>
       <style>{tooltipStyles}</style>
       <div className="card shadow-sm">
+        {/* 자동 거래 완료 안내 */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-800/50 rounded-full flex items-center justify-center">
+              <KeenIcon icon="information-circle" className="text-blue-600 dark:text-blue-400 size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                자동 거래 완료 안내
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                작업 완료 상태인 슬롯은 <span className="font-semibold">48시간 이내</span>에 거래 완료 버튼을 누르지 않으면 
+                <span className="font-semibold"> 자동으로 거래가 완료됩니다.</span>
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                문제가 있는 경우 48시간 이내에 고객센터로 문의해주세요.
+              </p>
+            </div>
+          </div>
+        </div>
+        
         <div className="card-header px-6 py-3.5" style={{ minHeight: '60px' }}>
           <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-3">
@@ -579,20 +618,15 @@ const SlotList: React.FC<SlotListProps> = ({
                               )}
                             </div>
                           ) : item.status === 'pending_user_confirm' ? (
-                            <div className="flex flex-col items-center gap-1">
-                              {getStatusBadge(item.status)}
-                              <button
-                                className="btn btn-xs btn-info"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (onConfirmTransaction) {
-                                    onConfirmTransaction(item.id);
-                                  }
-                                }}
-                              >
-                                거래완료
-                              </button>
-                            </div>
+                            <button
+                              className="btn btn-xs btn-info"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTransactionClick(item);
+                              }}
+                            >
+                              거래완료
+                            </button>
                           ) : (
                             getStatusBadge(item.status)
                           )}
@@ -697,7 +731,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
                     </div>
                     <div className="ml-2">
-                      {getStatusBadge(item.status)}
+                      {item.status !== 'pending_user_confirm' && getStatusBadge(item.status)}
                     </div>
                   </div>
 
@@ -715,9 +749,7 @@ const SlotList: React.FC<SlotListProps> = ({
                         className="btn btn-sm btn-info"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onConfirmTransaction) {
-                            onConfirmTransaction(item.id);
-                          }
+                          handleTransactionClick(item);
                         }}
                       >
                         거래완료
@@ -913,40 +945,76 @@ const SlotList: React.FC<SlotListProps> = ({
                     {item.userReason && (
                       <span className="badge badge-sm badge-warning mr-auto">메모</span>
                     )}
-                    <button
-                      className="btn btn-sm btn-icon btn-clear btn-primary"
-                      onClick={() => onOpenMemoModal(item.id)}
-                      title="메모"
-                    >
-                      <KeenIcon icon="notepad-edit" />
-                    </button>
-                    {/* 승인 전 상태일 때만 취소 버튼 표시 */}
-                    {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                    
+                    {/* 거래완료대기 상태일 때는 거래완료 버튼만 표시 */}
+                    {item.status === 'pending_user_confirm' ? (
                       <button
-                        className="btn btn-sm btn-icon btn-clear btn-warning"
-                        onClick={() => onCancelSlot(item.id)}
-                        title="취소"
+                        className="btn btn-sm btn-success"
+                        onClick={() => handleTransactionClick(item)}
+                        title="거래완료"
                       >
-                        <KeenIcon icon="cross-circle" />
+                        <KeenIcon icon="check-circle" className="mr-1" />
+                        거래완료
                       </button>
+                    ) : (
+                      <>
+                        <button
+                          className="btn btn-sm btn-icon btn-clear btn-primary"
+                          onClick={() => onOpenMemoModal(item.id)}
+                          title="메모"
+                        >
+                          <KeenIcon icon="notepad-edit" />
+                        </button>
+                        {/* 승인 전 상태일 때만 취소 버튼 표시 */}
+                        {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                          <button
+                            className="btn btn-sm btn-icon btn-clear btn-warning"
+                            onClick={() => onCancelSlot(item.id)}
+                            title="취소"
+                          >
+                            <KeenIcon icon="cross-circle" />
+                          </button>
+                        )}
+                        {/* 대기중 상태일 때만 삭제 버튼 표시 */}
+                        {item.status === 'pending' && (
+                          <button
+                            className="btn btn-sm btn-icon btn-clear btn-danger"
+                            onClick={() => {
+                              if (confirm('정말 삭제하시겠습니까?')) {
+                                onDeleteSlot(item.id);
+                              }
+                            }}
+                            title="삭제"
+                          >
+                            <KeenIcon icon="trash" />
+                          </button>
+                        )}
+                      </>
                     )}
-                    <button
-                      className="btn btn-sm btn-icon btn-clear btn-danger"
-                      onClick={() => {
-                        if (confirm('정말 삭제하시겠습니까?')) {
-                          onDeleteSlot(item.id);
-                        }
-                      }}
-                      title="삭제"
-                    >
-                      <KeenIcon icon="trash" />
-                    </button>
                   </div>
                 </div>
               ))}
             </div>
         </div>
       </div>
+
+      {/* 거래 완료 확인 모달 */}
+      {selectedTransactionSlot && (
+        <TransactionConfirmModal
+          isOpen={transactionModalOpen}
+          onClose={() => {
+            setTransactionModalOpen(false);
+            setSelectedTransactionSlot(null);
+          }}
+          onConfirm={handleConfirmTransaction}
+          slotData={{
+            campaignName: selectedTransactionSlot.campaign?.campaignName,
+            productName: selectedTransactionSlot.inputData?.productName,
+            workMemo: selectedTransactionSlot.inputData?.work_memo,
+            workMemoDate: selectedTransactionSlot.inputData?.work_memo_date
+          }}
+        />
+      )}
     </>
   );
 };

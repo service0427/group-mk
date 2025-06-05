@@ -626,6 +626,23 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         return;
       }
 
+      // 로고 필수 검증 - 업로드된 로고가 없고 기본 로고도 선택하지 않은 경우
+      if (!previewUrl && (!newCampaign.logo || newCampaign.logo === '')) {
+        setError('로고를 업로드하거나 기본 제공 로고 중 하나를 선택해주세요.');
+        return;
+      }
+
+      // 서비스 유형별 필수 필드 검증
+      if (serviceType && serviceTypeInfoMap[serviceType]) {
+        const fieldInfo = serviceTypeInfoMap[serviceType].additionalFields;
+
+        for (const [fieldKey, info] of Object.entries(fieldInfo)) {
+          if (info.required && (!additionalFields[fieldKey] || additionalFields[fieldKey].trim() === '')) {
+            setError(`${info.label}은(는) 필수 입력 항목입니다.`);
+            return;
+          }
+        }
+      }
 
       setLoading(true);
       setError(null);
@@ -754,14 +771,14 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
                     <div className="w-64">
                       <select
-                        value={previewUrl ? 'none' : (newCampaign.logo || 'none')}
+                        value={previewUrl ? '' : (newCampaign.logo || '')}
                         onChange={(e) => {
                           // 업로드된 이미지를 모두 제거하고 드롭다운 선택으로 전환
                           setPreviewUrl(null);
                           setUploadedLogo(null);
 
-                          // 'none'을 선택한 경우 로고를 빈 문자열로 설정
-                          if (e.target.value === 'none') {
+                          // 빈 값을 선택한 경우 로고를 빈 문자열로 설정
+                          if (e.target.value === '') {
                             handleChange('logo', '');
                             return;
                           }
@@ -814,7 +831,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                         className="select w-full h-10 px-3 py-2 border border-gray-200 bg-white focus:border-blue-500 rounded-md text-foreground"
                         disabled={loading}
                       >
-                        <option value="none">기본 제공 로고 선택</option>
+                        <option value="">기본 제공 로고 선택</option>
                         <option value="animal/svg/bear.svg">곰</option>
                         <option value="animal/svg/cat.svg">고양이</option>
                         <option value="animal/svg/cow.svg">소</option>
@@ -1024,6 +1041,23 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                                   disabled={loading}
                                 />
                               </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`required-${index}`}
+                                  checked={field.isRequired || false}
+                                  onChange={(e) => {
+                                    const updatedFields = [...(newCampaign.userInputFields || [])];
+                                    updatedFields[index] = { ...updatedFields[index], isRequired: e.target.checked };
+                                    setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
+                                  }}
+                                  className="checkbox checkbox-sm"
+                                  disabled={loading}
+                                />
+                                <label htmlFor={`required-${index}`} className="text-sm text-gray-600 whitespace-nowrap cursor-pointer">
+                                  필수
+                                </label>
+                              </div>
                             </div>
                             <Button
                               type="button"
@@ -1047,7 +1081,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
                           onClick={() => {
                             const updatedFields = [...(newCampaign.userInputFields || [])];
-                            updatedFields.push({ fieldName: '', description: '' });
+                            updatedFields.push({ fieldName: '', description: '', isRequired: false });
                             setNewCampaign(prev => ({ ...prev, userInputFields: updatedFields }));
                           }}
                           disabled={loading}

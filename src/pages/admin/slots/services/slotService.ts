@@ -1268,15 +1268,45 @@ export const getSlotList = async (
 export const completeSlotByMat = async (
   slotId: string,
   matId: string,
-  notes?: string
+  workMemo?: string
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
+    // work_memo가 있으면 먼저 input_data에 저장
+    if (workMemo && workMemo.trim()) {
+      // 기존 슬롯 정보 가져오기
+      const { data: slotData, error: slotError } = await supabase
+        .from('slots')
+        .select('input_data')
+        .eq('id', slotId)
+        .single();
+
+      if (slotError) {
+        console.error('슬롯 정보 조회 실패:', slotError);
+      } else {
+        // input_data 업데이트 (기존 데이터 유지하면서 work_memo 추가)
+        const updatedInputData = {
+          ...(slotData.input_data || {}),
+          work_memo: workMemo,
+          work_memo_date: new Date().toISOString()
+        };
+
+        const { error: updateError } = await supabase
+          .from('slots')
+          .update({ input_data: updatedInputData })
+          .eq('id', slotId);
+
+        if (updateError) {
+          console.error('work_memo 저장 실패:', updateError);
+        }
+      }
+    }
+
     // RPC 함수 호출 - mat_complete_slot
     const { data, error } = await supabase
       .rpc('mat_complete_slot', {
         p_slot_id: slotId,
         p_mat_id: matId,
-        p_notes: notes || null
+        p_notes: workMemo || null
       });
 
     if (error) {

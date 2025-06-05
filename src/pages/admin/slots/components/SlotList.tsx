@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Slot, User, Campaign } from './types';
 import { formatDate } from './constants';
 import { supabase } from '@/supabase';
+import { useAlert } from '@/hooks/useAlert';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -78,6 +79,7 @@ const SlotList: React.FC<SlotListProps> = ({
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange
 }) => {
+  const { showWarning } = useAlert();
   const [userMap, setUserMap] = useState<Record<string, User>>({});
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
@@ -89,6 +91,9 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   // 키워드 툴팁 상태 관리
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  
+  // 이전 슬롯 ID 목록을 저장하여 변경 여부 확인
+  const prevSlotIdsRef = useRef<string[]>([]);
   
   // 노출 안할 inputData
   const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
@@ -153,7 +158,7 @@ const SlotList: React.FC<SlotListProps> = ({
       );
       
       if (approvedSlots.length === 0) {
-        alert('승인된 슬롯만 완료 처리할 수 있습니다.');
+        showWarning('승인된 슬롯만 완료 처리할 수 있습니다.');
         return;
       }
       
@@ -164,12 +169,39 @@ const SlotList: React.FC<SlotListProps> = ({
   // 슬롯들의 사용자 정보를 한 번에 로드하는 함수
   useEffect(() => {
     const loadUserInfo = async () => {
-      if (!slots || slots.length === 0) return;
+      if (!slots || slots.length === 0) {
+        // 슬롯이 없으면 userMap도 초기화
+        if (Object.keys(userMap).length > 0) {
+          setUserMap({});
+        }
+        return;
+      }
+      
+      // 현재 슬롯 ID 목록
+      const currentSlotIds = slots.map(slot => slot.id).sort();
+      const prevSlotIds = prevSlotIdsRef.current;
+      
+      // 슬롯 목록이 변경되지 않았으면 종료
+      if (prevSlotIds.length === currentSlotIds.length && 
+          prevSlotIds.every((id, index) => id === currentSlotIds[index])) {
+        return;
+      }
+      
+      // 현재 슬롯 ID 목록 저장
+      prevSlotIdsRef.current = currentSlotIds;
       
       // 모든 슬롯에서 고유한 user_id 목록 추출
       const userIds = [...new Set(slots.map(slot => slot.user_id).filter(Boolean))];
       
       if (userIds.length === 0) return;
+      
+      // 이미 모든 사용자 정보가 있는지 확인
+      const needsUpdate = slots.some(slot => 
+        slot.user_id && !slot.user?.full_name && !userMap[slot.user_id]?.full_name
+      );
+      
+      // 업데이트가 필요 없으면 종료
+      if (!needsUpdate) return;
       
       try {
         // Supabase에서 users 테이블 조회
@@ -200,7 +232,7 @@ const SlotList: React.FC<SlotListProps> = ({
     };
     
     loadUserInfo();
-  }, [slots]);
+  }, [slots]); // userMap을 의존성에서 제거하여 무한 루프 방지
   
   // 캠페인 상태에 따른 닷 색상과 메시지
   const getCampaignStatusDot = (slot: Slot) => {

@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { keywordService, keywordGroupService } from '@/pages/keyword/services/keywordService';
 import { KeywordGroup, KeywordInput } from '@/pages/keyword/types';
 import { getTypeNameByCode } from '@/config/campaign.config';
+import { useAuthContext } from '@/auth';
+import { USER_ROLES } from '@/config/roles.config';
+import { CampaignServiceType } from '@/components/campaign-modals/types';
 
 interface AddKeywordModalProps {
   isOpen: boolean;
@@ -30,13 +33,15 @@ interface AddKeywordModalProps {
 }
 
 export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClose, defaultData }) => {
+  const { userRole } = useAuthContext();
   const [groups, setGroups] = useState<KeywordGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [urlError, setUrlError] = useState<boolean>(false);
-
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  
   // 이미지 확대 모달 상태
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<{ src: string; title: string } | null>(null);
@@ -66,14 +71,24 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
             const searchPattern = defaultData.type === 'shop' ? 'NaverShopping' : 'NaverPlace';
 
             filteredGroups = filteredGroups.filter(group => {
-              // 기본 그룹은 항상 포함 (다른 ㄱ)
-              //if (group.isDefault) return true;
-
-              // 캠페인 타입이 없는 일반 그룹도 포함
-              //if (!group.campaignType) return true;
-
-              // 해당 서비스 타입을 포함하는 그룹만 포함 (like 연산)
-              return group.campaignType && group.campaignType.includes(searchPattern);
+              // 해당 서비스 타입을 포함하는 그룹만 포함
+              if (!group.campaignType || !group.campaignType.includes(searchPattern)) {
+                return false;
+              }
+              
+              // 비기너 사용자인 경우 순위 확인 서비스만 허용
+              if (userRole === USER_ROLES.BEGINNER) {
+                return group.campaignType === CampaignServiceType.NAVER_SHOPPING_RANK ||
+                       group.campaignType === CampaignServiceType.NAVER_PLACE_RANK;
+              }
+              
+              // 가구매 서비스는 숨김
+              if (group.campaignType === CampaignServiceType.NAVER_SHOPPING_FAKESALE ||
+                  group.campaignType === CampaignServiceType.COUPANG_FAKESALE) {
+                return false;
+              }
+              
+              return true;
             });
           }
 
@@ -224,175 +239,202 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
             }
           }}
         >
-          <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 py-4 px-6 border-b shrink-0">
-            <div className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
-                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  내 키워드에 추가
-                  {defaultData && (
-                    <>
-                      {defaultData.type === 'shop' ? (
-                        <Badge variant="default" className="text-xs font-normal">N 쇼핑</Badge>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                          N 플레이스
-                        </span>
-                      )}
-                    </>
-                  )}
-                </DialogTitle>
-                <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  검색 결과를 키워드로 저장하여 관리할 수 있습니다
-                </DialogDescription>
-              </div>
+        <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 py-4 px-6 border-b shrink-0">
+          <div className="flex items-center">
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+              </svg>
             </div>
-          </DialogHeader>
+            <div className="flex-1">
+              <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                내 키워드에 추가
+                {defaultData && (
+                  <>
+                    {defaultData.type === 'shop' ? (
+                      <Badge variant="default" className="text-xs font-normal">N 쇼핑</Badge>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                        N 플레이스
+                      </span>
+                    )}
+                  </>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                검색 결과를 키워드로 저장하여 관리할 수 있습니다
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
 
-          <div className="p-6 bg-background overflow-y-auto flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <div className="space-y-4">
+        <div className="p-6 bg-background overflow-y-auto flex-1">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-4">
 
-                {/* 그룹 선택, 메인 키워드, MID/PID 같은 라인 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 그룹 선택 */}
-                  <div>
-                    <Label htmlFor="keyword-group" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      키워드 그룹 <span className="text-red-500">*</span>
-                    </Label>
-                    <select
-                      id="keyword-group"
-                      value={selectedGroupId || ''}
-                      onChange={(e) => setSelectedGroupId(Number(e.target.value))}
-                      className="select w-full"
-                      required
-                    >
-                      <option value="">그룹을 선택하세요</option>
-                      {groups.map(group => {
-                        // 캠페인 타입 라벨 가져오기
-                        let campaignLabel = '';
-                        if (group.campaignName && group.campaignType) {
-                          const typeName = getTypeNameByCode(group.campaignName, group.campaignType);
-                          campaignLabel = typeName || group.campaignName;
-                        } else if (group.campaignName) {
-                          campaignLabel = group.campaignName;
-                        }
-
-                        return (
-                          <option key={group.id} value={group.id}>
-                            {campaignLabel ? `${campaignLabel} (${group.name})` : group.name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                  {/* 메인 키워드 */}
-                  <div>
-                    <Label htmlFor="main-keyword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      메인 키워드 <span className="text-red-500">*</span>
-                    </Label>
-                    <input
-                      id="main-keyword"
-                      type="text"
-                      value={formData.mainKeyword}
-                      onChange={(e) => handleInputChange('mainKeyword', e.target.value)}
-                      placeholder="메인 키워드를 입력하세요"
-                      className="input w-full"
-                      required
-                    />
-                  </div>
-
-                  {/* MID/PID */}
-                  <div>
-                    <Label htmlFor="mid" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {defaultData?.type === 'place' ? 'PID' : 'MID'} <span className="text-red-500">*</span>
-                    </Label>
-                    <input
-                      id="mid"
-                      type="text"
-                      value={formData.mid || ''}
-                      onChange={(e) => {
-                        // 숫자만 입력 가능하도록 필터링
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        handleInputChange('mid', value ? parseInt(value) : undefined);
-                      }}
-                      placeholder={`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력하세요`}
-                      className="input w-full"
-                      disabled
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* 안내 문구 - 전체 너비로 표시 */}
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                  <p className="text-xs text-amber-800 dark:text-amber-200 font-medium flex items-start">
-                    <span className="mr-1">⚠️</span>
-                    <span>
-                      {defaultData?.type === 'shop' ? '쇼핑' : '플레이스'} 순위 확인을 위한 키워드이니 입력에 유의하세요.
-                      순위가 확인되지 않을 수 있습니다.
-                    </span>
-                  </p>
-                </div>
-
-                {/* URL */}
+              {/* 그룹 선택, 메인 키워드, MID/PID 같은 라인 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 그룹 선택 */}
                 <div>
-                  <Label htmlFor="url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    URL
+                  <Label htmlFor="keyword-group" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    키워드 그룹 <span className="text-red-500">*</span>
                   </Label>
-                  <div className="input pr-0 flex items-center [&[readonly]]:opacity-70 [&[readonly]]:bg-gray-50 dark:[&[readonly]]:bg-gray-900/50">
-                    <input
-                      id="url"
-                      type="url"
-                      value={formData.url}
-                      readOnly
-                      disabled
-                      placeholder="URL이 자동으로 입력됩니다"
-                      className="flex-1 bg-transparent border-0 outline-none p-0 placeholder:text-muted-foreground disabled:cursor-not-allowed"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (formData.url) {
-                          navigator.clipboard.writeText(formData.url);
-                          toast.success('URL이 복사되었습니다.');
+                  <select
+                    id="keyword-group"
+                    value={selectedGroupId || ''}
+                    onChange={async (e) => {
+                      const newGroupId = Number(e.target.value);
+                      setSelectedGroupId(newGroupId);
+                      setDuplicateWarning(null); // 이전 경고 메시지 초기화
+                      
+                      // 그룹이 선택되고 MID가 있는 경우 중복 체크
+                      if (newGroupId && formData.mid) {
+                        const result = await keywordService.checkDuplicate(
+                          newGroupId,
+                          formData.mainKeyword,
+                          formData.mid
+                        );
+                        
+                        if (result.isDuplicate) {
+                          setDuplicateWarning(result.message || '중복된 키워드가 있습니다.');
                         }
-                      }}
-                      disabled={!formData.url}
-                      className="flex-shrink-0 cursor-pointer group inline-flex items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50 transition-colors rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      title="URL 복사"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                      </svg>
-                    </button>
-                  </div>
+                      }
+                    }}
+                    className="select w-full"
+                    required
+                  >
+                    <option value="">그룹을 선택하세요</option>
+                    {groups.map(group => {
+                      // 캠페인 타입 라벨 가져오기
+                      let campaignLabel = '';
+                      if (group.campaignName && group.campaignType) {
+                        const typeName = getTypeNameByCode(group.campaignName, group.campaignType);
+                        campaignLabel = typeName || group.campaignName;
+                      } else if (group.campaignName) {
+                        campaignLabel = group.campaignName;
+                      }
+                      
+                      return (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                          {campaignLabel && ` (${campaignLabel})`}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
-
-
-                {/* 메모 */}
+                {/* 메인 키워드 */}
                 <div>
-                  <Label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    메모
+                  <Label htmlFor="main-keyword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    메인 키워드 <span className="text-red-500">*</span>
                   </Label>
                   <input
-                    id="description"
+                    id="main-keyword"
                     type="text"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="추가 정보나 필요한 정보를 입력하세요"
+                    value={formData.mainKeyword}
+                    onChange={(e) => handleInputChange('mainKeyword', e.target.value)}
+                    placeholder="메인 키워드를 입력하세요"
                     className="input w-full"
+                    required
                   />
                 </div>
 
+                {/* MID/PID */}
+                <div>
+                  <Label htmlFor="mid" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {defaultData?.type === 'place' ? 'PID' : 'MID'} <span className="text-red-500">*</span>
+                  </Label>
+                  <input
+                    id="mid"
+                    type="text"
+                    value={formData.mid || ''}
+                    onChange={(e) => {
+                      // 숫자만 입력 가능하도록 필터링
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      handleInputChange('mid', value ? parseInt(value) : undefined);
+                    }}
+                    placeholder={`${defaultData?.type === 'place' ? 'PID' : 'MID'}를 입력하세요`}
+                    className="input w-full"
+                    disabled
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* 중복 경고 메시지 */}
+              {duplicateWarning && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-xs text-red-800 dark:text-red-200 font-medium flex items-start">
+                    <span className="mr-1">❌</span>
+                    <span>{duplicateWarning}</span>
+                  </p>
+                </div>
+              )}
+
+              {/* 안내 문구 - 전체 너비로 표시 */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-xs text-amber-800 dark:text-amber-200 font-medium flex items-start">
+                  <span className="mr-1">⚠️</span>
+                  <span>
+                    {defaultData?.type === 'shop' ? '쇼핑' : '플레이스'} 순위 확인을 위한 키워드이니 입력에 유의하세요.
+                    순위가 확인되지 않을 수 있습니다.
+                  </span>
+                </p>
+              </div>
+
+              {/* URL */}
+              <div>
+                <Label htmlFor="url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  URL
+                </Label>
+                <div className="input pr-0 flex items-center [&[readonly]]:opacity-70 [&[readonly]]:bg-gray-50 dark:[&[readonly]]:bg-gray-900/50">
+                  <input
+                    id="url"
+                    type="url"
+                    value={formData.url}
+                    readOnly
+                    disabled
+                    placeholder="URL이 자동으로 입력됩니다"
+                    className="flex-1 bg-transparent border-0 outline-none p-0 placeholder:text-muted-foreground disabled:cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (formData.url) {
+                        navigator.clipboard.writeText(formData.url);
+                        toast.success('URL이 복사되었습니다.');
+                      }
+                    }}
+                    disabled={!formData.url}
+                    className="flex-shrink-0 cursor-pointer group inline-flex items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50 transition-colors rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title="URL 복사"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+
+              {/* 메모 */}
+              <div>
+                <Label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  메모
+                </Label>
+                <input
+                  id="description"
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="추가 정보나 필요한 정보를 입력하세요"
+                  className="input w-full"
+                />
+              </div>
 
                 {/* 추가 정보 표시 */}
                 {defaultData?.additionalInfo && (

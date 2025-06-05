@@ -126,6 +126,7 @@ export interface ICampaign {
 export interface UserInputField {
   fieldName: string;
   description: string;
+  isRequired?: boolean; // 필수 입력 필드 여부
 }
 
 export interface ExtendedCampaign extends ICampaign {

@@ -5,6 +5,7 @@ import { TranslationProvider } from './TranslationProvider';
 import { UIProvider } from './UIProvider';
 import { HelmetProvider } from 'react-helmet-async';
 import { LogoutProvider } from '@/contexts/LogoutContext';
+import { AlertProvider } from '@/hooks/useAlert';
 
 // 단일 QueryClient 인스턴스 생성
 const queryClient = new QueryClient({
@@ -32,9 +33,11 @@ const ProvidersWrapper = ({ children }: PropsWithChildren) => {
         <SettingsProvider>
           <TranslationProvider>
             <LogoutProvider>
-              <UIProvider>
-                {children}
-              </UIProvider>
+              <AlertProvider>
+                <UIProvider>
+                  {children}
+                </UIProvider>
+              </AlertProvider>
             </LogoutProvider>
           </TranslationProvider>
         </SettingsProvider>

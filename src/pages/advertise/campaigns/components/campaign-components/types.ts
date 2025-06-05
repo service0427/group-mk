@@ -25,6 +25,8 @@ export interface SlotItem {
     keyword1?: string;
     keyword2?: string;
     keyword3?: string;
+    work_memo?: string;
+    work_memo_date?: string;
   };
   deadline: string | null;
   createdAt: string;

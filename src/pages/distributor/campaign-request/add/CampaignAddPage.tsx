@@ -138,6 +138,12 @@ const CampaignAddPage: React.FC = () => {
       return;
     }
 
+    // 로고 필수 검증 - 업로드된 로고가 없고 기본 로고도 선택하지 않은 경우
+    if (!previewUrl && (!formData.logo || formData.logo === '')) {
+      setError('로고를 업로드하거나 기본 제공 로고 중 하나를 선택해주세요.');
+      return;
+    }
+
     // 서비스 유형별 필수 필드 검증은 CampaignForm 컴포넌트에서 처리됨
 
     setLoading(true);

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,7 @@ interface WorkProgress {
 interface ApprovalConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (workMemo?: string) => void;
   campaignName: string;
   dailyQuantity: number;
   progress: WorkProgress;
@@ -37,17 +38,32 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
   progress,
   actionType,
 }) => {
+  const [workMemo, setWorkMemo] = useState('');
   const remainingQuantity = Math.max(0, progress.totalRequestedQuantity - progress.totalWorkedQuantity);
   const remainingDays = Math.max(0, progress.requestedDays - progress.workedDays);
   const displayCompletionRate = Math.min(100, progress.completionRate); // 100% 상한
   const isComplete = actionType === 'complete';
+  const isRefund = actionType === 'refund';
+
+  // 모달이 닫힐 때 workMemo 초기화
+  const handleClose = () => {
+    setWorkMemo('');
+    onClose();
+  };
+
+  // 제목 설정
+  const getTitle = () => {
+    if (isComplete) return '슬롯 완료 확인';
+    if (isRefund) return '슬롯 환불 확인';
+    return '슬롯 승인 확인';
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-semibold text-foreground">
-            {isComplete ? '슬롯 완료 확인' : '슬롯 승인 확인'}
+            {getTitle()}
           </DialogTitle>
         </DialogHeader>
         
@@ -138,9 +154,57 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
             </div>
           )}
 
+          {/* 환불 경고 메시지 (환불인 경우만 표시) */}
+          {isRefund && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
+                    환불 처리 안내
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300 space-y-1">
+                    <p>환불 처리 시 다음 사항이 적용됩니다:</p>
+                    <ul className="list-disc list-inside ml-2 space-y-1">
+                      <li>작업이 완료된 수량을 제외한 나머지 금액이 환불됩니다</li>
+                      <li>환불 금액: {remainingQuantity > 0 ? `${remainingQuantity.toLocaleString()}개분` : '전액'}</li>
+                      <li>슬롯 상태가 '환불'로 변경됩니다</li>
+                      <li>이 작업은 취소할 수 없습니다</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 작업 완료 메모 (완료 처리 시에만 표시) */}
+          {isComplete && (
+            <div className="space-y-2 mb-4">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                작업 완료 메모 (선택사항)
+              </label>
+              <Textarea
+                value={workMemo}
+                onChange={(e) => setWorkMemo(e.target.value)}
+                placeholder="작업 완료와 관련된 메모를 입력하세요..."
+                className="w-full min-h-[80px] resize-none"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                ※ 이 메모는 작업 완료 기록에 저장됩니다.
+              </p>
+            </div>
+          )}
+
           {/* 확인 문구 */}
           <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-            {isComplete ? '슬롯을 완료 처리하시겠습니까?' : '슬롯을 승인하시겠습니까?'}
+            {isComplete && '슬롯을 완료 처리하시겠습니까?'}
+            {isRefund && '정말로 이 슬롯을 환불 처리하시겠습니까?'}
+            {!isComplete && !isRefund && '슬롯을 승인하시겠습니까?'}
             {isComplete && (
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 ※ 사용자가 확인 후 정산이 진행됩니다.
@@ -153,20 +217,26 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
             className="mr-2"
           >
             취소
           </Button>
           <Button
             type="button"
-            onClick={onConfirm}
-            className={progress.isEarlyCompletion 
-              ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-              : 'bg-primary hover:bg-primary/90 text-white'
+            onClick={() => {
+              onConfirm(isComplete ? workMemo : undefined);
+              handleClose();
+            }}
+            className={
+              isRefund 
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : progress.isEarlyCompletion 
+                ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                : 'bg-primary hover:bg-primary/90 text-white'
             }
           >
-            {isComplete ? '완료' : '승인'}
+            {isComplete ? '완료' : isRefund ? '환불' : '승인'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { keywordService, keywordGroupService } from '@/pages/keyword/services/keywordService';
 import { KeywordGroup, KeywordInput } from '@/pages/keyword/types';
 import { getTypeNameByCode } from '@/config/campaign.config';
+import { useAuthContext } from '@/auth';
+import { USER_ROLES } from '@/config/roles.config';
+import { CampaignServiceType } from '@/components/campaign-modals/types';
 
 interface AddKeywordModalProps {
   isOpen: boolean;
@@ -30,12 +33,14 @@ interface AddKeywordModalProps {
 }
 
 export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClose, defaultData }) => {
+  const { userRole } = useAuthContext();
   const [groups, setGroups] = useState<KeywordGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [urlError, setUrlError] = useState<boolean>(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   
   // 이미지 확대 모달 상태
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
@@ -66,14 +71,24 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
             const searchPattern = defaultData.type === 'shop' ? 'NaverShopping' : 'NaverPlace';
             
             filteredGroups = filteredGroups.filter(group => {
-              // 기본 그룹은 항상 포함 (다른 ㄱ)
-              //if (group.isDefault) return true;
+              // 해당 서비스 타입을 포함하는 그룹만 포함
+              if (!group.campaignType || !group.campaignType.includes(searchPattern)) {
+                return false;
+              }
               
-              // 캠페인 타입이 없는 일반 그룹도 포함
-              //if (!group.campaignType) return true;
+              // 비기너 사용자인 경우 순위 확인 서비스만 허용
+              if (userRole === USER_ROLES.BEGINNER) {
+                return group.campaignType === CampaignServiceType.NAVER_SHOPPING_RANK ||
+                       group.campaignType === CampaignServiceType.NAVER_PLACE_RANK;
+              }
               
-              // 해당 서비스 타입을 포함하는 그룹만 포함 (like 연산)
-              return group.campaignType && group.campaignType.includes(searchPattern);
+              // 가구매 서비스는 숨김
+              if (group.campaignType === CampaignServiceType.NAVER_SHOPPING_FAKESALE ||
+                  group.campaignType === CampaignServiceType.COUPANG_FAKESALE) {
+                return false;
+              }
+              
+              return true;
             });
           }
           
@@ -271,7 +286,24 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                   <select
                     id="keyword-group"
                     value={selectedGroupId || ''}
-                    onChange={(e) => setSelectedGroupId(Number(e.target.value))}
+                    onChange={async (e) => {
+                      const newGroupId = Number(e.target.value);
+                      setSelectedGroupId(newGroupId);
+                      setDuplicateWarning(null); // 이전 경고 메시지 초기화
+                      
+                      // 그룹이 선택되고 MID가 있는 경우 중복 체크
+                      if (newGroupId && formData.mid) {
+                        const result = await keywordService.checkDuplicate(
+                          newGroupId,
+                          formData.mainKeyword,
+                          formData.mid
+                        );
+                        
+                        if (result.isDuplicate) {
+                          setDuplicateWarning(result.message || '중복된 키워드가 있습니다.');
+                        }
+                      }
+                    }}
                     className="select w-full"
                     required
                   >
@@ -332,6 +364,16 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                   />
                 </div>
               </div>
+
+              {/* 중복 경고 메시지 */}
+              {duplicateWarning && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-xs text-red-800 dark:text-red-200 font-medium flex items-start">
+                    <span className="mr-1">❌</span>
+                    <span>{duplicateWarning}</span>
+                  </p>
+                </div>
+              )}
 
               {/* 안내 문구 - 전체 너비로 표시 */}
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
@@ -531,8 +573,8 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
           <div className="flex gap-3">
             <Button
               onClick={handleSave}
-              disabled={isSaving || !selectedGroupId || !formData.mainKeyword.trim() || !formData.mid}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={isSaving || !selectedGroupId || !formData.mainKeyword.trim() || !formData.mid || !!duplicateWarning}
+              className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>

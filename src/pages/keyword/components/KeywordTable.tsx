@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { Keyword, KeywordGroup, KeywordInput, PaginationParams } from '../types';
 import { useKeywordFieldConfig } from '../hooks/useKeywordFieldConfig';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   
   // 상태 관리
   const [searchText, setSearchText] = useState('');
+  const navigate = useNavigate();
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
   
   // 알림 모달 상태
@@ -516,6 +518,42 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 검색
               </button>
             </form>
+            {selectedGroup && (() => {
+              const serviceType = selectedGroup.campaignType;
+              const upperServiceType = serviceType?.toUpperCase() || '';
+              
+              // NS 또는 NP 서비스인지 확인
+              const isNaverService = upperServiceType.includes('PLACE') || 
+                                   upperServiceType.includes('NP') ||
+                                   serviceType?.includes('NaverPlace') ||
+                                   upperServiceType.includes('SHOPPING') || 
+                                   upperServiceType.includes('NS') ||
+                                   serviceType?.includes('NaverShopping');
+              
+              // 네이버 서비스인 경우에만 버튼 표시
+              if (isNaverService) {
+                return (
+                  <Button
+                    onClick={() => {
+                      // 서비스 타입에 따라 적절한 검색 페이지로 이동
+                      if (upperServiceType.includes('PLACE') || 
+                          upperServiceType.includes('NP') ||
+                          serviceType?.includes('NaverPlace')) {
+                        navigate('/search-place');
+                      } else {
+                        navigate('/search-shop');
+                      }
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs bg-purple-500 hover:bg-purple-600 text-white border-purple-500 hover:border-purple-600"
+                  >
+                    검색으로 등록하기
+                  </Button>
+                );
+              }
+              return null;
+            })()}
             {selectedKeywordIds.length > 0 && (
               <>
                 <Button

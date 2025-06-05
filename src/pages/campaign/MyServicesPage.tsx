@@ -144,11 +144,39 @@ const MyServicesPage: React.FC = () => {
     }
   }, [selectedSlotForMemo, memoText, showSuccess, showError, loadCampaignSlots]);
 
-  // 거래 확정 핸들러 (필요한 경우)
+  // 거래 확정 핸들러
   const handleConfirmTransaction = useCallback(async (slotId: string) => {
-    // 거래 확정 로직 구현
-    
-  }, []);
+    try {
+      // RPC 함수를 사용하여 거래 완료 처리 (정산 포함)
+      const { data, error } = await supabase.rpc('user_confirm_slot_completion', {
+        p_slot_id: slotId,
+        p_user_id: currentUser?.id,
+        p_notes: '사용자 거래 완료 확인'
+      });
+
+      if (error) {
+        console.error('거래 완료 처리 오류:', error);
+        throw error;
+      }
+
+      // RPC 함수의 반환값 확인
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (data.success) {
+          showSuccess(data.message || '거래가 완료되었습니다.');
+        } else {
+          showError(data.message || '거래 완료 처리 중 오류가 발생했습니다.');
+          return;
+        }
+      } else {
+        showSuccess('거래가 완료되었습니다.');
+      }
+
+      await loadCampaignSlots();
+    } catch (error) {
+      console.error('거래 완료 처리 오류:', error);
+      showError('거래 완료 처리 중 오류가 발생했습니다.');
+    }
+  }, [currentUser?.id, showSuccess, showError, loadCampaignSlots]);
 
   // 다중 선택 상태
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);

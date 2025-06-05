@@ -732,6 +732,70 @@ export const keywordService = {
     }
   },
 
+  // 키워드 중복 체크
+  async checkDuplicate(
+    groupId: number,
+    mainKeyword?: string,
+    mid?: number
+  ): Promise<{ isDuplicate: boolean; message?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return { isDuplicate: false, message: '로그인이 필요합니다.' };
+      }
+
+      // 사용자의 그룹인지 확인
+      const { data: groupData, error: groupError } = await supabase
+        .from('keyword_groups')
+        .select('id')
+        .eq('id', groupId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (groupError) {
+        return { isDuplicate: false, message: '해당 그룹에 접근할 권한이 없습니다.' };
+      }
+
+      // MID로 중복 체크 (MID가 있는 경우)
+      if (mid) {
+        const { data: midDuplicates, error: midError } = await supabase
+          .from('keywords')
+          .select('id, main_keyword')
+          .eq('group_id', groupId)
+          .eq('mid', mid);
+
+        if (!midError && midDuplicates && midDuplicates.length > 0) {
+          return { 
+            isDuplicate: true, 
+            message: `이미 등록된 MID입니다. (키워드: ${midDuplicates[0].main_keyword})` 
+          };
+        }
+      }
+
+      // 메인 키워드로 중복 체크 (메인 키워드가 있는 경우)
+      if (mainKeyword) {
+        const { data: keywordDuplicates, error: keywordError } = await supabase
+          .from('keywords')
+          .select('id')
+          .eq('group_id', groupId)
+          .eq('main_keyword', mainKeyword);
+
+        if (!keywordError && keywordDuplicates && keywordDuplicates.length > 0) {
+          return { 
+            isDuplicate: true, 
+            message: '이미 등록된 메인 키워드입니다.' 
+          };
+        }
+      }
+
+      return { isDuplicate: false };
+    } catch (error) {
+      console.error('Error checking duplicate:', error);
+      return { isDuplicate: false, message: '중복 체크 중 오류가 발생했습니다.' };
+    }
+  },
+
   // 새 키워드 추가
   async createKeyword(
     groupId: number, 

@@ -161,17 +161,19 @@ export class ActivityMonitor {
    * 전체 비활성 시간 계산 (백그라운드 시간 포함)
    */
   private calculateTotalInactiveTime(currentTime: number): number {
-    let inactiveTime = currentTime - this.lastActivity;
-    
     // 현재 백그라운드 상태인 경우
     if (this.wentBackgroundAt !== null) {
+      // 마지막 활동부터 백그라운드 진입까지의 시간
+      const inactiveBeforeBackground = this.wentBackgroundAt - this.lastActivity;
+      // 백그라운드에 있는 시간
       const currentBackgroundTime = currentTime - this.wentBackgroundAt;
-      inactiveTime = this.totalBackgroundTime + currentBackgroundTime + (this.lastActivity - this.wentBackgroundAt);
+      // 전체 비활성 시간 = 백그라운드 진입 전 비활성 시간 + 현재 백그라운드 시간 + 이전 누적 백그라운드 시간
+      return inactiveBeforeBackground + currentBackgroundTime + this.totalBackgroundTime;
     } else {
-      inactiveTime += this.totalBackgroundTime;
+      // 포그라운드 상태인 경우
+      // 전체 비활성 시간 = 현재 시간 - 마지막 활동 시간 + 누적 백그라운드 시간
+      return (currentTime - this.lastActivity) + this.totalBackgroundTime;
     }
-    
-    return inactiveTime;
   }
 
   /**

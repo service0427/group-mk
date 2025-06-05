@@ -567,7 +567,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
                 </div>
               )}
             </div>
-
+            
             {/* 버튼들 */}
             <div className="flex gap-3">
               <Button

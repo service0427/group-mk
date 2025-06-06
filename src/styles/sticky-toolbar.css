@@ -1,0 +1,36 @@
+/* Sticky Toolbar Styles */
+.sticky-toolbar {
+  /* 기본 스타일 보장 */
+  display: block !important;
+  visibility: visible !important;
+  
+  /* 그림자 효과 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* 다크 모드에서의 그림자 */
+.dark .sticky-toolbar {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* 원래 툴바가 sticky 상태일 때 공간 유지 */
+.toolbar-sticky-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 애니메이션 효과 */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sticky-toolbar {
+  animation: slideDown 0.3s ease-out;
+}

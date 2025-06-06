@@ -31,36 +31,42 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'NS 순위확인',
             path: '/advertise/campaigns/info/naver-shopping-rank',
             iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
             authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
           },
           {
             title: 'NS 트래픽',
             path: '/advertise/campaigns/info/naver-shopping-traffic',
             iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 순위확인',
             path: '/advertise/campaigns/info/naver-place-rank',
             iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
             authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
           },
           {
             title: 'NP 트래픽',
             path: '/advertise/campaigns/info/naver-place-traffic',
             iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 저장하기',
             path: '/advertise/campaigns/info/naver-place-save',
             iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
             title: 'NP 블로그공유',
             path: '/advertise/campaigns/info/naver-place-share',
             iconImage: '/media/ad-brand/naver-blog.png',
+            iconAbbr: 'NB',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
@@ -68,6 +74,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             disabled: true,
             path: '/advertise/campaigns/info/naver-auto',
             iconImage: '/media/ad-brand/naver.png',
+            iconAbbr: 'NA',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
@@ -75,6 +82,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             disabled: true,
             path: '/advertise/campaigns/info/naver-shopping-fakesale',
             iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
@@ -87,6 +95,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             title: 'CP 트래픽',
             path: '/advertise/campaigns/info/coupang-traffic',
             iconImage: '/media/ad-brand/coupang-app.png',
+            iconAbbr: 'CP',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
@@ -94,6 +103,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
             disabled: true,
             path: '/advertise/campaigns/info/coupang-fakesale',
             iconImage: '/media/ad-brand/coupang-app.png',
+            iconAbbr: 'CP',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
@@ -102,6 +112,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '인스타그램',
         disabled: true,
         iconImage: '/media/ad-brand/instagram.png',
+        iconAbbr: 'IG',
         authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       },
       {
@@ -114,6 +125,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '라이브방송',
         disabled: true,
         iconImage: '/media/ad-brand/youtube.png',
+        iconAbbr: 'YT',
         authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       }
     ]
@@ -126,11 +138,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: 'N 쇼핑 상품 검색',
         iconImage: '/media/ad-brand/naver-shopping.png',
+        iconAbbr: 'NS',
         path: '/search-shop'
       },
       {
         title: 'N 플레이스 검색',
         iconImage: '/media/ad-brand/naver-place.png',
+        iconAbbr: 'NP',
         path: '/search-place'
       },
       {

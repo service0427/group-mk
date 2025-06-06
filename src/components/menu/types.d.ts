@@ -158,6 +158,7 @@ export interface IMenuItemConfig {
   heading?: string;
   icon?: string;
   iconImage?: string; // 이미지 경로 (SVG 또는 PNG)
+  iconAbbr?: string; // 아이콘 약어 (예: NS, NP, CP 등)
   badge?: string;
   separator?: boolean;
   tooltip?: Partial<TooltipProps>;

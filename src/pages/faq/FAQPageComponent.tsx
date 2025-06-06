@@ -115,8 +115,8 @@ const FAQPageComponent = () => {
     >
       <div className="grid gap-5 lg:gap-7.5">
         {/* 카테고리별 필터 */}
-        <div className="card rounded-lg shadow-sm p-5">
-          <div className="flex flex-wrap gap-2">
+        <div className="card rounded-lg shadow-sm p-3 sm:p-5">
+          <div className="flex flex-wrap gap-2 overflow-x-auto">
             {faqCategories.map((category) => (
               <Button
                 key={category}
@@ -130,7 +130,7 @@ const FAQPageComponent = () => {
           </div>
         </div>
 
-        <div className="card rounded-lg shadow-sm overflow-hidden">
+        <div className="card rounded-lg shadow-sm">
           <div className="flex justify-between items-center p-5 border-b">
             <h3 className="text-lg font-medium text-card-foreground">FAQ ({activeCategory})</h3>
             <span className="text-sm text-muted-foreground">총 {filteredFAQs.length}개의 FAQ</span>
@@ -189,7 +189,7 @@ const FAQPageComponent = () => {
                                 <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
                                   <div className="flex items-start">
                                     <span className="text-primary font-bold mr-3 text-lg">A.</span>
-                                    <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+                                    <div className="whitespace-pre-line break-words overflow-wrap-anywhere pt-0.5">{faq.answer}</div>
                                   </div>
                                 </AccordionContent>
                               </AccordionItem>
@@ -203,7 +203,7 @@ const FAQPageComponent = () => {
                             {categoryFaqs.map((faq, index) => (
                               <div 
                                 key={faq.id} 
-                                className="p-4 hover:bg-muted/40 cursor-pointer border-b"
+                                className="p-3 hover:bg-muted/40 cursor-pointer border-b"
                                 onClick={() => incrementViewCount(faq)}
                               >
                                 <div className="flex items-start">
@@ -211,7 +211,7 @@ const FAQPageComponent = () => {
                                     {index + 1}
                                   </span>
                                   <div className="flex-1">
-                                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1 break-words">
                                       {faq.question}
                                     </h3>
                                     <div className="flex justify-between items-center">
@@ -237,7 +237,7 @@ const FAQPageComponent = () => {
                                         <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
                                           A
                                         </span>
-                                        <div className="whitespace-pre-line text-sm text-gray-700">
+                                        <div className="whitespace-pre-line break-words overflow-wrap-anywhere text-sm text-gray-700">
                                           {faq.answer}
                                         </div>
                                       </div>
@@ -276,7 +276,7 @@ const FAQPageComponent = () => {
                               <AccordionContent className="text-muted-foreground bg-gray-50 rounded-md p-5 mx-4 my-2 shadow-sm">
                                 <div className="flex items-start">
                                   <span className="text-primary font-bold mr-3 text-lg">A.</span>
-                                  <div className="whitespace-pre-line pt-0.5">{faq.answer}</div>
+                                  <div className="whitespace-pre-line break-words overflow-wrap-anywhere pt-0.5">{faq.answer}</div>
                                 </div>
                               </AccordionContent>
                             </AccordionItem>
@@ -290,7 +290,7 @@ const FAQPageComponent = () => {
                           {filteredFAQs.map((faq, index) => (
                             <div 
                               key={faq.id} 
-                              className="p-4 hover:bg-muted/40 cursor-pointer border-b"
+                              className="p-3 hover:bg-muted/40 cursor-pointer border-b"
                               onClick={() => incrementViewCount(faq)}
                             >
                               <div className="flex items-start">
@@ -298,7 +298,7 @@ const FAQPageComponent = () => {
                                   {index + 1}
                                 </span>
                                 <div className="flex-1">
-                                  <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                                  <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1 break-words">
                                     {faq.question}
                                   </h3>
                                   <div className="flex justify-between items-center">
@@ -324,7 +324,7 @@ const FAQPageComponent = () => {
                                       <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full min-w-5 h-5 flex items-center justify-center mr-2 mt-0.5">
                                         A
                                       </span>
-                                      <div className="whitespace-pre-line text-sm text-gray-700">
+                                      <div className="whitespace-pre-line break-words overflow-wrap-anywhere text-sm text-gray-700">
                                         {faq.answer}
                                       </div>
                                     </div>
@@ -347,9 +347,9 @@ const FAQPageComponent = () => {
           </div>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-5">
-          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">원하는 답변을 찾지 못하셨나요?</h3>
-          <p className="text-blue-700 dark:text-blue-200 mb-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-3 sm:p-5">
+          <h3 className="text-base sm:text-lg font-medium text-blue-900 dark:text-blue-100 mb-3 sm:mb-4">원하는 답변을 찾지 못하셨나요?</h3>
+          <p className="text-sm sm:text-base text-blue-700 dark:text-blue-200 mb-3 break-words">
             더 자세한 문의사항은 1:1 문의하기를 이용해주세요. 친절하게 답변해 드리겠습니다.
           </p>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white">

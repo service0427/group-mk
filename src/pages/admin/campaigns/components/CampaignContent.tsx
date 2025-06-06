@@ -647,7 +647,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                           <div>{campaign.originalData?.rejected_reason || '반려 사유 없음'}</div>
                           {!isAdmin && (
                             <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                              <KeenIcon icon="information-circle" className="mr-1 inline-block size-3" />
+                              <KeenIcon icon="information-2" className="mr-1 inline-block size-3" />
                               수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다.
                             </div>
                           )}
@@ -659,7 +659,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
-                <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+                <KeenIcon icon="information-2" className="size-8 mb-2 text-gray-400" />
                 <p className="text-muted-foreground">생성된 캠페인이 없습니다.</p>
               </div>
             )}
@@ -835,7 +835,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                             {!isAdmin && (
                               <div className="mt-0.5 text-xs text-blue-500">
                                 <span className="font-medium" title="수정 후 저장하시면 자동으로 재승인 요청이 진행됩니다">
-                                  <KeenIcon icon="information-circle" className="mr-0.5 inline-block size-3" />
+                                  <KeenIcon icon="information-2" className="mr-0.5 inline-block size-3" />
                                   수정하여 재승인 요청
                                 </span>
                               </div>
@@ -862,7 +862,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <tr>
                     <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                       <div className="flex flex-col items-center">
-                        <KeenIcon icon="information-circle" className="size-8 mb-2 text-gray-400" />
+                        <KeenIcon icon="information-2" className="size-8 mb-2 text-gray-400" />
                         <p>생성된 캠페인이 없습니다.</p>
                       </div>
                     </td>

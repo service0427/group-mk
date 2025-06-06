@@ -262,7 +262,7 @@ const SlotList: React.FC<SlotListProps> = ({
         <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-800/50 rounded-full flex items-center justify-center">
-              <KeenIcon icon="information-circle" className="text-blue-600 dark:text-blue-400 size-5" />
+              <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-5" />
             </div>
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-1">

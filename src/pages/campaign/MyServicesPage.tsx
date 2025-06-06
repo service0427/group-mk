@@ -610,7 +610,7 @@ const MyServicesPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <KeenIcon icon="information-circle" className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
+                <KeenIcon icon="information-2" className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
                   승인 대기 중인 슬롯만 취소됩니다. 이미 승인된 슬롯은 취소할 수 없습니다.
                 </p>

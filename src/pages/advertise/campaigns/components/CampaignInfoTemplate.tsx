@@ -285,7 +285,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow">
-              <KeenIcon icon="information-circle" className="size-16 mb-4 text-gray-400" />
+              <KeenIcon icon="information-2" className="size-16 mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-500 mb-2">캠페인 데이터가 없습니다</p>
               <p className="text-sm text-gray-400 mb-4">현재 제공 가능한 캠페인이 없습니다.</p>
               <button

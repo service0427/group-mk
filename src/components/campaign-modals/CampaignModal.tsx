@@ -1146,7 +1146,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 {/* 에러 메시지 - 미리보기 버튼 바로 왼쪽에 위치 */}
                 {error && (
                   <div className="flex items-center text-red-600 text-sm">
-                    <KeenIcon icon="information-circle" className="size-4 mr-1.5" />
+                    <KeenIcon icon="information-2" className="size-4 mr-1.5" />
                     <span>{error}</span>
                   </div>
                 )}
@@ -1537,7 +1537,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   {/* 미리보기 알림 */}
                   <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300">
                     <div className="flex items-start">
-                      <KeenIcon icon="information-circle" className="size-5 mr-2 shrink-0 mt-0.5" />
+                      <KeenIcon icon="information-2" className="size-5 mr-2 shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium">미리보기 모드</p>
                         <p className="text-sm mt-1">이 화면은 캠페인이 등록된 후 어떻게 보일지를 미리 보여주는 화면입니다. 실제 데이터는 저장 전까지 반영되지 않습니다.</p>

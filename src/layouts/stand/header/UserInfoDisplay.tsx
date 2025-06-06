@@ -181,19 +181,48 @@ const UserInfoDisplay = () => {
   // 외부 클릭 감지를 위한 이벤트 리스너
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (mobileMenuRef.current && 
-          !mobileMenuRef.current.contains(event.target as Node) && 
-          !(event.target as Element).closest('button[data-mobile-menu-trigger="true"]')) {
+      try {
+        // event.target이 존재하는지 확인
+        const target = event.target;
+        if (!target) return;
+        
+        // mobileMenuRef가 없으면 조기 종료
+        if (!mobileMenuRef.current) return;
+        
+        // target이 Node가 아니면 조기 종료
+        if (!(target instanceof Node)) {
+          console.warn('Invalid event target type:', target);
+          return;
+        }
+        
+        // target이 Element가 아니면 메뉴 닫기 (document 클릭 등)
+        if (!(target instanceof Element)) {
+          setMobileMenuOpen(false);
+          return;
+        }
+        
+        // contains 메서드 안전하게 사용
+        const isClickInside = mobileMenuRef.current.contains(target);
+        const isClickOnTrigger = target.closest('button[data-mobile-menu-trigger="true"]');
+        
+        if (!isClickInside && !isClickOnTrigger) {
+          setMobileMenuOpen(false);
+        }
+      } catch (error) {
+        // 오류 발생 시 로그 출력 및 메뉴 닫기
+        console.warn('모바일 메뉴 클릭 감지 오류:', error);
         setMobileMenuOpen(false);
       }
     };
     
     if (mobileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // capture: true로 이벤트 캡처 단계에서 처리
+      document.addEventListener('mousedown', handleClickOutside, { capture: true });
+      // wheel 이벤트는 별도로 처리하지 않음
     }
     
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside, { capture: true });
     };
   }, [mobileMenuOpen]);
 

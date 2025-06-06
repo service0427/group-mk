@@ -19,9 +19,10 @@ interface SlotsListProps {
   isLoading: boolean;
   matId: string;
   isAdmin?: boolean;
+  userRole?: string;
 }
 
-const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId, isAdmin = false }) => {
+const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId, isAdmin = false, userRole }) => {
   // 반응형 디바이스 체크
   const isMobile = !useResponsive('up', 'md');
 
@@ -161,13 +162,42 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
     if (platformConfig) {
       // config의 모든 서비스 타입 추가
       platformConfig.types.forEach(type => {
+        // 총판인 경우 순위확인 서비스 제외
+        if (!isAdmin && userRole === 'distributor') {
+          if (type.code === CampaignServiceType.NAVER_SHOPPING_RANK || 
+              type.code === CampaignServiceType.NAVER_PLACE_RANK) {
+            return;
+          }
+        }
         const label = SERVICE_TYPE_LABELS[type.code as CampaignServiceType] || type.name;
         counts[label] = 0;
       });
     }
 
     // 해당 플랫폼의 실제 슬롯들로 개수 계산
-    const platformSlots = slotsWithPlatform.filter(slot => slot.platform === selectedPlatform);
+    let platformSlots = slotsWithPlatform.filter(slot => slot.platform === selectedPlatform);
+    
+    // 총판인 경우 순위확인 서비스 슬롯 필터링
+    if (!isAdmin && userRole === 'distributor') {
+      platformSlots = platformSlots.filter(slot => {
+        if (!slot.service_type) return true;
+        
+        const normalizedServiceType = slot.service_type.toUpperCase().replace(/[\s\-_]/g, '');
+        
+        const isNaverShoppingRank = normalizedServiceType.includes('NAVERSHOPPINGRANK') ||
+                                  (normalizedServiceType.includes('NAVER') && 
+                                   normalizedServiceType.includes('SHOPPING') && 
+                                   normalizedServiceType.includes('RANK'));
+        
+        const isNaverPlaceRank = normalizedServiceType.includes('NAVERPLACERANK') ||
+                               (normalizedServiceType.includes('NAVER') && 
+                                normalizedServiceType.includes('PLACE') && 
+                                normalizedServiceType.includes('RANK'));
+        
+        return !isNaverShoppingRank && !isNaverPlaceRank;
+      });
+    }
+    
     counts['전체'] = platformSlots.length;
 
     platformSlots.forEach(slot => {
@@ -237,7 +267,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
     });
 
     return counts;
-  }, [slotsWithPlatform, selectedPlatform, slots.length]);
+  }, [slotsWithPlatform, selectedPlatform, slots.length, isAdmin, userRole]);
 
   // 필터링된 슬롯들
   const filteredSlots = useMemo(() => {
@@ -285,6 +315,29 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
       const minQty = Number(minQuantityFilter);
       filtered = filtered.filter(slot => {
         return slot.quantity && slot.quantity >= minQty;
+      });
+    }
+
+    // 총판 역할에 대한 서비스 필터링
+    if (!isAdmin && userRole === 'distributor') {
+      filtered = filtered.filter(slot => {
+        if (!slot.service_type) return true;
+        
+        // 서비스 타입을 대문자로 변환하고 공백, 하이픈, 언더스코어 제거
+        const normalizedServiceType = slot.service_type.toUpperCase().replace(/[\s\-_]/g, '');
+        
+        // NS 순위확인 (NAVER_SHOPPING_RANK) 및 NP 순위확인 (NAVER_PLACE_RANK) 제외
+        const isNaverShoppingRank = normalizedServiceType.includes('NAVERSHOPPINGRANK') ||
+                                  (normalizedServiceType.includes('NAVER') && 
+                                   normalizedServiceType.includes('SHOPPING') && 
+                                   normalizedServiceType.includes('RANK'));
+        
+        const isNaverPlaceRank = normalizedServiceType.includes('NAVERPLACERANK') ||
+                               (normalizedServiceType.includes('NAVER') && 
+                                normalizedServiceType.includes('PLACE') && 
+                                normalizedServiceType.includes('RANK'));
+        
+        return !isNaverShoppingRank && !isNaverPlaceRank;
       });
     }
 
@@ -393,7 +446,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
     });
 
     return filtered;
-  }, [slotsWithPlatform, selectedPlatform, selectedServiceType, searchTerm, sortField, sortDirection, startDateFilter, endDateFilter, minQuantityFilter]);
+  }, [slotsWithPlatform, selectedPlatform, selectedServiceType, searchTerm, sortField, sortDirection, startDateFilter, endDateFilter, minQuantityFilter, isAdmin, userRole]);
 
   // 모바일 카드 레이아웃 렌더링
   const renderMobileCard = (slot: Slot & { platform: string }) => {

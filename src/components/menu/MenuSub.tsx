@@ -51,39 +51,44 @@ const MenuSubComponent = forwardRef<HTMLDivElement | null, IMenuSubProps>(
 
     // 서브메뉴로 스크롤하는 함수 - 특정 ID를 가진 스크롤 컨테이너 직접 찾기
     const scrollToSubMenu = (scrollToBottom = false) => {
-      if (!subMenuRef.current) return;
+      try {
+        if (!subMenuRef.current) return;
 
-      // 사이드바의 스크롤 가능한 컨테이너를 직접 ID로 찾기
-      const scrollableParent = document.getElementById('sidebar-scrollable-container');
-      
-      if (!scrollableParent) {
-        // 직접 ID로 찾지 못한 경우 기존 방식으로 스크롤 가능한 요소 찾기
-        let parentEl = subMenuRef.current.parentElement;
-        while (parentEl) {
-          // clientHeight와 scrollHeight가 다르면 스크롤 가능한 요소
-          const hasScrollbar = parentEl.clientHeight < parentEl.scrollHeight;
-          if (hasScrollbar) {
-            break;
+        // 사이드바의 스크롤 가능한 컨테이너를 직접 ID로 찾기
+        const scrollableParent = document.getElementById('sidebar-scrollable-container');
+        
+        if (!scrollableParent) {
+          // 직접 ID로 찾지 못한 경우 기존 방식으로 스크롤 가능한 요소 찾기
+          let parentEl = subMenuRef.current.parentElement;
+          while (parentEl && parentEl instanceof HTMLElement) {
+            // clientHeight와 scrollHeight가 다르면 스크롤 가능한 요소
+            const hasScrollbar = parentEl.clientHeight < parentEl.scrollHeight;
+            if (hasScrollbar) {
+              break;
+            }
+            parentEl = parentEl.parentElement;
           }
-          parentEl = parentEl.parentElement;
+          
+          // 그래도 스크롤 가능한 요소를 찾지 못했으면 종료
+          if (!parentEl || !(parentEl instanceof HTMLElement)) return;
+          
+          performScroll(parentEl, scrollToBottom);
+        } else {
+          // ID로 찾은 컨테이너로 스크롤 수행
+          performScroll(scrollableParent, scrollToBottom);
         }
-        
-        // 그래도 스크롤 가능한 요소를 찾지 못했으면 종료
-        if (!parentEl) return;
-        
-        performScroll(parentEl, scrollToBottom);
-      } else {
-        // ID로 찾은 컨테이너로 스크롤 수행
-        performScroll(scrollableParent, scrollToBottom);
+      } catch (error) {
+        console.warn('MenuSub scrollToSubMenu error:', error);
       }
     };
     
     // 실제 스크롤 수행 함수
     const performScroll = (scrollableParent: HTMLElement, scrollToBottom: boolean) => {
-      if (!subMenuRef.current) return;
-      
-      const parentRect = scrollableParent.getBoundingClientRect();
-      const subMenuRect = subMenuRef.current.getBoundingClientRect();
+      try {
+        if (!subMenuRef.current || !(scrollableParent instanceof HTMLElement)) return;
+        
+        const parentRect = scrollableParent.getBoundingClientRect();
+        const subMenuRect = subMenuRef.current.getBoundingClientRect();
       
       // 서브메뉴의 전체 높이 계산 (보이지 않는 부분 포함)
       const subMenuFullHeight = subMenuRef.current.scrollHeight;
@@ -126,29 +131,36 @@ const MenuSubComponent = forwardRef<HTMLDivElement | null, IMenuSubProps>(
       if (nestedMenus.length > 0 && scrollToBottom) {
         // 추가 조정을 위한 지연 시간
         setTimeout(() => {
-          if (!subMenuRef.current) return;
-          
-          // 가장 깊은 중첩 메뉴 (맨 마지막 메뉴) 찾기
-          const deepestNestedMenu = nestedMenus[nestedMenus.length - 1];
-          const nestedMenuItems = deepestNestedMenu.querySelectorAll('.menu-item');
-          
-          if (nestedMenuItems.length > 0) {
-            // 가장 마지막 메뉴 아이템 찾기
-            const lastMenuItem = nestedMenuItems[nestedMenuItems.length - 1];
-            const lastMenuItemRect = lastMenuItem.getBoundingClientRect();
+          try {
+            if (!subMenuRef.current) return;
             
-            // 마지막 메뉴 아이템이 보이는 영역 밖에 있는 경우 추가 스크롤
-            if (lastMenuItemRect.bottom > parentRect.bottom) {
-              // 추가 여백 확보 (20 → 60)
-              const additionalScroll = lastMenuItemRect.bottom - parentRect.bottom + 60;
+            // 가장 깊은 중첩 메뉴 (맨 마지막 메뉴) 찾기
+            const deepestNestedMenu = nestedMenus[nestedMenus.length - 1];
+            const nestedMenuItems = deepestNestedMenu.querySelectorAll('.menu-item');
+            
+            if (nestedMenuItems.length > 0) {
+              // 가장 마지막 메뉴 아이템 찾기
+              const lastMenuItem = nestedMenuItems[nestedMenuItems.length - 1];
+              const lastMenuItemRect = lastMenuItem.getBoundingClientRect();
               
-              scrollableParent.scrollTo({
-                top: scrollPosition + additionalScroll,
-                behavior: 'smooth'
-              });
+              // 마지막 메뉴 아이템이 보이는 영역 밖에 있는 경우 추가 스크롤
+              if (lastMenuItemRect.bottom > parentRect.bottom) {
+                // 추가 여백 확보 (20 → 60)
+                const additionalScroll = lastMenuItemRect.bottom - parentRect.bottom + 60;
+                
+                scrollableParent.scrollTo({
+                  top: scrollPosition + additionalScroll,
+                  behavior: 'smooth'
+                });
+              }
             }
+          } catch (error) {
+            console.warn('MenuSub nested menu scroll error:', error);
           }
         }, 200); // 중첩 메뉴 스크롤을 위한 추가 지연
+      }
+      } catch (error) {
+        console.warn('MenuSub performScroll error:', error);
       }
     };
 

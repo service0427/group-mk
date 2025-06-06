@@ -98,7 +98,7 @@ const ImportantNoticeMarquee: React.FC = () => {
   const currentNotice = notices[activeIndex];
 
   return (
-    <div className="w-full bg-amber-50/90 dark:bg-amber-900/30 border-b border-gray-200 dark:border-coal-100 h-9 flex items-center">
+    <div className="notice-marquee w-full bg-amber-50/90 dark:bg-amber-900/30 border-b border-gray-200 dark:border-coal-100 h-9 flex items-center">
       <div className="w-full px-5">
         <div className="flex items-center">
           {/* 모바일에서는 아이콘만 표시하고 PC에서는 "중요 공지" 텍스트도 표시 */}

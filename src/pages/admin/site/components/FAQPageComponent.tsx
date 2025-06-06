@@ -3,6 +3,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner';
+import '@/styles/faq-mobile-fix.css';
 
 import {
   Table,
@@ -715,10 +716,10 @@ const FAQPageComponent = () => {
       toolbarActions={toolbarActions}
       showPageMenu={false}
     >
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-col space-y-4 overflow-x-hidden">
         {/* 카테고리 필터 */}
-        <div className="bg-card rounded-lg shadow-sm p-5 border border-border">
-          <div className="flex flex-wrap gap-2">
+        <div className="bg-card rounded-lg shadow-sm p-3 sm:p-5 border border-border max-w-full">
+          <div className="flex flex-wrap gap-2 overflow-x-auto">
             {faqCategories.map((category) => (
               <Button
                 key={category}
@@ -735,7 +736,7 @@ const FAQPageComponent = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
+        <div className="bg-card rounded-lg shadow-sm border border-border max-w-full overflow-hidden">
           <div className="p-5 flex justify-between items-center border-b">
             <h3 className="text-lg font-medium text-card-foreground">FAQ 목록 ({activeCategory})</h3>
           </div>
@@ -752,7 +753,7 @@ const FAQPageComponent = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div>
             {isLoading ? (
               <div className="p-8 flex justify-center items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -856,7 +857,7 @@ const FAQPageComponent = () => {
                 </div>
 
                 {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
-                <div className="block md:hidden">
+                <div className="block md:hidden overflow-x-hidden">
                   {faqs.length === 0 ? (
                     <div className="text-center py-10 text-gray-500">
                       FAQ가 없습니다
@@ -864,10 +865,10 @@ const FAQPageComponent = () => {
                   ) : (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {faqs.map((faq, index) => (
-                        <div key={faq.id} className="p-4 hover:bg-muted/40">
-                          <div className="flex gap-3">
+                        <div key={faq.id} className="p-3 hover:bg-muted/40 overflow-hidden">
+                          <div className="flex gap-2">
                             {/* 왼쪽 번호 표시 */}
-                            <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                            <div className="flex-none w-7 h-7 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-xs">
                               {(currentPage - 1) * itemsPerPage + index + 1}
                             </div>
 
@@ -875,7 +876,7 @@ const FAQPageComponent = () => {
                             <div className="flex-1 min-w-0">
                               {/* 헤더 영역: 제목만 표시 */}
                               <div className="mb-2">
-                                <h3 className="font-medium text-foreground truncate" onClick={() => openDetail(faq)}>
+                                <h3 className="font-medium text-foreground break-words cursor-pointer text-sm" onClick={() => openDetail(faq)} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                   {faq.question}
                                 </h3>
                               </div>
@@ -900,48 +901,44 @@ const FAQPageComponent = () => {
                               </div>
 
                               {/* 액션 버튼 영역 */}
-                              <div className="flex justify-between items-center">
+                              <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2">
-                                  <div className="flex flex-col xs:flex-row items-start xs:items-center gap-1 xs:gap-2">
-                                    <span className="text-xs text-muted-foreground">표시:</span>
-                                    <div className="flex items-center gap-2">
-                                      <Switch
-                                        checked={faq.is_active}
-                                        onCheckedChange={(checked) => handleToggleActive(faq, checked)}
-                                      />
-                                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${faq.is_active
-                                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
-                                        }`}>
-                                        {faq.is_active ? '표시' : '감춤'}
-                                      </span>
-                                    </div>
-                                  </div>
+                                  <span className="text-xs text-muted-foreground">표시:</span>
+                                  <Switch
+                                    checked={faq.is_active}
+                                    onCheckedChange={(checked) => handleToggleActive(faq, checked)}
+                                  />
+                                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${faq.is_active
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                    }`}>
+                                    {faq.is_active ? '표시' : '감춤'}
+                                  </span>
                                 </div>
                                 <div className="flex gap-2">
                                   <Button
                                     variant="outline"
-                                    size="icon"
+                                    size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openDetail(faq);
                                     }}
-                                    className="h-9 w-9"
-                                    title="수정"
+                                    className="flex-1"
                                   >
-                                    <KeenIcon icon="pencil" style="outline" className="w-5 h-5" />
+                                    <KeenIcon icon="pencil" style="outline" className="w-4 h-4 mr-1" />
+                                    수정
                                   </Button>
                                   <Button
                                     variant="destructive"
-                                    size="icon"
+                                    size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openDeleteConfirm(faq);
                                     }}
-                                    className="h-9 w-9"
-                                    title="삭제"
+                                    className="flex-1"
                                   >
-                                    <KeenIcon icon="trash" style="outline" className="w-5 h-5" />
+                                    <KeenIcon icon="trash" style="outline" className="w-4 h-4 mr-1" />
+                                    삭제
                                   </Button>
                                 </div>
                               </div>

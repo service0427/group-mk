@@ -96,7 +96,14 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
           >
             <MenuIcon className={clsx('items-start text-gray-500 dark:text-gray-400', iconWidth)}>
               {item.iconImage ? (
-                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                <div className="relative inline-block">
+                  <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                  {item.iconAbbr && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                      {item.iconAbbr}
+                    </span>
+                  )}
+                </div>
               ) : item.icon && (
                 <KeenIcon icon={item.icon} className={iconSize} />
               )}
@@ -139,7 +146,14 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
               )}
             >
               {item.iconImage ? (
-                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                <div className="relative inline-block">
+                  <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                  {item.iconAbbr && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                      {item.iconAbbr}
+                    </span>
+                  )}
+                </div>
               ) : item.icon && (
                 <KeenIcon icon={item.icon} className={iconSize} />
               )}
@@ -161,7 +175,14 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
         >
           <MenuIcon className={clsx('items-start text-gray-500 dark:text-gray-400', iconWidth)}>
             {item.iconImage ? (
-              <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+              <div className="relative inline-block">
+                <img src={item.iconImage} alt={item.title} className="w-6 h-6" />
+                {item.iconAbbr && (
+                  <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                    {item.iconAbbr}
+                  </span>
+                )}
+              </div>
             ) : item.icon && (
               <KeenIcon icon={item.icon} className={iconSize} />
             )}
@@ -214,7 +235,14 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
           >
             {item.iconImage ? (
               <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
-                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                <div className="relative inline-block">
+                  <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                  {item.iconAbbr && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                      {item.iconAbbr}
+                    </span>
+                  )}
+                </div>
               </MenuIcon>
             ) : item.icon ? (
               <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
@@ -265,7 +293,14 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
           >
             {item.iconImage ? (
               <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">
-                <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                <div className="relative inline-block">
+                  <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
+                  {item.iconAbbr && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                      {item.iconAbbr}
+                    </span>
+                  )}
+                </div>
               </MenuIcon>
             ) : item.icon ? (
               <MenuIcon className="items-center text-gray-600 dark:text-gray-500 menu-item-active:text-primary dark:menu-item-active:text-blue-400 menu-link-hover:!text-primary dark:menu-link-hover:!text-blue-400 w-[18px] mr-1.5">

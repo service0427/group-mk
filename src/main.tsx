@@ -1,3 +1,6 @@
+// Document 관련 폴리필 및 안전장치 - 가장 먼저 로드되어야 함
+import './utils/documentPolyfills';
+
 // WebSocket 브라우저 호환성 이슈 수정 (supabase 가져오기 전에 로드되어야 함)
 import './hooks/browser-ws-fix';
 

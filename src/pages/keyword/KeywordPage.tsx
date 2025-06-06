@@ -27,7 +27,7 @@ import { useAuthContext } from '@/auth';
 const KeywordPage: React.FC = () => {
   // 사용자 정보 가져오기
   const { userRole } = useAuthContext();
-  
+
   // 키워드 관리 훅 사용
   const {
     groups,
@@ -85,7 +85,7 @@ const KeywordPage: React.FC = () => {
     if (!selectedServiceType) {
       return [];
     }
-    
+
     return groups.filter(group => group.campaignType === selectedServiceType);
   }, [groups, selectedServiceType]);
 
@@ -171,7 +171,7 @@ const KeywordPage: React.FC = () => {
 
   // 서비스 타입 변경 핸들러
   const handleServiceTypeChange = (servicePath: string) => {
-    
+
     // kebab-case path를 CampaignServiceType enum 값으로 변환
     // 동적으로 변환 맵 생성
     const pathToServiceType: Record<string, string> = {};
@@ -185,10 +185,10 @@ const KeywordPage: React.FC = () => {
         .toLowerCase();
       pathToServiceType[kebabCase] = value;
     });
-    
+
     // 변환된 서비스 타입 또는 원본 유지
     const serviceType = pathToServiceType[servicePath] || servicePath;
-    
+
     setSelectedServiceType(serviceType);
     // 서비스 타입 변경 시 키워드 목록 초기화
     clearKeywords();
@@ -314,10 +314,10 @@ const KeywordPage: React.FC = () => {
 
       {/* 서비스 타입 탭 및 그룹 선택 영역 */}
       <Card className="mb-4 lg:mb-6">
-        <CardContent className="p-4 lg:p-6">
+        <CardContent className="p-3 sm:p-4 lg:p-6">
           {/* 서비스 타입 탭 */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">서비스</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">서비스</h3>
             <ServiceSelector
               selectedService={selectedServiceType}
               onServiceSelect={handleServiceTypeChange}
@@ -331,7 +331,7 @@ const KeywordPage: React.FC = () => {
 
           {/* 구분선 - 서비스 타입이 선택된 경우에만 표시 */}
           {selectedServiceType && (
-            <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
+            <div className="my-3 sm:my-4 border-t border-gray-200 dark:border-gray-700"></div>
           )}
 
           {/* 그룹 선택 버튼들 - 서비스 타입이 선택된 경우에만 표시 */}
@@ -339,8 +339,8 @@ const KeywordPage: React.FC = () => {
             <div className="space-y-2">
               {filteredGroups.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       그룹 선택
                       {selectedGroup && (
                         <span className="ml-2 text-xs text-gray-500">
@@ -353,8 +353,9 @@ const KeywordPage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setIsAddingGroup(true)}
+                      className="text-xs sm:text-sm"
                     >
-                      <KeenIcon icon="plus" className="size-4 mr-1" />
+                      <KeenIcon icon="plus" className="size-3 sm:size-4 mr-1" />
                       그룹 추가
                     </Button>
                   </div>
@@ -418,17 +419,17 @@ const KeywordPage: React.FC = () => {
                             setEditingGroupId(group.id);
                             setEditingGroupName(group.name);
                           }}
-                          className={`relative group ${selectedGroupId === group.id
-                              ? 'bg-blue-600 hover:bg-blue-700 border-blue-600'
-                              : ''
+                          className={`relative group text-xs sm:text-sm ${selectedGroupId === group.id
+                            ? 'bg-blue-600 hover:bg-blue-700 border-blue-600'
+                            : ''
                             }`}
                         >
-                          <span className="font-medium pr-8">
+                          <span className="font-medium pr-6 sm:pr-8">
                             {group.name}
                             {group.keywordCount !== undefined && group.keywordCount > 0 && (
                               <span className={`ml-2 text-xs ${selectedGroupId === group.id
-                                  ? 'text-white/80'
-                                  : 'text-gray-500'
+                                ? 'text-white/80'
+                                : 'text-gray-500'
                                 }`}>
                                 ({group.keywordCount})
                               </span>
@@ -436,8 +437,8 @@ const KeywordPage: React.FC = () => {
                           </span>
                           <span
                             className={`absolute right-2 ${selectedGroupId === group.id
-                                ? 'text-white/80 hover:text-white'
-                                : 'text-gray-400 hover:text-gray-600'
+                              ? 'text-white/80 hover:text-white'
+                              : 'text-gray-400 hover:text-gray-600'
                               }`}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -514,8 +515,8 @@ const KeywordPage: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 text-sm mb-2">
+                <div className="text-center py-3 sm:py-4">
+                  <p className="text-gray-500 text-xs sm:text-sm mb-2">
                     {isLoading ? '그룹 로딩 중...' : '사용 가능한 그룹이 없습니다'}
                   </p>
                   {!isLoading && (
@@ -534,8 +535,9 @@ const KeywordPage: React.FC = () => {
                           );
                         }
                       }}
+                      className="text-xs sm:text-sm"
                     >
-                      <KeenIcon icon="plus" className="size-4 mr-1" />
+                      <KeenIcon icon="plus" className="size-3 sm:size-4 mr-1" />
                       첫 그룹 만들기
                     </Button>
                   )}
@@ -574,15 +576,15 @@ const KeywordPage: React.FC = () => {
           onMoveKeywords={() => setIsMoveModalOpen(true)}
         />
       ) : (
-        <Card className="p-12 text-center">
+        <Card className="p-6 sm:p-8 lg:p-12 text-center">
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center justify-center space-x-4 mb-4">
-              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                <KeenIcon icon="information-2" className="size-6 text-gray-300" />
+            <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-700 dark:text-gray-300">
+                <KeenIcon icon="information-2" className="size-5 sm:size-6 text-gray-300" />
                 서비스 타입을 선택해주세요
               </h3>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-500 dark:text-gray-400 max-w-md px-4">
               상단의 서비스 타입 버튼을 클릭하여 관리할 키워드 그룹을 선택하세요.
               서비스 타입별로 키워드를 분류하여 효율적으로 관리할 수 있습니다.
             </p>

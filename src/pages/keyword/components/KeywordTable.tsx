@@ -53,18 +53,18 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 }) => {
   // 키워드 필드 설정 훅 사용
   const { getFieldConfig, isRequired, isHidden } = useKeywordFieldConfig(selectedGroup?.campaignType);
-  
+
   // 상태 관리
   const [searchText, setSearchText] = useState('');
   const navigate = useNavigate();
   const [editingKeywordId, setEditingKeywordId] = useState<number | null>(null);
-  
+
   // 알림 모달 상태
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogDescription, setDialogDescription] = useState('');
   const [dialogType, setDialogType] = useState<'error' | 'success'>('error');
-  
+
   // 삭제 확인 모달 상태
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -72,7 +72,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  
+
   // 입력 상태 관리
   const [newKeywordData, setNewKeywordData] = useState<KeywordInput>({
     mainKeyword: '',
@@ -84,7 +84,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     description: '',
     isActive: true, // 기본값을 활성 상태로 설정
   });
-  
+
   // 편집 상태 관리
   const [editingKeywordData, setEditingKeywordData] = useState<KeywordInput>({
     mainKeyword: '',
@@ -95,7 +95,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     keyword3: '',
     description: '',
   });
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mainKeywordRef = useRef<HTMLInputElement>(null);
   const midRef = useRef<HTMLInputElement>(null);
@@ -137,24 +137,24 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       }
 
       let label = header.defaultLabel;
-      
+
       if (header.field === 'keywords') {
         // keywords 필드는 keyword1, keyword2, keyword3의 라벨을 조합해서 표시
         const keyword1Label = getFieldLabel('keyword1', '키워드1');
         const keyword2Label = getFieldLabel('keyword2', '키워드2');
         const keyword3Label = getFieldLabel('keyword3', '키워드3');
-        
+
         // 보이는 키워드 필드들의 라벨을 조합
         const visibleKeywordLabels = [];
         if (!isHidden('keyword1')) visibleKeywordLabels.push(keyword1Label);
         if (!isHidden('keyword2')) visibleKeywordLabels.push(keyword2Label);
         if (!isHidden('keyword3')) visibleKeywordLabels.push(keyword3Label);
-        
+
         // keyword1, keyword2, keyword3이 모두 숨김이면 keywords 헤더도 숨김
         if (visibleKeywordLabels.length === 0) {
           return null;
         }
-        
+
         label = visibleKeywordLabels.join('/');
       } else if (!header.alwaysShow) {
         // 동적 필드는 설정된 라벨 사용
@@ -184,7 +184,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
     if (!isHidden('description')) count++;
     if (!isHidden('status')) count++;
     if (!isHidden('created_at')) count++;
-    
+
     // keywords 열은 keyword1, keyword2, keyword3 중 하나라도 보이면 표시
     if (!isHidden('keyword1') || !isHidden('keyword2') || !isHidden('keyword3')) count++;
     return count;
@@ -256,7 +256,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       */
       description: editingKeywordData.description ? editingKeywordData.description.trim() : undefined
     });
-    
+
     if (success) {
       setEditingKeywordId(null);
     }
@@ -293,7 +293,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   // URL 유효성 검사 함수
   const isValidUrl = (urlString: string): boolean => {
     if (!urlString) return true; // 빈 문자열은 허용 (선택 필드)
-    
+
     try {
       const url = new URL(urlString);
       // http 또는 https 프로토콜만 허용
@@ -369,131 +369,130 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
   // 페이지네이션 계산
   const totalPages = Math.ceil(totalKeywords / pagination.limit);
   const paginationRange = 2; // 현재 페이지 양쪽에 보여줄 페이지 수
-  
+
   const renderPaginationButtons = () => {
     const buttons = [];
-    
+
     // 첫 페이지로 이동 버튼
     buttons.push(
       <button
         key="first"
         onClick={() => onPageChange(1)}
         disabled={pagination.page === 1 || isLoading}
-        className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
+        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
       >
         &laquo;
       </button>
     );
-    
+
     // 이전 페이지로 이동 버튼
     buttons.push(
       <button
         key="prev"
         onClick={() => onPageChange(pagination.page - 1)}
         disabled={pagination.page === 1 || isLoading}
-        className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
+        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
       >
         &lt;
       </button>
     );
-    
+
     // 페이지 번호 버튼들
     const startPage = Math.max(1, pagination.page - paginationRange);
     const endPage = Math.min(totalPages, pagination.page + paginationRange);
-    
+
     // 시작 페이지가 1보다 크면 첫 페이지 표시
     if (startPage > 1) {
       buttons.push(
         <button
           key={1}
           onClick={() => onPageChange(1)}
-          className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
         >
           1
         </button>
       );
-      
+
       // 생략 표시
       if (startPage > 2) {
         buttons.push(
-          <span key="dots1" className="px-3 py-1 dark:text-white">
+          <span key="dots1" className="px-1 sm:px-3 py-1 text-xs sm:text-sm dark:text-white">
             ...
           </span>
         );
       }
     }
-    
+
     // 페이지 번호들
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <button
           key={i}
           onClick={() => onPageChange(i)}
-          className={`px-3 py-1 rounded-md ${
-            pagination.page === i
+          className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md ${pagination.page === i
               ? 'bg-primary-500 text-white'
               : 'border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-          }`}
+            }`}
         >
           {i}
         </button>
       );
     }
-    
+
     // 마지막 페이지가 totalPages보다 작으면 마지막 페이지 표시
     if (endPage < totalPages) {
       // 생략 표시
       if (endPage < totalPages - 1) {
         buttons.push(
-          <span key="dots2" className="px-3 py-1 dark:text-white">
+          <span key="dots2" className="px-1 sm:px-3 py-1 text-xs sm:text-sm dark:text-white">
             ...
           </span>
         );
       }
-      
+
       buttons.push(
         <button
           key={totalPages}
           onClick={() => onPageChange(totalPages)}
-          className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
         >
           {totalPages}
         </button>
       );
     }
-    
+
     // 다음 페이지로 이동 버튼
     buttons.push(
       <button
         key="next"
         onClick={() => onPageChange(pagination.page + 1)}
         disabled={pagination.page === totalPages || isLoading}
-        className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
+        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
       >
         &gt;
       </button>
     );
-    
+
     // 마지막 페이지로 이동 버튼
     buttons.push(
       <button
         key="last"
         onClick={() => onPageChange(totalPages)}
         disabled={pagination.page === totalPages || isLoading}
-        className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
+        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:text-white"
       >
         &raquo;
       </button>
     );
-    
+
     return buttons;
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h2 className="text-base font-bold text-blue-800 dark:text-blue-300">
+      <div className="p-2 sm:p-3 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+          <h2 className="text-sm sm:text-base font-bold text-blue-800 dark:text-blue-300">
             {selectedGroup ? `${selectedGroup.name} 키워드` : '키워드 관리'}
             <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
               총 {totalKeywords}개
@@ -501,19 +500,19 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           </h2>
 
           {/* 검색 폼 */}
-          <div className="flex w-full sm:w-auto gap-2">
-            <form onSubmit={handleSearch} className="flex">
+          <div className="flex flex-wrap w-full sm:w-auto gap-2">
+            <form onSubmit={handleSearch} className="flex flex-1 sm:flex-initial">
               <input
                 type="text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="키워드 검색"
-                className="flex-1 px-2 py-1 text-xs border border-blue-300 dark:border-blue-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="flex-1 px-2 py-1 text-xs border border-blue-300 dark:border-blue-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-w-0"
                 ref={searchInputRef}
               />
               <button
                 type="submit"
-                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-r-md"
+                className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 sm:px-3 py-1 rounded-r-md"
               >
                 검색
               </button>
@@ -521,30 +520,30 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             {selectedGroup && (() => {
               const serviceType = selectedGroup.campaignType;
               const upperServiceType = serviceType?.toUpperCase() || '';
-              
+
               // NS 또는 NP 서비스인지 확인
-              const isNaverService = upperServiceType.includes('PLACE') || 
-                                   upperServiceType.includes('NP') ||
-                                   serviceType?.includes('NaverPlace') ||
-                                   upperServiceType.includes('SHOPPING') || 
-                                   upperServiceType.includes('NS') ||
-                                   serviceType?.includes('NaverShopping');
-              
+              const isNaverService = upperServiceType.includes('PLACE') ||
+                upperServiceType.includes('NP') ||
+                serviceType?.includes('NaverPlace') ||
+                upperServiceType.includes('SHOPPING') ||
+                upperServiceType.includes('NS') ||
+                serviceType?.includes('NaverShopping');
+
               // 네이버 서비스인 경우에만 버튼 표시
               if (isNaverService) {
                 return (
                   <Button
                     onClick={() => {
                       // 서비스 타입에 따라 적절한 검색 페이지로 이동
-                      if (upperServiceType.includes('PLACE') || 
-                          upperServiceType.includes('NP') ||
-                          serviceType?.includes('NaverPlace')) {
+                      if (upperServiceType.includes('PLACE') ||
+                        upperServiceType.includes('NP') ||
+                        serviceType?.includes('NaverPlace')) {
                         navigate('/search-place');
                       } else {
                         navigate('/search-shop');
                       }
                     }}
-                    variant="outline" 
+                    variant="outline"
                     size="sm"
                     className="text-xs bg-purple-500 hover:bg-purple-600 text-white border-purple-500 hover:border-purple-600"
                   >
@@ -585,14 +584,15 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </>
             )}
             {onOpenUploadModal && (
-              <button 
+              <button
                 onClick={onOpenUploadModal}
-                className="flex items-center bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 rounded-md"
+                className="flex items-center bg-green-500 hover:bg-green-600 text-white text-xs px-2 sm:px-3 py-1 rounded-md"
               >
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                엑셀 업로드
+                <span className="hidden sm:inline">엑셀 업로드</span>
+                <span className="sm:hidden">업로드</span>
               </button>
             )}
           </div>
@@ -600,8 +600,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       </div>
 
       {/* 새 키워드 추가 폼 */}
-      <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30">
-        <form onSubmit={handleAddKeyword} className="flex flex-wrap items-end gap-2 w-full">
+      <div className="p-2 sm:p-3 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30">
+        <form onSubmit={handleAddKeyword} className="flex flex-wrap items-end gap-1 sm:gap-2 w-full">
           {!isHidden('main_keyword') && (
             <div className="w-full sm:w-auto sm:flex-grow-0 sm:min-w-[120px] sm:max-w-[180px]">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -667,11 +667,10 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 value={newKeywordData.url}
                 onChange={(e) => handleNewKeywordChange(e, 'url')}
                 placeholder={getFieldPlaceholder('url', 'URL')}
-                className={`w-full px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800 ${
-                  newKeywordData.url && !isValidUrl(newKeywordData.url) 
-                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500' 
+                className={`w-full px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800 ${newKeywordData.url && !isValidUrl(newKeywordData.url)
+                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500'
                     : 'border-green-300 dark:border-green-700 focus:ring-green-500'
-                }`}
+                  }`}
                 disabled={isLoading}
                 required={isRequired('url')}
                 ref={urlRef}
@@ -753,7 +752,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               />
             </div>
           )}
-          
+
           <div className="w-full sm:w-auto sm:flex-grow flex-shrink-0 sm:flex-shrink-0 mt-1 sm:mt-0">
             <div className="flex items-end gap-2 w-full">
               {!isHidden('description') && (
@@ -785,7 +784,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       {/* 키워드 테이블 */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-300 dark:border-gray-600">
-          <thead className="bg-blue-100 dark:bg-blue-800">
+          <thead className="bg-blue-100 dark:bg-blue-800 sticky top-0 z-10">
             <tr>
               {renderTableHeaders()}
             </tr>
@@ -811,18 +810,17 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </tr>
             ) : (
               keywords.map((keyword) => (
-                <tr 
-                  key={keyword.id} 
-                  className={`h-8 cursor-pointer transition-colors ${
-                    selectedKeywordIds.includes(keyword.id) 
-                      ? 'bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 border-l-4 border-purple-500' 
+                <tr
+                  key={keyword.id}
+                  className={`h-8 cursor-pointer transition-colors ${selectedKeywordIds.includes(keyword.id)
+                      ? 'bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 border-l-4 border-purple-500'
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                  }`}
+                    }`}
                   onClick={(e) => {
                     // 작업 버튼 영역 클릭은 제외
                     const target = e.target as HTMLElement;
                     if (target.closest('.actions-cell') || target.closest('.status-cell') || target.closest('button') || target.closest('input') || target.closest('label')) return;
-                    
+
                     if (selectedKeywordIds.includes(keyword.id)) {
                       onSelectionChange?.(selectedKeywordIds.filter(id => id !== keyword.id));
                     } else {
@@ -838,14 +836,14 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                       </div>
                     </td>
                   )}
-                  
+
                   {/* 사용중 (서비스) */}
                   <td className="px-2 py-2 border-r border-gray-300 dark:border-gray-600">
                     {keyword.activeSlots && keyword.activeSlots.length > 0 ? (
                       <div className="flex items-center gap-1 justify-center">
                         {keyword.activeSlots.map((slot, index) => (
-                          <div 
-                            key={slot.id} 
+                          <div
+                            key={slot.id}
                             className="relative"
                             onMouseEnter={(e) => {
                               const rect = e.currentTarget.getBoundingClientRect();
@@ -858,8 +856,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                             onMouseLeave={() => setHoveredSlotId(null)}
                           >
                             {slot.campaignLogo ? (
-                              <img 
-                                src={slot.campaignLogo} 
+                              <img
+                                src={slot.campaignLogo}
                                 alt={slot.campaignName}
                                 className="w-5 h-5 object-contain rounded border border-gray-200 dark:border-gray-600"
                                 onError={(e) => {
@@ -871,7 +869,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                                 }}
                               />
                             ) : null}
-                            <div 
+                            <div
                               className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center"
                               style={{ display: slot.campaignLogo ? 'none' : 'flex' }}
                             >
@@ -886,7 +884,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                       <div className="text-xs text-gray-500 dark:text-gray-400 text-center">-</div>
                     )}
                   </td>
-                  
+
                   {/* MID */}
                   {!isHidden('mid') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
@@ -895,7 +893,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                       </div>
                     </td>
                   )}
-                  
+
                   {/* URL */}
                   {!isHidden('url') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
@@ -915,7 +913,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                       </div>
                     </td>
                   )}
-                  
+
                   {/* 키워드 */}
                   {(!isHidden('keyword1') || !isHidden('keyword2') || !isHidden('keyword3')) && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
@@ -930,34 +928,34 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                       </div>
                     </td>
                   )}
-                  
+
                   {/* 상태 (스위치 버튼으로 변경) */}
                   {!isHidden('status') && (
                     <td className="px-2 py-1 text-center border-r border-gray-300 dark:border-gray-600 status-cell">
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input
-                        type="checkbox"
-                        id={`status-${keyword.id}`}
-                        checked={keyword.isActive}
-                        onChange={() => handleToggleActive(keyword.id, keyword.isActive)}
-                        className="sr-only peer"
-                        disabled={isLoading}
-                      />
-                      <label 
-                        htmlFor={`status-${keyword.id}`}
-                        className="block overflow-hidden h-6 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer 
+                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input
+                          type="checkbox"
+                          id={`status-${keyword.id}`}
+                          checked={keyword.isActive}
+                          onChange={() => handleToggleActive(keyword.id, keyword.isActive)}
+                          className="sr-only peer"
+                          disabled={isLoading}
+                        />
+                        <label
+                          htmlFor={`status-${keyword.id}`}
+                          className="block overflow-hidden h-6 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer 
                           peer-checked:bg-green-500 peer-disabled:cursor-not-allowed"
-                      >
-                        <span 
-                          className={`block h-6 w-6 rounded-full shadow transform transition-transform 
+                        >
+                          <span
+                            className={`block h-6 w-6 rounded-full shadow transform transition-transform 
                           ${keyword.isActive ? 'translate-x-4 bg-white' : 'translate-x-0 bg-white'} 
                           peer-disabled:bg-gray-300 dark:peer-disabled:bg-gray-600`}
-                        />
-                      </label>
-                    </div>
+                          />
+                        </label>
+                      </div>
                     </td>
                   )}
-                  
+
                   {/* 설명 */}
                   {!isHidden('description') && (
                     <td className="px-2 py-1 border-r border-gray-300 dark:border-gray-600">
@@ -984,7 +982,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                         {keyword.createdAt ? new Date(keyword.createdAt).toLocaleDateString() : '-'}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {keyword.createdAt ? new Date(keyword.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        {keyword.createdAt ? new Date(keyword.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </div>
                     </td>
                   )}
@@ -1033,13 +1031,13 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       </div>
 
       {/* 페이지네이션 */}
-      <div className="px-2 py-2 flex flex-col sm:flex-row justify-between items-center border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center mb-4 sm:mb-0">
-          <span className="mr-2 text-xs text-gray-700 dark:text-gray-300">페이지당 항목:</span>
+      <div className="px-2 py-2 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center">
+          <span className="mr-2 text-xs text-gray-700 dark:text-gray-300">페이지당:</span>
           <select
             value={pagination.limit}
             onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="border border-gray-300 dark:border-gray-600 rounded-md py-1 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+            className="select border border-gray-300 dark:border-gray-600 rounded-md py-1 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
             disabled={isLoading}
           >
             {[10, 25, 50, 100].map((limit) => (
@@ -1049,19 +1047,19 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             ))}
           </select>
         </div>
-        
+
         {totalPages > 0 && (
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap justify-center gap-1">
             {renderPaginationButtons()}
           </div>
         )}
       </div>
-      
+
       {/* 툴팁 Portal */}
-      {hoveredSlotId && keywords.map(keyword => 
-        keyword.activeSlots?.map(slot => 
+      {hoveredSlotId && keywords.map(keyword =>
+        keyword.activeSlots?.map(slot =>
           slot.id === hoveredSlotId ? ReactDOM.createPortal(
-            <div 
+            <div
               className="fixed z-[99999] pointer-events-none"
               style={{
                 top: `${tooltipPosition.top}px`,
@@ -1085,18 +1083,16 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
           {/* 헤더 영역 */}
-          <div className={`px-6 py-4 ${
-            dialogType === 'success' 
-              ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20' 
+          <div className={`px-6 py-4 ${dialogType === 'success'
+              ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
               : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
-          }`}>
+            }`}>
             <DialogHeader className="flex flex-row items-center gap-3">
               {/* 아이콘 */}
-              <div className={`flex-shrink-0 p-3 rounded-full ${
-                dialogType === 'success' 
-                  ? 'bg-green-100 dark:bg-green-800/30' 
+              <div className={`flex-shrink-0 p-3 rounded-full ${dialogType === 'success'
+                  ? 'bg-green-100 dark:bg-green-800/30'
                   : 'bg-red-100 dark:bg-red-800/30'
-              }`}>
+                }`}>
                 {dialogType === 'success' ? (
                   <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1107,30 +1103,28 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                   </svg>
                 )}
               </div>
-              <DialogTitle className={`text-lg font-semibold ${
-                dialogType === 'success' ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
-              }`}>
+              <DialogTitle className={`text-lg font-semibold ${dialogType === 'success' ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
+                }`}>
                 {dialogTitle}
               </DialogTitle>
             </DialogHeader>
           </div>
-          
+
           {/* 내용 영역 */}
           <div className="px-6 py-4">
             <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
               {dialogDescription}
             </DialogDescription>
           </div>
-          
+
           {/* 버튼 영역 */}
           <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3">
             <Button
               onClick={() => setDialogOpen(false)}
-              className={`w-full sm:w-auto ${
-                dialogType === 'success' 
-                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800' 
+              className={`w-full sm:w-auto ${dialogType === 'success'
+                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
                   : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-              } text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md`}
+                } text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md`}
             >
               확인
             </Button>
@@ -1155,7 +1149,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </DialogTitle>
             </DialogHeader>
           </div>
-          
+
           {/* 내용 영역 */}
           <div className="px-6 py-6">
             <div className="flex items-start gap-3">
@@ -1174,7 +1168,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
               </div>
             </div>
           </div>
-          
+
           {/* 버튼 영역 */}
           <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 flex gap-2 justify-end">
             <Button

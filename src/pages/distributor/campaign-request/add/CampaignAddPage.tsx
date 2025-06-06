@@ -255,118 +255,123 @@ const CampaignAddPage: React.FC = () => {
         </div>
 
         {/* 버튼 - 푸터 영역 */}
-        <div className="flex justify-end items-center py-5 px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-          {/* 에러 메시지 */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 px-4 sm:px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 gap-3">
+          {/* 에러 메시지 - 모바일에서 상단 표시 */}
           {error && (
-            <div className="flex items-center text-red-600 text-sm mr-3">
-              <KeenIcon icon="information-circle" className="size-4 mr-1.5" />
-              <span>{error}</span>
+            <div className="flex items-center text-red-600 text-sm order-first sm:order-none w-full sm:w-auto">
+              <KeenIcon icon="information-2" className="size-4 mr-1.5 flex-shrink-0" />
+              <span className="break-words">{error}</span>
             </div>
           )}
 
           {/* 버튼 그룹 */}
-          <div className="flex items-center gap-3">
-            {/* 미리보기 버튼 */}
-            <Button
-              onClick={() => setCampaignPreviewModalOpen(true)}
-              variant="outline"
-              className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
-              disabled={loading}
-            >
-              <KeenIcon icon="eye" className="me-1.5 size-4" />
-              미리보기
-            </Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            {/* 모바일: 미리보기와 취소 버튼을 한 줄에 */}
+            <div className="flex gap-2 sm:contents">
+              {/* 미리보기 버튼 */}
+              <Button
+                onClick={() => setCampaignPreviewModalOpen(true)}
+                variant="outline"
+                className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700 flex-1 sm:flex-initial"
+                disabled={loading}
+              >
+                <KeenIcon icon="eye" className="me-1.5 size-4" />
+                <span className="hidden sm:inline">미리보기</span>
+                <span className="sm:hidden">미리보기</span>
+              </Button>
 
-            {/* 캠페인 등록 신청 버튼 */}
+              {/* 취소 버튼 */}
+              <Button
+                onClick={() => navigate('/campaign-request')}
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 flex-1 sm:flex-initial"
+                disabled={loading}
+              >
+                취소
+              </Button>
+            </div>
+
+            {/* 캠페인 등록 신청 버튼 - 모바일에서 전체 너비 */}
             <Button
               onClick={handleSave}
-              className="bg-success hover:bg-success/90 text-white"
+              className="bg-success hover:bg-success/90 text-white w-full sm:w-auto"
               disabled={loading}
             >
               {loading ? (
-                <span className="flex items-center">
+                <span className="flex items-center justify-center">
                   <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
                   신청 중...
                 </span>
-              ) : '캠페인 등록 신청'}
-            </Button>
-
-            {/* 취소 버튼 */}
-            <Button
-              onClick={() => navigate('/campaign-request')}
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              disabled={loading}
-            >
-              취소
+              ) : (
+                <span className="flex items-center justify-center">
+                  <KeenIcon icon="add-files" className="me-1.5 size-4" />
+                  캠페인 등록 신청
+                </span>
+              )}
             </Button>
           </div>
         </div>
       </Card>
 
-      {/* 배너 이미지 미리보기 모달 - 사업자등록증 스타일 적용 */}
+      {/* 배너 이미지 미리보기 모달 - 모바일 최적화 */}
       {bannerPreviewModalOpen && ReactDOM.createPortal(
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/80 z-[9999]"
-          onClick={() => setBannerPreviewModalOpen(false)} // 배경 클릭 시 모달 닫기
-          style={{ width: '100vw', height: '100vh' }}
+          className="fixed inset-0 flex items-center justify-center bg-black/90 z-[9999]"
+          onClick={() => setBannerPreviewModalOpen(false)}
         >
           <div
-            className="relative max-w-4xl w-full max-h-[90vh] overflow-auto bg-white rounded-lg p-1 m-4 z-[10000]"
-            onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 이벤트 전파 방지
+            className="relative w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg p-0 m-2 sm:m-4 z-[10000]"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* 우측 상단 닫기 버튼 */}
+            {/* 우측 상단 닫기 버튼 - 모바일에서 크기 조정 */}
             <button
               onClick={() => setBannerPreviewModalOpen(false)}
-              className="absolute top-3 right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-all"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center shadow-lg transition-all"
               aria-label="닫기"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
             {/* 상단 닫기 텍스트 배너 */}
-            <div className="bg-gray-800/90 text-white py-2 px-4 text-center mb-2">
+            <div className="bg-gray-800/90 text-white py-2 px-3 sm:px-4 text-center">
               <button
                 onClick={() => setBannerPreviewModalOpen(false)}
-                className="flex items-center justify-center w-full"
+                className="flex items-center justify-center w-full text-sm sm:text-base"
               >
-                <span>배너 이미지 (클릭하여 닫기)</span>
-                <div className="ml-2 inline-flex">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
+                <span>배너 이미지 (탭하여 닫기)</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center p-2 sm:p-4">
               {bannerImagePreviewUrl ? (
                 <img
                   src={bannerImagePreviewUrl}
                   alt="배너 이미지"
-                  className="max-h-[70vh] object-contain"
-                  style={{ maxWidth: '100%' }}
+                  className="max-h-[60vh] sm:max-h-[70vh] object-contain w-full"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
                   }}
                 />
               ) : (
                 <div className="flex justify-center items-center h-40 text-muted-foreground">
-                  <p>이미지를 찾을 수 없습니다.</p>
+                  <p className="text-sm sm:text-base">이미지를 찾을 수 없습니다.</p>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-center items-center gap-4 mt-4 pb-2">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 p-3 sm:p-4 border-t">
               <a
                 href={bannerImagePreviewUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors w-full sm:w-auto text-sm sm:text-base"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
                 <span>새 탭에서 열기</span>
@@ -374,9 +379,9 @@ const CampaignAddPage: React.FC = () => {
 
               <button
                 onClick={() => setBannerPreviewModalOpen(false)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors w-full sm:w-auto text-sm sm:text-base"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <span>닫기</span>
@@ -387,15 +392,14 @@ const CampaignAddPage: React.FC = () => {
         document.body
       )}
 
-      {/* 캠페인 미리보기 다이얼로그 */}
+      {/* 캠페인 미리보기 다이얼로그 - 모바일 최적화 */}
       <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-4 border-primary">
-          <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-4 px-6 border-b sticky top-0 z-10 shadow-sm">
-            <DialogTitle className="text-lg font-medium text-foreground flex items-center">
-              <KeenIcon icon="eye" className="mr-2 text-primary size-5" />
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary">
+          <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 sm:py-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
+            <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
+              <KeenIcon icon="eye" className="mr-2 text-primary size-4 sm:size-5" />
               캠페인 상세정보(미리보기)
             </DialogTitle>
-            <div className="ml-auto"></div>
           </DialogHeader>
           <div className="bg-background flex flex-col max-h-[80vh] w-full">
             <div className="flex-shrink-0">
@@ -440,9 +444,9 @@ const CampaignAddPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 캠페인 헤더 정보 */}
-              <div className="bg-background border-b px-5 py-3">
-                <div className="flex items-center gap-4">
+              {/* 캠페인 헤더 정보 - 모바일 최적화 */}
+              <div className="bg-background border-b px-4 py-3 sm:px-5">
+                <div className="flex items-center gap-3 sm:gap-4">
                   {/* 로고 이미지: 업로드된 이미지 우선, 선택된 동물 로고, 또는 랜덤 동물 로고 */}
                   <img
                     src={(() => {
@@ -464,7 +468,7 @@ const CampaignAddPage: React.FC = () => {
                       const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
                       return toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
                     })()}
-                    className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
+                    className="rounded-full size-10 sm:size-12 shrink-0 border border-gray-100 shadow-sm"
                     alt="캠페인 로고"
                     onError={(e) => {
                       // 에러 발생시 다른 랜덤 동물로 재시도
@@ -478,10 +482,10 @@ const CampaignAddPage: React.FC = () => {
                       (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
                     }}
                   />
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground flex items-center">
-                      {formData.campaignName || '(캠페인 이름을 입력해주세요)'}
-                      <span className="badge badge-success badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center flex-wrap gap-2">
+                      <span className="truncate">{formData.campaignName || '(캠페인 이름을 입력해주세요)'}</span>
+                      <span className="badge badge-success badge-outline rounded-[30px] h-auto py-0.5 text-xs whitespace-nowrap">
                         <span className="size-1.5 rounded-full bg-success me-1.5"></span>
                         진행중
                       </span>
@@ -491,55 +495,55 @@ const CampaignAddPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 스크롤 가능한 콘텐츠 영역 */}
-            <div className="flex-grow overflow-y-auto p-6">
-              <div className="space-y-6">
-                {/* 상단: 주요 정보 요약 카드 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="bg-white p-4 rounded-xl border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <KeenIcon icon="wallet" className="text-primary size-5" />
-                      <div className="text-sm text-muted-foreground">건당 단가</div>
+            {/* 스크롤 가능한 콘텐츠 영역 - 모바일 최적화 */}
+            <div className="flex-grow overflow-y-auto p-4 sm:p-6">
+              <div className="space-y-4 sm:space-y-6">
+                {/* 상단: 주요 정보 요약 카드 - 모바일에서 2열로 표시 */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                      <KeenIcon icon="wallet" className="text-primary size-4 sm:size-5" />
+                      <div className="text-xs sm:text-sm text-muted-foreground">건당 단가</div>
                     </div>
-                    <div className="text-xl font-bold text-primary">
+                    <div className="text-lg sm:text-xl font-bold text-primary">
                       {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}
                     </div>
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <KeenIcon icon="basket" className="text-orange-500 size-5" />
-                      <div className="text-sm text-muted-foreground">최소 수량</div>
+                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                      <KeenIcon icon="basket" className="text-orange-500 size-4 sm:size-5" />
+                      <div className="text-xs sm:text-sm text-muted-foreground">최소 수량</div>
                     </div>
-                    <div className="text-xl font-bold text-orange-600">
+                    <div className="text-lg sm:text-xl font-bold text-orange-600">
                       {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}
                     </div>
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <KeenIcon icon="rocket" className="text-green-500 size-5" />
-                      <div className="text-sm text-muted-foreground">상승효율</div>
+                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border col-span-2 sm:col-span-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                      <KeenIcon icon="rocket" className="text-green-500 size-4 sm:size-5" />
+                      <div className="text-xs sm:text-sm text-muted-foreground">상승효율</div>
                     </div>
-                    <div className="text-xl font-bold text-green-600">
+                    <div className="text-lg sm:text-xl font-bold text-green-600">
                       60%
                     </div>
                   </div>
                 </div>
 
-                {/* 중간: 캠페인 설명 */}
+                {/* 중간: 캠페인 설명 - 모바일 최적화 */}
                 <div>
-                  <h3 className="text-lg font-medium text-foreground mb-3">캠페인 정보</h3>
-                  <div className="bg-white border border-border p-5 rounded-xl text-md text-foreground">
-                    <div className="mb-4">
-                      <h4 className="font-medium text-primary mb-2">설명</h4>
-                      <p className="text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-3 rounded-md border border-blue-100/50">
+                  <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">캠페인 정보</h3>
+                  <div className="bg-white border border-border p-4 sm:p-5 rounded-lg sm:rounded-xl text-sm sm:text-md text-foreground">
+                    <div className="mb-3 sm:mb-4">
+                      <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">설명</h4>
+                      <p className="text-xs sm:text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-2.5 sm:p-3 rounded-md border border-blue-100/50">
                         {formData.description || '(캠페인 설명을 입력해주세요)'}
                       </p>
                     </div>
 
-                    <div className="mb-4">
-                      <h4 className="font-medium text-primary mb-2">상세 설명</h4>
-                      <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
-                        <p className="whitespace-pre-line text-gray-700">
+                    <div className="mb-3 sm:mb-4">
+                      <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">상세 설명</h4>
+                      <div className="max-h-[150px] sm:max-h-[200px] overflow-y-auto pr-1 sm:pr-2 rounded-md p-2.5 sm:p-3 bg-blue-50/30">
+                        <p className="whitespace-pre-line text-gray-700 text-xs sm:text-sm">
                           {formData.detailedDescription && formData.detailedDescription !== formData.description ?
                             formData.detailedDescription :
                             (formData.description || '(캠페인 상세 설명을 입력해주세요)')}
@@ -549,11 +553,11 @@ const CampaignAddPage: React.FC = () => {
 
                     {formData.userInputFields && formData.userInputFields.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-primary mb-2">사용자 입력 필드</h4>
-                        <div className="max-h-[150px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
-                          <div className="space-y-2">
+                        <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">사용자 입력 필드</h4>
+                        <div className="max-h-[120px] sm:max-h-[150px] overflow-y-auto pr-1 sm:pr-2 rounded-md p-2.5 sm:p-3 bg-blue-50/30">
+                          <div className="space-y-1.5 sm:space-y-2">
                             {formData.userInputFields.map((field, index) => (
-                              <div key={index} className="flex gap-2 items-center text-sm">
+                              <div key={index} className="flex gap-1.5 sm:gap-2 items-center text-xs sm:text-sm">
                                 <span className="flex items-center gap-1">
                                   <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
                                   {field.isRequired && (
@@ -561,7 +565,7 @@ const CampaignAddPage: React.FC = () => {
                                   )}
                                 </span>
                                 <span className="text-gray-400">→</span>
-                                <span className="text-gray-700">{field.description || "(설명 없음)"}</span>
+                                <span className="text-gray-700 break-words">{field.description || "(설명 없음)"}</span>
                               </div>
                             ))}
                           </div>
@@ -571,11 +575,11 @@ const CampaignAddPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 가이드라인 */}
+                {/* 가이드라인 - 모바일 최적화 */}
                 <div>
-                  <h3 className="text-lg font-medium text-foreground mb-3">캠페인 가이드라인</h3>
-                  <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border">
-                    <ul className="list-disc list-inside space-y-1.5">
+                  <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">캠페인 가이드라인</h3>
+                  <div className="bg-white p-4 sm:p-5 rounded-lg sm:rounded-xl text-xs sm:text-md text-muted-foreground border border-border">
+                    <ul className="list-disc list-inside space-y-1 sm:space-y-1.5">
                       <li>해당 캠페인 건당 단가는 {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}입니다.</li>
                       <li>최소 구매 수량은 {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}입니다.</li>
                       <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
@@ -583,16 +587,16 @@ const CampaignAddPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 서비스 유형별 추가 정보 */}
+                {/* 서비스 유형별 추가 정보 - 모바일 최적화 */}
                 {serviceType && Object.keys(additionalFields).length > 0 && (
                   <div>
-                    <h3 className="text-lg font-medium text-foreground mb-3">{getServiceTypeName(serviceType)} 정보</h3>
-                    <div className="bg-white p-5 rounded-xl border border-border">
-                      <div className="grid gap-4">
+                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">{getServiceTypeName(serviceType)} 정보</h3>
+                    <div className="bg-white p-4 sm:p-5 rounded-lg sm:rounded-xl border border-border">
+                      <div className="grid gap-3 sm:gap-4">
                         {Object.entries(additionalFields).map(([fieldKey, fieldValue]) => (
                           <div key={fieldKey} className="flex flex-col">
-                            <span className="font-medium text-muted-foreground text-sm mb-1">{fieldKey}</span>
-                            <span className="text-foreground">{fieldValue || '-'}</span>
+                            <span className="font-medium text-muted-foreground text-xs sm:text-sm mb-1">{fieldKey}</span>
+                            <span className="text-foreground text-sm sm:text-base">{fieldValue || '-'}</span>
                           </div>
                         ))}
                       </div>
@@ -600,13 +604,13 @@ const CampaignAddPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* 미리보기 알림 */}
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md text-blue-600 dark:text-blue-300">
+                {/* 미리보기 알림 - 모바일 최적화 */}
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-md text-blue-600 dark:text-blue-300">
                   <div className="flex items-start">
-                    <KeenIcon icon="information-circle" className="size-5 mr-2 shrink-0 mt-0.5" />
+                    <KeenIcon icon="information-2" className="size-4 sm:size-5 mr-1.5 sm:mr-2 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium">미리보기 모드</p>
-                      <p className="text-sm mt-1">이 화면은 캠페인이 등록된 후 어떻게 보일지를 미리 보여주는 화면입니다. 실제 데이터는 저장 전까지 반영되지 않습니다.</p>
+                      <p className="font-medium text-sm sm:text-base">미리보기 모드</p>
+                      <p className="text-xs sm:text-sm mt-1">이 화면은 캠페인이 등록된 후 어떻게 보일지를 미리 보여주는 화면입니다. 실제 데이터는 저장 전까지 반영되지 않습니다.</p>
                     </div>
                   </div>
                 </div>

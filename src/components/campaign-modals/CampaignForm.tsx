@@ -209,7 +209,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
   // 스타일 클래스 정의
   const containerClass = isModal ? "" : "overflow-hidden border border-border rounded-lg mb-6 shadow-sm";
-  const headerClass = isModal ? "bg-background py-4 px-5 border-b sticky top-0 z-10 shadow-sm" : "flex items-center p-6";
+  const headerClass = isModal ? "bg-background py-4 px-3 sm:px-5 border-b sticky top-0 z-10 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" : "flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-6 gap-4";
   const tableClass = isModal ? "min-w-full divide-y divide-border" : "min-w-full divide-y divide-border";
 
   return (
@@ -225,7 +225,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       {/* 헤더 정보 - 표 스타일로 통일 */}
       <div className={`${containerClass} bg-white dark:bg-gray-800/20`}>
         <div className={headerClass}>
-          <div className="relative flex-shrink-0 mr-4">
+          <div className="relative flex-shrink-0 mx-auto sm:mx-0 sm:mr-4">
             {previewUrl || formData.logo ? (
               <img
                 src={previewUrl || toAbsoluteUrl(`/media/${formData.logo}`)}
@@ -246,11 +246,11 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             />
           </div>
           <div className="flex-1 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <Button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                className="bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto"
                 size="sm"
                 disabled={loading}
               >
@@ -258,9 +258,9 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 로고 이미지 업로드
               </Button>
 
-              <span className="text-sm font-medium text-gray-500 mx-2">또는</span>
+              <span className="text-sm font-medium text-gray-500 hidden sm:inline mx-2">또는</span>
 
-              <div className="w-64">
+              <div className="w-full sm:w-64">
                 {isModal ? (
                   <select
                     value={previewUrl ? 'none' : (formData.logo || 'none')}
@@ -405,9 +405,9 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               />
             )}
             
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요. 
-              <span className="text-blue-500">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span>
+              <span className="text-blue-500 block sm:inline">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span>
             </p>
           </div>
         </div>

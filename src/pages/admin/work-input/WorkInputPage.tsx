@@ -101,6 +101,7 @@ export const WorkInputPage: React.FC = () => {
           isLoading={isLoading}
           matId={currentUser?.id || ''}
           isAdmin={isAdmin}
+          userRole={currentUser?.role}
         />
       )}
     </DashboardTemplate>

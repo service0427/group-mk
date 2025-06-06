@@ -1,0 +1,71 @@
+/* FAQ 페이지 모바일 오버플로우 문제 해결 */
+@media (max-width: 768px) {
+  /* FAQ 컨테이너의 수평 스크롤 방지 */
+  .page-template-wrapper {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* 카드 내부 콘텐츠 래핑 강제 */
+  .card {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* 긴 텍스트 강제 줄바꿈 */
+  .whitespace-pre-line {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* 버튼 컨테이너 스크롤 허용 */
+  .flex.flex-wrap.gap-2.overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    max-width: 100%;
+  }
+
+  /* 모바일에서 과도한 패딩 조정 */
+  .container-full-width {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* FAQ 아코디언 항목 오버플로우 방지 */
+  .accordion-item {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* FAQ 질문/답변 텍스트 영역 */
+  .break-words {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    hyphens: auto;
+  }
+
+  /* 작은 화면에서 flex 아이템 정렬 */
+  .flex-1 {
+    min-width: 0; /* flexbox 내부 텍스트 오버플로우 방지 */
+  }
+}
+
+/* iOS Safari 오버플로우 문제 해결 */
+@supports (-webkit-touch-callout: none) {
+  .page-template-wrapper {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* iOS에서 overflow-wrap 지원 */
+  .break-words {
+    word-break: break-word !important;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+}

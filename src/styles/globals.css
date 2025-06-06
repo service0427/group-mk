@@ -24,3 +24,29 @@
 @import "card-fix.css"; /* 카드 스타일 통일 */
 @import "css/hide-scrollbar.css"; /* 모바일 스크롤바 숨기기 */
 @import "css/menu-active-child.css"; /* 메뉴 활성 상태 스타일 */
+
+/* 전역 오버플로우 방지 */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* 모바일 뷰포트 최적화 */
+@media (max-width: 768px) {
+  html {
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  body {
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}

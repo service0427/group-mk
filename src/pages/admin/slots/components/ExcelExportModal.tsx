@@ -486,7 +486,7 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
           {/* 템플릿 선택 안내 */}
           {!selectedTemplateId && !isLoading && templates.length > 0 && (
             <div className="text-center py-12 text-gray-500">
-              <KeenIcon icon="information-circle" className="size-12 mx-auto mb-3 text-gray-400" />
+              <KeenIcon icon="information-2" className="size-12 mx-auto mb-3 text-gray-400" />
               <p className="text-base font-medium">템플릿을 선택해주세요</p>
               <p className="text-sm mt-1">상단 드롭다운에서 템플릿을 선택하거나 새로 만들 수 있습니다.</p>
             </div>

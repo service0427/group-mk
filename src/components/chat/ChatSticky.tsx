@@ -180,42 +180,48 @@ const ChatSticky: React.FC = () => {
     
     // 스크롤 핸들러 함수
     function handleScroll() {
-      if (!mainContentElement) return;
-      
-      // 현재 스크롤 위치
-      const currentScrollY = mainContentElement.scrollTop || 0;
-      
-      // 이전 스크롤 위치
-      const prevScrollY = lastScrollYRef.current;
-      
-      // 스크롤 방향 (true: 위로, false: 아래로)
-      const isScrollingUp = currentScrollY < prevScrollY;
-      
-      // 화면 상단에 있는지 여부
-      const isAtTop = currentScrollY < 100;
-      
-      // 화면 하단에 있는지 여부
-      const containerHeight = mainContentElement.clientHeight;
-      const scrollHeight = mainContentElement.scrollHeight;
-      const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
-      
-      // 버튼 표시 여부 결정 로직
-      if (isScrollingUp || isAtTop || isAtBottom) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
+      try {
+        if (!mainContentElement || !(mainContentElement instanceof HTMLElement)) return;
+        
+        // 현재 스크롤 위치
+        const currentScrollY = mainContentElement.scrollTop || 0;
+        
+        // 이전 스크롤 위치
+        const prevScrollY = lastScrollYRef.current;
+        
+        // 스크롤 방향 (true: 위로, false: 아래로)
+        const isScrollingUp = currentScrollY < prevScrollY;
+        
+        // 화면 상단에 있는지 여부
+        const isAtTop = currentScrollY < 100;
+        
+        // 화면 하단에 있는지 여부
+        const containerHeight = mainContentElement.clientHeight;
+        const scrollHeight = mainContentElement.scrollHeight;
+        const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
+        
+        // 버튼 표시 여부 결정 로직
+        if (isScrollingUp || isAtTop || isAtBottom) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+        
+        // 현재 스크롤 위치를 이전 위치로 저장
+        lastScrollYRef.current = currentScrollY;
+      } catch (error) {
+        console.warn('ChatSticky handleScroll error:', error);
       }
-      
-      // 현재 스크롤 위치를 이전 위치로 저장
-      lastScrollYRef.current = currentScrollY;
     }
     
-    // 스크롤 이벤트 리스너 등록
-    mainContentElement.addEventListener('scroll', handleScroll);
+    // 스크롤 이벤트 리스너 등록 (passive 옵션으로 성능 개선)
+    mainContentElement.addEventListener('scroll', handleScroll, { passive: true });
     
     // 컴포넌트 언마운트 시 이벤트 리스너 제거
     return () => {
-      mainContentElement.removeEventListener('scroll', handleScroll);
+      if (mainContentElement && mainContentElement instanceof HTMLElement) {
+        mainContentElement.removeEventListener('scroll', handleScroll);
+      }
     };
   }, [isMobile]);
   

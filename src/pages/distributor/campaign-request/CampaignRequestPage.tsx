@@ -21,6 +21,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_TRAFFIC],
       icon: '/media/ad-brand/naver-shopping.png',
+      iconAbbr: 'NS',
       description: '네이버 쇼핑 페이지 노출 및 트래픽',
       disabled: false
     },
@@ -28,6 +29,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
       icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
       description: '네이버 플레이스 트래픽 증가',
       disabled: false
     },
@@ -35,6 +37,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_PLACE_SAVE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
       icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
       description: '네이버 플레이스 저장하기 증가',
       disabled: false
     },
@@ -42,6 +45,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_PLACE_SHARE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
       icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
       description: '네이버 플레이스 블로그 공유 증가',
       disabled: false
     },
@@ -49,6 +53,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.COUPANG_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
       icon: '/media/ad-brand/coupang-app.png',
+      iconAbbr: 'CP',
       description: '쿠팡을 통한 사이트 방문자 유치',
       disabled: false
     },
@@ -57,6 +62,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_AUTO,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],
       icon: '/media/ad-brand/naver.png',
+      iconAbbr: 'NA',
       description: '네이버 검색어 자동완성 노출',
       disabled: true
     },
@@ -64,6 +70,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
       icon: '/media/ad-brand/naver-shopping.png',
+      iconAbbr: 'NS',
       description: '네이버 쇼핑 가구매 증가',
       disabled: true
     },
@@ -71,6 +78,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.COUPANG_FAKESALE,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_FAKESALE],
       icon: '/media/ad-brand/coupang-app.png',
+      iconAbbr: 'CP',
       description: '쿠팡 가구매 증가',
       disabled: true
     },
@@ -78,6 +86,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.INSTAGRAM,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.INSTAGRAM],
       icon: '/media/ad-brand/instagram.png',
+      iconAbbr: 'IG',
       description: '인스타그램 마케팅 캠페인',
       disabled: true
     },
@@ -85,6 +94,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.PHOTO_VIDEO_PRODUCTION],
       icon: '/media/brand-logos/vimeo.svg',
+      iconAbbr: 'PV',
       description: '전문적인 포토 및 영상 제작',
       disabled: true
     },
@@ -92,6 +102,7 @@ const CampaignRequestPage: React.FC = () => {
       id: CampaignServiceType.LIVE_BROADCASTING,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.LIVE_BROADCASTING],
       icon: '/media/ad-brand/youtube.png',
+      iconAbbr: 'YT',
       description: '라이브 방송 마케팅',
       disabled: true
     },
@@ -135,7 +146,14 @@ const CampaignRequestPage: React.FC = () => {
                   onClick={() => !isDisabled && navigateToCampaignAddPage(service.id)}
                 >
                   <div className="flex items-center mb-3">
-                    <img src={service.icon} alt={service.name} className="w-6 h-6 mr-3" />
+                    <div className="relative inline-block mr-3">
+                      <img src={service.icon} alt={service.name} className="w-6 h-6" />
+                      {service.iconAbbr && (
+                        <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                          {service.iconAbbr}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium text-lg">{service.name}</span>
                     {isDisabled && (
                       <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">

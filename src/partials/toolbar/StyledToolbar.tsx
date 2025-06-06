@@ -120,7 +120,7 @@ const StyledToolbar: React.FC<StyledToolbarProps> = ({
       className={`${bgClass} ${textClass} shadow-lg px-4 py-3 fixed left-0 right-0 w-full sticky-toolbar`}
       style={{
         top: `${60 + (document.querySelector('.notice-marquee')?.clientHeight || 36)}px`,
-        zIndex: 9999,
+        zIndex: 20, // 헤더와 같은 레벨로 설정
         position: 'fixed',
       }}
     >

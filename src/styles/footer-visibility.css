@@ -1,0 +1,40 @@
+/* Footer visibility transition styles */
+
+/* 기본 상태: footer가 보일 때 */
+body:not(.footer-hidden) main.content {
+  transition: bottom 0.3s ease-out;
+}
+
+/* 모바일에서 footer가 숨겨질 때 */
+@media (max-width: 768px) {
+  body.footer-hidden main.content {
+    bottom: 0 !important;
+  }
+  
+  body:not(.footer-hidden) main.content {
+    bottom: 40px !important;
+  }
+}
+
+/* Footer transition 최적화 */
+.footer {
+  /* GPU 가속을 위한 will-change */
+  will-change: transform, opacity;
+  /* 부드러운 전환 효과 */
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* 모바일에서 footer 숨김 상태 */
+@media (max-width: 768px) {
+  .footer.hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .footer:not(.hidden) {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

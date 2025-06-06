@@ -5,6 +5,9 @@
 @import './chat-sticky.css';
 @import './chat-sticky-fix.css';
 
+/* Footer visibility 스타일 */
+@import './footer-visibility.css';
+
 /* 데스크톱 메인 콘텐츠 영역 설정 */
 @media (min-width: 1024px) {
   main.content {

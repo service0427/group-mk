@@ -14,6 +14,8 @@ const Footer = () => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  const [forceVisible, setForceVisible] = useState(false);
+  const forceVisibleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // 모바일에서 스크롤 감지 - MutationObserver로 DOM 준비 확인
   useEffect(() => {
@@ -60,6 +62,9 @@ const Footer = () => {
           const scrollHeight = mainContentElement.scrollHeight;
           const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
           
+          // 강제 표시 중이면 무시
+          if (forceVisible) return;
+          
           // 버튼 표시 여부 결정 로직
           if (isScrollingUp || isAtTop || isAtBottom) {
             setIsVisible(true);
@@ -104,7 +109,7 @@ const Footer = () => {
         mainContentElement.removeEventListener('scroll', scrollHandler);
       }
     };
-  }, [isMobile]);
+  }, [isMobile, forceVisible]);
   
   // 사이드바 테마에 따라 푸터에도 동일한 테마 적용
   const themeClass: string =
@@ -140,6 +145,55 @@ const Footer = () => {
       document.body.classList.remove('footer-hidden');
     };
   }, [isVisible, isMobile]);
+  
+  // 모바일에서 화면 클릭 시 푸터 토글
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleClick = (e: MouseEvent) => {
+      // 푸터 자체를 클릭한 경우는 무시
+      const footer = document.querySelector('footer');
+      if (footer && footer.contains(e.target as Node)) {
+        return;
+      }
+      
+      // 토글 동작
+      if (!isVisible) {
+        // 숨겨진 상태 -> 표시
+        setForceVisible(true);
+        setIsVisible(true);
+        
+        // 기존 타이머 클리어
+        if (forceVisibleTimeoutRef.current) {
+          clearTimeout(forceVisibleTimeoutRef.current);
+        }
+        
+        // 3초 후 강제 표시 해제
+        forceVisibleTimeoutRef.current = setTimeout(() => {
+          setForceVisible(false);
+        }, 3000);
+      } else if (forceVisible) {
+        // 강제 표시 상태 -> 숨김
+        setForceVisible(false);
+        setIsVisible(false);
+        
+        // 타이머 클리어
+        if (forceVisibleTimeoutRef.current) {
+          clearTimeout(forceVisibleTimeoutRef.current);
+        }
+      }
+    };
+    
+    // 전체 document에 이벤트 리스너 추가 (캡처 단계)
+    document.addEventListener('click', handleClick, true);
+    
+    return () => {
+      document.removeEventListener('click', handleClick, true);
+      if (forceVisibleTimeoutRef.current) {
+        clearTimeout(forceVisibleTimeoutRef.current);
+      }
+    };
+  }, [isMobile, isVisible, forceVisible]);
   
 
   return (

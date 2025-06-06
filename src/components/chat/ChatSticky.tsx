@@ -124,6 +124,8 @@ const ChatSticky: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [forceVisible, setForceVisible] = useState(false);
+  const forceVisibleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,6 +202,9 @@ const ChatSticky: React.FC = () => {
         const scrollHeight = mainContentElement.scrollHeight;
         const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
         
+        // 강제 표시 중이면 무시
+        if (forceVisible) return;
+        
         // 버튼 표시 여부 결정 로직
         if (isScrollingUp || isAtTop || isAtBottom) {
           setIsVisible(true);
@@ -223,7 +228,7 @@ const ChatSticky: React.FC = () => {
         mainContentElement.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [isMobile]);
+  }, [isMobile, forceVisible]);
   
   // CSS 키프레임을 JS에서 생성하여 삽입
   useEffect(() => {
@@ -280,6 +285,57 @@ const ChatSticky: React.FC = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, currentRoomId]);
+  
+  // 모바일에서 화면 클릭 시 채팅 스티키 토글
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleClick = (e: MouseEvent) => {
+      // 채팅 버튼이나 채팅창을 클릭한 경우는 무시
+      const chatButton = document.querySelector('.chat-sticky-button');
+      const chatContainer = document.querySelector('.chat-sticky-container');
+      if ((chatButton && chatButton.contains(e.target as Node)) ||
+          (chatContainer && chatContainer.contains(e.target as Node))) {
+        return;
+      }
+      
+      // 토글 동작
+      if (!isVisible) {
+        // 숨겨진 상태 -> 표시
+        setForceVisible(true);
+        setIsVisible(true);
+        
+        // 기존 타이머 클리어
+        if (forceVisibleTimeoutRef.current) {
+          clearTimeout(forceVisibleTimeoutRef.current);
+        }
+        
+        // 3초 후 강제 표시 해제
+        forceVisibleTimeoutRef.current = setTimeout(() => {
+          setForceVisible(false);
+        }, 3000);
+      } else if (forceVisible && !isOpen) {
+        // 강제 표시 상태이고 채팅창이 닫혀있을 때 -> 숨김
+        setForceVisible(false);
+        setIsVisible(false);
+        
+        // 타이머 클리어
+        if (forceVisibleTimeoutRef.current) {
+          clearTimeout(forceVisibleTimeoutRef.current);
+        }
+      }
+    };
+    
+    // 전체 document에 이벤트 리스너 추가 (캡처 단계)
+    document.addEventListener('click', handleClick, true);
+    
+    return () => {
+      document.removeEventListener('click', handleClick, true);
+      if (forceVisibleTimeoutRef.current) {
+        clearTimeout(forceVisibleTimeoutRef.current);
+      }
+    };
+  }, [isMobile, isVisible, forceVisible, isOpen]);
   
   // 버튼 클래스 이름 동적 생성
   const buttonClassName = `chat-sticky-button ${isVisible ? 'visible' : 'hidden'}`;

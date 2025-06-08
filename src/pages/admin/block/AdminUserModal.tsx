@@ -6,6 +6,7 @@ import { KeenIcon } from "@/components";
 import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
 import { createRoleChangeNotification } from "@/utils/notificationActions";
 import { useDialog, useToast } from "@/providers";
+import { useAuthContext } from "@/auth";
 
 interface ChargeHistoryModalProps {
     open: boolean;
@@ -31,21 +32,25 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
     const [selectedStatus, setSelectedStatus] = useState<string>('');
     const { showDialog } = useDialog();
     const { success, error: showError } = useToast();
+    const { userRole } = useAuthContext();
 
+    // 현재 사용자가 개발자인지 확인
+    const isDeveloper = userRole === USER_ROLES.DEVELOPER;
+    
     // 사용 가능한 역할과 상태 옵션
     const roles_array = [
-        {"code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR)},
-        {"code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER)},
-        {"code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR)},
-        {"code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY)},
-        {"code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER)},
-        {"code": USER_ROLES.BEGINNER, "name": getRoleDisplayName(USER_ROLES.BEGINNER)},
+        { "code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR) },
+        ...(isDeveloper ? [{ "code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER) }] : []),
+        { "code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR) },
+        { "code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY) },
+        { "code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER) },
+        { "code": USER_ROLES.BEGINNER, "name": getRoleDisplayName(USER_ROLES.BEGINNER) },
     ];
 
     const status_array = [
-        {"code":"active", "name": "활성"},
-        {"code":"inactive", "name": "비활성"},
-        {"code":"pending", "name": "대기중"},
+        { "code": "active", "name": "활성" },
+        { "code": "inactive", "name": "비활성" },
+        { "code": "pending", "name": "대기중" },
     ];
 
     useEffect(() => {
@@ -54,7 +59,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
         }
     }, [user_id, open]);
 
-    const getUserData = async(user_id: string) => {
+    const getUserData = async (user_id: string) => {
         setLoading(true);
         try {
             const response = await supabase
@@ -62,16 +67,16 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                 .select('*')
                 .eq('id', user_id)
                 .single();
-            
+
             if (response.error) {
                 throw new Error(response.error.message);
             }
-            
+
             setUserData(response.data);
             setSelectedRole(response.data.role);
             setSelectedStatus(response.data.status);
         } catch (error: any) {
-            
+
         } finally {
             setLoading(false);
         }
@@ -84,7 +89,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
         let badgeClass = '';
         let statusText = '';
 
-        switch(status) {
+        switch (status) {
             case 'active':
                 badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
                 statusText = '활성';
@@ -120,12 +125,12 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
     };
 
     // 회원정보 수정 핸들러
-    const handleUpdateUser = async() => {
+    const handleUpdateUser = async () => {
         try {
             // 역할이 변경되었는지 확인
             const isRoleChanged = userData && userData.role !== selectedRole;
             const oldRole = userData?.role || '';
-            
+
             // 회원 정보 업데이트
             const { error: updateDBError } = await supabase
                 .from('users')
@@ -134,7 +139,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                     'role': selectedRole
                 })
                 .eq('id', user_id);
-                
+
             if (updateDBError) {
                 throw new Error(updateDBError.message);
             }
@@ -147,7 +152,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                 roles_array.forEach(role => {
                     roleDisplayNames[role.code] = role.name;
                 });
-                
+
                 // 사용자에게 역할 변경 알림 전송
                 await createRoleChangeNotification(
                     user_id,
@@ -157,9 +162,9 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                 );
             }
 
-            setUserData(prev => prev ? {...prev, status: selectedStatus, role: selectedRole} : null);
+            setUserData(prev => prev ? { ...prev, status: selectedStatus, role: selectedRole } : null);
             success('회원 정보가 수정되었습니다.');
-            
+
             // 리스트 새로고침 콜백 호출
             onUpdate?.();
         } catch (error: any) {
@@ -170,7 +175,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
                 <DialogHeader className="bg-background py-4 px-6">
                     <DialogTitle className="text-xl font-bold text-foreground">회원 정보</DialogTitle>
                 </DialogHeader>
@@ -199,7 +204,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                             </div>
                                         </td>
                                     </tr>
-                                    
+
                                     {/* 상태 - 현재 상태와 셀렉트 박스 함께 표시 */}
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
@@ -212,7 +217,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                                 <div className="min-w-24">
                                                     {renderStatusBadge(userData.status)}
                                                 </div>
-                                                <select 
+                                                <select
                                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                                     value={selectedStatus}
                                                     onChange={handleStatusChange}
@@ -226,7 +231,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                             </div>
                                         </td>
                                     </tr>
-                                    
+
                                     {/* 이메일 */}
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
@@ -238,7 +243,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                             <span className="text-foreground font-medium">{userData.email}</span>
                                         </td>
                                     </tr>
-                                    
+
                                     {/* 비밀번호 */}
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
@@ -254,7 +259,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                             </div>
                                         </td>
                                     </tr>
-                                    
+
                                     {/* 권한 - 현재 권한과 셀렉트 박스 함께 표시 */}
                                     <tr>
                                         <td className="px-6 py-4 w-1/3">
@@ -269,7 +274,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                                         {getRoleDisplayName(userData.role)}
                                                     </span>
                                                 </div>
-                                                <select 
+                                                <select
                                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                                     value={selectedRole}
                                                     onChange={handleRoleChange}
@@ -285,15 +290,15 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                     </tr>
                                 </tbody>
                             </table>
-                            
+
                             <div className="mt-6 flex justify-end space-x-3 pt-2 border-t">
-                                <Button 
+                                <Button
                                     onClick={handleUpdateUser}
                                 >
                                     회원정보 수정
                                 </Button>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     onClick={onClose}
                                 >
                                     닫기

@@ -39,7 +39,7 @@ const ModalProfile = ({ open, onOpenChange }: IModalProfileProps) => {
       </style>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="container-fixed max-w-[auto] p-0 [&>button]:hidden">
+        <DialogContent className="container-fixed max-w-[auto] p-0 [&>button]:hidden" aria-describedby={undefined}>
           <DialogHeader className="modal-rounded-t p-0 border-0 relative min-h-80 flex flex-col items-stretch justify-end bg-center bg-cover bg-no-repeat mb-7 modal-bg">
             <DialogTitle></DialogTitle>
             <DialogDescription></DialogDescription>

@@ -459,7 +459,7 @@ export const RankingChangeChart: React.FC<RankingChangeChartProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[1280px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[1280px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background sticky top-0 z-10">
           <DialogTitle>캠페인 상세 정보</DialogTitle>
           {/* 버튼/라벨이 없을 때 오른쪽 공간 확보 */}

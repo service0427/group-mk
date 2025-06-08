@@ -42,7 +42,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
             .update({ view_count: (notice.view_count || 0) + 1 })
             .eq('id', notice.id);
         } catch (error) {
-          
+
         }
       }
     };
@@ -168,13 +168,13 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
           </svg>
           <span>이전</span>
         </button>
-        
+
         <div className="text-sm">
           <span className="font-medium">{currentPage}</span>
           <span className="text-gray-500 mx-1">/</span>
           <span className="text-gray-500">{totalPages}</span>
         </div>
-        
+
         <button
           className="btn btn-sm btn-outline flex items-center gap-1 h-8"
           onClick={() => onPageChange(currentPage + 1)}
@@ -186,7 +186,7 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
           </svg>
         </button>
       </div>
-      
+
       {/* 데스크탑 페이지네이션 - 기존 형태 유지 */}
       <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
         <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
@@ -242,7 +242,7 @@ const NoticePagination: React.FC<NoticePaginationProps> = ({
           </button>
         </div>
       </div>
-      
+
       {/* 모바일에서는 페이지당 표시 제거 */}
     </div>
   );
@@ -301,7 +301,7 @@ const NoticePageComponent = () => {
       setNormalNotices(paginatedNormal);
       setNotices([...important, ...paginatedNormal]);
     } catch (err: any) {
-      
+
       setError('공지사항을 불러오는데 실패했습니다.');
       toast.error("공지사항 목록을 불러오는 중 오류가 발생했습니다.");
     } finally {
@@ -403,7 +403,7 @@ const NoticePageComponent = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         {/* 데스크탑 레이아웃 */}
                         <div className="hidden md:flex items-center md:mb-0">
                           <span className="mr-2 inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/50 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:text-red-300">
@@ -538,7 +538,7 @@ const NoticePageComponent = () => {
 
       {/* 공지사항 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden flex flex-col h-[80vh]">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden flex flex-col h-[80vh]" aria-describedby={undefined}>
           <div className="bg-background py-4 px-8 border-b flex-shrink-0">
             <DialogTitle className="text-lg font-medium text-foreground">공지사항</DialogTitle>
           </div>

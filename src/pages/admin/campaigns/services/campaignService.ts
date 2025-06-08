@@ -420,6 +420,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       description: string;
       detailed_description?: string;
       unit_price: number;
+      min_quantity?: number; // 최소 수량 추가
       deadline: string;
       updated_at: Date;
       add_info: any; // add_info 내부에 add_field 포함
@@ -436,6 +437,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       description: data.description,
       detailed_description: data.detailedDescription,
       unit_price: data.unitPrice ? parseFloat(data.unitPrice) : 100,
+      min_quantity: data.minQuantity ? parseInt(data.minQuantity) : 10, // 최소 수량 추가!
       deadline: formatTimeHHMM(data.deadline), // 시:분 형식만 저장
       updated_at: new Date(),
       add_info: additionalInfo, // 여기에 이미 add_field가 포함됨
@@ -607,6 +609,7 @@ export const getServiceTypeCode = (uiCode: string): string => {
     'nshop-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE, // → 'NaverShoppingFakeSale'
     'nshoppingfakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
     'naver-shopping-fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+    'naver-shopping-fake-sale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
 
     // 네이버 쇼핑 순위확인
     'nshop-rank': CampaignServiceType.NAVER_SHOPPING_RANK,

@@ -17,7 +17,7 @@ interface IModalAccountDeactivatedProps {
 const ModalAccountDeactivated = ({ open, onOpenChange }: IModalAccountDeactivatedProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[500px] max-h-[95%] scrollable-y-auto">
+      <DialogContent className="w-full max-w-[500px] max-h-[95%] scrollable-y-auto" aria-describedby={undefined}>
         <DialogHeader className="justify-end border-0 pt-5">
           <DialogTitle></DialogTitle>
           <DialogDescription></DialogDescription>

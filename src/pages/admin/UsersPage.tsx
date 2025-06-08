@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
+import { useAuthContext } from '@/auth';
 
 const MakeUserRow = ({ user, getUserList, currentPage }: { user: any, getUserList: (page: number) => Promise<void>, currentPage: number }) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
@@ -134,6 +135,7 @@ const MakeUserRow = ({ user, getUserList, currentPage }: { user: any, getUserLis
 }
 
 const UsersPage = () => {
+    const { userRole } = useAuthContext();
 
     const [users, setUsers] = useState<any[]>([]);
     const [limit, setLimit] = useState<number>(10);
@@ -165,6 +167,11 @@ const UsersPage = () => {
             }
             if (searchName) {
                 countQuery.ilike('full_name', `%${searchName}%`);
+            }
+            
+            // 개발자가 아닌 경우에만 개발자 역할 제외
+            if (!isDeveloper) {
+                countQuery.neq('role', USER_ROLES.DEVELOPER);
             }
 
             const { count, error: countError } = await countQuery;
@@ -202,6 +209,11 @@ const UsersPage = () => {
             }
             if (searchName) {
                 dataQuery.ilike('full_name', `%${searchName}%`);
+            }
+            
+            // 개발자가 아닌 경우에만 개발자 역할 제외
+            if (!isDeveloper) {
+                dataQuery.neq('role', USER_ROLES.DEVELOPER);
             }
 
             const response = await dataQuery.range(offset, end);
@@ -266,10 +278,13 @@ const UsersPage = () => {
         setCurrentPage(1);
     }, [searchRole, searchStatus, searchEmail, searchName]);
 
+    // 현재 사용자가 개발자인지 확인
+    const isDeveloper = userRole === USER_ROLES.DEVELOPER;
+    
     const roles_array = [
         { "code": "", "name": "All" },
         { "code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR) },
-        { "code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER) },
+        ...(isDeveloper ? [{ "code": USER_ROLES.DEVELOPER, "name": getRoleDisplayName(USER_ROLES.DEVELOPER) }] : []),
         { "code": USER_ROLES.DISTRIBUTOR, "name": getRoleDisplayName(USER_ROLES.DISTRIBUTOR) },
         { "code": USER_ROLES.AGENCY, "name": getRoleDisplayName(USER_ROLES.AGENCY) },
         { "code": USER_ROLES.ADVERTISER, "name": getRoleDisplayName(USER_ROLES.ADVERTISER) },
@@ -367,7 +382,7 @@ const UsersPage = () => {
                     </div>
 
                     <button className="btn btn-primary h-10 px-6 md:mt-0 w-full md:w-auto" onClick={() => getUserList(1)}>
-                        <KeenIcon icon="search" className="md:me-2 flex-none" />
+                        <KeenIcon icon="magnifier" className="md:me-2 flex-none" />
                         <span className="hidden md:inline">검색</span>
                     </button>
                 </div>

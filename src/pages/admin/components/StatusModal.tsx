@@ -66,7 +66,7 @@ const StatusModal: React.FC<StatusModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogBody className="p-0">
           <div className={`p-8 ${statusColors[status]} flex flex-col items-center`}>
             <div className="mb-5">

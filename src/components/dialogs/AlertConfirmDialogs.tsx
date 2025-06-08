@@ -34,8 +34,8 @@ interface ConfirmDialogState extends DialogState {
 interface DialogContextProps {
   showAlert: (title: string, message: string, onConfirm?: () => void) => void;
   showConfirm: (
-    title: string, 
-    message: string, 
+    title: string,
+    message: string,
     onConfirm?: (confirmed: boolean) => void,
     options?: {
       confirmText?: string;
@@ -67,7 +67,7 @@ const AlertDialog: React.FC<AlertDialogState & { onClose: () => void }> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">{title}</DialogTitle>
         </DialogHeader>
@@ -111,7 +111,7 @@ const ConfirmDialog: React.FC<ConfirmDialogState & { onClose: () => void }> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">{title}</DialogTitle>
         </DialogHeader>
@@ -143,14 +143,14 @@ const ConfirmDialog: React.FC<ConfirmDialogState & { onClose: () => void }> = ({
 // Provider 컴포넌트
 export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const toast = useToast();
-  
+
   // 알림 다이얼로그 상태
   const [alertState, setAlertState] = useState<AlertDialogState>({
     isOpen: false,
     title: '',
     message: '',
   });
-  
+
   // 확인 다이얼로그 상태
   const [confirmState, setConfirmState] = useState<ConfirmDialogState>({
     isOpen: false,
@@ -170,8 +170,8 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // 확인 다이얼로그 표시
   const showConfirm = useCallback((
-    title: string, 
-    message: string, 
+    title: string,
+    message: string,
     onConfirm?: (confirmed: boolean) => void,
     options?: {
       confirmText?: string;
@@ -219,7 +219,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }}
     >
       {children}
-      
+
       {/* 알림 다이얼로그 렌더링 */}
       <AlertDialog
         isOpen={alertState.isOpen}
@@ -228,7 +228,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         onConfirm={alertState.onConfirm}
         onClose={closeAlert}
       />
-      
+
       {/* 확인 다이얼로그 렌더링 */}
       <ConfirmDialog
         isOpen={confirmState.isOpen}
@@ -247,10 +247,10 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 // 훅
 export const useDialog = (): DialogContextProps => {
   const context = useContext(DialogContext);
-  
+
   if (context === undefined) {
     throw new Error('useDialog must be used within a DialogProvider');
   }
-  
+
   return context;
 };

@@ -182,7 +182,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
       if (result.success) {
         const requests = result.data || [];
         setRecentRequests(requests);
-        
+
         // 가장 최근 요청의 입금자명이 있다면 자동으로 채우기
         if (requests.length > 0 && requests[0].account_holder) {
           setDepositorName(requests[0].account_holder);
@@ -225,7 +225,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
   const [dialogTitle, setDialogTitle] = useState<string>("");
   const [dialogDescription, setDialogDescription] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
-  
+
   // 충전 확인 모달 상태 관리
   const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
 
@@ -392,6 +392,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
             e.preventDefault();
             handleModalClose();
           }}
+          aria-describedby={undefined}
         >
           <DialogHeader className="flex items-center py-5 px-6 border-b flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white mr-3">
@@ -511,12 +512,12 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
               <div className="mb-6 p-4 border border-blue-100 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 8.5H22M6 16.5H8M10.5 16.5H16.5M2 11.5V19.5C2 20.05 2.45 20.5 3 20.5H21C21.55 20.5 22 20.05 22 19.5V11.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M22 8.5V7.7C22 7.2 21.8 6.8 21.4 6.4L19.1 4.1C18.7 3.7 18.2 3.5 17.7 3.5H6.3C5.8 3.5 5.3 3.7 4.9 4.1L2.6 6.4C2.2 6.8 2 7.2 2 7.7V8.5H22Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 8.5H22M6 16.5H8M10.5 16.5H16.5M2 11.5V19.5C2 20.05 2.45 20.5 3 20.5H21C21.55 20.5 22 20.05 22 19.5V11.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M22 8.5V7.7C22 7.2 21.8 6.8 21.4 6.4L19.1 4.1C18.7 3.7 18.2 3.5 17.7 3.5H6.3C5.8 3.5 5.3 3.7 4.9 4.1L2.6 6.4C2.2 6.8 2 7.2 2 7.7V8.5H22Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400">입금 계좌 정보</h4>
                 </div>
-                
+
                 <div className="space-y-1 text-sm">
                   {cashSetting.bank_name && (
                     <div className="flex justify-between py-1 border-b border-blue-100 dark:border-blue-800">
@@ -524,14 +525,14 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
                       <span className="font-medium text-blue-900 dark:text-blue-50">{cashSetting.bank_name}</span>
                     </div>
                   )}
-                  
+
                   {cashSetting.account_number && (
                     <div className="flex justify-between py-1 border-b border-blue-100 dark:border-blue-800">
                       <span className="text-blue-800 dark:text-blue-300">계좌번호</span>
                       <span className="font-medium text-blue-900 dark:text-blue-50">{cashSetting.account_number}</span>
                     </div>
                   )}
-                  
+
                   {cashSetting.account_holder && (
                     <div className="flex justify-between py-1">
                       <span className="text-blue-800 dark:text-blue-300">예금주</span>
@@ -539,7 +540,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
                   충전 요청 이후 위 계좌로 입금을 진행해 주세요.
                 </div>
@@ -568,7 +569,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
             <div className="mb-4">
               <div className="mb-3 flex justify-between items-center">
                 <p className="text-sm font-medium">최근 충전 요청 내역</p>
-                <button 
+                <button
                   type="button"
                   className="text-xs text-primary hover:text-primary-dark hover:underline flex items-center bg-transparent border-0 p-0 cursor-pointer"
                   onClick={() => {
@@ -661,8 +662,8 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
       </Dialog>
 
       {/* 충전 확인 다이얼로그 */}
-      <Dialog 
-        open={confirmDialogOpen} 
+      <Dialog
+        open={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}
       >
         <DialogPortal>
@@ -673,58 +674,58 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
               setConfirmDialogOpen(false);
             }}
           >
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-t-[4px] p-6 border-b-2 border-yellow-200 dark:border-yellow-700">
-            <DialogHeader className="text-center">
-              <DialogTitle className="text-center text-lg mb-2 text-yellow-700 dark:text-yellow-400">
-                충전 요청 확인
-              </DialogTitle>
-            </DialogHeader>
-          </div>
-
-          <div className="p-6">
-            <div className="space-y-3 mb-6">
-              <div className="text-2xl font-bold text-foreground">
-                {formatNumberWithCommas(parseInt(customAmount || '0'))}원
-              </div>
-              {showPointInfo && isEligibleForBonus && (
-                <div className="text-sm text-green-600">
-                  + {formatNumberWithCommas(bonusAmount)}원 무료 캐시
-                </div>
-              )}
-              <div className="text-sm text-muted-foreground">
-                입금자명: <span className="font-medium text-foreground">{depositorName}</span>
-              </div>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-t-[4px] p-6 border-b-2 border-yellow-200 dark:border-yellow-700">
+              <DialogHeader className="text-center">
+                <DialogTitle className="text-center text-lg mb-2 text-yellow-700 dark:text-yellow-400">
+                  충전 요청 확인
+                </DialogTitle>
+              </DialogHeader>
             </div>
-            
-            <DialogDescription className="text-center text-sm mb-6">
-              위 금액으로 캐시 충전을 요청하시겠습니까?<br/>
-              충전 요청 후 입금 계좌로 송금해주세요.
-            </DialogDescription>
 
-            <DialogFooter className="flex gap-3 justify-center mt-4 sm:justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmDialogOpen(false)}
-                className="min-w-[100px]"
-              >
-                취소
-              </Button>
-              <Button
-                onClick={handleCharge}
-                className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? '처리 중...' : '예, 충전 요청'}
-              </Button>
-            </DialogFooter>
-          </div>
+            <div className="p-6">
+              <div className="space-y-3 mb-6">
+                <div className="text-2xl font-bold text-foreground">
+                  {formatNumberWithCommas(parseInt(customAmount || '0'))}원
+                </div>
+                {showPointInfo && isEligibleForBonus && (
+                  <div className="text-sm text-green-600">
+                    + {formatNumberWithCommas(bonusAmount)}원 무료 캐시
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  입금자명: <span className="font-medium text-foreground">{depositorName}</span>
+                </div>
+              </div>
+
+              <DialogDescription className="text-center text-sm mb-6">
+                위 금액으로 캐시 충전을 요청하시겠습니까?<br />
+                충전 요청 후 입금 계좌로 송금해주세요.
+              </DialogDescription>
+
+              <DialogFooter className="flex gap-3 justify-center mt-4 sm:justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmDialogOpen(false)}
+                  className="min-w-[100px]"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleCharge}
+                  className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? '처리 중...' : '예, 충전 요청'}
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogPrimitive.Content>
         </DialogPortal>
       </Dialog>
 
       {/* 결과 알림 다이얼로그 */}
-      <Dialog 
-        open={resultDialogOpen} 
+      <Dialog
+        open={resultDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             setResultDialogOpen(false);
@@ -741,6 +742,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
           className="max-w-md mx-auto text-center bg-card p-0"
           style={{ zIndex: 10000 }} // 충전 요청 모달(9999)보다 높은 z-index 설정
           onPointerDownOutside={() => setResultDialogOpen(false)} // 모달 외부 클릭 시 닫기
+          aria-describedby={undefined}
         >
           <div className={`rounded-t-lg p-6 ${isSuccess ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
             <DialogHeader className="text-center">

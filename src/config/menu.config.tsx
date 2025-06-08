@@ -42,6 +42,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
+            title: 'NS 가구매',
+            path: '/advertise/campaigns/info/naver-shopping-fakesale',
+            iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
             title: 'NP 순위확인',
             path: '/advertise/campaigns/info/naver-place-rank',
             iconImage: '/media/ad-brand/naver-place.png',
@@ -75,14 +82,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
             path: '/advertise/campaigns/info/naver-auto',
             iconImage: '/media/ad-brand/naver.png',
             iconAbbr: 'NA',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NS 가구매',
-            disabled: true,
-            path: '/advertise/campaigns/info/naver-shopping-fakesale',
-            iconImage: '/media/ad-brand/naver-shopping.png',
-            iconAbbr: 'NS',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
@@ -133,7 +132,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '쇼핑/플레이스 검색',
     icon: 'ranking text-info',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
     children: [
       {
         title: 'N 쇼핑 상품 검색',
@@ -157,36 +156,36 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '순위 분석',
     icon: 'graph-up text-warning',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 광고주 등급부터(총판, 운영자 제외)
     disabled: true
   },
   {
     title: '신규 캠페인 신청',
     icon: 'add-files text-success',
     path: '/campaign-request',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
+    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
   },
   {
     title: '총판 출금 신청',
     icon: 'dollar text-danger',
     path: '/withdraw',
-    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
+    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
   },
   {
     heading: '내 정보 관리',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
   },
   {
     title: '이용 중인 서비스',
     icon: 'setting-4 text-info',
     path: '/my-services',
-    authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),
+    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
   },
   {
     title: '내 키워드',
     icon: 'pencil text-success',
     path: '/keyword',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
   },
   // {
   //   title: '캐쉬/포인트 관리',
@@ -321,11 +320,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'cube-2 text-info',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
     children: [
-      {
-        title: '슬롯 정보 관리',
-        icon: 'cube-2 text-primary',
-        path: '/manage/slots/info'
-      },
+      // {
+      //   title: '슬롯 정보 관리',
+      //   icon: 'cube-2 text-primary',
+      //   path: '/manage/slots/info'
+      // },
       {
         title: '슬롯 승인 관리',
         icon: 'verify text-success',
@@ -602,9 +601,30 @@ export const MENU_MEGA: TMenuConfig = [
   },
   {
     title: '관리자 메뉴',
+    authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
     children: [
       {
-        heading: '사이트 관리',
+        heading: '일반 설정',
+        children: [
+          {
+            title: '관리자 출금 설정',
+            icon: 'dollar text-warning',
+            path: '/admin/withdraw_setting'
+          },
+          {
+            title: '캐시 설정',
+            icon: 'dollar text-warning',
+            path: '/admin/cash_setting'
+          },
+          {
+            title: '검색 제한 설정',
+            icon: 'search-list text-info',
+            path: '/admin/site/search-limits'
+          }
+        ]
+      },
+      {
+        heading: '알림 및 채팅',
         children: [
           {
             title: '공지사항 관리',
@@ -624,7 +644,22 @@ export const MENU_MEGA: TMenuConfig = [
           {
             title: '채팅 관리',
             icon: 'message-text-1 text-success',
-            path: '/admin/chat'
+            path: '/admin/site/chat'
+          }
+        ]
+      },
+      {
+        heading: '캐시 및 출금',
+        children: [
+          {
+            title: '캐시 신청 관리',
+            icon: 'dollar text-warning',
+            path: '/admin/cash'
+          },
+          {
+            title: '운영자 출금 승인',
+            icon: 'dollar text-warning',
+            path: '/admin/withdraw_approve'
           }
         ]
       },
@@ -647,36 +682,16 @@ export const MENU_MEGA: TMenuConfig = [
         heading: '캠페인 관리',
         children: [
           {
-            title: '모든 캠페인 통합 관리',
+            title: '캠페인 통합 관리',
             icon: 'check-square text-danger',
             path: '/admin/campaigns/all',
-            authCheck: (role) => role === USER_ROLES.OPERATOR || role === USER_ROLES.DEVELOPER, // 최고 운영자 전용
+            authCheck: (role) => role === USER_ROLES.OPERATOR || role === USER_ROLES.DEVELOPER,
           },
           {
-            title: 'NAVER 쇼핑',
-            icon: 'shop text-primary',
-            path: '/admin/campaigns/naver-shopping-traffic'
-          },
-          {
-            title: 'NAVER 플레이스',
-            icon: 'geolocation text-danger',
-            path: '/admin/campaigns/naver-place'
-          },
-          {
-            title: 'NAVER 자동완성',
-            icon: 'filter-search text-info',
-            path: '/admin/campaigns/naver-auto'
-          },
-          {
-            title: 'NAVER 트래픽',
-            icon: 'chart-line text-success',
-            path: '/admin/campaigns/naver-traffic'
-          },
-          {
-            title: 'COUPANG 쇼핑',
-            icon: 'handcart text-warning',
-            path: '/admin/campaigns/coupang'
-          },
+            title: '캠페인 관리',
+            icon: 'setting-3 text-warning',
+            path: '/manage/campaign'
+          }
         ]
       },
       {
@@ -691,6 +706,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: '슬롯 승인 관리',
             icon: 'verify text-success',
             path: '/manage/slots/approve'
+          },
+          {
+            title: '총판 작업 입력',
+            icon: 'dollar text-warning',
+            path: '/manage/work-input'
           }
         ]
       }

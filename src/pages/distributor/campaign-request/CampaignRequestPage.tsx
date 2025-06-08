@@ -26,6 +26,14 @@ const CampaignRequestPage: React.FC = () => {
       disabled: false
     },
     {
+      id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
+      icon: '/media/ad-brand/naver-shopping.png',
+      iconAbbr: 'NS',
+      description: '네이버 쇼핑 가구매 증가',
+      disabled: false
+    },
+    {
       id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
       icon: '/media/ad-brand/naver-place.png',
@@ -64,14 +72,6 @@ const CampaignRequestPage: React.FC = () => {
       icon: '/media/ad-brand/naver.png',
       iconAbbr: 'NA',
       description: '네이버 검색어 자동완성 노출',
-      disabled: true
-    },
-    {
-      id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
-      icon: '/media/ad-brand/naver-shopping.png',
-      iconAbbr: 'NS',
-      description: '네이버 쇼핑 가구매 증가',
       disabled: true
     },
     {
@@ -139,8 +139,8 @@ const CampaignRequestPage: React.FC = () => {
                 <div
                   key={service.id}
                   className={`border dark:border-gray-700 rounded-lg p-5 flex flex-col transition-colors ${isDisabled
-                      ? 'opacity-60 cursor-not-allowed'
-                      : 'hover:border-primary hover:bg-primary/5 cursor-pointer'
+                    ? 'opacity-60 cursor-not-allowed'
+                    : 'hover:border-primary hover:bg-primary/5 cursor-pointer'
                     }`}
                   onClick={() => !isDisabled && navigateToCampaignAddPage(service.id)}
                 >
@@ -164,8 +164,8 @@ const CampaignRequestPage: React.FC = () => {
                   <div className="mt-auto text-right">
                     <Button
                       className={`${isDisabled
-                          ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                          : 'bg-primary text-white hover:bg-primary/90'
+                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                        : 'bg-primary text-white hover:bg-primary/90'
                         }`}
                       onClick={(e) => {
                         e.stopPropagation(); // 부모 div의 onClick 이벤트 전파 방지

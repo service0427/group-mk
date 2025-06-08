@@ -23,7 +23,7 @@ const ModalShareProfile = ({ open, onOpenChange }: ModalShareProfileProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[500px]">
+      <DialogContent className="max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Share Profile</DialogTitle>
           <DialogDescription></DialogDescription>

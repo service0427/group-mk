@@ -100,7 +100,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
         {/* 헤더 영역 */}
         <div className={`px-6 py-4 ${colors.header}`}>
           <DialogHeader className="flex flex-row items-center gap-3">
@@ -115,14 +115,14 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
             </DialogTitle>
           </DialogHeader>
         </div>
-        
+
         {/* 내용 영역 */}
         <div className="px-6 py-4">
           <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
             {message}
           </DialogDescription>
         </div>
-        
+
         {/* 버튼 영역 */}
         <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3">
           <Button

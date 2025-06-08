@@ -25,7 +25,7 @@ const CardAdCampaignRow = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
 
@@ -132,8 +132,8 @@ const CardAdCampaignRow = ({
                 상세보기
               </button>
 
-              {/* distributor 역할이 아닌 경우에만 구매하기 버튼 표시 */}
-              {userRole !== USER_ROLES.DISTRIBUTOR && (
+              {/* 총판 또는 운영자 역할이 아닌 경우에만 구매하기 버튼 표시 */}
+              {userRole !== USER_ROLES.DISTRIBUTOR && userRole !== USER_ROLES.OPERATOR && (
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={(e) => {

@@ -55,7 +55,7 @@ const CardAdCampaign = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
 
@@ -115,8 +115,8 @@ const CardAdCampaign = ({
                 상세보기
               </button>
 
-              {/* distributor 역할이 아닌 경우에만 구매하기 버튼 표시 */}
-              {userRole !== USER_ROLES.DISTRIBUTOR && (
+              {/* 총판 또는 운영자 역할이 아닌 경우에만 구매하기 버튼 표시 */}
+              {userRole !== USER_ROLES.DISTRIBUTOR && userRole !== USER_ROLES.OPERATOR && (
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={(e) => {
@@ -194,17 +194,17 @@ const CardAdCampaign = ({
       {/* 슬롯 추가 모달 */}
       {slotModalOpen && (
         <CampaignSlotWithKeywordModal
-            open={slotModalOpen}
-            onClose={() => setSlotModalOpen(false)}
-            category={title}
-            campaign={{
-              id: rawId || 1, // 실제 ID 사용
-              campaign_name: title,
-              status: status.label,
-              service_type: serviceTypeCode || 'NaverTraffic' // 전달받은 서비스 타입 코드 사용
-            }}
-            serviceCode={serviceTypeCode || 'NaverTraffic'} // 전달받은 서비스 타입 코드 사용
-          />
+          open={slotModalOpen}
+          onClose={() => setSlotModalOpen(false)}
+          category={title}
+          campaign={{
+            id: rawId || 1, // 실제 ID 사용
+            campaign_name: title,
+            status: status.label,
+            service_type: serviceTypeCode || 'NaverTraffic' // 전달받은 서비스 타입 코드 사용
+          }}
+          serviceCode={serviceTypeCode || 'NaverTraffic'} // 전달받은 서비스 타입 코드 사용
+        />
       )}
     </>
   );

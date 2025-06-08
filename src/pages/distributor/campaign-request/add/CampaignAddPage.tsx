@@ -160,13 +160,31 @@ const CampaignAddPage: React.FC = () => {
       return false;
     }
 
+    if (!formData.unitPrice || formData.unitPrice === '0' || formData.unitPrice === '') {
+      setError('건당 단가는 필수이며 0보다 큰 값이어야 합니다.');
+      return false;
+    }
+
+    if (!formData.minQuantity || formData.minQuantity === '0' || formData.minQuantity === '') {
+      setError('최소 수량은 필수이며 0보다 큰 값이어야 합니다.');
+      return false;
+    }
+
+    if (!formData.description.trim()) {
+      setError('캠페인 소개는 필수입니다.');
+      return false;
+    }
+
+    if (!formData.detailedDescription.trim()) {
+      setError('캠페인 상세설명은 필수입니다.');
+      return false;
+    }
+
     // 로고 필수 검증 - 업로드된 로고가 없고 기본 로고도 선택하지 않은 경우
     if (!previewUrl && (!formData.logo || formData.logo === '')) {
       setError('로고를 업로드하거나 기본 제공 로고 중 하나를 선택해주세요.');
-      return;
+      return false;
     }
-
-    // 서비스 유형별 필수 필드 검증은 CampaignForm 컴포넌트에서 처리됨
 
     setError(null);
     return true;
@@ -225,7 +243,7 @@ const CampaignAddPage: React.FC = () => {
 
     // validateForm에서 설정한 loading을 false로 리셋
     setLoading(false);
-    
+
     // validation 통과 시 확인 모달 열기
     setConfirmModalOpen(true);
   };
@@ -396,7 +414,7 @@ const CampaignAddPage: React.FC = () => {
 
       {/* 캠페인 미리보기 다이얼로그 - 모바일 최적화 */}
       <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary">
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary" aria-describedby={undefined}>
           <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 sm:py-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
             <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
               <KeenIcon icon="eye" className="mr-2 text-primary size-4 sm:size-5" />
@@ -502,6 +520,15 @@ const CampaignAddPage: React.FC = () => {
               <div className="space-y-4 sm:space-y-6">
                 {/* 상단: 주요 정보 요약 카드 - 모바일에서 2열로 표시 */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border col-span-2 sm:col-span-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                      <KeenIcon icon="rocket" className="text-green-500 size-4 sm:size-5" />
+                      <div className="text-xs sm:text-sm text-muted-foreground">상승효율</div>
+                    </div>
+                    <div className="text-lg sm:text-xl font-bold text-green-600">
+                      60%
+                    </div>
+                  </div>
                   <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
                     <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                       <KeenIcon icon="wallet" className="text-primary size-4 sm:size-5" />
@@ -518,15 +545,6 @@ const CampaignAddPage: React.FC = () => {
                     </div>
                     <div className="text-lg sm:text-xl font-bold text-orange-600">
                       {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border col-span-2 sm:col-span-1">
-                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                      <KeenIcon icon="rocket" className="text-green-500 size-4 sm:size-5" />
-                      <div className="text-xs sm:text-sm text-muted-foreground">상승효율</div>
-                    </div>
-                    <div className="text-lg sm:text-xl font-bold text-green-600">
-                      60%
                     </div>
                   </div>
                 </div>
@@ -577,18 +595,6 @@ const CampaignAddPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 가이드라인 - 모바일 최적화 */}
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">캠페인 가이드라인</h3>
-                  <div className="bg-white p-4 sm:p-5 rounded-lg sm:rounded-xl text-xs sm:text-md text-muted-foreground border border-border">
-                    <ul className="list-disc list-inside space-y-1 sm:space-y-1.5">
-                      <li>해당 캠페인 건당 단가는 {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}입니다.</li>
-                      <li>최소 구매 수량은 {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}입니다.</li>
-                      <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
-                    </ul>
-                  </div>
-                </div>
-
                 {/* 서비스 유형별 추가 정보 - 모바일 최적화 */}
                 {serviceType && Object.keys(additionalFields).length > 0 && (
                   <div>
@@ -634,7 +640,7 @@ const CampaignAddPage: React.FC = () => {
 
       {/* 캠페인 등록 확인 모달 */}
       <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <KeenIcon icon="add-files" className="text-primary size-5 mr-2" />

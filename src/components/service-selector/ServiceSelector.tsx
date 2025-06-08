@@ -73,9 +73,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           code: type.code,
           icon: icon,
           platform: campaign.name,
-          // 가구매 서비스와 N 자동완성은 비활성화
-          disabled: type.code === CampaignServiceType.NAVER_SHOPPING_FAKESALE ||
-            type.code === CampaignServiceType.COUPANG_FAKESALE ||
+          // CP 가구매와 N 자동완성은 비활성화 (NS 가구매는 활성화)
+          disabled: type.code === CampaignServiceType.COUPANG_FAKESALE ||
             type.code === CampaignServiceType.NAVER_AUTO
         });
       });

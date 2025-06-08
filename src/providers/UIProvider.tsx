@@ -343,7 +343,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
               {/* Dialog 컴포넌트 */}
               {dialogOptions && (
                 <Dialog open={dialogOpen} onOpenChange={hideDialog}>
-                  <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden">
+                  <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden" aria-describedby={undefined}>
                     {dialogOptions.title && (
                       <DialogHeader className="bg-background py-3 px-6">
                         <DialogTitle className="text-lg font-medium text-foreground">
@@ -373,10 +373,10 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                       <Button
                         type="button"
                         className={`px-4 ${dialogOptions.variant === 'destructive'
-                            ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
-                            : dialogOptions.variant === 'warning'
-                              ? 'bg-warning hover:bg-warning/90 text-warning-foreground'
-                              : 'bg-primary hover:bg-primary/90 text-white'
+                          ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
+                          : dialogOptions.variant === 'warning'
+                            ? 'bg-warning hover:bg-warning/90 text-warning-foreground'
+                            : 'bg-primary hover:bg-primary/90 text-white'
                           }`}
                         onClick={() => {
                           dialogOptions.onConfirm?.();

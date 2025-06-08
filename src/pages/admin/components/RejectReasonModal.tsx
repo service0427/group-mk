@@ -34,7 +34,7 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
       setReason(''); // 초기화
       onClose();
     } catch (error) {
-      
+
     } finally {
       setProcessing(false);
     }
@@ -42,7 +42,7 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">등업 신청 거부</DialogTitle>
         </DialogHeader>
@@ -69,14 +69,14 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
           </div>
         </DialogBody>
         <DialogFooter className="px-6 py-4 border-t flex justify-end gap-2">
-          <button 
+          <button
             onClick={onClose}
             className="btn btn-light"
             disabled={processing}
           >
             취소
           </button>
-          <button 
+          <button
             onClick={handleReject}
             className="btn btn-danger"
             disabled={processing}

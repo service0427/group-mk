@@ -17,7 +17,7 @@ interface IModalWelcomMessageProps {
 const ModalWelcomMessage = ({ open, onOpenChange }: IModalWelcomMessageProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[500px]">
+      <DialogContent className="max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader className="border-0">
           <DialogTitle></DialogTitle>
           <DialogDescription></DialogDescription>

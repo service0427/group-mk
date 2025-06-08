@@ -55,7 +55,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
       const { count, error: countError } = await countQuery;
 
       if (countError) {
-        
+
       } else if (count !== null) {
         setTotalRecords(count);
         setTotalPages(Math.ceil(count / itemsPerPage));
@@ -90,13 +90,13 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
       const { data, error } = await query;
 
       if (error) {
-        
+
         return;
       }
 
       setUsers(data || []);
     } catch (error: any) {
-      
+
       setUsers([]);
     } finally {
       setLoading(false);
@@ -179,7 +179,7 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">회원 선택</DialogTitle>
         </DialogHeader>
@@ -415,8 +415,8 @@ const UserSelectModal: React.FC<UserSelectModalProps> = ({ isOpen, onClose, onSe
                             <button
                               key={i}
                               className={`flex items-center justify-center w-8 h-8 rounded-md ${i === page
-                                  ? 'bg-primary text-white'
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300'
+                                ? 'bg-primary text-white'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300'
                                 }`}
                               onClick={() => setPage(i)}
                             >

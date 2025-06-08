@@ -685,6 +685,15 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-border">
                   <div className="flex items-center gap-2 mb-1">
+                    <KeenIcon icon="rocket" className="text-green-500 size-5" />
+                    <div className="text-sm text-muted-foreground">상승효율</div>
+                  </div>
+                  <div className="text-xl font-bold text-green-600">
+                    {campaign?.efficiency || '60%'}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="wallet" className="text-primary size-5" />
                     <div className="text-sm text-muted-foreground">건당 단가</div>
                   </div>
@@ -696,20 +705,19 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-border">
                   <div className="flex items-center gap-2 mb-1">
-                    <KeenIcon icon="rocket" className="text-green-500 size-5" />
-                    <div className="text-sm text-muted-foreground">상승효율</div>
-                  </div>
-                  <div className="text-xl font-bold text-green-600">
-                    {campaign?.efficiency || '60%'}
-                  </div>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-border">
-                  <div className="flex items-center gap-2 mb-1">
-                    <KeenIcon icon="timer" className="text-blue-500 size-5" />
-                    <div className="text-sm text-muted-foreground">접수마감시간</div>
+                    <KeenIcon icon="purchase" className="text-orange-500 size-5" />
+                    <div className="text-sm text-muted-foreground">최소수량</div>
                   </div>
                   <div className="text-xl font-bold text-foreground">
-                    {campaign?.deadline || '18:00'}
+                    {(() => {
+                      const minQty = campaign?.minQuantity || '100';
+                      // 이미 "개"가 포함된 경우 그대로 사용
+                      if (String(minQty).includes('개')) {
+                        return minQty;
+                      }
+                      // 숫자만 있는 경우 포맷팅 후 "개" 추가
+                      return `${formatPriceWithCommas(minQty)}개`;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -743,25 +751,9 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 </div>
               </div>
 
-              {/* 가이드라인 */}
-              <div>
-                <h3 className="text-lg font-medium text-foreground mb-3">캠페인 가이드라인</h3>
-                <div className="bg-white p-5 rounded-xl text-md text-muted-foreground border border-border">
-                  <ul className="list-disc list-inside space-y-1.5">
-                    <li>해당 캠페인 건당 단가는 {campaign?.unitPrice
-                      ? `${formatPriceWithCommas(campaign.unitPrice)}원`
-                      : '1,000원'}입니다.</li>
-                    <li>캠페인 접수 시간은 {campaign?.deadline || '18:00'}까지 입니다.</li>
-                    {campaign?.additionalLogic && campaign.additionalLogic !== '0' && campaign.additionalLogic !== '없음' && (
-                      <li>추가로직 필요 수량은 {campaign.additionalLogic}입니다.</li>
-                    )}
-                    <li>데이터는 24시간 내에 집계되며, 결과는 대시보드에서 확인할 수 있습니다.</li>
-                  </ul>
-                </div>
-              </div>
 
-              {/* 순위 변화 추이 섹션 */}
-              <div>
+              {/* 순위 변화 추이 섹션 - 주석 처리 */}
+              {/* <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-foreground">순위 변화 추이</h3>
                   <div className="flex gap-2">
@@ -842,7 +834,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                     </div>
                   </>
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
 

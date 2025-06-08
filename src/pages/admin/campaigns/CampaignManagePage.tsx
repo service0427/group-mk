@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardTemplate } from '@/components/pageTemplate';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,10 +9,11 @@ import { useAuthContext } from '@/auth';
 import { CampaignModal } from '@/components/campaign-modals';
 import { fetchCampaigns, getServiceTypeCode } from './services/campaignService';
 import { CampaignContent } from './components';
-import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { CAMPAIGNS } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import { ServiceSelector } from '@/components/service-selector';
+import { supabase } from '@/supabase';
 
 
 const CampaignManagePage: React.FC = () => {
@@ -28,6 +29,11 @@ const CampaignManagePage: React.FC = () => {
 
   // 캠페인 추가 모달 상태
   const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
+  
+  // 서비스별 캠페인 개수
+  const [serviceCampaignCounts, setServiceCampaignCounts] = useState<Record<string, number>>({});
+  // 캠페인이 있는 서비스 목록
+  const [servicesWithCampaigns, setServicesWithCampaigns] = useState<Set<string>>(new Set());
 
   // 권한 확인
   const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
@@ -37,6 +43,48 @@ const CampaignManagePage: React.FC = () => {
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
   };
+
+  // 서비스별 캠페인 개수를 가져오는 함수
+  const fetchAllServiceCounts = useCallback(async () => {
+    if (!currentUser?.id) return;
+
+    try {
+      // 모든 캠페인 가져오기 (상태 조건 없이)
+      let query = supabase
+        .from('campaigns')
+        .select('service_type');
+
+      // 개발자가 아니고 운영자도 아닌 경우 본인 캠페인만
+      if (userRole !== USER_ROLES.DEVELOPER && !isOperator) {
+        query = query.eq('mat_id', currentUser.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('서비스별 캠페인 수 조회 오류:', error);
+        return;
+      }
+
+      // 서비스별로 카운트 계산
+      const counts: Record<string, number> = {};
+      const servicesSet = new Set<string>();
+      
+      if (data) {
+        data.forEach((campaign: any) => {
+          if (campaign.service_type) {
+            counts[campaign.service_type] = (counts[campaign.service_type] || 0) + 1;
+            servicesSet.add(campaign.service_type);
+          }
+        });
+      }
+
+      setServiceCampaignCounts(counts);
+      setServicesWithCampaigns(servicesSet);
+    } catch (error) {
+      console.error('서비스별 캠페인 수 조회 중 오류:', error);
+    }
+  }, [currentUser?.id, userRole, isOperator]);
 
   // 캠페인 데이터 로드
   const loadCampaigns = async () => {
@@ -53,6 +101,9 @@ const CampaignManagePage: React.FC = () => {
       // fetchCampaigns가 이미 ICampaign 형식으로 변환해서 반환하므로 그대로 사용
       setCampaigns(rawData);
       setError(null);
+      
+      // 캠페인 개수도 업데이트
+      await fetchAllServiceCounts();
     } catch (err) {
       console.error('캠페인 데이터 조회 오류:', err);
       setError('캠페인 데이터를 불러오는데 실패했습니다.');
@@ -68,6 +119,11 @@ const CampaignManagePage: React.FC = () => {
       loadCampaigns();
     }
   }, [selectedService]);
+
+  // 컴포넌트 마운트 시 모든 서비스의 캠페인 수 가져오기
+  useEffect(() => {
+    fetchAllServiceCounts();
+  }, [fetchAllServiceCounts]);
 
   const handleAllCampaignsClick = () => {
     navigate('/admin/campaigns/all');
@@ -103,6 +159,11 @@ const CampaignManagePage: React.FC = () => {
             onServiceSelect={handleServiceClick}
             showDisabled={true}
             userRole={userRole}
+            showCount={true}
+            serviceCounts={serviceCampaignCounts}
+            servicesWithSlots={servicesWithCampaigns}
+            collapsible={true}
+            initialDisplayCount={6}
           />
         </CardContent>
       </Card>

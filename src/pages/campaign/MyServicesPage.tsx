@@ -11,7 +11,7 @@ import { CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
 import { CampaignServiceType } from '@/components/campaign-modals/types';
 import { ServiceSelector } from '@/components/service-selector';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { supabase } from '@/supabase';
 import {
   SearchForm,
@@ -45,7 +45,12 @@ const MyServicesPage: React.FC = () => {
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const [selectedSlotForMemo, setSelectedSlotForMemo] = useState<any>(null);
   const [memoText, setMemoText] = useState('');
-  
+
+  // 서비스별 슬롯 수를 저장할 상태
+  const [serviceSlotCounts, setServiceSlotCounts] = useState<Record<string, number>>({});
+  // 슬롯이 있는 서비스 목록 (모든 상태 포함)
+  const [servicesWithSlots, setServicesWithSlots] = useState<Set<string>>(new Set());
+
   // 취소 확인 모달 상태
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [slotsToCancel, setSlotsToCancel] = useState<string[]>([]);
@@ -107,6 +112,91 @@ const MyServicesPage: React.FC = () => {
       loadCampaignSlots();
     }
   }, [selectedService, currentUser?.id]);
+
+  // 서비스별 슬롯 수를 가져오는 함수
+  const fetchAllServiceCounts = useCallback(async () => {
+    if (!currentUser?.id) return;
+
+    try {
+      // 1. active 상태의 슬롯 카운트 (표시용)
+      let activeQuery = supabase
+        .from('slots')
+        .select(`
+          id,
+          product_id,
+          status,
+          user_id,
+          mat_id,
+          campaigns:product_id (
+            service_type
+          )
+        `)
+        .in('status', ['active']);
+
+      // 개발자가 아닌 경우에만 사용자 필터 적용
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        activeQuery = activeQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: activeData, error: activeError } = await activeQuery;
+
+      if (activeError) {
+        console.error('활성 슬롯 수 조회 오류:', activeError);
+        return;
+      }
+
+      // 2. 모든 상태의 슬롯 확인 (활성화 여부 판단용)
+      let allQuery = supabase
+        .from('slots')
+        .select(`
+          id,
+          campaigns:product_id (
+            service_type
+          )
+        `);
+
+      // 개발자가 아닌 경우에만 사용자 필터 적용
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        allQuery = allQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: allData, error: allError } = await allQuery;
+
+      if (allError) {
+        console.error('전체 슬롯 조회 오류:', allError);
+      }
+
+      // active 슬롯 카운트 계산
+      const counts: Record<string, number> = {};
+      if (activeData) {
+        activeData.forEach((slot: any) => {
+          if (slot.campaigns?.service_type) {
+            counts[slot.campaigns.service_type] = (counts[slot.campaigns.service_type] || 0) + 1;
+          }
+        });
+      }
+
+      // 슬롯이 있는 서비스 목록 생성
+      const servicesSet = new Set<string>();
+      if (allData) {
+        allData.forEach((slot: any) => {
+          if (slot.campaigns?.service_type) {
+            servicesSet.add(slot.campaigns.service_type);
+          }
+        });
+      }
+
+      setServiceSlotCounts(counts);
+      setServicesWithSlots(servicesSet);
+    } catch (error) {
+      console.error('서비스별 슬롯 수 조회 중 오류:', error);
+    }
+  }, [currentUser?.id, userRole]);
+
+  // 컴포넌트 마운트 시 모든 서비스의 슬롯 수 가져오기
+  useEffect(() => {
+    fetchAllServiceCounts();
+  }, [fetchAllServiceCounts]);
 
   // 메모 열기 핸들러
   const handleOpenMemoModal = useCallback((slotId: string) => {
@@ -184,7 +274,7 @@ const MyServicesPage: React.FC = () => {
   // 슬롯 취소 모달 열기
   const handleOpenCancelModal = useCallback((slotIds: string | string[]) => {
     const idsArray = Array.isArray(slotIds) ? slotIds : [slotIds];
-    
+
     // 취소 가능한 슬롯만 필터링
     const cancellableSlots = idsArray.filter(id => {
       const slot = filteredSlots.find(s => s.id === id);
@@ -261,7 +351,7 @@ const MyServicesPage: React.FC = () => {
               paid_balance: totalAmount,
               free_balance: 0
             });
-          
+
           if (insertError) {
             console.error('user_balances 생성 오류:', insertError);
             throw insertError;
@@ -308,6 +398,7 @@ const MyServicesPage: React.FC = () => {
       setSlotsToCancel([]);
       setSelectedSlots([]);
       await loadCampaignSlots();
+      await fetchAllServiceCounts(); // 서비스별 카운트 업데이트
     } catch (error) {
       console.error('슬롯 취소 오류:', error);
       showError('슬롯 취소 중 오류가 발생했습니다.');
@@ -351,6 +442,11 @@ const MyServicesPage: React.FC = () => {
             onServiceSelect={handleServiceClick}
             showDisabled={true}
             userRole={userRole}
+            showCount={true}
+            serviceCounts={serviceSlotCounts}
+            servicesWithSlots={servicesWithSlots}
+            collapsible={true}
+            initialDisplayCount={6}
           />
         </CardContent>
       </Card>
@@ -562,6 +658,7 @@ const MyServicesPage: React.FC = () => {
         onClose={() => {
           setIsAddModalOpen(false);
           loadCampaignSlots();
+          fetchAllServiceCounts(); // 서비스별 카운트 업데이트
         }}
         serviceCode={selectedService || ''}
         category={serviceCategoryLabel}
@@ -598,7 +695,7 @@ const MyServicesPage: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           {/* 컨텐츠 영역 */}
           <div className="p-6">
             {/* 취소할 슬롯 정보 */}
@@ -628,7 +725,7 @@ const MyServicesPage: React.FC = () => {
                     주의사항
                   </h4>
                   <p className="text-xs text-red-700 dark:text-red-300">
-                    이 작업은 되돌릴 수 없습니다. 취소된 슬롯은 다시 복구할 수 없으며, 
+                    이 작업은 되돌릴 수 없습니다. 취소된 슬롯은 다시 복구할 수 없으며,
                     새로 구매하셔야 합니다.
                   </p>
                 </div>

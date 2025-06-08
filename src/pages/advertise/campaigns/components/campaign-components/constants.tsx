@@ -11,6 +11,7 @@ export const SERVICE_TYPE_MAP = {
   'NP 공유': 'NaverPlaceShare',          // 약식 명칭 지원
   'NP 트래픽': 'NaverPlaceTraffic',
   'NP 순위확인': 'NaverPlaceRank',
+  'NB 포스팅': 'NaverBlogPost',
   'N 자동완성': 'NaverAuto',
   'N 트래픽': 'NaverTraffic',            // 기존 ntraffic에서 정확한 타입 코드로 변경
   'CP 트래픽': 'CoupangTraffic',
@@ -33,6 +34,7 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'NaverPlaceShare': 'NP 블로그공유',
   'NaverPlaceTraffic': 'NP 트래픽',
   'NaverPlaceRank': 'NP 순위확인',
+  'NaverBlogPost': 'NB 포스팅',
   'NaverAuto': 'N 자동완성',
   'CoupangTraffic': 'CP 트래픽',
   'OhouseTraffic': 'OH 트래픽',
@@ -46,6 +48,7 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'naver-place-share': 'NP 블로그공유',
   'naver-place-traffic': 'NP 트래픽',
   'naver-place-rank': 'NP 순위확인',
+  'naver-blog-post': 'NB 포스팅',
   'naver-auto': 'N 자동완성',
   'coupang-traffic': 'CP 트래픽',
   'coupang-fakesale': 'CP 가구매',
@@ -62,6 +65,7 @@ export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
   'naver-place-share': 'NaverPlaceShare',
   'naver-place-traffic': 'NaverPlaceTraffic',
   'naver-place-rank': 'NaverPlaceRank',
+  'naver-blog-post': 'NaverBlogPost',
   'naver-auto': 'NaverAuto',
   'coupang-traffic': 'CoupangTraffic',
   'coupang-fakesale': 'CoupangFakesale',

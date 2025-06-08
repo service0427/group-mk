@@ -26,6 +26,7 @@ export const CAMPAIGNS: CampaignConfig[] = [
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC], code: CampaignServiceType.NAVER_PLACE_TRAFFIC },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE], code: CampaignServiceType.NAVER_PLACE_SAVE },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE], code: CampaignServiceType.NAVER_PLACE_SHARE },
+      { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_BLOG_POST], code: CampaignServiceType.NAVER_BLOG_POST },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO], code: CampaignServiceType.NAVER_AUTO },
       { name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE], code: CampaignServiceType.NAVER_SHOPPING_FAKESALE }
     ]

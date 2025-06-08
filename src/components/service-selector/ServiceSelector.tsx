@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CAMPAIGNS } from '@/config/campaign.config';
@@ -15,6 +15,9 @@ interface ServiceSelectorProps {
   className?: string;
   requiresKeyword?: boolean;  // 키워드가 필요한 서비스만 표시할지 여부
   userRole?: string;  // 사용자 역할
+  servicesWithSlots?: Set<string>;  // 슬롯이 있는 서비스 목록
+  collapsible?: boolean;  // 접기/펼치기 기능 사용 여부
+  initialDisplayCount?: number;  // 초기 표시 개수
 }
 
 export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
@@ -25,8 +28,12 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   serviceCounts = {},
   className = '',
   requiresKeyword,
-  userRole
+  userRole,
+  servicesWithSlots,
+  collapsible = false,
+  initialDisplayCount = 6
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   // 모든 서비스를 menu.config.tsx 순서대로 정렬
   const allServices = useMemo(() => {
     // menu.config.tsx의 순서에 맞춰 수동으로 정렬
@@ -37,6 +44,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       CampaignServiceType.NAVER_PLACE_TRAFFIC,    // NP 트래픽
       CampaignServiceType.NAVER_PLACE_SAVE,       // NP 저장하기
       CampaignServiceType.NAVER_PLACE_SHARE,      // NP 블로그공유
+      CampaignServiceType.NAVER_BLOG_POST,        // NB 포스팅
       CampaignServiceType.NAVER_AUTO,             // N 자동완성
       CampaignServiceType.NAVER_SHOPPING_FAKESALE,// NS 가구매
       CampaignServiceType.COUPANG_TRAFFIC,        // CP 트래픽
@@ -61,6 +69,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           type.code === CampaignServiceType.NAVER_PLACE_RANK) {
           icon = '/media/ad-brand/naver-place.png';
         } else if (type.code === CampaignServiceType.NAVER_PLACE_SHARE) {
+          icon = '/media/ad-brand/naver-place.png';
+        } else if (type.code === CampaignServiceType.NAVER_BLOG_POST) {
           icon = '/media/ad-brand/naver-blog.png';
         }
 
@@ -73,7 +83,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           code: type.code,
           icon: icon,
           platform: campaign.name,
-          // CP 가구매와 N 자동완성은 비활성화 (NS 가구매는 활성화)
+          // CP 가구매와 N 자동완성은 비활성화 (NS 가구매, NB 포스팅은 활성화)
           disabled: type.code === CampaignServiceType.COUPANG_FAKESALE ||
             type.code === CampaignServiceType.NAVER_AUTO
         });
@@ -165,44 +175,97 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       services = services.filter(service => !service.disabled);
     }
 
+    // servicesWithSlots가 제공된 경우, 슬롯이 있는 서비스를 앞쪽으로 정렬
+    if (servicesWithSlots && servicesWithSlots.size > 0) {
+      const servicesWithSlotsArray: typeof services = [];
+      const servicesWithoutSlotsArray: typeof services = [];
+      
+      services.forEach(service => {
+        const hasSlots = servicesWithSlots.has(service.code);
+        if (hasSlots && !service.disabled) {
+          servicesWithSlotsArray.push(service);
+        } else {
+          servicesWithoutSlotsArray.push(service);
+        }
+      });
+      
+      services = [...servicesWithSlotsArray, ...servicesWithoutSlotsArray];
+    }
+
     return services;
-  }, [allServices, showDisabled, requiresKeyword, userRole]);
+  }, [allServices, showDisabled, requiresKeyword, userRole, servicesWithSlots]);
+
+  // 표시할 서비스 결정
+  const displayedServices = useMemo(() => {
+    if (!collapsible || isExpanded) {
+      return filteredServices;
+    }
+    return filteredServices.slice(0, initialDisplayCount);
+  }, [filteredServices, collapsible, isExpanded, initialDisplayCount]);
+
+  const hasMoreServices = collapsible && filteredServices.length > initialDisplayCount;
 
   return (
-    <div className={`flex flex-wrap gap-1.5 lg:gap-2 ${className}`}>
-      {filteredServices.map((service) => (
-        <Button
-          key={service.path}
-          variant={selectedService === service.path ? "default" : "outline"}
-          size="sm"
-          onClick={() => onServiceSelect(service.path)}
-          disabled={service.disabled}
-          className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
-              ? 'bg-primary hover:bg-primary/90'
-              : ''
-            }`}
-        >
-          {service.icon && (
-            <img
-              src={service.icon}
-              alt={service.name}
-              className="size-3 lg:size-4 mr-1 lg:mr-2"
-            />
-          )}
-          <span className="whitespace-nowrap">{service.name}</span>
-          {showCount && serviceCounts[service.code || service.path] && (
-            <Badge
-              variant="outline"
-              className={`ml-1.5 min-w-[20px] h-5 px-1 ${selectedService === service.path
-                  ? 'bg-white/20 border-white/40 text-white'
+    <div className={className}>
+      <div className="flex flex-wrap gap-1.5 lg:gap-2">
+        {displayedServices.map((service) => {
+          // servicesWithSlots가 제공되면, 슬롯이 없는 서비스는 비활성화
+          const hasSlots = !servicesWithSlots || servicesWithSlots.has(service.code);
+          const isDisabled = service.disabled || (!hasSlots && servicesWithSlots !== undefined);
+          
+          return (
+            <Button
+              key={service.path}
+              variant={selectedService === service.path ? "default" : "outline"}
+              size="sm"
+              onClick={() => onServiceSelect(service.path)}
+              disabled={isDisabled}
+              className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
+                  ? 'bg-primary hover:bg-primary/90'
                   : ''
                 }`}
             >
-              {serviceCounts[service.code || service.path]}
-            </Badge>
-          )}
-        </Button>
-      ))}
+            {service.icon && (
+              <img
+                src={service.icon}
+                alt={service.name}
+                className="size-3 lg:size-4 mr-1 lg:mr-2"
+              />
+            )}
+            <span className="whitespace-nowrap">{service.name}</span>
+            {showCount && (
+              <Badge
+                variant="outline"
+                className={`ml-1.5 min-w-[20px] h-5 px-1 ${selectedService === service.path
+                    ? 'bg-white/20 border-white/40 text-white'
+                    : ''
+                  }`}
+              >
+                {serviceCounts[service.code || service.path] || 0}
+              </Badge>
+            )}
+            </Button>
+          );
+        })}
+        
+        {/* 더보기/접기 버튼 */}
+        {hasMoreServices && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${
+              isExpanded 
+                ? 'border-gray-400 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800' 
+                : 'border-primary text-primary hover:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20'
+            }`}
+          >
+            <span className="whitespace-nowrap">
+              {isExpanded ? '접기' : `더보기 (+${filteredServices.length - initialDisplayCount})`}
+            </span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

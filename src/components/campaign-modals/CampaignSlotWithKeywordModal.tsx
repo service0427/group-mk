@@ -1517,13 +1517,47 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         onSave(campaignSlotData);
       }
 
-      // 성공 알림 표시 - 메시지 변경
-      showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      // 구매 완료 후 상태 초기화
+      // 선택된 키워드 초기화
+      setSelectedKeywords([]);
 
-      // 모달 닫기
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      // 키워드 입력 데이터 초기화
+      setKeywords(prev =>
+        prev.map(k => ({
+          ...k,
+          workCount: null,
+          dueDays: null,
+          inputData: {}
+        }))
+      );
+
+      // 슬롯 데이터 초기화
+      setSlotData({
+        productName: '',
+        mid: '',
+        url: '',
+        keyword1: '',
+        keyword2: '',
+        keyword3: '',
+        campaignId: selectedCampaignId,
+        selectedKeywords: [],
+        keywordDetails: []
+      });
+
+      // 결제 금액 초기화
+      setTotalPaymentAmount(0);
+
+      // 이미 등록된 키워드 목록 다시 가져오기
+      if (selectedCampaignId) {
+        await fetchAlreadyRegisteredKeywords(selectedCampaignId);
+        // 키워드 목록도 다시 가져오기 (등록된 키워드 표시를 위해)
+        if (selectedGroupId) {
+          await fetchKeywords(selectedGroupId);
+        }
+      }
+
+      // 성공 알림 표시
+      showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
     } catch (error) {
       console.error('키워드 구매 신청 중 오류:', error);
       showAlert('구매 신청 실패', (error instanceof Error ? error.message : '키워드 구매 신청 중 오류가 발생했습니다. 다시 시도해주세요.'), false);
@@ -1552,7 +1586,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 캠페인 슬롯 구매
               </DialogTitle>
               <div className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-full text-xs sm:text-sm border border-blue-100 dark:border-blue-900 shadow-sm flex items-center gap-1.5 sm:gap-2">
-                <KeenIcon icon="dollar" className="text-primary size-3 sm:size-4" />
+                <KeenIcon icon="dollar" className="text-primary size-4 sm:size-4" />
                 <span className="hidden sm:inline font-semibold text-gray-600 dark:text-gray-300">캐시 잔액:</span>
                 <span className="font-extrabold text-primary dark:text-primary-foreground text-xs sm:text-sm">{userCashBalance.toLocaleString()}원</span>
               </div>
@@ -1846,7 +1880,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                           <span className="text-sm font-medium text-foreground">내 키워드</span>
                         </div>
                         <div className="flex-1 flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                          <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3 shrink-0" />
+                          <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-4 shrink-0" />
                           <p className="text-xs text-blue-700 dark:text-blue-300 whitespace-nowrap">
                             <span className="font-semibold">작업 시작일:</span> 승인 다음날부터
                           </p>
@@ -2022,7 +2056,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                             setTimeout(() => calculateTotalPayment(allIds), 0);
                                           }
                                         }}
-                                        className="size-3 sm:size-4 cursor-pointer rounded"
+                                        className="size-4 sm:size-4 cursor-pointer rounded"
                                       />
                                     </div>
                                   </th>
@@ -2061,7 +2095,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         )}
                                         {field.description && (
                                           <span className="ml-1 inline-flex items-center justify-center">
-                                            <KeenIcon icon="information" className="size-3 text-blue-300" />
+                                            <KeenIcon icon="information" className="size-4 text-blue-300" />
                                             <div className="hidden group-hover:block absolute top-full left-1/2 transform -translate-x-1/2 z-50 mt-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap">
                                               {field.description}
                                             </div>
@@ -2093,7 +2127,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                             type="checkbox"
                                             checked={selectedKeywords.includes(keyword.id)}
                                             onChange={() => handleKeywordToggle(keyword.id)}
-                                            className="size-3 sm:size-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            className="size-4 sm:size-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                           />
                                         </div>
                                       </td>
@@ -2232,7 +2266,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                               />
                                               {field.description && (
                                                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-help">
-                                                  <KeenIcon icon="information" className="size-3 text-blue-400" />
+                                                  <KeenIcon icon="information" className="size-4 text-blue-400" />
                                                   <div className="hidden group-hover:block absolute bottom-full right-0 z-50 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap max-w-xs">
                                                     {field.description}
                                                   </div>

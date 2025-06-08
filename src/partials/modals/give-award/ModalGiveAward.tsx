@@ -22,7 +22,7 @@ const ModalGiveAward = ({ open, onOpenChange }: ModalGiveAwardProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[600px]">
+      <DialogContent className="max-w-[600px]" aria-describedby={undefined}>
         <DialogHeader className="py-4 px-5">
           <DialogTitle>Give Award</DialogTitle>
           <DialogDescription></DialogDescription>

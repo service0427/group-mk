@@ -88,7 +88,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-foreground">
             {notificationType === 'role' ? '권한별 알림 전송' : '회원별 알림 전송'}

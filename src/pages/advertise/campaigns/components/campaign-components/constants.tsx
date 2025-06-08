@@ -4,6 +4,7 @@ import React from 'react';
 export const SERVICE_TYPE_MAP = {
   'NS 트래픽': 'NaverShoppingTraffic',   // 기존 ntraffic에서 정확한 타입 코드로 변경
   'NS 순위확인': 'NaverShoppingRank',
+  'NS 가구매': 'NaverShoppingFakesale',
   'NP 저장하기': 'NaverPlaceSave',
   'NP 저장': 'NaverPlaceSave',           // 약식 명칭 지원
   'NP 블로그공유': 'NaverPlaceShare',
@@ -14,6 +15,7 @@ export const SERVICE_TYPE_MAP = {
   'N 트래픽': 'NaverTraffic',            // 기존 ntraffic에서 정확한 타입 코드로 변경
   'CP 트래픽': 'CoupangTraffic',
   'C 트래픽': 'CoupangTraffic',          // 약식 명칭 지원
+  'CP 가구매': 'CoupangFakesale',
   'OH 트래픽': 'OhouseTraffic'
 };
 
@@ -25,7 +27,7 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   // 새 코드 매핑
   'NaverTraffic': 'N 트래픽',
   'NaverShoppingTraffic': 'NS 트래픽',
-  'NaverShoppingFakeSale': 'NS 가짜매출',
+  'NaverShoppingFakesale': 'NS 가구매',
   'NaverShoppingRank': 'NS 순위확인',
   'NaverPlaceSave': 'NP 저장하기',
   'NaverPlaceShare': 'NP 블로그공유',
@@ -39,12 +41,14 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'naver-traffic': 'N 트래픽',
   'naver-shopping-traffic': 'NS 트래픽',
   'naver-shopping-rank': 'NS 순위확인',
+  'naver-shopping-fakesale': 'NS 가구매',
   'naver-place-save': 'NP 저장하기',
   'naver-place-share': 'NP 블로그공유',
   'naver-place-traffic': 'NP 트래픽',
   'naver-place-rank': 'NP 순위확인',
   'naver-auto': 'N 자동완성',
   'coupang-traffic': 'CP 트래픽',
+  'coupang-fakesale': 'CP 가구매',
   'ohouse-traffic': 'OH 트래픽'
 };
 
@@ -53,12 +57,14 @@ export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
   'naver-traffic': 'NaverTraffic',
   'naver-shopping-traffic': 'NaverShoppingTraffic',
   'naver-shopping-rank': 'NaverShoppingRank',
+  'naver-shopping-fakesale': 'NaverShoppingFakesale',
   'naver-place-save': 'NaverPlaceSave',
   'naver-place-share': 'NaverPlaceShare',
   'naver-place-traffic': 'NaverPlaceTraffic',
   'naver-place-rank': 'NaverPlaceRank',
   'naver-auto': 'NaverAuto',
   'coupang-traffic': 'CoupangTraffic',
+  'coupang-fakesale': 'CoupangFakesale',
   'ohouse-traffic': 'OhouseTraffic'
 };
 

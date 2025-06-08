@@ -23,46 +23,46 @@ const ManageCashPage = () => {
   const [searchDateFrom, setSearchDateFrom] = useState<string>('');
   const [searchDateTo, setSearchDateTo] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  
+
   // 모달 관련 상태 관리
   const [modalType, setModalType] = useState<'confirm' | 'reject' | 'result' | null>(null);
   const [modalData, setModalData] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
-  
+
   // 모달 열기 함수들
   const openConfirmModal = (requestId: string) => {
     setModalType('confirm');
     setModalData({ requestId });
   };
-  
+
   const openRejectModal = (requestId: string) => {
     setModalType('reject');
     setModalData({ requestId });
     setRejectReason('');
   };
-  
+
   const openResultModal = (title: string, message: string, isSuccess: boolean) => {
     setModalType('result');
     setModalData({ title, message, isSuccess });
   };
-  
+
   // 모달 닫기
   const closeModal = () => {
     setModalType(null);
     setModalData(null);
     setRejectReason('');
   };
-  
+
   // 승인 처리
   const handleConfirmApprove = async () => {
     if (!modalData?.requestId) return;
-    
+
     closeModal();
     setLoading(true);
-    
+
     try {
       const result = await CashManageService.approveChargeRequest(modalData.requestId);
-      
+
       if (result.success) {
         getCashRequestList(currentPage);
         openResultModal("충전 요청 승인 완료", result.message, true);
@@ -75,18 +75,18 @@ const ManageCashPage = () => {
       setLoading(false);
     }
   };
-  
+
   // 거부 처리
   const handleConfirmReject = async () => {
     if (!modalData?.requestId || !rejectReason.trim()) return;
-    
+
     const requestId = modalData.requestId;
     closeModal();
     setLoading(true);
-    
+
     try {
       const result = await CashManageService.rejectChargeRequest(requestId, rejectReason);
-      
+
       if (result.success) {
         getCashRequestList(currentPage);
         openResultModal("충전 요청 거부 완료", result.message, true);
@@ -100,7 +100,7 @@ const ManageCashPage = () => {
     }
   };
 
-  const getCashRequestList = async(page:number) => {
+  const getCashRequestList = async (page: number) => {
     setLoading(true);
     try {
       const result = await CashManageService.getCashRequestList(page, limit, {
@@ -110,14 +110,14 @@ const ManageCashPage = () => {
         dateFrom: searchDateFrom,
         dateTo: searchDateTo
       });
-      
+
       if (result.success) {
         setCashRequests(result.data || []);
         setTotalItems(result.totalItems || 0);
       } else {
         openResultModal("데이터 로딩 실패", result.message, false);
       }
-    } catch (error:any) {
+    } catch (error: any) {
       openResultModal("데이터 로딩 오류", error.message, false);
     } finally {
       setLoading(false);
@@ -130,18 +130,18 @@ const ManageCashPage = () => {
     setLimit(newLimit);
     setCurrentPage(1);
   }
-  
+
   // 페이지 이동 처리
   const handlePageChange = (page: number) => {
     if (page < 1 || page > getTotalPages()) return;
     setCurrentPage(page);
   }
-  
+
   // 총 페이지 수 계산
   const getTotalPages = () => {
     return Math.max(1, Math.ceil(totalItems / limit));
   }
-  
+
   // 현재 표시 중인 항목 범위 계산
   const getDisplayRange = () => {
     if (totalItems === 0) return "0-0 / 0";
@@ -152,25 +152,25 @@ const ManageCashPage = () => {
 
   useEffect(() => {
     getCashRequestList(currentPage);
-  }, [limit, currentPage]); 
-  
+  }, [limit, currentPage]);
+
   // 검색 조건이 변경되면 페이지를 1로 리셋
   useEffect(() => {
     setCurrentPage(1);
   }, [searchStatus, searchEmail, searchName, searchDateFrom, searchDateTo]);
 
   const status_array = [
-    {"code":"", "name": "전체"},
-    {"code":"pending", "name": "대기중"},
-    {"code":"approved", "name": "승인됨"},
-    {"code":"rejected", "name": "거절됨"},
+    { "code": "", "name": "전체" },
+    { "code": "pending", "name": "대기중" },
+    { "code": "approved", "name": "승인됨" },
+    { "code": "rejected", "name": "거절됨" },
   ];
 
   const renderStatusBadge = (status: string) => {
     let badgeClass = '';
     let statusText = '';
 
-    switch(status) {
+    switch (status) {
       case 'approved':
         badgeClass = 'bg-success/10 text-success';
         statusText = '승인됨';
@@ -220,7 +220,7 @@ const ManageCashPage = () => {
 
   return (
     <CommonTemplate
-      title="충전 관리" 
+      title="충전 관리"
       description="회원들의 캐시 충전 신청을 관리합니다"
       toolbarActions={toolbarActions}
       showPageMenu={false}
@@ -228,7 +228,7 @@ const ManageCashPage = () => {
       {/* 승인 확인 모달 */}
       {modalType === 'confirm' && (
         <Dialog open={true} onOpenChange={closeModal}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>캐시 충전 승인</DialogTitle>
               <DialogDescription>
@@ -239,7 +239,7 @@ const ManageCashPage = () => {
               <Button variant="outline" onClick={closeModal}>
                 취소
               </Button>
-              <Button 
+              <Button
                 className="bg-success hover:bg-success/90 text-white"
                 onClick={handleConfirmApprove}
                 disabled={loading}
@@ -250,11 +250,11 @@ const ManageCashPage = () => {
           </DialogContent>
         </Dialog>
       )}
-      
+
       {/* 거부 사유 입력 모달 */}
       {modalType === 'reject' && (
         <Dialog open={true} onOpenChange={closeModal}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>거부 사유 입력</DialogTitle>
             </DialogHeader>
@@ -274,7 +274,7 @@ const ManageCashPage = () => {
               <Button variant="outline" onClick={closeModal}>
                 취소
               </Button>
-              <Button 
+              <Button
                 className="bg-danger hover:bg-danger/90 text-white"
                 onClick={handleConfirmReject}
                 disabled={!rejectReason.trim() || loading}
@@ -285,11 +285,11 @@ const ManageCashPage = () => {
           </DialogContent>
         </Dialog>
       )}
-      
+
       {/* 결과 알림 모달 */}
       {modalType === 'result' && (
         <Dialog open={true} onOpenChange={closeModal}>
-          <DialogContent className="max-w-md text-center">
+          <DialogContent className="max-w-md text-center" aria-describedby={undefined}>
             <DialogHeader className="text-center">
               <DialogTitle className={`text-center ${modalData?.isSuccess ? "text-green-600" : "text-red-600"}`}>
                 {modalData?.title}
@@ -299,7 +299,7 @@ const ManageCashPage = () => {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="justify-center">
-              <Button 
+              <Button
                 onClick={closeModal}
                 className={modalData?.isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}
               >
@@ -309,13 +309,13 @@ const ManageCashPage = () => {
           </DialogContent>
         </Dialog>
       )}
-      
+
       <div className="grid gap-5 lg:gap-7.5">
         <div className="card p-6 mb-5 shadow-sm bg-card">
           <div className="card-header pb-5">
             <h3 className="card-title text-lg font-semibold">캐시 충전 신청 검색</h3>
           </div>
-          
+
           <div className="card-body p-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
               {/* 상태(status) - select box */}
@@ -324,8 +324,8 @@ const ManageCashPage = () => {
                   <span className="label-text text-sm font-medium text-foreground">상태</span>
                 </label>
                 <select className="select select-bordered w-full focus:ring-2 focus:ring-primary"
-                        value={searchStatus}
-                        onChange={(e) => setSearchStatus(e.target.value)}>
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}>
                   {status_array.map((option) => (
                     <option key={option.code} value={option.code}>
                       {option.name}
@@ -339,12 +339,12 @@ const ManageCashPage = () => {
                 <label className="label">
                   <span className="label-text text-sm font-medium text-foreground">이메일</span>
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="이메일을 입력하세요" 
+                <input
+                  type="text"
+                  placeholder="이메일을 입력하세요"
                   className="input input-bordered w-full focus:ring-2 focus:ring-primary"
                   value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)} 
+                  onChange={(e) => setSearchEmail(e.target.value)}
                 />
               </div>
 
@@ -353,9 +353,9 @@ const ManageCashPage = () => {
                 <label className="label">
                   <span className="label-text text-sm font-medium text-foreground">이름</span>
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="이름을 입력하세요" 
+                <input
+                  type="text"
+                  placeholder="이름을 입력하세요"
                   className="input input-bordered w-full focus:ring-2 focus:ring-primary"
                   value={searchName}
                   onChange={(e) => setSearchName(e.target.value)}
@@ -369,11 +369,11 @@ const ManageCashPage = () => {
                 <label className="label">
                   <span className="label-text text-sm font-medium text-foreground">신청일 (시작)</span>
                 </label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   className="input input-bordered w-full focus:ring-2 focus:ring-primary"
                   value={searchDateFrom}
-                  onChange={(e) => setSearchDateFrom(e.target.value)} 
+                  onChange={(e) => setSearchDateFrom(e.target.value)}
                 />
               </div>
 
@@ -382,16 +382,16 @@ const ManageCashPage = () => {
                 <label className="label">
                   <span className="label-text text-sm font-medium text-foreground">신청일 (종료)</span>
                 </label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   className="input input-bordered w-full focus:ring-2 focus:ring-primary"
                   value={searchDateTo}
-                  onChange={(e) => setSearchDateTo(e.target.value)} 
+                  onChange={(e) => setSearchDateTo(e.target.value)}
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="card-footer pt-5 flex justify-end">
             <button className="btn btn-primary px-6" onClick={() => getCashRequestList(1)}>
               검색
@@ -403,7 +403,7 @@ const ManageCashPage = () => {
           <div className="card-header p-6 pb-5 flex justify-between items-center">
             <h3 className="card-title text-lg font-semibold">캐시 충전 신청 리스트</h3>
           </div>
-          
+
           <div className="card-body p-0">
             {loading ? (
               <div className="flex justify-center items-center py-10">
@@ -499,8 +499,8 @@ const ManageCashPage = () => {
                                     </div>
                                   ) : (
                                     <span className="text-gray-500 text-xs">
-                                      {request.status === 'pending' ? 
-                                        `${request.minRequestAmount.toLocaleString()}원 이상 충전 시 무료캐시 제공` : 
+                                      {request.status === 'pending' ?
+                                        `${request.minRequestAmount.toLocaleString()}원 이상 충전 시 무료캐시 제공` :
                                         '혜택 없음'}
                                     </span>
                                   )
@@ -518,14 +518,14 @@ const ManageCashPage = () => {
                                 <div className="flex justify-end gap-2">
                                   {request.status === 'pending' && (
                                     <>
-                                      <button 
+                                      <button
                                         className="btn btn-sm btn-success"
                                         onClick={() => openConfirmModal(request.id)}
                                         disabled={loading}
                                       >
                                         승인
                                       </button>
-                                      <button 
+                                      <button
                                         className="btn btn-sm btn-danger"
                                         onClick={() => openRejectModal(request.id)}
                                         disabled={loading}
@@ -569,7 +569,7 @@ const ManageCashPage = () => {
                             </div>
                             {renderStatusBadge(request.status)}
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                             <div>
                               <p className="text-muted-foreground">충전 금액</p>
@@ -601,18 +601,18 @@ const ManageCashPage = () => {
                               <p>{formatDate(request.requested_at)}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex justify-end gap-2 mt-3">
                             {request.status === 'pending' && (
                               <>
-                                <button 
+                                <button
                                   className="btn btn-sm btn-success"
                                   onClick={() => openConfirmModal(request.id)}
                                   disabled={loading}
                                 >
                                   승인
                                 </button>
-                                <button 
+                                <button
                                   className="btn btn-sm btn-danger"
                                   onClick={() => openRejectModal(request.id)}
                                   disabled={loading}
@@ -639,13 +639,13 @@ const ManageCashPage = () => {
               </>
             )}
           </div>
-          
+
           <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
               <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
-              <select 
-                className="select select-sm select-bordered flex-grow min-w-[100px]" 
-                name="perpage" 
+              <select
+                className="select select-sm select-bordered flex-grow min-w-[100px]"
+                name="perpage"
                 value={limit}
                 onChange={handleChangeLimit}
               >
@@ -655,11 +655,11 @@ const ManageCashPage = () => {
                 <option value="100">100</option>
               </select>
             </div>
-            
+
             <div className="flex items-center gap-3 order-1 md:order-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
               <div className="flex">
-                <button 
+                <button
                   className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
@@ -668,7 +668,7 @@ const ManageCashPage = () => {
                     <path d="m15 18-6-6 6-6"></path>
                   </svg>
                 </button>
-                <button 
+                <button
                   className="btn btn-icon btn-sm btn-light rounded-l-none"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= getTotalPages()}

@@ -60,13 +60,13 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-6 border-b">
           <DialogTitle className="text-lg font-semibold text-foreground">
             {getTitle()}
           </DialogTitle>
         </DialogHeader>
-        
+
         <DialogBody className="p-6 bg-background">
           {/* 캠페인명 */}
           <div className="mb-4">
@@ -80,7 +80,7 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               작업 진행 현황
             </h4>
-            
+
             {progress.totalRequestedQuantity > 0 ? (
               <div className="space-y-2 pl-2">
                 <div className="flex items-center text-sm">
@@ -94,30 +94,29 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
                     )}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400 w-24">완료 수량:</span>
                   <span className="text-gray-900 dark:text-gray-100">
                     {progress.totalWorkedQuantity.toLocaleString()}개
                   </span>
                 </div>
-                
+
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400 w-24">작업 일수:</span>
                   <span className="text-gray-900 dark:text-gray-100">
                     {progress.workedDays}일 / {progress.requestedDays}일
                   </span>
                 </div>
-                
+
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400 w-24">진행률:</span>
-                  <span className={`font-semibold ${
-                    displayCompletionRate >= 100 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : displayCompletionRate > 0
+                  <span className={`font-semibold ${displayCompletionRate >= 100
+                    ? 'text-green-600 dark:text-green-400'
+                    : displayCompletionRate > 0
                       ? 'text-yellow-600 dark:text-yellow-400'
                       : 'text-red-600 dark:text-red-400'
-                  }`}>
+                    }`}>
                     {displayCompletionRate}%
                   </span>
                 </div>
@@ -212,7 +211,7 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
             )}
           </div>
         </DialogBody>
-        
+
         <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3">
           <Button
             type="button"
@@ -229,11 +228,11 @@ const ApprovalConfirmModal: React.FC<ApprovalConfirmModalProps> = ({
               handleClose();
             }}
             className={
-              isRefund 
+              isRefund
                 ? 'bg-red-600 hover:bg-red-700 text-white'
-                : progress.isEarlyCompletion 
-                ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-                : 'bg-primary hover:bg-primary/90 text-white'
+                : progress.isEarlyCompletion
+                  ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                  : 'bg-primary hover:bg-primary/90 text-white'
             }
           >
             {isComplete ? '완료' : isRefund ? '환불' : '승인'}

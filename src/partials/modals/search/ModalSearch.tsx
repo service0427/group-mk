@@ -235,6 +235,7 @@ const ModalSearch = forwardRef<HTMLDivElement, IModalSearchProps>(({ open, onOpe
       <DialogContent
         className="max-w-[600px] top-[5%] lg:top-[15%] translate-y-0 [&>button]:top-8 [&>button]:end-7"
         ref={ref}
+        aria-describedby={undefined}
       >
         <DialogHeader className="py-4">
           <DialogTitle></DialogTitle>

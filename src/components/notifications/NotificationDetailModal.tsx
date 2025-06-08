@@ -136,7 +136,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
       }
     );
   };
-  
+
   // 삭제 처리 함수 - showConfirm 사용
   const handleDelete = () => {
     showConfirm(
@@ -163,21 +163,22 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
     <>
       {/* 필요한 스타일을 동적으로 삽입 */}
       <style dangerouslySetInnerHTML={{ __html: modalStyles }} />
-      
-      <Dialog 
-        open={open} 
+
+      <Dialog
+        open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
             onClose();
           }
         }}
       >
-        <DialogContent 
+        <DialogContent
           className="relative max-w-md notification-modal-content"
           style={{ padding: 0, overflow: 'hidden' }}
+          aria-describedby={undefined}
         >
           {/* 닫기 버튼은 Dialog 컴포넌트에 기본으로 포함된 것을 사용 */}
-          
+
           <DialogHeader className={`${getBgColorClass()} p-4 mb-4 rounded-t-lg`}>
             <div className="flex items-center gap-3">
               <NotificationIcon type={notification.type} size="sm" />
@@ -187,8 +188,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                   {formatDate(notification.createdAt)}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                    notification.type === NotificationType.SYSTEM
+                  <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${notification.type === NotificationType.SYSTEM
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
                       : notification.type === NotificationType.TRANSACTION
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
@@ -199,9 +199,8 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                             : notification.type === NotificationType.MARKETING
                               ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
                               : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                  }`}>
-                    <span className={`inline-block w-2 h-2 rounded-full ${
-                      notification.type === NotificationType.SYSTEM
+                    }`}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${notification.type === NotificationType.SYSTEM
                         ? 'bg-blue-500 dark:bg-blue-400'
                         : notification.type === NotificationType.TRANSACTION
                           ? 'bg-green-500 dark:bg-green-400'
@@ -212,7 +211,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                               : notification.type === NotificationType.MARKETING
                                 ? 'bg-yellow-500 dark:bg-yellow-400'
                                 : 'bg-gray-500 dark:bg-gray-400'
-                    }`}></span>
+                      }`}></span>
                     {getNotificationTypeText(notification.type)}
                   </span>
 
@@ -254,7 +253,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                   onClick={() => {
                     // 모달 닫기
                     onClose();
-                    
+
                     // 약간의 지연 후 페이지 이동 (모달이 닫히는 시간 고려)
                     setTimeout(() => {
                       // 경로 정리 후 navigate 사용
@@ -267,7 +266,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                       if (!path.startsWith('/') && path.length > 0) {
                         path = '/' + path;
                       }
-                      
+
                       navigate(path);
                       // 페이지 이동 시 토스트 메시지 표시
                       toast.info('관련 페이지로 이동합니다');

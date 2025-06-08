@@ -154,15 +154,29 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
           {/* 스크롤 가능한 본문 내용 */}
           <div className="p-6 flex-grow overflow-y-auto">
             {/* 캠페인 주요 정보 */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-muted p-4 rounded-md">
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">상승효율</h3>
+                <p className="text-xl font-semibold text-green-600">
+                  {campaign.efficiency || '60%'}
+                </p>
+              </div>
               <div className="bg-muted p-4 rounded-md">
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">건당 단가</h3>
                 <p className="text-xl font-semibold text-primary">{unitPrice}원</p>
               </div>
               <div className="bg-muted p-4 rounded-md">
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">최소 수량</h3>
-                <p className="text-xl font-semibold text-primary">
-                  {campaign.minQuantity ? campaign.minQuantity.replace(/[^0-9]/g, '') : '10'}개
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">최소수량</h3>
+                <p className="text-xl font-semibold text-orange-600">
+                  {(() => {
+                    const minQty = campaign.minQuantity || '100';
+                    // 이미 "개"가 포함된 경우 그대로 사용
+                    if (String(minQty).includes('개')) {
+                      return minQty;
+                    }
+                    // 숫자만 있는 경우 "개" 추가
+                    return `${minQty.replace(/[^0-9]/g, '')}개`;
+                  })()}
                 </p>
               </div>
             </div>

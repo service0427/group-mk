@@ -33,23 +33,23 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
 
     // 사용 가능한 역할과 상태 옵션
     const roles_array = [
-        {"code":"operator", "name": "관리자"},
-        {"code":"developer", "name": "개발자"},
-        {"code":"distributor", "name": "총판"},
-        {"code":"agency", "name": "대행사"},
-        {"code":"advertiser", "name": "광고주"},
+        { "code": "operator", "name": "관리자" },
+        { "code": "developer", "name": "개발자" },
+        { "code": "distributor", "name": "총판" },
+        { "code": "agency", "name": "대행사" },
+        { "code": "advertiser", "name": "광고주" },
     ];
 
     const status_array = [
-        {"code":"active", "name": "활성"},
-        {"code":"inactive", "name": "비활성"},
-        {"code":"pending", "name": "대기중"},
+        { "code": "active", "name": "활성" },
+        { "code": "inactive", "name": "비활성" },
+        { "code": "pending", "name": "대기중" },
     ];
 
     // 입력값 변경 핸들러
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        
+
         // 에러 상태 초기화
         if (errors[name as keyof NewUserData]) {
             setErrors(prev => {
@@ -58,7 +58,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                 return newErrors;
             });
         }
-        
+
         setNewUserData(prev => ({
             ...prev,
             [name]: value
@@ -68,23 +68,23 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
     // 필드 유효성 검사
     const validateForm = (): boolean => {
         const newErrors: Partial<Record<keyof NewUserData, string>> = {};
-        
+
         if (!newUserData.full_name.trim()) {
             newErrors.full_name = '이름을 입력해주세요';
         }
-        
+
         if (!newUserData.email.trim()) {
             newErrors.email = '이메일을 입력해주세요';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUserData.email)) {
             newErrors.email = '유효한 이메일 주소를 입력해주세요';
         }
-        
+
         if (!newUserData.password.trim()) {
             newErrors.password = '비밀번호를 입력해주세요';
         } else if (newUserData.password.length < 6) {
             newErrors.password = '비밀번호는 최소 6자 이상이어야 합니다';
         }
-        
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -95,7 +95,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
         if (!validateForm()) {
             return;
         }
-        
+
         setLoading(true);
         try {
             // 1. 인증을 통해 사용자 생성 (Supabase Auth)
@@ -110,11 +110,11 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                     }
                 }
             });
-            
+
             if (authError) {
                 throw new Error(authError.message);
             }
-            
+
             // 2. users 테이블에 사용자 정보 저장
             const { error: dbError } = await supabase
                 .from('users')
@@ -125,11 +125,11 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                     role: newUserData.role,
                     status: newUserData.status
                 });
-                
+
             if (dbError) {
                 throw new Error(dbError.message);
             }
-            
+
             // 성공 메시지 및 모달 닫기
             alert('사용자가 성공적으로 추가되었습니다.');
             if (onUserAdded) {
@@ -138,9 +138,9 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
             onClose();
             // 폼 초기화
             setNewUserData(initialUserData);
-            
+
         } catch (error: any) {
-            
+
             alert(`사용자 추가 중 오류가 발생했습니다: ${error.message}`);
         } finally {
             setLoading(false);
@@ -156,7 +156,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
                 <DialogHeader className="bg-background py-4 px-6">
                     <DialogTitle className="text-xl font-bold text-foreground">신규 회원 추가</DialogTitle>
                 </DialogHeader>
@@ -216,7 +216,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                         {/* 역할 선택 */}
                         <div className="space-y-2">
                             <label htmlFor="role" className="text-sm font-medium text-foreground">권한</label>
-                            <select 
+                            <select
                                 id="role"
                                 name="role"
                                 value={newUserData.role}
@@ -234,7 +234,7 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                         {/* 상태 선택 */}
                         <div className="space-y-2">
                             <label htmlFor="status" className="text-sm font-medium text-foreground">상태</label>
-                            <select 
+                            <select
                                 id="status"
                                 name="status"
                                 value={newUserData.status}
@@ -249,9 +249,9 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                             </select>
                         </div>
                     </div>
-                    
+
                     <div className="mt-8 flex justify-end space-x-3 pt-2 border-t">
-                        <Button 
+                        <Button
                             onClick={handleAddUser}
                             disabled={loading}
                         >
@@ -262,8 +262,8 @@ const AdminUserInsertModal = ({ open, onClose, onUserAdded }: AdminUserInsertMod
                                 </>
                             ) : '회원 추가'}
                         </Button>
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={handleClose}
                             disabled={loading}
                         >

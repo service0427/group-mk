@@ -286,12 +286,17 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        // 두 필드를 한 번에 업데이트
-                        onFormDataChange({ 
-                          ...formData, 
-                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                        // 캠페인명이 비어있을 때만 자동 생성
+                        const updatedData = { 
+                          ...formData,
                           logo: e.target.value 
-                        });
+                        };
+                        
+                        if (!formData.campaignName || formData.campaignName.trim() === '') {
+                          updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
+                        }
+                        
+                        onFormDataChange(updatedData);
                       }
                     }}
                     className="select w-full h-10 px-3 py-2 border border-gray-200 bg-white focus:border-blue-500 rounded-md text-foreground"
@@ -344,12 +349,17 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        // 두 필드를 한 번에 업데이트
-                        onFormDataChange({ 
-                          ...formData, 
-                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                        // 캠페인명이 비어있을 때만 자동 생성
+                        const updatedData = { 
+                          ...formData,
                           logo: value 
-                        });
+                        };
+                        
+                        if (!formData.campaignName || formData.campaignName.trim() === '') {
+                          updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
+                        }
+                        
+                        onFormDataChange(updatedData);
                       }
                     }}
                     disabled={loading}
@@ -391,7 +401,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 value={formData.campaignName}
                 onChange={(e) => handleChange('campaignName', e.target.value)}
                 className="text-xl font-semibold text-foreground px-3 py-2 border border-gray-200 bg-white rounded-md w-full"
-                placeholder="캠페인 이름 입력"
+                placeholder="캠페인 이름 입력 *"
                 disabled={loading}
               />
             ) : (
@@ -400,7 +410,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 value={formData.campaignName}
                 onChange={(e) => handleChange('campaignName', e.target.value)}
                 className="text-xl font-semibold"
-                placeholder="캠페인 이름 입력"
+                placeholder="캠페인 이름 입력 *"
                 disabled={loading}
               />
             )}
@@ -408,6 +418,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요. 
               <span className="text-blue-500 block sm:inline">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span>
+              <span className="text-red-500 block text-xs mt-1">* 표시된 항목은 필수 입력 사항입니다.</span>
             </p>
           </div>
         </div>
@@ -419,7 +430,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
           <tbody className="divide-y divide-border">
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                건당 단가
+                건당 단가 <span className="text-red-500">*</span>
               </th>
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                 <div className="flex items-center">
@@ -513,7 +524,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                최소수량
+                최소수량 <span className="text-red-500">*</span>
               </th>
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                 <div className="flex items-center gap-2">
@@ -550,7 +561,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                캠페인 소개
+                캠페인 소개 <span className="text-red-500">*</span>
               </th>
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                 {isModal ? (
@@ -577,7 +588,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                캠페인 상세설명
+                캠페인 상세설명 <span className="text-red-500">*</span>
               </th>
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                 {isModal ? (
@@ -609,132 +620,149 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
                 <div className="space-y-3">
                   {(formData.userInputFields || []).map((field, index) => (
-                    <div key={index} className="flex items-center gap-2 border border-gray-200 rounded-md p-2 bg-gray-50 hover:bg-gray-100">
-                      {/* 순서 변경 버튼 */}
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            if (index === 0) return;
-                            const updatedFields = [...(formData.userInputFields || [])];
-                            [updatedFields[index - 1], updatedFields[index]] = [updatedFields[index], updatedFields[index - 1]];
-                            handleChange('userInputFields', updatedFields);
-                          }}
-                          disabled={loading || index === 0}
-                        >
-                          <KeenIcon icon="arrow-up" className="size-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            if (index === (formData.userInputFields || []).length - 1) return;
-                            const updatedFields = [...(formData.userInputFields || [])];
-                            [updatedFields[index], updatedFields[index + 1]] = [updatedFields[index + 1], updatedFields[index]];
-                            handleChange('userInputFields', updatedFields);
-                          }}
-                          disabled={loading || index === (formData.userInputFields || []).length - 1}
-                        >
-                          <KeenIcon icon="arrow-down" className="size-3" />
-                        </Button>
-                      </div>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-shrink-0 w-1/3">
-                          {isModal ? (
-                            <input
-                              type="text"
-                              value={field.fieldName}
-                              onChange={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                              placeholder="필드명 (한글/영문)"
-                              disabled={loading}
-                            />
-                          ) : (
-                            <Input
-                              type="text"
-                              value={field.fieldName}
-                              onChange={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              placeholder="필드명 (한글/영문)"
-                              disabled={loading}
-                            />
-                          )}
+                    <div key={index} className="border border-gray-200 rounded-md p-3 bg-gray-50 hover:bg-gray-100 space-y-3">
+                      {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        {/* 순서 변경 버튼 */}
+                        <div className="flex gap-1 order-last sm:order-first">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              if (index === 0) return;
+                              const updatedFields = [...(formData.userInputFields || [])];
+                              [updatedFields[index - 1], updatedFields[index]] = [updatedFields[index], updatedFields[index - 1]];
+                              handleChange('userInputFields', updatedFields);
+                            }}
+                            disabled={loading || index === 0}
+                          >
+                            <KeenIcon icon="arrow-up" className="size-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              if (index === (formData.userInputFields || []).length - 1) return;
+                              const updatedFields = [...(formData.userInputFields || [])];
+                              [updatedFields[index], updatedFields[index + 1]] = [updatedFields[index + 1], updatedFields[index]];
+                              handleChange('userInputFields', updatedFields);
+                            }}
+                            disabled={loading || index === (formData.userInputFields || []).length - 1}
+                          >
+                            <KeenIcon icon="arrow-down" className="size-3" />
+                          </Button>
                         </div>
-                        <div className="text-gray-400">→</div>
-                        <div className="flex-1">
-                          {isModal ? (
-                            <input
-                              type="text"
-                              value={field.description}
-                              onChange={(e) => {
+
+                        {/* 필드 입력 영역 */}
+                        <div className="flex-1 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+                          {/* 필드명 입력 */}
+                          <div className="w-full sm:w-1/3">
+                            <label className="block text-xs text-gray-600 mb-1 sm:hidden">필드명</label>
+                            {isModal ? (
+                              <input
+                                type="text"
+                                value={field.fieldName}
+                                onChange={(e) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
+                                placeholder="필드명"
+                                disabled={loading}
+                              />
+                            ) : (
+                              <Input
+                                type="text"
+                                value={field.fieldName}
+                                onChange={(e) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                placeholder="필드명"
+                                disabled={loading}
+                                className="text-sm"
+                              />
+                            )}
+                          </div>
+
+                          {/* 화살표 (데스크톱에서만 표시) */}
+                          <div className="text-gray-400 hidden sm:block">→</div>
+
+                          {/* 설명 입력 */}
+                          <div className="flex-1">
+                            <label className="block text-xs text-gray-600 mb-1 sm:hidden">설명</label>
+                            {isModal ? (
+                              <input
+                                type="text"
+                                value={field.description}
+                                onChange={(e) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
+                                placeholder="필드 설명"
+                                disabled={loading}
+                              />
+                            ) : (
+                              <Input
+                                type="text"
+                                value={field.description}
+                                onChange={(e) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                placeholder="필드 설명"
+                                disabled={loading}
+                                className="text-sm"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 필수값 체크박스와 삭제 버튼 */}
+                        <div className="flex items-center justify-between sm:justify-start gap-3">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={`required-${index}`}
+                              checked={field.isRequired || false}
+                              onCheckedChange={(checked) => {
                                 const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                updatedFields[index] = { ...updatedFields[index], isRequired: !!checked };
                                 handleChange('userInputFields', updatedFields);
                               }}
-                              className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                              placeholder="필드 설명 (사용자에게 안내할 내용)"
                               disabled={loading}
                             />
-                          ) : (
-                            <Input
-                              type="text"
-                              value={field.description}
-                              onChange={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], description: e.target.value };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              placeholder="필드 설명 (사용자에게 안내할 내용)"
-                              disabled={loading}
-                            />
-                          )}
+                            <label 
+                              htmlFor={`required-${index}`} 
+                              className="text-sm text-gray-600 cursor-pointer select-none"
+                            >
+                              필수
+                            </label>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 hover:text-red-600"
+                            onClick={() => {
+                              const updatedFields = [...(formData.userInputFields || [])];
+                              updatedFields.splice(index, 1);
+                              handleChange('userInputFields', updatedFields);
+                            }}
+                            disabled={loading}
+                          >
+                            <KeenIcon icon="trash" className="size-4" />
+                          </Button>
                         </div>
                       </div>
-                      {/* 필수값 체크박스 */}
-                      <div className="flex items-center gap-1">
-                        <Checkbox
-                          id={`required-${index}`}
-                          checked={field.isRequired || false}
-                          onCheckedChange={(checked) => {
-                            const updatedFields = [...(formData.userInputFields || [])];
-                            updatedFields[index] = { ...updatedFields[index], isRequired: !!checked };
-                            handleChange('userInputFields', updatedFields);
-                          }}
-                          disabled={loading}
-                        />
-                        <label 
-                          htmlFor={`required-${index}`} 
-                          className="text-sm text-gray-600 whitespace-nowrap cursor-pointer select-none"
-                        >
-                          필수
-                        </label>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-shrink-0 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 hover:text-red-600"
-                        onClick={() => {
-                          const updatedFields = [...(formData.userInputFields || [])];
-                          updatedFields.splice(index, 1);
-                          handleChange('userInputFields', updatedFields);
-                        }}
-                        disabled={loading}
-                      >
-                        <KeenIcon icon="trash" className="size-4" />
-                      </Button>
                     </div>
                   ))}
                   

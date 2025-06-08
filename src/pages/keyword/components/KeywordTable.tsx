@@ -430,8 +430,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
           key={i}
           onClick={() => onPageChange(i)}
           className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md ${pagination.page === i
-              ? 'bg-primary-500 text-white'
-              : 'border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+            ? 'bg-primary-500 text-white'
+            : 'border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
             }`}
         >
           {i}
@@ -668,8 +668,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 onChange={(e) => handleNewKeywordChange(e, 'url')}
                 placeholder={getFieldPlaceholder('url', 'URL')}
                 className={`w-full px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800 ${newKeywordData.url && !isValidUrl(newKeywordData.url)
-                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500'
-                    : 'border-green-300 dark:border-green-700 focus:ring-green-500'
+                  ? 'border-red-500 dark:border-red-500 focus:ring-red-500'
+                  : 'border-green-300 dark:border-green-700 focus:ring-green-500'
                   }`}
                 disabled={isLoading}
                 required={isRequired('url')}
@@ -813,8 +813,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
                 <tr
                   key={keyword.id}
                   className={`h-8 cursor-pointer transition-colors ${selectedKeywordIds.includes(keyword.id)
-                      ? 'bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 border-l-4 border-purple-500'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'
+                    ? 'bg-purple-100 dark:bg-purple-800/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 border-l-4 border-purple-500'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'
                     }`}
                   onClick={(e) => {
                     // 작업 버튼 영역 클릭은 제외
@@ -1081,17 +1081,17 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 
       {/* 알림 다이얼로그 */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
           {/* 헤더 영역 */}
           <div className={`px-6 py-4 ${dialogType === 'success'
-              ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
-              : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+            ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
+            : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
             }`}>
             <DialogHeader className="flex flex-row items-center gap-3">
               {/* 아이콘 */}
               <div className={`flex-shrink-0 p-3 rounded-full ${dialogType === 'success'
-                  ? 'bg-green-100 dark:bg-green-800/30'
-                  : 'bg-red-100 dark:bg-red-800/30'
+                ? 'bg-green-100 dark:bg-green-800/30'
+                : 'bg-red-100 dark:bg-red-800/30'
                 }`}>
                 {dialogType === 'success' ? (
                   <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1122,8 +1122,8 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             <Button
               onClick={() => setDialogOpen(false)}
               className={`w-full sm:w-auto ${dialogType === 'success'
-                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
-                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+                ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
+                : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
                 } text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md`}
             >
               확인
@@ -1134,7 +1134,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
 
       {/* 삭제 확인 다이얼로그 */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
           {/* 헤더 영역 */}
           <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 px-6 py-4">
             <DialogHeader className="flex flex-row items-center gap-3">

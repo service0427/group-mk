@@ -266,6 +266,9 @@ export const hasPermissionExcluding = (
 ): boolean => {
   if (!roleId) return false;
 
+  // 개발자는 항상 모든 메뉴에 접근 가능
+  if (roleId === USER_ROLES.DEVELOPER) return true;
+
   // 제외 역할에 해당하면 false 반환
   if (excludedRoles.includes(roleId)) return false;
 

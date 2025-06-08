@@ -38,7 +38,7 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
     if (!selectedTargetId) {
       return;
     }
-    
+
     setIsProcessing(true);
     try {
       await onConfirm(parseInt(selectedTargetId), actionType === 'copy');
@@ -52,7 +52,7 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -61,7 +61,7 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
             키워드 이동/복사
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="p-6 space-y-6">
           {/* 선택된 키워드 정보 */}
           <div>
@@ -103,12 +103,12 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 )}
               >
-                <KeenIcon 
-                  icon="arrow-right" 
+                <KeenIcon
+                  icon="arrow-right"
                   className={cn(
                     'size-6',
                     actionType === 'move' ? 'text-blue-600' : 'text-gray-500'
-                  )} 
+                  )}
                 />
                 <span className={cn(
                   'text-sm font-medium',
@@ -123,7 +123,7 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
                   </div>
                 )}
               </button>
-              
+
               <button
                 onClick={() => setActionType('copy')}
                 className={cn(
@@ -133,12 +133,12 @@ export const KeywordMoveModal: React.FC<KeywordMoveModalProps> = ({
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 )}
               >
-                <KeenIcon 
-                  icon="copy" 
+                <KeenIcon
+                  icon="copy"
                   className={cn(
                     'size-6',
                     actionType === 'copy' ? 'text-blue-600' : 'text-gray-500'
-                  )} 
+                  )}
                 />
                 <span className={cn(
                   'text-sm font-medium',

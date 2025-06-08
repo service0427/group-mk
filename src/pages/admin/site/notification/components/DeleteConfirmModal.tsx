@@ -20,7 +20,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6 border-b">
           <DialogTitle className="text-lg font-medium text-danger">{title}</DialogTitle>
         </DialogHeader>

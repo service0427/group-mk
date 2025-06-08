@@ -314,7 +314,7 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">삭제 확인</DialogTitle>
         </DialogHeader>
@@ -695,7 +695,7 @@ const FAQPageComponent = () => {
           <span className="hidden md:inline">새 FAQ 등록</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-8">
           <DialogTitle className="text-lg font-medium text-foreground">새 FAQ 작성</DialogTitle>
         </DialogHeader>
@@ -909,8 +909,8 @@ const FAQPageComponent = () => {
                                     onCheckedChange={(checked) => handleToggleActive(faq, checked)}
                                   />
                                   <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${faq.is_active
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
                                     }`}>
                                     {faq.is_active ? '표시' : '감춤'}
                                   </span>
@@ -977,7 +977,7 @@ const FAQPageComponent = () => {
 
       {/* FAQ 상세 다이얼로그 */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-4 px-8">
             <DialogTitle className="text-lg font-medium text-foreground">FAQ 상세</DialogTitle>
           </DialogHeader>

@@ -103,7 +103,7 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, 
           <label htmlFor="content" className="block text-sm font-medium text-foreground mb-1">내용</label>
         </div>
       </div>
-      
+
       {/* 스크롤 가능한 내용 영역 (에디터만) */}
       <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full mb-5">
         {notice && (
@@ -251,7 +251,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
           <label htmlFor="new-content" className="block text-sm font-medium text-foreground mb-1">내용</label>
         </div>
       </div>
-      
+
       {/* 스크롤 가능한 내용 영역 (에디터만) */}
       <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
         <div style={{ height: '450px' }}>
@@ -341,7 +341,7 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-3 px-6">
           <DialogTitle className="text-lg font-medium text-foreground">삭제 확인</DialogTitle>
         </DialogHeader>
@@ -717,20 +717,20 @@ const NoticePageComponent = () => {
 
   // 페이지 이동 관련
   const navigate = useNavigate();
-  
+
   // 새 공지사항 페이지로 이동
   const handleCreateNewNotice = () => {
     navigate('/admin/site/notice/new');
   };
-  
+
   // 공지사항 편집 페이지로 이동
   const handleEditNotice = (noticeId: string) => {
     navigate(`/admin/site/notice/edit/${noticeId}`);
   };
-  
+
   // 툴바 액션 버튼 (새 페이지 이동 방식)
   const toolbarActions = (
-    <Button 
+    <Button
       variant="outline"
       size="sm"
       className="bg-primary-600 text-white hover:bg-primary-700"
@@ -917,8 +917,8 @@ const NoticePageComponent = () => {
                                         onCheckedChange={(checked) => handleToggleActive(notice, checked)}
                                       />
                                       <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${notice.is_active
-                                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800/70 dark:text-gray-300'
                                         }`}>
                                         {notice.is_active ? '표시' : '감춤'}
                                       </span>
@@ -997,7 +997,7 @@ const NoticePageComponent = () => {
           setIsDetailOpen(open);
         }}
       >
-        <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden">
+        <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 w-full border-b">
             <DialogTitle className="text-base sm:text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
           </DialogHeader>

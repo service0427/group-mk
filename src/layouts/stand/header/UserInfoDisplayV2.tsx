@@ -196,26 +196,26 @@ const UserInfoDisplayV2 = () => {
         // event.target이 존재하는지 확인
         const target = event.target;
         if (!target) return;
-        
+
         // mobileMenuRef가 없으면 조기 종료
         if (!mobileMenuRef.current) return;
-        
+
         // target이 Node가 아니면 조기 종료
         if (!(target instanceof Node)) {
           console.warn('Invalid event target type:', target);
           return;
         }
-        
+
         // target이 Element가 아니면 메뉴 닫기 (document 클릭 등)
         if (!(target instanceof Element)) {
           setMobileMenuOpen(false);
           return;
         }
-        
+
         // contains 메서드 안전하게 사용
         const isClickInside = mobileMenuRef.current.contains(target);
         const isClickOnTrigger = target.closest('button[data-mobile-menu-trigger="true"]');
-        
+
         if (!isClickInside && !isClickOnTrigger) {
           setMobileMenuOpen(false);
         }
@@ -245,7 +245,7 @@ const UserInfoDisplayV2 = () => {
     <div className="flex items-center gap-2 lg:gap-3">
       {/* 로그아웃 확인 모달 */}
       <Dialog open={showLogoutModal} onOpenChange={(open) => setShowLogoutModal(open)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-lg font-medium">로그아웃 확인</DialogTitle>
           </DialogHeader>

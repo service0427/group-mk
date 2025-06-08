@@ -71,7 +71,7 @@ const ModalReportUser = forwardRef<HTMLDivElement, IModalReportUserProps>(
       return (
         <div className="flex flex-col gap-5 px-5">
           <div className="text-2sm text-gray-900 font-semibold">
-            Let us know why you?™re reporing this person
+            Let us know why you?ï¿½re reporing this person
           </div>
           <div className="flex flex-col gap-3.5">
             {items.map((item, index) => (
@@ -113,7 +113,7 @@ const ModalReportUser = forwardRef<HTMLDivElement, IModalReportUserProps>(
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[600px]" ref={ref}>
+        <DialogContent className="max-w-[600px]" ref={ref} aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Report User</DialogTitle>
             <DialogDescription></DialogDescription>

@@ -286,12 +286,17 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        // 두 필드를 한 번에 업데이트
-                        onFormDataChange({ 
-                          ...formData, 
-                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                        // 캠페인명이 비어있을 때만 자동 생성
+                        const updatedData = { 
+                          ...formData,
                           logo: e.target.value 
-                        });
+                        };
+                        
+                        if (!formData.campaignName || formData.campaignName.trim() === '') {
+                          updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
+                        }
+                        
+                        onFormDataChange(updatedData);
                       }
                     }}
                     className="select w-full h-10 px-3 py-2 border border-gray-200 bg-white focus:border-blue-500 rounded-md text-foreground"
@@ -344,12 +349,17 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
-                        // 두 필드를 한 번에 업데이트
-                        onFormDataChange({ 
-                          ...formData, 
-                          campaignName: `${koreanAnimalName}-${randomNum}`,
+                        // 캠페인명이 비어있을 때만 자동 생성
+                        const updatedData = { 
+                          ...formData,
                           logo: value 
-                        });
+                        };
+                        
+                        if (!formData.campaignName || formData.campaignName.trim() === '') {
+                          updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
+                        }
+                        
+                        onFormDataChange(updatedData);
                       }
                     }}
                     disabled={loading}

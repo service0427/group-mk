@@ -168,7 +168,6 @@ const CampaignAddPage: React.FC = () => {
 
     // 서비스 유형별 필수 필드 검증은 CampaignForm 컴포넌트에서 처리됨
 
-    setLoading(true);
     setError(null);
     return true;
   };
@@ -224,6 +223,9 @@ const CampaignAddPage: React.FC = () => {
       return;
     }
 
+    // validateForm에서 설정한 loading을 false로 리셋
+    setLoading(false);
+    
     // validation 통과 시 확인 모달 열기
     setConfirmModalOpen(true);
   };
@@ -255,18 +257,18 @@ const CampaignAddPage: React.FC = () => {
         </div>
 
         {/* 버튼 - 푸터 영역 */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 px-4 sm:px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 gap-3">
+        <div className="flex flex-col sm:flex-row justify-end items-center py-4 px-4 sm:px-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 gap-3">
           {/* 에러 메시지 - 모바일에서 상단 표시 */}
           {error && (
-            <div className="flex items-center text-red-600 text-sm order-first sm:order-none w-full sm:w-auto">
+            <div className="flex items-center text-red-600 text-sm order-first w-full">
               <KeenIcon icon="information-2" className="size-4 mr-1.5 flex-shrink-0" />
               <span className="break-words">{error}</span>
             </div>
           )}
 
-          {/* 버튼 그룹 */}
+          {/* 버튼 그룹 - 오른쪽 정렬 */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            {/* 모바일: 미리보기와 취소 버튼을 한 줄에 */}
+            {/* 모바일: 미리보기와 캠페인 등록 신청 버튼을 한 줄에 */}
             <div className="flex gap-2 sm:contents">
               {/* 미리보기 버튼 */}
               <Button
@@ -280,34 +282,34 @@ const CampaignAddPage: React.FC = () => {
                 <span className="sm:hidden">미리보기</span>
               </Button>
 
-              {/* 취소 버튼 */}
+              {/* 캠페인 등록 신청 버튼 */}
               <Button
-                onClick={() => navigate('/campaign-request')}
-                variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 flex-1 sm:flex-initial"
+                onClick={handleSave}
+                className="bg-success hover:bg-success/90 text-white flex-1 sm:flex-initial"
                 disabled={loading}
               >
-                취소
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                    신청 중...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center">
+                    <KeenIcon icon="add-files" className="me-1.5 size-4" />
+                    캠페인 등록 신청
+                  </span>
+                )}
               </Button>
             </div>
 
-            {/* 캠페인 등록 신청 버튼 - 모바일에서 전체 너비 */}
+            {/* 취소 버튼 - 모바일에서 전체 너비 */}
             <Button
-              onClick={handleSave}
-              className="bg-success hover:bg-success/90 text-white w-full sm:w-auto"
+              onClick={() => navigate('/campaign-request')}
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
               disabled={loading}
             >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-current rounded-full"></span>
-                  신청 중...
-                </span>
-              ) : (
-                <span className="flex items-center justify-center">
-                  <KeenIcon icon="add-files" className="me-1.5 size-4" />
-                  캠페인 등록 신청
-                </span>
-              )}
+              취소
             </Button>
           </div>
         </div>

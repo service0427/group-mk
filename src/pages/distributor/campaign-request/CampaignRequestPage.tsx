@@ -134,15 +134,14 @@ const CampaignRequestPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {serviceTypes.map((service) => {
               const isDisabled = service.disabled;
-              
+
               return (
                 <div
                   key={service.id}
-                  className={`border dark:border-gray-700 rounded-lg p-5 flex flex-col transition-colors ${
-                    isDisabled 
-                      ? 'opacity-60 cursor-not-allowed' 
+                  className={`border dark:border-gray-700 rounded-lg p-5 flex flex-col transition-colors ${isDisabled
+                      ? 'opacity-60 cursor-not-allowed'
                       : 'hover:border-primary hover:bg-primary/5 cursor-pointer'
-                  }`}
+                    }`}
                   onClick={() => !isDisabled && navigateToCampaignAddPage(service.id)}
                 >
                   <div className="flex items-center mb-3">
@@ -162,20 +161,21 @@ const CampaignRequestPage: React.FC = () => {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{service.description}</p>
-                  <Button
-                    className={`mt-auto ${
-                      isDisabled 
-                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
-                        : 'bg-primary text-white hover:bg-primary/90'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation(); // 부모 div의 onClick 이벤트 전파 방지
-                      !isDisabled && navigateToCampaignAddPage(service.id);
-                    }}
-                    disabled={isDisabled}
-                  >
-                    {isDisabled ? '준비중' : '신규 캠페인 등록'}
-                  </Button>
+                  <div className="mt-auto text-right">
+                    <Button
+                      className={`${isDisabled
+                          ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                          : 'bg-primary text-white hover:bg-primary/90'
+                        }`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 부모 div의 onClick 이벤트 전파 방지
+                        !isDisabled && navigateToCampaignAddPage(service.id);
+                      }}
+                      disabled={isDisabled}
+                    >
+                      {isDisabled ? '준비중' : '신규 캠페인 등록'}
+                    </Button>
+                  </div>
                 </div>
               );
             })}

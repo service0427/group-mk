@@ -35,6 +35,7 @@ export const DashboardContent: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // 대시보드 데이터 상태 관리
   const [stats, setStats] = useState<AdvertiserStats>({
@@ -414,22 +415,22 @@ export const DashboardContent: React.FC = () => {
 
       if (error) {
         console.error('캠페인 데이터 로드 중 오류:', error);
-        
+
         // status 필드 관련 오류인 경우 필터링 없이 다시 시도
         if (error.message && error.message.includes("status")) {
           // status 필드 필터링 실패, 필터링 없이 재시도
-          
+
           // status 필터링 없이 다시 시도
           const { data: allData, error: secondError } = await supabase
             .from('campaigns')
             .select('id, campaign_name, service_type, unit_price, min_quantity');
-            
+
           if (!secondError && allData) {
             setAvailableCampaigns(allData);
             return;
           }
         }
-        
+
         setAvailableCampaigns([]);
         return;
       }
@@ -506,7 +507,7 @@ export const DashboardContent: React.FC = () => {
       if (result.success && result.data) {
         const settingData = result.data;
         setCashSetting(settingData);
-        
+
         // 포인트 표시 여부 설정
         const showPoints = settingData.free_cash_percentage > 0;
         setShowPointInfo(showPoints);
@@ -581,7 +582,7 @@ export const DashboardContent: React.FC = () => {
   const handleCashCharge = async () => {
     try {
       setError(null);
-      
+
       if (!currentUser) {
         setError('로그인이 필요합니다.');
         return;
@@ -735,6 +736,25 @@ export const DashboardContent: React.FC = () => {
     }
   };
 
+  // Pull to refresh 핸들러
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // 모든 데이터 새로고침
+      await Promise.all([
+        loadStats(),
+        loadAvailableCampaigns(),
+        loadTransactionHistory(),
+        fetchCashSetting()
+      ]);
+      toast.success('데이터를 새로고침했습니다.');
+    } catch (error) {
+      toast.error('데이터 새로고침 중 오류가 발생했습니다.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     loadStats();
@@ -758,6 +778,9 @@ export const DashboardContent: React.FC = () => {
       description="광고 캠페인 관리, 성과 분석 및 타겟 그룹별 성과를 확인할 수 있는 종합 대시보드입니다."
       // 역할 기반 테마 적용
       headerTextClass="text-white"
+      // Pull to refresh 활성화
+      enablePullToRefresh={true}
+      onRefresh={handleRefresh}
       toolbarActions={
         <>
           {loading && (
@@ -1069,7 +1092,7 @@ export const DashboardContent: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* 입금자명 입력 필드 */}
                 <div>
                   <label htmlFor="depositor-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1288,8 +1311,8 @@ export const DashboardContent: React.FC = () => {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${transaction.status === '완료' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
-                              transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
-                                'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
+                            transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                              'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
                             }`}>
                             {transaction.status}
                           </span>
@@ -1328,8 +1351,8 @@ export const DashboardContent: React.FC = () => {
                           <div className="flex justify-between items-center mb-1">
                             <h3 className="font-medium text-foreground text-sm">{transaction.content}</h3>
                             <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${transaction.status === '완료' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
-                                transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
-                                  'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
+                              transaction.status === '진행중' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                'bg-gray-100 text-gray-600 dark:bg-gray-800/70 dark:text-gray-300'
                               }`}>
                               {transaction.status}
                             </span>

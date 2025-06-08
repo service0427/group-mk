@@ -1,0 +1,69 @@
+/* 모바일 스크롤 및 주소창 숨김 최적화 */
+
+/* 전체 화면 높이 설정 - 주소창 숨김 고려 */
+:root {
+  --app-height: 100vh;
+  --app-height-dynamic: 100dvh;
+}
+
+/* 주소창 숨김을 위한 설정 */
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  min-height: 100vh;
+  position: relative;
+  /* 스크롤 가능하도록 설정 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 모바일에서 부드러운 스크롤 */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* iOS Safari 바운스 효과 제거 */
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Pull to refresh 영역 */
+  .pull-to-refresh-enabled {
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+}
+
+/* 전체 화면 모달을 위한 설정 */
+.fullscreen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100vh;
+  height: -webkit-fill-available;
+  height: 100dvh;
+}
+
+/* iOS 노치 영역 고려 */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

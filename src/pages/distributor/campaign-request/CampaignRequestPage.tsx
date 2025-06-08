@@ -58,6 +58,14 @@ const CampaignRequestPage: React.FC = () => {
       disabled: false
     },
     {
+      id: CampaignServiceType.NAVER_BLOG_POST,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_BLOG_POST],
+      icon: '/media/ad-brand/naver-blog.png',
+      iconAbbr: 'NB',
+      description: '네이버 블로그 포스팅 마케팅',
+      disabled: false
+    },
+    {
       id: CampaignServiceType.COUPANG_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
       icon: '/media/ad-brand/coupang-app.png',

@@ -1018,7 +1018,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       서비스 유형
                     </span>
                     <span className="font-medium text-blue-900 dark:text-blue-100">
-                      {campaigns.find(c => c.id === campaignToApprove)?.serviceName}
+                      {getServiceLabel(campaigns.find(c => c.id === campaignToApprove)?.serviceType || '')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -1109,7 +1109,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       서비스 유형
                     </span>
                     <span className="font-medium text-red-900 dark:text-red-100">
-                      {campaigns.find(c => c.id === campaignToReject)?.serviceName}
+                      {getServiceLabel(campaigns.find(c => c.id === campaignToReject)?.serviceType || '')}
                     </span>
                   </div>
                 </div>

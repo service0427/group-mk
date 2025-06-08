@@ -8,6 +8,7 @@ export enum CampaignServiceType {
   NAVER_PLACE_SAVE = 'NaverPlaceSave',
   NAVER_PLACE_SHARE = 'NaverPlaceShare',
   NAVER_PLACE_RANK = 'NaverPlaceRank',
+  NAVER_BLOG_POST = 'NaverBlogPost',
   COUPANG_TRAFFIC = 'CoupangTraffic',
   COUPANG_FAKESALE = 'CoupangFakeSale',
   INSTAGRAM = 'Instagram',
@@ -26,6 +27,7 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   [CampaignServiceType.NAVER_PLACE_SAVE]: 'NP 저장하기',
   [CampaignServiceType.NAVER_PLACE_SHARE]: 'NP 블로그공유',
   [CampaignServiceType.NAVER_PLACE_RANK]: 'NP 순위확인',
+  [CampaignServiceType.NAVER_BLOG_POST]: 'NB 포스팅',
   [CampaignServiceType.COUPANG_TRAFFIC]: 'CP 트래픽',
   [CampaignServiceType.COUPANG_FAKESALE]: 'CP 가구매',
   [CampaignServiceType.INSTAGRAM]: '인스타그램',
@@ -53,6 +55,8 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
       return CampaignServiceType.NAVER_PLACE_SHARE;
     } else if (type === 'place-rank' || (subservice === 'place' && type === 'rank')) {
       return CampaignServiceType.NAVER_PLACE_RANK;
+    } else if (type === 'blog-post' || (subservice === 'blog' && type === 'post')) {
+      return CampaignServiceType.NAVER_BLOG_POST;
     }
   } else if (platform === 'coupang') {
     if (type === 'traffic') {
@@ -84,6 +88,9 @@ export const getServiceTypeFromPath = (platform: string, type: string, subservic
   }
   if (pathname.includes('naver/place') || pathname === 'naver-place-traffic') {
     return CampaignServiceType.NAVER_PLACE_TRAFFIC;
+  }
+  if (pathname.includes('naver/blog/post') || pathname === 'naver-blog-post') {
+    return CampaignServiceType.NAVER_BLOG_POST;
   }
   if (pathname.includes('naver/auto') || pathname === 'naver-auto') {
     return CampaignServiceType.NAVER_AUTO;

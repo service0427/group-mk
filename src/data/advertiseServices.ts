@@ -217,6 +217,39 @@ export const serviceData: Record<string, any> = {
         ]
       }
     },
+    blog: {
+      post: {
+        name: "네이버 블로그 포스팅",
+        description: "네이버 블로그에 고품질 포스팅을 통한 마케팅 전략",
+        features: [
+          {
+            title: "SEO 최적화 포스팅",
+            description: "검색 엔진 최적화를 통한 상위 노출 블로그 포스팅",
+            icon: "edit"
+          },
+          {
+            title: "타겟 키워드 공략",
+            description: "주요 키워드를 중심으로 한 전략적 콘텐츠 작성",
+            icon: "target"
+          },
+          {
+            title: "브랜드 스토리텔링",
+            description: "브랜드 가치를 효과적으로 전달하는 스토리 콘텐츠",
+            icon: "book-open"
+          }
+        ],
+        benefits: [
+          {
+            title: "장기적 노출 효과",
+            description: "검색 결과에서 지속적으로 노출되는 콘텐츠 자산"
+          },
+          {
+            title: "신뢰도 구축",
+            description: "전문적인 콘텐츠를 통한 브랜드 신뢰도 향상"
+          }
+        ]
+      }
+    },
     traffic: {
       name: "네이버 트래픽",
       description: "네이버 검색과 배너를 통한 사이트 트래픽 증가 마케팅",
@@ -253,8 +286,8 @@ export const getServiceData = (
     }
     return serviceData[platform][type];
   } catch (error) {
-    
-    
+
+
     return null;
   }
 };
@@ -296,6 +329,8 @@ export const getServiceTypeFromPath = (
     return CampaignServiceType.NAVER_PLACE_SHARE;
   } else if (platform === 'naver' && subservice === 'place' && type === 'rank') {
     return CampaignServiceType.NAVER_PLACE_RANK;
+  } else if (platform === 'naver' && subservice === 'blog' && type === 'post') {
+    return CampaignServiceType.NAVER_BLOG_POST;
   } else if (platform === 'naver' && type === 'auto') {
     return CampaignServiceType.NAVER_AUTO;
   } else if (platform === 'naver' && type === 'traffic') {
@@ -344,7 +379,7 @@ export const fetchRealCampaignData = async (
     // 서비스 정보 가져오기
     const serviceInfo = getServiceData(platform, type, subservice);
     if (!serviceInfo) {
-      
+
       return null;
     }
 
@@ -359,13 +394,13 @@ export const fetchRealCampaignData = async (
       .order('id', { ascending: true });
 
     if (error) {
-      
+
       return null;
     }
 
     // 데이터가 없으면 빈 배열 반환
     if (!data || data.length === 0) {
-      
+
       return {
         serviceData: serviceInfo,
         campaigns: []
@@ -392,7 +427,7 @@ export const fetchRealCampaignData = async (
       campaigns: formattedCampaigns
     };
   } catch (error) {
-    
+
     return null;
   }
 };

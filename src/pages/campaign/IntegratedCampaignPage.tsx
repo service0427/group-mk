@@ -92,6 +92,7 @@ const IntegratedCampaignPage: React.FC = () => {
       [CampaignServiceType.NAVER_PLACE_SAVE]: 'place-save',
       [CampaignServiceType.NAVER_PLACE_SHARE]: 'place-share',
       [CampaignServiceType.NAVER_PLACE_RANK]: 'place-rank',
+      [CampaignServiceType.NAVER_BLOG_POST]: 'blog-post',
       [CampaignServiceType.COUPANG_TRAFFIC]: 'traffic',
       [CampaignServiceType.COUPANG_FAKESALE]: 'fakesale',
       [CampaignServiceType.INSTAGRAM]: 'instagram',

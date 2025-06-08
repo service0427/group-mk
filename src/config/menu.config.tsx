@@ -2,7 +2,6 @@ import { type TMenuConfig } from '@/components/menu';
 import {
   USER_ROLES,
   PERMISSION_GROUPS,
-  canShowMenu,
   hasPermission,
   hasPermissionExcluding
 } from './roles.config';
@@ -28,53 +27,96 @@ export const MENU_SIDEBAR: TMenuConfig = [
         iconImage: '/media/ad-brand/naver.png',
         children: [
           {
-            title: 'NS 순위확인',
-            path: '/advertise/campaigns/info/naver-shopping-rank',
+            title: '네이버 쇼핑',
             iconImage: '/media/ad-brand/naver-shopping.png',
             iconAbbr: 'NS',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+            children: [
+              {
+                title: '효과 및 사용법',
+                icon: 'book-open text-info',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NS 순위확인',
+                path: '/advertise/campaigns/info/naver-shopping-rank',
+                iconImage: '/media/ad-brand/naver-shopping.png',
+                iconAbbr: 'NS',
+                authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+              },
+              {
+                title: 'NS 트래픽',
+                path: '/advertise/campaigns/info/naver-shopping-traffic',
+                iconImage: '/media/ad-brand/naver-shopping.png',
+                iconAbbr: 'NS',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NS 가구매',
+                path: '/advertise/campaigns/info/naver-shopping-fakesale',
+                iconImage: '/media/ad-brand/naver-shopping.png',
+                iconAbbr: 'NS',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+            ]
           },
           {
-            title: 'NS 트래픽',
-            path: '/advertise/campaigns/info/naver-shopping-traffic',
-            iconImage: '/media/ad-brand/naver-shopping.png',
-            iconAbbr: 'NS',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NS 가구매',
-            path: '/advertise/campaigns/info/naver-shopping-fakesale',
-            iconImage: '/media/ad-brand/naver-shopping.png',
-            iconAbbr: 'NS',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 순위확인',
-            path: '/advertise/campaigns/info/naver-place-rank',
+            title: '네이버 플레이스',
             iconImage: '/media/ad-brand/naver-place.png',
             iconAbbr: 'NP',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+            children: [
+              {
+                title: '효과 및 사용법',
+                icon: 'book-open text-info',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NP 순위확인',
+                path: '/advertise/campaigns/info/naver-place-rank',
+                iconImage: '/media/ad-brand/naver-place.png',
+                iconAbbr: 'NP',
+                authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+              },
+              {
+                title: 'NP 트래픽',
+                path: '/advertise/campaigns/info/naver-place-traffic',
+                iconImage: '/media/ad-brand/naver-place.png',
+                iconAbbr: 'NP',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NP 저장하기',
+                path: '/advertise/campaigns/info/naver-place-save',
+                iconImage: '/media/ad-brand/naver-place.png',
+                iconAbbr: 'NP',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NP 블로그공유',
+                path: '/advertise/campaigns/info/naver-place-share',
+                iconImage: '/media/ad-brand/naver-place.png',
+                iconAbbr: 'NP',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+            ]
           },
           {
-            title: 'NP 트래픽',
-            path: '/advertise/campaigns/info/naver-place-traffic',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 저장하기',
-            path: '/advertise/campaigns/info/naver-place-save',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 블로그공유',
-            path: '/advertise/campaigns/info/naver-place-share',
+            title: '네이버 블로그',
             iconImage: '/media/ad-brand/naver-blog.png',
             iconAbbr: 'NB',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+            children: [
+              {
+                title: '효과 및 사용법',
+                icon: 'book-open text-info',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+              {
+                title: 'NB 포스팅',
+                path: '/advertise/campaigns/info/naver-blog-post',
+                iconImage: '/media/ad-brand/naver-blog.png',
+                iconAbbr: 'NB',
+                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+              },
+            ]
           },
           {
             title: 'N 자동완성',

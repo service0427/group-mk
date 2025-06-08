@@ -647,6 +647,12 @@ export const getServiceTypeCode = (uiCode: string): string => {
     'coupang-fakesale': CampaignServiceType.COUPANG_FAKESALE,    // → 'CoupangFakeSale'
     'coupangfakesale': CampaignServiceType.COUPANG_FAKESALE,
 
+    // 네이버 블로그 포스팅
+    'naver-blog-post': CampaignServiceType.NAVER_BLOG_POST,      // → 'NaverBlogPost'
+    'nblog-post': CampaignServiceType.NAVER_BLOG_POST,
+    'naverblogpost': CampaignServiceType.NAVER_BLOG_POST,
+    'nblogpost': CampaignServiceType.NAVER_BLOG_POST,
+
     // 기존 레거시 코드 호환성 유지
     'nblog': 'nblog',
     'naver-blog': 'nblog',

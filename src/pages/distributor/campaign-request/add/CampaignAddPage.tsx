@@ -30,7 +30,6 @@ const CampaignAddPage: React.FC = () => {
   // 비활성화된 서비스 타입 체크
   const disabledServices = [
     CampaignServiceType.NAVER_AUTO,
-    CampaignServiceType.NAVER_SHOPPING_FAKESALE,
     CampaignServiceType.COUPANG_FAKESALE,
     CampaignServiceType.INSTAGRAM,
     CampaignServiceType.PHOTO_VIDEO_PRODUCTION,

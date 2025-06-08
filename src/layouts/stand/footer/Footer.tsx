@@ -6,22 +6,22 @@ import { generalSettings } from '@/config';
 import { AdMiscFaqModal } from '@/partials/misc/AdMiscFaqModal';
 import { useStandLayout } from '../';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useUIVisibility } from '@/hooks/useUIVisibility';
 
 const Footer = () => {
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const { layout } = useStandLayout();
   const { pathname } = useLocation();
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [isVisible, setIsVisible] = useState(true);
+  const { isVisible, forceVisible, setGlobalVisible } = useUIVisibility();
   const lastScrollYRef = useRef(0);
-  const [forceVisible, setForceVisible] = useState(false);
   const forceVisibleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // 모바일에서 스크롤 감지 - MutationObserver로 DOM 준비 확인
   useEffect(() => {
     // 데스크톱에서는 항상 표시
     if (!isMobile) {
-      setIsVisible(true);
+      setGlobalVisible(true);
       return;
     }
     
@@ -67,9 +67,9 @@ const Footer = () => {
           
           // 버튼 표시 여부 결정 로직
           if (isScrollingUp || isAtTop || isAtBottom) {
-            setIsVisible(true);
+            setGlobalVisible(true);
           } else {
-            setIsVisible(false);
+            setGlobalVisible(false);
           }
           
           // 현재 스크롤 위치를 이전 위치로 저장
@@ -157,11 +157,18 @@ const Footer = () => {
         return;
       }
       
+      // 채팅 버튼이나 채팅창을 클릭한 경우는 무시
+      const chatButton = document.querySelector('.chat-sticky-button');
+      const chatContainer = document.querySelector('.chat-sticky-container');
+      if ((chatButton && chatButton.contains(e.target as Node)) ||
+          (chatContainer && chatContainer.contains(e.target as Node))) {
+        return;
+      }
+      
       // 토글 동작
       if (!isVisible) {
         // 숨겨진 상태 -> 표시
-        setForceVisible(true);
-        setIsVisible(true);
+        setGlobalVisible(true, true); // force visible
         
         // 기존 타이머 클리어
         if (forceVisibleTimeoutRef.current) {
@@ -170,12 +177,11 @@ const Footer = () => {
         
         // 3초 후 강제 표시 해제
         forceVisibleTimeoutRef.current = setTimeout(() => {
-          setForceVisible(false);
+          setGlobalVisible(true, false); // remove force
         }, 3000);
       } else if (forceVisible) {
         // 강제 표시 상태 -> 숨김
-        setForceVisible(false);
-        setIsVisible(false);
+        setGlobalVisible(false);
         
         // 타이머 클리어
         if (forceVisibleTimeoutRef.current) {

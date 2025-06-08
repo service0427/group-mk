@@ -33,6 +33,19 @@ const StyledToolbar: React.FC<StyledToolbarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  // 툴바 클릭 시 최상단으로 스크롤
+  const handleToolbarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 빈 영역을 클릭했을 때만 동작 (버튼이나 링크 클릭은 제외)
+    const target = e.target as HTMLElement;
+    if (target === e.currentTarget || 
+        (!target.closest('button') && !target.closest('a') && !target.closest('input'))) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Portal container 생성
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -88,12 +101,13 @@ const StyledToolbar: React.FC<StyledToolbarProps> = ({
   // 일반 툴바 렌더링
   const renderToolbar = (isFixed = false) => (
     <div 
-      className={`${bgClass} ${textClass} shadow-md px-5 py-5 ${!isFixed ? 'mb-3 rounded-lg' : ''} dark:shadow-none Toolbar transition-all duration-300 ${
+      className={`${bgClass} ${textClass} shadow-md px-5 py-5 ${!isFixed ? 'mb-3 rounded-lg' : ''} dark:shadow-none Toolbar transition-all duration-300 cursor-pointer ${
         isFixed ? 'fixed left-0 right-0 z-20 shadow-lg px-4 py-3' : ''
       }`}
       style={isFixed ? {
         top: `${60 + (document.querySelector('.notice-marquee')?.clientHeight || 36)}px`,
       } : {}}
+      onClick={handleToolbarClick}
     >
       <div className={`flex ${isFixed ? 'items-center' : 'flex-col lg:flex-row lg:items-center'} justify-between`}>
         <div>
@@ -117,12 +131,13 @@ const StyledToolbar: React.FC<StyledToolbarProps> = ({
   // Sticky 툴바 컴포넌트
   const stickyToolbar = isSticky && isMobile && portalContainer ? (
     <div 
-      className={`${bgClass} ${textClass} shadow-lg px-4 py-3 fixed left-0 right-0 w-full sticky-toolbar`}
+      className={`${bgClass} ${textClass} shadow-lg px-4 py-3 fixed left-0 right-0 w-full sticky-toolbar cursor-pointer`}
       style={{
         top: `${60 + (document.querySelector('.notice-marquee')?.clientHeight || 36)}px`,
         zIndex: 20, // 헤더와 같은 레벨로 설정
         position: 'fixed',
       }}
+      onClick={handleToolbarClick}
     >
       <div className="flex items-center justify-between">
         <div>

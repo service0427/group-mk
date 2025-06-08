@@ -4,6 +4,8 @@ import { Container } from '@/components/container';
 import { StyledToolbar } from '@/partials/toolbar';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { getRoleThemeColors, USER_ROLES } from '@/config/roles.config';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useMediaQuery } from '@/hooks';
 
 interface DashboardTemplateProps {
   title?: string;
@@ -20,6 +22,9 @@ interface DashboardTemplateProps {
   // 대시보드 특화 속성 추가
   headerBgClass?: string;
   headerTextClass?: string;
+  // Pull to refresh
+  enablePullToRefresh?: boolean;
+  onRefresh?: () => void | Promise<void>;
 }
 
 /**
@@ -40,9 +45,24 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   children,
   headerBgClass,
   headerTextClass = "text-white",
+  enablePullToRefresh = false,
+  onRefresh,
 }) => {
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
+  
+  // 모바일 체크
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  
+  // 기본 새로고침 함수
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh();
+    } else {
+      // 기본 동작: 페이지 새로고침
+      window.location.reload();
+    }
+  };
 
   // 페이지 템플릿에 적용할 클래스 (CommonTemplate과 일관성 유지)
   const pageTemplateClass = `page-template-wrapper pt-0`;
@@ -112,7 +132,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     gradientClass = getRoleThemeColors(USER_ROLES.ADVERTISER, 'gradient');
   }
 
-  return (
+  const content = (
     <div className={pageTemplateClass}>
       {/* 헤더 영역 - 커스텀 배경색 */}
       <Container fullWidth={fullWidth} className={containerClassName}>
@@ -140,6 +160,19 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
       )}
     </div>
   );
+  
+  // 모바일에서 Pull to refresh 활성화
+  if (isMobile && enablePullToRefresh) {
+    return (
+      <div className="relative">
+        <PullToRefresh onRefresh={handleRefresh} className="pull-to-refresh-enabled">
+          {content}
+        </PullToRefresh>
+      </div>
+    );
+  }
+  
+  return content;
 };
 
 export default DashboardTemplate;

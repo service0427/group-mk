@@ -4,6 +4,7 @@ import { supabase } from '@/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useChat } from '@/hooks/useChat';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useUIVisibility } from '@/hooks/useUIVisibility';
 import { USER_ROLES, PERMISSION_GROUPS, hasPermission } from '@/config/roles.config';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 
@@ -123,14 +124,11 @@ const ChatSticky: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [forceVisible, setForceVisible] = useState(false);
-  const forceVisibleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isVisible } = useUIVisibility();
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef<boolean>(true);
-  const lastScrollYRef = useRef(0);
   
   // Custom hooks
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -160,75 +158,6 @@ const ChatSticky: React.FC = () => {
     };
   }, []);
   
-  // 스크롤 위치에 따라 버튼 표시 여부 결정
-  useEffect(() => {
-    // 초기 렌더링 시 항상 보이도록 강제 설정
-    setIsVisible(true);
-    
-    // 모바일이 아닌 경우 스크롤 이벤트 감시하지 않음
-    if (!isMobile) {
-      return;
-    }
-    
-    // 모바일에서는 main 요소에서만 스크롤 이벤트 감지
-    const mainContentElement = document.querySelector('main[role="content"]');
-    
-    if (!mainContentElement) {
-      return;
-    }
-    
-    // 초기 스크롤 위치 저장
-    lastScrollYRef.current = mainContentElement.scrollTop || 0;
-    
-    // 스크롤 핸들러 함수
-    function handleScroll() {
-      try {
-        if (!mainContentElement || !(mainContentElement instanceof HTMLElement)) return;
-        
-        // 현재 스크롤 위치
-        const currentScrollY = mainContentElement.scrollTop || 0;
-        
-        // 이전 스크롤 위치
-        const prevScrollY = lastScrollYRef.current;
-        
-        // 스크롤 방향 (true: 위로, false: 아래로)
-        const isScrollingUp = currentScrollY < prevScrollY;
-        
-        // 화면 상단에 있는지 여부
-        const isAtTop = currentScrollY < 100;
-        
-        // 화면 하단에 있는지 여부
-        const containerHeight = mainContentElement.clientHeight;
-        const scrollHeight = mainContentElement.scrollHeight;
-        const isAtBottom = containerHeight + currentScrollY >= scrollHeight - 100;
-        
-        // 강제 표시 중이면 무시
-        if (forceVisible) return;
-        
-        // 버튼 표시 여부 결정 로직
-        if (isScrollingUp || isAtTop || isAtBottom) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-        
-        // 현재 스크롤 위치를 이전 위치로 저장
-        lastScrollYRef.current = currentScrollY;
-      } catch (error) {
-        console.warn('ChatSticky handleScroll error:', error);
-      }
-    }
-    
-    // 스크롤 이벤트 리스너 등록 (passive 옵션으로 성능 개선)
-    mainContentElement.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
-    return () => {
-      if (mainContentElement && mainContentElement instanceof HTMLElement) {
-        mainContentElement.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [isMobile, forceVisible]);
   
   // CSS 키프레임을 JS에서 생성하여 삽입
   useEffect(() => {
@@ -286,56 +215,6 @@ const ChatSticky: React.FC = () => {
     }
   }, [messages, currentRoomId]);
   
-  // 모바일에서 화면 클릭 시 채팅 스티키 토글
-  useEffect(() => {
-    if (!isMobile) return;
-    
-    const handleClick = (e: MouseEvent) => {
-      // 채팅 버튼이나 채팅창을 클릭한 경우는 무시
-      const chatButton = document.querySelector('.chat-sticky-button');
-      const chatContainer = document.querySelector('.chat-sticky-container');
-      if ((chatButton && chatButton.contains(e.target as Node)) ||
-          (chatContainer && chatContainer.contains(e.target as Node))) {
-        return;
-      }
-      
-      // 토글 동작
-      if (!isVisible) {
-        // 숨겨진 상태 -> 표시
-        setForceVisible(true);
-        setIsVisible(true);
-        
-        // 기존 타이머 클리어
-        if (forceVisibleTimeoutRef.current) {
-          clearTimeout(forceVisibleTimeoutRef.current);
-        }
-        
-        // 3초 후 강제 표시 해제
-        forceVisibleTimeoutRef.current = setTimeout(() => {
-          setForceVisible(false);
-        }, 3000);
-      } else if (forceVisible && !isOpen) {
-        // 강제 표시 상태이고 채팅창이 닫혀있을 때 -> 숨김
-        setForceVisible(false);
-        setIsVisible(false);
-        
-        // 타이머 클리어
-        if (forceVisibleTimeoutRef.current) {
-          clearTimeout(forceVisibleTimeoutRef.current);
-        }
-      }
-    };
-    
-    // 전체 document에 이벤트 리스너 추가 (캡처 단계)
-    document.addEventListener('click', handleClick, true);
-    
-    return () => {
-      document.removeEventListener('click', handleClick, true);
-      if (forceVisibleTimeoutRef.current) {
-        clearTimeout(forceVisibleTimeoutRef.current);
-      }
-    };
-  }, [isMobile, isVisible, forceVisible, isOpen]);
   
   // 버튼 클래스 이름 동적 생성
   const buttonClassName = `chat-sticky-button ${isVisible ? 'visible' : 'hidden'}`;

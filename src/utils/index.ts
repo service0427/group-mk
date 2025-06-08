@@ -8,3 +8,4 @@ export * from './Router';
 export * from './String';
 export * from './Common';
 export * from './CampaignFormat';
+export * from './mobileOptimization';

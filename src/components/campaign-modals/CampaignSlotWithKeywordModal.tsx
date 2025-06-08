@@ -1575,10 +1575,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className={cn(
-          "w-[95vw] p-0 overflow-hidden flex flex-col",
+          "w-[100vw] sm:w-[95vw] p-0 overflow-hidden flex flex-col",
           isCompactMode
-            ? "h-[95vh] max-w-full sm:max-w-[500px] md:max-w-[1000px] lg:max-w-[1200px]"
-            : "h-[90vh] sm:h-[80vh] md:h-[75vh] lg:h-[70vh] max-w-full sm:max-w-[1000px] md:max-w-[1200px]"
+            ? "h-[100vh] h-[100dvh] sm:h-[90vh] max-w-full sm:max-w-[500px] md:max-w-[1000px] lg:max-w-[1200px]"
+            : "h-[100vh] h-[100dvh] sm:h-[80vh] md:h-[75vh] lg:h-[70vh] max-w-full sm:max-w-[1000px] md:max-w-[1200px]"
         )} aria-describedby={undefined}>
           <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
@@ -1592,7 +1592,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               </div>
             </div>
           </DialogHeader>
-          <div className="p-4 sm:p-6 bg-background flex-grow overflow-hidden flex flex-col">
+          <div className="p-4 sm:p-6 bg-background flex-1 overflow-y-auto flex flex-col">
             {/* 수직 레이아웃: 캠페인 선택이 위에, 키워드 관리가 아래에 */}
             <div className="flex flex-col gap-4 h-full min-h-0">
               {/* 캠페인 상세 정보 - 컴팩트 모드 지원 */}
@@ -2311,7 +2311,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               </div>
             </div>
           </div>
-          <div className="px-6 py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background sticky bottom-0 z-10 shadow-sm">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
             <div className="flex items-center">
               {selectedKeywords.length > 0 && (
                 <div className="flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-100 dark:border-blue-900 shadow-sm w-full sm:w-auto">

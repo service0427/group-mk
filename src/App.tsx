@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'; // BrowserRouter에서 HashRouter로 변경
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
-import { ScrollToTop } from '@/components';
+import { ScrollToTop, ScrollToTopButton, StatusBarTap } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { AuthProviderV2 } from '@/auth/providers/AuthProviderV2';
+import { initMobileOptimizations } from '@/utils/mobileOptimization';
 
 const App = () => {
   const { settings } = useSettings();
@@ -15,18 +16,23 @@ const App = () => {
   useEffect(() => {
     // 다크모드 전환 시 transitioning 클래스 추가
     document.documentElement.classList.add('transitioning');
-    
+
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.remove('light');
     document.documentElement.classList.add(settings.themeMode);
-    
+
     // 트랜지션 완료 후 transitioning 클래스 제거
     const timer = setTimeout(() => {
       document.documentElement.classList.remove('transitioning');
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [settings]);
+
+  // 모바일 최적화 초기화
+  useEffect(() => {
+    initMobileOptimizations();
+  }, []);
 
   // 세션/로컬 스토리지 플래그 정리 전용 (리디렉션 제거)
   useEffect(() => {
@@ -82,10 +88,16 @@ const App = () => {
         <PathnameProvider>
           <ScrollToTop />
 
+          {/* 모바일 상태바 탭 기능 */}
+          <StatusBarTap />
+
           {/* 라우팅 구조 */}
           <Routes>
             <Route path="/*" element={<AppRouting />} />
           </Routes>
+
+          {/* 맨 위로 가기 버튼 */}
+          <ScrollToTopButton />
         </PathnameProvider>
       </AuthProviderV2>
     </HashRouter>

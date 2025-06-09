@@ -313,7 +313,7 @@ const KeywordPage: React.FC = () => {
       )}
 
       {/* 서비스 타입 탭 및 그룹 선택 영역 */}
-      <Card className="mb-4 lg:mb-6">
+      <Card>
         <CardContent className="p-3 sm:p-4 lg:p-6">
           {/* 서비스 타입 탭 */}
           <div>

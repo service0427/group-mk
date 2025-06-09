@@ -39,7 +39,7 @@ html, body {
 
   main.content {
     margin-top: 0 !important;
-    padding-bottom: 2.5rem; /* 푸터 높이만큼 패딩 추가 - 축소된 높이에 맞춤 */
+    padding-bottom: 6rem; /* 푸터 높이보다 훨씬 많은 패딩 추가 */
   }
 }
 
@@ -120,6 +120,7 @@ html, body {
 /* 메인 콘텐츠 영역 스타일 재정의 */
 main.content {
   padding-top: 1rem !important; /* 상단 패딩 줄임 - 데스크톱만 */
+  padding-bottom: 5rem !important; /* 하단 패딩 대폭 증가 */
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%; /* 콘텐츠 영역 너비 100%로 설정 */
@@ -328,6 +329,7 @@ main.content {
 /* 컨텐츠 영역 스타일 */
 .template-content {
   position: relative;
-  margin-bottom: calc(var(--footer-height) + 0.25rem);
+  margin-bottom: calc(var(--footer-height) + 4rem); /* 하단 여백 대폭 증가 */
   min-height: fit-content; /* 콘텐츠 높이에 맞춰 자동으로 조정 */
+  padding-bottom: 2rem; /* 추가 패딩 증가 */
 }

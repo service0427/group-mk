@@ -68,7 +68,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   const pageTemplateClass = `page-template-wrapper pt-0`;
 
   // 대시보드 컨텐츠 클래스 (CommonTemplate과 일관성 유지)
-  const contentClasses = `template-content ${childrenClassName || "grid gap-4 lg:gap-5 pb-4"}`;
+  const contentClasses = `template-content ${childrenClassName || "grid gap-4 lg:gap-5 pb-24"}`;
 
   // 그라데이션 클래스 생성 - 역할 기반 테마 사용
   let gradientClass;

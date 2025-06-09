@@ -42,7 +42,7 @@ const CommonTemplate: React.FC<CommonTemplateProps> = ({
   fullWidth = true,
   containerClassName = "",
   children,
-  childrenClassName = "grid gap-4 lg:gap-5 pb-4"  // 간격을 확보
+  childrenClassName = "grid gap-4 lg:gap-5 pb-24"  // 하단 여백 더 증가
 }) => {
   const { pathname } = useLocation();
   const { getMenuConfig } = useMenus();

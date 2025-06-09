@@ -141,7 +141,7 @@ const IntegratedCampaignPage: React.FC = () => {
       headerTextClass="text-white"
     >
       {/* 모드 선택 탭 */}
-      <Card className="mb-6">
+      <Card>
         <CardContent className="p-4">
           <div className="flex gap-2 mb-4">
             <Button
@@ -219,19 +219,19 @@ const IntegratedCampaignPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {availableServiceTypes.map(type => {
                     // 가구매, N 자동완성, 인스타그램, 포토&영상 제작, 라이브방송은 비활성화
-                    const isDisabled = type.name.includes('가구매') || 
-                                     type.code === CampaignServiceType.NAVER_AUTO ||
-                                     type.code === CampaignServiceType.INSTAGRAM ||
-                                     type.code === CampaignServiceType.PHOTO_VIDEO_PRODUCTION ||
-                                     type.code === CampaignServiceType.LIVE_BROADCASTING;
-                    
+                    const isDisabled = type.name.includes('가구매') ||
+                      type.code === CampaignServiceType.NAVER_AUTO ||
+                      type.code === CampaignServiceType.INSTAGRAM ||
+                      type.code === CampaignServiceType.PHOTO_VIDEO_PRODUCTION ||
+                      type.code === CampaignServiceType.LIVE_BROADCASTING;
+
                     // 총판(Distributor)인 경우 NS 순위확인과 NP 순위확인은 숨김
-                    if (userRole === USER_ROLES.DISTRIBUTOR && 
-                        (type.code === CampaignServiceType.NAVER_SHOPPING_RANK || 
-                         type.code === CampaignServiceType.NAVER_PLACE_RANK)) {
+                    if (userRole === USER_ROLES.DISTRIBUTOR &&
+                      (type.code === CampaignServiceType.NAVER_SHOPPING_RANK ||
+                        type.code === CampaignServiceType.NAVER_PLACE_RANK)) {
                       return null;
                     }
-                    
+
                     return (
                       <Button
                         key={type.code}

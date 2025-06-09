@@ -452,7 +452,7 @@ const MyServicesPage: React.FC = () => {
       </Card>
 
       {/* 검색 카드 */}
-      <Card className="mt-6">
+      <Card>
         <CardContent className="p-6">
           {!selectedService ? (
             <div className="text-center py-8">

@@ -129,6 +129,7 @@ const ChatSticky: React.FC = () => {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef<boolean>(true);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   // Custom hooks
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -338,6 +339,12 @@ const ChatSticky: React.FC = () => {
     // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
     if (isMountedRef.current) {
       setIsOpen(!isOpen);
+      // 채팅창이 열리면 입력 필드에 포커스
+      if (!isOpen) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     }
   };
   
@@ -360,6 +367,8 @@ const ChatSticky: React.FC = () => {
           // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
           if (isMountedRef.current) {
             setInputValue('');
+            // 포커스 유지
+            inputRef.current?.focus();
           }
         }
         return;
@@ -410,6 +419,8 @@ const ChatSticky: React.FC = () => {
         // 컴포넌트가 마운트된 상태일 때만 상태 업데이트
         if (isMountedRef.current) {
           setInputValue('');
+          // 포커스 유지
+          inputRef.current?.focus();
         }
       } else {
         // 메시지 전송 실패 시 새 채팅방 생성 시도
@@ -435,6 +446,13 @@ const ChatSticky: React.FC = () => {
       if (isLoggingOut || !isMountedRef.current) return;
       
       setError(err.message || '메시지 전송 중 오류가 발생했습니다.');
+    } finally {
+      // 항상 포커스 유지
+      if (isMountedRef.current && inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 50);
+      }
     }
   };
   
@@ -578,6 +596,7 @@ const ChatSticky: React.FC = () => {
           {/* 입력 영역 */}
           <div className="chat-sticky-input-area">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}

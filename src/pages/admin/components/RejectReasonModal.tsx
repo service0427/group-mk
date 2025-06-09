@@ -24,7 +24,7 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
 
   const handleReject = async () => {
     if (!reason.trim()) {
-      alert('거부 사유를 입력해주세요.');
+      alert('반려 사유를 입력해주세요.');
       return;
     }
 
@@ -44,38 +44,31 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader className="bg-background py-4 px-6 border-b">
-          <DialogTitle className="text-lg font-medium text-foreground">등업 신청 거부</DialogTitle>
+          <DialogTitle className="text-lg font-medium text-foreground">등업 신청 반려</DialogTitle>
         </DialogHeader>
         <DialogBody className="p-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="rejection-reason" className="block text-sm font-medium text-gray-700 mb-1">
-                거부 사유
+                반려 사유
               </label>
               <textarea
                 id="rejection-reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="거부 사유를 입력해주세요"
+                placeholder="반려 사유를 입력해주세요"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                 rows={5}
                 disabled={processing}
               />
             </div>
             <div className="text-sm text-gray-500">
-              <p>* 입력한 거부 사유는 사용자에게 전달됩니다.</p>
-              <p>* 명확한 거부 사유와 추가 안내사항을 입력해주세요.</p>
+              <p>* 입력한 반려 사유는 사용자에게 전달됩니다.</p>
+              <p>* 명확한 반려 사유와 추가 안내사항을 입력해주세요.</p>
             </div>
           </div>
         </DialogBody>
         <DialogFooter className="px-6 py-4 border-t flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="btn btn-light"
-            disabled={processing}
-          >
-            취소
-          </button>
           <button
             onClick={handleReject}
             className="btn btn-danger"
@@ -95,9 +88,16 @@ const RejectReasonModal: React.FC<RejectReasonModalProps> = ({
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
-                거부하기
+                반려하기
               </span>
             )}
+          </button>
+          <button
+            onClick={onClose}
+            className="btn btn-light"
+            disabled={processing}
+          >
+            취소
           </button>
         </DialogFooter>
       </DialogContent>

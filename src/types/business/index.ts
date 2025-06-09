@@ -51,4 +51,5 @@ export interface BusinessFormData {
   business_email?: string;
   business_image_url?: string;
   bank_account?: BankAccountInfo; // 출금 계좌 정보 추가
+  target_role?: string; // 신청 대상 역할 (총판/대행사)
 }

@@ -33,7 +33,16 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
 }) => {
   const { userRole, currentUser } = useAuthContext();
   const { showToast } = useCustomToast();
-  const { showConfirm } = useDialog();
+  
+  // DialogProvider 내부에서만 사용하도록 try-catch로 안전하게 처리
+  let dialogMethods: any = null;
+  try {
+    dialogMethods = useDialog();
+  } catch (error) {
+    console.warn('DialogProvider not available');
+  }
+  const showConfirm = dialogMethods?.showConfirm;
+  
   const [isEditMode, setIsEditMode] = useState(false);
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
@@ -153,17 +162,27 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
 
   const handleClose = () => {
     if (isEditMode && content !== originalContent) {
-      showConfirm(
-        '변경사항 확인',
-        '변경사항이 저장되지 않았습니다. 정말 닫으시겠습니까?',
-        (confirmed) => {
-          if (confirmed) {
+      if (showConfirm) {
+        showConfirm(
+          '변경사항 확인',
+          '변경사항이 저장되지 않았습니다. 정말 닫으시겠습니까?',
+          (confirmed: boolean) => {
+            if (confirmed) {
             setContent(originalContent);
             setIsEditMode(false);
             onClose();
+            }
           }
+        );
+      } else {
+        // showConfirm이 없을 때는 기본 confirm 사용
+        const confirmed = window.confirm('변경사항이 저장되지 않았습니다. 정말 닫으시겠습니까?');
+        if (confirmed) {
+          setContent(originalContent);
+          setIsEditMode(false);
+          onClose();
         }
-      );
+      }
     } else {
       setIsEditMode(false);
       onClose();

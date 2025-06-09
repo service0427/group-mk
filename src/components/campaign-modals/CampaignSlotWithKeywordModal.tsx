@@ -1578,7 +1578,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           "w-[100vw] sm:w-[95vw] p-0 overflow-hidden flex flex-col",
           isCompactMode
             ? "h-[100vh] h-[100dvh] sm:h-[90vh] max-w-full sm:max-w-[500px] md:max-w-[1000px] lg:max-w-[1200px]"
-            : "h-[100vh] h-[100dvh] sm:h-[80vh] md:h-[75vh] lg:h-[70vh] max-w-full sm:max-w-[1000px] md:max-w-[1200px]"
+            : "h-[95vh] h-[95dvh] max-w-full sm:max-w-[1000px] md:max-w-[1200px]"
         )} aria-describedby={undefined}>
           <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm flex-shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">

@@ -393,9 +393,9 @@ const UserInfoDisplay = () => {
         </div>
       ) : (
         // 태블릿/데스크톱 버전 - 기존 레이아웃 개선
-        <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12 min-w-0">
+        <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12 min-w-0 max-w-[500px]">
           {/* 알림 드롭다운 - 태블릿에서는 아이콘만 표시 */}
-          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0 max-w-[120px]">
             <NotificationDropdown
               containerClassName="flex items-center h-full"
               hideTextOnMobile={isTablet}
@@ -420,8 +420,8 @@ const UserInfoDisplay = () => {
                 ]
               }}
             >
-              <MenuToggle className="flex items-center px-3 hover:bg-blue-100/80 dark:hover:bg-blue-800/50 transition-colors rounded-md cursor-pointer h-9 min-w-0">
-                <div className="flex items-center min-w-0">
+              <MenuToggle className="flex items-center px-3 hover:bg-blue-100/80 dark:hover:bg-blue-800/50 transition-colors rounded-md cursor-pointer h-9 min-w-0 max-w-[250px]">
+                <div className="flex items-center min-w-0 w-full">
                   {/* 사용자 아이콘 */}
                   <div className="flex-shrink-0 mr-2 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-8 border-2 border-blue-300 dark:border-blue-600">
                     <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-lg" />
@@ -431,14 +431,14 @@ const UserInfoDisplay = () => {
                   {isTablet ? (
                     <></>
                   ) : (
-                    <div className="flex flex-col justify-center min-w-0 max-w-[180px]">
+                    <div className="flex flex-col justify-center flex-1 min-w-0 overflow-hidden">
                       {/* 1줄: 사용자 이름 */}
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[150px]">
                         {currentUser.full_name || '사용자'}
                       </div>
 
                       {/* 2줄: 캐시 잔액 */}
-                      <div className="flex items-center min-w-0">
+                      <div className="flex items-center min-w-0 max-w-[150px]">
                         <KeenIcon icon="dollar" className="text-success dark:text-green-300 mr-1 text-xs flex-shrink-0" />
                         <div className="text-xs font-medium text-success dark:text-green-300 truncate">
                           {isLoading ? (

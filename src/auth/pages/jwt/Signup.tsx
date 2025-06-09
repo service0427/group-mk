@@ -25,11 +25,11 @@ const signupSchema = Yup.object().shape({
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('이메일을 입력해주세요'),
   password: Yup.string()
-    .min(4, '최소 4자 이상 입력해주세요')
+    .min(6, '최소 6자 이상 입력해주세요')
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('비밀번호를 입력해주세요'),
   changepassword: Yup.string()
-    .min(4, '최소 4자 이상 입력해주세요')
+    .min(6, '최소 6자 이상 입력해주세요')
     .max(50, '최대 50자까지 입력 가능합니다')
     .required('비밀번호 확인이 필요합니다')
     .oneOf([Yup.ref('password')], "비밀번호가 일치하지 않습니다"),

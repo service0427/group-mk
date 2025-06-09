@@ -20,12 +20,15 @@ import { useMenus } from '@/providers';
 import { useResponsive } from '@/hooks';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { useEffect } from 'react';
+import { useServiceEffectModal } from '@/contexts/ServiceEffectModalContext';
+import { ServiceEffectCategory } from '@/types/service-effect.types';
 
 interface SidebarMenuProps {
   onMenuStateChange?: () => void;
 }
 
 const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
+  const { openModal } = useServiceEffectModal();
   const isMobile = !useResponsive('up', 'md');
   const linkPl = isMobile ? 'ps-[6px]' : 'ps-[8px]';
   const linkPr = isMobile ? 'pe-[6px]' : 'pe-[8px]';
@@ -60,19 +63,35 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
     'before:start-[32px]'
   ];
 
-  const buildMenu = (items: TMenuConfig) => {
+  // 부모 메뉴 제목에서 서비스 카테고리를 결정하는 함수
+  const getServiceCategoryFromParentTitle = (parentTitle: string): ServiceEffectCategory | null => {
+    switch (parentTitle) {
+      case '네이버 쇼핑':
+        return 'NAVER_SHOPPING';
+      case '네이버 플레이스':
+        return 'NAVER_PLACE';
+      case '네이버 블로그':
+        return 'NAVER_BLOG';
+      case '쿠팡':
+        return 'COUPANG';
+      default:
+        return null;
+    }
+  };
+
+  const buildMenu = (items: TMenuConfig, parentTitle?: string) => {
     return items.map((item, index) => {
       if (item.heading) {
         return buildMenuHeading(item, index);
       } else if (item.disabled) {
         return buildMenuItemRootDisabled(item, index);
       } else {
-        return buildMenuItemRoot(item, index);
+        return buildMenuItemRoot(item, index, parentTitle);
       }
     });
   };
 
-  const buildMenuItemRoot = (item: IMenuItemConfig, index: number) => {
+  const buildMenuItemRoot = (item: IMenuItemConfig, index: number, parentTitle?: string) => {
     // 캠페인 소개 메뉴인지 확인
     const isCampaignIntroMenu = item.title === '캠페인 소개' || item.title === '쇼핑/플레이스 검색';
 
@@ -122,7 +141,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
             // 캠페인 소개 메뉴의 하위 항목은 항상 표시
             show={isCampaignIntroMenu}
           >
-            {buildMenuItemChildren(item.children, index, 1, isCampaignIntroMenu)}
+            {buildMenuItemChildren(item.children, index, 1, isCampaignIntroMenu, item.title)}
           </MenuSub>
         </MenuItem>
       );
@@ -195,7 +214,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
     );
   };
 
-  const buildMenuItemChildren = (items: TMenuConfig, index: number, level: number = 0, isParentCampaignIntro: boolean = false) => {
+  const buildMenuItemChildren = (items: TMenuConfig, index: number, level: number = 0, isParentCampaignIntro: boolean = false, parentTitle?: string) => {
     return items.map((item, idx) => {
       // 상위 메뉴가 캠페인 소개 메뉴인 경우 표시
       const shouldAlwaysShow = isParentCampaignIntro;
@@ -203,14 +222,18 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
       if (item.disabled) {
         return buildMenuItemChildDisabled(item, idx, level);
       } else {
-        return buildMenuItemChild(item, idx, level, shouldAlwaysShow);
+        return buildMenuItemChild(item, idx, level, shouldAlwaysShow, parentTitle);
       }
     });
   };
 
-  const buildMenuItemChild = (item: IMenuItemConfig, index: number, level: number = 0, alwaysShow: boolean = false) => {
+  const buildMenuItemChild = (item: IMenuItemConfig, index: number, level: number = 0, alwaysShow: boolean = false, parentTitle?: string) => {
     // 네이버 메뉴인지 확인 (캠페인 소개 > 네이버)
     const isNaverMenu = item.title === '네이버';
+
+    // "효과 및 사용법" 메뉴인지 확인
+    const isEffectMenu = item.title === '효과 및 사용법';
+
 
     if (item.children) {
       return (
@@ -273,13 +296,21 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
             // 상위 메뉴가 캠페인 소개이거나 네이버 메뉴인 경우 항상 표시
             show={alwaysShow || isNaverMenu}
           >
-            {buildMenuItemChildren(item.children, index, item.collapse ? level : level + 1, alwaysShow || isNaverMenu)}
+            {buildMenuItemChildren(item.children, index, item.collapse ? level : level + 1, alwaysShow || isNaverMenu, item.title)}
           </MenuSub>
         </MenuItem>
       );
     } else {
+      // "효과 및 사용법" 메뉴 클릭 처리
+      const handleClick = isEffectMenu && parentTitle ? (e: any) => {
+        const serviceCategory = getServiceCategoryFromParentTitle(parentTitle);
+        if (serviceCategory) {
+          openModal(serviceCategory);
+        }
+      } : undefined;
+
       return (
-        <MenuItem key={index}>
+        <MenuItem key={index} onClick={handleClick}>
           <MenuLink
             path={item.path}
             className={clsx(
@@ -439,7 +470,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
         isMobile && 'mobile-sidebar-menu' // 모바일에서 추가 스타일 (CSS에서 처리)
       )}
     >
-      {filteredMenuConfig && buildMenu(filteredMenuConfig)}
+      {filteredMenuConfig && buildMenu(filteredMenuConfig, '')}
     </Menu>
   );
 };

@@ -6,6 +6,7 @@ import { UIProvider } from './UIProvider';
 import { HelmetProvider } from 'react-helmet-async';
 import { LogoutProvider } from '@/contexts/LogoutContext';
 import { AlertProvider } from '@/hooks/useAlert';
+import { DialogProvider } from '@/components/dialogs/AlertConfirmDialogs';
 
 // 단일 QueryClient 인스턴스 생성
 const queryClient = new QueryClient({
@@ -35,7 +36,9 @@ const ProvidersWrapper = ({ children }: PropsWithChildren) => {
             <LogoutProvider>
               <AlertProvider>
                 <UIProvider>
-                  {children}
+                  <DialogProvider>
+                    {children}
+                  </DialogProvider>
                 </UIProvider>
               </AlertProvider>
             </LogoutProvider>

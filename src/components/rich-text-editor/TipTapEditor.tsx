@@ -345,4 +345,4 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
   );
 };
 
-export { TipTapEditor };
+export default TipTapEditor;

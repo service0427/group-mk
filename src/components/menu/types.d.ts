@@ -174,6 +174,7 @@ export interface IMenuItemConfig {
   children?: IMenuItemConfig[];
   childrenIndex?: number;
   authCheck?: (role: string) => boolean; // 권한 확인 함수 (특정 사용자 역할만 메뉴 표시)
+  onClick?: () => void; // 클릭 이벤트 핸들러
 }
 
 export type TMenuConfig = IMenuItemConfig[];

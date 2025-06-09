@@ -8,6 +8,7 @@ import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { AuthProviderV2 } from '@/auth/providers/AuthProviderV2';
 import { initMobileOptimizations } from '@/utils/mobileOptimization';
+import { ServiceEffectModalProvider } from '@/contexts/ServiceEffectModalContext';
 
 const App = () => {
   const { settings } = useSettings();
@@ -85,20 +86,22 @@ const App = () => {
       <LogoutTransition />
 
       <AuthProviderV2>
-        <PathnameProvider>
-          <ScrollToTop />
+        <ServiceEffectModalProvider>
+          <PathnameProvider>
+            <ScrollToTop />
 
-          {/* 모바일 상태바 탭 기능 */}
-          <StatusBarTap />
+            {/* 모바일 상태바 탭 기능 */}
+            <StatusBarTap />
 
-          {/* 라우팅 구조 */}
-          <Routes>
-            <Route path="/*" element={<AppRouting />} />
-          </Routes>
+            {/* 라우팅 구조 */}
+            <Routes>
+              <Route path="/*" element={<AppRouting />} />
+            </Routes>
 
-          {/* 맨 위로 가기 버튼 */}
-          <ScrollToTopButton />
-        </PathnameProvider>
+            {/* 맨 위로 가기 버튼 */}
+            <ScrollToTopButton />
+          </PathnameProvider>
+        </ServiceEffectModalProvider>
       </AuthProviderV2>
     </HashRouter>
   );

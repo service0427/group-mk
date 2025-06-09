@@ -29,7 +29,7 @@ const CampaignManagePage: React.FC = () => {
 
   // 캠페인 추가 모달 상태
   const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
-  
+
   // 서비스별 캠페인 개수
   const [serviceCampaignCounts, setServiceCampaignCounts] = useState<Record<string, number>>({});
   // 캠페인이 있는 서비스 목록
@@ -69,7 +69,7 @@ const CampaignManagePage: React.FC = () => {
       // 서비스별로 카운트 계산
       const counts: Record<string, number> = {};
       const servicesSet = new Set<string>();
-      
+
       if (data) {
         data.forEach((campaign: any) => {
           if (campaign.service_type) {
@@ -101,7 +101,7 @@ const CampaignManagePage: React.FC = () => {
       // fetchCampaigns가 이미 ICampaign 형식으로 변환해서 반환하므로 그대로 사용
       setCampaigns(rawData);
       setError(null);
-      
+
       // 캠페인 개수도 업데이트
       await fetchAllServiceCounts();
     } catch (err) {
@@ -173,7 +173,7 @@ const CampaignManagePage: React.FC = () => {
         <Card>
           <CardContent className="p-4 lg:p-6">
             <div className="text-center py-6 lg:py-8">
-              <KeenIcon icon="information-3" className="text-4xl lg:text-5xl text-muted-foreground mb-3 lg:mb-4" />
+              <KeenIcon icon="information-3" className="text-4xl lg:text-5xl text-muted-foreground" />
               <p className="text-base lg:text-lg text-muted-foreground">서비스를 선택해주세요</p>
               <p className="text-xs lg:text-sm text-muted-foreground mt-1 lg:mt-2">선택한 서비스의 캠페인 목록이 표시됩니다</p>
             </div>

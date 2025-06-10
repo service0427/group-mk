@@ -9,8 +9,21 @@ const getNestedValue = (obj: any, path: string): any => {
   }, obj);
 };
 
-// 날짜 포맷팅 함수
+// 날짜 포맷팅 함수 (날짜만)
 const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+// 날짜/시간 포맷팅 함수 (날짜와 시간 모두)
+const formatDateTime = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return dateString;
@@ -82,14 +95,14 @@ export const exportToExcel = (slots: Slot[], template: ExcelTemplate, fileName: 
           case 'input_data.keywords':
             value = formatKeywords(slot.input_data?.keywords);
             break;
+          case 'start_date':
+          case 'end_date':
+            value = formatDate(slot[field]);
+            break;
           case 'created_at':
           case 'submitted_at':
           case 'processed_at':
-            value = formatDate(getNestedValue(slot, field));
-            break;
-          case 'start_date':
-          case 'end_date':
-            value = slot[field] ? new Date(slot[field]).toLocaleDateString('ko-KR') : '';
+            value = formatDateTime(getNestedValue(slot, field));
             break;
           default:
             // 중첩된 필드 처리

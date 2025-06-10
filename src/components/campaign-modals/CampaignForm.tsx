@@ -697,6 +697,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                 <option value={FieldType.TEXT}>텍스트</option>
                                 <option value={FieldType.INTEGER}>숫자</option>
                                 <option value={FieldType.ENUM}>선택목록</option>
+                                <option value={FieldType.FILE}>파일</option>
                               </select>
                             ) : (
                               <Select
@@ -720,6 +721,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                   <SelectItem value={FieldType.TEXT}>텍스트</SelectItem>
                                   <SelectItem value={FieldType.INTEGER}>숫자</SelectItem>
                                   <SelectItem value={FieldType.ENUM}>선택목록</SelectItem>
+                                  <SelectItem value={FieldType.FILE}>파일</SelectItem>
                                 </SelectContent>
                               </Select>
                             )}
@@ -877,6 +879,16 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           )}
                         </div>
                       )}
+                      
+                      {/* file 타입일 때 안내 메시지 */}
+                      {field.fieldType === FieldType.FILE && (
+                        <div className="mt-2 px-3">
+                          <div className="text-xs text-gray-500 space-y-1">
+                            <p>• 최대 파일 크기: 10MB</p>
+                            <p>• 허용 파일 타입: 이미지 파일 (JPG, PNG, GIF 등)</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                   
@@ -905,7 +917,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
                   <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>
                   <p className="mt-1">• '필수' 체크 시 사용자가 반드시 입력해야 하는 필드가 됩니다.</p>
-                  <p className="mt-1">• 타입 선택: 텍스트(일반 텍스트), 숫자(숫자만 입력 가능), 선택목록(드롭다운 선택)</p>
+                  <p className="mt-1">• 타입 선택: 텍스트(일반 텍스트), 숫자(숫자만 입력 가능), 선택목록(드롭다운 선택), 파일(파일 업로드)</p>
                 </div>
               </td>
             </tr>

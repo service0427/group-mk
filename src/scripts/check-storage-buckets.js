@@ -1,7 +1,8 @@
 // Storage 버킷 확인 및 생성 스크립트
-require('dotenv').config();
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
-const { createClient } = require('@supabase/supabase-js');
+dotenv.config();
 
 // Supabase 클라이언트 생성
 const supabaseUrl = process.env.VITE_PUBLIC_SUPABASE_URL;
@@ -31,6 +32,12 @@ const requiredBuckets = [
     name: 'notice-files',
     public: true,
     fileSizeLimit: 30 * 1024 * 1024, // 30MB
+    allowedMimeTypes: null // 모든 파일 타입 허용
+  },
+  {
+    name: 'campaign-files',
+    public: true,
+    fileSizeLimit: 50 * 1024 * 1024, // 50MB
     allowedMimeTypes: null // 모든 파일 타입 허용
   }
 ];

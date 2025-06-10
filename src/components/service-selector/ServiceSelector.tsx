@@ -206,8 +206,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const hasMoreServices = collapsible && filteredServices.length > initialDisplayCount;
 
   return (
-    <div className={className}>
-      <div className="flex flex-wrap gap-1.5 lg:gap-2">
+    <div className={`${className} overflow-x-auto`}>
+      <div className="flex flex-wrap gap-1.5 lg:gap-2 min-w-0">
         {displayedServices.map((service) => {
           // servicesWithSlots가 제공되면, 슬롯이 없는 서비스는 비활성화
           const hasSlots = !servicesWithSlots || servicesWithSlots.has(service.code);
@@ -232,7 +232,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                 className="size-3 lg:size-4 mr-1 lg:mr-2"
               />
             )}
-            <span className="whitespace-nowrap">{service.name}</span>
+            <span className="sm:whitespace-nowrap">{service.name}</span>
             {showCount && (
               <Badge
                 variant="outline"
@@ -260,7 +260,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                 : 'border-primary text-primary hover:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20'
             }`}
           >
-            <span className="whitespace-nowrap">
+            <span className="sm:whitespace-nowrap">
               {isExpanded ? '접기' : `더보기 (+${filteredServices.length - initialDisplayCount})`}
             </span>
           </Button>

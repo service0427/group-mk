@@ -187,6 +187,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   const [selectedKeywords, setSelectedKeywords] = useState<number[]>([]);
   const [keywordLoading, setKeywordLoading] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [keywordSearchMode, setKeywordSearchMode] = useState<boolean>(false); // 키워드 검색 모드
 
   // 비동기 작업 오류 상태
   const [keywordError, setKeywordError] = useState<string | null>(null);
@@ -381,9 +382,34 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 모달이 열릴 때만 한 번 데이터 로드 (모든 데이터를 한 번에 로드)
   useEffect(() => {
     if (open) {
+      // campaign prop에서 초기 키워드 데이터 추출
+      if (campaign?.initialKeywordData) {
+        const initialData = campaign.initialKeywordData;
+        
+        // slotData 초기화
+        setSlotData({
+          productName: initialData.productName || '',
+          mid: initialData.mid || '',
+          url: initialData.url || '',
+          keyword1: initialData.keyword1 || '',
+          keyword2: initialData.keyword2 || '',
+          keyword3: initialData.keyword3 || '',
+          selectedKeywords: initialData.selectedKeywords || [],
+          keywordDetails: initialData.keywordDetails || []
+        });
+        
+        // 선택된 키워드 설정
+        if (initialData.selectedKeywords && initialData.selectedKeywords.length > 0) {
+          setSelectedKeywords(initialData.selectedKeywords);
+          setKeywordSearchMode(true); // 키워드 모드로 설정
+        }
+      }
+      
       fetchCampaigns(); // 캠페인 목록 조회
       fetchKeywordGroups(); // 키워드 그룹 조회
       fetchUserBalance(); // 사용자 잔액 가져오기
+      
+      // 선택된 그룹 ID 설정은 그룹 목록이 로드된 후에 처리됨 (fetchKeywordGroups 내부에서)
     }
   }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
@@ -398,6 +424,31 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
     }
   }, [selectedCampaignId, campaigns]);
+
+  // 초기 키워드 데이터가 설정되고 캠페인이 선택되었을 때 금액 계산
+  useEffect(() => {
+    if (campaign?.initialKeywordData && selectedCampaignId && campaigns.length > 0 && keywords.length > 0) {
+      // 캠페인 정보와 키워드 정보가 모두 준비되었을 때 금액 계산
+      const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+      if (selectedCampaign && campaign.initialKeywordData.selectedKeywords?.length > 0) {
+        // 키워드가 keywords 배열에 있는지 확인
+        const keywordExists = keywords.find(k => k.id === campaign.initialKeywordData.selectedKeywords[0]);
+        if (keywordExists) {
+          // 키워드 정보 설정 후 금액 계산
+          setTimeout(() => {
+            calculateTotalPayment(campaign.initialKeywordData.selectedKeywords);
+          }, 100);
+        }
+      }
+    }
+  }, [campaign?.initialKeywordData, selectedCampaignId, campaigns, keywords]);
+
+  // 그룹이 선택되었을 때 키워드 로드
+  useEffect(() => {
+    if (selectedGroupId && campaign?.selectedGroupId === selectedGroupId) {
+      fetchKeywords(selectedGroupId);
+    }
+  }, [selectedGroupId]);
 
   // 캠페인 로고 또는 아이콘 가져오기 함수
   const fetchCampaignBanner = async (campaign: SupabaseCampaign) => {
@@ -606,9 +657,19 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       setKeywordGroups(transformedData);
 
-      // 그룹이 있으면 첫 번째 그룹 선택
-      if (transformedData.length > 0) {
-        // 기본 그룹을 우선 선택, 없으면, 첫 번째 그룹
+      // campaign prop에서 selectedGroupId가 전달되었으면 해당 그룹 선택
+      if (campaign?.selectedGroupId) {
+        // 전달받은 그룹이 목록에 있는지 확인
+        const targetGroup = transformedData.find(g => g.id === campaign.selectedGroupId);
+        if (targetGroup) {
+          setSelectedGroupId(campaign.selectedGroupId);
+        } else if (transformedData.length > 0) {
+          // 해당 그룹이 없으면 첫 번째 그룹 선택
+          const defaultGroup = transformedData.find(g => g.isDefault);
+          setSelectedGroupId(defaultGroup?.id || transformedData[0].id);
+        }
+      } else if (transformedData.length > 0 && !selectedGroupId) {
+        // selectedGroupId가 없을 때만 첫 번째 그룹 선택
         const defaultGroup = transformedData.find(g => g.isDefault);
         setSelectedGroupId(defaultGroup?.id || transformedData[0].id);
       }
@@ -788,6 +849,25 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
           // 금액 재계산
           setTimeout(() => calculateTotalPayment(validSelectedKeywords), 0);
+        }
+      }
+
+      // campaign의 initialKeywordData가 있으면 해당 키워드의 작업타수와 마감일수 설정
+      if (campaign?.initialKeywordData && campaign.initialKeywordData.selectedKeywords?.length > 0) {
+        const initialKeywordId = campaign.initialKeywordData.selectedKeywords[0];
+        const keywordInList = transformedData.find(k => k.id === initialKeywordId);
+        
+        if (keywordInList) {
+          // 해당 키워드의 작업타수와 마감일수 설정
+          setKeywords(prev => prev.map(k => 
+            k.id === initialKeywordId 
+              ? { 
+                  ...k, 
+                  workCount: campaign.initialKeywordData.keywordDetails?.[0]?.workCount || minQuantity,
+                  dueDays: campaign.initialKeywordData.keywordDetails?.[0]?.dueDays || 1
+                }
+              : k
+          ));
         }
       }
     } catch (error) {
@@ -2006,16 +2086,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                       </div>
                     ) : (
                       <>
-                        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white py-1.5 sm:py-2 px-3 sm:px-4 border-b flex justify-between items-center rounded-t-md">
+                        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white py-1 px-3 sm:px-4 border-b flex justify-between items-center rounded-t-md">
                           <div className="flex items-center gap-2">
-                            <KeenIcon icon="list" className="text-white size-4" />
-                            <div className="text-sm font-semibold antialiased">
+                            <KeenIcon icon="list" className="text-white size-3" />
+                            <div className="text-xs font-medium antialiased">
                               총 {keywords.length}개의 키워드
                             </div>
                           </div>
-                          <div className="inline-flex items-center gap-1.5 text-sm bg-green-500/30 py-1 px-2 md:py-1.5 md:px-3 rounded-full">
-                            <KeenIcon icon="check-circle" className="text-green-300 size-4" />
-                            <span className="font-semibold text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
+                          <div className="inline-flex items-center gap-1 text-xs bg-green-500/30 py-0.5 px-2 rounded-full">
+                            <KeenIcon icon="check-circle" className="text-green-300 size-3" />
+                            <span className="font-medium text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
                           </div>
                         </div>
                         <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900 min-h-0">
@@ -2157,7 +2237,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                               <div className="text-xs">
                                                 {keyword.mid && !isHidden('mid') && <p className="text-gray-600 mb-1 flex items-center gap-1 font-medium"><span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getFieldLabel('mid', 'MID')}</span> {keyword.mid}</p>}
                                                 {keyword.url && !isHidden('url') && <p className="text-blue-600 truncate max-w-[300px] hover:text-blue-700 font-medium">{keyword.url}</p>}
-                                                {keyword.description && !isHidden('description') && <p className="text-gray-500 text-xs mt-1">{keyword.description}</p>}
+                                                {keyword.description && !isHidden('description') && <p className="text-gray-500 text-xs mt-1 truncate max-w-[300px]">{keyword.description}</p>}
                                               </div>
                                             </td>
                                           );

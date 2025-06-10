@@ -218,7 +218,18 @@ export const useKeywords = () => {
     setError(null);
     
     try {
-      const response = await keywordGroupService.updateGroup(groupId, name);
+      // 기존 그룹 정보를 찾아서 campaign 정보 유지
+      const group = groups.find(g => g.id === groupId);
+      if (!group) {
+        throw new Error('그룹을 찾을 수 없습니다.');
+      }
+      
+      const response = await keywordGroupService.updateGroup(
+        groupId,
+        name,
+        group.campaignName,
+        group.campaignType
+      );
       
       if (response.success) {
         await loadGroups();
@@ -232,7 +243,7 @@ export const useKeywords = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadGroups]);
+  }, [loadGroups, groups]);
 
   // 그룹 삭제 핸들러
   const deleteGroup = useCallback(async (groupId: number) => {

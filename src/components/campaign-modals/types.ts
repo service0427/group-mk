@@ -161,7 +161,8 @@ export interface ICampaign {
 export enum FieldType {
   TEXT = 'text',
   INTEGER = 'integer',
-  ENUM = 'enum'
+  ENUM = 'enum',
+  FILE = 'file'
 }
 
 // 사용자 입력 필드 타입 정의
@@ -171,6 +172,10 @@ export interface UserInputField {
   isRequired?: boolean; // 필수 입력 필드 여부
   fieldType?: FieldType; // 필드 타입 (기본값: text)
   enumOptions?: string[]; // enum 타입일 때 선택 옵션들
+  fileOptions?: { // file 타입일 때 파일 옵션
+    maxSizeMB?: number; // 최대 파일 크기 (MB)
+    acceptedTypes?: string[]; // 허용된 파일 타입 (예: ['image/*', '.pdf'])
+  };
 }
 
 export interface ExtendedCampaign extends ICampaign {

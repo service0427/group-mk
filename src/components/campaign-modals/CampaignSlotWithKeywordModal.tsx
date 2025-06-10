@@ -34,7 +34,7 @@ interface Keyword {
   createdAt: string;
   updatedAt: string;
   // 추가 필드
-  workCount?: number | null; // 작업타수
+  workCount?: number | null; // 작업수
   dueDate?: string | null;   // 마감일 (기존: 날짜 형식)
   dueDays?: number | null;   // 마감 일수 (변경: 숫자 형식)
   // 사용자 입력 필드 데이터
@@ -87,7 +87,7 @@ interface CampaignSlotData {
   campaignId?: number; // 선택된 캠페인 ID
   // 추가: 선택된 키워드 목록
   selectedKeywords?: number[];
-  // 추가: 키워드 상세 정보 (작업타수, 마감일수, 추가 입력 데이터 등)
+  // 추가: 키워드 상세 정보 (작업수, 마감일수, 추가 입력 데이터 등)
   keywordDetails?: KeywordDetail[];
   // 추가 입력 필드 데이터
   input_data?: Record<string, any>; // 키워드별 추가 입력 필드 데이터
@@ -766,7 +766,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minQuantity = 1; // 기본값
         }
 
-        // 키워드 목록에 기본 작업타수 설정 및 기본 마감일수 설정
+        // 키워드 목록에 기본 작업수 설정 및 기본 마감일수 설정
         transformedData.forEach(keyword => {
           keyword.workCount = minQuantity as unknown as undefined;
           keyword.dueDays = 1; // 기본 마감일수 1일로 설정
@@ -821,7 +821,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       return newSelection;
     });
 
-    // 선택 시 선택된 캠페인의 min_quantity를 작업타수로 자동 설정
+    // 선택 시 선택된 캠페인의 min_quantity를 작업수로 자동 설정
     if (!keywords.find(k => k.id === keywordId)?.workCount && selectedCampaign) {
       const minQuantity = selectedCampaign.min_quantity ?
         (typeof selectedCampaign.min_quantity === 'string' ?
@@ -872,7 +872,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     selection.forEach(keywordId => {
       const keyword = keywords.find(k => k.id === keywordId);
       if (keyword) {
-        // 작업타수가 null, undefined, 0, 음수인 경우 최소값을 구해서 적용
+        // 작업수가 null, undefined, 0, 음수인 경우 최소값을 구해서 적용
         let minQuantity = 1; // 기본 최소값
         if (selectedCampaign) {
           if (typeof selectedCampaign.min_quantity === 'string') {
@@ -902,7 +902,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     setTotalPaymentAmount(totalWithTax);
   };
 
-  // 작업타수 변경 핸들러 (입력 중)
+  // 작업수 변경 핸들러 (입력 중)
   const handleWorkCountChange = (keywordId: number, value: number | null) => {
     // 입력 중에는 임시로 어떤 값이든 허용하고, 결제 금액 계산은 하지 않음
     setKeywords(prev => {
@@ -913,13 +913,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     });
   };
 
-  // 작업타수 입력 완료(blur) 핸들러
+  // 작업수 입력 완료(blur) 핸들러
   const handleWorkCountBlur = (keywordId: number) => {
     // 선택된 키워드 찾기
     const keyword = keywords.find(k => k.id === keywordId);
     if (!keyword) return;
 
-    // 선택된 캠페인의 최소 작업타수 가져오기
+    // 선택된 캠페인의 최소 작업수 가져오기
     let minQuantity = 1; // 기본 최소값
     if (selectedCampaign) {
       if (typeof selectedCampaign.min_quantity === 'string') {
@@ -955,6 +955,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     isRequired?: boolean;
     fieldType?: FieldType;
     enumOptions?: string[];
+    fileOptions?: { maxSizeMB?: number; acceptedTypes?: string[] };
   }> => {
     if (!campaign || !campaign.add_info) return [];
 
@@ -964,6 +965,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       isRequired?: boolean;
       fieldType?: FieldType;
       enumOptions?: string[];
+      fileOptions?: { maxSizeMB?: number; acceptedTypes?: string[] };
     }> = [];
 
     try {
@@ -983,7 +985,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       addFields = addFields.map(field => ({
         ...field,
         fieldType: field.fieldType || FieldType.TEXT, // 기본값 TEXT
-        enumOptions: field.enumOptions || undefined
+        enumOptions: field.enumOptions || undefined,
+        fileOptions: field.fieldType === FieldType.FILE 
+          ? {
+              maxSizeMB: 10, // 10MB 고정
+              // 추후 타입들은 여기에 추가 해야 한다. 현재는 image들만
+              acceptedTypes: ['image/*'] // 이미지 파일만 허용 (고정)
+            }
+          : undefined
       }));
 
     } catch (e) {
@@ -1073,6 +1082,83 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     handleInputDataChange(keywordId, fieldName, numericValue);
   };
 
+  // 파일 업로드 핸들러
+  const handleFileUpload = async (keywordId: number, fieldName: string, file: File, fileOptions?: { maxSizeMB?: number; acceptedTypes?: string[] }) => {
+    try {
+      // 파일 크기 검증
+      const maxSizeMB = fileOptions?.maxSizeMB || 10; // 기본값 10MB
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        showAlert('오류', `파일 크기는 ${maxSizeMB}MB를 초과할 수 없습니다.`, false);
+        return;
+      }
+
+      // 파일 타입 검증 (기본값: image/*)
+      const acceptedTypes = fileOptions?.acceptedTypes || ['image/*'];
+      const fileType = file.type;
+      const fileNameLower = file.name.toLowerCase();
+      const isAccepted = acceptedTypes.some(acceptedType => {
+        if (acceptedType.includes('*')) {
+          // 예: 'image/*'
+          const prefix = acceptedType.split('/')[0];
+          return fileType.startsWith(prefix + '/');
+        } else if (acceptedType.startsWith('.')) {
+          // 예: '.pdf'
+          return fileNameLower.endsWith(acceptedType);
+        } else {
+          // 예: 'application/pdf'
+          return fileType === acceptedType;
+        }
+      });
+
+      if (!isAccepted) {
+        showAlert('오류', `허용되지 않는 파일 형식입니다. 이미지 파일만 업로드 가능합니다.`, false);
+        return;
+      }
+
+      // Supabase Storage에 업로드
+      // 파일명을 안전하게 처리 (한글 및 특수문자 제거)
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const filePath = `campaign-files/${currentUser?.id || 'anonymous'}/${safeFileName}`;
+      
+      // RLS 정책 우회를 위해 upsert 사용
+      const { data, error } = await supabase.storage
+        .from('campaign-files')
+        .upload(filePath, file, {
+          upsert: true, // 파일이 이미 존재하면 덮어쓰기
+          cacheControl: '3600'
+        });
+
+      if (error) {
+        console.error('파일 업로드 오류:', error);
+        showAlert('오류', '파일 업로드 중 오류가 발생했습니다.', false);
+        return;
+      }
+
+      // 공개 URL 가져오기
+      const { data: urlData } = supabase.storage
+        .from('campaign-files')
+        .getPublicUrl(filePath);
+
+      if (urlData?.publicUrl) {
+        // 파일 URL을 inputData에 저장
+        handleInputDataChange(keywordId, fieldName, urlData.publicUrl);
+        // 파일명도 별도로 저장 (나중에 표시용)
+        handleInputDataChange(keywordId, `${fieldName}_fileName`, file.name);
+      }
+    } catch (error) {
+      console.error('파일 업로드 오류:', error);
+      showAlert('오류', '파일 업로드 중 오류가 발생했습니다.', false);
+    }
+  };
+
+  // 파일 삭제 핸들러
+  const handleFileRemove = (keywordId: number, fieldName: string) => {
+    handleInputDataChange(keywordId, fieldName, '');
+    handleInputDataChange(keywordId, `${fieldName}_fileName`, '');
+  };
+
   // 폼 유효성 검사 함수
   const validateForm = (): boolean => {
     // 키워드 선택 확인만 체크
@@ -1102,6 +1188,15 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               if (field.fieldType === FieldType.INTEGER && value) {
                 if (!/^\d+$/.test(value)) {
                   showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 숫자만 입력 가능합니다.`, false);
+                  return false;
+                }
+              }
+              
+              // FILE 타입 필드 검증 (필수 파일 필드가 비어있는지 확인)
+              if (field.fieldType === FieldType.FILE && field.isRequired) {
+                const fileUrl = keyword.inputData?.[field.fieldName];
+                if (!fileUrl || fileUrl.trim() === '') {
+                  showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 파일은 필수입니다.`, false);
                   return false;
                 }
               }
@@ -1140,7 +1235,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // 2. 각 키워드에 대한 총 결제 금액 계산
       let totalAmount = 0;
       for (const detail of slotData.keywordDetails) {
-        // 개별 키워드 가격 계산 (단가 * 작업타수 * 진행일수)
+        // 개별 키워드 가격 계산 (단가 * 작업수 * 진행일수)
         const keywordPrice = unitPrice * detail.workCount * detail.dueDays;
         totalAmount += keywordPrice;
       }
@@ -1180,7 +1275,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         const keyword = keywords.find(k => k.id === detail.id);
         if (!keyword) continue;
 
-        // 개별 키워드 가격 계산 (단가 * 작업타수 * 진행일수)
+        // 개별 키워드 가격 계산 (단가 * 작업수 * 진행일수)
         const keywordPrice = Math.round(unitPrice * detail.workCount * detail.dueDays * 1.1); // 부가세 포함
 
         // 키워드 ID에 대한 상세 입력 데이터 가져오기
@@ -1196,7 +1291,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           updated_at: now,
           submitted_at: now,
           keyword_id: detail.id, // 키워드 ID
-          quantity: detail.workCount, // 작업타수 (quantity 사용)
+          quantity: detail.workCount, // 작업수 (quantity 사용)
           // deadline 필드는 DB에서 기본값이 null이므로 저장 항목에서 제외
           input_data: {
             ...keywordInputData,
@@ -1471,7 +1566,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         const keyword = keywords.find(k => k.id === keywordId);
         if (!keyword) return null;
 
-        // 최소 작업타수 확인
+        // 최소 작업수 확인
         let minQuantity = 1;
         if (selectedCampaign) {
           if (typeof selectedCampaign.min_quantity === 'string') {
@@ -1481,7 +1576,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           }
         }
 
-        // 작업타수가 최소값보다 작으면 최소값 사용
+        // 작업수가 최소값보다 작으면 최소값 사용
         const workCount = keyword.workCount === null || keyword.workCount === undefined || keyword.workCount < minQuantity
           ? minQuantity
           : keyword.workCount;
@@ -2086,7 +2181,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                             const allIds = keywords.map(k => k.id);
                                             setSelectedKeywords(allIds);
 
-                                            // 선택된 캠페인의 min_quantity를 작업타수로 자동 설정
+                                            // 선택된 캠페인의 min_quantity를 작업수로 자동 설정
                                             if (selectedCampaign) {
                                               const minQuantity = selectedCampaign.min_quantity ?
                                                 (typeof selectedCampaign.min_quantity === 'string' ?
@@ -2127,7 +2222,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     }
                                     return null;
                                   })()}
-                                  <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">타수</th>
+                                  <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업수</th>
                                   <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
                                   <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
                                   {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
@@ -2216,7 +2311,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       <td className="min-w-[80px] px-3 py-3 border border-gray-200 align-middle">
                                         <input
                                           type="text"
-                                          placeholder="타수"
+                                          placeholder="작업수"
                                           value={keyword.workCount === null || keyword.workCount === undefined ? '' : keyword.workCount}
                                           onChange={(e) => {
                                             const inputValue = e.target.value;
@@ -2343,6 +2438,59 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                                   onClick={e => e.stopPropagation()}
                                                   required={field.isRequired}
                                                 />
+                                              ) : field.fieldType === FieldType.FILE ? (
+                                                // FILE 타입: 파일 업로드
+                                                <div className="w-full">
+                                                  {keyword.inputData?.[field.fieldName] ? (
+                                                    // 파일이 업로드된 경우
+                                                    <div className="flex items-center gap-1">
+                                                      <KeenIcon icon="picture" className="size-3 text-gray-500" />
+                                                      <a
+                                                        href={keyword.inputData?.[field.fieldName]}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[9px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[100px] flex-1"
+                                                        title={keyword.inputData?.[`${field.fieldName}_fileName`] || '파일 보기 (새 탭에서 열림)'}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                      >
+                                                        {keyword.inputData?.[`${field.fieldName}_fileName`] || '파일'}
+                                                      </a>
+                                                      <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleFileRemove(keyword.id, field.fieldName);
+                                                        }}
+                                                        className="text-red-500 hover:text-red-700 p-0.5"
+                                                        title="파일 삭제"
+                                                      >
+                                                        <KeenIcon icon="cross" className="size-3" />
+                                                      </button>
+                                                    </div>
+                                                  ) : (
+                                                    // 파일 선택 버튼
+                                                    <label className={`flex items-center justify-center px-2 py-1 text-[9px] sm:text-xs border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${field.isRequired && !keyword.inputData?.[field.fieldName]
+                                                      ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                                      : 'border-gray-300'
+                                                      }`}>
+                                                      <KeenIcon icon="file-up" className="size-3 mr-1" />
+                                                      파일 선택
+                                                      <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) => {
+                                                          e.stopPropagation();
+                                                          const file = e.target.files?.[0];
+                                                          if (file) {
+                                                            handleFileUpload(keyword.id, field.fieldName, file, field.fileOptions);
+                                                          }
+                                                        }}
+                                                        onClick={e => e.stopPropagation()}
+                                                      />
+                                                    </label>
+                                                  )}
+                                                </div>
                                               ) : (
                                                 // TEXT 타입 (기본값): 일반 텍스트 입력
                                                 <input

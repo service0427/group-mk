@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM, { createPortal } from 'react-dom';
 import { Slot, User, Campaign } from './types';
 import { formatDate } from './constants';
 import { supabase } from '@/supabase';
 import { useAlert } from '@/hooks/useAlert';
+import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
+import { KeenIcon } from '@/components';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -92,11 +94,56 @@ const SlotList: React.FC<SlotListProps> = ({
   // 키워드 툴팁 상태 관리
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   
+  // 이미지 모달 상태 관리
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null);
+  
   // 이전 슬롯 ID 목록을 저장하여 변경 여부 확인
   const prevSlotIdsRef = useRef<string[]>([]);
   
   // 노출 안할 inputData
   const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
+  
+  // 슬롯이 변경될 때 모든 팝오버와 모달 닫기
+  useEffect(() => {
+    // 첫 렌더링이 아니고, 실제로 슬롯이 변경되었을 때만 실행
+    if (prevSlotIdsRef.current.length > 0) {
+      const currentSlotIds = slots.map(s => s.id);
+      const hasChanged = 
+        prevSlotIdsRef.current.length !== currentSlotIds.length ||
+        !prevSlotIdsRef.current.every((id, index) => id === currentSlotIds[index]);
+      
+      if (hasChanged) {
+        setOpenPopoverId(null);
+        setOpenRejectionId(null);
+        setOpenKeywordTooltipId(null);
+        setImageModalOpen(false);
+        setSelectedImage(null);
+      }
+    }
+    
+    // 현재 슬롯 ID 목록 저장
+    prevSlotIdsRef.current = slots.map(s => s.id);
+  }, [slots]);
+  
+  // ESC 키로 이미지 모달 닫기
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && imageModalOpen) {
+        setImageModalOpen(false);
+        setSelectedImage(null);
+      }
+    };
+    
+    if (imageModalOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [imageModalOpen]);
+  
   
   // 실제 사용할 selectedSlots와 업데이트 함수 결정
   const selectedSlots = externalSelectedSlots !== undefined ? externalSelectedSlots : internalSelectedSlots;
@@ -350,7 +397,7 @@ const SlotList: React.FC<SlotListProps> = ({
               </th>
               <th className="py-3 px-3 text-start font-medium">사용자</th>
               <th className="py-3 px-3 text-center font-medium">키워드</th>
-              <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">타수</th>
+              <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업수</th>
               <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업기간</th>
               <th className="py-3 px-3 text-center font-medium hidden xl:table-cell">캠페인</th>
               <th className="py-3 px-3 text-center font-medium">상태</th>
@@ -531,7 +578,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   </div>
                 </td>
                 
-                {/* 작업 타수 */}
+                {/* 작업수 */}
                 <td className="py-3 px-3 text-center hidden lg:table-cell">
                   <span className="text-gray-700 dark:text-gray-300">
                     {slot.quantity ? slot.quantity.toLocaleString() : 
@@ -678,7 +725,10 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 추가정보 */}
                 <td className="py-3 px-3 text-center hidden lg:table-cell">
                   {slot.input_data && (() => {
-                    const userInputFields = Object.entries(slot.input_data).filter(([key]) => !passItem.includes(key));
+                    // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링
+                    const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
+                      !passItem.includes(key) && !key.endsWith('_fileName')
+                    );
                     
                     if (userInputFields.length === 0) 
                       return <span className="text-xs text-gray-400">-</span>;
@@ -738,13 +788,53 @@ const SlotList: React.FC<SlotListProps> = ({
                                 }}
                               >
                                 <div className="space-y-1">
-                                  {userInputFields.map(([key, value]) => (
-                                    <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
-                                      <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{key}</span>
-                                      <span className="text-gray-400 dark:text-gray-500">:</span>
-                                      <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">{value ? String(value) : '-'}</span>
-                                    </div>
-                                  ))}
+                                  {userInputFields.map(([key, value]) => {
+                                    // 파일 URL인지 확인
+                                    const isFileUrl = value && typeof value === 'string' && 
+                                      (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                                    
+                                    // 이미지 파일인지 확인
+                                    const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                                    
+                                    // 파일명 추출 - _fileName 필드가 있으면 그 값을 사용
+                                    const fileNameKey = `${key}_fileName`;
+                                    const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                                    
+                                    return (
+                                      <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
+                                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{key}</span>
+                                        <span className="text-gray-400 dark:text-gray-500">:</span>
+                                        <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
+                                          {isFileUrl ? (
+                                            isImage ? (
+                                              <button
+                                                className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedImage({ url: value, title: key });
+                                                  setImageModalOpen(true);
+                                                }}
+                                              >
+                                                {fileName}
+                                              </button>
+                                            ) : (
+                                              <a
+                                                href={value}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-400 hover:text-blue-300 underline"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                {fileName}
+                                              </a>
+                                            )
+                                          ) : (
+                                            value ? String(value) : '-'
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </div>
@@ -949,7 +1039,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 })()}
               </span>
               <span>
-                <span className="text-gray-500">타수:</span> 
+                <span className="text-gray-500">작업수:</span> 
                 <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">
                   {slot.quantity ? slot.quantity.toLocaleString() : 
                    slot.input_data?.quantity || slot.input_data?.workCount || '-'}
@@ -998,7 +1088,10 @@ const SlotList: React.FC<SlotListProps> = ({
             
             {/* 사용자 입력 필드 (접을 수 있는 섹션) */}
             {slot.input_data && (() => {
-              const userInputFields = Object.entries(slot.input_data).filter(([key]) => !passItem.includes(key));
+              // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링
+              const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
+                !passItem.includes(key) && !key.endsWith('_fileName')
+              );
               
               if (userInputFields.length === 0) return null;
               
@@ -1009,13 +1102,54 @@ const SlotList: React.FC<SlotListProps> = ({
                   </summary>
                   <div className="mt-2 bg-gray-50 dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700">
                     <div className="space-y-1.5">
-                      {userInputFields.map(([key, value]) => (
-                        <div key={key} className="flex items-start gap-2 text-xs">
-                          <span className="font-medium text-gray-600 dark:text-gray-400 min-w-[70px]">{key}</span>
-                          <span className="text-gray-500 dark:text-gray-500">:</span>
-                          <span className="text-gray-800 dark:text-gray-200 flex-1">{value ? String(value) : '-'}</span>
-                        </div>
-                      ))}
+                      {userInputFields.map(([key, value]) => {
+                        // 파일 URL인지 확인
+                        const isFileUrl = value && typeof value === 'string' && 
+                          (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                        
+                        // 이미지 파일인지 확인
+                        const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                        
+                        // 파일명 추출 - _fileName 필드가 있으면 그 값을 사용
+                        const fileNameKey = `${key}_fileName`;
+                        const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                        
+                        return (
+                          <div key={key} className="flex items-start gap-2 text-xs">
+                            <span className="font-medium text-gray-600 dark:text-gray-400 min-w-[70px]">{key}</span>
+                            <span className="text-gray-500 dark:text-gray-500">:</span>
+                            <span className="text-gray-800 dark:text-gray-200 flex-1">
+                              {isFileUrl ? (
+                                isImage ? (
+                                  <button
+                                    className="text-blue-600 hover:text-blue-700 underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      setSelectedImage({ url: value, title: key });
+                                      setImageModalOpen(true);
+                                    }}
+                                  >
+                                    {fileName}
+                                  </button>
+                                ) : (
+                                  <a
+                                    href={value}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-700 underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {fileName}
+                                  </a>
+                                )
+                              ) : (
+                                value ? String(value) : '-'
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </details>
@@ -1224,6 +1358,42 @@ const SlotList: React.FC<SlotListProps> = ({
       )}
       </div>
     </div>
+    
+    {/* 이미지 모달 - search-shop 스타일 */}
+    {imageModalOpen && selectedImage && createPortal(
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
+        onClick={() => {
+          setImageModalOpen(false);
+          setSelectedImage(null);
+        }}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        <div className="relative max-w-4xl max-h-[90vh]">
+          <img
+            src={selectedImage.url}
+            alt={selectedImage.title}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
+            onClick={() => {
+              setImageModalOpen(false);
+              setSelectedImage(null);
+            }}
+          >
+            <KeenIcon icon="cross" className="text-lg" />
+          </button>
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+              {selectedImage.title}
+            </p>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
     </>
   );
 };

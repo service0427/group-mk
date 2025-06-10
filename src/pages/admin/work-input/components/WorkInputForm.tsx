@@ -81,7 +81,7 @@ export const WorkInputForm: React.FC<WorkInputFormProps> = ({ slots, onSubmit, i
 
     // quantity 체크
     if (selectedSlot?.quantity && formData.work_cnt > selectedSlot.quantity) {
-      newErrors.work_cnt = `작업 횟수는 총 작업 타수(${selectedSlot.quantity})를 초과할 수 없습니다.`;
+      newErrors.work_cnt = `작업 횟수는 총 작업수(${selectedSlot.quantity})를 초과할 수 없습니다.`;
     }
 
     setErrors(newErrors);
@@ -164,7 +164,7 @@ export const WorkInputForm: React.FC<WorkInputFormProps> = ({ slots, onSubmit, i
               <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md text-sm">
                 <p><span className="font-medium">서비스 유형:</span> {getServiceTypeNameFromSlot(selectedSlot)}</p>
                 <p><span className="font-medium">상태:</span> {selectedSlot.status}</p>
-                <p><span className="font-medium">작업 타수:</span> {selectedSlot.quantity || '미지정'}</p>
+                <p><span className="font-medium">작업수:</span> {selectedSlot.quantity || '미지정'}</p>
               </div>
             )}
           </div>

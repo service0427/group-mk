@@ -71,7 +71,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
     
     const workCount = parseInt(formData.work_cnt);
     if (!formData.work_cnt || isNaN(workCount) || workCount <= 0) {
-      toast.error('올바른 작업 타수를 입력해주세요.');
+      toast.error('올바른 작업수를 입력해주세요.');
       return;
     }
 
@@ -273,10 +273,10 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
                 </p>
               </div>
 
-              {/* 작업 타수 */}
+              {/* 작업수 */}
               <div>
                 <label htmlFor="work-count" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  작업 타수 <span className="text-red-500">*</span>
+                  작업수 <span className="text-red-500">*</span>
                 </label>
                 <Input
                   id="work-count"
@@ -290,7 +290,7 @@ const WorkInputModal: React.FC<WorkInputModalProps> = ({
                   required
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  해당 날짜에 완료한 작업 타수를 입력하세요.
+                  해당 날짜에 완료한 작업수를 입력하세요.
                 </p>
               </div>
 

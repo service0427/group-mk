@@ -164,7 +164,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
       // 필드 매핑 - 매트별 슬롯 번호 사용
       const slotNumberStr = findValue(['슬롯번호', '슬롯 번호', 'slot_number', 'slotnumber', '번호']) || '';
       const date = findValue(['날짜', 'date', '작업날짜', '작업 날짜']) || '';
-      const workCntStr = findValue(['작업량', '작업 량', 'work_cnt', 'workcnt', '타수']) || '0';
+      const workCntStr = findValue(['작업량', '작업 량', 'work_cnt', 'workcnt', '타수', '작업수']) || '0';
       const notes = findValue(['비고', '메모', 'notes', '설명']) || '';
       
 
@@ -644,7 +644,7 @@ const WorkExcelUploadModal: React.FC<WorkExcelUploadModalProps> = ({
               <ul className="text-xs text-blue-700 dark:text-blue-200 space-y-1">
                 <li>• <strong>슬롯 번호</strong>: 작업할 슬롯의 번호 (숫자)</li>
                 <li>• <strong>날짜</strong>: 작업 날짜 (YYYY-MM-DD 형식)</li>
-                <li>• <strong>작업량</strong>: 작업한 타수 (숫자)</li>
+                <li>• <strong>작업량</strong>: 작업한 수 (숫자)</li>
                 <li>• <strong>비고</strong>: 메모 (선택사항)</li>
               </ul>
             </div>

@@ -8,10 +8,44 @@ import {
 
 export const MENU_SIDEBAR: TMenuConfig = [
   {
-    title: '공지사항',
-    icon: 'notification text-warning',
-    path: '/notice'
+    title: '내 키워드',
+    icon: 'pencil text-success',
+    path: '/keyword',
+    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
   },
+  {
+    title: '이용 중인 서비스',
+    icon: 'setting-4 text-info',
+    path: '/my-services',
+    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
+  },
+  // {
+  //   title: '캐쉬/포인트 관리',
+  //   icon: 'dollar text-warning',
+  //   authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
+  //   children: [
+  //     {
+  //       title: '캐쉬/포인트 이용안내',
+  //       icon: 'information text-info',
+  //       path: '/cash/guide'
+  //     },
+  //     {
+  //       title: '캐쉬 충전 요청 확인',
+  //       icon: 'dollar text-success',
+  //       path: '/myinfo/cash-requests'
+  //     },
+  //     {
+  //       title: '캐쉬 충전/사용내역',
+  //       icon: 'document text-primary',
+  //       path: '/cash/history'
+  //     },
+  //     {
+  //       title: '포인트 사용내역',
+  //       icon: 'document text-primary',
+  //       path: '/point/history'
+  //     },
+  //   ]
+  // },
   {
     heading: '서비스',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
@@ -22,111 +56,106 @@ export const MENU_SIDEBAR: TMenuConfig = [
     path: '/advertise/ntraffic/desc',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
     children: [
+
       {
-        title: '네이버',
-        iconImage: '/media/ad-brand/naver.png',
+        title: '네이버 쇼핑',
+        iconImage: '/media/ad-brand/naver-shopping.png',
+        iconAbbr: 'NS',
         children: [
           {
-            title: '네이버 쇼핑',
+            title: '효과 및 사용법',
+            icon: 'book-open text-info',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
+            title: 'NS 순위확인',
+            path: '/advertise/campaigns/info/naver-shopping-rank',
             iconImage: '/media/ad-brand/naver-shopping.png',
             iconAbbr: 'NS',
-            children: [
-              {
-                title: '효과 및 사용법',
-                icon: 'book-open text-info',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NS 순위확인',
-                path: '/advertise/campaigns/info/naver-shopping-rank',
-                iconImage: '/media/ad-brand/naver-shopping.png',
-                iconAbbr: 'NS',
-                authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
-              },
-              {
-                title: 'NS 트래픽',
-                path: '/advertise/campaigns/info/naver-shopping-traffic',
-                iconImage: '/media/ad-brand/naver-shopping.png',
-                iconAbbr: 'NS',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NS 가구매',
-                path: '/advertise/campaigns/info/naver-shopping-fakesale',
-                iconImage: '/media/ad-brand/naver-shopping.png',
-                iconAbbr: 'NS',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-            ]
+            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
           },
           {
-            title: '네이버 플레이스',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            children: [
-              {
-                title: '효과 및 사용법',
-                icon: 'book-open text-info',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NP 순위확인',
-                path: '/advertise/campaigns/info/naver-place-rank',
-                iconImage: '/media/ad-brand/naver-place.png',
-                iconAbbr: 'NP',
-                authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
-              },
-              {
-                title: 'NP 트래픽',
-                path: '/advertise/campaigns/info/naver-place-traffic',
-                iconImage: '/media/ad-brand/naver-place.png',
-                iconAbbr: 'NP',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NP 저장하기',
-                path: '/advertise/campaigns/info/naver-place-save',
-                iconImage: '/media/ad-brand/naver-place.png',
-                iconAbbr: 'NP',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NP 블로그공유',
-                path: '/advertise/campaigns/info/naver-place-share',
-                iconImage: '/media/ad-brand/naver-place.png',
-                iconAbbr: 'NP',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-            ]
+            title: 'NS 트래픽',
+            path: '/advertise/campaigns/info/naver-shopping-traffic',
+            iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
           {
-            title: '네이버 블로그',
-            iconImage: '/media/ad-brand/naver-blog.png',
-            iconAbbr: 'NB',
-            children: [
-              {
-                title: '효과 및 사용법',
-                icon: 'book-open text-info',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-              {
-                title: 'NB 포스팅',
-                path: '/advertise/campaigns/info/naver-blog-post',
-                iconImage: '/media/ad-brand/naver-blog.png',
-                iconAbbr: 'NB',
-                authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-              },
-            ]
-          },
-          {
-            title: 'N 자동완성',
-            disabled: true,
-            path: '/advertise/campaigns/info/naver-auto',
-            iconImage: '/media/ad-brand/naver.png',
-            iconAbbr: 'NA',
+            title: 'NS 가구매',
+            path: '/advertise/campaigns/info/naver-shopping-fakesale',
+            iconImage: '/media/ad-brand/naver-shopping.png',
+            iconAbbr: 'NS',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
         ]
+      },
+      {
+        title: '네이버 플레이스',
+        iconImage: '/media/ad-brand/naver-place.png',
+        iconAbbr: 'NP',
+        children: [
+          {
+            title: '효과 및 사용법',
+            icon: 'book-open text-info',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
+            title: 'NP 순위확인',
+            path: '/advertise/campaigns/info/naver-place-rank',
+            iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
+            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+          },
+          {
+            title: 'NP 트래픽',
+            path: '/advertise/campaigns/info/naver-place-traffic',
+            iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
+            title: 'NP 저장하기',
+            path: '/advertise/campaigns/info/naver-place-save',
+            iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
+            title: 'NP 블로그공유',
+            path: '/advertise/campaigns/info/naver-place-share',
+            iconImage: '/media/ad-brand/naver-place.png',
+            iconAbbr: 'NP',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+        ]
+      },
+      {
+        title: '네이버 블로그',
+        iconImage: '/media/ad-brand/naver-blog.png',
+        iconAbbr: 'NB',
+        children: [
+          {
+            title: '효과 및 사용법',
+            icon: 'book-open text-info',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+          {
+            title: 'NB 포스팅',
+            path: '/advertise/campaigns/info/naver-blog-post',
+            iconImage: '/media/ad-brand/naver-blog.png',
+            iconAbbr: 'NB',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          },
+        ]
+      },
+      {
+        title: 'N 자동완성',
+        disabled: true,
+        path: '/advertise/campaigns/info/naver-auto',
+        iconImage: '/media/ad-brand/naver.png',
+        iconAbbr: 'NA',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
       },
       {
         title: '쿠팡',
@@ -202,60 +231,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
     disabled: true
   },
   {
-    title: '신규 캠페인 신청',
-    icon: 'add-files text-success',
-    path: '/campaign-request',
-    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
+    heading: '마케팅의 정석',
   },
   {
-    title: '총판 출금 신청',
-    icon: 'dollar text-danger',
-    path: '/withdraw',
-    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
+    title: '공지사항',
+    icon: 'notification text-warning',
+    path: '/notice'
   },
-  {
-    heading: '내 정보 관리',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
-  },
-  {
-    title: '이용 중인 서비스',
-    icon: 'setting-4 text-info',
-    path: '/my-services',
-    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
-  },
-  {
-    title: '내 키워드',
-    icon: 'pencil text-success',
-    path: '/keyword',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
-  },
-  // {
-  //   title: '캐쉬/포인트 관리',
-  //   icon: 'dollar text-warning',
-  //   authCheck: (role) => role === USER_ROLES.BEGINNER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 비기너 역할이거나 광고주 이상(총판 제외)
-  //   children: [
-  //     {
-  //       title: '캐쉬/포인트 이용안내',
-  //       icon: 'information text-info',
-  //       path: '/cash/guide'
-  //     },
-  //     {
-  //       title: '캐쉬 충전 요청 확인',
-  //       icon: 'dollar text-success',
-  //       path: '/myinfo/cash-requests'
-  //     },
-  //     {
-  //       title: '캐쉬 충전/사용내역',
-  //       icon: 'document text-primary',
-  //       path: '/cash/history'
-  //     },
-  //     {
-  //       title: '포인트 사용내역',
-  //       icon: 'document text-primary',
-  //       path: '/point/history'
-  //     },
-  //   ]
-  // },
   {
     heading: '관리자 메뉴',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
@@ -352,6 +334,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
     ]
   },
   {
+    title: '신규 캠페인 신청',
+    icon: 'add-files text-primary',
+    path: '/campaign-request',
+    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
+  },
+  {
     title: '캠페인 관리',
     icon: 'setting-3 text-warning',
     path: '/manage/campaign',
@@ -378,6 +366,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/manage/work-input'
       }
     ]
+  },
+  {
+    title: '총판 출금 신청',
+    icon: 'dollar text-danger',
+    path: '/withdraw',
+    authCheck: (role) => role === USER_ROLES.DISTRIBUTOR || role === USER_ROLES.DEVELOPER,  // 총판, 개발자
   },
   {
     title: '개발자 메뉴',

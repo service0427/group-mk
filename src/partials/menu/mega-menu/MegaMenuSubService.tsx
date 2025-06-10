@@ -8,14 +8,32 @@ const MegaMenuSubService = (items: TMenuConfig, itemIndex: number = 5) => {
 
   if (!serviceItem) return null;
 
-  // 네이버 하위 카테고리들을 모두 수집
-  const naverCategory = serviceItem.children?.find(item => item.title === '네이버');
-  const naverShoppingItems = naverCategory?.children?.find(item => item.title === '네이버 쇼핑')?.children?.filter(item => !item.title?.includes('가구매') && !item.title?.includes('효과 및 사용법')) || [];
-  const naverPlaceItems = naverCategory?.children?.find(item => item.title === '네이버 플레이스')?.children?.filter(item => !item.title?.includes('효과 및 사용법')) || [];
-  const naverBlogItems = naverCategory?.children?.find(item => item.title === '네이버 블로그')?.children?.filter(item => !item.title?.includes('효과 및 사용법') && !item.disabled) || [];
-  const naverAutoItem = naverCategory?.children?.find(item => item.title === 'N 자동완성');
+  // 직접 카테고리에서 아이템 수집
+  const naverShoppingCategory = serviceItem.children?.find(item => item.title === '네이버 쇼핑');
+  const naverPlaceCategory = serviceItem.children?.find(item => item.title === '네이버 플레이스');
+  const naverBlogCategory = serviceItem.children?.find(item => item.title === '네이버 블로그');
+  const coupangCategory = serviceItem.children?.find(item => item.title === '쿠팡');
 
-  // 네이버 서비스 항목 (자동완성 제외)
+  // 각 카테고리에서 "효과 및 사용법"을 제외한 실제 서비스 항목들 수집
+  const naverShoppingItems = naverShoppingCategory?.children?.filter(item =>
+    item.path && !item.title?.includes('효과 및 사용법') && !item.title?.includes('가구매')
+  ) || [];
+
+  const naverPlaceItems = naverPlaceCategory?.children?.filter(item =>
+    item.path && !item.title?.includes('효과 및 사용법')
+  ) || [];
+
+  const naverBlogItems = naverBlogCategory?.children?.filter(item =>
+    item.path && !item.title?.includes('효과 및 사용법') && !item.disabled
+  ) || [];
+
+  const naverAutoItem = serviceItem.children?.find(item => item.title === 'N 자동완성');
+
+  const coupangItems = coupangCategory?.children?.filter(item =>
+    item.path && !item.title?.includes('가구매') && !item.disabled
+  ) || [];
+
+  // 네이버 서비스 항목
   const naverServices = {
     heading: '네이버 서비스',
     children: [
@@ -28,27 +46,24 @@ const MegaMenuSubService = (items: TMenuConfig, itemIndex: number = 5) => {
   // 쿠팡 서비스 항목
   const coupangServices = {
     heading: '쿠팡 서비스',
-    children: (serviceItem.children
-      ?.find(item => item.title === '쿠팡')
-      ?.children?.filter(item => !item.title?.includes('가구매')) || [])
+    children: coupangItems
   };
 
   // 준비 중인 서비스
   const additionalServices = {
     heading: '준비 중인 서비스',
     children: [
+      // disabled된 항목들
       ...(serviceItem.children?.filter(item => item.disabled) || []),
 
       // N 자동완성
-      ...(naverAutoItem ? [naverAutoItem] : []),
+      ...(naverAutoItem && naverAutoItem.disabled ? [naverAutoItem] : []),
 
       // NS 가구매 항목
-      ...(naverCategory?.children?.find(item => item.title === '네이버 쇼핑')?.children?.filter(item => item.title?.includes('가구매')) || []),
+      ...(naverShoppingCategory?.children?.filter(item => item.title?.includes('가구매')) || []),
 
       // CP 가구매 항목
-      ...(serviceItem.children
-        ?.find(item => item.title === '쿠팡')
-        ?.children?.filter(item => item.title?.includes('가구매')) || [])
+      ...(coupangCategory?.children?.filter(item => item.title?.includes('가구매')) || [])
     ]
   };
 

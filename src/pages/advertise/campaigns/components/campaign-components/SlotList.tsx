@@ -29,6 +29,7 @@ interface SlotListProps {
   selectedSlots?: string[];
   onSelectedSlotsChange?: (selectedSlots: string[]) => void;
   showBulkCancel?: boolean;
+  customStatusLabels?: Record<string, string>; // 커스텀 상태 라벨
 }
 
 // CSS for tooltip
@@ -99,7 +100,8 @@ const SlotList: React.FC<SlotListProps> = ({
   showBulkActions = false,
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange,
-  showBulkCancel = false
+  showBulkCancel = false,
+  customStatusLabels
 }) => {
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
@@ -111,7 +113,7 @@ const SlotList: React.FC<SlotListProps> = ({
       setInternalSelectedSlots(newSelectedSlots);
     }
   };
-  
+
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
@@ -119,6 +121,19 @@ const SlotList: React.FC<SlotListProps> = ({
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
 
+
+  // 커스텀 상태 배지 (MyServicesPage용)
+  const getCustomStatusBadge = (status: string): JSX.Element => {
+    // customStatusLabels가 있고 해당 상태가 정의되어 있으면 커스텀 라벨 사용
+    if (customStatusLabels && customStatusLabels[status]) {
+      // approved 상태를 진행중으로 표시
+      if (status === 'approved') {
+        return <span className="badge badge-success whitespace-nowrap">{customStatusLabels[status]}</span>;
+      }
+    }
+    // 기본 getStatusBadge 사용
+    return getStatusBadge(status);
+  };
 
   // 캠페인 상태에 따른 닷 색상과 메시지
   const getCampaignStatusDot = (campaign?: Campaign) => {
@@ -269,7 +284,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 자동 거래 완료 안내
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                작업 완료 상태인 슬롯은 <span className="font-semibold">48시간 이내</span>에 거래 완료 버튼을 누르지 않으면 
+                작업 완료 상태인 슬롯은 <span className="font-semibold">48시간 이내</span>에 거래 완료 버튼을 누르지 않으면
                 <span className="font-semibold"> 자동으로 거래가 완료됩니다.</span>
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
@@ -278,7 +293,7 @@ const SlotList: React.FC<SlotListProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="card-header px-6 py-3.5" style={{ minHeight: '60px' }}>
           <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-3">
@@ -435,7 +450,7 @@ const SlotList: React.FC<SlotListProps> = ({
                             if (Array.isArray(item.inputData.keywords)) {
                               keywordArray.push(...item.inputData.keywords);
                             }
-                            
+
                             if (keywordArray.length === 0) {
                               return <span className="text-gray-400 text-sm">-</span>;
                             }
@@ -468,12 +483,12 @@ const SlotList: React.FC<SlotListProps> = ({
                                     {openKeywordTooltipId === item.id && ReactDOM.createPortal(
                                       <>
                                         {/* 배경 클릭 시 닫기 */}
-                                        <div 
-                                          className="fixed inset-0" 
-                                          style={{zIndex: 9998}}
+                                        <div
+                                          className="fixed inset-0"
+                                          style={{ zIndex: 9998 }}
                                           onClick={() => setOpenKeywordTooltipId(null)}
                                         />
-                                        <div 
+                                        <div
                                           className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
                                           style={{
                                             zIndex: 99999,
@@ -508,7 +523,7 @@ const SlotList: React.FC<SlotListProps> = ({
                                                 </span>
                                               </div>
                                             </div>
-                                            
+
                                             {/* 서브 키워드 */}
                                             {additionalCount > 0 && (
                                               <>
@@ -519,15 +534,14 @@ const SlotList: React.FC<SlotListProps> = ({
                                                     {keywordArray.slice(1).map((keyword, index) => (
                                                       <span
                                                         key={index}
-                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                                                          index % 4 === 0
-                                                          ? 'bg-green-500/20 text-green-200'
-                                                          : index % 4 === 1
-                                                          ? 'bg-purple-500/20 text-purple-200'
-                                                          : index % 4 === 2
-                                                          ? 'bg-orange-500/20 text-orange-200'
-                                                          : 'bg-pink-500/20 text-pink-200'
-                                                        }`}
+                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${index % 4 === 0
+                                                            ? 'bg-green-500/20 text-green-200'
+                                                            : index % 4 === 1
+                                                              ? 'bg-purple-500/20 text-purple-200'
+                                                              : index % 4 === 2
+                                                                ? 'bg-orange-500/20 text-orange-200'
+                                                                : 'bg-pink-500/20 text-pink-200'
+                                                          }`}
                                                       >
                                                         {keyword}
                                                       </span>
@@ -576,7 +590,7 @@ const SlotList: React.FC<SlotListProps> = ({
                         <div className="flex items-center justify-center">
                           {item.status === 'rejected' ? (
                             <div className="inline-flex items-center gap-1">
-                              {getStatusBadge(item.status)}
+                              {getCustomStatusBadge(item.status)}
                               {item.rejectionReason && (
                                 <div className="relative inline-block">
                                   <button
@@ -628,7 +642,7 @@ const SlotList: React.FC<SlotListProps> = ({
                               거래완료
                             </button>
                           ) : (
-                            getStatusBadge(item.status)
+                            getCustomStatusBadge(item.status)
                           )}
                         </div>
                       </td>
@@ -693,308 +707,307 @@ const SlotList: React.FC<SlotListProps> = ({
           <div className="card-body p-4 space-y-4">
             {filteredSlots.map((item) => (
               <div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-white dark:bg-gray-800 overflow-hidden">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <EditableCell
-                        id={item.id}
-                        field="mid"
-                        value={item.inputData?.mid || ''}
-                        editingCell={editingCell}
-                        editingValue={editingValue}
-                        onEditStart={onEditStart}
-                        onEditChange={onEditChange}
-                        onEditSave={onEditSave}
-                        onEditCancel={onEditCancel}
-                        placeholder="MID를 입력해주세요"
-                        disabled={item.status !== 'pending'}
-                      >
-                        <h4 className="font-medium text-gray-900">
-                          {item.inputData?.mid || '-'}
-                        </h4>
-                      </EditableCell>
-                      <div className="mt-1 flex items-center gap-2">
-                        <img
-                          src={getCampaignLogo(item)}
-                          alt="캠페인 로고"
-                          className="w-5 h-5 rounded-full object-contain bg-gray-50"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
-                          }}
-                        />
-                        <span className="text-sm text-gray-600">{item.campaign?.campaignName || '-'}</span>
-                        {getCampaignStatusDot(item.campaign)}
-                      </div>
-                      {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && item.user && (
-                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          사용자: {item.user.full_name || '이름 없음'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-2">
-                      {item.status !== 'pending_user_confirm' && getStatusBadge(item.status)}
-                    </div>
-                  </div>
-
-                  {item.status === 'rejected' && item.rejectionReason && (
-                    <div className="mb-3 p-2 bg-danger-light rounded">
-                      <p className="text-sm text-danger">
-                        <strong>반려 사유:</strong> {item.rejectionReason}
-                      </p>
-                    </div>
-                  )}
-
-                  {item.status === 'pending_user_confirm' && (
-                    <div className="mb-3 flex justify-center">
-                      <button
-                        className="btn btn-sm btn-info"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTransactionClick(item);
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <EditableCell
+                      id={item.id}
+                      field="mid"
+                      value={item.inputData?.mid || ''}
+                      editingCell={editingCell}
+                      editingValue={editingValue}
+                      onEditStart={onEditStart}
+                      onEditChange={onEditChange}
+                      onEditSave={onEditSave}
+                      onEditCancel={onEditCancel}
+                      placeholder="MID를 입력해주세요"
+                      disabled={item.status !== 'pending'}
+                    >
+                      <h4 className="font-medium text-gray-900">
+                        {item.inputData?.mid || '-'}
+                      </h4>
+                    </EditableCell>
+                    <div className="mt-1 flex items-center gap-2">
+                      <img
+                        src={getCampaignLogo(item)}
+                        alt="캠페인 로고"
+                        className="w-5 h-5 rounded-full object-contain bg-gray-50"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
                         }}
-                      >
-                        거래완료
-                      </button>
+                      />
+                      <span className="text-sm text-gray-600">{item.campaign?.campaignName || '-'}</span>
+                      {getCampaignStatusDot(item.campaign)}
                     </div>
-                  )}
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex">
-                      <span className="text-gray-600 w-16">등록일:</span>
-                      <span className="text-gray-900">{formatDate(item.createdAt)}</span>
-                    </div>
-
-                    <div className="overflow-hidden">
-                      <span className="text-gray-600">URL:</span>
-                      <div className="w-full overflow-hidden">
-                        {editingCell.id === item.id && editingCell.field === 'url' ? (
-                          <EditableCell
-                            id={item.id}
-                            field="url"
-                            value={item.inputData?.url || ''}
-                            editingCell={editingCell}
-                            editingValue={editingValue}
-                            onEditStart={onEditStart}
-                            onEditChange={onEditChange}
-                            onEditSave={onEditSave}
-                            onEditCancel={onEditCancel}
-                            isUrl={true}
-                          />
-                        ) : item.inputData?.url ? (
-                          <a 
-                            href={item.inputData.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className={`text-primary hover:underline text-sm break-all block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (item.status === 'pending') {
-                                onEditStart(item.id, 'url');
-                              }
-                            }}
-                            title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
-                          >
-                            {item.inputData.url}
-                          </a>
-                        ) : (
-                          <span 
-                            className={`text-gray-400 text-sm block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
-                            onClick={() => item.status === 'pending' && onEditStart(item.id, 'url')}
-                            title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
-                          >
-                            -
-                          </span>
-                        )}
+                    {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && item.user && (
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        사용자: {item.user.full_name || '이름 없음'}
                       </div>
-                    </div>
-
-                    <div>
-                      <span className="text-gray-600">키워드:</span>
-                      <div className="mt-1">
-                        <div className="flex items-center gap-1 relative">
-                          {(() => {
-                            // 키워드 배열 생성 (메인키워드 + 서브키워드)
-                            const keywordArray = [];
-                            if (item.inputData.mainKeyword) {
-                              keywordArray.push(item.inputData.mainKeyword);
-                            }
-                            if (Array.isArray(item.inputData.keywords)) {
-                              keywordArray.push(...item.inputData.keywords);
-                            }
-                            
-                            if (keywordArray.length === 0) {
-                              return <span className="text-gray-400 text-sm">-</span>;
-                            }
-
-                            const mainKeyword = keywordArray[0];
-                            const additionalCount = keywordArray.length - 1;
-
-                            return (
-                              <>
-                                <span className="text-sm text-gray-900 dark:text-white font-medium">
-                                  {mainKeyword}
-                                </span>
-                                {additionalCount > 0 && (
-                                  <>
-                                    <button
-                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        setPopoverPosition({
-                                          top: rect.top - 10,
-                                          left: rect.left + rect.width / 2
-                                        });
-                                        setOpenKeywordTooltipId(openKeywordTooltipId === item.id ? null : item.id);
-                                      }}
-                                    >
-                                      +{additionalCount}
-                                    </button>
-                                    {/* Tooltip - 모바일에서도 동일하게 사용 */}
-                                    {openKeywordTooltipId === item.id && ReactDOM.createPortal(
-                                      <>
-                                        <div 
-                                          className="fixed inset-0" 
-                                          style={{zIndex: 9998}}
-                                          onClick={() => setOpenKeywordTooltipId(null)}
-                                        />
-                                        <div 
-                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
-                                          style={{
-                                            zIndex: 99999,
-                                            left: `${popoverPosition.left}px`,
-                                            top: `${popoverPosition.top}px`,
-                                            transform: 'translate(-50%, -100%)'
-                                          }}
-                                        >
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="font-medium text-gray-100">전체 키워드</div>
-                                            <button
-                                              className="text-gray-400 hover:text-gray-200 transition-colors"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenKeywordTooltipId(null);
-                                              }}
-                                            >
-                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                              </svg>
-                                            </button>
-                                          </div>
-                                          <div className="space-y-2">
-                                            {/* 메인 키워드 */}
-                                            {item.inputData.mainKeyword && (
-                                              <div>
-                                                <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
-                                                <div className="flex flex-wrap gap-1">
-                                                  <span
-                                                    className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
-                                                  >
-                                                    {item.inputData.mainKeyword}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            )}
-                                            
-                                            {/* 서브 키워드 */}
-                                            {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 && (
-                                              <>
-                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
-                                                <div>
-                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    {item.inputData.keywords.map((keyword, index) => (
-                                                      <span
-                                                        key={index}
-                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                                                          index % 4 === 0
-                                                          ? 'bg-green-500/20 text-green-200'
-                                                          : index % 4 === 1
-                                                          ? 'bg-purple-500/20 text-purple-200'
-                                                          : index % 4 === 2
-                                                          ? 'bg-orange-500/20 text-orange-200'
-                                                          : 'bg-pink-500/20 text-pink-200'
-                                                        }`}
-                                                      >
-                                                        {keyword}
-                                                      </span>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              </>
-                                            )}
-                                          </div>
-                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                                          </div>
-                                        </div>
-                                      </>,
-                                      document.body
-                                    )}
-                                  </>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-
-                  <div className="flex justify-end items-center gap-2 mt-4 pt-3 border-t">
-                    {item.userReason && (
-                      <span className="badge badge-sm badge-warning mr-auto">메모</span>
-                    )}
-                    
-                    {/* 거래완료대기 상태일 때는 거래완료 버튼만 표시 */}
-                    {item.status === 'pending_user_confirm' ? (
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => handleTransactionClick(item)}
-                        title="거래완료"
-                      >
-                        <KeenIcon icon="check-circle" className="mr-1" />
-                        거래완료
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          className="btn btn-sm btn-icon btn-clear btn-primary"
-                          onClick={() => onOpenMemoModal(item.id)}
-                          title="메모"
-                        >
-                          <KeenIcon icon="notepad-edit" />
-                        </button>
-                        {/* 승인 전 상태일 때만 취소 버튼 표시 */}
-                        {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
-                          <button
-                            className="btn btn-sm btn-icon btn-clear btn-warning"
-                            onClick={() => onCancelSlot(item.id)}
-                            title="취소"
-                          >
-                            <KeenIcon icon="cross-circle" />
-                          </button>
-                        )}
-                        {/* 대기중 상태일 때만 삭제 버튼 표시 */}
-                        {item.status === 'pending' && (
-                          <button
-                            className="btn btn-sm btn-icon btn-clear btn-danger"
-                            onClick={() => {
-                              if (confirm('정말 삭제하시겠습니까?')) {
-                                onDeleteSlot(item.id);
-                              }
-                            }}
-                            title="삭제"
-                          >
-                            <KeenIcon icon="trash" />
-                          </button>
-                        )}
-                      </>
-                    )}
+                  <div className="ml-2">
+                    {item.status !== 'pending_user_confirm' && getCustomStatusBadge(item.status)}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {item.status === 'rejected' && item.rejectionReason && (
+                  <div className="mb-3 p-2 bg-danger-light rounded">
+                    <p className="text-sm text-danger">
+                      <strong>반려 사유:</strong> {item.rejectionReason}
+                    </p>
+                  </div>
+                )}
+
+                {item.status === 'pending_user_confirm' && (
+                  <div className="mb-3 flex justify-center">
+                    <button
+                      className="btn btn-sm btn-info"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTransactionClick(item);
+                      }}
+                    >
+                      거래완료
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex">
+                    <span className="text-gray-600 w-16">등록일:</span>
+                    <span className="text-gray-900">{formatDate(item.createdAt)}</span>
+                  </div>
+
+                  <div className="overflow-hidden">
+                    <span className="text-gray-600">URL:</span>
+                    <div className="w-full overflow-hidden">
+                      {editingCell.id === item.id && editingCell.field === 'url' ? (
+                        <EditableCell
+                          id={item.id}
+                          field="url"
+                          value={item.inputData?.url || ''}
+                          editingCell={editingCell}
+                          editingValue={editingValue}
+                          onEditStart={onEditStart}
+                          onEditChange={onEditChange}
+                          onEditSave={onEditSave}
+                          onEditCancel={onEditCancel}
+                          isUrl={true}
+                        />
+                      ) : item.inputData?.url ? (
+                        <a
+                          href={item.inputData.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`text-primary hover:underline text-sm break-all block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (item.status === 'pending') {
+                              onEditStart(item.id, 'url');
+                            }
+                          }}
+                          title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
+                        >
+                          {item.inputData.url}
+                        </a>
+                      ) : (
+                        <span
+                          className={`text-gray-400 text-sm block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                          onClick={() => item.status === 'pending' && onEditStart(item.id, 'url')}
+                          title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
+                        >
+                          -
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-600">키워드:</span>
+                    <div className="mt-1">
+                      <div className="flex items-center gap-1 relative">
+                        {(() => {
+                          // 키워드 배열 생성 (메인키워드 + 서브키워드)
+                          const keywordArray = [];
+                          if (item.inputData.mainKeyword) {
+                            keywordArray.push(item.inputData.mainKeyword);
+                          }
+                          if (Array.isArray(item.inputData.keywords)) {
+                            keywordArray.push(...item.inputData.keywords);
+                          }
+
+                          if (keywordArray.length === 0) {
+                            return <span className="text-gray-400 text-sm">-</span>;
+                          }
+
+                          const mainKeyword = keywordArray[0];
+                          const additionalCount = keywordArray.length - 1;
+
+                          return (
+                            <>
+                              <span className="text-sm text-gray-900 dark:text-white font-medium">
+                                {mainKeyword}
+                              </span>
+                              {additionalCount > 0 && (
+                                <>
+                                  <button
+                                    className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setPopoverPosition({
+                                        top: rect.top - 10,
+                                        left: rect.left + rect.width / 2
+                                      });
+                                      setOpenKeywordTooltipId(openKeywordTooltipId === item.id ? null : item.id);
+                                    }}
+                                  >
+                                    +{additionalCount}
+                                  </button>
+                                  {/* Tooltip - 모바일에서도 동일하게 사용 */}
+                                  {openKeywordTooltipId === item.id && ReactDOM.createPortal(
+                                    <>
+                                      <div
+                                        className="fixed inset-0"
+                                        style={{ zIndex: 9998 }}
+                                        onClick={() => setOpenKeywordTooltipId(null)}
+                                      />
+                                      <div
+                                        className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                        style={{
+                                          zIndex: 99999,
+                                          left: `${popoverPosition.left}px`,
+                                          top: `${popoverPosition.top}px`,
+                                          transform: 'translate(-50%, -100%)'
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="font-medium text-gray-100">전체 키워드</div>
+                                          <button
+                                            className="text-gray-400 hover:text-gray-200 transition-colors"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setOpenKeywordTooltipId(null);
+                                            }}
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {/* 메인 키워드 */}
+                                          {item.inputData.mainKeyword && (
+                                            <div>
+                                              <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                              <div className="flex flex-wrap gap-1">
+                                                <span
+                                                  className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
+                                                >
+                                                  {item.inputData.mainKeyword}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* 서브 키워드 */}
+                                          {Array.isArray(item.inputData.keywords) && item.inputData.keywords.length > 0 && (
+                                            <>
+                                              <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                              <div>
+                                                <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                <div className="flex flex-wrap gap-1">
+                                                  {item.inputData.keywords.map((keyword, index) => (
+                                                    <span
+                                                      key={index}
+                                                      className={`px-2 py-0.5 text-xs rounded-md inline-block ${index % 4 === 0
+                                                          ? 'bg-green-500/20 text-green-200'
+                                                          : index % 4 === 1
+                                                            ? 'bg-purple-500/20 text-purple-200'
+                                                            : index % 4 === 2
+                                                              ? 'bg-orange-500/20 text-orange-200'
+                                                              : 'bg-pink-500/20 text-pink-200'
+                                                        }`}
+                                                    >
+                                                      {keyword}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                          <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                        </div>
+                                      </div>
+                                    </>,
+                                    document.body
+                                  )}
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end items-center gap-2 mt-4 pt-3 border-t">
+                  {item.userReason && (
+                    <span className="badge badge-sm badge-warning mr-auto">메모</span>
+                  )}
+
+                  {/* 거래완료대기 상태일 때는 거래완료 버튼만 표시 */}
+                  {item.status === 'pending_user_confirm' ? (
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={() => handleTransactionClick(item)}
+                      title="거래완료"
+                    >
+                      <KeenIcon icon="check-circle" className="mr-1" />
+                      거래완료
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="btn btn-sm btn-icon btn-clear btn-primary"
+                        onClick={() => onOpenMemoModal(item.id)}
+                        title="메모"
+                      >
+                        <KeenIcon icon="notepad-edit" />
+                      </button>
+                      {/* 승인 전 상태일 때만 취소 버튼 표시 */}
+                      {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                        <button
+                          className="btn btn-sm btn-icon btn-clear btn-warning"
+                          onClick={() => onCancelSlot(item.id)}
+                          title="취소"
+                        >
+                          <KeenIcon icon="cross-circle" />
+                        </button>
+                      )}
+                      {/* 대기중 상태일 때만 삭제 버튼 표시 */}
+                      {item.status === 'pending' && (
+                        <button
+                          className="btn btn-sm btn-icon btn-clear btn-danger"
+                          onClick={() => {
+                            if (confirm('정말 삭제하시겠습니까?')) {
+                              onDeleteSlot(item.id);
+                            }
+                          }}
+                          title="삭제"
+                        >
+                          <KeenIcon icon="trash" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

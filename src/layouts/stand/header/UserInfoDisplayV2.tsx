@@ -26,6 +26,8 @@ import { useMediaQuery } from '@/hooks';
 import { ChargeModal } from '@/components/cash';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
+import { Badge } from '@/components/ui/badge';
+import { getRoleDisplayName, getRoleThemeColors } from '@/config/roles.config';
 
 /**
  * 개선된 UserInfoDisplay 컴포넌트
@@ -322,11 +324,18 @@ const UserInfoDisplayV2 = () => {
                     <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
                       <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {currentUser.full_name || '사용자'}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white truncate">
+                          {currentUser.full_name || '사용자'}
+                        </span>
+                        <Badge
+                          className={`text-xs px-1.5 py-0 ${getRoleThemeColors(currentUser.role, 'base')} text-white border-0 flex-shrink-0`}
+                        >
+                          {getRoleDisplayName(currentUser.role || '')}
+                        </Badge>
                       </div>
-                      <div className="text-sm text-gray-900 dark:text-gray-500">
+                      <div className="text-sm text-gray-900 dark:text-gray-500 truncate">
                         {currentUser.email}
                       </div>
                     </div>
@@ -469,9 +478,16 @@ const UserInfoDisplayV2 = () => {
                       <></>
                     ) : (
                       <div className="flex flex-col justify-center min-w-0 max-w-[180px]">
-                        {/* 1줄: 사용자 이름 */}
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {currentUser.full_name || '사용자'}
+                        {/* 1줄: 사용자 이름과 등급 배지 */}
+                        <div className="flex items-center gap-1.5 max-w-full">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px]" title={currentUser.full_name || '사용자'}>
+                            {currentUser.full_name || '사용자'}
+                          </span>
+                          <Badge
+                            className={`text-[10px] px-1 py-0 ${getRoleThemeColors(currentUser.role, 'base')} text-white border-0 flex-shrink-0`}
+                          >
+                            {getRoleDisplayName(currentUser.role || '')}
+                          </Badge>
                         </div>
 
                         {/* 2줄: 캐시 잔액 */}
@@ -500,9 +516,16 @@ const UserInfoDisplayV2 = () => {
                           <div className="flex-shrink-0 mr-3 flex items-center justify-center bg-blue-100 dark:bg-blue-800 rounded-full size-10 border-2 border-blue-300 dark:border-blue-600">
                             <KeenIcon icon="user" className="text-blue-600 dark:text-blue-300 text-xl" />
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              {currentUser.full_name || '사용자'}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium text-gray-900 dark:text-white truncate">
+                                {currentUser.full_name || '사용자'}
+                              </span>
+                              <Badge
+                                className={`text-[10px] px-1 py-0 ${getRoleThemeColors(currentUser.role, 'base')} text-white border-0 flex-shrink-0`}
+                              >
+                                {getRoleDisplayName(currentUser.role || '')}
+                              </Badge>
                             </div>
                             <div className="text-sm text-gray-900 dark:text-gray-500">
                               {currentUser.email}

@@ -231,28 +231,9 @@ const KeywordPage: React.FC = () => {
     groupId: number,
     name: string
   ) => {
-    // 기존 그룹 정보를 찾아서 campaign 정보 유지
-    const group = groups.find(g => g.id === groupId);
-    if (group) {
-      // keywordGroupService의 updateGroup을 campaign 정보와 함께 호출
-      const response = await keywordGroupService.updateGroup(
-        groupId,
-        name,
-        group.campaignName,
-        group.campaignType
-      );
-
-      if (response.success) {
-        // updateGroup 대신 createGroup의 loadGroups를 활용하기 위해
-        // 임시로 빈 그룹을 생성하고 바로 삭제 (loadGroups 트리거용)
-        // 더 나은 방법: useKeywords 훅을 수정하여 loadGroups를 export하거나
-        // updateGroup이 campaign 정보를 받도록 수정
-
-        // 현재는 기존 updateGroup 함수 사용
-        return await updateGroup(groupId, name);
-      }
-    }
-    return false;
+    // useKeywords의 updateGroup이 이미 campaign 정보를 유지하지 않으므로
+    // 직접 updateGroup 함수를 호출
+    return await updateGroup(groupId, name);
   };
 
   // 업로드 모달 열기 핸들러
@@ -326,6 +307,8 @@ const KeywordPage: React.FC = () => {
               serviceCounts={serviceTypeCounts}
               requiresKeyword={true}
               userRole={userRole}
+              collapsible={true}
+              initialDisplayCount={4}
             />
           </div>
 
@@ -359,7 +342,7 @@ const KeywordPage: React.FC = () => {
                       그룹 추가
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 max-h-[200px] sm:max-h-none overflow-y-auto">
                     {filteredGroups.map((group) => (
                       editingGroupId === group.id ? (
                         <div key={group.id} className="flex items-center gap-1">

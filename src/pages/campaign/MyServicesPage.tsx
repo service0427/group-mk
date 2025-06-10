@@ -131,7 +131,7 @@ const MyServicesPage: React.FC = () => {
             service_type
           )
         `)
-        .in('status', ['active']);
+        .in('status', ['active', 'approved']);
 
       // 개발자가 아닌 경우에만 사용자 필터 적용
       if (userRole !== USER_ROLES.DEVELOPER) {
@@ -428,8 +428,8 @@ const MyServicesPage: React.FC = () => {
 
   return (
     <DashboardTemplate
-      title="내 서비스 관리"
-      description="진행 중인 캠페인을 관리하고 상태를 확인할 수 있습니다."
+      title="이용 중인 서비스"
+      description="이용 중인 캠페인을 관리하고 상태를 확인할 수 있습니다."
       headerTextClass="text-white"
       toolbarActions={toolbarActions}
     >
@@ -649,6 +649,9 @@ const MyServicesPage: React.FC = () => {
           selectedSlots={selectedSlots}
           onSelectedSlotsChange={setSelectedSlots}
           showBulkCancel={true} // 일괄 취소 버튼 표시
+          customStatusLabels={{
+            approved: '진행중'  // approved 상태를 진행중으로 표시
+          }}
         />
       )}
 

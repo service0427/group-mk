@@ -17,11 +17,21 @@ const getStatusText = (status: string): string => {
   return statusMap[status] || status;
 };
 
-// 날짜 포맷팅
-const formatDate = (dateString: string | null | undefined): string => {
+// 날짜 포맷팅 (시간 포함)
+const formatDateTime = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   try {
     return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss', { locale: ko });
+  } catch {
+    return dateString;
+  }
+};
+
+// 날짜 포맷팅 (날짜만)
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  try {
+    return format(new Date(dateString), 'yyyy-MM-dd', { locale: ko });
   } catch {
     return dateString;
   }
@@ -148,15 +158,15 @@ const convertSlotToRow = (slot: Slot, columns: ExcelColumn[]): any => {
         break;
 
       case 'created_at':
-        value = formatDate(slot.created_at);
+        value = formatDateTime(slot.created_at);
         break;
 
       case 'submitted_at':
-        value = formatDate(slot.submitted_at);
+        value = formatDateTime(slot.submitted_at);
         break;
 
       case 'processed_at':
-        value = formatDate(slot.processed_at);
+        value = formatDateTime(slot.processed_at);
         break;
 
       case 'mat_reason':

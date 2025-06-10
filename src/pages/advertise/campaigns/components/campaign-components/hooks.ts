@@ -349,10 +349,10 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
         query = query.eq('status', statusFilter);
       }
 
-      // 검색어 필터 적용
-      if (searchInput) {
-        query = query.or(`input_data->productName.ilike.%${searchInput}%,input_data->mid.ilike.%${searchInput}%,input_data->url.ilike.%${searchInput}%`);
-      }
+      // 검색어 필터 적용은 클라이언트 측에서 처리 (JSONB 필드 검색 제한 회피)
+      // if (searchInput) {
+      //   query = query.or(`input_data->productName.ilike.%${searchInput}%,input_data->>mid.ilike.%${searchInput}%,input_data->url.ilike.%${searchInput}%`);
+      // }
 
       // 날짜 필터 적용 (created_at 필드 기준)
       if (searchDateFrom) {
@@ -466,7 +466,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
         const normalizedSearchTerm = searchInput.toLowerCase().trim();
         filtered = filtered.filter(item =>
           item.inputData.productName?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.mid?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.mid?.toString().toLowerCase().includes(normalizedSearchTerm) ||
           item.inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
           (Array.isArray(item.inputData.keywords) && item.inputData.keywords.some(keyword =>
             keyword.toLowerCase().includes(normalizedSearchTerm)

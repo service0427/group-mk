@@ -704,18 +704,18 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
 
               <DialogFooter className="flex gap-3 justify-center mt-4 sm:justify-center">
                 <Button
-                  variant="outline"
-                  onClick={() => setConfirmDialogOpen(false)}
-                  className="min-w-[100px]"
-                >
-                  취소
-                </Button>
-                <Button
                   onClick={handleCharge}
                   className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? '처리 중...' : '예, 충전 요청'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmDialogOpen(false)}
+                  className="min-w-[100px]"
+                >
+                  취소
                 </Button>
               </DialogFooter>
             </div>

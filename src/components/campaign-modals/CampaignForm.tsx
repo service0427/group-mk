@@ -12,14 +12,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toAbsoluteUrl } from '@/utils';
-import { CampaignServiceType } from './types';
+import { CampaignServiceType, FieldType, UserInputField } from './types';
 
 // 캠페인 폼 데이터 인터페이스
 interface CampaignFormInputData {
   campaignName: string;
   description: string;
   detailedDescription: string;
-  userInputFields: Array<{ fieldName: string; description: string; isRequired?: boolean; order?: number }>;
+  userInputFields: UserInputField[];
   logo: string;
   unitPrice: string;
   bannerImage?: string;
@@ -428,6 +428,22 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       <div className={containerClass}>
         <table className={tableClass}>
           <tbody className="divide-y divide-border">
+            {/* 서비스 타입 - 수정 모드에서만 표시 */}
+            {serviceType && (
+              <tr>
+                <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                  서비스 타입
+                </th>
+                <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+                  <div className="flex items-center">
+                    <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
+                      {serviceTypeInfoMap[serviceType as CampaignServiceType]?.name || serviceType}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            )}
+            
             <tr>
               <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
                 건당 단가 <span className="text-red-500">*</span>
@@ -659,8 +675,58 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                         {/* 필드 입력 영역 */}
                         <div className="flex-1 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+                          {/* 타입 선택 (필드명 앞에 위치) */}
+                          <div className="w-full sm:w-32">
+                            <label className="block text-xs text-gray-600 mb-1 sm:hidden">타입</label>
+                            {isModal ? (
+                              <select
+                                value={field.fieldType || FieldType.TEXT}
+                                onChange={(e) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { 
+                                    ...updatedFields[index], 
+                                    fieldType: e.target.value as FieldType,
+                                    // enum에서 다른 타입으로 변경시 enumOptions 제거
+                                    enumOptions: e.target.value === FieldType.ENUM ? updatedFields[index].enumOptions : undefined
+                                  };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
+                                disabled={loading}
+                              >
+                                <option value={FieldType.TEXT}>텍스트</option>
+                                <option value={FieldType.INTEGER}>숫자</option>
+                                <option value={FieldType.ENUM}>선택목록</option>
+                              </select>
+                            ) : (
+                              <Select
+                                value={field.fieldType || FieldType.TEXT}
+                                onValueChange={(value) => {
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { 
+                                    ...updatedFields[index], 
+                                    fieldType: value as FieldType,
+                                    // enum에서 다른 타입으로 변경시 enumOptions 제거
+                                    enumOptions: value === FieldType.ENUM ? updatedFields[index].enumOptions : undefined
+                                  };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                disabled={loading}
+                              >
+                                <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={FieldType.TEXT}>텍스트</SelectItem>
+                                  <SelectItem value={FieldType.INTEGER}>숫자</SelectItem>
+                                  <SelectItem value={FieldType.ENUM}>선택목록</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+
                           {/* 필드명 입력 */}
-                          <div className="w-full sm:w-1/3">
+                          <div className="w-full sm:w-1/4">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">필드명</label>
                             {isModal ? (
                               <input
@@ -763,6 +829,54 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           </Button>
                         </div>
                       </div>
+                      
+                      {/* enum 타입일 때 옵션 입력 */}
+                      {field.fieldType === FieldType.ENUM && (
+                        <div className="mt-2 px-3">
+                          <label className="block text-xs text-gray-600 mb-1">선택 옵션 (콤마로 구분)</label>
+                          {isModal ? (
+                            <input
+                              type="text"
+                              defaultValue={field.enumOptions?.join(', ') || ''}
+                              onBlur={(e) => {
+                                const updatedFields = [...(formData.userInputFields || [])];
+                                const options = e.target.value
+                                  .split(',')
+                                  .map(opt => opt.trim())
+                                  .filter(opt => opt.length > 0);
+                                updatedFields[index] = { 
+                                  ...updatedFields[index], 
+                                  enumOptions: options.length > 0 ? options : undefined
+                                };
+                                handleChange('userInputFields', updatedFields);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
+                              placeholder="옵션1, 옵션2, 옵션3"
+                              disabled={loading}
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              defaultValue={field.enumOptions?.join(', ') || ''}
+                              onBlur={(e) => {
+                                const updatedFields = [...(formData.userInputFields || [])];
+                                const options = e.target.value
+                                  .split(',')
+                                  .map(opt => opt.trim())
+                                  .filter(opt => opt.length > 0);
+                                updatedFields[index] = { 
+                                  ...updatedFields[index], 
+                                  enumOptions: options.length > 0 ? options : undefined
+                                };
+                                handleChange('userInputFields', updatedFields);
+                              }}
+                              placeholder="옵션1, 옵션2, 옵션3"
+                              disabled={loading}
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                   
@@ -771,7 +885,12 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
                     onClick={() => {
                       const updatedFields = [...(formData.userInputFields || [])];
-                      updatedFields.push({ fieldName: '', description: '', isRequired: false });
+                      updatedFields.push({ 
+                        fieldName: '', 
+                        description: '', 
+                        isRequired: false,
+                        fieldType: FieldType.TEXT // 기본값으로 TEXT 타입 설정
+                      });
                       handleChange('userInputFields', updatedFields);
                     }}
                     disabled={loading}
@@ -786,6 +905,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
                   <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>
                   <p className="mt-1">• '필수' 체크 시 사용자가 반드시 입력해야 하는 필드가 됩니다.</p>
+                  <p className="mt-1">• 타입 선택: 텍스트(일반 텍스트), 숫자(숫자만 입력 가능), 선택목록(드롭다운 선택)</p>
                 </div>
               </td>
             </tr>

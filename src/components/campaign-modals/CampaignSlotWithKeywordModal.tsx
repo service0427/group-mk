@@ -14,7 +14,7 @@ import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
-import { getStatusLabel, getStatusColor, CampaignServiceType, SERVICE_TYPE_LABELS } from './types';
+import { getStatusLabel, getStatusColor, CampaignServiceType, SERVICE_TYPE_LABELS, FieldType } from './types';
 import { getStatusColorClass } from '@/utils/CampaignFormat';
 import { resolveServiceType } from '@/utils/serviceTypeResolver';
 import { useKeywordFieldConfig } from '@/pages/keyword/hooks/useKeywordFieldConfig';
@@ -949,10 +949,22 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   };
 
   // 캠페인의 추가 입력 필드 가져오기
-  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ fieldName: string; description: string; isRequired?: boolean }> => {
+  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ 
+    fieldName: string; 
+    description: string; 
+    isRequired?: boolean;
+    fieldType?: FieldType;
+    enumOptions?: string[];
+  }> => {
     if (!campaign || !campaign.add_info) return [];
 
-    let addFields: Array<{ fieldName: string; description: string; isRequired?: boolean }> = [];
+    let addFields: Array<{ 
+      fieldName: string; 
+      description: string; 
+      isRequired?: boolean;
+      fieldType?: FieldType;
+      enumOptions?: string[];
+    }> = [];
 
     try {
       // 문자열인 경우 파싱 시도
@@ -966,6 +978,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       else if (campaign.add_info.add_field && Array.isArray(campaign.add_info.add_field)) {
         addFields = campaign.add_info.add_field;
       }
+
+      // fieldType이 문자열인 경우 FieldType enum으로 변환
+      addFields = addFields.map(field => ({
+        ...field,
+        fieldType: field.fieldType || FieldType.TEXT, // 기본값 TEXT
+        enumOptions: field.enumOptions || undefined
+      }));
+
     } catch (e) {
       console.error('추가 입력 필드 파싱 오류:', e);
       return [];
@@ -1033,6 +1053,26 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     );
   };
 
+  // 숫자만 입력받는 핸들러
+  const handleNumberInputChange = (keywordId: number, fieldName: string, value: string) => {
+    // 빈 문자열이면 그대로 처리 (필드를 비울 수 있도록)
+    if (value === '') {
+      handleInputDataChange(keywordId, fieldName, '');
+      return;
+    }
+    
+    // 숫자만 허용 (한글 및 특수문자 제거)
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // 숫자가 아닌 값이 입력되었다면 기존 값 유지
+    if (value !== numericValue) {
+      // 입력이 차단되었음을 사용자에게 알릴 수 있음
+      return;
+    }
+    
+    handleInputDataChange(keywordId, fieldName, numericValue);
+  };
+
   // 폼 유효성 검사 함수
   const validateForm = (): boolean => {
     // 키워드 선택 확인만 체크
@@ -1056,6 +1096,14 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               if (!value || value.trim() === '') {
                 showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
                 return false;
+              }
+              
+              // INTEGER 타입 필드 검증
+              if (field.fieldType === FieldType.INTEGER && value) {
+                if (!/^\d+$/.test(value)) {
+                  showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 숫자만 입력 가능합니다.`, false);
+                  return false;
+                }
               }
             }
           }
@@ -1568,6 +1616,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
+  
 
   if (!open || !category) return null;
 
@@ -2020,7 +2069,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         </div>
                         <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900 min-h-0">
                           <div className="h-full overflow-x-auto overflow-y-auto custom-scrollbar">
-                            <table className="min-w-[1200px] w-full border-separate border-spacing-0">
+                            <table className={`w-full border-separate border-spacing-0`} style={{ minWidth: `${1200 + (getAdditionalFields(selectedCampaign).length * 150)}px` }}>
                               <thead className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white shadow-lg backdrop-blur-sm">
                                 <tr className="text-left">
                                   <th className="min-w-[50px] w-[50px] px-2 py-3 text-xs font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
@@ -2086,7 +2135,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       key={index}
                                       className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased relative group ${index === getAdditionalFields(selectedCampaign).length - 1 ? 'rounded-tr-md' : ''
                                         }`}
-                                      style={{ width: `${35 / Math.max(1, getAdditionalFields(selectedCampaign).length)}%` }}
+                                      style={{ minWidth: '150px' }}
                                     >
                                       <div className="flex items-center justify-center">
                                         <span>{field.fieldName}</span>
@@ -2248,22 +2297,67 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         <td
                                           key={index}
                                           className="px-1 sm:px-2 py-1 sm:py-2 md:px-3 md:py-3 border border-gray-200 align-middle relative group"
-                                          style={{ width: `${35 / Math.max(1, getAdditionalFields(selectedCampaign).length)}%` }}
+                                          style={{ minWidth: '150px' }}
                                         >
                                           {selectedKeywords.includes(keyword.id) ? (
                                             <div className="relative">
-                                              <input
-                                                type="text"
-                                                placeholder={`${field.fieldName} 입력${field.isRequired ? ' (필수)' : ''}`}
-                                                value={keyword.inputData?.[field.fieldName] || ''}
-                                                onChange={(e) => handleInputDataChange(keyword.id, field.fieldName, e.target.value)}
-                                                className={`w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800 ${field.isRequired && (!keyword.inputData?.[field.fieldName] || keyword.inputData[field.fieldName].trim() === '')
-                                                  ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
-                                                  : ''
-                                                  }`}
-                                                onClick={e => e.stopPropagation()}
-                                                required={field.isRequired}
-                                              />
+                                              {/* 필드 타입에 따른 입력 방식 */}
+                                              {field.fieldType === FieldType.ENUM && field.enumOptions ? (
+                                                // ENUM 타입: 드롭다운 선택
+                                                <select
+                                                  value={keyword.inputData?.[field.fieldName] || ''}
+                                                  onChange={(e) => handleInputDataChange(keyword.id, field.fieldName, e.target.value)}
+                                                  className={`w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800 ${field.isRequired && (!keyword.inputData?.[field.fieldName] || keyword.inputData[field.fieldName].trim() === '')
+                                                    ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                                    : ''
+                                                    }`}
+                                                  onClick={e => e.stopPropagation()}
+                                                  required={field.isRequired}
+                                                >
+                                                  <option value="">선택하세요</option>
+                                                  {field.enumOptions.map((option, optionIndex) => (
+                                                    <option key={optionIndex} value={option}>
+                                                      {option}
+                                                    </option>
+                                                  ))}
+                                                </select>
+                                              ) : field.fieldType === FieldType.INTEGER ? (
+                                                // INTEGER 타입: 숫자만 입력
+                                                <input
+                                                  type="text"
+                                                  inputMode="numeric"
+                                                  pattern="[0-9]*"
+                                                  placeholder={`${field.fieldName} 입력${field.isRequired ? ' (필수)' : ''} (숫자만)`}
+                                                  value={keyword.inputData?.[field.fieldName] || ''}
+                                                  onChange={(e) => handleNumberInputChange(keyword.id, field.fieldName, e.target.value)}
+                                                  onKeyPress={(e) => {
+                                                    // 숫자가 아닌 키 입력 차단
+                                                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                                                      e.preventDefault();
+                                                    }
+                                                  }}
+                                                  className={`w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800 ${field.isRequired && (!keyword.inputData?.[field.fieldName] || keyword.inputData[field.fieldName].trim() === '')
+                                                    ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                                    : ''
+                                                    }`}
+                                                  onClick={e => e.stopPropagation()}
+                                                  required={field.isRequired}
+                                                />
+                                              ) : (
+                                                // TEXT 타입 (기본값): 일반 텍스트 입력
+                                                <input
+                                                  type="text"
+                                                  placeholder={`${field.fieldName} 입력${field.isRequired ? ' (필수)' : ''}`}
+                                                  value={keyword.inputData?.[field.fieldName] || ''}
+                                                  onChange={(e) => handleInputDataChange(keyword.id, field.fieldName, e.target.value)}
+                                                  className={`w-full px-1.5 py-1 text-[9px] sm:text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-slate-800 ${field.isRequired && (!keyword.inputData?.[field.fieldName] || keyword.inputData[field.fieldName].trim() === '')
+                                                    ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                                                    : ''
+                                                    }`}
+                                                  onClick={e => e.stopPropagation()}
+                                                  required={field.isRequired}
+                                                />
+                                              )}
                                               {field.description && (
                                                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-help">
                                                   <KeenIcon icon="information" className="size-4 text-blue-400" />

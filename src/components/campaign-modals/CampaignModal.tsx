@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
-import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor, CampaignServiceType } from './types';
+import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor, CampaignServiceType, convertDbServiceTypeToEnum } from './types';
 import {
   Dialog,
   DialogContent,
@@ -194,6 +194,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           fieldName: field.fieldName || field.name || '',
           description: field.description || field.desc || '',
           isRequired: field.isRequired || false,
+          fieldType: field.fieldType || 'text', // fieldType 추가
+          enumOptions: field.enumOptions || undefined, // enumOptions 추가
           order: field.order
         }));
       }
@@ -271,6 +273,10 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       // originalData에 status가 있으면 그 값을 우선 사용 (서버 데이터 우선)
       const finalStatus = campaign.originalData?.status || initialStatus || 'pending';
 
+      // 서비스 타입 가져오기 (originalData에서 우선, 없으면 campaign에서)
+      const dbServiceType = campaign.originalData?.service_type || campaign.serviceType || '';
+      const convertedServiceType = convertDbServiceTypeToEnum(dbServiceType);
+
       // 캠페인 데이터로 newCampaign 상태 업데이트
       setNewCampaign({
         id: campaign.id,
@@ -291,6 +297,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           color: getStatusColor(finalStatus),
           status: finalStatus
         },
+        serviceType: convertedServiceType, // 변환된 서비스 타입 추가
         originalData: campaign.originalData // originalData 보존
       });
 
@@ -826,7 +833,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 onFormDataChange={handleFormDataChange}
                 additionalFields={additionalFields}
                 onAdditionalFieldsChange={setAdditionalFields}
-                serviceType={campaign?.serviceType}
+                serviceType={campaign ? newCampaign.serviceType : serviceType}
                 loading={loading}
                 error={null}
                 onBannerPreview={() => setBannerPreviewModalOpen(true)}

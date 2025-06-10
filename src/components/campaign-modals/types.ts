@@ -35,6 +35,28 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   [CampaignServiceType.LIVE_BROADCASTING]: '라이브방송'
 };
 
+// DB의 snake_case를 enum의 PascalCase로 변환하는 함수
+export const convertDbServiceTypeToEnum = (dbServiceType: string): string => {
+  const typeMap: { [key: string]: string } = {
+    'naver_auto': CampaignServiceType.NAVER_AUTO,
+    'naver_shopping_traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'naver_shopping_fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+    'naver_shopping_rank': CampaignServiceType.NAVER_SHOPPING_RANK,
+    'naver_place_traffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'naver_place_save': CampaignServiceType.NAVER_PLACE_SAVE,
+    'naver_place_share': CampaignServiceType.NAVER_PLACE_SHARE,
+    'naver_place_rank': CampaignServiceType.NAVER_PLACE_RANK,
+    'naver_blog_post': CampaignServiceType.NAVER_BLOG_POST,
+    'coupang_traffic': CampaignServiceType.COUPANG_TRAFFIC,
+    'coupang_fakesale': CampaignServiceType.COUPANG_FAKESALE,
+    'instagram': CampaignServiceType.INSTAGRAM,
+    'photo_video_production': CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
+    'live_broadcasting': CampaignServiceType.LIVE_BROADCASTING
+  };
+  
+  return typeMap[dbServiceType] || dbServiceType;
+};
+
 // URL 경로에서 서비스 타입을 결정하는 헬퍼 함수
 export const getServiceTypeFromPath = (platform: string, type: string, subservice?: string): CampaignServiceType => {
   // 새로운 URL 구조 파라미터 처리 (platform, type, subservice)
@@ -135,11 +157,20 @@ export interface ICampaign {
 }
 
 // 확장된 캠페인 인터페이스
+// 필드 타입 enum 정의
+export enum FieldType {
+  TEXT = 'text',
+  INTEGER = 'integer',
+  ENUM = 'enum'
+}
+
 // 사용자 입력 필드 타입 정의
 export interface UserInputField {
   fieldName: string;
   description: string;
   isRequired?: boolean; // 필수 입력 필드 여부
+  fieldType?: FieldType; // 필드 타입 (기본값: text)
+  enumOptions?: string[]; // enum 타입일 때 선택 옵션들
 }
 
 export interface ExtendedCampaign extends ICampaign {

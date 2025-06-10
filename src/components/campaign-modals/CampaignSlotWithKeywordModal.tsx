@@ -858,12 +858,23 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         const keywordInList = transformedData.find(k => k.id === initialKeywordId);
         
         if (keywordInList) {
+          // 선택된 캠페인의 최소 수량 가져오기
+          const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+          let minQty = 1;
+          if (selectedCampaign && selectedCampaign.min_quantity) {
+            if (typeof selectedCampaign.min_quantity === 'string') {
+              minQty = parseInt(selectedCampaign.min_quantity) || 1;
+            } else {
+              minQty = selectedCampaign.min_quantity;
+            }
+          }
+          
           // 해당 키워드의 작업타수와 마감일수 설정
           setKeywords(prev => prev.map(k => 
             k.id === initialKeywordId 
               ? { 
                   ...k, 
-                  workCount: campaign.initialKeywordData.keywordDetails?.[0]?.workCount || minQuantity,
+                  workCount: campaign.initialKeywordData.keywordDetails?.[0]?.workCount || minQty,
                   dueDays: campaign.initialKeywordData.keywordDetails?.[0]?.dueDays || 1
                 }
               : k

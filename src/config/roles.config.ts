@@ -77,7 +77,7 @@ export const USER_ROLE_BADGE_COLORS = {
   [USER_ROLES.DISTRIBUTOR]: 'success',  // 총판
   [USER_ROLES.AGENCY]: 'info',          // 대행사
   [USER_ROLES.ADVERTISER]: 'danger',    // 광고주
-  [USER_ROLES.BEGINNER]: 'secondary'    // 비기너
+  [USER_ROLES.BEGINNER]: 'warning'    // 비기너
 };
 
 /**
@@ -146,14 +146,14 @@ export const USER_ROLE_THEME_COLORS: Record<string, RoleThemeColors> = {
     transparent: 'bg-blue-50'
   },
 
-  // 비기너 테마 색상 (회색 계열)
+  // 비기너 테마 색상 (노란색 계열)
   [USER_ROLES.BEGINNER]: {
-    base: 'bg-gray-500',
-    gradient: 'bg-gradient-to-r from-gray-400 to-gray-600',
-    textClass: 'text-gray-600',
-    baseHex: '#6b7280',
-    hoverHex: '#4b5563',
-    transparent: 'bg-gray-50'
+    base: 'bg-yellow-500',
+    gradient: 'bg-gradient-to-r from-yellow-400 to-amber-500',
+    textClass: 'text-yellow-600',
+    baseHex: '#eab308',
+    hoverHex: '#ca8a04',
+    transparent: 'bg-yellow-50'
   }
 };
 

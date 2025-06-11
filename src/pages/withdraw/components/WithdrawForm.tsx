@@ -456,35 +456,35 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       {/* 금액 빠른 선택 */}
       <div className="grid grid-cols-5 gap-2 mb-8">
         <button
-          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
+          className="py-3 border border-gray-300 rounded text-xs bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('10000')}
           type="button"
         >
           +1만
         </button>
         <button
-          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
+          className="py-3 border border-gray-300 rounded text-xs bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('50000')}
           type="button"
         >
           +5만
         </button>
         <button
-          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
+          className="py-3 border border-gray-300 rounded text-xs bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('100000')}
           type="button"
         >
           +10만
         </button>
         <button
-          className="py-3 border border-gray-300 rounded text-sm bg-card hover:bg-muted/60"
+          className="py-3 border border-gray-300 rounded text-xs bg-card hover:bg-muted/60"
           onClick={() => handleAmountSelect('1000000')}
           type="button"
         >
           +100만
         </button>
         <button
-          className="py-3 border border-blue-500 text-blue-500 rounded text-sm bg-blue-50 hover:bg-blue-100"
+          className="py-3 border border-blue-500 rounded text-xs text-blue-500 bg-card bg-blue-50 hover:bg-blue-100"
           onClick={handleMaxAmountSelect}
           type="button"
         >
@@ -518,7 +518,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             id="bankSelect"
             value={bankName}
             onChange={(e) => setBankName(e.target.value)}
-            className="w-full h-10 px-3 py-2 bg-light-light rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary"
+            className="select w-full h-10 px-3 py-2 bg-light-light rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary"
           >
             <option value="">은행을 선택하세요</option>
             {bankList.map((bank) => (
@@ -566,8 +566,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           disabled={isLoading || !customAmount || Number(customAmount) <= 0 || !bankName || !accountNumber || !accountHolder}
           type="button"
           className={`w-full py-4 ${customAmount && Number(customAmount) > 0 && bankName && accountNumber && accountHolder && !isLoading
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-200 text-gray-600'
+            ? 'bg-blue-500 text-white hover:bg-blue-600'
+            : 'bg-gray-200 text-gray-600'
             } font-medium rounded-md transition-colors mt-5 ${isLoading ? 'cursor-not-allowed opacity-70' : ''
             }`}
         >
@@ -654,8 +654,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
       {toast.visible && (
         <div
           className={`fixed bottom-4 right-4 z-50 max-w-md p-4 rounded-lg shadow-lg border transition-opacity duration-300 ${toast.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-red-50 border-red-200 text-red-800'
             }`}
         >
           <div className="flex items-start">

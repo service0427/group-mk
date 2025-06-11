@@ -361,6 +361,12 @@ export const useAuthStore = create<AuthState>()(
             // 로그아웃 중이거나 인증되지 않은 경우 실행하지 않음
             if (!currentUser || isLoggingOut || !isAuthenticated) return;
             
+            // 비기너 사용자는 DB 조회를 건너뛰고 현재 정보 유지
+            if (currentUser.role === USER_ROLES.BEGINNER) {
+              // 비기너는 users 테이블에 데이터가 없으므로 조회하지 않음
+              return;
+            }
+            
             // DB에서 최신 사용자 정보 가져오기
             const { data: userData, error } = await supabase
               .from('users')

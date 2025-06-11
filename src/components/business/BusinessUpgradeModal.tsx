@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { BusinessFormData } from '@/types/business';
@@ -73,9 +73,25 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     }
   }, [initialData, isOpen]);
 
+  // 모든 필드 유효성 검사
+  const validateAllFields = () => {
+    validateField('business_number', formData.business_number);
+    validateField('business_name', formData.business_name);
+    validateField('representative_name', formData.representative_name);
+    if (formData.business_email) {
+      validateField('business_email', formData.business_email);
+    }
+    if (!hasExistingBankAccount) {
+      validateField('bank_bank_name', formData.bank_account?.bank_name || '');
+      validateField('bank_account_number', formData.bank_account?.account_number || '');
+      validateField('bank_account_holder', formData.bank_account?.account_holder || '');
+    }
+  };
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const { currentUser } = useAuthContext();
 
@@ -99,6 +115,88 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         [name]: value
       }));
     }
+
+    // 필드 유효성 검사
+    validateField(name, value);
+  };
+
+  // 개별 필드 유효성 검사
+  const validateField = (name: string, value: string) => {
+    const errors = { ...validationErrors };
+
+    // 사업자 등록번호 검증
+    if (name === 'business_number') {
+      if (!value) {
+        errors.business_number = '사업자 등록번호는 필수입니다.';
+      } else if (!/^\d{3}-\d{2}-\d{5}$/.test(value)) {
+        errors.business_number = '형식: 000-00-00000';
+      } else {
+        delete errors.business_number;
+      }
+    }
+
+    // 상호명 검증
+    if (name === 'business_name') {
+      if (!value) {
+        errors.business_name = '상호명은 필수입니다.';
+      } else if (value.length < 2) {
+        errors.business_name = '상호명은 2자 이상이어야 합니다.';
+      } else {
+        delete errors.business_name;
+      }
+    }
+
+    // 대표자명 검증
+    if (name === 'representative_name') {
+      if (!value) {
+        errors.representative_name = '대표자명은 필수입니다.';
+      } else if (value.length < 2) {
+        errors.representative_name = '대표자명은 2자 이상이어야 합니다.';
+      } else {
+        delete errors.representative_name;
+      }
+    }
+
+    // 이메일 검증 (선택사항)
+    if (name === 'business_email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        errors.business_email = '올바른 이메일 형식이 아닙니다.';
+      } else {
+        delete errors.business_email;
+      }
+    }
+
+    // 은행 계좌 정보 검증
+    if (name === 'bank_bank_name' && !hasExistingBankAccount) {
+      if (!value) {
+        errors.bank_name = '은행명은 필수입니다.';
+      } else {
+        delete errors.bank_name;
+      }
+    }
+
+    if (name === 'bank_account_number' && !hasExistingBankAccount) {
+      if (!value) {
+        errors.account_number = '계좌번호는 필수입니다.';
+      } else if (!/^[0-9-]+$/.test(value)) {
+        errors.account_number = '숫자와 하이픈(-)만 입력 가능합니다.';
+      } else {
+        delete errors.account_number;
+      }
+    }
+
+    if (name === 'bank_account_holder' && !hasExistingBankAccount) {
+      if (!value) {
+        errors.account_holder = '예금주는 필수입니다.';
+      } else if (value.length < 2) {
+        errors.account_holder = '예금주는 2자 이상이어야 합니다.';
+      } else {
+        delete errors.account_holder;
+      }
+    }
+
+    setValidationErrors(errors);
   };
 
   const handleImageChange = async (file: File | null) => {
@@ -145,6 +243,16 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     setLoading(true);
     setError('');
 
+    // 모든 필드 유효성 검사 실행
+    validateAllFields();
+
+    // 유효성 검사 오류가 있으면 제출 중단
+    if (Object.keys(validationErrors).length > 0) {
+      setError('필수 입력 항목을 모두 입력해주세요.');
+      setLoading(false);
+      return;
+    }
+
     // 먼저 버킷 존재 여부 확인
     const bucketExists = await checkBucketExists('business-images');
     if (!bucketExists) {
@@ -156,6 +264,17 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
       setError('사업자등록번호, 상호명, 대표자명은 필수 입력 항목입니다.');
       setLoading(false);
       return;
+    }
+
+    // 계좌 정보 필수값 체크 (기존 계좌가 없는 경우)
+    if (!hasExistingBankAccount) {
+      if (!formData.bank_account?.bank_name ||
+        !formData.bank_account?.account_number ||
+        !formData.bank_account?.account_holder) {
+        setError('출금 계좌 정보는 필수 입력 항목입니다.');
+        setLoading(false);
+        return;
+      }
     }
 
     // 사업자등록증 이미지는 현재 기술적 문제로 선택 사항으로 변경
@@ -451,33 +570,33 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-4 border-b bg-gray-50">
-          <DialogTitle className="text-lg font-semibold">
-            {isEditMode ? '사업자 정보 수정' : '사업자 등업 신청'}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="overflow-y-auto max-h-[calc(90vh-150px)] p-6">
-          {success ? (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/20 text-success mb-4">
-                <KeenIcon icon="check" className="size-8" />
-              </div>
-              <h4 className="text-lg font-medium mb-2">
-                {isEditMode ? '정보 수정 완료' : '등업 신청 완료'}
-              </h4>
-              <p className="text-gray-600 mb-4">
-                {isEditMode ? (
-                  <>사업자 정보가 성공적으로 수정되었습니다.</>
-                ) : (
-                  <>사업자 등업 신청이 완료되었습니다.<br />
-                    관리자 승인 후 등급이 변경됩니다.</>
-                )}
-              </p>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 overflow-hidden" aria-describedby={undefined}>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader className="p-6 pb-4 border-b bg-background">
+            <DialogTitle className="text-lg font-semibold">
+              {isEditMode ? '사업자 정보 수정' : '사업자 등업 신청'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
+            {success ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/20 text-success mb-4">
+                  <KeenIcon icon="check" className="size-8" />
+                </div>
+                <h4 className="text-lg font-medium mb-2">
+                  {isEditMode ? '정보 수정 완료' : '등업 신청 완료'}
+                </h4>
+                <p className="text-gray-600 mb-4">
+                  {isEditMode ? (
+                    <>사업자 정보가 성공적으로 수정되었습니다.</>
+                  ) : (
+                    <>사업자 등업 신청이 완료되었습니다.<br />
+                      관리자 승인 후 등급이 변경됩니다.</>
+                  )}
+                </p>
 
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+              </div>
+            ) : (
               <div className="space-y-3">
                 {/* 등업 신청 타입 선택 */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -516,9 +635,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           value={formData.business_number}
                           onChange={handleChange}
                           placeholder="000-00-00000"
-                          className="input input-sm w-full"
+                          className={`input input-sm w-full ${validationErrors.business_number ? 'input-error' : ''}`}
                           required
                         />
+                        {validationErrors.business_number && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.business_number}</p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">상호명 <span className="text-red-500">*</span></label>
@@ -528,9 +650,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           value={formData.business_name}
                           onChange={handleChange}
                           placeholder="상호명"
-                          className="input input-sm w-full"
+                          className={`input input-sm w-full ${validationErrors.business_name ? 'input-error' : ''}`}
                           required
                         />
+                        {validationErrors.business_name && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.business_name}</p>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -542,9 +667,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           value={formData.representative_name}
                           onChange={handleChange}
                           placeholder="대표자명"
-                          className="input input-sm w-full"
+                          className={`input input-sm w-full ${validationErrors.representative_name ? 'input-error' : ''}`}
                           required
                         />
+                        {validationErrors.representative_name && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.representative_name}</p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">사업자용 이메일</label>
@@ -554,8 +682,11 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           value={formData.business_email}
                           onChange={handleChange}
                           placeholder="email@example.com"
-                          className="input input-sm w-full"
+                          className={`input input-sm w-full ${validationErrors.business_email ? 'input-error' : ''}`}
                         />
+                        {validationErrors.business_email && (
+                          <p className="text-xs text-red-500 mt-1">{validationErrors.business_email}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -597,9 +728,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                             value={formData.bank_account?.bank_name || ''}
                             onChange={handleChange}
                             placeholder="예) KB국민은행"
-                            className="input input-sm w-full"
+                            className={`input input-sm w-full ${validationErrors.bank_name ? 'input-error' : ''}`}
                             required
                           />
+                          {validationErrors.bank_name && (
+                            <p className="text-xs text-red-500 mt-1">{validationErrors.bank_name}</p>
+                          )}
                         </div>
                         <div>
                           <label className="text-xs font-medium text-gray-600 mb-1 block">계좌번호 <span className="text-red-500">*</span></label>
@@ -609,9 +743,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                             value={formData.bank_account?.account_number || ''}
                             onChange={handleChange}
                             placeholder="숫자만 입력"
-                            className="input input-sm w-full"
+                            className={`input input-sm w-full ${validationErrors.account_number ? 'input-error' : ''}`}
                             required
                           />
+                          {validationErrors.account_number && (
+                            <p className="text-xs text-red-500 mt-1">{validationErrors.account_number}</p>
+                          )}
                         </div>
                         <div>
                           <label className="text-xs font-medium text-gray-600 mb-1 block">예금주 <span className="text-red-500">*</span></label>
@@ -621,9 +758,12 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                             value={formData.bank_account?.account_holder || ''}
                             onChange={handleChange}
                             placeholder="예금주명"
-                            className="input input-sm w-full"
+                            className={`input input-sm w-full ${validationErrors.account_holder ? 'input-error' : ''}`}
                             required
                           />
+                          {validationErrors.account_holder && (
+                            <p className="text-xs text-red-500 mt-1">{validationErrors.account_holder}</p>
+                          )}
                         </div>
                       </div>
                       <div className="text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
@@ -640,6 +780,15 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                     <span className="text-xs text-gray-500">선택사항</span>
                   </div>
 
+                  {/* 총판 신청 시 안내 문구 */}
+                  {formData.target_role === USER_ROLES.DISTRIBUTOR && (
+                    <div className="mb-3 p-2 bg-blue-50 rounded-md">
+                      <p className="text-xs text-blue-700">
+                        <span className="font-medium">안내:</span> 총판 신청 시 사업자 등록증 확인이 필요합니다.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="border-2 border-dashed border-gray-200 rounded-lg p-3 bg-gray-50">
                     {imagePreview ? (
                       <div className="relative">
@@ -651,9 +800,9 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleImageChange(null)}
-                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md"
+                          className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md transition-all"
                         >
-                          <KeenIcon icon="cross" className="size-3" />
+                          <KeenIcon icon="cross" className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
@@ -697,36 +846,37 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                 {error && (
                   <div className="alert alert-error p-3 text-sm">{error}</div>
                 )}
-
-                <div className="pt-4 flex justify-end gap-3 border-t">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        처리중
-                      </span>
-                    ) : isEditMode ? '수정하기' : '신청하기'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="btn btn-outline"
-                    disabled={loading}
-                  >
-                    취소
-                  </button>
-                </div>
               </div>
-            </form>
+            )}
+          </div>
+          {!success && (
+            <DialogFooter className="p-6 pt-4 border-t bg-background">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading || Object.keys(validationErrors).length > 0}
+              >
+                {loading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    처리중
+                  </span>
+                ) : isEditMode ? '수정하기' : '신청하기'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-secondary"
+                disabled={loading}
+              >
+                취소
+              </button>
+            </DialogFooter>
           )}
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

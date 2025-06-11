@@ -55,8 +55,8 @@ const WithdrawRequestPage: React.FC = () => {
 
   return (
     <CommonTemplate
-      title="출금 신청"
-      description="캐쉬/포인트 관리 > 출금 신청"
+      title="캐시 출금 신청"
+      description="캐시 출금을 신청합니다. 운영자 출금 요청 확인 및 승인 후 출금 처리됩니다."
       showPageMenu={false}
     >
       <div className="w-full max-w-lg mx-auto">
@@ -138,8 +138,8 @@ const WithdrawRequestPage: React.FC = () => {
               type="button"
               onClick={() => setNotification(prev => ({ ...prev, visible: false }))}
               className={`w-full py-3 rounded-md font-medium ${notification.type === 'success'
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-red-600 hover:bg-red-700 text-white'
                 }`}
             >
               확인

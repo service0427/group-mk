@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
@@ -26,6 +27,24 @@ const ProfilePage = () => {
   const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+
+  // ESC 키 핸들러
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && imageModalOpen) {
+        setImageModalOpen(false);
+        setSelectedImage('');
+      }
+    };
+    
+    if (imageModalOpen) {
+      document.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [imageModalOpen]);
 
   // 사업자 정보와 등업 신청 현황 체크
   // 초기 상태 설정을 위한 useEffect
@@ -949,75 +968,60 @@ const ProfilePage = () => {
         setCurrentUser={setCurrentUser}
       />
 
-
-      {imageModalOpen && (
+      {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
+      {imageModalOpen && selectedImage && createPortal(
         <div
-          className="fixed inset-0 flex items-center justify-center z-50 bg-black/70"
-          onClick={() => setImageModalOpen(false)} // 배경 클릭 시 모달 닫기
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => {
+            setImageModalOpen(false);
+            setSelectedImage('');
+          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <div
-            className="relative max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg p-1"
-            onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 이벤트 전파 방지
-          >
-            {/* 우측 상단 닫기 버튼 */}
-            <button
-              onClick={() => setImageModalOpen(false)}
-              className="absolute top-3 right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-all"
-              aria-label="닫기"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* 상단 닫기 텍스트 배너 */}
-            <div className="bg-gray-800/80 text-white py-2 px-4 text-center mb-2">
-              <button
-                onClick={() => setImageModalOpen(false)}
-                className="flex items-center justify-center w-full"
-              >
-                <span>이미지 닫기</span>
-                <div className="ml-2 inline-flex">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-              </button>
-            </div>
+          <div className="relative max-w-4xl max-h-[90vh]">
             <img
               src={selectedImage}
               alt="사업자등록증"
-              className="max-h-[85vh] object-contain"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
               onError={(e) => {
-
                 (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
               }}
             />
-            <div className="flex justify-center items-center gap-4 mt-3 pb-2">
-              <button
-                onClick={() => setImageModalOpen(false)}
-                className="btn btn-danger flex items-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>닫기</span>
-              </button>
-
+            <button
+              className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
+              onClick={() => {
+                setImageModalOpen(false);
+                setSelectedImage('');
+              }}
+            >
+              <KeenIcon icon="cross" className="text-lg" />
+            </button>
+            <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-3">
               <a
                 href={selectedImage}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-outline-primary flex items-center"
+                className="btn btn-sm btn-primary shadow-lg"
+                onClick={(e) => e.stopPropagation()}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                <span>새 탭에서 열기</span>
+                <KeenIcon icon="external-link" className="me-1" />
+                새 탭에서 열기
               </a>
+              <button
+                className="btn btn-sm btn-light shadow-lg"
+                onClick={() => {
+                  setImageModalOpen(false);
+                  setSelectedImage('');
+                }}
+              >
+                <KeenIcon icon="cross" className="me-1" />
+                닫기
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </CommonTemplate>
   );

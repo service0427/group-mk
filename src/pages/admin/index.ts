@@ -5,7 +5,6 @@ import * as Site from './site';
 import { ManageCashPage } from './cash';
 import ChatManagePage from './ChatManagePage';
 import LevelUpRequestsPage from './LevelUpRequestsPage';
-import { SearchLimitsPage } from './SearchLimitsPage';
 
 export { 
   UsersPage, 
@@ -14,6 +13,5 @@ export {
   Site, 
   ManageCashPage, 
   ChatManagePage,
-  LevelUpRequestsPage,
-  SearchLimitsPage
+  LevelUpRequestsPage
 };

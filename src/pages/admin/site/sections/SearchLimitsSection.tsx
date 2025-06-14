@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CommonTemplate } from '@/components/pageTemplate';
-import { KeenIcon } from '@/components';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { KeenIcon } from '@/components/keenicons';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/supabase';
 import searchLimitService from '@/services/searchLimitService';
 import { toast } from 'sonner';
@@ -17,7 +15,7 @@ interface SearchLimitConfig {
   monthly_limit: number | null;
 }
 
-const SearchLimitsPage: React.FC = () => {
+export const SearchLimitsSection: React.FC = () => {
   const [limitConfigs, setLimitConfigs] = useState<SearchLimitConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [editingRole, setEditingRole] = useState<string | null>(null);
@@ -162,16 +160,26 @@ const SearchLimitsPage: React.FC = () => {
   };
 
   return (
-    <CommonTemplate
-      title="검색 제한 설정"
-      description="회원 등급별 검색 제한을 관리합니다"
-      showPageMenu={false}
-    >
-      <Card>
-        <div className="p-4 sm:p-6 border-b">
+    <div className="grid gap-6">
+      {/* 섹션 타이틀 */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="bg-success/10 p-2 rounded-lg">
+          <KeenIcon icon="search-list" className="text-xl text-success" />
+        </div>
+        <h2 className="text-2xl font-bold">검색 제한 설정</h2>
+      </div>
+
+      {/* 검색 제한 설정 카드 */}
+      <div className="card bg-card rounded-xl shadow-sm overflow-hidden border border-border min-h-[600px] flex flex-col">
+        <div className="p-4 sm:p-6 border-b border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h3 className="text-base sm:text-lg font-semibold">회원 등급별 검색 제한</h3>
-            <Button onClick={fetchData} className="btn btn-sm btn-light">
+            <div className="flex items-center gap-3">
+              <div className="bg-info-light/50 dark:bg-info/20 p-2 rounded-lg">
+                <KeenIcon icon="shield-search" className="text-lg text-info" />
+              </div>
+              <h3 className="text-xl font-semibold text-card-foreground">회원 등급별 검색 제한</h3>
+            </div>
+            <Button onClick={fetchData} size="sm" variant="outline">
               <KeenIcon icon="arrows-circle" className="text-sm me-1" />
               <span className="hidden sm:inline">새로고침</span>
               <span className="sm:hidden">새로고침</span>
@@ -179,12 +187,13 @@ const SearchLimitsPage: React.FC = () => {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center p-8 sm:p-10">
-            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mr-2 sm:mr-3"></div>
-            <p className="text-sm sm:text-base text-muted-foreground">데이터를 불러오는 중...</p>
-          </div>
-        ) : isMobile ? (
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full min-h-[400px]">
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mr-2 sm:mr-3"></div>
+              <p className="text-sm sm:text-base text-muted-foreground">데이터를 불러오는 중...</p>
+            </div>
+          ) : isMobile ? (
           // 모바일 카드 레이아웃
           <div className="space-y-3 p-4">
             {['beginner', 'advertiser', 'agency', 'distributor', 'operator', 'developer'].map((role) => {
@@ -193,7 +202,7 @@ const SearchLimitsPage: React.FC = () => {
               const isEditingThis = editingRole === role;
 
               return (
-                <Card key={role} className={`p-4 ${isEditingThis ? 'ring-2 ring-primary' : ''}`}>
+                <div key={role} className={`card p-4 ${isEditingThis ? 'ring-2 ring-primary' : ''}`}>
                   <div className="flex items-center justify-between mb-3">
                     <Badge className={`${getRoleBadgeColor(role)} text-sm`}>
                       {getRoleDisplayName(role)}
@@ -307,7 +316,7 @@ const SearchLimitsPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -447,19 +456,20 @@ const SearchLimitsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        )}
-
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-4 sm:p-5 mt-4 sm:mt-6 mx-4 sm:mx-6">
-          <h4 className="font-medium mb-2 text-blue-900 dark:text-blue-100 text-sm sm:text-base">사용 안내</h4>
-          <ul className="text-xs sm:text-sm text-blue-700 dark:text-blue-200 space-y-1">
-            <li>• 일일/월간 제한에 <strong className="text-blue-900 dark:text-blue-100">-1</strong>을 입력하면 <strong className="text-blue-900 dark:text-blue-100">무제한</strong>으로 설정됩니다.</li>
-            <li>• 월간 제한을 비워두면 <strong className="text-blue-900 dark:text-blue-100">무제한</strong>으로 설정됩니다.</li>
-            <li>• 변경사항은 즉시 적용되며, 현재 로그인한 사용자는 다시 로그인해야 적용됩니다.</li>
-          </ul>
+          )}
         </div>
-      </Card>
-    </CommonTemplate>
+      </div>
+
+      {/* 설명 영역 */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 p-4 sm:p-5">
+        <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">검색 제한 설정 안내</h3>
+        <div className="space-y-2 text-blue-700 dark:text-blue-200 text-sm">
+          <p>• <span className="font-medium text-blue-900 dark:text-blue-100">회원 등급별 제한</span>: 각 회원 등급에 따라 검색 횟수를 제한할 수 있습니다.</p>
+          <p>• <span className="font-medium text-blue-900 dark:text-blue-100">일일/월간 제한</span>: -1을 입력하면 무제한으로 설정됩니다.</p>
+          <p>• <span className="font-medium text-blue-900 dark:text-blue-100">N 쇼핑/N 플레이스</span>: 각 검색 유형별로 별도의 제한을 설정할 수 있습니다.</p>
+          <p>• <span className="font-medium text-blue-900 dark:text-blue-100">즉시 적용</span>: 변경사항은 즉시 적용되며, 현재 로그인한 사용자는 재로그인 후 적용됩니다.</p>
+        </div>
+      </div>
+    </div>
   );
 };
-
-export { SearchLimitsPage };

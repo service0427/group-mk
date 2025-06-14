@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
-import { TipTapEditor } from '@/components/rich-text-editor';
 import { supabase } from '@/supabase';
 import { toast } from 'sonner'; // sonner 라이브러리의 toast 함수 사용
 
@@ -33,295 +32,6 @@ interface Notice {
   published_at: string;
   expires_at: string | null;
 }
-
-// 공지사항 상세 컴포넌트
-interface NoticeDetailProps {
-  notice: Notice | null;
-  onClose: () => void;
-  onUpdate: (id: string, data: any) => void;
-  onDelete: (notice: Notice) => void;
-}
-
-const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose, onUpdate, onDelete }) => {
-  const [title, setTitle] = useState(notice?.title || '');
-  const [content, setContent] = useState(notice?.content || '');
-  const [isActive, setIsActive] = useState(notice?.is_active || false);
-  const [isImportant, setIsImportant] = useState(notice?.is_important || false);
-  const [isLoading, setIsLoading] = useState(false);
-  const editorRef = useRef<any>(null);
-
-  // notice가 변경될 때 상태 업데이트
-  useEffect(() => {
-    if (notice) {
-      setTitle(notice.title || '');
-      setContent(notice.content || '');
-      setIsActive(notice.is_active || false);
-      setIsImportant(notice.is_important || false);
-    }
-  }, [notice]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (notice) {
-      setIsLoading(true);
-      try {
-        // 이미 state에 저장된 content 사용
-        await onUpdate(notice.id, {
-          title,
-          content, // 에디터에서 변경 시 setContent로 업데이트된 값 사용
-          is_active: isActive,
-          is_important: isImportant
-        });
-        toast("공지사항이 업데이트 되었습니다.");
-        onClose();
-      } catch (error) {
-        toast.error("공지사항 업데이트 중 오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  if (!notice) return null;
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[90vh] w-full">
-      {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
-      <div className="flex-shrink-0 p-4 sm:p-8 w-full bg-background pb-0">
-        <div className="mb-5 w-full">
-          <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1">제목</label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-background focus:ring-primary focus:border-primary"
-            required
-          />
-        </div>
-
-        <div className="w-full">
-          <label htmlFor="content" className="block text-sm font-medium text-foreground mb-1">내용</label>
-        </div>
-      </div>
-
-      {/* 스크롤 가능한 내용 영역 (에디터만) */}
-      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full mb-5">
-        {notice && (
-          <div style={{ height: '450px' }}>
-            <TipTapEditor
-              key={`notice-${notice.id}`} // 공지사항 ID가 변경될 때마다 컴포넌트를 완전히 새로 생성
-              content={content}
-              onChange={setContent}
-              placeholder="공지사항 내용을 입력하세요..."
-            />
-          </div>
-        )}
-      </div>
-
-      {/* 고정된 하단 설정 및 버튼 영역 */}
-      <div className="flex-shrink-0 border-t bg-muted/30 p-4 sm:p-6 w-full overflow-hidden">
-        {/* 설정 옵션 */}
-        <div className="space-y-3 mb-5 w-full">
-          <div className="flex justify-between items-center bg-background p-4 rounded-md">
-            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
-            <div className="flex items-center justify-end gap-3 w-[200px]">
-              <Switch
-                id="isActive"
-                checked={isActive}
-                onCheckedChange={setIsActive}
-                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
-              />
-              <label htmlFor="isActive" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
-                {isActive ? '표시됨' : '감춰짐'}
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center bg-background p-4 rounded-md">
-            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
-            <div className="flex items-center justify-end gap-3 w-[200px]">
-              <Switch
-                id="isImportant"
-                checked={isImportant}
-                onCheckedChange={setIsImportant}
-                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
-              />
-              <label htmlFor="isImportant" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
-                {isImportant ? '중요 공지' : '일반 공지'}
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* 버튼 영역 */}
-        <div className="flex justify-between space-x-3 pt-5 border-t border-border">
-          <div>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                if (notice) {
-                  onDelete(notice);
-                }
-                onClose();
-              }}
-              className="px-4"
-              disabled={isLoading}
-            >
-              삭제하기
-            </Button>
-          </div>
-          <div className="flex space-x-3">
-            <Button
-              type="submit"
-              className="bg-primary hover:bg-primary/90 text-white px-4"
-              disabled={isLoading}
-            >
-              {isLoading ? '저장 중...' : '저장하기'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="px-4"
-              disabled={isLoading}
-            >
-              취소
-            </Button>
-          </div>
-        </div>
-      </div>
-    </form>
-  );
-};
-
-// 새 공지사항 작성 컴포넌트
-interface CreateNoticeProps {
-  onClose: () => void;
-  onSave: (data: any) => Promise<void>;
-}
-
-const CreateNotice: React.FC<CreateNoticeProps> = ({ onClose, onSave }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isActive, setIsActive] = useState(true);
-  const [isImportant, setIsImportant] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const editorRef = useRef<any>(null);
-
-  // CreateNotice 컴포넌트 마운트 시 자동으로 초기화됨
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      // state에 저장된 content 사용
-      await onSave({
-        title,
-        content, // 에디터에서 변경 시 setContent로 업데이트된 값
-        is_active: isActive,
-        is_important: isImportant
-      });
-      toast("공지사항이 등록되었습니다.");
-      onClose();
-    } catch (error) {
-      toast.error("공지사항 등록 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[90vh] w-full">
-      {/* 고정 헤더 영역 (제목, 제목 입력, 내용 레이블, 이미지 첨부 버튼) */}
-      <div className="flex-shrink-0 p-4 sm:p-8 w-full bg-background">
-        <div className="mb-5 w-full">
-          <label htmlFor="new-title" className="block text-sm font-medium text-foreground mb-1">제목</label>
-          <Input
-            id="new-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-background focus:ring-primary focus:border-primary"
-            placeholder="공지사항 제목을 입력하세요"
-            required
-          />
-        </div>
-
-        <div className="w-full">
-          <label htmlFor="new-content" className="block text-sm font-medium text-foreground mb-1">내용</label>
-        </div>
-      </div>
-
-      {/* 스크롤 가능한 내용 영역 (에디터만) */}
-      <div className="flex-grow overflow-y-auto px-3 sm:px-6 w-full">
-        <div style={{ height: '450px' }}>
-          <TipTapEditor
-            key="new-notice"
-            content={content}
-            onChange={setContent}
-            placeholder="공지사항 내용을 입력하세요..."
-          />
-        </div>
-      </div>
-
-      {/* 고정된 하단 설정 및 버튼 영역 */}
-      <div className="flex-shrink-0 border-t bg-muted/30 p-4 sm:p-6 w-full overflow-hidden">
-        {/* 설정 옵션 */}
-        <div className="space-y-3 mb-5 w-full">
-          <div className="flex justify-between items-center bg-background p-4 rounded-md">
-            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">표시여부</label>
-            <div className="flex items-center justify-end gap-3 w-[200px]">
-              <Switch
-                id="new-isActive"
-                checked={isActive}
-                onCheckedChange={setIsActive}
-                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
-              />
-              <label htmlFor="new-isActive" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
-                {isActive ? '표시됨' : '감춰짐'}
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center bg-background p-4 rounded-md">
-            <label className="block text-sm font-medium text-foreground min-w-[70px] sm:min-w-[80px]">중요 공지</label>
-            <div className="flex items-center justify-end gap-3 w-[200px]">
-              <Switch
-                id="new-isImportant"
-                checked={isImportant}
-                onCheckedChange={setIsImportant}
-                className="data-[state=checked]:bg-primary scale-110 sm:scale-125"
-              />
-              <label htmlFor="new-isImportant" className="text-sm text-foreground whitespace-nowrap w-[120px] text-right">
-                {isImportant ? '중요 공지' : '일반 공지'}
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* 버튼 영역 */}
-        <div className="flex justify-end space-x-3 pt-5 border-t border-border">
-          <Button
-            type="submit"
-            className="bg-primary hover:bg-primary/90 text-white px-4"
-            disabled={isLoading}
-          >
-            {isLoading ? '등록 중...' : '등록하기'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="px-4"
-            disabled={isLoading}
-          >
-            취소
-          </Button>
-        </div>
-      </div>
-    </form>
-  );
-};
 
 // 삭제 확인 대화상자 컴포넌트
 interface DeleteConfirmDialogProps {
@@ -501,9 +211,6 @@ const NoticePageComponent = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [noticeToDelete, setNoticeToDelete] = useState<Notice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -566,85 +273,6 @@ const NoticePageComponent = () => {
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1); // 페이지당 항목 수 변경 시 첫 페이지로 이동
-  };
-
-  // 공지사항 상세 열기
-  const openDetail = async (notice: Notice) => {
-    try {
-      // 선택한 공지사항의 최신 데이터를 다시 가져옴
-      const { data, error } = await supabase
-        .from('notice')
-        .select('*')
-        .eq('id', notice.id)
-        .single();
-
-      if (error) throw error;
-
-      // 최신 데이터로 상태 업데이트
-      setSelectedNotice(data || notice);
-      setIsDetailOpen(true);
-
-    } catch (err) {
-      console.error('공지사항 상세 조회 오류:', err);
-      // 오류 발생 시 원본 데이터 사용
-      setSelectedNotice(notice);
-      setIsDetailOpen(true);
-    }
-  };
-
-  // 공지사항 업데이트
-  const updateNotice = async (id: string, data: any) => {
-    try {
-      const { error } = await supabase
-        .from('notice')
-        .update({
-          title: data.title,
-          content: data.content,
-          is_active: data.is_active,
-          is_important: data.is_important,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // 업데이트 후 목록 새로고침
-      await fetchNotices();
-      return;
-    } catch (err) {
-
-      throw err;
-    }
-  };
-
-  // 새 공지사항 저장
-  const saveNewNotice = async (data: any) => {
-    try {
-      // 로그인한 사용자의 ID 가져오기 (예시)
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const userId = userData.user?.id;
-
-      const { error } = await supabase
-        .from('notice')
-        .insert({
-          title: data.title,
-          content: data.content,
-          is_active: data.is_active,
-          is_important: data.is_important,
-          author_id: userId, // 로그인한 사용자의 ID 
-          view_count: 0
-        });
-
-      if (error) throw error;
-
-      // 추가 후 목록 새로고침
-      await fetchNotices();
-    } catch (err) {
-
-      throw err;
-    }
   };
 
   // 공지사항 삭제 확인 다이얼로그 열기
@@ -810,7 +438,7 @@ const NoticePageComponent = () => {
                             <td className="py-3 px-3">
                               <button
                                 className="hover:text-blue-600 text-left font-medium truncate max-w-[250px] md:max-w-[350px] lg:max-w-full block"
-                                onClick={() => openDetail(notice)}
+                                onClick={() => handleEditNotice(notice.id)}
                                 title={notice.title}
                               >
                                 {notice.is_important && (
@@ -886,7 +514,7 @@ const NoticePageComponent = () => {
                             <div className="flex-1 min-w-0 max-w-full">
                               {/* 헤더 영역: 제목과 중요 표시 */}
                               <div className="mb-2">
-                                <h3 className="font-medium text-foreground flex items-center gap-1 truncate max-w-[95%]" onClick={() => openDetail(notice)}>
+                                <h3 className="font-medium text-foreground flex items-center gap-1 truncate max-w-[95%] cursor-pointer hover:text-blue-600" onClick={() => handleEditNotice(notice.id)}>
                                   {notice.is_important && (
                                     <span className="inline-flex items-center justify-center bg-red-100 text-red-800 text-xs font-medium rounded px-1 dark:bg-red-900/50 dark:text-red-300 flex-shrink-0">중요</span>
                                   )}
@@ -985,32 +613,6 @@ const NoticePageComponent = () => {
           </div>
         </div>
       </div>
-
-      {/* 공지사항 상세 다이얼로그 */}
-      <Dialog
-        open={isDetailOpen}
-        onOpenChange={(open) => {
-          // 다이얼로그가 닫힐 때 선택된 공지사항 초기화
-          if (!open) {
-            setSelectedNotice(null);
-          }
-          setIsDetailOpen(open);
-        }}
-      >
-        <DialogContent className="max-w-[900px] w-full p-0 overflow-hidden" aria-describedby={undefined}>
-          <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-6 w-full border-b">
-            <DialogTitle className="text-base sm:text-lg font-medium text-foreground">공지사항 상세</DialogTitle>
-          </DialogHeader>
-          <div className="bg-background flex flex-col max-h-[90vh] w-full">
-            <NoticeDetail
-              notice={selectedNotice}
-              onClose={() => setIsDetailOpen(false)}
-              onUpdate={updateNotice}
-              onDelete={openDeleteConfirm}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* 삭제 확인 다이얼로그 */}
       <DeleteConfirmDialog

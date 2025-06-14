@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { TipTapViewer } from '@/components/rich-text-editor';
+import { ToastUIViewer } from '@/components/toast-editor/ToastUIViewer';
 import { supabase } from '@/supabase';
+import { useSettings } from '@/providers/SettingsProvider';
 import { toast } from 'sonner';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -31,6 +32,10 @@ interface NoticeDetailProps {
 }
 
 const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
+  const { getThemeMode } = useSettings();
+  const themeMode = getThemeMode();
+  const theme = themeMode === 'system' || themeMode === 'dark' ? 'dark' : 'light';
+  
   // 조회수 증가 처리
   useEffect(() => {
     const updateViewCount = async () => {
@@ -84,7 +89,11 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ notice, onClose }) => {
 
       {/* 공지사항 내용 - 스크롤 가능 영역 */}
       <div className="flex-grow overflow-y-auto py-4" style={{ minHeight: '200px', maxHeight: 'calc(80vh - 150px)' }}>
-        <TipTapViewer content={notice.content} />
+        <ToastUIViewer 
+          content={notice.content}
+          height="auto"
+          theme={theme}
+        />
       </div>
 
       {/* 닫기 버튼 - 고정 푸터 */}

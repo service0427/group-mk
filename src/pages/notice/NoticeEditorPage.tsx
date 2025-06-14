@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { KeenIcon } from '@/components/keenicons';
-import { TipTapEditor } from '@/components/rich-text-editor';
+import { ToastUIEditor } from '@/components/toast-editor/ToastUIEditor';
 import { supabase } from '@/supabase';
+import { useSettings } from '@/providers/SettingsProvider';
 import { toast } from 'sonner';
 import { createSystemNotificationForAll } from '@/utils/notification';
 import { NotificationPriority } from '@/types/notification';
@@ -16,6 +17,9 @@ const NoticeEditorPage = () => {
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
   const navigate = useNavigate();
+  const { getThemeMode } = useSettings();
+  const themeMode = getThemeMode();
+  const theme = themeMode === 'system' || themeMode === 'dark' ? 'dark' : 'light';
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -254,10 +258,12 @@ const NoticeEditorPage = () => {
                     <label className="block text-sm font-medium">내용</label>
                   </div>
                   
-                  <div className="min-h-[200px] sm:min-h-[300px] border rounded-md overflow-hidden max-w-full">
-                    <TipTapEditor
+                  <div className="border rounded-md overflow-hidden max-w-full">
+                    <ToastUIEditor
                       content={content}
                       onChange={setContent}
+                      height="600px"
+                      theme={theme}
                       placeholder="공지사항 내용을 입력하세요..."
                     />
                   </div>

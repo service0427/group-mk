@@ -250,79 +250,75 @@ export const MENU_SIDEBAR: TMenuConfig = [
       {
         title: '일반 설정',
         icon: 'setting text-primary',
-        children: [
-          {
-            title: '관리자 출금 설정',
-            icon: 'dollar text-warning',
-            path: '/admin/withdraw_setting'
-          },
-          {
-            title: '캐시 설정',
-            icon: 'dollar text-warning',
-            path: '/admin/cash_setting'
-          },
-          {
-            title: '검색 제한 설정',
-            icon: 'search-list text-info',
-            path: '/admin/site/search-limits'
-          },
-        ]
+        path: '/admin/site/general-settings',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
       },
       {
         title: '알림 및 채팅',
         icon: 'notification-1 text-info',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
         children: [
           {
             title: '공지사항 관리',
             icon: 'notification-1 text-primary',
-            path: '/admin/site/notice'
+            path: '/admin/site/notice',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
           {
             title: 'FAQ 관리',
             icon: 'message-question text-info',
-            path: '/admin/site/faq'
+            path: '/admin/site/faq',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
           {
             title: '알림 관리',
             icon: 'notification text-warning',
-            path: '/admin/site/notification'
+            path: '/admin/site/notification',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
           {
             title: '채팅 관리',
             icon: 'message-text text-success',
-            path: '/admin/site/chat'
+            path: '/admin/site/chat',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
         ],
       },
       {
         title: '캐시 및 출금 관리',
         icon: 'dollar text-danger',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
         children: [
           {
             title: '캐시 신청 관리',
             icon: 'dollar text-warning',
-            path: '/admin/cash'
+            path: '/admin/cash',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
           {
             title: '운영자 출금 승인',
             icon: 'dollar text-warning',
-            path: '/admin/withdraw_approve'
+            path: '/admin/withdraw_approve',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
         ],
       },
       {
         title: '사용자 관리',
         icon: 'users text-info',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
         children: [
           {
             title: '사용자 관리',
             icon: 'users text-primary',
-            path: '/admin/users'
+            path: '/admin/users',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           },
           {
             title: '등업 신청 관리',
             icon: 'verify text-success',
-            path: '/admin/levelup-requests'
+            path: '/admin/levelup-requests',
+            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
           }
         ]
       },
@@ -330,6 +326,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
         title: '캠페인 통합 관리',
         path: '/admin/campaigns/all',
         icon: 'setting-3 text-warning',
+        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.MANAGE_USERS),
       },
     ]
   },
@@ -643,19 +640,9 @@ export const MENU_MEGA: TMenuConfig = [
         heading: '일반 설정',
         children: [
           {
-            title: '관리자 출금 설정',
-            icon: 'dollar text-warning',
-            path: '/admin/withdraw_setting'
-          },
-          {
-            title: '캐시 설정',
-            icon: 'dollar text-warning',
-            path: '/admin/cash_setting'
-          },
-          {
-            title: '검색 제한 설정',
-            icon: 'search-list text-info',
-            path: '/admin/site/search-limits'
+            title: '일반 설정',
+            icon: 'setting text-primary',
+            path: '/admin/site/general-settings'
           }
         ]
       },

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { TipTapViewer } from '@/components/rich-text-editor';
+import { ToastUIViewer } from '@/components/toast-editor/ToastUIViewer';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { supabase } from '@/supabase';
+import { useSettings } from '@/providers/SettingsProvider';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components/keenicons';
@@ -27,6 +28,9 @@ const NoticeDetailPage = () => {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { showToast } = useCustomToast();
+  const { getThemeMode } = useSettings();
+  const themeMode = getThemeMode();
+  const theme = themeMode === 'system' || themeMode === 'dark' ? 'dark' : 'light';
 
   useEffect(() => {
     const fetchNotice = async () => {
@@ -180,7 +184,11 @@ const NoticeDetailPage = () => {
 
         {/* 공지사항 내용 */}
         <div className="p-6">
-          <TipTapViewer content={notice.content} />
+          <ToastUIViewer 
+            content={notice.content}
+            height="auto"
+            theme={theme}
+          />
         </div>
 
         {/* 하단 네비게이션 */}

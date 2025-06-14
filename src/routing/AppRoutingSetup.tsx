@@ -60,16 +60,13 @@ export const SearchShopInfo = lazyWithPreload(() => import('@/pages/SearchShopIn
 export const SearchPlaceInfo = lazyWithPreload(() => import('@/pages/SearchPlaceInfo'));
 export const SearchHistoryPage = lazyWithPreload(() => import('@/pages/search').then(m => ({ default: m.SearchHistoryPage })));
 
-// 검색 제한 관리 페이지 lazy loading with preload
-export const SearchLimitsPage = lazyWithPreload(() => import('@/pages/admin').then(m => ({ default: m.SearchLimitsPage })));
-
 // 출금 페이지 lazy loading with preload
 export const WithdrawRequestPage = lazyWithPreload(() => import('@/pages/withdraw').then(m => ({ default: m.WithdrawRequestPage })));
 export const WithdrawApprovePage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawApprovePage })));
-export const WithdrawSettingPage = lazyWithPreload(() => import('@/pages/admin/withdraw').then(m => ({ default: m.WithdrawSettingPage })));
 
-// 캐시 관리 페이지 lazy loading with preload
-export const ManageSettingPage = lazyWithPreload(() => import('@/pages/admin/cash').then(m => ({ default: m.ManageSettingPage })));
+
+// 일반 설정 페이지 lazy loading with preload
+export const SiteGeneralSettingPage = lazyWithPreload(() => import('@/pages/admin/site/SiteGeneralSetting'));
 
 // 총판 캠페인 요청 페이지 lazy loading with preload
 export const CampaignRequestPage = lazyWithPreload(() => import('@/pages/distributor/campaign-request').then(m => ({ default: m.CampaignRequestPage })));
@@ -211,13 +208,13 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/admin/site/faq" element={<Site.FAQPage />} />
           <Route path="/admin/site/notification" element={<Site.NotificationPage />} />
           <Route path="/admin/site/chat" element={<SuspenseWrapper><ChatManagePage /></SuspenseWrapper>} />
-          <Route path="/admin/site/search-limits" element={<SuspenseWrapper><SearchLimitsPage /></SuspenseWrapper>} />
 
           {/* 캐시 관리 라우트 */}
           <Route path="/admin/cash" element={<SuspenseWrapper><ManageCashPage /></SuspenseWrapper>} />
-          <Route path="/admin/cash_setting" element={<SuspenseWrapper><ManageSettingPage /></SuspenseWrapper>} />
-          <Route path="/admin/withdraw_setting" element={<SuspenseWrapper><WithdrawSettingPage /></SuspenseWrapper>} />
           <Route path="/admin/withdraw_approve" element={<SuspenseWrapper><WithdrawApprovePage /></SuspenseWrapper>} />
+          
+          {/* 일반 설정 통합 페이지 */}
+          <Route path="/admin/site/general-settings" element={<SuspenseWrapper><SiteGeneralSettingPage /></SuspenseWrapper>} />
 
           {/* 캠페인 통합 관리 페이지 - 운영자 전용 */}
           <Route path="/admin/campaigns/all" element={<SuspenseWrapper><AllCampaignsPage /></SuspenseWrapper>} />
@@ -261,11 +258,9 @@ initializeComponentMap({
   '/admin/chat': ChatManagePage,
   '/admin/levelup-requests': LevelUpRequestsPage,
   '/admin/cash': ManageCashPage,
-  '/admin/cash_setting': ManageSettingPage,
-  '/admin/withdraw_setting': WithdrawSettingPage,
   '/admin/withdraw_approve': WithdrawApprovePage,
   '/manage/work-input': WorkInputPage,
-  '/admin/site/search-limits': SearchLimitsPage,
+  '/admin/site/general-settings': SiteGeneralSettingPage,
   '/manage/campaign': CampaignManagePage,
   '/admin/campaigns/all': AllCampaignsPage,
 

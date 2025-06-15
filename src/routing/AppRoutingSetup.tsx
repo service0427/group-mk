@@ -75,6 +75,9 @@ export const CampaignAddPage = lazyWithPreload(() => import('@/pages/distributor
 // 작업 입력 페이지 lazy loading with preload
 export const WorkInputPage = lazyWithPreload(() => import('@/pages/admin/work-input').then(m => ({ default: m.WorkInputPage })));
 
+// 견적 요청 목록 페이지 lazy loading with preload
+export const GuaranteeQuotesPage = lazyWithPreload(() => import('@/pages/manage/guarantee-quotes/GuaranteeQuotesPage').then(m => ({ default: m.GuaranteeQuotesPage })));
+
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
   Campaigns,
@@ -191,6 +194,9 @@ const AppRoutingSetup = (): ReactElement => {
           {/* 슬롯 관리 라우트 */}
           <Route path="/manage/slots/info" element={<Slots.InfoPage />} />
           <Route path="/manage/slots/approve" element={<Slots.ApprovePage />} />
+          
+          {/* 견적 요청 목록 */}
+          <Route path="/manage/guarantee-quotes" element={<SuspenseWrapper><GuaranteeQuotesPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 

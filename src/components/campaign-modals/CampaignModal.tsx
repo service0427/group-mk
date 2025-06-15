@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
+import { useAuthContext } from '@/auth';
 import { ICampaign, ExtendedCampaign, getStatusLabel, getStatusColor, CampaignServiceType, convertDbServiceTypeToEnum } from './types';
 import {
   Dialog,
@@ -41,8 +42,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   updateCampaign
 }) => {
   // 사용자 권한 확인 (개발자도 운영자 모드로 처리)
-  const userRole = localStorage.getItem('userRole');
-  const isDeveloper = userRole === 'developer';
+  const { userRole, currentUser } = useAuthContext();
+  const isDeveloper = userRole === 'developer' || currentUser?.role === 'developer';
   const isOperatorMode = isOperator || isDeveloper;
   // 기본값으로 채워진 새 캠페인 객체
   const [newCampaign, setNewCampaign] = useState<ExtendedCampaign>({
@@ -111,6 +112,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     logo: '',
     unitPrice: '100',
     minQuantity: '10',
+    slotType: 'standard',
+    isNegotiable: false,
+    guaranteeCount: '',
+    guaranteeUnit: '일',
+    targetRank: '1',
+    minGuaranteePrice: '',
+    maxGuaranteePrice: '',
   });
 
   // 초기 폼 데이터 저장 (변경 감지용)
@@ -122,6 +130,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     logo: '',
     unitPrice: '100',
     minQuantity: '10',
+    slotType: 'standard',
+    isNegotiable: false,
+    guaranteeCount: '',
+    guaranteeUnit: '일',
+    targetRank: '1',
+    minGuaranteePrice: '',
+    maxGuaranteePrice: '',
   });
 
   // newCampaign과 formData 동기화
@@ -133,7 +148,14 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       userInputFields: newCampaign.userInputFields || [],
       logo: newCampaign.logo,
       unitPrice: newCampaign.unitPrice || '100',
-      minQuantity: newCampaign.minQuantity || '10'
+      minQuantity: newCampaign.minQuantity || '10',
+      slotType: newCampaign.slotType || 'standard',
+      isNegotiable: newCampaign.isNegotiable || false,
+      guaranteeCount: String(newCampaign.guaranteeCount || ''),
+      guaranteeUnit: newCampaign.guaranteeUnit || '일',
+      targetRank: String(newCampaign.targetRank || '1'),
+      minGuaranteePrice: String(newCampaign.minGuaranteePrice || ''),
+      maxGuaranteePrice: String(newCampaign.maxGuaranteePrice || '')
     });
   }, [newCampaign]);
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
@@ -298,7 +320,15 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           status: finalStatus
         },
         serviceType: convertedServiceType, // 변환된 서비스 타입 추가
-        originalData: campaign.originalData // originalData 보존
+        originalData: campaign.originalData, // originalData 보존
+        // 보장형 슬롯 관련 필드 추가
+        slotType: campaign.originalData?.slot_type || campaign.slotType || 'standard',
+        isNegotiable: campaign.originalData?.is_negotiable || campaign.isNegotiable || false,
+        guaranteeCount: campaign.originalData?.guarantee_count?.toString() || campaign.guaranteeCount?.toString() || '',
+        guaranteeUnit: campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일',
+        targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
+        minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
+        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
       });
 
       // 초기 폼 데이터도 설정 (변경 감지용)
@@ -309,7 +339,14 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         userInputFields: userInputFieldsValue,
         logo: campaign.logo || '',
         unitPrice: unitPrice,
-        minQuantity: minQuantity
+        minQuantity: minQuantity,
+        slotType: campaign.originalData?.slot_type || campaign.slotType || 'standard',
+        isNegotiable: campaign.originalData?.is_negotiable || campaign.isNegotiable || false,
+        guaranteeCount: campaign.originalData?.guarantee_count?.toString() || campaign.guaranteeCount?.toString() || '',
+        guaranteeUnit: campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일',
+        targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
+        minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
+        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
       };
       setInitialFormData(initialData);
 
@@ -593,6 +630,12 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : newCampaign.bannerImage,
         uploadedBannerImage: bannerImagePreviewUrl,
         status: finalStatus,
+        // 보장형 슬롯 관련 필드 추가 (슬롯 타입은 수정 불가)
+        guaranteeCount: formData.guaranteeCount,
+        guaranteeUnit: formData.guaranteeUnit,
+        targetRank: formData.targetRank,
+        minGuaranteePrice: formData.minGuaranteePrice,
+        maxGuaranteePrice: formData.maxGuaranteePrice,
       };
 
       // 반려 사유가 있으면 항상 전달
@@ -843,6 +886,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 onBannerImageUpload={handleBannerImageUpload}
                 onBannerImageRemove={handleBannerImageRemove}
                 isModal={true}
+                isEditMode={!!campaign} // 캠페인이 있으면 편집 모드
               />
             </div>
           </DialogBody>
@@ -850,7 +894,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           {/* 버튼 - 푸터 영역 */}
           <DialogFooter className="py-3 sm:py-4 px-4 sm:px-5 border-t bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
             {/* 운영자 모드일 때 표시되는 푸터 */}
-            {isOperatorMode && campaign ? (
+            {isOperatorMode && !!campaign ? (
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end w-full gap-2 sm:gap-3">
                 {/* 에러 메시지 - 모바일에서는 상단에 표시 */}
                 {error && (
@@ -1141,8 +1185,75 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                         );
                       }
 
-                      // 기타 상태 - 기본 저장 버튼
-                      return null;
+                      // 기타 상태 (pending 포함) - 기본 버튼들
+                      return (
+                        <>
+                          {/* 준비중 상태일 때 표시안함 버튼 추가 */}
+                          {currentStatus === 'pending' && (
+                            <Button
+                              onClick={() => {
+                                newCampaign.status = 'pause';
+                                handleSave();
+                              }}
+                              variant="outline"
+                              className="border-orange-300 hover:bg-orange-50 text-orange-600 hover:text-orange-700"
+                              disabled={loading}
+                              size="sm"
+                            >
+                              <KeenIcon icon="shield-cross" className="me-1 sm:me-1.5 size-4" />
+                              <span className="hidden sm:inline">표시안함</span>
+                              <span className="sm:hidden">표시안함</span>
+                            </Button>
+                          )}
+
+                          {/* 미리보기 버튼 */}
+                          <Button
+                            onClick={() => setCampaignPreviewModalOpen(true)}
+                            variant="outline"
+                            className="border-blue-300 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
+                            disabled={loading}
+                            size="sm"
+                          >
+                            <KeenIcon icon="eye" className="me-1 sm:me-1.5 size-4" />
+                            <span className="hidden sm:inline">미리보기</span>
+                            <span className="sm:hidden">미리보기</span>
+                          </Button>
+
+                          {/* 정보 수정 버튼 */}
+                          <Button
+                            onClick={handleSave}
+                            className="bg-success hover:bg-success/90 text-white"
+                            disabled={loading}
+                            size="sm"
+                          >
+                            {loading ? (
+                              <span className="flex items-center">
+                                <span className="animate-spin mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4 border-t-2 border-b-2 border-current rounded-full"></span>
+                                <span className="hidden sm:inline">저장 중...</span>
+                                <span className="sm:hidden">저장</span>
+                              </span>
+                            ) : (
+                              <span className="flex items-center">
+                                <KeenIcon icon="notepad-edit" className="me-1 sm:me-1.5 size-4" />
+                                <span className="hidden sm:inline">정보 수정</span>
+                                <span className="sm:hidden">수정</span>
+                              </span>
+                            )}
+                          </Button>
+
+                          {/* 취소 버튼 */}
+                          <Button
+                            onClick={onClose}
+                            variant="outline"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                            disabled={loading}
+                            size="sm"
+                          >
+                            <span className="hidden sm:inline">취소</span>
+                            <span className="sm:hidden">취소</span>
+                          </Button>
+                        </>
+                      );
                     })()}
                   </div>
 
@@ -1291,7 +1402,30 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         </Dialog>
       )}
 
-      {/* 캠페인 미리보기 다이얼로그 - 모바일 최적화 */}
+      {/* 캠페인 미리보기 모달 - CampaignPreviewModal 사용 */}
+      <CampaignPreviewModal
+        open={campaignPreviewModalOpen}
+        onClose={() => setCampaignPreviewModalOpen(false)}
+        campaign={{
+          ...newCampaign,
+          slotType: formData.slotType,
+          guaranteeCount: formData.guaranteeCount,
+          guaranteeUnit: formData.guaranteeUnit,
+          minGuaranteePrice: formData.minGuaranteePrice,
+          maxGuaranteePrice: formData.maxGuaranteePrice,
+          originalData: {
+            ...newCampaign.originalData,
+            slot_type: formData.slotType,
+            guarantee_count: formData.guaranteeCount,
+            guarantee_unit: formData.guaranteeUnit,
+            min_guarantee_price: formData.minGuaranteePrice,
+            max_guarantee_price: formData.maxGuaranteePrice,
+          }
+        }}
+      />
+
+      {/* 기존 인라인 미리보기 제거 - 주석 처리 */}
+      {false && (
       <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
         <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary" aria-describedby={undefined}>
           <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 sm:py-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
@@ -1308,7 +1442,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   <div className="absolute inset-0 overflow-hidden">
                     {/* 배경 이미지(블러용) */}
                     <img
-                      src={bannerImagePreviewUrl}
+                      src={bannerImagePreviewUrl || ''}
                       alt=""
                       className="w-full h-full object-cover"
                       style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
@@ -1319,7 +1453,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   {/* 실제 이미지 (블러 없음) */}
                   <div className="relative z-10 flex justify-center items-center py-6">
                     <img
-                      src={bannerImagePreviewUrl}
+                      src={bannerImagePreviewUrl || ''}
                       alt="캠페인 배너"
                       className="object-contain max-h-[160px] max-w-[90%] shadow-lg rounded-md"
                       onError={(e) => {
@@ -1350,7 +1484,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                   <img
                     src={(() => {
                       // 업로드된 이미지가 있으면 그것을 사용
-                      if (previewUrl) return previewUrl;
+                      if (previewUrl) return previewUrl || '';
 
                       // 기본 제공 로고 중 선택된 것이 있으면 그것을 사용
                       if (formData.logo && formData.logo !== 'none' && formData.logo !== '') {
@@ -1499,6 +1633,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* 승인 확인 모달 */}
       {approvalModalOpen && (

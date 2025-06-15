@@ -754,6 +754,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       )}
                     </div>
                   </th>
+                  <th className="py-4 px-5 text-center font-medium w-[100px]">서비스타입</th>
                   <th 
                     onClick={() => handleSort('name')}
                     className="py-4 px-5 text-start font-medium cursor-pointer hover:bg-muted min-w-[280px]"
@@ -803,7 +804,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
               <tbody>
                 {paginatedCampaigns.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10">
+                    <td colSpan={8} className="text-center py-10">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <KeenIcon icon="document-search" className="size-12 mb-2" />
                         <p>검색 결과가 없습니다.</p>
@@ -830,7 +831,18 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                         </div>
                       </td>
                       
-                      {/* 3. 캠페인 */}
+                      {/* 3. 서비스타입 */}
+                      <td className="py-4 px-5 text-center">
+                        <span className={`badge ${
+                          campaign.originalData?.slot_type === 'guarantee' 
+                            ? 'badge-info' 
+                            : 'badge-primary'
+                        } badge-outline rounded-[30px] h-auto py-0.5 text-xs`}>
+                          {campaign.originalData?.slot_type === 'guarantee' ? '보장형' : '일반형'}
+                        </span>
+                      </td>
+                      
+                      {/* 4. 캠페인 */}
                       <td className="py-4 px-5">
                         <div className="flex items-center">
                           <div className="relative mr-3 flex-shrink-0">
@@ -856,12 +868,12 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                         </div>
                       </td>
                       
-                      {/* 4. 캠페인 수정시간 */}
+                      {/* 5. 캠페인 수정시간 */}
                       <td className="py-4 px-5 text-center">
                         {campaign.updatedAt}
                       </td>
                       
-                      {/* 5. 상태 */}
+                      {/* 7. 상태 */}
                       <td className="py-4 px-5">
                         <div className="flex flex-col gap-1 items-center">
                           {/* 승인 대기중 상태는 변경 불가 */}
@@ -909,7 +921,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                         </div>
                       </td>
                       
-                      {/* 6. 승인/반려 */}
+                      {/* 8. 승인/반려 */}
                       <td className="py-4 px-5 text-center">
                         <div className="flex items-center justify-center gap-1">
                           {campaign.status.status === 'waiting_approval' ? (
@@ -937,7 +949,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                         </div>
                       </td>
                       
-                      {/* 7. 캠페인 상세 */}
+                      {/* 9. 캠페인 상세 */}
                       <td className="py-4 px-5 text-center">
                         <button
                           className="btn btn-xs btn-primary"

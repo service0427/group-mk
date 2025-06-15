@@ -17,6 +17,11 @@ export interface CampaignData {
   additional_logic?: string | number;
   status: string;
   service_type?: string | CampaignServiceType;
+  slot_type?: string; // 추가: 슬롯 타입 (standard, guarantee)
+  guarantee_count?: number; // 추가: 보장 수량
+  guarantee_unit?: string; // 추가: 보장 단위 (일, 주, 월)
+  min_guarantee_price?: number; // 추가: 최소 보장 가격
+  max_guarantee_price?: number; // 추가: 최대 보장 가격
   add_info?: {
     logo_url?: string;
     banner_url?: string;
@@ -46,6 +51,7 @@ export interface FormattedCampaignData {
     variant: string;
     value: number;
   };
+  originalData?: any; // 추가: 원본 데이터 전달용
 }
 
 /**
@@ -455,7 +461,8 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
     progress: {
       variant: getProgressVariant(campaign.status, index),
       value: 100
-    }
+    },
+    originalData: campaign // 원본 데이터 전체를 포함
   };
 
 

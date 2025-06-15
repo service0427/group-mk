@@ -1,0 +1,240 @@
+# 보장성 슬롯 시스템 구현 작업 스케줄
+
+작성일: 2025-01-13
+프로젝트: group-mk 보장성 슬롯 시스템
+
+## 전체 일정: 약 4-5주 (22-28일)
+
+---
+
+## Week 1: 기초 구조 및 데이터베이스 (5일)
+
+### Day 1-2: 데이터베이스 설계 및 구축
+**작업 내용:**
+- [ ] guarantee_slot_requests 테이블 생성
+- [ ] guarantee_slot_negotiations 테이블 생성
+- [ ] guarantee_slots 테이블 생성
+- [ ] guarantee_slot_holdings 테이블 생성
+- [ ] guarantee_slot_settlements 테이블 생성
+- [ ] guarantee_slot_transactions 테이블 생성
+- [ ] campaigns 테이블 수정 (보장성 슬롯 필드 추가)
+- [ ] RLS (Row Level Security) 정책 설정
+- [ ] 인덱스 생성 및 최적화
+
+**산출물:**
+- guarantee-slot-schema.sql
+- guarantee-slot-rls-policies.sql
+- guarantee-slot-functions.sql
+
+### Day 3-4: 기본 서비스 레이어 구현
+**작업 내용:**
+- [ ] guaranteeSlotService.ts 생성
+- [ ] distributorGuaranteeSlotService.ts 생성
+- [ ] 기본 CRUD 함수 구현
+- [ ] Supabase 타입 생성 (supabase gen types)
+- [ ] 에러 핸들링 구조 설정
+
+**산출물:**
+- src/services/guaranteeSlotService.ts
+- src/services/distributorGuaranteeSlotService.ts
+- src/types/guarantee-slot.types.ts
+
+### Day 5: API 및 기본 훅 설정
+**작업 내용:**
+- [ ] useGuaranteeSlots 커스텀 훅 생성
+- [ ] useGuaranteeSlotNegotiations 훅 생성
+- [ ] API 응답 타입 정의
+- [ ] 기본 테스트 케이스 작성
+
+**산출물:**
+- src/hooks/useGuaranteeSlots.ts
+- src/hooks/useGuaranteeSlotNegotiations.ts
+
+---
+
+## Week 2: 협상 시스템 구현 (5일)
+
+### Day 6-7: 견적 요청 UI 구현
+**작업 내용:**
+- [ ] GuaranteeSlotRequestModal 컴포넌트 생성
+- [ ] 캠페인 선택 UI
+- [ ] 목표 순위 & 보장 횟수 입력 폼
+- [ ] 예산 입력 (선택사항)
+- [ ] 유효성 검증
+
+**산출물:**
+- src/components/guarantee-slot-modals/GuaranteeSlotRequestModal.tsx
+- src/components/guarantee-slot-modals/types.ts
+
+### Day 8-9: 협상 메시지 시스템
+**작업 내용:**
+- [ ] NegotiationChat 컴포넌트 생성
+- [ ] 실시간 메시지 구독 (Supabase Realtime)
+- [ ] 가격 제안 UI
+- [ ] 메시지 알림 시스템
+- [ ] 읽음 표시 기능
+
+**산출물:**
+- src/components/guarantee-slot-modals/NegotiationChat.tsx
+- src/components/guarantee-slot-modals/PriceProposalForm.tsx
+- src/hooks/useRealtimeNegotiations.ts
+
+### Day 10: 총판용 견적 관리 화면
+**작업 내용:**
+- [ ] 새 견적 요청 목록 페이지
+- [ ] 견적 상세 보기 모달
+- [ ] 가격 제안 기능
+- [ ] 견적 승인/거절 기능
+
+**산출물:**
+- src/pages/distributor/GuaranteeSlotRequests.tsx
+- src/pages/distributor/components/RequestDetailModal.tsx
+
+---
+
+## Week 3: 핵심 비즈니스 로직 (6일)
+
+### Day 11-12: 보장성 슬롯 구매 프로세스
+**작업 내용:**
+- [ ] purchase_guarantee_slot SQL 함수 작성
+- [ ] Supabase Edge Function 생성
+- [ ] 트랜잭션 처리 (잔액 차감, 홀딩 생성)
+- [ ] 구매 확인 UI
+- [ ] 구매 내역 저장
+
+**산출물:**
+- supabase/functions/purchase-guarantee-slot/index.ts
+- src/scripts/guarantee-slot-purchase-function.sql
+
+### Day 13-14: 순위 확인 시스템
+**작업 내용:**
+- [ ] 총판용 순위 확인 화면
+- [ ] confirm_guarantee_achievement SQL 함수
+- [ ] 순위 달성 확인 Edge Function
+- [ ] 확인 이력 관리
+- [ ] 중복 확인 방지 로직
+
+**산출물:**
+- src/pages/distributor/GuaranteeSlotChecks.tsx
+- supabase/functions/confirm-guarantee-rank/index.ts
+- src/scripts/guarantee-slot-confirmation-function.sql
+
+### Day 15-16: 홀딩 관리 시스템
+**작업 내용:**
+- [ ] 홀딩 상태 관리 함수
+- [ ] 홀딩 이동 로직 (user → distributor)
+- [ ] 홀딩 현황 대시보드
+- [ ] 자동 홀딩 업데이트 트리거
+
+**산출물:**
+- src/scripts/guarantee-slot-holding-triggers.sql
+- src/components/guarantee-slot/HoldingStatusCard.tsx
+
+---
+
+## Week 4: 정산 및 UI 완성 (6일)
+
+### Day 17-18: 정산 시스템
+**작업 내용:**
+- [ ] 회차별 정산 로직 구현
+- [ ] 자동 정산 처리 함수
+- [ ] 정산 내역 관리 UI
+- [ ] 총판 출금 신청 연동
+
+**산출물:**
+- src/scripts/guarantee-slot-settlement-functions.sql
+- src/pages/distributor/GuaranteeSlotSettlements.tsx
+
+### Day 19-20: 사용자 화면 완성
+**작업 내용:**
+- [ ] 보장성 슬롯 상품 목록 페이지
+- [ ] 내 보장성 슬롯 관리 페이지
+- [ ] 진행 상황 추적 UI
+- [ ] 정산 내역 확인
+
+**산출물:**
+- src/pages/campaign/GuaranteeSlots.tsx
+- src/pages/myinfo/MyGuaranteeSlots.tsx
+- src/components/guarantee-slot/ProgressTracker.tsx
+
+### Day 21-22: 관리자 화면
+**작업 내용:**
+- [ ] 전체 보장성 슬롯 현황 대시보드
+- [ ] 수동 정산 처리 기능
+- [ ] 분쟁 중재 화면
+- [ ] 시스템 로그 조회
+
+**산출물:**
+- src/pages/admin/guarantee-slots/DashboardPage.tsx
+- src/pages/admin/guarantee-slots/DisputePage.tsx
+
+---
+
+## Week 5: 테스트 및 안정화 (4일)
+
+### Day 23-24: 통합 테스트
+**작업 내용:**
+- [ ] 전체 플로우 테스트
+- [ ] 엣지 케이스 처리
+- [ ] 성능 테스트
+- [ ] 보안 취약점 점검
+
+### Day 25-26: 버그 수정 및 최적화
+**작업 내용:**
+- [ ] 발견된 버그 수정
+- [ ] UI/UX 개선
+- [ ] 쿼리 최적화
+- [ ] 코드 리팩토링
+
+### Day 27-28: 배포 준비
+**작업 내용:**
+- [ ] 배포 스크립트 작성
+- [ ] 마이그레이션 계획
+- [ ] 사용자 가이드 작성
+- [ ] 운영 모니터링 설정
+
+---
+
+## 주요 마일스톤
+
+1. **Week 1 완료**: 데이터베이스 및 기본 구조 완성
+2. **Week 2 완료**: 협상 시스템 구현 완료
+3. **Week 3 완료**: 핵심 비즈니스 로직 완성
+4. **Week 4 완료**: 전체 UI 및 정산 시스템 완성
+5. **Week 5 완료**: 프로덕션 배포 준비 완료
+
+## 리스크 및 대응 방안
+
+### 기술적 리스크
+1. **Supabase Realtime 설정**
+   - 대응: 초기에 테스트 환경 구축
+   
+2. **복잡한 트랜잭션 처리**
+   - 대응: SQL 함수로 원자성 보장
+
+3. **기존 시스템과의 충돌**
+   - 대응: 독립적인 테이블 구조로 분리
+
+### 일정 리스크
+1. **협상 시스템 복잡도**
+   - 대응: MVP 먼저 구현 (고정가 방식)
+
+2. **테스트 시간 부족**
+   - 대응: 개발과 병행하여 단위 테스트 작성
+
+## 우선순위 조정 가능 항목
+
+### 필수 기능 (MVP)
+- 보장성 슬롯 구매
+- 순위 확인 시스템
+- 기본 정산
+
+### 추가 기능 (Phase 2)
+- 실시간 협상
+- 자동 정산
+- 고급 분석 대시보드
+
+---
+
+작성자: Claude Code Assistant
+검토 필요: 프로젝트 매니저

@@ -31,6 +31,8 @@ export interface SlotItem {
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
+  startDate: string | null;
+  endDate: string | null;
   campaign?: Campaign;
   user?: {
     id: string;

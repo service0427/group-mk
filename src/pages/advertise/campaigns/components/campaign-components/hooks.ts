@@ -326,6 +326,8 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
         .from('slots')
         .select(`
           *,
+          start_date,
+          end_date,
           user:users(id, email, full_name)
         `, { count: 'exact' });
 
@@ -415,6 +417,8 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             deadline: slot.deadline,
             createdAt: slot.created_at,
             updatedAt: slot.updated_at,
+            startDate: slot.start_date,
+            endDate: slot.end_date,
             campaign: matchingCampaign ? {
               id: matchingCampaign.id,
               campaignName: matchingCampaign.campaign_name,
@@ -468,6 +472,10 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
           item.inputData.productName?.toLowerCase().includes(normalizedSearchTerm) ||
           item.inputData.mid?.toString().toLowerCase().includes(normalizedSearchTerm) ||
           item.inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.mainKeyword?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.keyword1?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.keyword2?.toLowerCase().includes(normalizedSearchTerm) ||
+          item.inputData.keyword3?.toLowerCase().includes(normalizedSearchTerm) ||
           (Array.isArray(item.inputData.keywords) && item.inputData.keywords.some(keyword =>
             keyword.toLowerCase().includes(normalizedSearchTerm)
           ))
@@ -582,6 +590,8 @@ const generateMockSlots = (serviceType: string, userId: string): SlotItem[] => {
     deadline: '22:00',
     createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - i * 12 * 60 * 60 * 1000).toISOString(),
+    startDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date(Date.now() + (30 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     campaign: {
       id: i + 1,
       campaignName: `${serviceCategory} 캠페인 ${i + 1}`,

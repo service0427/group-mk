@@ -21,7 +21,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
   const [searchKeyword, setSearchKeyword] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [status, setStatus] = useState('pending'); // 기본값은 '대기중'(pending)
+  const [status, setStatus] = useState('all'); // 기본값은 '전체'(all)
 
   const searchTypes = [
     { value: 'all', label: '전체' },
@@ -44,7 +44,7 @@ const WithdrawRequestSearchBar: React.FC<WithdrawRequestSearchBarProps> = ({ onS
       setSearchKeyword(initialParams.username || '');
       setStartDate(initialParams.startDate || '');
       setEndDate(initialParams.endDate || '');
-      setStatus(initialParams.status || 'pending');
+      setStatus(initialParams.status || 'all');
     } else {
       // 초기 검색 실행 (기본적으로 대기중 상태만 표시)
       handleSearch();

@@ -31,7 +31,7 @@ export const WithdrawApprovePage: React.FC = () => {
     username: '',
     startDate: '',
     endDate: '',
-    status: 'pending', // 기본값을 대기중(pending)으로 설정
+    status: 'all', // 기본값을 전체(all)로 설정
   })
   const [totalItems, setTotalItems] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -54,7 +54,7 @@ export const WithdrawApprovePage: React.FC = () => {
         )
       }
       
-      if (searchParams.status) {
+      if (searchParams.status && searchParams.status !== 'all') {
         filteredData = filteredData.filter(item => 
           item.status === searchParams.status
         )
@@ -116,7 +116,7 @@ export const WithdrawApprovePage: React.FC = () => {
       username: params.searchKeyword,
       startDate: params.startDate || '',
       endDate: params.endDate || '',
-      status: params.status || 'pending', // 상태가 없으면 기본값 'pending' 사용
+      status: params.status || 'all', // 상태가 없으면 기본값 'all' 사용
     }
     
     setSearchParams(convertedParams)

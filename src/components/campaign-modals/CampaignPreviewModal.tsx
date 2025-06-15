@@ -2,12 +2,12 @@ import React from 'react';
 import { KeenIcon } from '@/components';
 import { ICampaign } from './types';
 import { toAbsoluteUrl } from '@/utils';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogBody, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,13 +34,13 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
     if (campaign.originalData?.add_info?.banner_url) {
       return campaign.originalData.add_info.banner_url;
     }
-    
+
     if (campaign.bannerImage) {
-      return typeof campaign.bannerImage === 'string' && campaign.bannerImage.startsWith('http') 
-        ? campaign.bannerImage 
+      return typeof campaign.bannerImage === 'string' && campaign.bannerImage.startsWith('http')
+        ? campaign.bannerImage
         : toAbsoluteUrl(`/media/${campaign.bannerImage}`);
     }
-    
+
     // 배너가 없으면 기본 배너 이미지 반환
     return toAbsoluteUrl('/media/campaign/default-banner.jpg');
   };
@@ -50,13 +50,13 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
     if (campaign.originalData?.add_info?.logo_url) {
       return campaign.originalData.add_info.logo_url;
     }
-    
+
     if (campaign.logo) {
-      return typeof campaign.logo === 'string' && campaign.logo.startsWith('http') 
-        ? campaign.logo 
+      return typeof campaign.logo === 'string' && campaign.logo.startsWith('http')
+        ? campaign.logo
         : toAbsoluteUrl(`/media/${campaign.logo}`);
     }
-    
+
     // 로고가 없으면 랜덤 동물 SVG 사용
     const animalLogos = [
       'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
@@ -77,7 +77,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
         status: campaign.status.status || 'pending'
       };
     }
-    
+
     return {
       label: '준비중',
       color: 'info',
@@ -90,11 +90,11 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
     if (campaign.unitPrice) {
       return campaign.unitPrice;
     }
-    
+
     if (campaign.originalData?.unit_price) {
       return campaign.originalData.unit_price.toString();
     }
-    
+
     return '100';
   };
 
@@ -148,11 +148,10 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
             </div>
 
             {/* 캠페인 헤더 정보 - 개선된 디자인 */}
-            <div className={`border-b px-5 py-4 ${
-              isGuaranteeType 
-                ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800' 
+            <div className={`border-b px-5 py-4 ${isGuaranteeType
+                ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800'
                 : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-            }`}>
+              }`}>
               <div className="flex items-center gap-4">
                 {/* 로고 이미지 - 크기 증가 */}
                 <div className="relative">
@@ -165,35 +164,32 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                     }}
                   />
                 </div>
-                
+
                 {/* 캠페인 정보 */}
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-foreground mb-2">
                     {campaign?.campaignName}
                   </h2>
-                  
+
                   {/* 배지들 - 아이콘 포함 */}
                   <div className="flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                      isGuaranteeType 
-                        ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${isGuaranteeType
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
                         : 'bg-blue-50 text-blue-700 border border-blue-200'
-                    }`}>
+                      }`}>
                       <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
                       {isGuaranteeType ? '보장형' : '일반형'}
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                      statusInfo.color === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
-                      statusInfo.color === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
-                      statusInfo.color === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                      'bg-blue-50 text-blue-700 border-blue-200'
-                    }`}>
-                      <span className={`size-2 rounded-full mr-1.5 ${
-                        statusInfo.color === 'success' ? 'bg-green-500' :
-                        statusInfo.color === 'danger' ? 'bg-red-500' :
-                        statusInfo.color === 'warning' ? 'bg-yellow-500' :
-                        'bg-blue-500'
-                      }`}></span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusInfo.color === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
+                        statusInfo.color === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
+                          statusInfo.color === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                      }`}>
+                      <span className={`size-2 rounded-full mr-1.5 ${statusInfo.color === 'success' ? 'bg-green-500' :
+                          statusInfo.color === 'danger' ? 'bg-red-500' :
+                            statusInfo.color === 'warning' ? 'bg-yellow-500' :
+                              'bg-blue-500'
+                        }`}></span>
                       {statusInfo.label}
                     </span>
                   </div>
@@ -229,7 +225,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                         (() => {
                           const min = Number(minGuaranteePrice);
                           const max = Number(maxGuaranteePrice);
-                          
+
                           // 금액이 너무 크면 축약 표기
                           const formatPrice = (price: number) => {
                             if (price >= 100000000) { // 1억 이상
@@ -244,7 +240,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                             }
                             return price.toLocaleString();
                           };
-                          
+
                           return `${formatPrice(min)} ~ ${formatPrice(max)}원`;
                         })()
                       ) : '-'
@@ -277,7 +273,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                   </p>
                 </div>
               </div>
-              
+
               {/* 캠페인 정보 */}
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3">캠페인 정보</h3>
@@ -288,13 +284,13 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                       {campaign.description}
                     </p>
                   </div>
-              
+
                   <div>
                     <h4 className="font-medium text-primary mb-2">상세 설명</h4>
                     <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                       <p className="whitespace-pre-line text-gray-700 text-sm">
-                        {campaign.detailedDescription ? 
-                          campaign.detailedDescription : 
+                        {campaign.detailedDescription ?
+                          campaign.detailedDescription :
                           (campaign.originalData?.detailed_description || campaign.description)}
                       </p>
                     </div>
@@ -304,14 +300,14 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
             </div>
           </div>
         </div>
-        
+
         <DialogFooter className="p-4 border-t bg-background sticky bottom-0 z-10 shadow-lg">
           <div className="flex items-center justify-between w-full">
             <p className="text-sm text-primary font-medium">
               <KeenIcon icon="information-2" className="mr-1 size-4" />
               이 화면은 미리보기 모드입니다
             </p>
-            <Button 
+            <Button
               onClick={onClose}
               className="bg-primary hover:bg-primary/90 text-white"
             >

@@ -506,10 +506,10 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
         try {
           // 새 서비스 함수를 사용하여 상세 정보 가져오기
           const detail = await getCampaignDetail(campaign.id);
-          
+
           if (detail) {
             setCampaignDetail(detail);
-            
+
             // 배너 URL 설정
             let bannerUrl = null;
             if (detail.add_info) {
@@ -524,7 +524,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 bannerUrl = detail.add_info.banner_url || null;
               }
             }
-            
+
             setBannerUrl(bannerUrl);
           }
         } catch (err) {
@@ -626,11 +626,10 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
             )}
 
             {/* 캠페인 헤더 정보 - 개선된 디자인 */}
-            <div className={`border-b px-5 py-4 ${
-              isGuaranteeType 
-                ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800' 
+            <div className={`border-b px-5 py-4 ${isGuaranteeType
+                ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800'
                 : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-            }`}>
+              }`}>
               <div className="flex items-center gap-4">
                 {/* 로고 이미지 - 크기 증가 */}
                 <div className="relative">
@@ -679,35 +678,32 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                     }}
                   />
                 </div>
-                
+
                 {/* 캠페인 정보 */}
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-foreground mb-2">
                     {campaign?.campaignName}
                   </h2>
-                  
+
                   {/* 배지들 - 아이콘 포함 */}
                   <div className="flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                      isGuaranteeType 
-                        ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${isGuaranteeType
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
                         : 'bg-blue-50 text-blue-700 border border-blue-200'
-                    }`}>
+                      }`}>
                       <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
                       {isGuaranteeType ? '보장형' : '일반형'}
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                      statusDotColor === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
-                      statusDotColor === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
-                      statusDotColor === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                      'bg-blue-50 text-blue-700 border-blue-200'
-                    }`}>
-                      <span className={`size-2 rounded-full mr-1.5 ${
-                        statusDotColor === 'success' ? 'bg-green-500' :
-                        statusDotColor === 'danger' ? 'bg-red-500' :
-                        statusDotColor === 'warning' ? 'bg-yellow-500' :
-                        'bg-blue-500'
-                      }`}></span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusDotColor === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
+                        statusDotColor === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
+                          statusDotColor === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                      }`}>
+                      <span className={`size-2 rounded-full mr-1.5 ${statusDotColor === 'success' ? 'bg-green-500' :
+                          statusDotColor === 'danger' ? 'bg-red-500' :
+                            statusDotColor === 'warning' ? 'bg-yellow-500' :
+                              'bg-blue-500'
+                        }`}></span>
                       {statusLabel}
                     </span>
                   </div>
@@ -743,7 +739,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                         (() => {
                           const min = Number(minGuaranteePrice);
                           const max = Number(maxGuaranteePrice);
-                          
+
                           // 금액이 너무 크면 축약 표기
                           const formatPrice = (price: number) => {
                             if (price >= 100000000) { // 1억 이상
@@ -758,7 +754,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                             }
                             return price.toLocaleString();
                           };
-                          
+
                           return `${formatPrice(min)} ~ ${formatPrice(max)}원`;
                         })()
                       ) : '-'
@@ -810,12 +806,12 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                     <div className="max-h-[200px] overflow-y-auto pr-2 rounded-md p-3 bg-blue-50/30">
                       <p className="whitespace-pre-line text-gray-700">
                         {/* 가져온 상세 정보에서 상세 설명 표시 */}
-                        {campaignDetail?.detailed_description ? 
-                          campaignDetail.detailed_description.replace(/\\n/g, '\n') : 
-                          (campaign?.originalData?.detailed_description ? 
+                        {campaignDetail?.detailed_description ?
+                          campaignDetail.detailed_description.replace(/\\n/g, '\n') :
+                          (campaign?.originalData?.detailed_description ?
                             campaign.originalData.detailed_description.replace(/\\n/g, '\n') :
-                            (campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ? 
-                              campaign.detailedDescription : 
+                            (campaign?.detailedDescription && campaign.detailedDescription !== campaign.description ?
+                              campaign.detailedDescription :
                               (campaign?.description || '상세 설명이 없습니다.')))}
                       </p>
                     </div>

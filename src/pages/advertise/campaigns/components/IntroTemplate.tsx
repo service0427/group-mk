@@ -105,7 +105,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
         if (data && data.length > 0) {
           // 보장형 캠페인 찾기
           const guaranteeCampaigns = data.filter(c => c.slot_type === 'guarantee');
-          
+
           // DB에서 가져온 데이터의 키 목록 확인 (모든 필드명 표시)
           const sampleItem = data[0];
         }
@@ -126,7 +126,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           if (!formattedItem.originalData) {
             (formattedItem as any).originalData = campaign;
           }
-          
+
 
           return formattedItem;
         });

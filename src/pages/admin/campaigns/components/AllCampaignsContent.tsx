@@ -754,7 +754,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                       )}
                     </div>
                   </th>
-                  <th className="py-4 px-5 text-center font-medium w-[100px]">서비스구분</th>
+                  <th className="py-4 px-5 text-center font-medium w-[100px]">서비스타입</th>
                   <th 
                     onClick={() => handleSort('name')}
                     className="py-4 px-5 text-start font-medium cursor-pointer hover:bg-muted min-w-[280px]"
@@ -831,7 +831,7 @@ export const AllCampaignsContent: React.FC<AllCampaignsContentProps> = ({
                         </div>
                       </td>
                       
-                      {/* 3. 서비스구분 */}
+                      {/* 3. 서비스타입 */}
                       <td className="py-4 px-5 text-center">
                         <span className={`badge ${
                           campaign.originalData?.slot_type === 'guarantee' 

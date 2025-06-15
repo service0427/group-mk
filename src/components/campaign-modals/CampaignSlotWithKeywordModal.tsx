@@ -18,6 +18,7 @@ import { getStatusLabel, getStatusColor, CampaignServiceType, SERVICE_TYPE_LABEL
 import { getStatusColorClass } from '@/utils/CampaignFormat';
 import { resolveServiceType } from '@/utils/serviceTypeResolver';
 import { useKeywordFieldConfig } from '@/pages/keyword/hooks/useKeywordFieldConfig';
+import { GuaranteeQuoteRequestModal } from './GuaranteeQuoteRequestModal';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -165,6 +166,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   const [alertTitle, setAlertTitle] = useState<string>("");
   const [alertDescription, setAlertDescription] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
+
+  // 보장형 견적 요청 모달 상태
+  const [quoteRequestModalOpen, setQuoteRequestModalOpen] = useState(false);
 
   // 알림 다이얼로그 표시 함수
   const showAlert = (title: string, description: string, success: boolean = true) => {
@@ -394,7 +398,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // campaign prop에서 초기 키워드 데이터 추출
       if (campaign?.initialKeywordData) {
         const initialData = campaign.initialKeywordData;
-        
+
         // slotData 초기화
         setSlotData({
           productName: initialData.productName || '',
@@ -406,18 +410,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           selectedKeywords: initialData.selectedKeywords || [],
           keywordDetails: initialData.keywordDetails || []
         });
-        
+
         // 선택된 키워드 설정
         if (initialData.selectedKeywords && initialData.selectedKeywords.length > 0) {
           setSelectedKeywords(initialData.selectedKeywords);
           setKeywordSearchMode(true); // 키워드 모드로 설정
         }
       }
-      
+
       fetchCampaigns(); // 캠페인 목록 조회
       fetchKeywordGroups(); // 키워드 그룹 조회
       fetchUserBalance(); // 사용자 잔액 가져오기
-      
+
       // 선택된 그룹 ID 설정은 그룹 목록이 로드된 후에 처리됨 (fetchKeywordGroups 내부에서)
     }
   }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
@@ -865,7 +869,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       if (campaign?.initialKeywordData && campaign.initialKeywordData.selectedKeywords?.length > 0) {
         const initialKeywordId = campaign.initialKeywordData.selectedKeywords[0];
         const keywordInList = transformedData.find(k => k.id === initialKeywordId);
-        
+
         if (keywordInList) {
           // 선택된 캠페인의 최소 수량 가져오기
           const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
@@ -877,15 +881,15 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               minQty = selectedCampaign.min_quantity;
             }
           }
-          
+
           // 해당 키워드의 작업타수와 마감일수 설정
-          setKeywords(prev => prev.map(k => 
-            k.id === initialKeywordId 
-              ? { 
-                  ...k, 
-                  workCount: campaign.initialKeywordData.keywordDetails?.[0]?.workCount || minQty,
-                  dueDays: campaign.initialKeywordData.keywordDetails?.[0]?.dueDays || 1
-                }
+          setKeywords(prev => prev.map(k =>
+            k.id === initialKeywordId
+              ? {
+                ...k,
+                workCount: campaign.initialKeywordData.keywordDetails?.[0]?.workCount || minQty,
+                dueDays: campaign.initialKeywordData.keywordDetails?.[0]?.dueDays || 1
+              }
               : k
           ));
         }
@@ -1049,9 +1053,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   };
 
   // 캠페인의 추가 입력 필드 가져오기
-  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{ 
-    fieldName: string; 
-    description: string; 
+  const getAdditionalFields = (campaign: SupabaseCampaign | null): Array<{
+    fieldName: string;
+    description: string;
     isRequired?: boolean;
     fieldType?: FieldType;
     enumOptions?: string[];
@@ -1059,9 +1063,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   }> => {
     if (!campaign || !campaign.add_info) return [];
 
-    let addFields: Array<{ 
-      fieldName: string; 
-      description: string; 
+    let addFields: Array<{
+      fieldName: string;
+      description: string;
       isRequired?: boolean;
       fieldType?: FieldType;
       enumOptions?: string[];
@@ -1086,12 +1090,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         ...field,
         fieldType: field.fieldType || FieldType.TEXT, // 기본값 TEXT
         enumOptions: field.enumOptions || undefined,
-        fileOptions: field.fieldType === FieldType.FILE 
+        fileOptions: field.fieldType === FieldType.FILE
           ? {
-              maxSizeMB: 10, // 10MB 고정
-              // 추후 타입들은 여기에 추가 해야 한다. 현재는 image들만
-              acceptedTypes: ['image/*'] // 이미지 파일만 허용 (고정)
-            }
+            maxSizeMB: 10, // 10MB 고정
+            // 추후 타입들은 여기에 추가 해야 한다. 현재는 image들만
+            acceptedTypes: ['image/*'] // 이미지 파일만 허용 (고정)
+          }
           : undefined
       }));
 
@@ -1169,16 +1173,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       handleInputDataChange(keywordId, fieldName, '');
       return;
     }
-    
+
     // 숫자만 허용 (한글 및 특수문자 제거)
     const numericValue = value.replace(/[^0-9]/g, '');
-    
+
     // 숫자가 아닌 값이 입력되었다면 기존 값 유지
     if (value !== numericValue) {
       // 입력이 차단되었음을 사용자에게 알릴 수 있음
       return;
     }
-    
+
     handleInputDataChange(keywordId, fieldName, numericValue);
   };
 
@@ -1221,7 +1225,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
       const filePath = `campaign-files/${currentUser?.id || 'anonymous'}/${safeFileName}`;
-      
+
       // RLS 정책 우회를 위해 upsert 사용
       const { data, error } = await supabase.storage
         .from('campaign-files')
@@ -1283,7 +1287,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
                 return false;
               }
-              
+
               // INTEGER 타입 필드 검증
               if (field.fieldType === FieldType.INTEGER && value) {
                 if (!/^\d+$/.test(value)) {
@@ -1291,7 +1295,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                   return false;
                 }
               }
-              
+
               // FILE 타입 필드 검증 (필수 파일 필드가 비어있는지 확인)
               if (field.fieldType === FieldType.FILE && field.isRequired) {
                 const fileUrl = keyword.inputData?.[field.fieldName];
@@ -1646,20 +1650,26 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     // 폼 유효성 검사
     if (!validateForm()) return;
 
+    // 선택한 캠페인이 없으면 오류 처리
+    if (!selectedCampaignId) {
+      showAlert('오류', '캠페인을 선택해주세요.', false);
+      return;
+    }
+
+    // 선택된 키워드가 없으면 오류 처리
+    if (selectedKeywords.length === 0) {
+      showAlert('오류', '하나 이상의 키워드를 선택해주세요.', false);
+      return;
+    }
+
+    // 보장형 캠페인인 경우 견적 요청 모달 열기
+    if (selectedCampaign?.slot_type === 'guarantee') {
+      setQuoteRequestModalOpen(true);
+      return;
+    }
+
     try {
       setSaving(true);
-
-      // 선택한 캠페인이 없으면 오류 처리
-      if (!selectedCampaignId) {
-        showAlert('오류', '캠페인을 선택해주세요.', false);
-        return;
-      }
-
-      // 선택된 키워드가 없으면 오류 처리
-      if (selectedKeywords.length === 0) {
-        showAlert('오류', '하나 이상의 키워드를 선택해주세요.', false);
-        return;
-      }
 
       // 선택된 키워드 상세 정보 수집 - dueDays 필드 사용
       const keywordDetails: KeywordDetail[] = selectedKeywords.map(keywordId => {
@@ -1811,7 +1821,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
-  
+
 
   if (!open || !category) return null;
 
@@ -1860,20 +1870,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         <KeenIcon icon="category" className="text-green-500 size-4 shrink-0" />
                         <div className="w-1/2 sm:w-48">
                           <select
-                          id="service-select"
-                          value={selectedServiceCode}
-                          onChange={(e) => {
-                            handleServiceChange(e.target.value);
-                          }}
-                          className="select flex w-full bg-white rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 h-8 pl-2 pr-6"
-                        >
-                          {Object.entries(SERVICE_TYPE_LABELS).map(([type, label]) => (
-                            <option key={type} value={type}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                            id="service-select"
+                            value={selectedServiceCode}
+                            onChange={(e) => {
+                              handleServiceChange(e.target.value);
+                            }}
+                            className="select flex w-full bg-white rounded-md border border-input text-sm ring-offset-0 hover:border-gray-400 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 h-8 pl-2 pr-6"
+                          >
+                            {Object.entries(SERVICE_TYPE_LABELS).map(([type, label]) => (
+                              <option key={type} value={type}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
                         {/* 캠페인 선택 */}
                         <KeenIcon icon="document" className="text-blue-500 size-4 shrink-0" />
@@ -1917,8 +1927,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     {selectedCampaign && (
                       <div className={cn(
                         "flex flex-col gap-2 px-3 py-2 border-2 rounded-md",
-                        selectedCampaign.slot_type === 'guarantee' 
-                          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-400 dark:border-purple-600" 
+                        selectedCampaign.slot_type === 'guarantee'
+                          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-400 dark:border-purple-600"
                           : "bg-blue-50 dark:bg-blue-900/20 border-blue-400 dark:border-blue-600"
                       )}>
                         {/* 캠페인명과 상태 */}
@@ -1943,11 +1953,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                             </h3>
                           </div>
                           {/* 서비스 타입 배지 */}
-                          <span className={`badge ${
-                            selectedCampaign.slot_type === 'guarantee' 
-                              ? 'badge-info' 
-                              : 'badge-primary'
-                          } badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
+                          <span className={`badge ${selectedCampaign.slot_type === 'guarantee'
+                            ? 'badge-info'
+                            : 'badge-primary'
+                            } badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
                             <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
                             {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
                           </span>
@@ -1960,8 +1969,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         {/* 캠페인 상세 정보 */}
                         <div className={cn(
                           "text-xs flex flex-wrap items-center gap-x-3 gap-y-1",
-                          selectedCampaign.slot_type === 'guarantee' 
-                            ? "text-purple-700 dark:text-purple-300" 
+                          selectedCampaign.slot_type === 'guarantee'
+                            ? "text-purple-700 dark:text-purple-300"
                             : "text-blue-700 dark:text-blue-300"
                         )}>
                           {selectedCampaign.slot_type === 'guarantee' ? (
@@ -1972,7 +1981,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                   {(() => {
                                     const minPrice = Number(selectedCampaign.min_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
                                     const maxPrice = Number(selectedCampaign.max_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
-                                    
+
                                     if (minPrice && maxPrice) {
                                       const formatPrice = (price: number) => {
                                         if (price >= 100000000) {
@@ -1987,7 +1996,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                         }
                                         return price.toLocaleString();
                                       };
-                                      
+
                                       return `${formatPrice(minPrice)}~${formatPrice(maxPrice)}원`;
                                     }
                                     return '가격 협의';
@@ -2099,8 +2108,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     {/* 2행: 선택된 캠페인 정보 */}
                     <div className={cn(
                       "w-full bg-white rounded-lg shadow-sm p-3 sm:p-4 mt-3",
-                      selectedCampaign?.slot_type === 'guarantee' 
-                        ? "border-2 border-purple-400 dark:border-purple-600" 
+                      selectedCampaign?.slot_type === 'guarantee'
+                        ? "border-2 border-purple-400 dark:border-purple-600"
                         : "border-2 border-blue-400 dark:border-blue-600"
                     )}>
                       {selectedCampaign ? (
@@ -2130,11 +2139,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                 {selectedCampaign.campaign_name}
                               </h2>
                               {/* 서비스 타입 배지 */}
-                              <span className={`badge ${
-                                selectedCampaign.slot_type === 'guarantee' 
-                                  ? 'badge-info' 
-                                  : 'badge-primary'
-                              } badge-outline rounded-[30px] h-auto py-1`}>
+                              <span className={`badge ${selectedCampaign.slot_type === 'guarantee'
+                                ? 'badge-info'
+                                : 'badge-primary'
+                                } badge-outline rounded-[30px] h-auto py-1`}>
                                 <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3.5 me-1.5" />
                                 {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
                               </span>
@@ -2154,7 +2162,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                       {(() => {
                                         const minPrice = Number(selectedCampaign.min_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
                                         const maxPrice = Number(selectedCampaign.max_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
-                                        
+
                                         if (minPrice && maxPrice) {
                                           const formatPrice = (price: number) => {
                                             if (price >= 100000000) {
@@ -2169,7 +2177,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                             }
                                             return price.toLocaleString();
                                           };
-                                          
+
                                           return `${formatPrice(minPrice)}~${formatPrice(maxPrice)}원`;
                                         }
                                         return '가격 협의';
@@ -2273,22 +2281,22 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                           <KeenIcon icon="folder" className="text-blue-500 size-4 shrink-0" />
                           <div className="w-1/2 sm:w-48">
                             <select
-                            id="group-select"
-                            value={selectedGroupId || ''}
-                            onChange={(e) => handleGroupSelect(Number(e.target.value))}
-                            className="select w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-8 pl-2 pr-6"
-                          >
-                            {keywordGroups.length === 0 ? (
-                              <option value="">그룹이 없습니다</option>
-                            ) : (
-                              keywordGroups.map(group => (
-                                <option key={group.id} value={group.id}>
-                                  {group.name} {group.isDefault ? '(기본)' : ''}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                        </div>
+                              id="group-select"
+                              value={selectedGroupId || ''}
+                              onChange={(e) => handleGroupSelect(Number(e.target.value))}
+                              className="select w-full bg-background rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary h-8 pl-2 pr-6"
+                            >
+                              {keywordGroups.length === 0 ? (
+                                <option value="">그룹이 없습니다</option>
+                              ) : (
+                                keywordGroups.map(group => (
+                                  <option key={group.id} value={group.id}>
+                                    {group.name} {group.isDefault ? '(기본)' : ''}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                          </div>
 
                           {/* 키워드 검색 */}
                           <KeenIcon icon="magnifier" className="text-blue-500 size-4 shrink-0" />
@@ -2302,7 +2310,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* 두 번째 행: 모바일에서만 작업시작일 안내 표시 */}
                       <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5 sm:hidden">
                         <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
@@ -2796,13 +2804,26 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
             <div className="flex items-center">
               {selectedKeywords.length > 0 && (
-                <div className="flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-100 dark:border-blue-900 shadow-sm w-full sm:w-auto">
-                  <KeenIcon icon="wallet" className="text-primary size-5 mr-2 translate-y-[4px]" />
+                <div className={cn(
+                  "flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border shadow-sm w-full sm:w-auto",
+                  selectedCampaign?.slot_type === 'guarantee'
+                    ? "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/40 dark:to-purple-900/40 border-purple-200 dark:border-purple-800"
+                    : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-blue-100 dark:border-blue-900"
+                )}>
+                  <KeenIcon icon="wallet" className={cn(
+                    "size-5 mr-2 translate-y-[4px]",
+                    selectedCampaign?.slot_type === 'guarantee' ? "text-purple-600 dark:text-purple-400" : "text-primary"
+                  )} />
                   <div className="flex items-baseline flex-wrap">
                     <span className="font-semibold text-gray-600 dark:text-gray-300 text-sm">
                       {selectedCampaign?.slot_type === 'guarantee' ? '예상 금액:' : '결제 금액:'}
                     </span>
-                    <span className="ml-2 font-extrabold text-primary dark:text-primary-foreground text-base sm:text-lg">
+                    <span className={cn(
+                      "ml-2 font-extrabold text-base sm:text-lg",
+                      selectedCampaign?.slot_type === 'guarantee'
+                        ? "text-purple-600 dark:text-purple-400"
+                        : "text-primary dark:text-primary-foreground"
+                    )}>
                       {selectedCampaign?.slot_type === 'guarantee' ? '견적 요청 필요' : `${totalPaymentAmount.toLocaleString()}원`}
                     </span>
                     {selectedCampaign?.slot_type !== 'guarantee' && (
@@ -2815,7 +2836,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             <Button
               onClick={handleSave}
               type="button"
-              className="px-4 sm:px-6 md:px-8 bg-primary hover:bg-primary/90 text-white transition-all duration-300 h-9 sm:h-10 rounded-md shadow-sm w-full sm:w-auto"
+              className={cn(
+                "px-4 sm:px-6 md:px-8 text-white transition-all duration-300 h-9 sm:h-10 rounded-md shadow-sm w-full sm:w-auto",
+                selectedCampaign?.slot_type === 'guarantee'
+                  ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700"
+                  : "bg-primary hover:bg-primary/90"
+              )}
               disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}
             >
               {saving ? (
@@ -2852,9 +2878,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             <DialogTitle className="text-lg font-semibold text-foreground">
               <div className="flex items-center gap-2">
                 {isSuccess ? (
-                  <KeenIcon icon="Check" className="size-5 text-green-600 dark:text-green-400" />
+                  <KeenIcon icon="check-circle" className="size-5 text-green-600 dark:text-green-400" />
                 ) : (
-                  <KeenIcon icon="Information" className="size-5 text-red-600 dark:text-red-400" />
+                  <KeenIcon icon="information-1" className="size-5 text-red-600 dark:text-red-400" />
                 )}
                 <span className={isSuccess ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}>{alertTitle}</span>
               </div>
@@ -2873,6 +2899,42 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 보장형 견적 요청 모달 */}
+      <GuaranteeQuoteRequestModal
+        open={quoteRequestModalOpen}
+        onClose={() => setQuoteRequestModalOpen(false)}
+        campaign={selectedCampaign}
+        keywordDetails={selectedKeywords.map(keywordId => {
+          const keyword = keywords.find(k => k.id === keywordId);
+          if (!keyword || !keyword.workCount || !keyword.dueDays) return null;
+
+          return {
+            id: keyword.id,
+            mainKeyword: keyword.mainKeyword,
+            workCount: keyword.workCount,
+            dueDays: keyword.dueDays,
+            inputData: keyword.inputData || {}
+          };
+        }).filter(Boolean) as KeywordDetail[]}
+        onSuccess={() => {
+          // 견적 요청 성공 후 처리
+          setQuoteRequestModalOpen(false);
+          showAlert('견적 요청 완료', '견적 요청이 성공적으로 접수되었습니다. 총판에서 검토 후 연락드리겠습니다.', true);
+
+          // 상태 초기화
+          setSelectedKeywords([]);
+          setKeywords(prev =>
+            prev.map(k => ({
+              ...k,
+              workCount: null,
+              dueDays: null,
+              inputData: {}
+            }))
+          );
+          setTotalPaymentAmount(0);
+        }}
+      />
     </>
   );
 };

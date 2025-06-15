@@ -74,27 +74,10 @@ export const guaranteeSlotRequestService = {
   // 견적 요청 목록 조회
   async getRequests(filter: GuaranteeSlotRequestFilter = {}) {
     try {
+      // 먼저 기본 데이터만 가져오기
       let query = supabase
         .from('guarantee_slot_requests')
-        .select(`
-          *,
-          campaigns (
-            id,
-            campaign_name,
-            service_type,
-            mat_id
-          ),
-          users!guarantee_slot_requests_user_id_fkey (
-            id,
-            email,
-            full_name
-          ),
-          distributors:users!guarantee_slot_requests_distributor_id_fkey (
-            id,
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // 필터 적용

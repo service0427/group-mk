@@ -36,15 +36,15 @@ interface CampaignFormInputData {
 // 서비스 타입별 필드 정보
 interface ServiceTypeInfo {
   name: string;
-  additionalFields: { 
-    [key: string]: { 
-      label: string; 
-      type: string; 
-      defaultValue: string; 
-      placeholder?: string; 
-      required?: boolean; 
-      options?: Array<{ value: string, label: string }> 
-    } 
+  additionalFields: {
+    [key: string]: {
+      label: string;
+      type: string;
+      defaultValue: string;
+      placeholder?: string;
+      required?: boolean;
+      options?: Array<{ value: string, label: string }>
+    }
   };
 }
 
@@ -199,11 +199,11 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
     if (Object.values(CampaignServiceType).includes(serviceType as CampaignServiceType)) {
       return serviceTypeInfoMap[serviceType as CampaignServiceType];
     }
-    
+
     if (typeof serviceType === 'string' && serviceTypeInfoMap[serviceType as any]) {
       return serviceTypeInfoMap[serviceType as any];
     }
-    
+
     return serviceTypeInfoMap[CampaignServiceType.NAVER_SHOPPING_RANK];
   };
 
@@ -295,15 +295,15 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
                         // 캠페인명이 비어있을 때만 자동 생성
-                        const updatedData = { 
+                        const updatedData = {
                           ...formData,
-                          logo: e.target.value 
+                          logo: e.target.value
                         };
-                        
+
                         if (!formData.campaignName || formData.campaignName.trim() === '') {
                           updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
                         }
-                        
+
                         onFormDataChange(updatedData);
                       }
                     }}
@@ -358,15 +358,15 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
                         // 캠페인명이 비어있을 때만 자동 생성
-                        const updatedData = { 
+                        const updatedData = {
                           ...formData,
-                          logo: value 
+                          logo: value
                         };
-                        
+
                         if (!formData.campaignName || formData.campaignName.trim() === '') {
                           updatedData.campaignName = `${koreanAnimalName}-${randomNum}`;
                         }
-                        
+
                         onFormDataChange(updatedData);
                       }
                     }}
@@ -402,7 +402,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 )}
               </div>
             </div>
-            
+
             <Input
               type="text"
               value={formData.campaignName}
@@ -411,9 +411,9 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               placeholder="캠페인 이름 입력 *"
               disabled={loading}
             />
-            
+
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-              로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요. 
+              로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요.
               <span className="text-blue-500 block sm:inline">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span>
               <span className="text-red-500 block text-xs mt-1">* 표시된 항목은 필수 입력 사항입니다.</span>
             </p>
@@ -425,10 +425,10 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       <div className={containerClass}>
         <table className={tableClass}>
           <tbody className="divide-y divide-border">
-            {/* 슬롯 타입 선택 */}
+            {/* 서비스타입 선택 */}
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
-                슬롯 타입 <span className="text-red-500">*</span>
+                서비스타입 <span className="text-red-500">*</span>
               </th>
               <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="flex flex-col gap-2">
@@ -460,32 +460,34 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                     일반형(슬롯기반) 서비스는 작업 기반 서비스이며, 보장형 서비스는 기간 내 보장 서비스입니다.
-                    {isEditMode && <span className="text-red-500 block mt-1">※ 슬롯 타입은 수정할 수 없습니다.</span>}
+                    {isEditMode && <span className="text-red-500 block mt-1">※ 서비스타입은 수정할 수 없습니다.</span>}
                   </p>
                 </div>
               </td>
             </tr>
-            
-            <tr>
-              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
-                건당 단가 <span className="text-red-500">*</span>
-              </th>
-              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                <div className="flex items-center">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="10"
-                    value={formData.unitPrice}
-                    onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                    className="w-24"
-                    disabled={loading}
-                  />
-                  <span className="ml-2 text-md font-medium text-foreground">원</span>
-                </div>
-              </td>
-            </tr>
-            
+
+            {formData.slotType !== 'guarantee' && (
+              <tr>
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                  건당 단가 <span className="text-red-500">*</span>
+                </th>
+                <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                  <div className="flex items-center">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="10"
+                      value={formData.unitPrice}
+                      onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
+                      className="w-24"
+                      disabled={loading}
+                    />
+                    <span className="ml-2 text-md font-medium text-foreground">원</span>
+                  </div>
+                </td>
+              </tr>
+            )}
+
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 배너 이미지
@@ -547,33 +549,33 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </div>
               </td>
             </tr>
-            
+
             {/* 최소수량 - 일반 서비스일 때만 표시 */}
             {formData.slotType !== 'guarantee' && (
               <tr>
                 <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                   최소수량 <span className="text-red-500">*</span>
                 </th>
-              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    value={formData.minQuantity || '10'}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9]/g, '');
-                      handleChange('minQuantity', value);
-                    }}
-                    className="w-24 sm:w-32"
-                    placeholder="10"
-                    disabled={loading}
-                  />
-                  <span className="text-xs sm:text-sm text-muted-foreground">개</span>
-                </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
-              </td>
-            </tr>
+                <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      value={formData.minQuantity || '10'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleChange('minQuantity', value);
+                      }}
+                      className="w-24 sm:w-32"
+                      placeholder="10"
+                      disabled={loading}
+                    />
+                    <span className="text-xs sm:text-sm text-muted-foreground">개</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
+                </td>
+              </tr>
             )}
-            
+
             {/* 보장성 슬롯 관련 필드들 - 보장성 슬롯 선택 시에만 표시 */}
             {formData.slotType === 'guarantee' && (
               <>
@@ -661,7 +663,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </tr>
               </>
             )}
-            
+
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 캠페인 소개 <span className="text-red-500">*</span>
@@ -677,7 +679,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 />
               </td>
             </tr>
-            
+
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 캠페인 상세설명 <span className="text-red-500">*</span>
@@ -693,7 +695,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 />
               </td>
             </tr>
-            
+
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px] align-top">
                 사용자 입력 필드
@@ -748,8 +750,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                 value={field.fieldType || FieldType.TEXT}
                                 onChange={(e) => {
                                   const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { 
-                                    ...updatedFields[index], 
+                                  updatedFields[index] = {
+                                    ...updatedFields[index],
                                     fieldType: e.target.value as FieldType,
                                     // enum에서 다른 타입으로 변경시 enumOptions 제거
                                     enumOptions: e.target.value === FieldType.ENUM ? updatedFields[index].enumOptions : undefined
@@ -769,8 +771,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                 value={field.fieldType || FieldType.TEXT}
                                 onValueChange={(value) => {
                                   const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { 
-                                    ...updatedFields[index], 
+                                  updatedFields[index] = {
+                                    ...updatedFields[index],
                                     fieldType: value as FieldType,
                                     // enum에서 다른 타입으로 변경시 enumOptions 제거
                                     enumOptions: value === FieldType.ENUM ? updatedFields[index].enumOptions : undefined
@@ -843,8 +845,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                               }}
                               disabled={loading}
                             />
-                            <label 
-                              htmlFor={`required-${index}`} 
+                            <label
+                              htmlFor={`required-${index}`}
                               className="text-sm text-muted-foreground cursor-pointer select-none"
                             >
                               필수
@@ -866,7 +868,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           </Button>
                         </div>
                       </div>
-                      
+
                       {/* enum 타입일 때 옵션 입력 */}
                       {field.fieldType === FieldType.ENUM && (
                         <div className="mt-2 px-3">
@@ -880,8 +882,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                 .split(',')
                                 .map(opt => opt.trim())
                                 .filter(opt => opt.length > 0);
-                              updatedFields[index] = { 
-                                ...updatedFields[index], 
+                              updatedFields[index] = {
+                                ...updatedFields[index],
                                 enumOptions: options.length > 0 ? options : undefined
                               };
                               handleChange('userInputFields', updatedFields);
@@ -892,7 +894,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           />
                         </div>
                       )}
-                      
+
                       {/* file 타입일 때 안내 메시지 */}
                       {field.fieldType === FieldType.FILE && (
                         <div className="mt-2 px-3">
@@ -904,15 +906,15 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                       )}
                     </div>
                   ))}
-                  
+
                   <Button
                     type="button"
                     className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
                     onClick={() => {
                       const updatedFields = [...(formData.userInputFields || [])];
-                      updatedFields.push({ 
-                        fieldName: '', 
-                        description: '', 
+                      updatedFields.push({
+                        fieldName: '',
+                        description: '',
                         isRequired: false,
                         fieldType: FieldType.TEXT // 기본값으로 TEXT 타입 설정
                       });
@@ -924,7 +926,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     입력 필드 추가
                   </Button>
                 </div>
-                
+
                 <div className="text-xs sm:text-sm text-muted-foreground mt-3">
                   <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>

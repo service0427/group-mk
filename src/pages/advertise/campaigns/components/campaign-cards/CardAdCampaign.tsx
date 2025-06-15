@@ -58,10 +58,10 @@ const CardAdCampaign = ({
 
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
-  
+
   // 보장형 여부 확인
   const isGuaranteeType = rawData?.slot_type === 'guarantee';
-  
+
 
   // 이제 props로 받은 rawData와 ID만 사용
   // 원본 데이터는 더 이상 확인하지 않음, 모달에서 직접 조회
@@ -107,15 +107,14 @@ const CardAdCampaign = ({
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               {/* 서비스 타입 배지 */}
-              <span className={`badge ${
-                isGuaranteeType 
-                  ? 'badge-info' 
+              <span className={`badge ${isGuaranteeType
+                  ? 'badge-info'
                   : 'badge-primary'
-              } badge-outline rounded-[30px] h-auto py-0.5 px-2`}>
+                } badge-outline rounded-[30px] h-auto py-0.5 px-2`}>
                 <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
                 {isGuaranteeType ? '보장형' : '일반형'}
               </span>
-              
+
               <span className={`badge ${status.variant} badge-outline rounded-[30px] h-auto py-1`}>
                 <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
                 {status.label}
@@ -191,7 +190,7 @@ const CardAdCampaign = ({
               if (isGuaranteeType && statistic.description.includes('건당단가')) {
                 const minPrice = rawData?.min_guarantee_price;
                 const maxPrice = rawData?.max_guarantee_price;
-                
+
                 if (minPrice && maxPrice) {
                   const formatPrice = (price: number) => {
                     if (price >= 100000000) {
@@ -206,7 +205,7 @@ const CardAdCampaign = ({
                     }
                     return price.toLocaleString();
                   };
-                  
+
                   return (
                     <div
                       key={index}
@@ -220,12 +219,12 @@ const CardAdCampaign = ({
                   );
                 }
               }
-              
+
               // 보장형인 경우 최소수량을 보장으로 표시
               if (isGuaranteeType && statistic.description.includes('최소수량')) {
                 const guaranteeCount = rawData?.guarantee_count;
                 const guaranteeUnit = rawData?.guarantee_unit || '일';
-                
+
                 return (
                   <div
                     key={index}
@@ -238,7 +237,7 @@ const CardAdCampaign = ({
                   </div>
                 );
               }
-              
+
               return renderItem(statistic, index);
             })}
           </div>

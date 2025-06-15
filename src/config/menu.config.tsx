@@ -358,6 +358,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/manage/slots/approve'
       },
       {
+        title: '견적 요청 목록',
+        icon: 'message-programming text-info',
+        path: '/manage/guarantee-quotes'
+      },
+      {
         title: '총판 작업 입력',
         icon: 'dollar text-warning',
         path: '/manage/work-input'
@@ -729,6 +734,11 @@ export const MENU_MEGA: TMenuConfig = [
             title: '슬롯 승인 관리',
             icon: 'verify text-success',
             path: '/manage/slots/approve'
+          },
+          {
+            title: '견적 요청 목록',
+            icon: 'message-programming text-info',
+            path: '/manage/guarantee-quotes'
           },
           {
             title: '총판 작업 입력',

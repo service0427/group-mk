@@ -85,11 +85,11 @@ const ApprovePage: React.FC = () => {
   const [actionType, setActionType] = useState<string | undefined>(undefined);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
-  
+
   // 엑셀 내보내기 모달 상태
   const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
-  
-  
+
+
   // 슬롯 상세 모달 상태 - 하나의 객체로 관리
   const [detailModalState, setDetailModalState] = useState<{
     isOpen: boolean;
@@ -98,28 +98,28 @@ const ApprovePage: React.FC = () => {
     isOpen: false,
     slot: null
   });
-  
+
   // MonthlyStatistics 컴포넌트 ref
   const monthlyStatisticsRef = useRef<MonthlyStatisticsRef>(null);
-  
+
   // 총판 사용자가 가진 서비스 타입들을 계산
   const availableServiceTypes = useMemo(() => {
     // 총판이 아닌 경우 전체 서비스 타입 반환
     if (!currentUser || currentUser.role !== USER_ROLES.DISTRIBUTOR) {
       return Object.keys(SERVICE_TYPE_LABELS);
     }
-    
+
     // 총판인 경우 자신의 캠페인이 있는 서비스 타입만 반환
-    const distributorCampaigns = campaigns.filter(campaign => 
+    const distributorCampaigns = campaigns.filter(campaign =>
       campaign.mat_id === currentUser.id
     );
-    
+
     // 중복 제거하여 고유한 서비스 타입만 추출
     const uniqueServiceTypes = [...new Set(distributorCampaigns.map(c => c.service_type))];
-    
+
     return uniqueServiceTypes;
   }, [campaigns, currentUser]);
-  
+
   // 필터링된 슬롯들을 useMemo로 계산
   const filteredSlots = useMemo(() => {
     if (!searchTerm || !searchTerm.trim()) {
@@ -127,8 +127,8 @@ const ApprovePage: React.FC = () => {
     }
 
     const normalizedSearchTerm = searchTerm.toLowerCase().trim();
-    
-    
+
+
     // 안전한 문자열 변환 함수
     const safeToLower = (value: any): string => {
       if (typeof value === 'string') return value.toLowerCase();
@@ -173,14 +173,14 @@ const ApprovePage: React.FC = () => {
         if (inputData.keywords && typeof inputData.keywords === 'string') {
           try {
             const parsedKeywords = JSON.parse(inputData.keywords);
-            
+
             if (Array.isArray(parsedKeywords)) {
               const keywordMatch = parsedKeywords.some((keyword: any) => {
                 const keywordLower = safeToLower(keyword);
                 const isMatch = keywordLower.includes(normalizedSearchTerm);
                 return isMatch;
               });
-              
+
               if (keywordMatch) {
                 return true;
               }
@@ -188,7 +188,7 @@ const ApprovePage: React.FC = () => {
           } catch (e) {
           }
         }
-        
+
         // keywords가 배열로 저장된 경우
         if (inputData.keywords && Array.isArray(inputData.keywords)) {
           const keywordMatch = inputData.keywords.some((keyword: any) => {
@@ -196,7 +196,7 @@ const ApprovePage: React.FC = () => {
             const isMatch = keywordLower.includes(normalizedSearchTerm);
             return isMatch;
           });
-          
+
           if (keywordMatch) {
             return true;
           }
@@ -219,8 +219,8 @@ const ApprovePage: React.FC = () => {
       return false;
     });
   }, [slots, searchTerm]);
-  
-  
+
+
   // 승인 확인 모달 상태
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [approvalModalData, setApprovalModalData] = useState<{
@@ -307,9 +307,9 @@ const ApprovePage: React.FC = () => {
             }
             return campaign;
           });
-          
+
           setCampaigns(parsedCampaigns);
-          
+
           // selectedServiceType이 아직 설정되지 않은 경우에만 기본값 설정
           if (!selectedServiceType && parsedCampaigns.length > 0) {
             // 사용자가 가진 캠페인의 서비스 타입 중 첫 번째를 선택
@@ -497,7 +497,7 @@ const ApprovePage: React.FC = () => {
 
         // 취소된 슬롯 제외
         query = query.neq('status', 'cancelled');
-        
+
         // 상태 필터 적용
         if (searchStatus) {
           query = query.eq('status', searchStatus);
@@ -564,7 +564,7 @@ const ApprovePage: React.FC = () => {
             // 캠페인 정보 설정
             let campaignName = campaign?.campaign_name;
             let campaignLogo;
-            
+
             if (campaign) {
               // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
               if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
@@ -582,7 +582,7 @@ const ApprovePage: React.FC = () => {
               campaign_logo: campaignLogo,
               campaign // 전체 캠페인 정보도 포함
             };
-            
+
             return enrichedSlot;
           });
 
@@ -614,12 +614,12 @@ const ApprovePage: React.FC = () => {
         .eq('slot_id', slotId);
 
       if (workError) {
-          return null;
+        return null;
       }
 
       // 해당 슬롯 정보 가져오기
       let slot = slots.find(s => s.id === slotId) || filteredSlots.find(s => s.id === slotId);
-      
+
       if (!slot) {
         // 슬롯을 직접 조회
         const { data: slotInfo, error: slotError } = await supabase
@@ -627,23 +627,23 @@ const ApprovePage: React.FC = () => {
           .select('id, quantity, input_data, start_date, end_date, product_id')
           .eq('id', slotId)
           .single();
-          
+
         if (slotError || !slotInfo) {
           return null;
         }
-        
+
         slot = slotInfo as Slot;
       }
 
       // 작업 기간 계산
       let dueDays = 1;
-      
+
       // 1. start_date와 end_date가 있으면 이를 사용 (가장 정확)
       if (slot.start_date && slot.end_date) {
         const start = new Date(slot.start_date);
         const end = new Date(slot.end_date);
         dueDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      } 
+      }
       // 2. input_data의 dueDays 사용
       else if (slot.input_data?.dueDays && Number(slot.input_data.dueDays) > 0) {
         dueDays = Number(slot.input_data.dueDays);
@@ -652,10 +652,10 @@ const ApprovePage: React.FC = () => {
       else if (slot.input_data?.workCount && Number(slot.input_data.workCount) > 0) {
         dueDays = Number(slot.input_data.workCount);
       }
-      
+
       // 일일 작업량 가져오기
       let dailyQuantity = 0;
-      
+
       // 1. slots 테이블의 quantity 필드 확인 (가장 우선)
       if (slot.quantity && Number(slot.quantity) > 0) {
         dailyQuantity = Number(slot.quantity);
@@ -675,19 +675,19 @@ const ApprovePage: React.FC = () => {
       else if (slot.input_data?.['작업량'] && Number(slot.input_data['작업량']) > 0) {
         dailyQuantity = Number(slot.input_data['작업량']);
       }
-      
-      
+
+
       // 총 요청 수량 계산
       const totalRequestedQuantity = dailyQuantity * dueDays;
 
       // 실제 작업량 계산
       const totalWorkedQuantity = workData?.reduce((sum, work) => sum + (work.work_cnt || 0), 0) || 0;
-      
+
       // 작업 일수 계산
       const workedDays = workData?.length || 0;
 
       // 완료율 계산 (100% 상한)
-      const completionRate = totalRequestedQuantity > 0 
+      const completionRate = totalRequestedQuantity > 0
         ? Math.min(100, Math.round((totalWorkedQuantity / totalRequestedQuantity) * 100))
         : 0;
 
@@ -706,7 +706,7 @@ const ApprovePage: React.FC = () => {
 
   // 승인 처리 함수 (actionType 매개변수 추가)
   const handleApproveSlot = async (slotId: string | string[], actionType?: string) => {
-    
+
     // 처리할 슬롯 ID 설정
     let slotIdsToProcess: string[] = [];
     if (Array.isArray(slotId)) {
@@ -724,14 +724,14 @@ const ApprovePage: React.FC = () => {
         // 작업 진행률 확인
         const progress = await calculateWorkProgress(slotIdsToProcess[0]);
         const slot = slots.find(s => s.id === slotIdsToProcess[0]) || filteredSlots.find(s => s.id === slotIdsToProcess[0]);
-        
+
         if (!slot) {
           showError('슬롯을 찾을 수 없습니다.');
           return;
         }
 
         const campaignName = slot.campaign_name || slot.input_data?.productName || '캠페인';
-        
+
         // 환불 처리인 경우
         if (actionType === 'refund') {
           // 환불 확인 모달 표시
@@ -752,26 +752,26 @@ const ApprovePage: React.FC = () => {
           setApprovalModalOpen(true);
           return;
         }
-        
+
         // 일반 승인인 경우 작업 진행률이 있으면 확인 다이얼로그 표시
         if (!actionType && progress && progress.totalRequestedQuantity > 0) {
           const completionRate = Math.min(100, progress.completionRate);
-          
+
           let confirmMessage = `캠페인: ${campaignName}\n\n`;
           confirmMessage += `작업 현황:\n`;
           confirmMessage += `• 요청 수량: ${progress.totalRequestedQuantity.toLocaleString()}개\n`;
           confirmMessage += `• 완료 수량: ${progress.totalWorkedQuantity.toLocaleString()}개\n`;
           confirmMessage += `• 작업 일수: ${progress.workedDays}일 / ${progress.requestedDays}일\n`;
           confirmMessage += `• 진행률: ${completionRate}%\n`;
-          
+
           if (progress.totalWorkedQuantity > 0 && completionRate < 100) {
             confirmMessage += `\n⚠️ 작업이 진행 중입니다. 미완료분은 추후 환불됩니다.\n`;
           } else if (progress.totalWorkedQuantity === 0) {
             confirmMessage += `\n⚠️ 아직 작업이 시작되지 않았습니다.\n`;
           }
-          
+
           confirmMessage += `\n이 슬롯을 승인하시겠습니까?`;
-          
+
           // showConfirm 대신 ApprovalConfirmModal 사용
           setApprovalModalData({
             slotId: slotIdsToProcess[0],
@@ -782,19 +782,19 @@ const ApprovePage: React.FC = () => {
           });
           setApprovalModalOpen(true);
           return;
-          
+
         }
       } catch (error) {
       }
     }
-    
+
     // 다중 선택이거나 진행률 확인 실패 시 바로 처리
     await processApproval(slotIdsToProcess, actionType);
   };
 
   // 실제 승인 처리 함수
   const processApproval = async (slotIdsToProcess: string[], actionType?: string) => {
-    
+
     // 로딩 상태 표시
     setLoading(true);
 
@@ -808,16 +808,16 @@ const ApprovePage: React.FC = () => {
 
       // 해당 슬롯 정보 가져오기
       let slotsToProcess = slots.filter(slot => slotIdsToProcess.includes(slot.id));
-      
+
       if (slotsToProcess.length === 0) {
         // filteredSlots에서도 찾아보기
         const filteredSlotsToProcess = filteredSlots.filter(slot => slotIdsToProcess.includes(slot.id));
-        
+
         if (filteredSlotsToProcess.length > 0) {
           slotsToProcess = filteredSlotsToProcess;
         }
       }
-      
+
       if (slotsToProcess.length === 0) {
         showError('처리할 슬롯을 찾을 수 없습니다.');
         setLoading(false);
@@ -849,7 +849,7 @@ const ApprovePage: React.FC = () => {
         const endDate = endDateObj.toISOString().split('T')[0];
 
         // API 호출 처리
-        
+
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
         results.push(result);
 
@@ -881,7 +881,7 @@ const ApprovePage: React.FC = () => {
         showSuccess(slotsToProcess.length > 1
           ? `${successResults.length}/${slotsToProcess.length}개의 슬롯이 성공적으로 처리되었습니다.`
           : '슬롯이 성공적으로 처리되었습니다.');
-          
+
         // 통계 새로고침
         if (monthlyStatisticsRef.current) {
           monthlyStatisticsRef.current.refresh();
@@ -985,12 +985,12 @@ const ApprovePage: React.FC = () => {
 
         // 성공 메시지 표시
         showSuccess(result.message);
-        
+
         // 통계 새로고침
         if (monthlyStatisticsRef.current) {
           monthlyStatisticsRef.current.refresh();
         }
-        
+
         return true;
       } else {
         // 실패 시 오류 메시지 표시
@@ -1028,20 +1028,20 @@ const ApprovePage: React.FC = () => {
       // 단일 슬롯인 경우 작업 진행률 확인 후 모달 표시
       if (isSingleSlot && slotIds.length === 1) {
         const progress = await calculateWorkProgress(slotIds[0]);
-        
+
         if (progress) {
           const slot = slots.find(s => s.id === slotIds[0]) || filteredSlots.find(s => s.id === slotIds[0]);
-          
+
           if (!slot) {
             showError('슬롯을 찾을 수 없습니다.');
             return;
           }
-          
+
           const campaignName = slot.campaign_name || slot.input_data?.productName || '캠페인';
-          
+
           // 일일 작업량 가져오기
           let dailyQuantity = 0;
-          
+
           if (slot.quantity && Number(slot.quantity) > 0) {
             dailyQuantity = Number(slot.quantity);
           } else if (slot.input_data?.quantity && Number(slot.input_data.quantity) > 0) {
@@ -1053,7 +1053,7 @@ const ApprovePage: React.FC = () => {
           } else if (slot.input_data?.['작업량'] && Number(slot.input_data['작업량']) > 0) {
             dailyQuantity = Number(slot.input_data['작업량']);
           }
-          
+
           // 모달 데이터 설정
           setApprovalModalData({
             slotId: slotIds[0],
@@ -1063,13 +1063,13 @@ const ApprovePage: React.FC = () => {
             actionType: 'complete'
           });
           setApprovalModalOpen(true);
-          
+
           return;
         }
       }
 
       // 다중 선택이거나 진행률 조회 실패 시 확인 다이얼로그
-      const confirmMessage = isSingleSlot 
+      const confirmMessage = isSingleSlot
         ? '이 슬롯을 완료 처리하시겠습니까? 사용자가 확인 후 정산이 진행됩니다.'
         : `선택한 ${slotIds.length}개의 슬롯을 완료 처리하시겠습니까? 사용자가 확인 후 정산이 진행됩니다.`;
 
@@ -1105,19 +1105,19 @@ const ApprovePage: React.FC = () => {
       for (const id of slotIds) {
         try {
           const result = await completeSlotByMat(id, currentUser?.id || '', workMemo);
-          
+
           if (result.success) {
             successCount++;
-            
+
             // UI 업데이트
             const updateSlotStatus = (slots: Slot[]) =>
               slots.map(slot =>
                 slot.id === id
                   ? {
-                      ...slot,
-                      status: 'pending_user_confirm',
-                      updated_at: new Date().toISOString()
-                    }
+                    ...slot,
+                    status: 'pending_user_confirm',
+                    updated_at: new Date().toISOString()
+                  }
                   : slot
               );
 
@@ -1133,7 +1133,7 @@ const ApprovePage: React.FC = () => {
       // 결과 메시지 표시
       if (successCount > 0) {
         showSuccess(`${successCount}개의 슬롯이 완료 처리되었습니다.`);
-        
+
         // 통계 새로고침
         if (monthlyStatisticsRef.current) {
           monthlyStatisticsRef.current.refresh();
@@ -1275,7 +1275,7 @@ const ApprovePage: React.FC = () => {
     // 검색 버튼 클릭 시 특별한 동작 없음 (useMemo로 자동 필터링됨)
     // 필요시 검색 이벤트 로깅 등 추가 가능
   };
-  
+
   // 엑셀 내보내기 처리
   const handleExcelExport = useCallback((template: ExcelTemplate) => {
     try {
@@ -1319,154 +1319,154 @@ const ApprovePage: React.FC = () => {
       description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
       showPageMenu={false}
     >
-        
 
-        {/* 월간 통계 */}
-        <MonthlyStatistics 
-          ref={monthlyStatisticsRef}
-          selectedServiceType={selectedServiceType}
-          selectedCampaign={selectedCampaign}
-        />
 
-        {/* 작업 시작일 안내 */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div className="flex-1">
-              <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">중요 안내사항</h4>
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                승인 이후 <strong>다음날부터</strong> 작업을 시작해야 합니다.
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
-                예시: 오늘 승인 시, 내일부터 작업이 시작됩니다. 작업자에게 이 사항을 반드시 안내해주세요.
-              </p>
-            </div>
+      {/* 월간 통계 */}
+      <MonthlyStatistics
+        ref={monthlyStatisticsRef}
+        selectedServiceType={selectedServiceType}
+        selectedCampaign={selectedCampaign}
+      />
+
+      {/* 작업 시작일 안내 */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">중요 안내사항</h4>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              승인 이후 <strong>다음날부터</strong> 작업을 시작해야 합니다.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              예시: 오늘 승인 시, 내일부터 작업이 시작됩니다. 작업자에게 이 사항을 반드시 안내해주세요.
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* 검색 및 필터 영역 */}
-        <SearchForm
-          loading={loading}
-          selectedServiceType={selectedServiceType}
-          selectedCampaign={selectedCampaign}
-          searchTerm={searchTerm}
-          searchStatus={searchStatus}
-          searchDateFrom={searchDateFrom}
-          searchDateTo={searchDateTo}
-          filteredCampaigns={filteredCampaigns}
-          onServiceTypeChange={handleServiceTypeChange}
-          onCampaignChange={handleCampaignChange}
-          onSearchChange={handleSearchChange}
-          onSearchStatusChange={handleSearchStatusChange}
-          onSearchDateFromChange={handleSearchDateFromChange}
-          onSearchDateToChange={handleSearchDateToChange}
-          onSearch={handleSearch}
-          onExcelExport={() => setExcelModalOpen(true)}
-          selectedCount={selectedSlots.length}
-          totalCount={filteredSlots.length}
-          availableServiceTypes={availableServiceTypes}
-          userRole={currentUser?.role}
-        />
-
-
-          {/* viewState에 따라 적절한 컴포넌트 표시 */}
-          {viewState === ViewState.LOADING && <LoadingState />}
-
-          {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
+      {/* 검색 및 필터 영역 */}
+      <SearchForm
+        loading={loading}
+        selectedServiceType={selectedServiceType}
+        selectedCampaign={selectedCampaign}
+        searchTerm={searchTerm}
+        searchStatus={searchStatus}
+        searchDateFrom={searchDateFrom}
+        searchDateTo={searchDateTo}
+        filteredCampaigns={filteredCampaigns}
+        onServiceTypeChange={handleServiceTypeChange}
+        onCampaignChange={handleCampaignChange}
+        onSearchChange={handleSearchChange}
+        onSearchStatusChange={handleSearchStatusChange}
+        onSearchDateFromChange={handleSearchDateFromChange}
+        onSearchDateToChange={handleSearchDateToChange}
+        onSearch={handleSearch}
+        onExcelExport={() => setExcelModalOpen(true)}
+        selectedCount={selectedSlots.length}
+        totalCount={filteredSlots.length}
+        availableServiceTypes={availableServiceTypes}
+        userRole={currentUser?.role}
+      />
 
 
-          {viewState === ViewState.DATA && (
-            <>
-              <SlotList
-                slots={filteredSlots}
-                selectedServiceType={selectedServiceType}
-                campaigns={campaigns}
-                onApprove={handleApproveSlot}
-                onReject={handleRejectSlot}
-                onComplete={handleCompleteSlot}
-                onMemo={handleOpenMemoModal}
-                onDetail={handleOpenDetailModal}
-                selectedSlots={selectedSlots}
-                onSelectedSlotsChange={setSelectedSlots}
-              />
+      {/* viewState에 따라 적절한 컴포넌트 표시 */}
+      {viewState === ViewState.LOADING && <LoadingState />}
 
-              {/* 메모 모달 */}
-              <SlotMemoModal
-                open={memoModalOpen}
-                onClose={handleCloseMemoModal}
-                slotId={selectedSlotId}
-                initialMemo={initialMemo}
-                onSave={handleSaveMemo}
-                slot={selectedSlot}
-              />
+      {viewState === ViewState.AUTH_REQUIRED && <AuthRequired />}
 
-              {/* 승인 모달 제거함 */}
 
-              {/* 승인 확인 모달 */}
-              {approvalModalData && (
-                <ApprovalConfirmModal
-                  isOpen={approvalModalOpen}
-                  onClose={() => {
-                    setApprovalModalOpen(false);
-                    setApprovalModalData(null);
-                  }}
-                  onConfirm={async (workMemo?: string) => {
-                    setApprovalModalOpen(false);
-                    if (approvalModalData.actionType === 'complete') {
-                      await processCompleteSlot([approvalModalData.slotId], workMemo);
-                    } else {
-                      await processApproval([approvalModalData.slotId], approvalModalData.actionType);
-                    }
-                    setApprovalModalData(null);
-                  }}
-                  campaignName={approvalModalData.campaignName}
-                  dailyQuantity={approvalModalData.dailyQuantity}
-                  progress={approvalModalData.progress}
-                  actionType={approvalModalData.actionType}
-                />
-              )}
+      {viewState === ViewState.DATA && (
+        <>
+          <SlotList
+            slots={filteredSlots}
+            selectedServiceType={selectedServiceType}
+            campaigns={campaigns}
+            onApprove={handleApproveSlot}
+            onReject={handleRejectSlot}
+            onComplete={handleCompleteSlot}
+            onMemo={handleOpenMemoModal}
+            onDetail={handleOpenDetailModal}
+            selectedSlots={selectedSlots}
+            onSelectedSlotsChange={setSelectedSlots}
+          />
 
-              {/* 반려 모달 */}
-              <RejectModal
-                isOpen={rejectModalOpen}
-                onClose={() => setRejectModalOpen(false)}
-                onConfirm={(reason) => {
-                  // actionSlotId가 null이면 배열 처리(선택된 슬롯들), 아니면 단일 슬롯 처리
-                  const slotIdToProcess = actionSlotId === null ? selectedSlots : actionSlotId;
-                  processRejectSlot(slotIdToProcess, reason);
+          {/* 메모 모달 */}
+          <SlotMemoModal
+            open={memoModalOpen}
+            onClose={handleCloseMemoModal}
+            slotId={selectedSlotId}
+            initialMemo={initialMemo}
+            onSave={handleSaveMemo}
+            slot={selectedSlot}
+          />
 
-                  // 모달 상태 초기화
-                  setRejectModalOpen(false);
-                  setActionSlotId(null);
-                }}
-                count={selectedSlots.length}
-              />
-              
-              {/* 엑셀 내보내기 모달 */}
-              {excelModalOpen && (
-                <ExcelExportModal
-                  isOpen={excelModalOpen}
-                  onClose={() => setExcelModalOpen(false)}
-                  onExport={handleExcelExport}
-                />
-              )}
-              
-              {/* 슬롯 상세 모달 */}
-              <SlotDetailModal
-                isOpen={detailModalState.isOpen}
-                onClose={() => {
-                  setDetailModalState({
-                    isOpen: false,
-                    slot: null
-                  });
-                }}
-                slot={detailModalState.slot}
-                selectedServiceType={selectedServiceType}
-              />
-            </>
+          {/* 승인 모달 제거함 */}
+
+          {/* 승인 확인 모달 */}
+          {approvalModalData && (
+            <ApprovalConfirmModal
+              isOpen={approvalModalOpen}
+              onClose={() => {
+                setApprovalModalOpen(false);
+                setApprovalModalData(null);
+              }}
+              onConfirm={async (workMemo?: string) => {
+                setApprovalModalOpen(false);
+                if (approvalModalData.actionType === 'complete') {
+                  await processCompleteSlot([approvalModalData.slotId], workMemo);
+                } else {
+                  await processApproval([approvalModalData.slotId], approvalModalData.actionType);
+                }
+                setApprovalModalData(null);
+              }}
+              campaignName={approvalModalData.campaignName}
+              dailyQuantity={approvalModalData.dailyQuantity}
+              progress={approvalModalData.progress}
+              actionType={approvalModalData.actionType}
+            />
           )}
+
+          {/* 반려 모달 */}
+          <RejectModal
+            isOpen={rejectModalOpen}
+            onClose={() => setRejectModalOpen(false)}
+            onConfirm={(reason) => {
+              // actionSlotId가 null이면 배열 처리(선택된 슬롯들), 아니면 단일 슬롯 처리
+              const slotIdToProcess = actionSlotId === null ? selectedSlots : actionSlotId;
+              processRejectSlot(slotIdToProcess, reason);
+
+              // 모달 상태 초기화
+              setRejectModalOpen(false);
+              setActionSlotId(null);
+            }}
+            count={selectedSlots.length}
+          />
+
+          {/* 엑셀 내보내기 모달 */}
+          {excelModalOpen && (
+            <ExcelExportModal
+              isOpen={excelModalOpen}
+              onClose={() => setExcelModalOpen(false)}
+              onExport={handleExcelExport}
+            />
+          )}
+
+          {/* 슬롯 상세 모달 */}
+          <SlotDetailModal
+            isOpen={detailModalState.isOpen}
+            onClose={() => {
+              setDetailModalState({
+                isOpen: false,
+                slot: null
+              });
+            }}
+            slot={detailModalState.slot}
+            selectedServiceType={selectedServiceType}
+          />
+        </>
+      )}
     </CommonTemplate>
   );
 };

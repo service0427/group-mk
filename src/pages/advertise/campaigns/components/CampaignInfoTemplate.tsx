@@ -86,21 +86,30 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
       // 유틸리티 함수를 사용하여 데이터 변환 (인덱스와 서비스 타입 코드 전달)
       const formattedItems: IAdCampaignsContentItem[] = campaigns.map((campaign, index) => {
-        // formatCampaignData 함수에 맞게 데이터 구조 조정
+        // originalData가 있으면 직접 사용, 없으면 campaign 자체를 원본으로 사용
+        const rawCampaignData = campaign.originalData || campaign;
+        
+        // formatCampaignData 함수에 원본 DB 데이터 형식으로 전달
         const formattedData = formatCampaignData({
-          id: campaign.id,
-          campaign_name: campaign.campaignName,
-          description: campaign.description,
-          detailed_description: campaign.detailedDescription,
-          logo: campaign.logo,
-          efficiency: campaign.efficiency?.replace('%', ''),
-          min_quantity: campaign.minQuantity?.replace('개', ''),
-          deadline: campaign.deadline,
-          status: campaign.status.label === '진행중' ? 'active' : campaign.status.label === '준비중' ? 'pending' : 'pause',
-          service_type: campaign.serviceType,
-          add_info: campaign.originalData?.add_info,
-          unit_price: campaign.unitPrice,
-          additional_logic: campaign.additionalLogic
+          id: rawCampaignData.id || campaign.id,
+          campaign_name: rawCampaignData.campaign_name || campaign.campaignName,
+          description: rawCampaignData.description || campaign.description,
+          detailed_description: rawCampaignData.detailed_description || campaign.detailedDescription,
+          logo: rawCampaignData.logo || campaign.logo,
+          efficiency: rawCampaignData.efficiency || campaign.efficiency?.replace('%', ''),
+          min_quantity: rawCampaignData.min_quantity || campaign.minQuantity?.replace('개', ''),
+          deadline: rawCampaignData.deadline || campaign.deadline,
+          status: rawCampaignData.status || (campaign.status.label === '진행중' ? 'active' : campaign.status.label === '준비중' ? 'pending' : 'pause'),
+          service_type: rawCampaignData.service_type || campaign.serviceType,
+          add_info: rawCampaignData.add_info,
+          unit_price: rawCampaignData.unit_price || campaign.unitPrice,
+          additional_logic: rawCampaignData.additional_logic || campaign.additionalLogic,
+          // 보장형 관련 필드들 추가
+          slot_type: rawCampaignData.slot_type,
+          guarantee_count: rawCampaignData.guarantee_count,
+          guarantee_unit: rawCampaignData.guarantee_unit,
+          min_guarantee_price: rawCampaignData.min_guarantee_price,
+          max_guarantee_price: rawCampaignData.max_guarantee_price
         }, index, serviceTypeCode);
 
         return {
@@ -181,12 +190,14 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         logoSize={item.logoSize}
         title={item.title}
         description={item.description}
+        detailedDescription={item.detailedDescription}
         status={item.status}
         statistics={item.statistics}
         progress={item.progress}
         url={campaignPath}
         key={index}
         rawId={item.rawId}
+        rawData={item.originalData}
         serviceTypeCode={serviceTypeCode}
       />
     );
@@ -220,11 +231,13 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
         logoSize={item.logoSize}
         title={item.title}
         description={item.description}
+        detailedDescription={item.detailedDescription}
         status={item.status}
         statistics={item.statistics}
         url={campaignPath}
         key={index}
         rawId={item.rawId}
+        rawData={item.originalData}
         serviceTypeCode={serviceTypeCode}
       />
     );

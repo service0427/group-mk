@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보장성 슬롯 견적 요청</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        /* shadcn/ui 스타일 모방 */
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            height: 2.25rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            transition: all 0.15s;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-ghost {
+            background-color: transparent;
+            color: #374151;
+        }
+        .btn-ghost:hover {
+            background-color: #f3f4f6;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 0.125rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+        .dialog-content {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 48rem;
+            width: 90%;
+            max-height: 90vh;
+            overflow: auto;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Container -->
+    <div class="min-h-screen">
+        <!-- Toolbar -->
+        <div class="bg-white border-b px-6 py-4">
+            <div class="container mx-auto">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-semibold text-gray-900">보장성 슬롯 견적 관리</h1>
+                        <p class="text-sm text-gray-600 mt-1">순위 보장 서비스 견적 요청 및 협상</p>
+                    </div>
+                    <button onclick="openRequestModal()" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i>
+                        새 견적 요청
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="container mx-auto p-6">
+            <div class="grid gap-6">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">전체 견적</p>
+                                <p class="text-2xl font-semibold">12</p>
+                            </div>
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-invoice text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">협상 중</p>
+                                <p class="text-2xl font-semibold text-yellow-600">5</p>
+                            </div>
+                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-handshake text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">합의 완료</p>
+                                <p class="text-2xl font-semibold text-green-600">4</p>
+                            </div>
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">진행 중</p>
+                                <p class="text-2xl font-semibold text-purple-600">3</p>
+                            </div>
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Card -->
+                <div class="card">
+                    <div class="p-6 border-b">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">내 견적 요청</h3>
+                            <div class="flex items-center gap-4">
+                                <select class="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
+                                    <option>전체 상태</option>
+                                    <option>새 제안</option>
+                                    <option>협상 중</option>
+                                    <option>합의 완료</option>
+                                    <option>진행 중</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divide-y divide-gray-200">
+                        <!-- 새 제안 받음 -->
+                        <div class="p-6 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h4 class="font-medium text-gray-900">무선 이어폰</h4>
+                                        <span class="badge bg-blue-100 text-blue-700">새 제안</span>
+                                        <span class="text-xs text-gray-500">30분 전</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                        <div>
+                                            <span class="text-gray-500">서비스:</span>
+                                            <span class="ml-1 font-medium">쿠팡</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">목표:</span>
+                                            <span class="ml-1 font-medium">10위 × 15회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">총판 제안:</span>
+                                            <span class="ml-1 font-medium text-blue-600">7만원/회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">총액:</span>
+                                            <span class="ml-1 font-medium">1,155,000원</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                                        <p class="text-blue-800">
+                                            <i class="fas fa-comment-alt mr-2"></i>
+                                            "해당 키워드는 경쟁도가 낮아 목표 달성이 수월합니다. 합리적인 가격으로 제안드립니다."
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-4 flex flex-col gap-2">
+                                    <button onclick="openNegotiationDetail()" class="btn btn-ghost">
+                                        상세보기
+                                    </button>
+                                    <button class="btn btn-primary">
+                                        승인하기
+                                    </button>
+                                    <button class="btn btn-ghost text-yellow-600 hover:bg-yellow-50">
+                                        협상하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 협상 중 -->
+                        <div class="p-6 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h4 class="font-medium text-gray-900">아이폰 케이스</h4>
+                                        <span class="badge bg-yellow-100 text-yellow-700">협상 중</span>
+                                        <span class="text-xs text-gray-500">2시간 전</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                        <div>
+                                            <span class="text-gray-500">서비스:</span>
+                                            <span class="ml-1 font-medium">네이버 쇼핑</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">목표:</span>
+                                            <span class="ml-1 font-medium">5위 × 20회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">현재 제안:</span>
+                                            <span class="ml-1 font-medium text-purple-600">총판 5만원/회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">협상:</span>
+                                            <span class="ml-1 font-medium text-orange-600">3회 진행</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                            <span class="text-gray-600">내 차례 응답 대기 중</span>
+                                        </div>
+                                        <span class="text-gray-500">마지막 메시지: "4만원에 가능할까요?"</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-4 flex flex-col gap-2">
+                                    <button onclick="openNegotiationDetail()" class="btn btn-ghost">
+                                        협상 내역
+                                    </button>
+                                    <button class="btn btn-primary bg-yellow-500 hover:bg-yellow-600">
+                                        응답하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 합의 완료 -->
+                        <div class="p-6 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h4 class="font-medium text-gray-900">나이키 운동화</h4>
+                                        <span class="badge bg-green-100 text-green-700">합의 완료</span>
+                                        <span class="text-xs text-gray-500">어제</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                        <div>
+                                            <span class="text-gray-500">서비스:</span>
+                                            <span class="ml-1 font-medium">네이버 쇼핑</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">목표:</span>
+                                            <span class="ml-1 font-medium">3위 × 10회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">합의 가격:</span>
+                                            <span class="ml-1 font-medium text-green-600">9만원/회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">총액:</span>
+                                            <span class="ml-1 font-medium">990,000원</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                                        <p class="text-green-800">
+                                            <i class="fas fa-check-circle mr-2"></i>
+                                            협상이 완료되었습니다. 구매를 진행하여 서비스를 시작하세요.
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-4 flex flex-col gap-2">
+                                    <button onclick="openNegotiationDetail()" class="btn btn-ghost">
+                                        협상 내역
+                                    </button>
+                                    <button class="btn btn-primary bg-green-600 hover:bg-green-700">
+                                        <i class="fas fa-shopping-cart mr-2"></i>
+                                        구매하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 진행 중 -->
+                        <div class="p-6 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h4 class="font-medium text-gray-900">맥북 케이스</h4>
+                                        <span class="badge bg-purple-100 text-purple-700">진행 중</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-32 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-purple-600 h-2 rounded-full" style="width: 70%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-600">7/10회</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                        <div>
+                                            <span class="text-gray-500">서비스:</span>
+                                            <span class="ml-1 font-medium">네이버 쇼핑</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">목표:</span>
+                                            <span class="ml-1 font-medium">3위 × 10회</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">회당 금액:</span>
+                                            <span class="ml-1 font-medium">10만원</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-500">정산 완료:</span>
+                                            <span class="ml-1 font-medium text-purple-600">70만원</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <span class="text-gray-600">
+                                            <i class="fas fa-calendar-check mr-1"></i>
+                                            마지막 달성: 2024.06.10 (2위)
+                                        </span>
+                                        <span class="text-gray-600">
+                                            <i class="fas fa-hourglass-half mr-1"></i>
+                                            예상 완료: 3일 후
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-4 flex flex-col gap-2">
+                                    <button class="btn btn-ghost">
+                                        진행 상황
+                                    </button>
+                                    <button class="btn btn-ghost text-purple-600 hover:bg-purple-50">
+                                        달성 내역
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 견적 요청 모달 -->
+    <div id="requestModal" class="hidden">
+        <div class="dialog-overlay" onclick="closeRequestModal()"></div>
+        <div class="dialog-content">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">보장성 슬롯 견적 요청</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">서비스 선택</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>네이버 쇼핑 - 순위 보장</option>
+                            <option>네이버 플레이스 - 순위 보장</option>
+                            <option>쿠팡 - 순위 보장</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                        <h4 class="font-medium text-gray-900">키워드 정보</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    메인 키워드 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" placeholder="예: 나이키 운동화" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    상품 URL <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" placeholder="https://..." 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    목표 순위 <span class="text-red-500">*</span>
+                                </label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option>1위</option>
+                                    <option>2위</option>
+                                    <option selected>3위</option>
+                                    <option>5위</option>
+                                    <option>10위</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    보장 횟수 <span class="text-red-500">*</span>
+                                </label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option>5회</option>
+                                    <option selected>10회</option>
+                                    <option>20회</option>
+                                    <option>30회</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    희망 예산 (선택)
+                                </label>
+                                <input type="text" placeholder="예: 1,000,000" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            총판이 견적을 확인 후 가격을 제안합니다. 제안받은 가격을 검토하고 협상을 진행할 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 mt-6">
+                    <button onclick="closeRequestModal()" class="btn btn-ghost">취소</button>
+                    <button class="btn btn-primary">견적 요청</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 협상 상세 모달 -->
+    <div id="negotiationModal" class="hidden">
+        <div class="dialog-overlay" onclick="closeNegotiationDetail()"></div>
+        <div class="dialog-content">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold">아이폰 케이스 - 협상 내역</h3>
+                        <p class="text-sm text-gray-500">네이버 쇼핑 • 5위 × 20회 보장</p>
+                    </div>
+                    <button onclick="closeNegotiationDetail()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- 요청 -->
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-gray-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium">견적 요청</span>
+                                    <span class="text-xs text-gray-500">오늘 14:30</span>
+                                </div>
+                                <p class="text-sm text-gray-700">5위를 20회 보장받고 싶습니다.</p>
+                                <p class="text-sm text-gray-500 mt-1">희망 예산: 80만원</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 총판 제안 -->
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                            <span class="text-white text-sm font-medium">총</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-purple-700">가격 제안</span>
+                                    <span class="text-xs text-gray-500">오늘 15:00</span>
+                                </div>
+                                <div class="bg-white rounded p-3 mb-2">
+                                    <p class="text-sm text-gray-600">회당 단가</p>
+                                    <p class="text-xl font-semibold text-purple-600">60,000원</p>
+                                </div>
+                                <p class="text-sm text-gray-700">해당 키워드는 경쟁도가 높아 이 정도 단가가 필요합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 사용자 역제안 -->
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-gray-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium">역제안</span>
+                                    <span class="text-xs text-gray-500">오늘 15:30</span>
+                                </div>
+                                <p class="text-sm text-gray-700">4만원에 가능할까요? 장기적으로 여러 상품을 진행할 예정입니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 총판 최종 제안 -->
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                            <span class="text-white text-sm font-medium">총</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-purple-700">최종 제안</span>
+                                    <span class="text-xs text-gray-500">오늘 16:00</span>
+                                </div>
+                                <div class="bg-white rounded p-3 mb-2">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-600">조정된 단가</p>
+                                            <p class="text-xl font-semibold text-purple-600">50,000원</p>
+                                        </div>
+                                        <span class="text-sm text-green-600 font-medium">
+                                            <i class="fas fa-arrow-down mr-1"></i>16% 할인
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-700">장기 계약을 고려하여 특별 할인 적용했습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500">현재 제안</p>
+                            <p class="text-lg font-semibold">회당 50,000원 (총 1,100,000원)</p>
+                        </div>
+                        <span class="badge bg-yellow-100 text-yellow-700">응답 대기</span>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="closeNegotiationDetail()" class="btn btn-ghost flex-1">닫기</button>
+                        <button class="btn btn-ghost text-yellow-600 hover:bg-yellow-50 flex-1">재협상</button>
+                        <button class="btn btn-primary bg-green-600 hover:bg-green-700 flex-1">5만원에 승인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 견적 요청 모달
+        function openRequestModal() {
+            document.getElementById('requestModal').classList.remove('hidden');
+        }
+
+        function closeRequestModal() {
+            document.getElementById('requestModal').classList.add('hidden');
+        }
+
+        // 협상 상세 모달
+        function openNegotiationDetail() {
+            document.getElementById('negotiationModal').classList.remove('hidden');
+        }
+
+        function closeNegotiationDetail() {
+            document.getElementById('negotiationModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -136,7 +136,7 @@ export interface ICampaign {
   logo: string;
   efficiency: string;
   minQuantity: string;
-  deadline: string;
+  deadline?: string;
   status: string | {
     label: string;
     color: string;
@@ -154,6 +154,14 @@ export interface ICampaign {
   serviceName?: string; // 서비스 이름
   updatedAt?: string; // 업데이트 시간
   additionalFields?: any; // 추가 필드 (CampaignPreviewModal에서 사용)
+  // 보장형 슬롯 관련 필드
+  slotType?: 'standard' | 'guarantee';
+  guaranteeCount?: string | number;
+  guaranteeUnit?: '일' | '회';
+  minGuaranteePrice?: string | number;
+  maxGuaranteePrice?: string | number;
+  targetRank?: string | number;
+  isNegotiable?: boolean;
 }
 
 // 확장된 캠페인 인터페이스

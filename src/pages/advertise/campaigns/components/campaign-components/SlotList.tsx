@@ -121,6 +121,39 @@ const SlotList: React.FC<SlotListProps> = ({
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
 
+  // 남은 일수 계산 함수
+  const calculateRemainingDays = (endDate: string | null): number | null => {
+    if (!endDate) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    
+    const diffTime = end.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+
+  // 남은 일수에 따른 색상 클래스 반환
+  const getRemainingDaysColorClass = (days: number | null): string => {
+    if (days === null) return 'text-gray-400';
+    if (days < 0) return 'text-gray-500'; // 마감됨
+    if (days === 0) return 'text-red-600 font-bold'; // 오늘 마감
+    if (days <= 3) return 'text-orange-500 font-semibold'; // 3일 이하
+    if (days <= 7) return 'text-yellow-600'; // 7일 이하
+    return 'text-gray-700 dark:text-gray-300'; // 일반
+  };
+
+  // 남은 일수 표시 텍스트
+  const getRemainingDaysText = (days: number | null): string => {
+    if (days === null) return '-';
+    if (days < 0) return '마감';
+    if (days === 0) return '0일';
+    return `${days}일`;
+  };
 
   // 커스텀 상태 배지 (MyServicesPage용)
   const getCustomStatusBadge = (status: string): JSX.Element => {
@@ -361,11 +394,13 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-start font-medium text-xs w-[20%]">상품명</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[15%]">키워드</th>
+                    <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">상품명</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">키워드</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">등록일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">관리</th>
                   </tr>
                 </thead>
@@ -647,10 +682,24 @@ const SlotList: React.FC<SlotListProps> = ({
                         </div>
                       </td>
 
-                      {/* 등록일 */}
-                      <td className="py-2 px-3 text-center w-[10%]">
+                      {/* 시작일 */}
+                      <td className="py-2 px-3 text-center w-[8%]">
                         <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                          {formatDate(item.createdAt)}
+                          {item.startDate ? formatDate(item.startDate) : '-'}
+                        </span>
+                      </td>
+
+                      {/* 마감일 */}
+                      <td className="py-2 px-3 text-center w-[8%]">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {item.endDate ? formatDate(item.endDate) : '-'}
+                        </span>
+                      </td>
+
+                      {/* 남은일 */}
+                      <td className="py-2 px-3 text-center w-[6%]">
+                        <span className={`text-xs whitespace-nowrap ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate))}`}>
+                          {getRemainingDaysText(calculateRemainingDays(item.endDate))}
                         </span>
                       </td>
 
@@ -772,9 +821,22 @@ const SlotList: React.FC<SlotListProps> = ({
                 )}
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex">
-                    <span className="text-gray-600 w-16">등록일:</span>
-                    <span className="text-gray-900">{formatDate(item.createdAt)}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex">
+                      <span className="text-gray-600 w-16">시작일:</span>
+                      <span className="text-gray-900">{item.startDate ? formatDate(item.startDate) : '-'}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="text-gray-600 w-16">마감일:</span>
+                      <span className="text-gray-900">{item.endDate ? formatDate(item.endDate) : '-'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <span className="text-gray-600 w-16">남은일:</span>
+                    <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate))}`}>
+                      {getRemainingDaysText(calculateRemainingDays(item.endDate))}
+                    </span>
                   </div>
 
                   <div className="overflow-hidden">

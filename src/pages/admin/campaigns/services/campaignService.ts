@@ -745,7 +745,16 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       // 추가 정보 (업로드된 이미지 URL + add_field)
       add_info: additionalInfo,
       // 현재 사용자의 ID를 mat_id로 설정 (슬롯 등록 시 필요)
-      mat_id: userId
+      mat_id: userId,
+      // 보장성 슬롯 관련 필드
+      slot_type: data.slotType || 'standard',
+      is_guarantee: data.slotType === 'guarantee',
+      is_negotiable: data.isNegotiable || false,
+      guarantee_count: data.slotType === 'guarantee' && data.guaranteeCount ? parseInt(data.guaranteeCount) : null,
+      guarantee_unit: data.slotType === 'guarantee' && data.guaranteeUnit ? data.guaranteeUnit : null,
+      target_rank: data.slotType === 'guarantee' && data.targetRank ? parseInt(data.targetRank) : null,
+      min_guarantee_price: data.slotType === 'guarantee' && data.minGuaranteePrice ? parseFloat(data.minGuaranteePrice) : null,
+      max_guarantee_price: data.slotType === 'guarantee' && data.maxGuaranteePrice ? parseFloat(data.maxGuaranteePrice) : null
     };
 
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회

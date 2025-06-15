@@ -17,7 +17,8 @@ import { toast } from 'sonner';
 import { toAbsoluteUrl } from '@/utils';
 import { createCampaign, formatTimeHHMM } from '@/pages/admin/campaigns/services/campaignService';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
-import { CampaignForm, type CampaignFormData } from '@/components/campaign-modals';
+import { CampaignForm, CampaignPreviewModal, type CampaignFormData } from '@/components/campaign-modals';
+import { ICampaign } from '@/components/campaign-modals/types';
 
 
 const CampaignAddPage: React.FC = () => {
@@ -55,6 +56,13 @@ const CampaignAddPage: React.FC = () => {
     unitPrice: '100',
     bannerImage: '',
     minQuantity: '10',
+    slotType: 'standard',
+    isNegotiable: false,
+    guaranteeCount: '',
+    guaranteeUnit: '일', // 기본값 일
+    targetRank: '1', // 기본값 1위
+    minGuaranteePrice: '',
+    maxGuaranteePrice: '',
   });
 
   // 서비스 유형별 추가 필드
@@ -78,6 +86,39 @@ const CampaignAddPage: React.FC = () => {
   // 확인 모달 상태
   const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
 
+  // formData를 ICampaign 형태로 변환하는 함수
+  const convertFormDataToCampaign = (data: CampaignFormData): ICampaign => {
+    return {
+      id: 'preview',
+      campaignName: data.campaignName || '(캠페인 이름을 입력해주세요)',
+      description: data.description || '(캠페인 설명을 입력해주세요)',
+      detailedDescription: data.detailedDescription || '',
+      logo: previewUrl || uploadedLogo || data.logo || '',
+      efficiency: '60%',
+      minQuantity: data.minQuantity ? `${data.minQuantity}개` : '10개',
+      status: {
+        label: '진행중',
+        color: 'success',
+        status: 'active'
+      },
+      additionalLogic: '',
+      serviceType: getServiceTypeName(serviceType),
+      unitPrice: data.unitPrice || '100',
+      bannerImage: bannerImagePreviewUrl || uploadedBannerImage || '',
+      originalData: {
+        slot_type: data.slotType,
+        guarantee_count: data.guaranteeCount,
+        guarantee_unit: data.guaranteeUnit,
+        min_guarantee_price: data.minGuaranteePrice,
+        max_guarantee_price: data.maxGuaranteePrice,
+        is_negotiable: data.isNegotiable,
+        add_info: {
+          logo_url: previewUrl || uploadedLogo || '',
+          banner_url: bannerImagePreviewUrl || uploadedBannerImage || ''
+        }
+      }
+    };
+  };
 
   // 서비스 유형에 따른 이름 반환
   const getServiceTypeName = (type: string): string => {
@@ -185,6 +226,29 @@ const CampaignAddPage: React.FC = () => {
       return false;
     }
 
+    // 보장성 슬롯 관련 검증
+    if (formData.slotType === 'guarantee') {
+      if (!formData.guaranteeCount || formData.guaranteeCount === '0' || formData.guaranteeCount === '') {
+        setError('보장 횟수는 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
+      if (!formData.minGuaranteePrice || formData.minGuaranteePrice === '0' || formData.minGuaranteePrice === '') {
+        setError('최소 보장 가격은 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
+      if (!formData.maxGuaranteePrice || formData.maxGuaranteePrice === '0' || formData.maxGuaranteePrice === '') {
+        setError('최대 보장 가격은 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
+      if (Number(formData.minGuaranteePrice) > Number(formData.maxGuaranteePrice)) {
+        setError('최소 보장 가격은 최대 보장 가격보다 작거나 같아야 합니다.');
+        return false;
+      }
+    }
+
     setError(null);
     return true;
   };
@@ -214,7 +278,15 @@ const CampaignAddPage: React.FC = () => {
         // 기본값 설정
         efficiency: '0',
         minQuantity: formData.minQuantity || '10',
-        additionalLogic: '0'
+        additionalLogic: '0',
+        // 보장성 슬롯 관련 필드
+        slotType: formData.slotType,
+        isNegotiable: formData.isNegotiable,
+        guaranteeCount: formData.guaranteeCount,
+        guaranteeUnit: formData.guaranteeUnit,
+        targetRank: formData.targetRank || '1',
+        minGuaranteePrice: formData.minGuaranteePrice,
+        maxGuaranteePrice: formData.maxGuaranteePrice
       });
 
       if (!result.success) {
@@ -411,231 +483,12 @@ const CampaignAddPage: React.FC = () => {
         document.body
       )}
 
-      {/* 캠페인 미리보기 다이얼로그 - 모바일 최적화 */}
-      <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary" aria-describedby={undefined}>
-          <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 sm:py-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
-            <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
-              <KeenIcon icon="eye" className="mr-2 text-primary size-4 sm:size-5" />
-              캠페인 상세정보(미리보기)
-            </DialogTitle>
-          </DialogHeader>
-          <div className="bg-background flex flex-col max-h-[80vh] w-full">
-            <div className="flex-shrink-0">
-              {/* 배너 이미지 영역 - 이미지가 없으면 표시하지 않음 */}
-              {bannerImagePreviewUrl && (
-                <div className="w-full relative">
-                  <div className="absolute inset-0 overflow-hidden">
-                    {/* 배경 이미지(블러용) */}
-                    <img
-                      src={bannerImagePreviewUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      style={{ filter: 'blur(8px) brightness(0.9)', transform: 'scale(1.1)' }}
-                    />
-                    {/* 배경 오버레이 */}
-                    <div className="absolute inset-0 bg-black/20"></div>
-                  </div>
-                  {/* 실제 이미지 (블러 없음) */}
-                  <div className="relative z-10 flex justify-center items-center py-6">
-                    <img
-                      src={bannerImagePreviewUrl}
-                      alt="캠페인 배너"
-                      className="object-contain max-h-[160px] max-w-[90%] shadow-lg rounded-md"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 기본 배경으로 대체
-                        e.currentTarget.style.display = 'none';
-                        const parentDiv = e.currentTarget.parentElement;
-                        if (parentDiv) {
-                          parentDiv.innerHTML = `
-                            <div class="size-20 rounded-full bg-white/30 flex items-center justify-center">
-                              <img
-                                src="${toAbsoluteUrl('/media/app/mini-logo-primary.svg')}"
-                                alt="캠페인 로고"
-                                class="h-14 w-auto"
-                              />
-                            </div>
-                          `;
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 캠페인 헤더 정보 - 모바일 최적화 */}
-              <div className="bg-background border-b px-4 py-3 sm:px-5">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  {/* 로고 이미지: 업로드된 이미지 우선, 선택된 동물 로고, 또는 랜덤 동물 로고 */}
-                  <img
-                    src={(() => {
-                      // 업로드된 이미지가 있으면 그것을 사용
-                      if (previewUrl) return previewUrl;
-
-                      // 기본 제공 로고 중 선택된 것이 있으면 그것을 사용
-                      if (formData.logo && formData.logo !== 'none') {
-                        return toAbsoluteUrl(`/media/${formData.logo}`);
-                      }
-
-                      // 아무것도 선택되지 않았으면 랜덤 동물 PNG 사용
-                      const animalLogos = [
-                        'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
-                        'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
-                        'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
-                        'sheep', 'teddy-bear', 'turtle'
-                      ];
-                      const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
-                      return toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
-                    })()}
-                    className="rounded-full size-10 sm:size-12 shrink-0 border border-gray-100 shadow-sm"
-                    alt="캠페인 로고"
-                    onError={(e) => {
-                      // 에러 발생시 다른 랜덤 동물로 재시도
-                      const animalLogos = [
-                        'bear', 'cat', 'cow', 'crocodile', 'dolphin', 'elephant',
-                        'flamingo', 'giraffe', 'horse', 'kangaroo', 'koala',
-                        'leopard', 'lion', 'llama', 'owl', 'pelican', 'penguin',
-                        'sheep', 'teddy-bear', 'turtle'
-                      ];
-                      const randomAnimal = animalLogos[Math.floor(Math.random() * animalLogos.length)];
-                      (e.target as HTMLImageElement).src = toAbsoluteUrl(`/media/animal/${randomAnimal}.png`);
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center flex-wrap gap-2">
-                      <span className="truncate">{formData.campaignName || '(캠페인 이름을 입력해주세요)'}</span>
-                      <span className="badge badge-success badge-outline rounded-[30px] h-auto py-0.5 text-xs whitespace-nowrap">
-                        <span className="size-1.5 rounded-full bg-success me-1.5"></span>
-                        진행중
-                      </span>
-                    </h2>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 스크롤 가능한 콘텐츠 영역 - 모바일 최적화 */}
-            <div className="flex-grow overflow-y-auto p-4 sm:p-6">
-              <div className="space-y-4 sm:space-y-6">
-                {/* 상단: 주요 정보 요약 카드 - 모바일에서 2열로 표시 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border col-span-2 sm:col-span-1">
-                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                      <KeenIcon icon="rocket" className="text-green-500 size-4 sm:size-5" />
-                      <div className="text-xs sm:text-sm text-muted-foreground">상승효율</div>
-                    </div>
-                    <div className="text-lg sm:text-xl font-bold text-green-600">
-                      60%
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
-                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                      <KeenIcon icon="wallet" className="text-primary size-4 sm:size-5" />
-                      <div className="text-xs sm:text-sm text-muted-foreground">건당 단가</div>
-                    </div>
-                    <div className="text-lg sm:text-xl font-bold text-primary">
-                      {formData.unitPrice ? `${formData.unitPrice}원` : '100원'}
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border">
-                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                      <KeenIcon icon="basket" className="text-orange-500 size-4 sm:size-5" />
-                      <div className="text-xs sm:text-sm text-muted-foreground">최소 수량</div>
-                    </div>
-                    <div className="text-lg sm:text-xl font-bold text-orange-600">
-                      {formData.minQuantity ? `${formData.minQuantity}개` : '10개'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 중간: 캠페인 설명 - 모바일 최적화 */}
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">캠페인 정보</h3>
-                  <div className="bg-white border border-border p-4 sm:p-5 rounded-lg sm:rounded-xl text-sm sm:text-md text-foreground">
-                    <div className="mb-3 sm:mb-4">
-                      <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">설명</h4>
-                      <p className="text-xs sm:text-sm whitespace-pre-line text-gray-700 bg-blue-50/50 p-2.5 sm:p-3 rounded-md border border-blue-100/50">
-                        {formData.description || '(캠페인 설명을 입력해주세요)'}
-                      </p>
-                    </div>
-
-                    <div className="mb-3 sm:mb-4">
-                      <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">상세 설명</h4>
-                      <div className="max-h-[150px] sm:max-h-[200px] overflow-y-auto pr-1 sm:pr-2 rounded-md p-2.5 sm:p-3 bg-blue-50/30">
-                        <p className="whitespace-pre-line text-gray-700 text-xs sm:text-sm">
-                          {formData.detailedDescription && formData.detailedDescription !== formData.description ?
-                            formData.detailedDescription :
-                            (formData.description || '(캠페인 상세 설명을 입력해주세요)')}
-                        </p>
-                      </div>
-                    </div>
-
-                    {formData.userInputFields && formData.userInputFields.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-primary mb-1.5 sm:mb-2 text-sm sm:text-base">사용자 입력 필드</h4>
-                        <div className="max-h-[120px] sm:max-h-[150px] overflow-y-auto pr-1 sm:pr-2 rounded-md p-2.5 sm:p-3 bg-blue-50/30">
-                          <div className="space-y-1.5 sm:space-y-2">
-                            {formData.userInputFields.map((field, index) => (
-                              <div key={index} className="flex gap-1.5 sm:gap-2 items-center text-xs sm:text-sm">
-                                <span className="flex items-center gap-1">
-                                  <span className="font-medium text-blue-600">{field.fieldName || "(이름 없음)"}</span>
-                                  {field.isRequired && (
-                                    <span className="text-red-500 text-xs font-bold">*</span>
-                                  )}
-                                </span>
-                                <span className="text-gray-400">→</span>
-                                <span className="text-gray-700 break-words">{field.description || "(설명 없음)"}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 서비스 유형별 추가 정보 - 모바일 최적화 */}
-                {serviceType && Object.keys(additionalFields).length > 0 && (
-                  <div>
-                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3">{getServiceTypeName(serviceType)} 정보</h3>
-                    <div className="bg-white p-4 sm:p-5 rounded-lg sm:rounded-xl border border-border">
-                      <div className="grid gap-3 sm:gap-4">
-                        {Object.entries(additionalFields).map(([fieldKey, fieldValue]) => (
-                          <div key={fieldKey} className="flex flex-col">
-                            <span className="font-medium text-muted-foreground text-xs sm:text-sm mb-1">{fieldKey}</span>
-                            <span className="text-foreground text-sm sm:text-base">{fieldValue || '-'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 미리보기 알림 - 모바일 최적화 */}
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-md text-blue-600 dark:text-blue-300">
-                  <div className="flex items-start">
-                    <KeenIcon icon="information-2" className="size-4 sm:size-5 mr-1.5 sm:mr-2 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-sm sm:text-base">미리보기 모드</p>
-                      <p className="text-xs sm:text-sm mt-1">이 화면은 캠페인이 등록된 후 어떻게 보일지를 미리 보여주는 화면입니다. 실제 데이터는 저장 전까지 반영되지 않습니다.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 하단 버튼 영역 */}
-            <div className="flex-shrink-0 border-t p-4 flex justify-end">
-              <Button
-                onClick={() => setCampaignPreviewModalOpen(false)}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                확인
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 캠페인 미리보기 모달 */}
+      <CampaignPreviewModal
+        open={campaignPreviewModalOpen}
+        onClose={() => setCampaignPreviewModalOpen(false)}
+        campaign={campaignPreviewModalOpen ? convertFormDataToCampaign(formData) : null}
+      />
 
       {/* 캠페인 등록 확인 모달 */}
       <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>

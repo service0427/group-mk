@@ -24,6 +24,13 @@ interface CampaignFormInputData {
   unitPrice: string;
   bannerImage?: string;
   minQuantity?: string;
+  slotType?: 'standard' | 'guarantee';
+  isNegotiable?: boolean;
+  guaranteeCount?: string;
+  guaranteeUnit?: '일' | '회';
+  targetRank?: string;
+  minGuaranteePrice?: string;
+  maxGuaranteePrice?: string;
 }
 
 // 서비스 타입별 필드 정보
@@ -112,8 +119,8 @@ interface CampaignFormProps {
   bannerImagePreviewUrl?: string | null;
   onBannerImageUpload?: (file: File) => void;
   onBannerImageRemove?: () => void;
-  // 컴포넌트 타입별 스타일 적용
   isModal?: boolean;
+  isEditMode?: boolean; // 편집 모드 여부
 }
 
 const CampaignForm: React.FC<CampaignFormProps> = ({
@@ -130,12 +137,13 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
   bannerImagePreviewUrl,
   onBannerImageUpload,
   onBannerImageRemove,
-  isModal = false
+  isModal = true,
+  isEditMode = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerImageFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (field: keyof CampaignFormInputData, value: string | Array<{ fieldName: string; description: string }>) => {
+  const handleChange = (field: keyof CampaignFormInputData, value: string | Array<{ fieldName: string; description: string }> | boolean) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
@@ -208,9 +216,9 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
   };
 
   // 스타일 클래스 정의
-  const containerClass = isModal ? "" : "overflow-hidden border border-border rounded-lg mb-6 shadow-sm";
-  const headerClass = isModal ? "bg-background py-4 px-3 sm:px-5 border-b sticky top-0 z-10 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" : "flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-6 gap-4";
-  const tableClass = isModal ? "min-w-full divide-y divide-border" : "min-w-full divide-y divide-border";
+  const containerClass = "overflow-hidden border border-border rounded-lg mb-6 shadow-sm";
+  const headerClass = "flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-6 gap-4";
+  const tableClass = "min-w-full divide-y divide-border";
 
   return (
     <div>
@@ -223,7 +231,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       )}
 
       {/* 헤더 정보 - 표 스타일로 통일 */}
-      <div className={`${containerClass} bg-white dark:bg-gray-800/20`}>
+      <div className={`${containerClass} bg-background`}>
         <div className={headerClass}>
           <div className="relative flex-shrink-0 mx-auto sm:mx-0 sm:mr-4">
             {previewUrl || formData.logo ? (
@@ -261,7 +269,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               <span className="text-sm font-medium text-gray-500 hidden sm:inline mx-2">또는</span>
 
               <div className="w-full sm:w-64">
-                {isModal ? (
+                {false ? (
                   <select
                     value={previewUrl ? 'none' : (formData.logo || 'none')}
                     onChange={(e) => {
@@ -395,27 +403,16 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               </div>
             </div>
             
-            {isModal ? (
-              <input
-                type="text"
-                value={formData.campaignName}
-                onChange={(e) => handleChange('campaignName', e.target.value)}
-                className="text-xl font-semibold text-foreground px-3 py-2 border border-gray-200 bg-white rounded-md w-full"
-                placeholder="캠페인 이름 입력 *"
-                disabled={loading}
-              />
-            ) : (
-              <Input
-                type="text"
-                value={formData.campaignName}
-                onChange={(e) => handleChange('campaignName', e.target.value)}
-                className="text-xl font-semibold"
-                placeholder="캠페인 이름 입력 *"
-                disabled={loading}
-              />
-            )}
+            <Input
+              type="text"
+              value={formData.campaignName}
+              onChange={(e) => handleChange('campaignName', e.target.value)}
+              className="text-xl font-semibold"
+              placeholder="캠페인 이름 입력 *"
+              disabled={loading}
+            />
             
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
               로고 이미지를 업로드 하거나 기본 제공 로고 중 선택하세요. 
               <span className="text-blue-500 block sm:inline">(로고 선택 시 자동으로 "[동물명]-[랜덤숫자]" 형식의 이름이 생성됩니다)</span>
               <span className="text-red-500 block text-xs mt-1">* 표시된 항목은 필수 입력 사항입니다.</span>
@@ -428,60 +425,73 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
       <div className={containerClass}>
         <table className={tableClass}>
           <tbody className="divide-y divide-border">
-            {/* 서비스 타입 - 수정 모드에서만 표시 */}
-            {serviceType && (
-              <tr>
-                <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                  서비스 타입
-                </th>
-                <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                  <div className="flex items-center">
-                    <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
-                      {serviceTypeInfoMap[serviceType as CampaignServiceType]?.name || serviceType}
-                    </span>
+            {/* 슬롯 타입 선택 */}
+            <tr>
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                슬롯 타입 <span className="text-red-500">*</span>
+              </th>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                    <label className={`flex items-center gap-2 ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                      <input
+                        type="radio"
+                        name="slotType"
+                        value="standard"
+                        checked={formData.slotType !== 'guarantee'}
+                        onChange={(e) => handleChange('slotType', e.target.value)}
+                        className="size-4"
+                        disabled={loading || isEditMode}
+                      />
+                      <span className="text-xs sm:text-sm font-medium">일반형(슬롯기반) 서비스</span>
+                    </label>
+                    <label className={`flex items-center gap-2 ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                      <input
+                        type="radio"
+                        name="slotType"
+                        value="guarantee"
+                        checked={formData.slotType === 'guarantee'}
+                        onChange={(e) => handleChange('slotType', e.target.value)}
+                        className="size-4"
+                        disabled={loading || isEditMode}
+                      />
+                      <span className="text-xs sm:text-sm font-medium">보장형 서비스</span>
+                    </label>
                   </div>
-                </td>
-              </tr>
-            )}
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                    일반형(슬롯기반) 서비스는 작업 기반 서비스이며, 보장형 서비스는 기간 내 보장 서비스입니다.
+                    {isEditMode && <span className="text-red-500 block mt-1">※ 슬롯 타입은 수정할 수 없습니다.</span>}
+                  </p>
+                </div>
+              </td>
+            </tr>
             
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 건당 단가 <span className="text-red-500">*</span>
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="flex items-center">
-                  {isModal ? (
-                    <input
-                      type="number"
-                      min="0"
-                      step="10"
-                      value={formData.unitPrice}
-                      onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                      className="w-24 h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                      disabled={loading}
-                    />
-                  ) : (
-                    <Input
-                      type="number"
-                      min="0"
-                      step="10"
-                      value={formData.unitPrice}
-                      onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
-                      className="w-24"
-                      disabled={loading}
-                    />
-                  )}
+                  <Input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={formData.unitPrice}
+                    onChange={(e) => handleNumberChange('unitPrice', e.target.value)}
+                    className="w-24"
+                    disabled={loading}
+                  />
                   <span className="ml-2 text-md font-medium text-foreground">원</span>
                 </div>
               </td>
             </tr>
             
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 배너 이미지
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                <div className="flex flex-col gap-3">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="flex flex-col gap-2">
                   <div className="flex items-start gap-4">
                     <Button
                       type="button"
@@ -533,112 +543,167 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                       )}
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground mt-1">캠페인 상세 페이지에 표시될 배너 이미지를 업로드하세요.</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 상세 페이지에 표시될 배너 이미지를 업로드하세요.</p>
                 </div>
               </td>
             </tr>
             
-            <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                최소수량 <span className="text-red-500">*</span>
-              </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+            {/* 최소수량 - 일반 서비스일 때만 표시 */}
+            {formData.slotType !== 'guarantee' && (
+              <tr>
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                  최소수량 <span className="text-red-500">*</span>
+                </th>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="flex items-center gap-2">
-                  {isModal ? (
-                    <input
-                      type="text"
-                      value={formData.minQuantity || '10'}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        handleChange('minQuantity', value);
-                      }}
-                      className="w-32 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                      placeholder="10"
-                      disabled={loading}
-                    />
-                  ) : (
-                    <Input
-                      type="text"
-                      value={formData.minQuantity || '10'}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        handleChange('minQuantity', value);
-                      }}
-                      className="w-32"
-                      placeholder="10"
-                      disabled={loading}
-                    />
-                  )}
-                  <span className="text-sm text-muted-foreground">개</span>
+                  <Input
+                    type="text"
+                    value={formData.minQuantity || '10'}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      handleChange('minQuantity', value);
+                    }}
+                    className="w-24 sm:w-32"
+                    placeholder="10"
+                    disabled={loading}
+                  />
+                  <span className="text-xs sm:text-sm text-muted-foreground">개</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
               </td>
             </tr>
+            )}
+            
+            {/* 보장성 슬롯 관련 필드들 - 보장성 슬롯 선택 시에만 표시 */}
+            {formData.slotType === 'guarantee' && (
+              <>
+                {/* 보장 횟수/일수 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                    보장 일수(횟수) <span className="text-red-500">*</span>
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          value={formData.guaranteeCount || ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            handleChange('guaranteeCount', value);
+                          }}
+                          className="w-24 sm:w-32"
+                          placeholder="10"
+                          disabled={loading}
+                        />
+                        <Select
+                          value={formData.guaranteeUnit || '일'}
+                          onValueChange={(value) => handleChange('guaranteeUnit', value)}
+                          disabled={loading}
+                        >
+                          <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="일">일</SelectItem>
+                            <SelectItem value="회">회</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">목표 순위 혹은 목표 작업량을 보장할 기간 혹은 횟수를 입력하세요.</p>
+                    </div>
+                  </td>
+                </tr>
+
+
+                {/* 최소 보장 가격 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                    최소 가격 <span className="text-red-500">*</span>
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={formData.minGuaranteePrice || ''}
+                        onChange={(e) => handleChange('minGuaranteePrice', e.target.value)}
+                        className="w-24 sm:w-32"
+                        placeholder=""
+                        disabled={loading}
+                      />
+                      <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* 최대 보장 가격 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                    최대 가격 <span className="text-red-500">*</span>
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={formData.maxGuaranteePrice || ''}
+                        onChange={(e) => handleChange('maxGuaranteePrice', e.target.value)}
+                        className="w-24 sm:w-32"
+                        placeholder=""
+                        disabled={loading}
+                      />
+                      <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )}
             
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 캠페인 소개 <span className="text-red-500">*</span>
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                {isModal ? (
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleChange('description', e.target.value)}
-                    className="w-full h-[60px] px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                    rows={2}
-                    placeholder="간단한 캠페인 소개를 입력하세요"
-                    disabled={loading}
-                  />
-                ) : (
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => handleChange('description', e.target.value)}
-                    className="min-h-[60px]"
-                    rows={2}
-                    placeholder="간단한 캠페인 소개를 입력하세요"
-                    disabled={loading}
-                  />
-                )}
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  className="min-h-[50px]"
+                  rows={2}
+                  placeholder="간단한 캠페인 소개를 입력하세요"
+                  disabled={loading}
+                />
               </td>
             </tr>
             
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                 캠페인 상세설명 <span className="text-red-500">*</span>
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                {isModal ? (
-                  <textarea
-                    value={formData.detailedDescription}
-                    onChange={(e) => handleChange('detailedDescription', e.target.value)}
-                    className="w-full h-[100px] px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                    rows={4}
-                    placeholder="상세한 캠페인 설명을 입력하세요"
-                    disabled={loading}
-                  />
-                ) : (
-                  <Textarea
-                    value={formData.detailedDescription}
-                    onChange={(e) => handleChange('detailedDescription', e.target.value)}
-                    className="min-h-[100px]"
-                    rows={4}
-                    placeholder="상세한 캠페인 설명을 입력하세요"
-                    disabled={loading}
-                  />
-                )}
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <Textarea
+                  value={formData.detailedDescription}
+                  onChange={(e) => handleChange('detailedDescription', e.target.value)}
+                  className="min-h-[80px]"
+                  rows={4}
+                  placeholder="상세한 캠페인 설명을 입력하세요"
+                  disabled={loading}
+                />
               </td>
             </tr>
             
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px] align-top">
                 사용자 입력 필드
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                <div className="space-y-3">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="space-y-2">
                   {(formData.userInputFields || []).map((field, index) => (
-                    <div key={index} className="border border-gray-200 rounded-md p-3 bg-gray-50 hover:bg-gray-100 space-y-3">
+                    <div key={index} className="border border-gray-200 rounded-md p-3 bg-gray-50 hover:bg-gray-100 space-y-2">
                       {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         {/* 순서 변경 버튼 */}
                         <div className="flex gap-1 order-last sm:order-first">
                           <Button
@@ -678,7 +743,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           {/* 타입 선택 (필드명 앞에 위치) */}
                           <div className="w-full sm:w-32">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">타입</label>
-                            {isModal ? (
+                            {false ? (
                               <select
                                 value={field.fieldType || FieldType.TEXT}
                                 onChange={(e) => {
@@ -728,35 +793,20 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           </div>
 
                           {/* 필드명 입력 */}
-                          <div className="w-full sm:w-1/4">
+                          <div className="w-full sm:w-1/5">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">필드명</label>
-                            {isModal ? (
-                              <input
-                                type="text"
-                                value={field.fieldName}
-                                onChange={(e) => {
-                                  const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
-                                  handleChange('userInputFields', updatedFields);
-                                }}
-                                className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
-                                placeholder="필드명"
-                                disabled={loading}
-                              />
-                            ) : (
-                              <Input
-                                type="text"
-                                value={field.fieldName}
-                                onChange={(e) => {
-                                  const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
-                                  handleChange('userInputFields', updatedFields);
-                                }}
-                                placeholder="필드명"
-                                disabled={loading}
-                                className="text-sm"
-                              />
-                            )}
+                            <Input
+                              type="text"
+                              value={field.fieldName}
+                              onChange={(e) => {
+                                const updatedFields = [...(formData.userInputFields || [])];
+                                updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
+                                handleChange('userInputFields', updatedFields);
+                              }}
+                              placeholder="필드명"
+                              disabled={loading}
+                              className="text-sm"
+                            />
                           </div>
 
                           {/* 화살표 (데스크톱에서만 표시) */}
@@ -765,38 +815,23 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           {/* 설명 입력 */}
                           <div className="flex-1">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">설명</label>
-                            {isModal ? (
-                              <input
-                                type="text"
-                                value={field.description}
-                                onChange={(e) => {
-                                  const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { ...updatedFields[index], description: e.target.value };
-                                  handleChange('userInputFields', updatedFields);
-                                }}
-                                className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
-                                placeholder="필드 설명"
-                                disabled={loading}
-                              />
-                            ) : (
-                              <Input
-                                type="text"
-                                value={field.description}
-                                onChange={(e) => {
-                                  const updatedFields = [...(formData.userInputFields || [])];
-                                  updatedFields[index] = { ...updatedFields[index], description: e.target.value };
-                                  handleChange('userInputFields', updatedFields);
-                                }}
-                                placeholder="필드 설명"
-                                disabled={loading}
-                                className="text-sm"
-                              />
-                            )}
+                            <Input
+                              type="text"
+                              value={field.description}
+                              onChange={(e) => {
+                                const updatedFields = [...(formData.userInputFields || [])];
+                                updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                handleChange('userInputFields', updatedFields);
+                              }}
+                              placeholder="필드 설명"
+                              disabled={loading}
+                              className="text-sm"
+                            />
                           </div>
                         </div>
 
                         {/* 필수값 체크박스와 삭제 버튼 */}
-                        <div className="flex items-center justify-between sm:justify-start gap-3">
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
                           <div className="flex items-center gap-2">
                             <Checkbox
                               id={`required-${index}`}
@@ -810,7 +845,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                             />
                             <label 
                               htmlFor={`required-${index}`} 
-                              className="text-sm text-gray-600 cursor-pointer select-none"
+                              className="text-sm text-muted-foreground cursor-pointer select-none"
                             >
                               필수
                             </label>
@@ -836,47 +871,25 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                       {field.fieldType === FieldType.ENUM && (
                         <div className="mt-2 px-3">
                           <label className="block text-xs text-gray-600 mb-1">선택 옵션 (콤마로 구분)</label>
-                          {isModal ? (
-                            <input
-                              type="text"
-                              defaultValue={field.enumOptions?.join(', ') || ''}
-                              onBlur={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                const options = e.target.value
-                                  .split(',')
-                                  .map(opt => opt.trim())
-                                  .filter(opt => opt.length > 0);
-                                updatedFields[index] = { 
-                                  ...updatedFields[index], 
-                                  enumOptions: options.length > 0 ? options : undefined
-                                };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              className="w-full px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md text-sm"
-                              placeholder="옵션1, 옵션2, 옵션3"
-                              disabled={loading}
-                            />
-                          ) : (
-                            <Input
-                              type="text"
-                              defaultValue={field.enumOptions?.join(', ') || ''}
-                              onBlur={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                const options = e.target.value
-                                  .split(',')
-                                  .map(opt => opt.trim())
-                                  .filter(opt => opt.length > 0);
-                                updatedFields[index] = { 
-                                  ...updatedFields[index], 
-                                  enumOptions: options.length > 0 ? options : undefined
-                                };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              placeholder="옵션1, 옵션2, 옵션3"
-                              disabled={loading}
-                              className="text-sm"
-                            />
-                          )}
+                          <Input
+                            type="text"
+                            defaultValue={field.enumOptions?.join(', ') || ''}
+                            onBlur={(e) => {
+                              const updatedFields = [...(formData.userInputFields || [])];
+                              const options = e.target.value
+                                .split(',')
+                                .map(opt => opt.trim())
+                                .filter(opt => opt.length > 0);
+                              updatedFields[index] = { 
+                                ...updatedFields[index], 
+                                enumOptions: options.length > 0 ? options : undefined
+                              };
+                              handleChange('userInputFields', updatedFields);
+                            }}
+                            placeholder="옵션1, 옵션2, 옵션3"
+                            disabled={loading}
+                            className="text-sm"
+                          />
                         </div>
                       )}
                       
@@ -912,7 +925,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                   </Button>
                 </div>
                 
-                <div className="text-sm text-muted-foreground mt-3">
+                <div className="text-xs sm:text-sm text-muted-foreground mt-3">
                   <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
                   <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>
@@ -926,87 +939,48 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             {serviceType && serviceTypeInfoMap[serviceType] &&
               Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
                 <tr key={fieldKey}>
-                  <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
                     {fieldInfo.label}
                     {fieldInfo.required && <span className="text-red-500 ml-1">*</span>}
                   </th>
-                  <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                     {fieldInfo.type === 'select' ? (
-                      isModal ? (
-                        <select
-                          value={additionalFields[fieldKey] || fieldInfo.defaultValue || 'none'}
-                          onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                          className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                          disabled={loading}
-                        >
-                          <option value="none">선택하세요</option>
+                      <Select
+                        value={additionalFields[fieldKey] || fieldInfo.defaultValue || 'none'}
+                        onValueChange={(value) => handleAdditionalFieldChange(fieldKey, value)}
+                        disabled={loading}
+                      >
+                        <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
+                          <SelectValue placeholder="선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">선택하세요</SelectItem>
                           {fieldInfo.options?.map(option => (
-                            <option key={option.value} value={option.value}>
+                            <SelectItem key={option.value} value={option.value}>
                               {option.label}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </select>
-                      ) : (
-                        <Select
-                          value={additionalFields[fieldKey] || fieldInfo.defaultValue || 'none'}
-                          onValueChange={(value) => handleAdditionalFieldChange(fieldKey, value)}
-                          disabled={loading}
-                        >
-                          <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
-                            <SelectValue placeholder="선택하세요" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">선택하세요</SelectItem>
-                            {fieldInfo.options?.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )
+                        </SelectContent>
+                      </Select>
                     ) : fieldInfo.type === 'textarea' ? (
-                      isModal ? (
-                        <textarea
-                          value={additionalFields[fieldKey] || ''}
-                          onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                          className="w-full h-[60px] px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                          placeholder={fieldInfo.placeholder}
-                          disabled={loading}
-                          required={fieldInfo.required}
-                        />
-                      ) : (
-                        <Textarea
-                          value={additionalFields[fieldKey] || ''}
-                          onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                          className="min-h-[60px]"
-                          placeholder={fieldInfo.placeholder}
-                          disabled={loading}
-                          required={fieldInfo.required}
-                        />
-                      )
+                      <Textarea
+                        value={additionalFields[fieldKey] || ''}
+                        onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
+                        className="min-h-[50px]"
+                        placeholder={fieldInfo.placeholder}
+                        disabled={loading}
+                        required={fieldInfo.required}
+                      />
                     ) : (
-                      isModal ? (
-                        <input
-                          type={fieldInfo.type}
-                          value={additionalFields[fieldKey] || ''}
-                          onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                          className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
-                          placeholder={fieldInfo.placeholder}
-                          disabled={loading}
-                          required={fieldInfo.required}
-                        />
-                      ) : (
-                        <Input
-                          type={fieldInfo.type}
-                          value={additionalFields[fieldKey] || ''}
-                          onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
-                          className="w-full"
-                          placeholder={fieldInfo.placeholder}
-                          disabled={loading}
-                          required={fieldInfo.required}
-                        />
-                      )
+                      <Input
+                        type={fieldInfo.type}
+                        value={additionalFields[fieldKey] || ''}
+                        onChange={(e) => handleAdditionalFieldChange(fieldKey, e.target.value)}
+                        className="w-full"
+                        placeholder={fieldInfo.placeholder}
+                        disabled={loading}
+                        required={fieldInfo.required}
+                      />
                     )}
                   </td>
                 </tr>

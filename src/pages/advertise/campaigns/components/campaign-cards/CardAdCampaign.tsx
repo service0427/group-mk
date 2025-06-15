@@ -58,6 +58,10 @@ const CardAdCampaign = ({
 
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
+  
+  // 보장형 여부 확인
+  const isGuaranteeType = rawData?.slot_type === 'guarantee';
+  
 
   // 이제 props로 받은 rawData와 ID만 사용
   // 원본 데이터는 더 이상 확인하지 않음, 모달에서 직접 조회
@@ -101,18 +105,30 @@ const CardAdCampaign = ({
       <div className="card overflow-hidden grow flex flex-col justify-between">
         <div className="p-5 mb-5 flex flex-col">
           <div className="flex items-center justify-between mb-5">
-            <span className={`badge ${status.variant} badge-outline rounded-[30px] h-auto py-1`}>
-              <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
-              {status.label}
-            </span>
+            <div className="flex items-center gap-2">
+              {/* 서비스 타입 배지 */}
+              <span className={`badge ${
+                isGuaranteeType 
+                  ? 'badge-info' 
+                  : 'badge-primary'
+              } badge-outline rounded-[30px] h-auto py-0.5 px-2`}>
+                <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
+                {isGuaranteeType ? '보장형' : '일반형'}
+              </span>
+              
+              <span className={`badge ${status.variant} badge-outline rounded-[30px] h-auto py-1`}>
+                <span className={`size-1.5 rounded-full bg-${getStatusColorClass(status.variant)} me-1.5`}></span>
+                {status.label}
+              </span>
+            </div>
 
             <div className="flex gap-2">
               <button
                 className="btn btn-sm btn-info"
                 onClick={() => setModalOpen(true)}
               >
-                <KeenIcon icon="eye" className="me-1.5" />
-                상세보기
+                <KeenIcon icon="eye" className="me-0 sm:me-1.5" />
+                <span className="hidden sm:inline">상세보기</span>
               </button>
 
               {/* 총판 또는 운영자 역할이 아닌 경우에만 구매하기 버튼 표시 */}
@@ -124,8 +140,8 @@ const CardAdCampaign = ({
                     setSlotModalOpen(true);
                   }}
                 >
-                  <KeenIcon icon="purchase" className="me-1.5" />
-                  구매하기
+                  <KeenIcon icon={isGuaranteeType ? "message-text" : "purchase"} className="me-0 sm:me-1.5" />
+                  <span className="hidden sm:inline">{isGuaranteeType ? '견적요청' : '구매하기'}</span>
                 </button>
               )}
             </div>
@@ -171,6 +187,58 @@ const CardAdCampaign = ({
 
           <div className="flex items-center justify-center flex-wrap gap-2 lg:gap-5 mt-auto">
             {statistics.map((statistic, index) => {
+              // 보장형인 경우 건당단가를 가격범위로 표시
+              if (isGuaranteeType && statistic.description.includes('건당단가')) {
+                const minPrice = rawData?.min_guarantee_price;
+                const maxPrice = rawData?.max_guarantee_price;
+                
+                if (minPrice && maxPrice) {
+                  const formatPrice = (price: number) => {
+                    if (price >= 100000000) {
+                      const billions = price / 100000000;
+                      return billions % 1 === 0 ? `${billions}억` : `${billions.toFixed(1)}억`;
+                    } else if (price >= 10000000) {
+                      const tenMillions = price / 10000000;
+                      return tenMillions % 1 === 0 ? `${tenMillions}천만` : `${tenMillions.toFixed(1)}천만`;
+                    } else if (price >= 10000) {
+                      const tenThousands = price / 10000;
+                      return tenThousands % 1 === 0 ? `${tenThousands}만` : `${tenThousands.toFixed(1)}만`;
+                    }
+                    return price.toLocaleString();
+                  };
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
+                    >
+                      <span className="text-gray-900 text-sm leading-none font-medium">
+                        {formatPrice(Number(minPrice))}~{formatPrice(Number(maxPrice))}원
+                      </span>
+                      <span className="text-gray-700 text-xs">💎가격범위</span>
+                    </div>
+                  );
+                }
+              }
+              
+              // 보장형인 경우 최소수량을 보장으로 표시
+              if (isGuaranteeType && statistic.description.includes('최소수량')) {
+                const guaranteeCount = rawData?.guarantee_count;
+                const guaranteeUnit = rawData?.guarantee_unit || '일';
+                
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
+                  >
+                    <span className="text-gray-900 text-sm leading-none font-medium">
+                      {guaranteeCount ? `${guaranteeCount}${guaranteeUnit}` : '-'}
+                    </span>
+                    <span className="text-gray-700 text-xs">🛡️{guaranteeUnit === '일' ? '보장일수' : '보장회수'}</span>
+                  </div>
+                );
+              }
+              
               return renderItem(statistic, index);
             })}
           </div>

@@ -543,6 +543,13 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
   // 캠페인 ID는 업데이트 조건으로만 사용
   const campaignId = campaign.id;
 
+  // 보장형 서비스 여부 확인
+  const isGuaranteeType = campaignDetail?.slot_type === 'guarantee' || campaign.originalData?.slot_type === 'guarantee' || campaign.slotType === 'guarantee';
+  const guaranteeCount = campaignDetail?.guarantee_count || campaign.originalData?.guarantee_count || campaign.guaranteeCount;
+  const guaranteeUnit = campaignDetail?.guarantee_unit || campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일';
+  const minGuaranteePrice = campaignDetail?.min_guarantee_price || campaign.originalData?.min_guarantee_price || campaign.minGuaranteePrice;
+  const maxGuaranteePrice = campaignDetail?.max_guarantee_price || campaign.originalData?.max_guarantee_price || campaign.maxGuaranteePrice;
+
   // 상태가 문자열 또는 객체일 수 있음을 처리
   // 1. 상태 원시값 (active, pause 등) 가져오기
   let statusRaw = 'active'; // 기본값
@@ -618,61 +625,92 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
               </div>
             )}
 
-            {/* 캠페인 헤더 정보 */}
-            <div className="bg-background border-b px-5 py-3">
+            {/* 캠페인 헤더 정보 - 개선된 디자인 */}
+            <div className={`border-b px-5 py-4 ${
+              isGuaranteeType 
+                ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800' 
+                : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+            }`}>
               <div className="flex items-center gap-4">
-                <img
-                  src={(() => {
-                    // 로고가 없으면 기본 이미지 사용
-                    if (!campaign.logo) {
-                      return toAbsoluteUrl('/media/animal/svg/lion.svg');
-                    }
-
-                    // 로고에 경로가 이미 포함된 경우 그대로 사용
-                    if (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http')) {
-                      return campaign.logo;
-                    }
-
-                    // 로고가 파일명(확장자 포함)인 경우 경로 추가
-                    if (campaign.logo.includes('.svg') || campaign.logo.includes('.png')) {
-                      return toAbsoluteUrl(`/media/${campaign.logo}`);
-                    }
-
-                    // 플라밍고-89740과 같은 형식인 경우 플라밍고만 추출 시도
-                    const dashIndex = campaign.logo.indexOf('-');
-                    if (dashIndex > 0) {
-                      const animalName = campaign.logo.substring(0, dashIndex).toLowerCase().trim();
-                      // 알려진 동물 이름인지 확인 (플라밍고, 라이언 등)
-                      if (['플라밍고', 'flamingo'].includes(animalName)) {
-                        return toAbsoluteUrl('/media/animal/svg/flamingo.svg');
-                      }
-                      if (['라이언', '사자', 'lion'].includes(animalName)) {
+                {/* 로고 이미지 - 크기 증가 */}
+                <div className="relative">
+                  <img
+                    src={(() => {
+                      // 로고가 없으면 기본 이미지 사용
+                      if (!campaign.logo) {
                         return toAbsoluteUrl('/media/animal/svg/lion.svg');
                       }
-                      if (['고양이', 'cat'].includes(animalName)) {
-                        return toAbsoluteUrl('/media/animal/svg/cat.svg');
-                      }
-                      // 다른 동물 이름 추가 필요시 확장
-                    }
 
-                    // 동물 이름으로 간주하고 SVG 경로 생성
-                    return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
-                  })()}
-                  className="rounded-full size-12 shrink-0 border border-gray-100 shadow-sm"
-                  alt={campaign?.campaignName}
-                  onError={(e) => {
-                    // 이미지 로드 실패 시 조용히 기본 이미지 사용
-                    (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
-                  }}
-                />
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground flex items-center">
+                      // 로고에 경로가 이미 포함된 경우 그대로 사용
+                      if (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http')) {
+                        return campaign.logo;
+                      }
+
+                      // 로고가 파일명(확장자 포함)인 경우 경로 추가
+                      if (campaign.logo.includes('.svg') || campaign.logo.includes('.png')) {
+                        return toAbsoluteUrl(`/media/${campaign.logo}`);
+                      }
+
+                      // 플라밍고-89740과 같은 형식인 경우 플라밍고만 추출 시도
+                      const dashIndex = campaign.logo.indexOf('-');
+                      if (dashIndex > 0) {
+                        const animalName = campaign.logo.substring(0, dashIndex).toLowerCase().trim();
+                        // 알려진 동물 이름인지 확인 (플라밍고, 라이언 등)
+                        if (['플라밍고', 'flamingo'].includes(animalName)) {
+                          return toAbsoluteUrl('/media/animal/svg/flamingo.svg');
+                        }
+                        if (['라이언', '사자', 'lion'].includes(animalName)) {
+                          return toAbsoluteUrl('/media/animal/svg/lion.svg');
+                        }
+                        if (['고양이', 'cat'].includes(animalName)) {
+                          return toAbsoluteUrl('/media/animal/svg/cat.svg');
+                        }
+                        // 다른 동물 이름 추가 필요시 확장
+                      }
+
+                      // 동물 이름으로 간주하고 SVG 경로 생성
+                      return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
+                    })()}
+                    className="rounded-xl size-16 shrink-0 object-cover border-2 border-gray-200 shadow-md"
+                    alt={campaign?.campaignName}
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 조용히 기본 이미지 사용
+                      (e.target as HTMLImageElement).src = toAbsoluteUrl('/media/animal/svg/lion.svg');
+                    }}
+                  />
+                </div>
+                
+                {/* 캠페인 정보 */}
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
                     {campaign?.campaignName}
-                    <span className={`badge ${statusBadge} badge-outline rounded-[30px] h-auto py-0.5 text-xs ml-2`}>
-                      <span className={`size-1.5 rounded-full bg-${statusDotColor} me-1.5`}></span>
+                  </h2>
+                  
+                  {/* 배지들 - 아이콘 포함 */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      isGuaranteeType 
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
+                      {isGuaranteeType ? '보장형' : '일반형'}
+                    </span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                      statusDotColor === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
+                      statusDotColor === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
+                      statusDotColor === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                      'bg-blue-50 text-blue-700 border-blue-200'
+                    }`}>
+                      <span className={`size-2 rounded-full mr-1.5 ${
+                        statusDotColor === 'success' ? 'bg-green-500' :
+                        statusDotColor === 'danger' ? 'bg-red-500' :
+                        statusDotColor === 'warning' ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`}></span>
                       {statusLabel}
                     </span>
-                  </h2>
+                  </div>
                 </div>
               </div>
             </div>
@@ -695,29 +733,63 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 <div className="bg-white p-4 rounded-xl border border-border">
                   <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="wallet" className="text-primary size-5" />
-                    <div className="text-sm text-muted-foreground">건당 단가</div>
+                    <div className="text-sm text-muted-foreground">
+                      {isGuaranteeType ? '가격범위' : '건당단가'}
+                    </div>
                   </div>
-                  <div className="text-xl font-bold text-primary">
-                    {campaign?.unitPrice
-                      ? `${formatPriceWithCommas(campaign.unitPrice)}원`
-                      : '1,000원'}
+                  <div className={`font-bold text-primary ${isGuaranteeType ? 'text-sm' : 'text-xl'}`}>
+                    {isGuaranteeType ? (
+                      minGuaranteePrice && maxGuaranteePrice ? (
+                        (() => {
+                          const min = Number(minGuaranteePrice);
+                          const max = Number(maxGuaranteePrice);
+                          
+                          // 금액이 너무 크면 축약 표기
+                          const formatPrice = (price: number) => {
+                            if (price >= 100000000) { // 1억 이상
+                              const billions = price / 100000000;
+                              return billions % 1 === 0 ? `${billions}억` : `${billions.toFixed(1)}억`;
+                            } else if (price >= 10000000) { // 1천만 이상
+                              const tenMillions = price / 10000000;
+                              return tenMillions % 1 === 0 ? `${tenMillions}천만` : `${tenMillions.toFixed(1)}천만`;
+                            } else if (price >= 10000) { // 1만 이상
+                              const tenThousands = price / 10000;
+                              return tenThousands % 1 === 0 ? `${tenThousands}만` : `${tenThousands.toFixed(1)}만`;
+                            }
+                            return price.toLocaleString();
+                          };
+                          
+                          return `${formatPrice(min)} ~ ${formatPrice(max)}원`;
+                        })()
+                      ) : '-'
+                    ) : (
+                      campaign?.unitPrice
+                        ? `${formatPriceWithCommas(campaign.unitPrice)}원`
+                        : '1,000원'
+                    )}
                   </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-border">
                   <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="purchase" className="text-orange-500 size-5" />
-                    <div className="text-sm text-muted-foreground">최소수량</div>
+                    <div className="text-sm text-muted-foreground">
+                      {isGuaranteeType ? '보장' : '최소수량'}
+                    </div>
                   </div>
                   <div className="text-xl font-bold text-foreground">
-                    {(() => {
-                      const minQty = campaign?.minQuantity || '100';
-                      // 이미 "개"가 포함된 경우 그대로 사용
-                      if (String(minQty).includes('개')) {
-                        return minQty;
-                      }
-                      // 숫자만 있는 경우 포맷팅 후 "개" 추가
-                      return `${formatPriceWithCommas(minQty)}개`;
-                    })()}
+                    {isGuaranteeType ? (
+                      guaranteeCount ? `${guaranteeCount}${guaranteeUnit}` : '-'
+                    ) : (
+                      (() => {
+                        const minQty = campaign?.minQuantity || '100';
+                        // 이미 "개"가 포함된 경우 그대로 사용
+                        if (String(minQty).includes('개')) {
+                          return minQty;
+                        }
+                        // 숫자만 있는 경우 포맷팅 후 "개" 추가
+                        return `${formatPriceWithCommas(minQty)}개`;
+                      })()
+                    )}
                   </div>
                 </div>
               </div>

@@ -15,7 +15,7 @@ import { getStatusLabel, getStatusColor } from '@/components/campaign-modals/typ
 const AllCampaignsPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const { userRole } = useAuthContext();
+  const { userRole, currentUser } = useAuthContext();
 
   // 캠페인 데이터 상태
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -25,9 +25,10 @@ const AllCampaignsPage: React.FC = () => {
   // 캠페인 추가 모달 상태
   const [addCampaignModalOpen, setAddCampaignModalOpen] = useState<boolean>(false);
 
-  // 권한 확인
-  const isAdmin = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
-  const isOperator = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
+  // 권한 확인 - userRole이 없으면 currentUser.role 사용
+  const effectiveRole = userRole || currentUser?.role;
+  const isAdmin = hasPermission(effectiveRole, PERMISSION_GROUPS.ADMIN);
+  const isOperator = hasPermission(effectiveRole, PERMISSION_GROUPS.ADMIN);
 
 
   // 모든 캠페인 데이터 로드 (서비스 타입 무관)

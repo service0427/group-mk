@@ -103,7 +103,9 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
 
         // 데이터 변환 전에 원본 데이터를 직접 확인
         if (data && data.length > 0) {
-
+          // 보장형 캠페인 찾기
+          const guaranteeCampaigns = data.filter(c => c.slot_type === 'guarantee');
+          
           // DB에서 가져온 데이터의 키 목록 확인 (모든 필드명 표시)
           const sampleItem = data[0];
         }
@@ -120,8 +122,11 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
           // ID 설정 (나중에 원본 데이터와 매칭하기 위해)
           formattedItem.id = campaign.id;
 
-          // 원본 데이터를 아이템에 직접 포함시킴 (타입 확장)
-          (formattedItem as any).originalData = campaign;
+          // formatCampaignData가 이미 originalData를 포함하고 있으므로, 확인만 하고 없으면 추가
+          if (!formattedItem.originalData) {
+            (formattedItem as any).originalData = campaign;
+          }
+          
 
           return formattedItem;
         });
@@ -206,6 +211,7 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
   const renderProject = (item: IAdCampaignsContentItem, index: number) => {
     // 상세 설명 가져오기 (이제 originalData에서 직접 가져옴)
     const detailedDesc = item.originalData?.detailed_description?.replace(/\\n/g, '\n') || item.detailedDescription;
+
 
     return (
       <CardAdCampaign
@@ -307,20 +313,6 @@ const IntroTemplate: React.FC<IntroTemplateProps> = ({ serviceData, campaignPath
               </div>
             </div>
 
-            {/* 디버그 정보 출력 */}
-            <div className="mb-4 p-4 bg-gray-100 rounded border border-gray-300">
-              <h4 className="font-bold mb-2">디버그 정보:</h4>
-              <p>캠페인 개수: {items.length}</p>
-              <p>원본 데이터 개수: {rawItems.length}</p>
-              {rawItems.length > 0 && (
-                <div>
-                  <p>첫 번째 캠페인 ID: {rawItems[0].id}</p>
-                  <p>첫 번째 캠페인 이름: {rawItems[0].campaign_name}</p>
-                  <p>상세 설명 유무: {rawItems[0].detailed_description ? '있음' : '없음'}</p>
-                  <p>상세 설명 미리보기: {rawItems[0].detailed_description?.substring(0, 30)}...</p>
-                </div>
-              )}
-            </div>
 
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow">

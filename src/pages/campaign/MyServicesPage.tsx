@@ -507,7 +507,7 @@ const MyServicesPage: React.FC = () => {
                       <input
                         type="text"
                         className="input input-bordered input-sm w-full"
-                        placeholder="제품명, MID, URL 검색"
+                        placeholder="제품명, MID, URL, 키워드 검색"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                       />
@@ -582,7 +582,7 @@ const MyServicesPage: React.FC = () => {
                 <input
                   type="text"
                   className="input input-bordered input-sm w-full"
-                  placeholder="제품명, MID, URL 검색"
+                  placeholder="제품명, MID, URL, 키워드 검색"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                 />

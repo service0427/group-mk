@@ -300,14 +300,15 @@ const MyServicesPage: React.FC = () => {
   const handleOpenRefundModal = useCallback((slotIds: string | string[]) => {
     const idsArray = Array.isArray(slotIds) ? slotIds : [slotIds];
 
-    // 환불 가능한 슬롯만 필터링 (active 또는 approved 상태)
+    // 환불 가능한 슬롯만 필터링 (active 또는 approved 상태, 이미 환불 관련 상태는 제외)
     const refundableSlots = idsArray.filter(id => {
       const slot = filteredSlots.find(s => s.id === id);
-      return slot && (slot.status === 'active' || slot.status === 'approved');
+      return slot && (slot.status === 'active' || slot.status === 'approved') && 
+             !['refund_pending', 'refund_approved', 'refunded', 'cancelled'].includes(slot.status);
     });
 
     if (refundableSlots.length === 0) {
-      showError('진행 중인 슬롯만 환불 신청할 수 있습니다.');
+      showError('진행 중인 슬롯만 환불 신청할 수 있습니다. 이미 환불이 진행 중이거나 완료된 슬롯은 선택할 수 없습니다.');
       return;
     }
 
@@ -744,7 +745,7 @@ const MyServicesPage: React.FC = () => {
           status: slot.status,
           campaign: slot.campaign ? {
             campaignName: slot.campaign.campaignName,
-            refund_settings: slot.campaign.refundSettings
+            refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
           } : undefined
         }))}
         onSuccess={async () => {

@@ -96,8 +96,8 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
         } else {
           // active 상태 (작업 진행 중) - 사용 일수에 따른 부분 환불
           calculation = calculateRefund(
-            slot.startDate,
-            slot.endDate,
+            slot.startDate ?? null,
+            slot.endDate ?? null,
             Number(amount),
             refundSettings as RefundSettings
           );
@@ -233,7 +233,7 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
         <DialogHeader className="pb-4 border-b mb-4">
           <DialogTitle className="text-xl font-bold flex items-center gap-3">
             <div className="size-12 rounded-full bg-gradient-to-br from-red-400 to-pink-500 shadow-lg flex items-center justify-center">
-              <KeenIcon icon="wallet" className="text-white size-7" />
+              <KeenIcon icon="wallet" className="text-white" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">환불 신청</h3>
@@ -266,17 +266,59 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
                   {totalRefundAmount.toLocaleString()}원
                 </span>
               </div>
-              {anyRequiresApproval && (
-                <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <KeenIcon icon="shield-tick" className="text-amber-600 dark:text-amber-400 size-5 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-amber-800 dark:text-amber-200">승인 필요</p>
-                      <p className="text-amber-700 dark:text-amber-300 mt-0.5">총판 승인 후 환불이 진행됩니다.</p>
+              {/* 환불 정책 정보 표시 */}
+              {(() => {
+                // 첫 번째 슬롯에서 환불 설정을 가져옴
+                const firstSlotWithRefundSettings = slots.find(slot => 
+                  slot.campaign?.refund_settings && slot.campaign.refund_settings.enabled
+                );
+                
+                if (!firstSlotWithRefundSettings?.campaign?.refund_settings) {
+                  return null;
+                }
+                
+                const refundSettings = firstSlotWithRefundSettings.campaign.refund_settings;
+                
+                return (
+                  <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <KeenIcon icon="information-2" className="text-amber-600 dark:text-amber-400 size-5 mt-0.5" />
+                      <div className="text-sm space-y-1">
+                        <p className="font-medium text-amber-800 dark:text-amber-200">환불 정책</p>
+                        {(() => {
+                          switch (refundSettings.type) {
+                          case 'immediate':
+                            return (
+                              <p className="text-amber-700 dark:text-amber-300">
+                                • 환불 승인 후 즉시 환불 처리됩니다.
+                              </p>
+                            );
+                          case 'delayed':
+                            return (
+                              <p className="text-amber-700 dark:text-amber-300">
+                                • 환불 승인 후 {refundSettings.delay_days || 0}일 뒤에 환불됩니다.
+                              </p>
+                            );
+                          case 'cutoff_based':
+                            return (
+                              <p className="text-amber-700 dark:text-amber-300">
+                                • 마감시간({refundSettings.cutoff_time || '18:00'}) 이후 환불 처리됩니다.
+                              </p>
+                            );
+                          default:
+                            return null;
+                        }
+                      })()}
+                        {anyRequiresApproval && (
+                          <p className="text-amber-700 dark:text-amber-300">
+                            • 총판 승인이 필요합니다.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -341,7 +383,7 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
                             {calc.refundAmount.toLocaleString()}원
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {calc.refundRate.toFixed(0)}% 환불
+                            {calc.refundRate?.toFixed(0) ?? 0}% 환불
                           </p>
                           {calc.expectedRefundDate && (
                             <div className="mt-1 flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">

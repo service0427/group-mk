@@ -176,7 +176,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       guaranteeUnit: newCampaign.guaranteeUnit || '일',
       targetRank: String(newCampaign.targetRank || '1'),
       minGuaranteePrice: String(newCampaign.minGuaranteePrice || ''),
-      maxGuaranteePrice: String(newCampaign.maxGuaranteePrice || '')
+      maxGuaranteePrice: String(newCampaign.maxGuaranteePrice || ''),
       refundSettings: newCampaign.refundSettings || {
         enabled: true,
         type: 'immediate',
@@ -375,9 +375,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         guaranteeUnit: campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일',
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
-        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
-        refundSettings: refundSettingsValue, // 환불 설정 추가
-        originalData: campaign.originalData // originalData 보존
+        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || '',
+        refundSettings: refundSettingsValue // 환불 설정 추가
       });
 
       // 초기 폼 데이터도 설정 (변경 감지용)
@@ -395,7 +394,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         guaranteeUnit: campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일',
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
-        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
+        maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || '',
         refundSettings: refundSettingsValue
       };
       setInitialFormData(initialData);
@@ -1664,7 +1663,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 </div>
 
                 {/* 환불 정책 - 모바일 최적화 */}
-                {formData.refundSettings && formData.refundSettings.enabled && (
+                {formData.refundSettings?.enabled && (
                   <div>
                     <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3 flex items-center gap-2">
                       <KeenIcon icon="shield-tick" className="text-primary size-4 sm:size-5" />
@@ -1679,13 +1678,13 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                             <span className="font-medium text-amber-700 dark:text-amber-300">환불 가능 시점: </span>
                             <span className="text-gray-700 dark:text-gray-300">
                               {(() => {
-                                switch (formData.refundSettings.type) {
+                                switch (formData.refundSettings?.type) {
                                   case 'immediate':
                                     return '즉시 환불 가능';
                                   case 'delayed':
-                                    return `작업 시작 ${formData.refundSettings.delay_days || 0}일 후 환불 가능`;
+                                    return `작업 시작 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
                                   case 'cutoff_based':
-                                    return `마감시간(${formData.refundSettings.cutoff_time || '18:00'}) 이후 환불 가능`;
+                                    return `마감시간(${formData.refundSettings?.cutoff_time || '18:00'}) 이후 환불 가능`;
                                   default:
                                     return '즉시 환불 가능';
                                 }
@@ -1700,20 +1699,20 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           <div className="text-xs sm:text-sm">
                             <span className="font-medium text-amber-700 dark:text-amber-300">환불 승인: </span>
                             <span className="text-gray-700 dark:text-gray-300">
-                              {formData.refundSettings.requires_approval ? '총판 승인 필요' : '자동 승인'}
+                              {formData.refundSettings?.requires_approval ? '총판 승인 필요' : '자동 승인'}
                             </span>
                           </div>
                         </div>
 
                         {/* 환불 규정 */}
-                        {formData.refundSettings.refund_rules && (
+                        {formData.refundSettings?.refund_rules && (
                           <>
                             <div className="flex items-start gap-2">
                               <KeenIcon icon="calendar-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
                               <div className="text-xs sm:text-sm">
                                 <span className="font-medium text-amber-700 dark:text-amber-300">최소 사용 일수: </span>
                                 <span className="text-gray-700 dark:text-gray-300">
-                                  {formData.refundSettings.refund_rules.min_usage_days || 0}일
+                                  {formData.refundSettings?.refund_rules?.min_usage_days || 0}일
                                 </span>
                               </div>
                             </div>
@@ -1723,7 +1722,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                               <div className="text-xs sm:text-sm">
                                 <span className="font-medium text-amber-700 dark:text-amber-300">최대 환불 가능 일수: </span>
                                 <span className="text-gray-700 dark:text-gray-300">
-                                  {formData.refundSettings.refund_rules.max_refund_days || 7}일
+                                  {formData.refundSettings?.refund_rules?.max_refund_days || 7}일
                                 </span>
                               </div>
                             </div>
@@ -1733,7 +1732,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                               <div className="text-xs sm:text-sm">
                                 <span className="font-medium text-amber-700 dark:text-amber-300">부분 환불: </span>
                                 <span className="text-gray-700 dark:text-gray-300">
-                                  {formData.refundSettings.refund_rules.partial_refund ? '사용 기간에 따른 부분 환불 가능' : '전액 환불만 가능'}
+                                  {formData.refundSettings?.refund_rules?.partial_refund ? '사용 기간에 따른 부분 환불 가능' : '전액 환불만 가능'}
                                 </span>
                               </div>
                             </div>

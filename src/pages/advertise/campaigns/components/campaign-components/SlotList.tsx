@@ -122,6 +122,7 @@ const SlotList: React.FC<SlotListProps> = ({
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
+  const [openRefundRejectionId, setOpenRefundRejectionId] = useState<string | null>(null);
 
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
@@ -158,12 +159,407 @@ const SlotList: React.FC<SlotListProps> = ({
   };
 
   // 커스텀 상태 배지 (MyServicesPage용)
-  const getCustomStatusBadge = (status: string): JSX.Element => {
+  const getCustomStatusBadge = (status: string, slot?: SlotItem): JSX.Element => {
+    // 환불 거절된 슬롯 확인
+    const hasRejectedRefund = slot?.refund_requests?.some(req => req.status === 'rejected');
+    // 환불 승인된 슬롯 확인
+    const hasApprovedRefund = slot?.refund_requests?.some(req => req.status === 'approved');
+    
+    // refund_approved 상태는 특별 처리
+    if (status === 'refund_approved') {
+      console.log('refund_approved slot:', slot);
+      return (
+        <div className="flex items-center gap-1">
+          <span className="badge badge-primary whitespace-nowrap">환불승인</span>
+          <div className="relative">
+            <button
+              className="badge badge-info whitespace-nowrap text-xs cursor-pointer flex items-center gap-1"
+              data-refund-rejection-id={slot?.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenRefundRejectionId(openRefundRejectionId === slot?.id ? null : slot?.id || null);
+              }}
+            >
+              환불정보
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </button>
+            {openRefundRejectionId === slot?.id && ReactDOM.createPortal(
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setOpenRefundRejectionId(null)} />
+                <div 
+                  className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
+                  style={{
+                    left: (() => {
+                      const button = document.querySelector(`[data-refund-rejection-id="${slot.id}"]`);
+                      if (!button) return '0px';
+                      const rect = button.getBoundingClientRect();
+                      const tooltipWidth = 288; // w-72 = 18rem = 288px
+                      let left = rect.right - tooltipWidth;
+                      if (left < 10) left = 10;
+                      if (left + tooltipWidth > window.innerWidth - 10) {
+                        left = window.innerWidth - tooltipWidth - 10;
+                      }
+                      return `${left}px`;
+                    })(),
+                    top: (() => {
+                      const button = document.querySelector(`[data-refund-rejection-id="${slot.id}"]`);
+                      if (!button) return '0px';
+                      const rect = button.getBoundingClientRect();
+                      const tooltipHeight = 150; // 대략적인 툴팁 높이
+                      
+                      // 화면 상단에 공간이 충분한지 확인
+                      if (rect.top - tooltipHeight - 8 < 10) {
+                        // 공간이 부족하면 버튼 아래에 표시
+                        return `${rect.bottom + 8}px`;
+                      } else {
+                        // 공간이 충분하면 버튼 위에 표시
+                        return `${rect.top - tooltipHeight - 8}px`;
+                      }
+                    })()
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-medium text-sm">환불 정보</div>
+                    <button
+                      className="text-gray-400 hover:text-gray-200 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenRefundRejectionId(null);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* 환불 승인 정보 */}
+                  {slot?.refund_requests && slot.refund_requests.length > 0 ? (
+                    slot.refund_requests
+                      .filter(req => req.status === 'approved')
+                      .map((request, index) => (
+                      <div key={request.id} className={index > 0 ? 'mt-3 pt-3 border-t border-gray-700' : ''}>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-green-400 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span className="font-medium">환불 승인됨</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">환불 사유:</span>
+                            <div className="text-gray-200 mt-1">{request.refund_reason || '사유 없음'}</div>
+                          </div>
+                          {request.approval_date && (
+                            <div className="text-gray-400 text-xs">
+                              승인일: {formatDate(request.approval_date)}
+                            </div>
+                          )}
+                          {slot.campaign?.refund_settings && request.approval_date && (
+                            <div className="bg-blue-900/30 border border-blue-700/50 rounded-md p-2 mt-2">
+                              <div className="text-blue-300 text-xs space-y-1">
+                                {slot.campaign.refund_settings.type === 'immediate' && (
+                                  <>
+                                    <div className="font-medium">💡 즉시 환불</div>
+                                    <div>환불 예정일: 즉시 처리</div>
+                                  </>
+                                )}
+                                {slot.campaign.refund_settings.type === 'delayed' && (
+                                  <>
+                                    <div className="font-medium">💡 지연 환불</div>
+                                    <div>
+                                      환불 예정일: {(() => {
+                                        const approvalDate = new Date(request.approval_date);
+                                        const refundDate = new Date(approvalDate);
+                                        refundDate.setDate(refundDate.getDate() + (slot.campaign.refund_settings.delay_days || 0));
+                                        return formatDate(refundDate.toISOString());
+                                      })()}
+                                    </div>
+                                    <div className="text-gray-400">
+                                      (승인일 + {slot.campaign.refund_settings.delay_days}일)
+                                    </div>
+                                  </>
+                                )}
+                                {slot.campaign.refund_settings.type === 'cutoff_based' && (
+                                  <>
+                                    <div className="font-medium">💡 마감시간 기준 환불</div>
+                                    <div>
+                                      환불 예정일: {(() => {
+                                        const approvalDate = new Date(request.approval_date);
+                                        const [hours, minutes] = (slot.campaign.refund_settings.cutoff_time || '00:00').split(':').map(Number);
+                                        const refundDate = new Date(approvalDate);
+                                        refundDate.setHours(hours, minutes, 0, 0);
+                                        
+                                        // 승인 시간이 마감시간을 지났으면 다음날로
+                                        if (refundDate <= approvalDate) {
+                                          refundDate.setDate(refundDate.getDate() + 1);
+                                        }
+                                        
+                                        return `${formatDate(refundDate.toISOString())} ${slot.campaign.refund_settings.cutoff_time}`;
+                                      })()}
+                                    </div>
+                                    <div className="text-gray-400">
+                                      (마감시간: {slot.campaign.refund_settings.cutoff_time})
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // 환불 요청 정보가 없을 때
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-blue-400 mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="8" x2="12" y2="12"></line>
+                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span className="font-medium">환불 승인 상태</span>
+                      </div>
+                      <div className="text-gray-300">
+                        이 슬롯은 환불이 승인되었습니다.
+                      </div>
+                      {slot?.campaign?.refund_settings && (
+                        <div className="bg-blue-900/30 border border-blue-700/50 rounded-md p-2 mt-2">
+                          <div className="text-blue-300 text-xs">
+                            {slot.campaign.refund_settings.type === 'immediate' && '💡 즉시 환불 처리'}
+                            {slot.campaign.refund_settings.type === 'delayed' && 
+                              `💡 ${slot.campaign.refund_settings.delay_days}일 후 환불 예정`}
+                            {slot.campaign.refund_settings.type === 'cutoff_based' && 
+                              `💡 마감시간(${slot.campaign.refund_settings.cutoff_time}) 이후 환불 예정`}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>,
+              document.body
+            )}
+          </div>
+        </div>
+      );
+    }
+    
     // customStatusLabels가 있고 해당 상태가 정의되어 있으면 커스텀 라벨 사용
     if (customStatusLabels && customStatusLabels[status]) {
       // approved 상태를 진행중으로 표시
       if (status === 'approved') {
-        return <span className="badge badge-success whitespace-nowrap">{customStatusLabels[status]}</span>;
+        return (
+          <div className="flex items-center gap-1">
+            <span className="badge badge-success whitespace-nowrap">{customStatusLabels[status]}</span>
+            {hasRejectedRefund && (
+              <div className="relative">
+                <button
+                  className="badge badge-danger whitespace-nowrap text-xs cursor-pointer flex items-center gap-1"
+                  data-refund-rejection-id={slot?.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenRefundRejectionId(openRefundRejectionId === slot?.id ? null : slot?.id || null);
+                  }}
+                >
+                  환불거절
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </button>
+                {openRefundRejectionId === slot?.id && ReactDOM.createPortal(
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenRefundRejectionId(null)} />
+                    <div 
+                      className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
+                      style={{
+                        left: (() => {
+                          const button = document.querySelector(`[data-refund-rejection-id="${slot.id}"]`);
+                          if (!button) return '0px';
+                          const rect = button.getBoundingClientRect();
+                          const tooltipWidth = 288; // w-72 = 18rem = 288px
+                          let left = rect.right - tooltipWidth;
+                          if (left < 10) left = 10;
+                          if (left + tooltipWidth > window.innerWidth - 10) {
+                            left = window.innerWidth - tooltipWidth - 10;
+                          }
+                          return `${left}px`;
+                        })(),
+                        top: (() => {
+                          const button = document.querySelector(`[data-refund-rejection-id="${slot.id}"]`);
+                          if (!button) return '0px';
+                          const rect = button.getBoundingClientRect();
+                          const tooltipHeight = 150; // 대략적인 툴팁 높이
+                          
+                          // 화면 상단에 공간이 충분한지 확인
+                          if (rect.top - tooltipHeight - 8 < 10) {
+                            // 공간이 부족하면 버튼 아래에 표시
+                            return `${rect.bottom + 8}px`;
+                          } else {
+                            // 공간이 충분하면 버튼 위에 표시
+                            return `${rect.top - tooltipHeight - 8}px`;
+                          }
+                        })()
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="font-medium text-sm">환불 정보</div>
+                        <button
+                          className="text-gray-400 hover:text-gray-200 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenRefundRejectionId(null);
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      {/* 환불 승인 정보 */}
+                      {slot?.refund_requests && slot.refund_requests.length > 0 ? (
+                        slot.refund_requests
+                          .filter(req => req.status === 'approved')
+                          .map((request, index) => (
+                          <div key={request.id} className={index > 0 ? 'mt-3 pt-3 border-t border-gray-700' : ''}>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-green-400 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span className="font-medium">환불 승인됨</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">환불 사유:</span>
+                                <div className="text-gray-200 mt-1">{request.refund_reason || '사유 없음'}</div>
+                              </div>
+                              {request.approval_date && (
+                                <div className="text-gray-400 text-xs">
+                                  승인일: {formatDate(request.approval_date)}
+                                </div>
+                              )}
+                              {slot.campaign?.refund_settings && request.approval_date && (
+                                <div className="bg-blue-900/30 border border-blue-700/50 rounded-md p-2 mt-2">
+                                  <div className="text-blue-300 text-xs space-y-1">
+                                    {slot.campaign.refund_settings.type === 'immediate' && (
+                                      <>
+                                        <div className="font-medium">💡 즉시 환불</div>
+                                        <div>환불 예정일: 즉시 처리</div>
+                                      </>
+                                    )}
+                                    {slot.campaign.refund_settings.type === 'delayed' && (
+                                      <>
+                                        <div className="font-medium">💡 지연 환불</div>
+                                        <div>
+                                          환불 예정일: {(() => {
+                                            const approvalDate = new Date(request.approval_date);
+                                            const refundDate = new Date(approvalDate);
+                                            refundDate.setDate(refundDate.getDate() + (slot.campaign.refund_settings.delay_days || 0));
+                                            return formatDate(refundDate.toISOString());
+                                          })()}
+                                        </div>
+                                        <div className="text-gray-400">
+                                          (승인일 + {slot.campaign.refund_settings.delay_days}일)
+                                        </div>
+                                      </>
+                                    )}
+                                    {slot.campaign.refund_settings.type === 'cutoff_based' && (
+                                      <>
+                                        <div className="font-medium">💡 마감시간 기준 환불</div>
+                                        <div>
+                                          환불 예정일: {(() => {
+                                            const approvalDate = new Date(request.approval_date);
+                                            const [hours, minutes] = (slot.campaign.refund_settings.cutoff_time || '00:00').split(':').map(Number);
+                                            const refundDate = new Date(approvalDate);
+                                            refundDate.setHours(hours, minutes, 0, 0);
+                                            
+                                            // 승인 시간이 마감시간을 지났으면 다음날로
+                                            if (refundDate <= approvalDate) {
+                                              refundDate.setDate(refundDate.getDate() + 1);
+                                            }
+                                            
+                                            return `${formatDate(refundDate.toISOString())} ${slot.campaign.refund_settings.cutoff_time}`;
+                                          })()}
+                                        </div>
+                                        <div className="text-gray-400">
+                                          (마감시간: {slot.campaign.refund_settings.cutoff_time})
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        // 환불 요청 정보가 없을 때
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-blue-400 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="8" x2="12" y2="12"></line>
+                              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <span className="font-medium">환불 승인 상태</span>
+                          </div>
+                          <div className="text-gray-300">
+                            이 슬롯은 환불이 승인되었습니다.
+                          </div>
+                          {slot?.campaign?.refund_settings && (
+                            <div className="bg-blue-900/30 border border-blue-700/50 rounded-md p-2 mt-2">
+                              <div className="text-blue-300 text-xs">
+                                {slot.campaign.refund_settings.type === 'immediate' && '💡 즉시 환불 처리'}
+                                {slot.campaign.refund_settings.type === 'delayed' && 
+                                  `💡 ${slot.campaign.refund_settings.delay_days}일 후 환불 예정`}
+                                {slot.campaign.refund_settings.type === 'cutoff_based' && 
+                                  `💡 마감시간(${slot.campaign.refund_settings.cutoff_time}) 이후 환불 예정`}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* 환불 거절 정보 */}
+                      {slot?.refund_requests && slot.refund_requests
+                        .filter(req => req.status === 'rejected')
+                        .map((request, index) => (
+                          <div key={request.id} className={slot.refund_requests?.filter(r => r.status === 'approved').length || 0 > 0 || index > 0 ? 'mt-3 pt-3 border-t border-gray-700' : ''}>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-red-400 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                <span className="font-medium">환불 거절됨</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">거절 사유:</span>
+                                <div className="text-gray-200 mt-1">{request.approval_notes || '사유 없음'}</div>
+                              </div>
+                              {request.approval_date && (
+                                <div className="text-gray-400 text-xs">
+                                  거절일: {formatDate(request.approval_date)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </>,
+                  document.body
+                )}
+              </div>
+            )}
+          </div>
+        );
       }
     }
     // 기본 getStatusBadge 사용
@@ -679,7 +1075,7 @@ const SlotList: React.FC<SlotListProps> = ({
                               거래완료
                             </button>
                           ) : (
-                            getCustomStatusBadge(item.status)
+                            getCustomStatusBadge(item.status, item)
                           )}
                         </div>
                       </td>

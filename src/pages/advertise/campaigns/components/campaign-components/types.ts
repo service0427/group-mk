@@ -4,6 +4,7 @@ export interface Campaign {
   logo?: string;
   status: string;
   serviceType: string;
+  refund_settings?: any;
 }
 
 export interface SlotItem {
@@ -39,6 +40,14 @@ export interface SlotItem {
     email: string;
     full_name: string;
   };
+  refund_requests?: Array<{
+    id: string;
+    status: 'pending' | 'approved' | 'rejected';
+    refund_reason: string;
+    approval_notes?: string;
+    request_date: string;
+    approval_date?: string;
+  }>;
 }
 
 export interface CampaignListItem {

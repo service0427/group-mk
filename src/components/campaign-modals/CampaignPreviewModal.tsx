@@ -11,6 +11,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { RefundSettings } from '@/types/refund.types';
 
 interface CampaignPreviewModalProps {
   open: boolean;
@@ -297,6 +298,89 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* 환불 정책 */}
+              {((campaign.originalData?.refund_settings && campaign.originalData.refund_settings.enabled) || 
+                (campaign.refundSettings && campaign.refundSettings.enabled)) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                    <KeenIcon icon="shield-tick" className="text-primary" />
+                    환불 정책
+                  </h3>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-md border border-amber-200 dark:border-amber-800">
+                    <div className="space-y-3">
+                      {/* 환불 가능 시점 */}
+                      <div className="flex items-start gap-2">
+                        <KeenIcon icon="time-half-pass" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <span className="font-medium text-amber-700 dark:text-amber-300">환불 가능 시점: </span>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {(() => {
+                              const refundSettings = (campaign.originalData?.refund_settings || campaign.refundSettings) as RefundSettings;
+                              switch (refundSettings.type) {
+                                case 'immediate':
+                                  return '즉시 환불 가능';
+                                case 'delayed':
+                                  return `작업 시작 ${refundSettings.delay_days || 0}일 후 환불 가능`;
+                                case 'cutoff_based':
+                                  return `마감시간(${refundSettings.cutoff_time || '18:00'}) 이후 환불 가능`;
+                                default:
+                                  return '즉시 환불 가능';
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 환불 승인 필요 여부 */}
+                      <div className="flex items-start gap-2">
+                        <KeenIcon icon="user-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <span className="font-medium text-amber-700 dark:text-amber-300">환불 승인: </span>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {(campaign.originalData?.refund_settings || campaign.refundSettings)?.requires_approval ? '총판 승인 필요' : '자동 승인'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 환불 규정 */}
+                      {(campaign.originalData?.refund_settings || campaign.refundSettings)?.refund_rules && (
+                        <>
+                          <div className="flex items-start gap-2">
+                            <KeenIcon icon="calendar-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                            <div className="text-sm">
+                              <span className="font-medium text-amber-700 dark:text-amber-300">최소 사용 일수: </span>
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {(campaign.originalData?.refund_settings || campaign.refundSettings)?.refund_rules?.min_usage_days || 0}일
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-2">
+                            <KeenIcon icon="calendar-remove" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                            <div className="text-sm">
+                              <span className="font-medium text-amber-700 dark:text-amber-300">최대 환불 가능 일수: </span>
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {(campaign.originalData?.refund_settings || campaign.refundSettings)?.refund_rules?.max_refund_days || 7}일
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-2">
+                            <KeenIcon icon="percentage-circle" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                            <div className="text-sm">
+                              <span className="font-medium text-amber-700 dark:text-amber-300">부분 환불: </span>
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {(campaign.originalData?.refund_settings || campaign.refundSettings)?.refund_rules?.partial_refund ? '사용 기간에 따른 부분 환불 가능' : '전액 환불만 가능'}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

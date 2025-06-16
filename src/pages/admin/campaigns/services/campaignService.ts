@@ -427,6 +427,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       logo?: string;
       status?: string;
       rejected_reason?: string;
+      refund_settings?: any; // 환불 설정 추가
     }
 
     // 이제 additionalInfo에 이미 add_field가 포함되어 있음
@@ -442,7 +443,9 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       updated_at: new Date(),
       add_info: additionalInfo, // 여기에 이미 add_field가 포함됨
       // 로고 이미지 경로 변경 (업로드된 로고가 있거나 로고 값이 있을 경우)
-      ...(data.uploadedLogo || data.logo ? { logo: data.logo } : {})
+      ...(data.uploadedLogo || data.logo ? { logo: data.logo } : {}),
+      // 환불 설정 추가
+      ...(data.refundSettings ? { refund_settings: data.refundSettings } : {})
     };
 
     // 상태 변경 플래그와 이전 상태 저장
@@ -754,7 +757,18 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       guarantee_unit: data.slotType === 'guarantee' && data.guaranteeUnit ? data.guaranteeUnit : null,
       target_rank: data.slotType === 'guarantee' && data.targetRank ? parseInt(data.targetRank) : null,
       min_guarantee_price: data.slotType === 'guarantee' && data.minGuaranteePrice ? parseFloat(data.minGuaranteePrice) : null,
-      max_guarantee_price: data.slotType === 'guarantee' && data.maxGuaranteePrice ? parseFloat(data.maxGuaranteePrice) : null
+      max_guarantee_price: data.slotType === 'guarantee' && data.maxGuaranteePrice ? parseFloat(data.maxGuaranteePrice) : null,
+      // 환불 설정 추가
+      refund_settings: data.refundSettings || {
+        enabled: true,
+        type: 'immediate',
+        requires_approval: false,
+        refund_rules: {
+          min_usage_days: 0,
+          max_refund_days: 7,
+          partial_refund: true
+        }
+      }
     };
 
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회

@@ -144,6 +144,7 @@ export const getActiveCampaignsByServiceType = async (serviceType: string) => {
         service_type: parsedItem.service_type,
         additional_logic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
         add_info: parsedItem.add_info,
+        refundSettings: parsedItem.refund_settings, // 환불 설정 추가
         // 원본 데이터도 포함
         originalData: parsedItem
       };
@@ -223,6 +224,7 @@ export const fetchCampaignsByServiceType = async (serviceType: string, userId?: 
       unitPrice: parsedItem.unit_price,
       serviceType: parsedItem.service_type,
       additionalLogic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
+      refundSettings: parsedItem.refund_settings, // 환불 설정 추가
       // 상세 설명을 분리해서 명시적으로 가져오기
       // 원본 데이터도 포함 (파싱된 add_info 포함)
       originalData: parsedItem

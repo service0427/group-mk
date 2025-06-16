@@ -18,6 +18,6 @@ export interface IAdCampaignsContentItem {
     variant: string;
     value: number;
   };
-  originalData?: any; // 원본 데이터 전체 저장
+  originalData?: any; // 원본 데이터 전체 저장 (환불 설정 포함)
   rawId?: string | number; // 원본 ID - 모달에 전달할 때 사용
 }

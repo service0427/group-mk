@@ -240,28 +240,6 @@ create index IF not exists idx_cash_charge_requests_status on public.cash_charge
 
 create index IF not exists idx_cash_charge_requests_user_id on public.cash_charge_requests using btree (user_id) TABLESPACE pg_default;
 
-create table public.campaigns (
-  id serial not null,
-  group_id character varying(30) null,
-  service_type character varying(30) not null,
-  campaign_name character varying(50) not null,
-  status character varying(20) not null default '''waiting_approval''::character varying'::character varying,
-  description text not null,
-  detailed_description text null,
-  logo character varying(100) not null,
-  efficiency numeric(5, 2) null,
-  min_quantity integer not null,
-  unit_price numeric(10, 2) not null,
-  additional_logic integer null,
-  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
-  deadline character varying(5) null,
-  mat_id uuid null,
-  add_info jsonb null,
-  rejected_reason text null,
-  constraint campaigns_pkey_new primary key (id)
-) TABLESPACE pg_default;
-
 create table public.balance_audit_log (
   id uuid not null default gen_random_uuid (),
   user_id uuid not null,
@@ -452,3 +430,139 @@ create table public.system_logs (
 create index IF not exists idx_system_logs_created_at on public.system_logs using btree (created_at) TABLESPACE pg_default;
 
 create index IF not exists idx_system_logs_log_type on public.system_logs using btree (log_type) TABLESPACE pg_default;
+
+create table public.campaigns (
+  id serial not null,
+  group_id character varying(30) null,
+  service_type character varying(30) not null,
+  campaign_name character varying(50) not null,
+  status character varying(20) not null default '''waiting_approval''::character varying'::character varying,
+  description text not null,
+  detailed_description text null,
+  logo character varying(100) not null,
+  efficiency numeric(5, 2) null,
+  min_quantity integer not null,
+  unit_price numeric(10, 2) not null,
+  additional_logic integer null,
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  deadline character varying(5) null,
+  mat_id uuid null,
+  add_info jsonb null,
+  rejected_reason text null,
+  slot_type character varying(20) null default 'standard'::character varying,
+  guarantee_days integer null,
+  is_guarantee boolean null default false,
+  guarantee_count integer null,
+  target_rank integer null,
+  is_negotiable boolean null default false,
+  min_guarantee_price numeric(10, 2) null,
+  max_guarantee_price numeric(10, 2) null,
+  guarantee_unit character varying(10) null default '일'::character varying,
+  refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "cutoff_time": "00:00", "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}, "approval_roles": ["distributor", "advertiser"], "requires_approval": false}'::jsonb,
+  constraint campaigns_pkey_new primary key (id),
+  constraint guarantee_count_check check (
+    (
+      (
+        ((slot_type)::text = 'guarantee'::text)
+        and (guarantee_count is not null)
+        and (guarantee_count > 0)
+      )
+      or (
+        ((slot_type)::text = 'standard'::text)
+        and (guarantee_count is null)
+      )
+    )
+  ),
+  constraint guarantee_price_check check (
+    (
+      (
+        (is_negotiable = true)
+        and (min_guarantee_price is not null)
+        and (max_guarantee_price is not null)
+        and (min_guarantee_price <= max_guarantee_price)
+      )
+      or (is_negotiable = false)
+    )
+  ),
+  constraint guarantee_unit_check check (
+    (
+      (
+        (guarantee_unit)::text = any (
+          (
+            array['일'::character varying, '회'::character varying]
+          )::text[]
+        )
+      )
+      or (guarantee_unit is null)
+    )
+  ),
+  constraint slot_type_check check (
+    (
+      (slot_type)::text = any (
+        (
+          array[
+            'standard'::character varying,
+            'guarantee'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint target_rank_check check (
+    (
+      (
+        ((slot_type)::text = 'guarantee'::text)
+        and (target_rank is not null)
+        and (target_rank > 0)
+      )
+      or (
+        ((slot_type)::text = 'standard'::text)
+        and (target_rank is null)
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_campaigns_slot_type on public.campaigns using btree (slot_type) TABLESPACE pg_default;
+
+create index IF not exists idx_campaigns_is_guarantee on public.campaigns using btree (is_guarantee) TABLESPACE pg_default;
+
+create index IF not exists idx_campaigns_guarantee_unit on public.campaigns using btree (guarantee_unit) TABLESPACE pg_default
+where
+  ((slot_type)::text = 'guarantee'::text);
+
+create trigger update_campaigns_is_guarantee BEFORE INSERT
+or
+update OF slot_type on campaigns for EACH row
+execute FUNCTION update_is_guarantee_flag ();
+
+
+create table public.slot_refund_approvals (
+  id uuid not null default gen_random_uuid (),
+  slot_id uuid not null,
+  requester_id uuid not null,
+  approver_id uuid null,
+  status text not null default 'pending'::text,
+  request_date timestamp with time zone null default now(),
+  approval_date timestamp with time zone null,
+  refund_amount numeric not null,
+  refund_reason text null,
+  approval_notes text null,
+  constraint slot_refund_approvals_pkey primary key (id),
+  constraint slot_refund_approvals_approver_id_fkey foreign KEY (approver_id) references users (id),
+  constraint slot_refund_approvals_requester_id_fkey foreign KEY (requester_id) references users (id),
+  constraint slot_refund_approvals_slot_id_fkey foreign KEY (slot_id) references slots (id),
+  constraint slot_refund_approvals_status_check check (
+    (
+      status = any (
+        array[
+          'pending'::text,
+          'approved'::text,
+          'rejected'::text,
+          'cancelled'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;

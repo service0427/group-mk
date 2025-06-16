@@ -156,22 +156,49 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
 
       // 1. 승인이 필요한 슬롯은 환불 승인 요청 생성
       if (slotsNeedingApproval.length > 0) {
-        const approvalInserts = slotsNeedingApproval.map(slotId => {
+        for (const slotId of slotsNeedingApproval) {
           const calc = refundCalculations.get(slotId)!;
-          return {
-            slot_id: slotId,
-            requester_id: currentUserId,
-            refund_amount: calc.refundAmount,
-            refund_reason: refundReason,
-            status: 'pending'
-          };
-        });
-
-        const { error: approvalError } = await supabase
-          .from('slot_refund_approvals')
-          .insert(approvalInserts);
-
-        if (approvalError) throw approvalError;
+          
+          // 기존 거절된 환불 요청이 있는지 확인
+          const { data: existingApproval } = await supabase
+            .from('slot_refund_approvals')
+            .select('id, status')
+            .eq('slot_id', slotId)
+            .eq('status', 'rejected')
+            .single();
+          
+          if (existingApproval) {
+            // 기존 거절된 요청을 재사용
+            const { error: updateError } = await supabase
+              .from('slot_refund_approvals')
+              .update({
+                refund_amount: calc.refundAmount,
+                refund_reason: refundReason,
+                status: 'pending',
+                request_date: new Date().toISOString(),
+                approval_date: null,
+                approver_id: null,
+                approval_notes: null,
+                approved_amount: null
+              })
+              .eq('id', existingApproval.id);
+              
+            if (updateError) throw updateError;
+          } else {
+            // 새로운 환불 요청 생성
+            const { error: insertError } = await supabase
+              .from('slot_refund_approvals')
+              .insert({
+                slot_id: slotId,
+                requester_id: currentUserId,
+                refund_amount: calc.refundAmount,
+                refund_reason: refundReason,
+                status: 'pending'
+              });
+              
+            if (insertError) throw insertError;
+          }
+        }
 
         // 슬롯 상태를 refund_pending으로 변경
         const { error: statusError } = await supabase

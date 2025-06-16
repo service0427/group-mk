@@ -709,8 +709,6 @@ const SlotList: React.FC<SlotListProps> = ({
                     )}
                     {slot.status === 'success' && 
                       <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">완료</span>}
-                    {slot.status === 'refund' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">환불</span>}
                     {slot.status === 'complete' && 
                       <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 dark:bg-gray-700 text-white">종료</span>}
                     {slot.status === 'completed' && 
@@ -963,8 +961,6 @@ const SlotList: React.FC<SlotListProps> = ({
                   <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">반려</span>}
                 {slot.status === 'success' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">완료</span>}
-                {slot.status === 'refund' && 
-                  <span className="px-1.5 py-0.5 text-xs rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">환불</span>}
                 {slot.status === 'complete' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 dark:bg-gray-700 text-white">종료</span>}
                 {slot.status === 'completed' && 

@@ -431,8 +431,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       fetchCampaigns(); // 캠페인 목록 조회
-      fetchKeywordGroups(); // 키워드 그룹 조회
       fetchUserBalance(); // 사용자 잔액 가져오기
+      // fetchKeywordGroups는 캠페인이 로드된 후에 호출됨
 
       // 선택된 그룹 ID 설정은 그룹 목록이 로드된 후에 처리됨 (fetchKeywordGroups 내부에서)
     }
@@ -444,11 +444,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
       if (selectedCampaign) {
         fetchCampaignBanner(selectedCampaign);
-        // 캠페인이 변경되면 해당 서비스 타입의 키워드 그룹만 다시 불러오기
+        // 캠페인이 설정된 후에만 키워드 그룹 불러오기
         fetchKeywordGroups();
       }
     }
-  }, [selectedCampaignId, campaigns]);
+  }, [selectedCampaignId]);
 
   // 초기 키워드 데이터가 설정되고 캠페인이 선택되었을 때 금액 계산
   useEffect(() => {
@@ -470,7 +470,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 그룹이 선택되었을 때 키워드 로드
   useEffect(() => {
-    if (selectedGroupId && campaign?.selectedGroupId === selectedGroupId) {
+    if (selectedGroupId) {
       fetchKeywords(selectedGroupId);
     }
   }, [selectedGroupId]);
@@ -658,7 +658,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 캠페인의 service_type이 있으면 campaign_type으로 필터링
       if (campaignServiceType) {
+        console.log('Filtering keyword groups by campaign_type:', campaignServiceType);
         query = query.eq('campaign_type', campaignServiceType);
+      } else {
+        console.log('No campaignServiceType found, fetching all groups');
       }
 
       const { data, error } = await query;
@@ -667,6 +670,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         setKeywordError("키워드 그룹을 불러오지 못했습니다");
         return;
       }
+      
+      console.log('Fetched keyword groups:', data?.map(g => ({ 
+        id: g.id, 
+        name: g.name, 
+        campaign_type: g.campaign_type 
+      })));
 
       // 스네이크 케이스에서 카멜 케이스로 변환
       const transformedData = data.map(item => ({

@@ -27,6 +27,7 @@ export const CampaignPage = lazyWithPreload(() => import('@/pages/advertise').th
 // 마이페이지 lazy loading with preload
 export const ProfilePage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.ProfilePage })));
 export const ServicesPage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.ServicesPage })));
+export const MyGuaranteeQuotesPage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.MyGuaranteeQuotesPage })));
 export const CashRequestsPage = lazyWithPreload(() => import('@/pages/myinfo').then(m => ({ default: m.CashRequestsPage })));
 export const NotificationsPage = lazyWithPreload(() => import('@/pages/myinfo/notifications'));
 
@@ -156,6 +157,9 @@ const AppRoutingSetup = (): ReactElement => {
           <Route path="/point/history" element={<SuspenseWrapper><PointHistoryPage /></SuspenseWrapper>} />
           <Route path="/myinfo/cash-requests" element={<SuspenseWrapper><CashRequestsPage /></SuspenseWrapper>} />
 
+          {/* 내 서비스 관리 라우트 (비기너 등급부터 접근 가능) */}
+          <Route path="/myinfo/services" element={<SuspenseWrapper><ServicesPage /></SuspenseWrapper>} />
+
           {/* 내 서비스 관리 라우트 */}
           <Route path="/my-services" element={<SuspenseWrapper><MyServicesPage /></SuspenseWrapper>} />
 
@@ -170,6 +174,7 @@ const AppRoutingSetup = (): ReactElement => {
 
           {/* 캠페인 관리 페이지 - URL 파라미터 사용 */}
           <Route path="/advertise/campaigns/my/:serviceType" element={<SuspenseWrapper><CampaignPage /></SuspenseWrapper>} />
+
         </Route>
       </Route>
 
@@ -294,6 +299,7 @@ initializeComponentMap({
   '/my-services': MyServicesPage,
   '/myinfo/profile': ProfilePage,
   '/myinfo/services': ServicesPage,
+  '/myinfo/guarantee-quotes': MyGuaranteeQuotesPage,
   '/myinfo/cash-requests': CashRequestsPage,
   '/myinfo/notifications': NotificationsPage,
 

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.guarantee_slot_requests (
     final_daily_amount NUMERIC(10,2),  -- 최종 협의된 회당 단가
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT request_status_check CHECK (status IN ('requested', 'negotiating', 'accepted', 'rejected', 'expired'))
+    CONSTRAINT request_status_check CHECK (status IN ('requested', 'negotiating', 'accepted', 'rejected', 'expired', 'purchased'))
 );
 
 -- 인덱스 생성
@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS public.guarantee_slot_negotiations (
     message_type VARCHAR(20) NOT NULL,  -- 'message', 'price_proposal', 'counter_offer'
     message TEXT NOT NULL,
     proposed_daily_amount NUMERIC(10,2),  -- 제안 단가 (price_proposal인 경우)
+    proposed_guarantee_count INTEGER,  -- 제안 보장 횟수/일수 (price_proposal인 경우)
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT sender_type_check CHECK (sender_type IN ('user', 'distributor')),
@@ -239,6 +240,7 @@ AND gs.completed_count < gs.guarantee_count;
 -- =============================================================================
 
 COMMENT ON TABLE guarantee_slot_requests IS '보장성 슬롯 견적 요청 테이블';
+COMMENT ON COLUMN guarantee_slot_requests.status IS 'requested: 요청됨, negotiating: 협상중, accepted: 협상완료, rejected: 거절됨, expired: 만료됨, purchased: 구매완료';
 COMMENT ON TABLE guarantee_slot_negotiations IS '보장성 슬롯 협상 메시지 테이블';
 COMMENT ON TABLE guarantee_slots IS '보장성 슬롯 메인 테이블';
 COMMENT ON TABLE guarantee_slot_holdings IS '보장성 슬롯 홀딩 금액 관리 테이블';

@@ -764,7 +764,7 @@ const ChatSticky: React.FC = () => {
                     {/* 첨부파일 표시 - 컴팩트 버전 */}
                     {message.attachments && message.attachments.length > 0 && (
                       <div className="mt-2 space-y-2">
-                        {message.attachments.map((attachment: AttachmentFile, attachIndex: number) => (
+                        {message.attachments.map((attachment: any, attachIndex: number) => (
                           <div key={attachIndex} className="p-2 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded">
                             <div className="flex items-center gap-2 mb-2">
                               {fileUploadService.isImageFile({ type: attachment.type } as File) ? (
@@ -1124,7 +1124,7 @@ const ChatSticky: React.FC = () => {
                       {/* 첨부파일 표시 - 확대 버전 */}
                       {message.attachments && message.attachments.length > 0 && (
                         <div className="mt-3 space-y-2">
-                          {message.attachments.map((attachment: AttachmentFile, attachIndex: number) => (
+                          {message.attachments.map((attachment: any, attachIndex: number) => (
                             <div key={attachIndex} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded">
                               {fileUploadService.isImageFile({ type: attachment.type } as File) ? (
                                 <img 

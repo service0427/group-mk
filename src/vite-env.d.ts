@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
-// inert 속성 타입 선언 (접근성 문제 해결용)
-declare module 'react' {
-  interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
+// React namespace 확장으로 inert 속성 추가
+namespace React {
+  interface HTMLAttributes<T> {
     inert?: string | undefined;
   }
 }

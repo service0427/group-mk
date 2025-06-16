@@ -495,8 +495,11 @@ const ApprovePage: React.FC = () => {
           }
         }
 
-        // 취소된 슬롯 제외
-        query = query.neq('status', 'cancelled');
+        // 취소된 슬롯 및 환불 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
+        query = query.neq('status', 'cancelled')
+                     .neq('status', 'refund_pending')
+                     .neq('status', 'refund_approved')
+                     .neq('status', 'refunded');
 
         // 상태 필터 적용
         if (searchStatus) {

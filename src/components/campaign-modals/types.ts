@@ -1,5 +1,6 @@
 // 캠페인 서비스 타입 정의
 export enum CampaignServiceType {
+  NAVER_TRAFFIC = 'NaverTraffic',
   NAVER_AUTO = 'NaverAuto',
   NAVER_SHOPPING_TRAFFIC = 'NaverShoppingTraffic',
   NAVER_SHOPPING_FAKESALE = 'NaverShoppingFakeSale',
@@ -19,6 +20,7 @@ export enum CampaignServiceType {
 // 서비스 타입 설명 (CampaignServiceType enum 기준으로 통일)
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
   // 표준 enum 형태
+  [CampaignServiceType.NAVER_TRAFFIC]: 'N 트래픽',
   [CampaignServiceType.NAVER_AUTO]: 'N 자동완성',
   [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'NS 트래픽',
   [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: 'NS 가구매',
@@ -38,6 +40,7 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
 // DB의 snake_case를 enum의 PascalCase로 변환하는 함수
 export const convertDbServiceTypeToEnum = (dbServiceType: string): string => {
   const typeMap: { [key: string]: string } = {
+    'naver_traffic': CampaignServiceType.NAVER_TRAFFIC,
     'naver_auto': CampaignServiceType.NAVER_AUTO,
     'naver_shopping_traffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
     'naver_shopping_fakesale': CampaignServiceType.NAVER_SHOPPING_FAKESALE,

@@ -39,5 +39,15 @@ export default defineConfig(({ mode }) => ({
         manualChunks: undefined
       }
     }
+  },
+  // 개발 서버 프록시 설정
+  server: {
+    proxy: {
+      '/api/purchase-guarantee-slot': {
+        target: 'http://localhost:8787', // Wrangler 로컬 서버
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      }
+    }
   }
 }));

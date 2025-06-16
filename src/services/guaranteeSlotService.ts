@@ -104,11 +104,14 @@ export const guaranteeSlotRequestService = {
   },
 
   // 견적 요청 상태 업데이트
-  async updateRequestStatus(requestId: string, status: GuaranteeSlotRequestStatus, finalDailyAmount?: number) {
+  async updateRequestStatus(requestId: string, status: GuaranteeSlotRequestStatus, finalDailyAmount?: number, finalGuaranteeCount?: number) {
     try {
       const updateData: any = { status };
       if (finalDailyAmount !== undefined) {
         updateData.final_daily_amount = finalDailyAmount;
+      }
+      if (finalGuaranteeCount !== undefined) {
+        updateData.guarantee_count = finalGuaranteeCount;
       }
 
       const { data, error } = await supabase
@@ -140,7 +143,8 @@ export const guaranteeSlotRequestService = {
             mat_id,
             min_guarantee_price,
             max_guarantee_price,
-            logo
+            logo,
+            guarantee_unit
           ),
           keywords (
             id,
@@ -179,6 +183,7 @@ export const negotiationService = {
           message_type: params.message_type,
           message: params.message,
           proposed_daily_amount: params.proposed_daily_amount,
+          proposed_guarantee_count: params.proposed_guarantee_count,
           attachments: params.attachments || [],
         })
         .select()
@@ -234,40 +239,52 @@ export const guaranteeSlotService = {
       }
 
       if (!request.final_daily_amount) {
-        throw new Error('최종 가격이 확정되지 않았습니다.');
+        throw new Error('협상된 가격이 확정되지 않았습니다.');
       }
 
-      const totalAmount = request.final_daily_amount * request.guarantee_count * 1.1; // 부가세 10% 포함
+      if (!request.guarantee_count) {
+        throw new Error('보장 횟수가 확정되지 않았습니다.');
+      }
+
+      const totalAmount = Math.floor(request.final_daily_amount * request.guarantee_count * 1.1); // VAT 포함
 
       // 사용자 잔액 확인
       const { data: userBalance, error: balanceError } = await supabase
-        .from('users')
-        .select('cash_amount, free_cash_amount')
-        .eq('id', userId)
+        .from('user_balances')
+        .select('total_balance')
+        .eq('user_id', userId)
         .single();
 
       if (balanceError || !userBalance) {
-        throw new Error('사용자 정보를 조회할 수 없습니다.');
+        throw new Error('사용자 잔액 정보를 조회할 수 없습니다.');
       }
 
-      const totalBalance = (userBalance.cash_amount || 0) + (userBalance.free_cash_amount || 0);
-      if (totalBalance < totalAmount) {
+      if (userBalance.total_balance < totalAmount) {
         throw new Error('잔액이 부족합니다.');
       }
 
-      // Edge Function 호출로 구매 처리
-      const { data, error } = await supabase.functions.invoke('purchase-guarantee-slot', {
-        body: {
-          request_id: params.request_id,
-          user_id: userId,
-          purchase_reason: params.purchase_reason,
-        },
+      // Supabase RPC 직접 호출로 구매 처리
+      const { data, error } = await supabase.rpc('purchase_guarantee_slot', {
+        p_request_id: params.request_id,
+        p_user_id: userId,
+        p_purchase_reason: params.purchase_reason || null
       });
 
-      if (error) throw error;
-      return { data, error: null };
+      if (error) {
+        console.error('보장형 슬롯 구매 RPC 오류:', error);
+        throw new Error(error.message || '구매 처리 중 오류가 발생했습니다.');
+      }
+
+      return { 
+        data: {
+          success: true,
+          message: '보장형 슬롯 구매가 완료되었습니다.',
+          ...data
+        }, 
+        error: null 
+      };
     } catch (error) {
-      console.error('보장성 슬롯 구매 실패:', error);
+      console.error('보장형 슬롯 구매 실패:', error);
       return { data: null, error };
     }
   },
@@ -433,6 +450,61 @@ export const guaranteeSlotService = {
         .eq('id', holding.id);
     } catch (error) {
       console.error('홀딩 업데이트 실패:', error);
+    }
+  },
+
+  // 보장형 슬롯 승인
+  async approveSlot(slotId: string, distributorId: string) {
+    try {
+      const { data, error } = await supabase.rpc('approve_guarantee_slot', {
+        p_slot_id: slotId,
+        p_distributor_id: distributorId
+      });
+
+      if (error) {
+        console.error('보장형 슬롯 승인 실패:', error);
+        throw new Error(error.message || '승인 처리 중 오류가 발생했습니다.');
+      }
+
+      return { 
+        data: {
+          success: true,
+          message: '보장형 슬롯이 승인되었습니다.',
+          ...data
+        }, 
+        error: null 
+      };
+    } catch (error: any) {
+      console.error('보장형 슬롯 승인 실패:', error);
+      return { data: null, error };
+    }
+  },
+
+  // 보장형 슬롯 반려
+  async rejectSlot(slotId: string, distributorId: string, rejectionReason: string) {
+    try {
+      const { data, error } = await supabase.rpc('reject_guarantee_slot', {
+        p_slot_id: slotId,
+        p_distributor_id: distributorId,
+        p_rejection_reason: rejectionReason
+      });
+
+      if (error) {
+        console.error('보장형 슬롯 반려 실패:', error);
+        throw new Error(error.message || '반려 처리 중 오류가 발생했습니다.');
+      }
+
+      return { 
+        data: {
+          success: true,
+          message: '보장형 슬롯이 반려되었습니다.',
+          ...data
+        }, 
+        error: null 
+      };
+    } catch (error: any) {
+      console.error('보장형 슬롯 반려 실패:', error);
+      return { data: null, error };
     }
   },
 };

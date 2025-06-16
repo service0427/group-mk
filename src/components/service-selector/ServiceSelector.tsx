@@ -5,6 +5,7 @@ import { CAMPAIGNS } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import { SERVICE_METADATA } from '@/config/service-metadata';
 import { USER_ROLES } from '@/config/roles.config';
+import { KeenIcon } from '@/components';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -274,7 +275,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   >
                     <span className="flex items-center justify-between w-full">
                       <span className="flex items-center">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        <KeenIcon icon="element-11" className="size-4 mr-2 text-blue-500" />
                         일반형
                       </span>
                       {showCount && (
@@ -290,7 +291,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   >
                     <span className="flex items-center justify-between w-full">
                       <span className="flex items-center">
-                        <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                        <KeenIcon icon="shield-tick" className="size-4 mr-2 text-purple-500" />
                         보장형
                       </span>
                       {showCount && (

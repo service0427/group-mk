@@ -2,13 +2,13 @@
 // 작성일: 2025-06-15
 
 // 보장성 슬롯 견적 요청 상태
-export type GuaranteeSlotRequestStatus = 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired';
+export type GuaranteeSlotRequestStatus = 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
 
 // 협상 메시지 타입
 export type NegotiationMessageType = 'message' | 'price_proposal' | 'counter_offer';
 
 // 보장성 슬롯 상태
-export type GuaranteeSlotStatus = 'active' | 'completed' | 'cancelled';
+export type GuaranteeSlotStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
 
 // 홀딩 상태
 export type HoldingStatus = 'holding' | 'partial_released' | 'completed' | 'refunded';
@@ -56,6 +56,7 @@ export interface GuaranteeSlotNegotiation {
   message_type: NegotiationMessageType;
   message: string;
   proposed_daily_amount?: number;
+  proposed_guarantee_count?: number;
   attachments?: AttachmentFile[];
   is_read: boolean;
   created_at: string;
@@ -164,6 +165,7 @@ export interface CreateNegotiationMessageParams {
   request_id: string;
   message: string;
   proposed_daily_amount?: number;
+  proposed_guarantee_count?: number;
   message_type: NegotiationMessageType;
   attachments?: AttachmentFile[];
 }

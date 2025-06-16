@@ -122,6 +122,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
           return { label: '협상 중', color: 'badge-warning', icon: 'message-programming' };
         case 'accepted':
           return { label: '협상 완료', color: 'badge-success', icon: 'check-circle' };
+        case 'purchased':
+          return { label: '구매 완료', color: 'badge-primary', icon: 'credit-card' };
         case 'rejected':
           return { label: '거절됨', color: 'badge-error', icon: 'close-circle' };
         case 'expired':
@@ -403,6 +405,25 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                             협상
                           </Button>
                         )}
+                        {item.status === 'accepted' && (
+                          <Button
+                            size="sm"
+                            onClick={() => onOpenNegotiationModal(item)}
+                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
+                              <rect width="20" height="14" x="2" y="5" rx="2"/>
+                              <line x1="2" x2="22" y1="10" y2="10"/>
+                            </svg>
+                            구매
+                          </Button>
+                        )}
+                        {item.status === 'purchased' && (
+                          <span className="text-xs text-green-600 font-medium">구매완료</span>
+                        )}
+                        {item.status === 'rejected' && (
+                          <span className="text-xs text-red-500">거절됨</span>
+                        )}
                         {item.status === 'requested' && (
                           <span className="text-xs text-gray-500">대기중</span>
                         )}
@@ -503,6 +524,25 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                       <KeenIcon icon="message-programming" className="size-3 mr-1" />
                       협상
                     </Button>
+                  )}
+                  {item.status === 'accepted' && (
+                    <Button
+                      size="sm"
+                      onClick={() => onOpenNegotiationModal(item)}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
+                        <rect width="20" height="14" x="2" y="5" rx="2"/>
+                        <line x1="2" x2="22" y1="10" y2="10"/>
+                      </svg>
+                      구매
+                    </Button>
+                  )}
+                  {item.status === 'purchased' && (
+                    <span className="text-xs text-green-600 font-medium">구매완료</span>
+                  )}
+                  {item.status === 'rejected' && (
+                    <span className="text-xs text-red-500">거절됨</span>
                   )}
                   {item.status === 'requested' && (
                     <span className="text-xs text-muted-foreground">대기중</span>

@@ -25,6 +25,7 @@ interface SlotListProps {
   hasFilters?: boolean;
   isAllData?: boolean;
   onCancelSlot?: (id: string | string[]) => void;
+  onRefundSlot?: (id: string | string[]) => void; // 환불 핸들러 추가
   showBulkActions?: boolean;
   selectedSlots?: string[];
   onSelectedSlotsChange?: (selectedSlots: string[]) => void;
@@ -97,6 +98,7 @@ const SlotList: React.FC<SlotListProps> = ({
   hasFilters = false,
   isAllData = false,
   onCancelSlot,
+  onRefundSlot,
   showBulkActions = false,
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange,
@@ -707,7 +709,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       <td className="py-2 px-3 w-[8%]">
                         <div className="flex justify-center items-center gap-1">
                           <button
-                            className="btn btn-sm btn-icon btn-clear btn-primary"
+                            className="btn btn-sm btn-icon btn-clear btn-primary h-8 w-8"
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenMemoModal(item.id);
@@ -727,6 +729,19 @@ const SlotList: React.FC<SlotListProps> = ({
                               title="취소"
                             >
                               <KeenIcon icon="cross-circle" />
+                            </button>
+                          )}
+                          {/* 진행 중인 슬롯일 때만 환불 버튼 표시 */}
+                          {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
+                            <button
+                              className="btn btn-sm btn-icon btn-clear btn-info"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRefundSlot(item.id);
+                              }}
+                              title="환불"
+                            >
+                              <KeenIcon icon="wallet"/>
                             </button>
                           )}
                           <button
@@ -1048,6 +1063,16 @@ const SlotList: React.FC<SlotListProps> = ({
                           title="취소"
                         >
                           <KeenIcon icon="cross-circle" />
+                        </button>
+                      )}
+                      {/* 진행 중인 슬롯일 때만 환불 버튼 표시 */}
+                      {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
+                        <button
+                          className="btn btn-sm btn-icon btn-clear btn-danger"
+                          onClick={() => onRefundSlot(item.id)}
+                          title="환불"
+                        >
+                          <KeenIcon icon="dollar-circle" />
                         </button>
                       )}
                       {/* 대기중 상태일 때만 삭제 버튼 표시 */}

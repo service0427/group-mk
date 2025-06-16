@@ -162,6 +162,7 @@ export interface ICampaign {
   maxGuaranteePrice?: string | number;
   targetRank?: string | number;
   isNegotiable?: boolean;
+  refundSettings?: any; // 환불 설정
 }
 
 // 확장된 캠페인 인터페이스
@@ -196,6 +197,7 @@ export interface ExtendedCampaign extends ICampaign {
   rejectionReason?: string;
   serviceType?: string;
   additionalInfo?: any; // 추가 항목 정보
+  refundSettings?: any; // 환불 설정
 }
 
 // 캠페인 상태 관련 유틸리티 함수

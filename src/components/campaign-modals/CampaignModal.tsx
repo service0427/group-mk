@@ -17,6 +17,7 @@ import { createCampaignReapprovalRequestNotification } from '@/utils/notificatio
 import { CampaignForm } from './CampaignForm';
 import { CampaignPreviewModal } from './CampaignPreviewModal';
 import type { CampaignFormData } from './CampaignForm';
+import { RefundSettings } from '@/types/refund.types';
 
 interface CampaignModalProps {
   open: boolean;
@@ -119,6 +120,16 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     targetRank: '1',
     minGuaranteePrice: '',
     maxGuaranteePrice: '',
+    refundSettings: {
+      enabled: true,
+      type: 'immediate',
+      requires_approval: false,
+      refund_rules: {
+        min_usage_days: 0,
+        max_refund_days: 7,
+        partial_refund: true
+      }
+    }
   });
 
   // 초기 폼 데이터 저장 (변경 감지용)
@@ -137,6 +148,16 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     targetRank: '1',
     minGuaranteePrice: '',
     maxGuaranteePrice: '',
+    refundSettings: {
+      enabled: true,
+      type: 'immediate',
+      requires_approval: false,
+      refund_rules: {
+        min_usage_days: 0,
+        max_refund_days: 7,
+        partial_refund: true
+      }
+    }
   });
 
   // newCampaign과 formData 동기화
@@ -156,6 +177,16 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       targetRank: String(newCampaign.targetRank || '1'),
       minGuaranteePrice: String(newCampaign.minGuaranteePrice || ''),
       maxGuaranteePrice: String(newCampaign.maxGuaranteePrice || '')
+      refundSettings: newCampaign.refundSettings || {
+        enabled: true,
+        type: 'immediate',
+        requires_approval: false,
+        refund_rules: {
+          min_usage_days: 0,
+          max_refund_days: 7,
+          partial_refund: true
+        }
+      }
     });
   }, [newCampaign]);
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
@@ -299,6 +330,22 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       const dbServiceType = campaign.originalData?.service_type || campaign.serviceType || '';
       const convertedServiceType = convertDbServiceTypeToEnum(dbServiceType);
 
+      // 환불 설정 가져오기
+      let refundSettingsValue: RefundSettings = {
+        enabled: true,
+        type: 'immediate',
+        requires_approval: false,
+        refund_rules: {
+          min_usage_days: 0,
+          max_refund_days: 7,
+          partial_refund: true
+        }
+      };
+
+      if (campaign.originalData?.refund_settings) {
+        refundSettingsValue = campaign.originalData.refund_settings;
+      }
+
       // 캠페인 데이터로 newCampaign 상태 업데이트
       setNewCampaign({
         id: campaign.id,
@@ -329,6 +376,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
         maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
+        refundSettings: refundSettingsValue, // 환불 설정 추가
+        originalData: campaign.originalData // originalData 보존
       });
 
       // 초기 폼 데이터도 설정 (변경 감지용)
@@ -347,6 +396,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
         maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || ''
+        refundSettings: refundSettingsValue
       };
       setInitialFormData(initialData);
 
@@ -539,6 +589,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     // 사용자 입력 필드 변경 확인
     if (JSON.stringify(formData.userInputFields) !== JSON.stringify(initialFormData.userInputFields)) return true;
 
+    // 환불 설정 변경 확인
+    if (JSON.stringify(formData.refundSettings) !== JSON.stringify(initialFormData.refundSettings)) return true;
+
     return false;
   };
 
@@ -636,6 +689,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         targetRank: formData.targetRank,
         minGuaranteePrice: formData.minGuaranteePrice,
         maxGuaranteePrice: formData.maxGuaranteePrice,
+        refundSettings: formData.refundSettings, // 환불 설정 추가
       };
 
       // 반려 사유가 있으면 항상 전달
@@ -816,7 +870,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           // 기본값 설정
           efficiency: '0',
           minQuantity: '10',
-          additionalLogic: '0'
+          additionalLogic: '0',
+          refundSettings: formData.refundSettings // 환불 설정 추가
         };
 
         // 1. DB에 새 캠페인 생성
@@ -1607,6 +1662,87 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* 환불 정책 - 모바일 최적화 */}
+                {formData.refundSettings && formData.refundSettings.enabled && (
+                  <div>
+                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 sm:mb-3 flex items-center gap-2">
+                      <KeenIcon icon="shield-tick" className="text-primary size-4 sm:size-5" />
+                      환불 정책
+                    </h3>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 sm:p-5 rounded-lg sm:rounded-xl border border-amber-200 dark:border-amber-800">
+                      <div className="space-y-2.5 sm:space-y-3">
+                        {/* 환불 가능 시점 */}
+                        <div className="flex items-start gap-2">
+                          <KeenIcon icon="time-half-pass" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                          <div className="text-xs sm:text-sm">
+                            <span className="font-medium text-amber-700 dark:text-amber-300">환불 가능 시점: </span>
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {(() => {
+                                switch (formData.refundSettings.type) {
+                                  case 'immediate':
+                                    return '즉시 환불 가능';
+                                  case 'delayed':
+                                    return `작업 시작 ${formData.refundSettings.delay_days || 0}일 후 환불 가능`;
+                                  case 'cutoff_based':
+                                    return `마감시간(${formData.refundSettings.cutoff_time || '18:00'}) 이후 환불 가능`;
+                                  default:
+                                    return '즉시 환불 가능';
+                                }
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 환불 승인 필요 여부 */}
+                        <div className="flex items-start gap-2">
+                          <KeenIcon icon="user-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                          <div className="text-xs sm:text-sm">
+                            <span className="font-medium text-amber-700 dark:text-amber-300">환불 승인: </span>
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {formData.refundSettings.requires_approval ? '총판 승인 필요' : '자동 승인'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 환불 규정 */}
+                        {formData.refundSettings.refund_rules && (
+                          <>
+                            <div className="flex items-start gap-2">
+                              <KeenIcon icon="calendar-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                              <div className="text-xs sm:text-sm">
+                                <span className="font-medium text-amber-700 dark:text-amber-300">최소 사용 일수: </span>
+                                <span className="text-gray-700 dark:text-gray-300">
+                                  {formData.refundSettings.refund_rules.min_usage_days || 0}일
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <KeenIcon icon="calendar-remove" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                              <div className="text-xs sm:text-sm">
+                                <span className="font-medium text-amber-700 dark:text-amber-300">최대 환불 가능 일수: </span>
+                                <span className="text-gray-700 dark:text-gray-300">
+                                  {formData.refundSettings.refund_rules.max_refund_days || 7}일
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <KeenIcon icon="percentage-circle" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                              <div className="text-xs sm:text-sm">
+                                <span className="font-medium text-amber-700 dark:text-amber-300">부분 환불: </span>
+                                <span className="text-gray-700 dark:text-gray-300">
+                                  {formData.refundSettings.refund_rules.partial_refund ? '사용 기간에 따른 부분 환불 가능' : '전액 환불만 가능'}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* 미리보기 알림 - 모바일 최적화 */}
                 <div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-md text-blue-600 dark:text-blue-300">

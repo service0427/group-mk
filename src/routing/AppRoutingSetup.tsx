@@ -81,6 +81,9 @@ export const GuaranteeQuotesPage = lazyWithPreload(() => import('@/pages/manage/
 // 환불 관리 페이지 lazy loading with preload
 export const RefundManagementPage = lazyWithPreload(() => import('@/pages/distributor/refund-management').then(m => ({ default: m.RefundManagementPage })));
 
+// 테스트 페이지 lazy loading with preload (숨김 페이지)
+export const RefundTestPage = lazyWithPreload(() => import('@/pages/test/RefundTestPage'));
+
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
   Campaigns,
@@ -245,6 +248,13 @@ const AppRoutingSetup = (): ReactElement => {
         </Route>
       </Route>
 
+      {/* 테스트 페이지 (관리자 이상 접근 가능 - URL 직접 입력으로만 접근) */}
+      <Route element={<RequireAuth minRoleLevel={PERMISSION_GROUPS.ADMIN} />}>
+        <Route element={<StandLayout />}>
+          <Route path="/test/refund" element={<SuspenseWrapper><RefundTestPage /></SuspenseWrapper>} />
+        </Route>
+      </Route>
+
       {/* 인증 및 에러 페이지 */}
       <Route path="error/*" element={<ErrorsRouting />} />
       <Route path="auth/*" element={<AuthPage />} />
@@ -321,6 +331,9 @@ initializeComponentMap({
   
   // 환불 관리 페이지
   '/manage/refunds': RefundManagementPage,
+  
+  // 테스트 페이지
+  '/test/refund': RefundTestPage,
 });
 
 export { AppRoutingSetup };

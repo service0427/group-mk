@@ -83,7 +83,8 @@ const IntegratedCampaignPage: React.FC = () => {
     const urlPlatform = platformMap[selectedPlatform] || selectedPlatform.toLowerCase();
 
     // 서비스 타입에서 URL 경로 추출
-    const typeMap: Record<CampaignServiceType, string> = {
+    const typeMap: Record<string, string> = {
+      [CampaignServiceType.NAVER_TRAFFIC]: 'traffic',
       [CampaignServiceType.NAVER_AUTO]: 'auto',
       [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'shopping-traffic',
       [CampaignServiceType.NAVER_SHOPPING_FAKESALE]: 'shopping-fakesale',

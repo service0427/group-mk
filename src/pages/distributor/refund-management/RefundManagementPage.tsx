@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RefundSettings } from '@/types/refund.types';
 import { calculateRefund } from '@/utils/refundUtils';
+import { useDialog } from '@/providers';
 
 interface RefundRequest {
   id: string;
@@ -27,6 +28,7 @@ interface RefundRequest {
   requester_id: string;
   approver_id?: string;
   refund_amount: number;
+  approved_amount?: number;
   refund_reason: string;
   status: 'pending' | 'approved' | 'rejected';
   request_date: string;
@@ -59,7 +61,11 @@ const RefundManagementPage: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<RefundRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [approvalAmount, setApprovalAmount] = useState<string>('');
+  const [approvalReason, setApprovalReason] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [isImmediateRefund, setIsImmediateRefund] = useState(false);
+  const { showDialog } = useDialog();
 
   // 환불 요청 목록 가져오기
   const fetchRefundRequests = async () => {
@@ -72,6 +78,7 @@ const RefundManagementPage: React.FC = () => {
         .select(`
           *,
           refund_amount,
+          approved_amount,
           refund_reason,
           slot:slots!slot_refund_approvals_slot_id_fkey(
             id,
@@ -130,16 +137,96 @@ const RefundManagementPage: React.FC = () => {
   // 환불 승인
   const handleApprove = async () => {
     if (!selectedRequest || !currentUser) return;
+    
+    // 환불 금액 유효성 검사
+    const finalAmount = parseFloat(approvalAmount) || selectedRequest.refund_amount;
+    const originalAmount = selectedRequest.refund_amount;
+    
+    if (finalAmount <= 0) {
+      showError('환불 금액은 0보다 커야 합니다.');
+      return;
+    }
+    
+    // 원본 금액보다 많은 금액으로 환불할 수 없음
+    if (finalAmount > originalAmount) {
+      showError(`환불 금액은 신청 금액(${originalAmount.toLocaleString()}원)을 초과할 수 없습니다.`);
+      return;
+    }
 
     setIsLoading(true);
     try {
+      // 즉시 환불인 경우 처리
+      if (isImmediateRefund) {
+        // 환불 정책 확인
+        const refundSettings = selectedRequest.slot?.campaign?.refund_settings;
+        if (refundSettings?.type === 'delayed' && refundSettings.delay_days) {
+          // 모달로 확인
+          const shouldProceed = await new Promise<boolean>((resolve) => {
+            showDialog({
+              title: '즉시 환불 경고',
+              message: `이 캠페인은 ${refundSettings.delay_days}일 후 환불 정책입니다.\n정말로 즉시 환불 처리하시겠습니까?`,
+              confirmText: '즉시 환불 처리',
+              cancelText: '취소',
+              variant: 'warning',
+              onConfirm: () => resolve(true),
+              onCancel: () => resolve(false)
+            });
+          });
+          
+          if (!shouldProceed) {
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // 즉시 환불 처리 로직
+        // 1. 환불 승인 상태 업데이트
+        const { error: approvalError } = await supabase
+          .from('slot_refund_approvals')
+          .update({
+            status: 'approved',
+            approval_date: new Date().toISOString(),
+            approver_id: currentUser.id,
+            approved_amount: finalAmount,
+            approval_notes: approvalReason || null
+          })
+          .eq('id', selectedRequest.id);
+          
+        if (approvalError) throw approvalError;
+        
+        // 2. 즉시 환불 처리 (process_single_refund 함수 호출)
+        const { data, error: refundError } = await supabase.rpc('process_single_refund', {
+          p_refund_request_id: selectedRequest.id
+        });
+        
+        if (refundError) throw refundError;
+        
+        if (data?.success) {
+          showSuccess('환불이 즉시 처리되었습니다.');
+        } else {
+          showError(data?.message || '환불 처리에 실패했습니다.');
+        }
+        
+        setSelectedRequest(null);
+        setActionType(null);
+        setApprovalAmount('');
+        setApprovalReason('');
+        setIsImmediateRefund(false);
+        fetchRefundRequests();
+        return;
+      }
+      // 환불 차액 계산 (총판에게 지급할 금액)
+      const refundDifference = originalAmount - finalAmount;
+      
       // 환불 요청 상태 업데이트
       const { error: updateError } = await supabase
         .from('slot_refund_approvals')
         .update({
           status: 'approved',
           approval_date: new Date().toISOString(),
-          approver_id: currentUser.id
+          approver_id: currentUser.id,
+          approved_amount: finalAmount,
+          approval_notes: approvalReason || null
         })
         .eq('id', selectedRequest.id);
 
@@ -173,16 +260,68 @@ const RefundManagementPage: React.FC = () => {
           .insert({
             refund_request_id: selectedRequest.id,
             scheduled_date: scheduledDate.toISOString(),
-            amount: selectedRequest.refund_amount,
+            amount: finalAmount, // 수정된 금액 사용
             status: 'pending'
           });
 
         if (scheduleError) console.error('Error creating refund schedule:', scheduleError);
       }
-
-      showSuccess('환불 요청이 승인되었습니다.');
+      
+      // 환불 차액이 있으면 총판에게 캐시 지급
+      if (refundDifference > 0) {
+        try {
+          // 현재 잔액 가져오기
+          const { data: balanceData, error: balanceError } = await supabase
+            .from('user_balances')
+            .select('total_balance')
+            .eq('user_id', currentUser.id)
+            .single();
+          
+          if (balanceError) throw balanceError;
+          
+          const currentBalance = balanceData?.total_balance || 0;
+          const newBalance = currentBalance + refundDifference;
+          
+          // 잔액 업데이트
+          const { error: updateBalanceError } = await supabase
+            .from('user_balances')
+            .update({ 
+              total_balance: newBalance,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', currentUser.id);
+          
+          if (updateBalanceError) throw updateBalanceError;
+          
+          // 캐시 히스토리 추가
+          const { error: historyError } = await supabase
+            .from('user_cash_history')
+            .insert({
+              user_id: currentUser.id,
+              transaction_type: 'refund',
+              amount: refundDifference,
+              description: `환불 차액 지급 - ${selectedRequest.slot?.campaign?.campaign_name || '캠페인 정보 없음'}`,
+              reference_id: selectedRequest.id,
+              balance_after: newBalance
+            });
+          
+          if (historyError) {
+            console.error('Error creating cash history:', historyError);
+          }
+          
+          showSuccess(`환불 요청이 승인되었습니다.\n환불 차액 ${refundDifference.toLocaleString()}원이 총판에게 지급되었습니다.`);
+        } catch (error) {
+          console.error('Error updating distributor balance:', error);
+          showSuccess('환불 요청이 승인되었습니다.\n(차액 지급 중 오류가 발생했습니다)');
+        }
+      } else {
+        showSuccess('환불 요청이 승인되었습니다.');
+      }
+      
       setSelectedRequest(null);
       setActionType(null);
+      setApprovalAmount('');
+      setApprovalReason('');
       fetchRefundRequests();
     } catch (error) {
       console.error('Error approving refund:', error);
@@ -314,8 +453,14 @@ const RefundManagementPage: React.FC = () => {
                         <div>
                           <p className="flex items-center gap-2">
                             <KeenIcon icon="wallet" className="size-4" />
-                            환불 금액: {request.refund_amount.toLocaleString()}원
+                            신청 금액: {request.refund_amount.toLocaleString()}원
                           </p>
+                          {request.approved_amount && request.approved_amount !== request.refund_amount && (
+                            <p className="flex items-center gap-2 mt-1">
+                              <KeenIcon icon="check-circle" className="size-4" />
+                              승인 금액: <span className="font-semibold text-green-600">{request.approved_amount.toLocaleString()}원</span>
+                            </p>
+                          )}
                           {request.slot?.start_date && request.slot?.end_date && (
                             <p className="flex items-center gap-2 mt-1">
                               <KeenIcon icon="time" className="size-4" />
@@ -354,6 +499,16 @@ const RefundManagementPage: React.FC = () => {
                           <p className="text-xs text-green-600">
                             승인일: {format(new Date(request.approval_date), 'yyyy-MM-dd HH:mm', { locale: ko })}
                           </p>
+                          {request.approved_amount && request.approved_amount !== request.refund_amount && (
+                            <p className="text-xs text-green-600 mt-1">
+                              차액 지급: {(request.refund_amount - request.approved_amount).toLocaleString()}원
+                            </p>
+                          )}
+                          {request.approval_notes && (
+                            <p className="text-xs text-green-600 mt-1">
+                              승인 사유: {request.approval_notes}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -365,6 +520,7 @@ const RefundManagementPage: React.FC = () => {
                           onClick={() => {
                             setSelectedRequest(request);
                             setActionType('approve');
+                            setApprovalAmount(request.refund_amount.toString());
                           }}
                           className="bg-green-600 hover:bg-green-700"
                         >
@@ -394,7 +550,12 @@ const RefundManagementPage: React.FC = () => {
       </Card>
 
       {/* 승인 확인 모달 */}
-      <Dialog open={actionType === 'approve'} onOpenChange={() => setActionType(null)}>
+      <Dialog open={actionType === 'approve'} onOpenChange={() => {
+        setActionType(null);
+        setApprovalAmount('');
+        setApprovalReason('');
+        setIsImmediateRefund(false);
+      }}>
         <DialogContent className="max-w-md p-6">
           <DialogHeader className="pb-4 border-b mb-4">
             <DialogTitle className="text-xl font-bold flex items-center gap-3">
@@ -409,11 +570,70 @@ const RefundManagementPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-700">이 환불 요청을 승인하시겠습니까?</p>
-              <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                <KeenIcon icon="wallet" className="size-4" />
-                환불 금액: <span className="font-semibold">{selectedRequest?.refund_amount.toLocaleString()}원</span>
+              <p className="text-sm text-gray-700 mb-3">환불 요청 정보</p>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <KeenIcon icon="user" className="size-4" />
+                  신청자: <span className="font-semibold">{selectedRequest?.user?.full_name || '정보 없음'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <KeenIcon icon="wallet" className="size-4" />
+                  요청 금액: <span className="font-semibold">{selectedRequest?.refund_amount.toLocaleString()}원</span>
+                </div>
               </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="approval-amount" className="text-sm font-medium mb-2 block">
+                환불 금액 <span className="text-red-500">*</span>
+              </Label>
+              <input
+                id="approval-amount"
+                type="number"
+                value={approvalAmount}
+                onChange={(e) => setApprovalAmount(e.target.value)}
+                placeholder="환불 금액을 입력해주세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                min="0"
+                step="1000"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                요청 금액: {selectedRequest?.refund_amount.toLocaleString()}원
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="approval-reason" className="text-sm font-medium mb-2 block">
+                승인 사유 <span className="text-gray-400">(선택사항)</span>
+              </Label>
+              <Textarea
+                id="approval-reason"
+                value={approvalReason}
+                onChange={(e) => setApprovalReason(e.target.value)}
+                placeholder="승인 사유를 입력해주세요"
+                className="w-full resize-none"
+                rows={3}
+              />
+            </div>
+            
+            {/* 즉시 환불 옵션 */}
+            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <input
+                type="checkbox"
+                id="immediate-refund"
+                checked={isImmediateRefund}
+                onChange={(e) => setIsImmediateRefund(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="immediate-refund" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <KeenIcon icon="flash" className="size-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">즉시 환불 처리</span>
+                </div>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  체크 시 3일 대기 없이 즉시 환불이 처리됩니다
+                </p>
+              </label>
             </div>
             {selectedRequest?.slot?.campaign?.refund_settings && (
               <div className="bg-blue-50 rounded-lg p-4">
@@ -432,7 +652,12 @@ const RefundManagementPage: React.FC = () => {
             )}
           </div>
           <DialogFooter className="pt-4 border-t mt-4">
-            <Button variant="outline" onClick={() => setActionType(null)}>
+            <Button variant="outline" onClick={() => {
+              setActionType(null);
+              setApprovalAmount('');
+              setApprovalReason('');
+              setIsImmediateRefund(false);
+            }}>
               취소
             </Button>
             <Button 

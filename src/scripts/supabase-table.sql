@@ -298,7 +298,11 @@ create table public.notifications (
           'transaction'::text,
           'service'::text,
           'slot'::text,
-          'marketing'::text
+          'marketing'::text,
+          'slot_created'::text,
+          'slot_approved'::text,
+          'slot_success'::text,
+          'slot_refund'::text
         ]
       )
     )

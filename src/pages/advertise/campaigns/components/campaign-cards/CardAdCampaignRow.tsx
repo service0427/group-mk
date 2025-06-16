@@ -48,6 +48,8 @@ const CardAdCampaignRow = ({
     additionalLogic: statistics.find(stat => stat.description.includes('추가로직'))?.total || '없음',
     // 상세 설명 전달 - 상세정보는 모달에서 직접 조회
     detailedDescription: detailedDescription || description,
+    // 환불 설정 추가
+    refundSettings: rawData?.refundSettings || rawData?.refund_settings,
     // 원본 데이터 전체를 originalData로 전달하여 모달에서 활용할 수 있게 함
     originalData: rawData,
     status: {

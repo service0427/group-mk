@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select';
 import { toAbsoluteUrl } from '@/utils';
 import { CampaignServiceType, FieldType, UserInputField } from './types';
+import { RefundSettings } from '@/types/refund.types';
+import { RefundSettingsForm } from '@/components/refund';
 
 // 캠페인 폼 데이터 인터페이스
 interface CampaignFormInputData {
@@ -31,6 +33,7 @@ interface CampaignFormInputData {
   targetRank?: string;
   minGuaranteePrice?: string;
   maxGuaranteePrice?: string;
+  refundSettings?: RefundSettings;
 }
 
 // 서비스 타입별 필드 정보
@@ -990,6 +993,25 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             }
           </tbody>
         </table>
+      </div>
+
+      {/* 환불 설정 섹션 */}
+      <div className={containerClass}>
+        <RefundSettingsForm
+          settings={formData.refundSettings || {
+            enabled: true,
+            type: 'immediate',
+            requires_approval: false,
+            refund_rules: {
+              min_usage_days: 0,
+              max_refund_days: 7,
+              partial_refund: true
+            }
+          }}
+          onChange={(settings) => handleChange('refundSettings', settings as any)}
+          disabled={loading}
+          isModal={isModal}
+        />
       </div>
     </div>
   );

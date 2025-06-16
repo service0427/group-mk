@@ -363,6 +363,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/manage/guarantee-quotes'
       },
       {
+        title: '환불 요청 관리',
+        icon: 'wallet text-danger',
+        path: '/manage/refunds'
+      },
+      {
         title: '총판 작업 입력',
         icon: 'dollar text-warning',
         path: '/manage/work-input'

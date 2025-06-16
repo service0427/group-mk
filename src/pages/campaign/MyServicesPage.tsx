@@ -30,8 +30,10 @@ import {
   DialogContent,
   DialogTitle,
   DialogHeader,
+  DialogBody,
   DialogFooter
 } from '@/components/ui/dialog';
+import { SlotRefundModal } from '@/components/refund/SlotRefundModal';
 
 
 const MyServicesPage: React.FC = () => {
@@ -288,6 +290,30 @@ const MyServicesPage: React.FC = () => {
 
     setSlotsToCancel(cancellableSlots);
     setIsCancelModalOpen(true);
+  }, [filteredSlots, showError]);
+
+  // 환불 모달 상태
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [slotsToRefund, setSlotsToRefund] = useState<string[]>([]);
+
+  // 슬롯 환불 모달 열기
+  const handleOpenRefundModal = useCallback((slotIds: string | string[]) => {
+    const idsArray = Array.isArray(slotIds) ? slotIds : [slotIds];
+
+    // 환불 가능한 슬롯만 필터링 (active 또는 approved 상태, 이미 환불 관련 상태는 제외)
+    const refundableSlots = idsArray.filter(id => {
+      const slot = filteredSlots.find(s => s.id === id);
+      return slot && (slot.status === 'active' || slot.status === 'approved') && 
+             !['refund_pending', 'refund_approved', 'refunded', 'cancelled'].includes(slot.status);
+    });
+
+    if (refundableSlots.length === 0) {
+      showError('진행 중인 슬롯만 환불 신청할 수 있습니다. 이미 환불이 진행 중이거나 완료된 슬롯은 선택할 수 없습니다.');
+      return;
+    }
+
+    setSlotsToRefund(refundableSlots);
+    setIsRefundModalOpen(true);
   }, [filteredSlots, showError]);
 
   // 슬롯 취소 실행
@@ -645,6 +671,7 @@ const MyServicesPage: React.FC = () => {
           hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
           isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
           onCancelSlot={handleOpenCancelModal}
+          onRefundSlot={handleOpenRefundModal} // 환불 핸들러 추가
           showBulkActions={true} // 광고주도 다중 선택해서 취소할 수 있도록
           selectedSlots={selectedSlots}
           onSelectedSlotsChange={setSelectedSlots}
@@ -679,100 +706,54 @@ const MyServicesPage: React.FC = () => {
         onSave={handleSaveMemo}
       />
 
-      {/* 취소 확인 모달 */}
+      {/* 취소 모달 */}
       <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-0">
-          {/* 헤더 영역 - 경고 색상 배경 */}
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <KeenIcon icon="shield-cross" className="text-white size-6" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold text-white mb-1">
-                  슬롯 취소 확인
-                </DialogTitle>
-                <p className="text-white/80 text-sm">
-                  정말 취소하시겠습니까?
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 컨텐츠 영역 */}
-          <div className="p-6">
-            {/* 취소할 슬롯 정보 */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">취소할 슬롯</span>
-                <span className="text-2xl font-bold text-primary">
-                  {slotsToCancel.length}개
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <KeenIcon icon="information-2" className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  승인 대기 중인 슬롯만 취소됩니다. 이미 승인된 슬롯은 취소할 수 없습니다.
-                </p>
-              </div>
-            </div>
-
-            {/* 경고 메시지 */}
-            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-                  <KeenIcon icon="shield-cross" className="text-red-600 dark:text-red-400 size-4" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-red-900 dark:text-red-200 mb-1">
-                    주의사항
-                  </h4>
-                  <p className="text-xs text-red-700 dark:text-red-300">
-                    이 작업은 되돌릴 수 없습니다. 취소된 슬롯은 다시 복구할 수 없으며,
-                    새로 구매하셔야 합니다.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 푸터 영역 */}
-          <DialogFooter className="bg-gray-50 dark:bg-gray-900 px-6 py-4 flex-row justify-end gap-2 border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsCancelModalOpen(false);
-                setSlotsToCancel([]);
-              }}
-              className="min-w-[80px]"
-              disabled={isCancelling}
-            >
-              <KeenIcon icon="arrow-left" className="size-4 mr-1" />
-              돌아가기
+        <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>슬롯 취소</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-gray-700">
+              선택한 {slotsToCancel.length}개의 슬롯을 취소하시겠습니까?
+              <br />
+              취소된 슬롯의 결제 금액은 캐시로 환불됩니다.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
+              취소
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleConfirmCancel}
-              className="min-w-[100px] bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isCancelling}
-            >
-              {isCancelling ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  처리중...
-                </>
-              ) : (
-                <>
-                  <KeenIcon icon="trash" className="size-4 mr-1" />
-                  취소하기
-                </>
-              )}
+            <Button onClick={handleConfirmCancel} disabled={isCancelling}>
+              {isCancelling ? '처리 중...' : '확인'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 환불 모달 */}
+      <SlotRefundModal
+        isOpen={isRefundModalOpen}
+        onClose={() => {
+          setIsRefundModalOpen(false);
+          setSlotsToRefund([]);
+        }}
+        slots={filteredSlots.filter(slot => slotsToRefund.includes(slot.id)).map(slot => ({
+          id: slot.id,
+          startDate: slot.startDate,
+          endDate: slot.endDate,
+          product_id: slot.productId,
+          status: slot.status,
+          campaign: slot.campaign ? {
+            campaignName: slot.campaign.campaignName,
+            refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
+          } : undefined
+        }))}
+        onSuccess={async () => {
+          await loadCampaignSlots();
+          await fetchAllServiceCounts();
+          setSelectedSlots([]);
+        }}
+      />
     </DashboardTemplate>
   );
 };

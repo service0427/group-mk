@@ -1,5 +1,12 @@
 /// <reference types="vite/client" />
 
+// inert 속성 타입 선언 (접근성 문제 해결용)
+declare module 'react' {
+  interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
+    inert?: string | undefined;
+  }
+}
+
 // ApexCharts 타입 선언
 declare module 'react-apexcharts' {
   import { ComponentType } from 'react';

@@ -95,7 +95,7 @@
     "react-intl": "^6.8.7",
     "react-leaflet": "^4.2.1",
     "react-query": "^3.39.3",
-    "react-quill": "^2.0.0",
+    "react-quill": "^0.0.2",
     "react-router": "^6.28.0",
     "react-router-dom": "^6.28.0",
     "sharp": "^0.34.1",

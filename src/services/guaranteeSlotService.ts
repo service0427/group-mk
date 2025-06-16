@@ -47,6 +47,13 @@ export const guaranteeSlotRequestService = {
           guarantee_count: params.guarantee_count,
           initial_budget: params.initial_budget,
           status: 'requested' as GuaranteeSlotRequestStatus,
+          keyword_id: params.keyword_id,
+          input_data: params.input_data || {},
+          start_date: params.start_date,
+          end_date: params.end_date,
+          quantity: params.quantity || 1,
+          user_reason: params.user_reason,
+          additional_requirements: params.additional_requirements,
         })
         .select()
         .single();
@@ -132,7 +139,17 @@ export const guaranteeSlotRequestService = {
             service_type,
             mat_id,
             min_guarantee_price,
-            max_guarantee_price
+            max_guarantee_price,
+            logo
+          ),
+          keywords (
+            id,
+            main_keyword,
+            keyword1,
+            keyword2,
+            keyword3,
+            url,
+            mid
           ),
           negotiations:guarantee_slot_negotiations (*)
         `)
@@ -162,6 +179,7 @@ export const negotiationService = {
           message_type: params.message_type,
           message: params.message,
           proposed_daily_amount: params.proposed_daily_amount,
+          attachments: params.attachments || [],
         })
         .select()
         .single();

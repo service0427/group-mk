@@ -5,6 +5,12 @@ import { CAMPAIGNS } from '@/config/campaign.config';
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import { SERVICE_METADATA } from '@/config/service-metadata';
 import { USER_ROLES } from '@/config/roles.config';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ServiceSelectorProps {
   selectedService: string | null;
@@ -12,12 +18,18 @@ interface ServiceSelectorProps {
   showDisabled?: boolean;
   showCount?: boolean;
   serviceCounts?: Record<string, number>;
+  guaranteeCounts?: Record<string, number>;
   className?: string;
   requiresKeyword?: boolean;  // 키워드가 필요한 서비스만 표시할지 여부
   userRole?: string;  // 사용자 역할
   servicesWithSlots?: Set<string>;  // 슬롯이 있는 서비스 목록
   collapsible?: boolean;  // 접기/펼치기 기능 사용 여부
   initialDisplayCount?: number;  // 초기 표시 개수
+  expandableServices?: boolean;  // 서비스별 일반형/보장형 확장 기능 사용 여부
+  onGuaranteeSelect?: (service: string) => void;  // 보장형 선택 콜백
+  getTotalCount?: (serviceType: string) => number;
+  getGeneralCount?: (serviceType: string) => number;
+  getGuaranteeCount?: (serviceType: string) => number;
 }
 
 export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
@@ -26,12 +38,18 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   showDisabled = true,
   showCount = false,
   serviceCounts = {},
+  guaranteeCounts = {},
   className = '',
   requiresKeyword,
   userRole,
   servicesWithSlots,
   collapsible = false,
-  initialDisplayCount = 6
+  initialDisplayCount = 6,
+  expandableServices = false,
+  onGuaranteeSelect,
+  getTotalCount,
+  getGeneralCount,
+  getGuaranteeCount
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // 모든 서비스를 menu.config.tsx 순서대로 정렬
@@ -213,39 +231,114 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
           const hasSlots = !servicesWithSlots || servicesWithSlots.has(service.code);
           const isDisabled = service.disabled || (!hasSlots && servicesWithSlots !== undefined);
           
-          return (
-            <Button
-              key={service.path}
-              variant={selectedService === service.path ? "default" : "outline"}
-              size="sm"
-              onClick={() => onServiceSelect(service.path)}
-              disabled={isDisabled}
-              className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
-                  ? 'bg-primary hover:bg-primary/90'
-                  : ''
-                }`}
-            >
-            {service.icon && (
-              <img
-                src={service.icon}
-                alt={service.name}
-                className="size-3 lg:size-4 mr-1 lg:mr-2"
-              />
-            )}
-            <span className="sm:whitespace-nowrap">{service.name}</span>
-            {showCount && (
-              <Badge
-                variant="outline"
-                className={`ml-1.5 min-w-[20px] h-5 px-1 ${selectedService === service.path
-                    ? 'bg-white/20 border-white/40 text-white'
+          if (expandableServices) {
+            // 확장 모드: DropdownMenu 사용
+            return (
+              <DropdownMenu key={service.path}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={selectedService === service.path ? "default" : "outline"}
+                    size="sm"
+                    disabled={isDisabled}
+                    className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
+                        ? 'bg-primary hover:bg-primary/90'
+                        : ''
+                      }`}
+                  >
+                    {service.icon && (
+                      <img
+                        src={service.icon}
+                        alt={service.name}
+                        className="size-3 lg:size-4 mr-1 lg:mr-2"
+                      />
+                    )}
+                    <span className="sm:whitespace-nowrap">{service.name}</span>
+                    {showCount && (
+                      <Badge
+                        variant="outline"
+                        className={`ml-1.5 min-w-[20px] h-5 px-1 ${selectedService === service.path
+                            ? 'bg-white/20 border-white/40 text-white'
+                            : ''
+                          }`}
+                      >
+                        {getTotalCount ? getTotalCount(service.code || service.path) : (serviceCounts[service.code || service.path] || 0)}
+                      </Badge>
+                    )}
+                    <span className="ml-2 text-gray-400">▼</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[140px]">
+                  <DropdownMenuItem 
+                    onClick={() => onServiceSelect(service.path)}
+                    className="cursor-pointer"
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        일반형
+                      </span>
+                      {showCount && (
+                        <Badge variant="outline" className="text-xs ml-2">
+                          {getGeneralCount ? getGeneralCount(service.code || service.path) : (serviceCounts[service.code || service.path] || 0)}
+                        </Badge>
+                      )}
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onGuaranteeSelect?.(service.path)}
+                    className="cursor-pointer"
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                        보장형
+                      </span>
+                      {showCount && (
+                        <Badge variant="outline" className="text-xs ml-2">
+                          {getGuaranteeCount ? getGuaranteeCount(service.code || service.path) : (guaranteeCounts[service.code || service.path] || 0)}
+                        </Badge>
+                      )}
+                    </span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          } else {
+            // 기본 모드: 일반 버튼
+            return (
+              <Button
+                key={service.path}
+                variant={selectedService === service.path ? "default" : "outline"}
+                size="sm"
+                onClick={() => onServiceSelect(service.path)}
+                disabled={isDisabled}
+                className={`relative text-xs lg:text-sm px-2 lg:px-4 py-1.5 lg:py-2 ${selectedService === service.path
+                    ? 'bg-primary hover:bg-primary/90'
                     : ''
                   }`}
               >
-                {serviceCounts[service.code || service.path] || 0}
-              </Badge>
-            )}
-            </Button>
-          );
+                {service.icon && (
+                  <img
+                    src={service.icon}
+                    alt={service.name}
+                    className="size-3 lg:size-4 mr-1 lg:mr-2"
+                  />
+                )}
+                <span className="sm:whitespace-nowrap">{service.name}</span>
+                {showCount && (
+                  <Badge
+                    variant="outline"
+                    className={`ml-1.5 min-w-[20px] h-5 px-1 ${selectedService === service.path
+                        ? 'bg-white/20 border-white/40 text-white'
+                        : ''
+                      }`}
+                  >
+                    {serviceCounts[service.code || service.path] || 0}
+                  </Badge>
+                )}
+              </Button>
+            );
+          }
         })}
         
         {/* 더보기/접기 버튼 */}

@@ -95,13 +95,32 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         return;
       }
 
+      // 첫 번째 키워드 정보 가져오기
+      const firstKeyword = keywordDetails[0];
+      
+      // input_data 구성 (키워드별 작업 정보)
+      const inputData = {
+        keywords: keywordDetails.map(kd => ({
+          id: kd.id,
+          main_keyword: kd.mainKeyword,
+          work_count: kd.workCount,
+          due_days: kd.dueDays,
+          input_data: kd.inputData || {}
+        }))
+      };
+
       // 견적 요청 생성
       const { data, error } = await guaranteeSlotRequestService.createRequest({
         campaign_id: campaign.id,
         target_rank: 1, // 기본값으로 1을 사용 (UI에서 제거됨)
         guarantee_count: parseInt(guaranteeCount.toString()),
         initial_budget: parseInt(formData.initialBudget.replace(/,/g, '')),
-        message: formData.message
+        message: formData.message,
+        keyword_id: firstKeyword?.id, // 첫 번째 키워드 ID
+        input_data: inputData,
+        quantity: keywordDetails.reduce((sum, kd) => sum + (kd.workCount || 0), 0), // 총 작업수
+        user_reason: formData.message, // 사용자 요청 사유
+        additional_requirements: `선택된 키워드: ${keywordDetails.map(kd => kd.mainKeyword).join(', ')}`
       }, userId);
 
       if (error) {
@@ -153,12 +172,18 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">선택한 키워드:</span>
                   <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
-                    {selectedKeywordNames.map((name, index) => (
+                    {keywordDetails.map((keyword, index) => (
                       <span key={index} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs">
-                        {name}
+                        {keyword.mainKeyword} ({keyword.workCount}개, {keyword.dueDays}일)
                       </span>
                     ))}
                   </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">총 작업수:</span>
+                  <span className="font-medium">
+                    {keywordDetails.reduce((sum, kd) => sum + (kd.workCount || 0), 0)}개
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">가격 범위:</span>

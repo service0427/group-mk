@@ -27,8 +27,24 @@ export interface GuaranteeSlotRequest {
   initial_budget?: number;
   status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;
+  keyword_id?: number;
+  input_data?: Record<string, any>;
+  start_date?: string;
+  end_date?: string;
+  quantity?: number;
+  user_reason?: string;
+  additional_requirements?: string;
   created_at: string;
   updated_at: string;
+}
+
+// 첨부파일 정보
+export interface AttachmentFile {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  uploaded_at: string;
 }
 
 // 협상 메시지
@@ -40,6 +56,7 @@ export interface GuaranteeSlotNegotiation {
   message_type: NegotiationMessageType;
   message: string;
   proposed_daily_amount?: number;
+  attachments?: AttachmentFile[];
   is_read: boolean;
   created_at: string;
 }
@@ -57,6 +74,13 @@ export interface GuaranteeSlot {
   daily_guarantee_amount: number;
   total_amount: number;
   status: GuaranteeSlotStatus;
+  keyword_id?: number;
+  input_data?: Record<string, any>;
+  start_date?: string;
+  end_date?: string;
+  quantity?: number;
+  user_reason?: string;
+  additional_requirements?: string;
   purchase_reason?: string;
   cancellation_reason?: string;
   created_at: string;
@@ -127,6 +151,13 @@ export interface CreateGuaranteeSlotRequestParams {
   guarantee_count: number;
   initial_budget?: number;
   message?: string;
+  keyword_id?: number;
+  input_data?: Record<string, any>;
+  start_date?: string;
+  end_date?: string;
+  quantity?: number;
+  user_reason?: string;
+  additional_requirements?: string;
 }
 
 export interface CreateNegotiationMessageParams {
@@ -134,6 +165,7 @@ export interface CreateNegotiationMessageParams {
   message: string;
   proposed_daily_amount?: number;
   message_type: NegotiationMessageType;
+  attachments?: AttachmentFile[];
 }
 
 export interface PurchaseGuaranteeSlotParams {

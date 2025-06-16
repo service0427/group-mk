@@ -78,6 +78,9 @@ export const WorkInputPage = lazyWithPreload(() => import('@/pages/admin/work-in
 // 견적 요청 목록 페이지 lazy loading with preload
 export const GuaranteeQuotesPage = lazyWithPreload(() => import('@/pages/manage/guarantee-quotes/GuaranteeQuotesPage').then(m => ({ default: m.GuaranteeQuotesPage })));
 
+// 환불 관리 페이지 lazy loading with preload
+export const RefundManagementPage = lazyWithPreload(() => import('@/pages/distributor/refund-management').then(m => ({ default: m.RefundManagementPage })));
+
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
   Campaigns,
@@ -197,6 +200,9 @@ const AppRoutingSetup = (): ReactElement => {
           
           {/* 견적 요청 목록 */}
           <Route path="/manage/guarantee-quotes" element={<SuspenseWrapper><GuaranteeQuotesPage /></SuspenseWrapper>} />
+          
+          {/* 환불 관리 */}
+          <Route path="/manage/refunds" element={<SuspenseWrapper><RefundManagementPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -312,6 +318,9 @@ initializeComponentMap({
   // 총판 캠페인 요청 페이지
   '/campaign-request': CampaignRequestPage,
   '/campaign-request/add': CampaignAddPage,
+  
+  // 환불 관리 페이지
+  '/manage/refunds': RefundManagementPage,
 });
 
 export { AppRoutingSetup };

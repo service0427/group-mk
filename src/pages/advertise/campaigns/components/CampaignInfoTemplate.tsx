@@ -114,7 +114,11 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
 
         return {
           ...formattedData,
-          rawId: campaign.id // 원본 ID 저장
+          rawId: campaign.id, // 원본 ID 저장
+          originalData: {
+            ...campaign.originalData,
+            refundSettings: campaign.refundSettings // 환불 설정 추가
+          }
         };
       });
 

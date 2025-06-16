@@ -130,6 +130,18 @@ interface SupabaseCampaign {
     add_field?: Array<{ fieldName: string; description: string; isRequired?: boolean }>; // 추가 입력 필드 목록
     [key: string]: any;
   } | string; // 배너 URL 등의 추가 정보
+  refund_settings?: {
+    enabled: boolean;
+    type: 'immediate' | 'delayed' | 'cutoff_based';
+    delay_days?: number;
+    cutoff_time?: string;
+    requires_approval: boolean;
+    refund_rules?: {
+      min_usage_days: number;
+      max_refund_days: number;
+      partial_refund: boolean;
+    };
+  };
 }
 
 const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> = ({
@@ -2234,10 +2246,35 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                               )}
                             </div>
 
-                            <div className="text-sm">
+                            <div className="text-sm space-y-2">
                               <div className="bg-blue-50/50 p-2 rounded border border-blue-100/50 text-gray-700 line-clamp-2">
                                 {selectedCampaign.description || '설명이 없습니다.'}
                               </div>
+                              
+                              {/* 환불 정책 표시 */}
+                              {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled && (
+                                <div className="bg-amber-50/50 p-2 rounded border border-amber-100/50">
+                                  <div className="flex items-start gap-1.5">
+                                    <KeenIcon icon="shield-tick" className="text-amber-600 size-4 mt-0.5 shrink-0" />
+                                    <div className="text-xs text-gray-700 space-y-0.5">
+                                      <div className="font-medium text-amber-700">환불 정책</div>
+                                      <div>
+                                        • {selectedCampaign.refund_settings.type === 'immediate' ? '즉시 환불' : 
+                                          selectedCampaign.refund_settings.type === 'delayed' ? `${selectedCampaign.refund_settings.delay_days}일 후 환불` : 
+                                          `마감시간(${selectedCampaign.refund_settings.cutoff_time}) 기준 환불`}
+                                      </div>
+                                      {selectedCampaign.refund_settings.refund_rules && (
+                                        <div>
+                                          • 사용 {selectedCampaign.refund_settings.refund_rules.min_usage_days || 0}일 이상, {selectedCampaign.refund_settings.refund_rules.max_refund_days || 7}일 이내 환불 가능
+                                        </div>
+                                      )}
+                                      {selectedCampaign.refund_settings.requires_approval && (
+                                        <div className="text-orange-600">• 총판 승인 필요</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

@@ -239,7 +239,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
           <div className="relative flex-shrink-0 mx-auto sm:mx-0 sm:mr-4">
             {previewUrl || formData.logo ? (
               <img
-                src={previewUrl || toAbsoluteUrl(`/media/${formData.logo}`)}
+                src={previewUrl || (formData.logo.startsWith('/media/') ? toAbsoluteUrl(formData.logo) : toAbsoluteUrl(`/media/${formData.logo}`))}
                 className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
                 alt="캠페인 로고"
               />
@@ -292,8 +292,10 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           'teddy-bear': '테디베어', 'turtle': '거북이'
                         };
 
-                        const animalNameWithPath = selectedAnimal.split('/').pop() || '';
-                        const englishAnimalName = animalNameWithPath.replace('.svg', '');
+                        // Extract animal name from path like "/media/animal/svg/bear.svg"
+                        const pathParts = selectedAnimal.split('/');
+                        const fileName = pathParts[pathParts.length - 1] || '';
+                        const englishAnimalName = fileName.replace('.svg', '');
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
@@ -314,26 +316,26 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     disabled={loading}
                   >
                     <option value="none">기본 제공 로고 선택</option>
-                    <option value="animal/svg/bear.svg">곰</option>
-                    <option value="animal/svg/cat.svg">고양이</option>
-                    <option value="animal/svg/cow.svg">소</option>
-                    <option value="animal/svg/crocodile.svg">악어</option>
-                    <option value="animal/svg/dolphin.svg">돌고래</option>
-                    <option value="animal/svg/elephant.svg">코끼리</option>
-                    <option value="animal/svg/flamingo.svg">플라밍고</option>
-                    <option value="animal/svg/giraffe.svg">기린</option>
-                    <option value="animal/svg/horse.svg">말</option>
-                    <option value="animal/svg/kangaroo.svg">캥거루</option>
-                    <option value="animal/svg/koala.svg">코알라</option>
-                    <option value="animal/svg/leopard.svg">표범</option>
-                    <option value="animal/svg/lion.svg">사자</option>
-                    <option value="animal/svg/llama.svg">라마</option>
-                    <option value="animal/svg/owl.svg">올빼미</option>
-                    <option value="animal/svg/pelican.svg">펠리컨</option>
-                    <option value="animal/svg/penguin.svg">펭귄</option>
-                    <option value="animal/svg/sheep.svg">양</option>
-                    <option value="animal/svg/teddy-bear.svg">테디베어</option>
-                    <option value="animal/svg/turtle.svg">거북이</option>
+                    <option value="/media/animal/svg/bear.svg">곰</option>
+                    <option value="/media/animal/svg/cat.svg">고양이</option>
+                    <option value="/media/animal/svg/cow.svg">소</option>
+                    <option value="/media/animal/svg/crocodile.svg">악어</option>
+                    <option value="/media/animal/svg/dolphin.svg">돌고래</option>
+                    <option value="/media/animal/svg/elephant.svg">코끼리</option>
+                    <option value="/media/animal/svg/flamingo.svg">플라밍고</option>
+                    <option value="/media/animal/svg/giraffe.svg">기린</option>
+                    <option value="/media/animal/svg/horse.svg">말</option>
+                    <option value="/media/animal/svg/kangaroo.svg">캥거루</option>
+                    <option value="/media/animal/svg/koala.svg">코알라</option>
+                    <option value="/media/animal/svg/leopard.svg">표범</option>
+                    <option value="/media/animal/svg/lion.svg">사자</option>
+                    <option value="/media/animal/svg/llama.svg">라마</option>
+                    <option value="/media/animal/svg/owl.svg">올빼미</option>
+                    <option value="/media/animal/svg/pelican.svg">펠리컸</option>
+                    <option value="/media/animal/svg/penguin.svg">펭귄</option>
+                    <option value="/media/animal/svg/sheep.svg">양</option>
+                    <option value="/media/animal/svg/teddy-bear.svg">테디베어</option>
+                    <option value="/media/animal/svg/turtle.svg">거북이</option>
                   </select>
                 ) : (
                   <Select
@@ -355,8 +357,10 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           'teddy-bear': '테디베어', 'turtle': '거북이'
                         };
 
-                        const animalNameWithPath = selectedAnimal.split('/').pop() || '';
-                        const englishAnimalName = animalNameWithPath.replace('.svg', '').replace('animal/svg/', '');
+                        // Extract animal name from path like "/media/animal/svg/bear.svg"
+                        const pathParts = selectedAnimal.split('/');
+                        const fileName = pathParts[pathParts.length - 1] || '';
+                        const englishAnimalName = fileName.replace('.svg', '');
                         const koreanAnimalName = animalNameMap[englishAnimalName] || englishAnimalName;
                         const randomNum = Math.floor(10000 + Math.random() * 90000);
 
@@ -380,26 +384,26 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">기본 제공 로고 선택</SelectItem>
-                      <SelectItem value="animal/svg/bear.svg">곰</SelectItem>
-                      <SelectItem value="animal/svg/cat.svg">고양이</SelectItem>
-                      <SelectItem value="animal/svg/cow.svg">소</SelectItem>
-                      <SelectItem value="animal/svg/crocodile.svg">악어</SelectItem>
-                      <SelectItem value="animal/svg/dolphin.svg">돌고래</SelectItem>
-                      <SelectItem value="animal/svg/elephant.svg">코끼리</SelectItem>
-                      <SelectItem value="animal/svg/flamingo.svg">플라밍고</SelectItem>
-                      <SelectItem value="animal/svg/giraffe.svg">기린</SelectItem>
-                      <SelectItem value="animal/svg/horse.svg">말</SelectItem>
-                      <SelectItem value="animal/svg/kangaroo.svg">캥거루</SelectItem>
-                      <SelectItem value="animal/svg/koala.svg">코알라</SelectItem>
-                      <SelectItem value="animal/svg/leopard.svg">표범</SelectItem>
-                      <SelectItem value="animal/svg/lion.svg">사자</SelectItem>
-                      <SelectItem value="animal/svg/llama.svg">라마</SelectItem>
-                      <SelectItem value="animal/svg/owl.svg">올빼미</SelectItem>
-                      <SelectItem value="animal/svg/pelican.svg">펠리컨</SelectItem>
-                      <SelectItem value="animal/svg/penguin.svg">펭귄</SelectItem>
-                      <SelectItem value="animal/svg/sheep.svg">양</SelectItem>
-                      <SelectItem value="animal/svg/teddy-bear.svg">테디베어</SelectItem>
-                      <SelectItem value="animal/svg/turtle.svg">거북이</SelectItem>
+                      <SelectItem value="/media/animal/svg/bear.svg">곰</SelectItem>
+                      <SelectItem value="/media/animal/svg/cat.svg">고양이</SelectItem>
+                      <SelectItem value="/media/animal/svg/cow.svg">소</SelectItem>
+                      <SelectItem value="/media/animal/svg/crocodile.svg">악어</SelectItem>
+                      <SelectItem value="/media/animal/svg/dolphin.svg">돌고래</SelectItem>
+                      <SelectItem value="/media/animal/svg/elephant.svg">코끼리</SelectItem>
+                      <SelectItem value="/media/animal/svg/flamingo.svg">플라밍고</SelectItem>
+                      <SelectItem value="/media/animal/svg/giraffe.svg">기린</SelectItem>
+                      <SelectItem value="/media/animal/svg/horse.svg">말</SelectItem>
+                      <SelectItem value="/media/animal/svg/kangaroo.svg">캥거루</SelectItem>
+                      <SelectItem value="/media/animal/svg/koala.svg">코알라</SelectItem>
+                      <SelectItem value="/media/animal/svg/leopard.svg">표범</SelectItem>
+                      <SelectItem value="/media/animal/svg/lion.svg">사자</SelectItem>
+                      <SelectItem value="/media/animal/svg/llama.svg">라마</SelectItem>
+                      <SelectItem value="/media/animal/svg/owl.svg">올빼미</SelectItem>
+                      <SelectItem value="/media/animal/svg/pelican.svg">펠리컨</SelectItem>
+                      <SelectItem value="/media/animal/svg/penguin.svg">펭귄</SelectItem>
+                      <SelectItem value="/media/animal/svg/sheep.svg">양</SelectItem>
+                      <SelectItem value="/media/animal/svg/teddy-bear.svg">테디베어</SelectItem>
+                      <SelectItem value="/media/animal/svg/turtle.svg">거북이</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

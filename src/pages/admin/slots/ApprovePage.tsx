@@ -497,9 +497,9 @@ const ApprovePage: React.FC = () => {
 
         // 취소된 슬롯 및 환불 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
         query = query.neq('status', 'cancelled')
-                     .neq('status', 'refund_pending')
-                     .neq('status', 'refund_approved')
-                     .neq('status', 'refunded');
+          .neq('status', 'refund_pending')
+          .neq('status', 'refund_approved')
+          .neq('status', 'refunded');
 
         // 상태 필터 적용
         if (searchStatus) {
@@ -1300,8 +1300,8 @@ const ApprovePage: React.FC = () => {
   if (authLoading && !initialized) {
     return (
       <CommonTemplate
-        title="슬롯 승인 관리"
-        description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
+        title="일반형 슬롯 관리"
+        description="일반형 캠페인 승인 및 슬롯을 관리합니다."
         showPageMenu={false}
       >
         <div className="min-h-[400px] flex items-center justify-center">
@@ -1318,11 +1318,10 @@ const ApprovePage: React.FC = () => {
 
   return (
     <CommonTemplate
-      title="슬롯 승인 관리"
-      description="관리자 메뉴 > 슬롯 관리 > 슬롯 승인 관리"
+      title="일반형 슬롯 관리"
+      description="일반형 캠페인 승인 및 슬롯을 관리합니다."
       showPageMenu={false}
     >
-
 
       {/* 월간 통계 */}
       <MonthlyStatistics

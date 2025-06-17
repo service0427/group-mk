@@ -605,7 +605,7 @@ const generateMockSlots = (serviceType: string, userId: string): SlotItem[] => {
     campaign: {
       id: i + 1,
       campaignName: `${serviceCategory} 캠페인 ${i + 1}`,
-      logo: 'animal/svg/lion.svg',
+      logo: '/media/animal/svg/lion.svg',
       status: 'active',
       serviceType: serviceType
     }

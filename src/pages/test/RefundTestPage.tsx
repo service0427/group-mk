@@ -146,6 +146,8 @@ const RefundTestPage: React.FC = () => {
         .select(`
           *,
           slot:slots!slot_refund_approvals_slot_id_fkey(
+            id,
+            status,
             campaign:campaigns!slots_product_id_fkey(
               campaign_name
             )
@@ -156,7 +158,13 @@ const RefundTestPage: React.FC = () => {
         .limit(20);
 
       if (error) throw error;
-      setRefundApprovals(data || []);
+      
+      // 이미 환불 처리된 항목 필터링 (슬롯 상태가 refunded가 아닌 것만)
+      const pendingRefunds = (data || []).filter(approval => 
+        approval.slot?.status !== 'refunded'
+      );
+      
+      setRefundApprovals(pendingRefunds);
     } catch (error) {
       console.error('Error fetching pending refunds:', error);
     }
@@ -306,6 +314,7 @@ const RefundTestPage: React.FC = () => {
         alert(data.message);
       }
       fetchPendingRefunds();
+      fetchSlots(); // 슬롯 목록도 새로고침
     } catch (error) {
       console.error('Error processing single refund:', error);
       alert('환불 처리에 실패했습니다.');

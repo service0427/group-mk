@@ -81,10 +81,30 @@ export const guaranteeSlotRequestService = {
   // 견적 요청 목록 조회
   async getRequests(filter: GuaranteeSlotRequestFilter = {}) {
     try {
-      // 먼저 기본 데이터만 가져오기
+      // 캠페인 정보와 함께 가져오기
       let query = supabase
         .from('guarantee_slot_requests')
-        .select('*')
+        .select(`
+          *,
+          campaigns (
+            id,
+            campaign_name,
+            service_type,
+            mat_id,
+            min_guarantee_price,
+            max_guarantee_price,
+            guarantee_unit,
+            logo,
+            status
+          ),
+          keywords (
+            id,
+            main_keyword,
+            keyword1,
+            keyword2,
+            keyword3
+          )
+        `)
         .order('created_at', { ascending: false });
 
       // 필터 적용
@@ -144,7 +164,8 @@ export const guaranteeSlotRequestService = {
             min_guarantee_price,
             max_guarantee_price,
             logo,
-            guarantee_unit
+            guarantee_unit,
+            status
           ),
           keywords (
             id,

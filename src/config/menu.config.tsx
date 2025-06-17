@@ -344,7 +344,7 @@ export const MENU_SIDEBAR: TMenuConfig = [
   },
   {
     title: '슬롯 관리',
-    icon: 'cube-2 text-info',
+    icon: 'cube-2 text-success',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.DISTRIBUTOR),
     children: [
       // {
@@ -353,13 +353,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
       //   path: '/manage/slots/info'
       // },
       {
-        title: '슬롯 승인 관리',
-        icon: 'verify text-success',
+        title: '일반형 슬롯 관리',
+        icon: 'element-11 text-primary',
         path: '/manage/slots/approve'
       },
       {
-        title: '견적 요청 목록',
-        icon: 'message-programming text-info',
+        title: '보장형 슬롯 관리',
+        icon: 'shield-tick text-info',
         path: '/manage/guarantee-quotes'
       },
       {

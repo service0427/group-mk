@@ -313,6 +313,18 @@ const SlotList: React.FC<SlotListProps> = ({
   const getCampaignLogo = (slot: Slot): string | undefined => {
     // 캠페인 로고가 있으면 우선 사용
     if (slot.campaign_logo) {
+      // animal/svg/ 형태의 경로면 /media/ 추가
+      if (slot.campaign_logo.includes('animal/svg/') && !slot.campaign_logo.startsWith('/media/')) {
+        return `/media/${slot.campaign_logo}`;
+      }
+      // http로 시작하거나 /로 시작하면 그대로 사용
+      if (slot.campaign_logo.startsWith('http') || slot.campaign_logo.startsWith('/')) {
+        return slot.campaign_logo;
+      }
+      // 단순 동물 이름이면 경로 구성
+      if (!slot.campaign_logo.includes('/')) {
+        return `/media/animal/svg/${slot.campaign_logo}.svg`;
+      }
       return slot.campaign_logo;
     }
     

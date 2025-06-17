@@ -165,7 +165,8 @@ export class LogoutService {
       'logout_complete',
       'logout_redirect',
       'logout_timestamp',
-      'logout_error'
+      'logout_error',
+      'sidebar_scroll_initialized'  // 사이드바 스크롤 초기화 플래그
     ];
 
     sessionStorageKeys.forEach(key => {

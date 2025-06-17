@@ -969,7 +969,10 @@ const RefundTestPage: React.FC = () => {
                               {tableItems.map((item: any, idx: number) => (
                                 <div key={idx} className="bg-gray-50 dark:bg-gray-800 rounded p-2 text-sm">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant={item.action === 'INSERT' ? 'default' : 'secondary'} className="text-xs">
+                                    <Badge 
+                                      variant={item.action === 'INSERT' ? 'default' : item.action === 'UPDATE' ? 'secondary' : 'outline'} 
+                                      className={`text-xs ${item.action === 'UPDATE' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : ''}`}
+                                    >
                                       {item.action}
                                     </Badge>
                                     <span className="text-xs text-gray-500">ID: {item.record_id || 'NEW'}</span>
@@ -1051,7 +1054,12 @@ const RefundTestPage: React.FC = () => {
                           variant={
                             new Date(approval.approval_date).getTime() + 3 * 24 * 60 * 60 * 1000 <= Date.now()
                               ? 'destructive'
-                              : 'secondary'
+                              : 'outline'
+                          }
+                          className={
+                            new Date(approval.approval_date).getTime() + 3 * 24 * 60 * 60 * 1000 > Date.now()
+                              ? 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-700'
+                              : ''
                           }
                         >
                           {new Date(approval.approval_date).getTime() + 3 * 24 * 60 * 60 * 1000 <= Date.now()
@@ -1150,6 +1158,7 @@ const RefundTestPage: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
                             onClick={() => {
                               const amountInput = document.getElementById(`amount-${approval.id}`) as HTMLInputElement;
                               const reasonInput = document.getElementById(`reason-${approval.id}`) as HTMLInputElement;
@@ -1173,7 +1182,6 @@ const RefundTestPage: React.FC = () => {
                             }}
                             disabled={isLoading}
                           >
-                            <KeenIcon icon="play" className="size-3 mr-1" />
                             즉시 처리
                           </Button>
                         </div>
@@ -1231,9 +1239,10 @@ const RefundTestPage: React.FC = () => {
                             variant={
                               item.action === 'INSERT' ? 'default' : 
                               item.action === 'ERROR' ? 'destructive' : 
-                              'secondary'
+                              item.action === 'UPDATE' ? 'secondary' : 
+                              'outline'
                             } 
-                            className="text-xs"
+                            className={`text-xs ${item.action === 'UPDATE' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : ''}`}
                           >
                             {item.action}
                           </Badge>

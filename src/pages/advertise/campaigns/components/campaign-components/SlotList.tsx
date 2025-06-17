@@ -141,7 +141,13 @@ const SlotList: React.FC<SlotListProps> = ({
   };
 
   // 남은 일수에 따른 색상 클래스 반환
-  const getRemainingDaysColorClass = (days: number | null): string => {
+  const getRemainingDaysColorClass = (days: number | null, slot?: SlotItem): string => {
+    // 환불 승인 상태거나 환불 요청이 승인된 경우 일반 색상
+    if (slot?.status === 'refund_approved' || 
+        slot?.refund_requests?.some(req => req.status === 'approved')) {
+      return 'text-gray-700 dark:text-gray-300';
+    }
+    
     if (days === null) return 'text-gray-400';
     if (days < 0) return 'text-gray-500'; // 마감됨
     if (days === 0) return 'text-red-600 font-bold'; // 오늘 마감
@@ -151,7 +157,13 @@ const SlotList: React.FC<SlotListProps> = ({
   };
 
   // 남은 일수 표시 텍스트
-  const getRemainingDaysText = (days: number | null): string => {
+  const getRemainingDaysText = (days: number | null, slot?: SlotItem): string => {
+    // 환불 승인 상태거나 환불 요청이 승인된 경우 '-' 표시
+    if (slot?.status === 'refund_approved' || 
+        slot?.refund_requests?.some(req => req.status === 'approved')) {
+      return '-';
+    }
+    
     if (days === null) return '-';
     if (days < 0) return '마감';
     if (days === 0) return '0일';
@@ -1095,8 +1107,8 @@ const SlotList: React.FC<SlotListProps> = ({
 
                       {/* 남은일 */}
                       <td className="py-2 px-3 text-center w-[6%]">
-                        <span className={`text-xs whitespace-nowrap ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate))}`}>
-                          {getRemainingDaysText(calculateRemainingDays(item.endDate))}
+                        <span className={`text-xs whitespace-nowrap ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate), item)}`}>
+                          {getRemainingDaysText(calculateRemainingDays(item.endDate), item)}
                         </span>
                       </td>
 
@@ -1244,8 +1256,8 @@ const SlotList: React.FC<SlotListProps> = ({
                   
                   <div className="flex items-center">
                     <span className="text-gray-600 w-16">남은일:</span>
-                    <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate))}`}>
-                      {getRemainingDaysText(calculateRemainingDays(item.endDate))}
+                    <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate), item)}`}>
+                      {getRemainingDaysText(calculateRemainingDays(item.endDate), item)}
                     </span>
                   </div>
 

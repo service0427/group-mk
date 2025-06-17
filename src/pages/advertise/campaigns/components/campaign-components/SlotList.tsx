@@ -167,7 +167,6 @@ const SlotList: React.FC<SlotListProps> = ({
     
     // refund_approved 상태는 특별 처리
     if (status === 'refund_approved') {
-      console.log('refund_approved slot:', slot);
       return (
         <div className="flex items-center gap-1">
           <span className="badge badge-primary whitespace-nowrap">환불승인</span>

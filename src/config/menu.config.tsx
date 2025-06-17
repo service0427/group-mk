@@ -16,8 +16,8 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     title: '이용 중인 서비스',
     icon: 'setting-4 text-info',
-    path: '/my-services',
     authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
+    path: '/my-services',
   },
   // {
   //   title: '캐쉬/포인트 관리',
@@ -590,7 +590,7 @@ export const MENU_MEGA: TMenuConfig = [
       },
       {
         heading: '내 서비스 관리',
-        authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR]),  // 광고주 등급부터, 총판은 제외
+        authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
         children: [
           {
             title: '이용 중 서비스 관리',

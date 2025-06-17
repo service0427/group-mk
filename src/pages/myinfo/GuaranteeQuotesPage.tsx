@@ -2,16 +2,16 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuthContext } from '@/auth';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { guaranteeSlotRequestService } from '@/services/guaranteeSlotService';
 import { supabase } from '@/supabase';
 import { KeenIcon } from '@/components';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { GuaranteeNegotiationModal } from '@/components/campaign-modals/GuaranteeNegotiationModal';
+import type { GuaranteeSlotRequestStatus } from '@/types/guarantee-slot.types';
 
 // 타입 정의
-interface GuaranteeQuoteRequest {
+interface MyGuaranteeQuoteRequest {
   id: string;
   campaign_id: number;
   user_id: string;
@@ -19,7 +19,7 @@ interface GuaranteeQuoteRequest {
   target_rank: number;
   guarantee_count: number;
   initial_budget?: number;
-  status: 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired';
+  status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;
   created_at: string;
   updated_at: string;
@@ -28,31 +28,22 @@ interface GuaranteeQuoteRequest {
     id: number;
     campaign_name: string;
     service_type: string;
-    mat_id: string;
-    min_guarantee_price?: number;
-    max_guarantee_price?: number;
     guarantee_unit?: string;
-  };
-  users?: {
-    id: string;
-    email: string;
-    full_name: string;
   };
 }
 
-const GuaranteeQuotesPage: React.FC = () => {
+const MyGuaranteeQuotesPage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
 
-  const [requests, setRequests] = useState<GuaranteeQuoteRequest[]>([]);
+  const [requests, setRequests] = useState<MyGuaranteeQuoteRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchStatus, setSearchStatus] = useState<string>('');
-  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const [negotiationModal, setNegotiationModal] = useState<{
     open: boolean;
     requestId: string;
-    requestData?: GuaranteeQuoteRequest;
+    requestData?: MyGuaranteeQuoteRequest;
   }>({
     open: false,
     requestId: ''
@@ -72,42 +63,56 @@ const GuaranteeQuotesPage: React.FC = () => {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(req => 
         req.campaign_id?.toString().includes(term) ||
-        req.user_id?.toLowerCase().includes(term)
+        req.campaigns?.campaign_name?.toLowerCase().includes(term)
       );
     }
 
     return filtered;
   }, [requests, searchStatus, searchTerm]);
 
-  // 견적 요청 목록 가져오기
-  const fetchRequests = useCallback(async () => {
+  // 내 견적 요청 목록 가져오기
+  const fetchMyRequests = useCallback(async () => {
     if (!currentUser) return;
 
     try {
       setLoading(true);
 
-      // 권한에 따른 필터
-      const filter: any = {};
-      
-      // ADMIN 그룹(운영자/개발자)이 아닌 경우, 총판은 자신이 생성한 캠페인의 요청만 볼 수 있음
-      if (!hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
-        if (currentUser.role === USER_ROLES.DISTRIBUTOR) {
-          // 총판은 자신의 distributor_id가 설정된 요청만 조회
-          filter.distributor_id = currentUser.id;
-        }
-      }
-      // ADMIN 그룹은 모든 요청을 볼 수 있음 (필터 없음)
-
-      const { data, error } = await guaranteeSlotRequestService.getRequests(filter);
+      // 현재 사용자의 요청만 조회
+      const { data, error } = await guaranteeSlotRequestService.getRequests({
+        user_id: currentUser.id
+      });
 
       if (error) {
         throw error;
       }
 
-      setRequests(data || []);
+      // 캠페인 정보도 함께 가져오기
+      if (data && data.length > 0) {
+        const campaignIds = [...new Set(data.map(req => req.campaign_id))];
+        const { data: campaigns, error: campaignError } = await supabase
+          .from('campaigns')
+          .select('id, campaign_name, service_type, guarantee_unit')
+          .in('id', campaignIds);
+
+        if (campaignError) throw campaignError;
+
+        const campaignMap = campaigns.reduce((acc, campaign) => {
+          acc[campaign.id] = campaign;
+          return acc;
+        }, {} as any);
+
+        const requestsWithCampaigns = data.map(request => ({
+          ...request,
+          campaigns: campaignMap[request.campaign_id]
+        }));
+
+        setRequests(requestsWithCampaigns);
+      } else {
+        setRequests(data || []);
+      }
     } catch (error) {
-      console.error('견적 요청 목록 조회 실패:', error);
-      showError('견적 요청 목록을 불러오는데 실패했습니다.');
+      console.error('내 견적 요청 목록 조회 실패:', error);
+      showError('견적 요청 내역을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -115,9 +120,9 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading && currentUser) {
-      fetchRequests();
+      fetchMyRequests();
     }
-  }, [authLoading, currentUser, fetchRequests]);
+  }, [authLoading, currentUser, fetchMyRequests]);
 
   // 상태별 배지 색상
   const getStatusBadgeClass = (status: string) => {
@@ -141,13 +146,13 @@ const GuaranteeQuotesPage: React.FC = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'requested':
-        return '요청됨';
+        return '견적 요청됨';
       case 'negotiating':
-        return '협상중';
+        return '협상 중';
       case 'accepted':
-        return '수락됨';
+        return '협상 완료';
       case 'rejected':
-        return '거절됨';
+        return '협상 거절됨';
       case 'expired':
         return '만료됨';
       default:
@@ -171,7 +176,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   };
 
   // 협상 모달 열기
-  const handleOpenNegotiation = (request: GuaranteeQuoteRequest) => {
+  const handleOpenNegotiation = (request: MyGuaranteeQuoteRequest) => {
     setNegotiationModal({
       open: true,
       requestId: request.id,
@@ -189,15 +194,15 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   // 협상 상태 변경 시 목록 새로고침
   const handleNegotiationStatusChange = (status: string) => {
-    fetchRequests(); // 목록 새로고침
+    fetchMyRequests(); // 목록 새로고침
   };
 
   // 로딩 상태
   if (authLoading || loading) {
     return (
       <CommonTemplate
-        title="견적 요청 목록"
-        description="보장형 캠페인 견적 요청 관리"
+        title="보장형 견적 내역"
+        description="내 정보 관리 > 보장형 견적 내역"
         showPageMenu={false}
       >
         <div className="min-h-[400px] flex items-center justify-center">
@@ -212,33 +217,14 @@ const GuaranteeQuotesPage: React.FC = () => {
     );
   }
 
-  // 권한 체크
-  if (!currentUser || !hasPermission(currentUser.role, PERMISSION_GROUPS.DISTRIBUTOR)) {
-    return (
-      <CommonTemplate
-        title="견적 요청 목록"
-        description="보장형 캠페인 견적 요청 관리"
-        showPageMenu={false}
-      >
-        <div className="min-h-[400px] flex items-center justify-center">
-          <div className="text-center">
-            <KeenIcon icon="shield-cross" className="text-6xl text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">접근 권한이 없습니다</h3>
-            <p className="text-gray-500">이 페이지는 총판 이상의 권한이 필요합니다.</p>
-          </div>
-        </div>
-      </CommonTemplate>
-    );
-  }
-
   return (
     <CommonTemplate
-      title="견적 요청 목록"
-      description="보장형 캠페인 견적 요청 관리"
+      title="보장형 견적 내역"
+      description="내 정보 관리 > 보장형 견적 내역"
       showPageMenu={false}
     >
       {/* 검색 영역 */}
-      <div className="card mb-6" inert={negotiationModal.open ? '' : undefined}>
+      <div className="card mb-6">
         <div className="card-header">
           <h3 className="card-title">견적 요청 검색</h3>
         </div>
@@ -249,13 +235,12 @@ const GuaranteeQuotesPage: React.FC = () => {
                 className="select"
                 value={searchStatus}
                 onChange={(e) => setSearchStatus(e.target.value)}
-                disabled={negotiationModal.open}
               >
                 <option value="">전체 상태</option>
-                <option value="requested">요청됨</option>
-                <option value="negotiating">협상중</option>
-                <option value="accepted">수락됨</option>
-                <option value="rejected">거절됨</option>
+                <option value="requested">견적 요청됨</option>
+                <option value="negotiating">협상 중</option>
+                <option value="accepted">협상 완료</option>
+                <option value="rejected">협상 거절됨</option>
                 <option value="expired">만료됨</option>
               </select>
             </div>
@@ -263,16 +248,15 @@ const GuaranteeQuotesPage: React.FC = () => {
               <input
                 type="text"
                 className="input"
-                placeholder="캠페인명, 요청자명, 이메일로 검색"
+                placeholder="캠페인명, 캠페인 ID로 검색"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                disabled={negotiationModal.open}
               />
             </div>
             <button
               className="btn btn-primary"
-              onClick={fetchRequests}
-              disabled={loading || negotiationModal.open}
+              onClick={fetchMyRequests}
+              disabled={loading}
             >
               <KeenIcon icon="magnifier" className="me-2" />
               검색
@@ -281,41 +265,33 @@ const GuaranteeQuotesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 요청 목록 */}
-      <div className="card" inert={negotiationModal.open ? '' : undefined}>
+      {/* 견적 요청 목록 */}
+      <div className="card">
         <div className="card-header">
-          <h3 className="card-title">견적 요청 목록 ({filteredRequests.length}건)</h3>
+          <h3 className="card-title">내 견적 요청 내역 ({filteredRequests.length}건)</h3>
         </div>
         <div className="card-body">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-10">
               <KeenIcon icon="folder-open" className="text-6xl text-gray-300 mb-4" />
-              <p className="text-gray-500">견적 요청이 없습니다.</p>
+              <p className="text-gray-500">
+                {searchTerm || searchStatus ? '검색 결과가 없습니다.' : '견적 요청 내역이 없습니다.'}
+              </p>
+              {!searchTerm && !searchStatus && (
+                <p className="text-sm text-gray-400 mt-2">
+                  보장형 캠페인에서 견적을 요청해보세요.
+                </p>
+              )}
             </div>
           ) : (
             <div className="table-responsive">
               <table className="table table-rounded table-striped table-hover">
                 <thead>
                   <tr className="fw-bold fs-6 text-gray-800">
-                    <th className="w-10">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={selectedRequests.length === filteredRequests.length && filteredRequests.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedRequests(filteredRequests.map(r => r.id));
-                          } else {
-                            setSelectedRequests([]);
-                          }
-                        }}
-                        disabled={negotiationModal.open}
-                      />
-                    </th>
                     <th>캠페인</th>
-                    <th>요청자</th>
                     <th>희망 예산</th>
                     <th>보장 기간</th>
+                    <th>최종 금액</th>
                     <th>상태</th>
                     <th>요청일시</th>
                     <th className="text-end">작업</th>
@@ -325,30 +301,13 @@ const GuaranteeQuotesPage: React.FC = () => {
                   {filteredRequests.map((request) => (
                     <tr key={request.id}>
                       <td>
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={selectedRequests.includes(request.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedRequests([...selectedRequests, request.id]);
-                            } else {
-                              setSelectedRequests(selectedRequests.filter(id => id !== request.id));
-                            }
-                          }}
-                          disabled={negotiationModal.open}
-                        />
-                      </td>
-                      <td>
                         <div>
-                          <div className="font-medium text-gray-900">캠페인 #{request.campaign_id}</div>
-                          <div className="text-xs text-gray-500">ID: {request.campaign_id}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <div>
-                          <div className="text-gray-900">사용자</div>
-                          <div className="text-xs text-gray-500">{request.user_id}</div>
+                          <div className="font-medium text-gray-900">
+                            {request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ID: {request.campaign_id} | 목표: {request.target_rank}위
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -362,8 +321,22 @@ const GuaranteeQuotesPage: React.FC = () => {
                       </td>
                       <td>
                         <span className="text-gray-900">
-                          {request.guarantee_count}일
+                          {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
                         </span>
+                      </td>
+                      <td>
+                        {request.final_daily_amount ? (
+                          <div>
+                            <div className="text-gray-900 font-medium">
+                              {formatPrice(request.final_daily_amount)}원/일
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              총 {formatPrice(request.final_daily_amount * request.guarantee_count)}원
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">협상 중</span>
+                        )}
                       </td>
                       <td>
                         <span className={`badge ${getStatusBadgeClass(request.status)}`}>
@@ -383,22 +356,22 @@ const GuaranteeQuotesPage: React.FC = () => {
                           <button
                             className="btn btn-sm btn-primary"
                             onClick={() => handleOpenNegotiation(request)}
-                            title="협상하기"
-                            disabled={negotiationModal.open}
+                            title="협상 내용 보기"
                           >
                             <KeenIcon icon="message-text" className="fs-4" />
                           </button>
-                          <button
-                            className="btn btn-sm btn-light"
-                            onClick={() => {
-                              // TODO: 상세보기 구현
-                              console.log('상세보기:', request);
-                            }}
-                            title="상세보기"
-                            disabled={negotiationModal.open}
-                          >
-                            <KeenIcon icon="eye" className="fs-4" />
-                          </button>
+                          {request.status === 'accepted' && (
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => {
+                                // TODO: 구매 진행 모달 열기
+                                console.log('구매 진행:', request);
+                              }}
+                              title="구매 진행"
+                            >
+                              <KeenIcon icon="wallet" className="fs-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -416,11 +389,11 @@ const GuaranteeQuotesPage: React.FC = () => {
         onClose={handleCloseNegotiation}
         requestId={negotiationModal.requestId}
         requestData={negotiationModal.requestData}
-        currentUserRole={currentUser?.role === USER_ROLES.DISTRIBUTOR ? 'distributor' : 'user'}
+        currentUserRole="user"
         onStatusChange={handleNegotiationStatusChange}
       />
     </CommonTemplate>
   );
 };
 
-export { GuaranteeQuotesPage };
+export { MyGuaranteeQuotesPage };

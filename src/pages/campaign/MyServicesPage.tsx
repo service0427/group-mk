@@ -34,11 +34,13 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { SlotRefundModal } from '@/components/refund/SlotRefundModal';
+import { MyGuaranteeQuotesContent } from '@/pages/myinfo/components/MyGuaranteeQuotesContent';
 
 
 const MyServicesPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'general' | 'guarantee'>('general'); // 뷰 모드 상태 추가
   const { currentUser, userRole } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
 
@@ -50,6 +52,8 @@ const MyServicesPage: React.FC = () => {
 
   // 서비스별 슬롯 수를 저장할 상태
   const [serviceSlotCounts, setServiceSlotCounts] = useState<Record<string, number>>({});
+  // 보장형 서비스별 슬롯 수를 저장할 상태
+  const [guaranteeSlotCounts, setGuaranteeSlotCounts] = useState<Record<string, number>>({});
   // 슬롯이 있는 서비스 목록 (모든 상태 포함)
   const [servicesWithSlots, setServicesWithSlots] = useState<Set<string>>(new Set());
 
@@ -101,6 +105,7 @@ const MyServicesPage: React.FC = () => {
 
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
+    setViewMode('general'); // 일반형 선택 시 뷰모드 설정
     // 검색 초기화
     setSearchInput('');
     setStatusFilter('all');
@@ -115,12 +120,12 @@ const MyServicesPage: React.FC = () => {
     }
   }, [selectedService, currentUser?.id]);
 
-  // 서비스별 슬롯 수를 가져오는 함수
+  // 서비스별 슬롯 수를 가져오는 함수 (일반형 + 보장형)
   const fetchAllServiceCounts = useCallback(async () => {
     if (!currentUser?.id) return;
 
     try {
-      // 1. active 상태의 슬롯 카운트 (표시용)
+      // 1. 일반형 active 상태의 슬롯 카운트
       let activeQuery = supabase
         .from('slots')
         .select(`
@@ -147,7 +152,30 @@ const MyServicesPage: React.FC = () => {
         return;
       }
 
-      // 2. 모든 상태의 슬롯 확인 (활성화 여부 판단용)
+      // 2. 보장형 active 상태의 슬롯 카운트
+      let guaranteeActiveQuery = supabase
+        .from('guarantee_slot_requests')
+        .select(`
+          id,
+          status,
+          campaigns:campaign_id (
+            service_type
+          )
+        `)
+        .in('status', ['accepted', 'negotiating']);
+
+      // 개발자가 아닌 경우에만 사용자 필터 적용
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        guaranteeActiveQuery = guaranteeActiveQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: guaranteeActiveData, error: guaranteeActiveError } = await guaranteeActiveQuery;
+
+      if (guaranteeActiveError) {
+        console.error('보장형 활성 슬롯 수 조회 오류:', guaranteeActiveError);
+      }
+
+      // 3. 모든 상태의 슬롯 확인 (활성화 여부 판단용)
       let allQuery = supabase
         .from('slots')
         .select(`
@@ -168,17 +196,47 @@ const MyServicesPage: React.FC = () => {
         console.error('전체 슬롯 조회 오류:', allError);
       }
 
-      // active 슬롯 카운트 계산
-      const counts: Record<string, number> = {};
+      // 4. 모든 보장형 요청 확인
+      let allGuaranteeQuery = supabase
+        .from('guarantee_slot_requests')
+        .select(`
+          id,
+          campaigns:campaign_id (
+            service_type
+          )
+        `);
+
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        allGuaranteeQuery = allGuaranteeQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: allGuaranteeData, error: allGuaranteeError } = await allGuaranteeQuery;
+
+      if (allGuaranteeError) {
+        console.error('전체 보장형 요청 조회 오류:', allGuaranteeError);
+      }
+
+      // 일반형 active 슬롯 카운트 계산
+      const generalCounts: Record<string, number> = {};
       if (activeData) {
         activeData.forEach((slot: any) => {
           if (slot.campaigns?.service_type) {
-            counts[slot.campaigns.service_type] = (counts[slot.campaigns.service_type] || 0) + 1;
+            generalCounts[slot.campaigns.service_type] = (generalCounts[slot.campaigns.service_type] || 0) + 1;
           }
         });
       }
 
-      // 슬롯이 있는 서비스 목록 생성
+      // 보장형 active 슬롯 카운트 계산
+      const guaranteeCounts: Record<string, number> = {};
+      if (guaranteeActiveData) {
+        guaranteeActiveData.forEach((request: any) => {
+          if (request.campaigns?.service_type) {
+            guaranteeCounts[request.campaigns.service_type] = (guaranteeCounts[request.campaigns.service_type] || 0) + 1;
+          }
+        });
+      }
+
+      // 슬롯이 있는 서비스 목록 생성 (일반형 + 보장형)
       const servicesSet = new Set<string>();
       if (allData) {
         allData.forEach((slot: any) => {
@@ -187,8 +245,16 @@ const MyServicesPage: React.FC = () => {
           }
         });
       }
+      if (allGuaranteeData) {
+        allGuaranteeData.forEach((request: any) => {
+          if (request.campaigns?.service_type) {
+            servicesSet.add(request.campaigns.service_type);
+          }
+        });
+      }
 
-      setServiceSlotCounts(counts);
+      setServiceSlotCounts(generalCounts);
+      setGuaranteeSlotCounts(guaranteeCounts);
       setServicesWithSlots(servicesSet);
     } catch (error) {
       console.error('서비스별 슬롯 수 조회 중 오류:', error);
@@ -440,16 +506,21 @@ const MyServicesPage: React.FC = () => {
 
   // 툴바 액션 버튼
   const toolbarActions = (
-    <Button
-      variant="outline"
-      size="sm"
-      className="bg-primary-600 text-white hover:bg-primary-700"
-      onClick={() => setIsAddModalOpen(true)}
-      disabled={!selectedService}
-    >
-      <KeenIcon icon="plus" className="size-4 mr-2" />
-      새 슬롯 추가
-    </Button>
+    <div className="flex items-center gap-2">
+      {/* 새 슬롯 추가 버튼 - 일반형일 때만 표시 */}
+      {viewMode === 'general' && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-primary-600 text-white hover:bg-primary-700"
+          onClick={() => setIsAddModalOpen(true)}
+          disabled={!selectedService}
+        >
+          <KeenIcon icon="plus" className="size-4 mr-2" />
+          새 슬롯 추가
+        </Button>
+      )}
+    </div>
   );
 
   return (
@@ -470,24 +541,43 @@ const MyServicesPage: React.FC = () => {
             userRole={userRole}
             showCount={true}
             serviceCounts={serviceSlotCounts}
+            guaranteeCounts={guaranteeSlotCounts}
             servicesWithSlots={servicesWithSlots}
             collapsible={true}
             initialDisplayCount={6}
+            expandableServices={true}
+            onGuaranteeSelect={(service) => {
+              // 보장형 선택 시 서비스 설정 및 컴포넌트 모드 전환
+              setSelectedService(service);
+              setViewMode('guarantee');
+            }}
+            getTotalCount={(serviceType) => {
+              const generalCount = serviceSlotCounts[serviceType] || 0;
+              const guaranteeCount = guaranteeSlotCounts[serviceType] || 0;
+              return generalCount + guaranteeCount;
+            }}
+            getGeneralCount={(serviceType) => serviceSlotCounts[serviceType] || 0}
+            getGuaranteeCount={(serviceType) => guaranteeSlotCounts[serviceType] || 0}
           />
         </CardContent>
       </Card>
 
-      {/* 검색 카드 */}
-      <Card>
-        <CardContent className="p-6">
-          {!selectedService ? (
-            <div className="text-center py-8">
-              <KeenIcon icon="information-3" className="text-5xl text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">서비스를 선택해주세요</p>
-            </div>
-          ) : (
-            <>
-              <h3 className="text-base font-medium mb-4">슬롯 검색</h3>
+      {/* 메인 콘텐츠 - 뷰 모드에 따라 다른 컴포넌트 표시 */}
+      {viewMode === 'guarantee' ? (
+        <MyGuaranteeQuotesContent />
+      ) : (
+        <>
+          {/* 검색 카드 */}
+          <Card>
+            <CardContent className="p-6">
+              {!selectedService ? (
+                <div className="text-center py-8">
+                  <KeenIcon icon="information-3" className="text-5xl text-muted-foreground mb-4" />
+                  <p className="text-lg text-muted-foreground">서비스를 선택해주세요</p>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-base font-medium mb-4">슬롯 검색</h3>
 
               {/* 데스크톱 검색 폼 */}
               <div className="hidden md:block space-y-4">
@@ -637,123 +727,125 @@ const MyServicesPage: React.FC = () => {
                   <KeenIcon icon="magnifier" className="size-4" />
                   검색
                 </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 슬롯 목록 */}
-      {!selectedService ? (
-        <Card className="mt-6">
-          <CardContent className="p-6">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">서비스를 선택하면 슬롯 목록이 표시됩니다</p>
-            </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
-      ) : (
-        <SlotList
-          filteredSlots={filteredSlots || []}
-          isLoading={isLoading}
-          error={slotsError}
-          serviceType={selectedService}
-          editingCell={editingCell}
-          editingValue={editingValue}
-          onEditStart={handleEditStart}
-          onEditChange={handleEditChange}
-          onEditSave={saveEdit}
-          onEditCancel={handleEditCancel}
-          onDeleteSlot={handleDeleteSlot}
-          onOpenMemoModal={handleOpenMemoModal}
-          onConfirmTransaction={handleConfirmTransaction}
-          userRole={userRole}
-          hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
-          isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
-          onCancelSlot={handleOpenCancelModal}
-          onRefundSlot={handleOpenRefundModal} // 환불 핸들러 추가
-          showBulkActions={true} // 광고주도 다중 선택해서 취소할 수 있도록
-          selectedSlots={selectedSlots}
-          onSelectedSlotsChange={setSelectedSlots}
-          showBulkCancel={true} // 일괄 취소 버튼 표시
-          customStatusLabels={{
-            approved: '진행중'  // approved 상태를 진행중으로 표시
+
+        {/* 슬롯 목록 */}
+        {!selectedService ? (
+          <Card className="mt-6">
+            <CardContent className="p-6">
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">서비스를 선택하면 슬롯 목록이 표시됩니다</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <SlotList
+            filteredSlots={filteredSlots || []}
+            isLoading={isLoading}
+            error={slotsError}
+            serviceType={selectedService}
+            editingCell={editingCell}
+            editingValue={editingValue}
+            onEditStart={handleEditStart}
+            onEditChange={handleEditChange}
+            onEditSave={saveEdit}
+            onEditCancel={handleEditCancel}
+            onDeleteSlot={handleDeleteSlot}
+            onOpenMemoModal={handleOpenMemoModal}
+            onConfirmTransaction={handleConfirmTransaction}
+            userRole={userRole}
+            hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
+            isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
+            onCancelSlot={handleOpenCancelModal}
+            onRefundSlot={handleOpenRefundModal}
+            showBulkActions={true}
+            selectedSlots={selectedSlots}
+            onSelectedSlotsChange={setSelectedSlots}
+            showBulkCancel={true}
+            customStatusLabels={{
+              approved: '진행중'
+            }}
+          />
+        )}
+
+        {/* 모달들 */}
+        <CampaignSlotWithKeywordModal
+          open={isAddModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            loadCampaignSlots();
+            fetchAllServiceCounts(); // 서비스별 카운트 업데이트
+          }}
+          serviceCode={selectedService || ''}
+          category={serviceCategoryLabel}
+        />
+
+        <MemoModal
+          isOpen={isMemoModalOpen}
+          onClose={() => {
+            setIsMemoModalOpen(false);
+            setSelectedSlotForMemo(null);
+            setMemoText('');
+          }}
+          memoText={memoText}
+          setMemoText={setMemoText}
+          onSave={handleSaveMemo}
+        />
+
+        {/* 취소 모달 */}
+        <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+          <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle>슬롯 취소</DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <p className="text-sm text-gray-700">
+                선택한 {slotsToCancel.length}개의 슬롯을 취소하시겠습니까?
+                <br />
+                취소된 슬롯의 결제 금액은 캐시로 환불됩니다.
+              </p>
+            </DialogBody>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
+                취소
+              </Button>
+              <Button onClick={handleConfirmCancel} disabled={isCancelling}>
+                {isCancelling ? '처리 중...' : '확인'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 환불 모달 */}
+        <SlotRefundModal
+          isOpen={isRefundModalOpen}
+          onClose={() => {
+            setIsRefundModalOpen(false);
+            setSlotsToRefund([]);
+          }}
+          slots={filteredSlots.filter(slot => slotsToRefund.includes(slot.id)).map(slot => ({
+            id: slot.id,
+            startDate: slot.startDate,
+            endDate: slot.endDate,
+            product_id: slot.productId,
+            status: slot.status,
+            campaign: slot.campaign ? {
+              campaignName: slot.campaign.campaignName,
+              refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
+            } : undefined
+          }))}
+          onSuccess={async () => {
+            await loadCampaignSlots();
+            await fetchAllServiceCounts();
+            setSelectedSlots([]);
           }}
         />
+      </>
       )}
-
-      {/* 모달들 */}
-      <CampaignSlotWithKeywordModal
-        open={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          loadCampaignSlots();
-          fetchAllServiceCounts(); // 서비스별 카운트 업데이트
-        }}
-        serviceCode={selectedService || ''}
-        category={serviceCategoryLabel}
-      />
-
-      <MemoModal
-        isOpen={isMemoModalOpen}
-        onClose={() => {
-          setIsMemoModalOpen(false);
-          setSelectedSlotForMemo(null);
-          setMemoText('');
-        }}
-        memoText={memoText}
-        setMemoText={setMemoText}
-        onSave={handleSaveMemo}
-      />
-
-      {/* 취소 모달 */}
-      <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>슬롯 취소</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <p className="text-sm text-gray-700">
-              선택한 {slotsToCancel.length}개의 슬롯을 취소하시겠습니까?
-              <br />
-              취소된 슬롯의 결제 금액은 캐시로 환불됩니다.
-            </p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
-              취소
-            </Button>
-            <Button onClick={handleConfirmCancel} disabled={isCancelling}>
-              {isCancelling ? '처리 중...' : '확인'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 환불 모달 */}
-      <SlotRefundModal
-        isOpen={isRefundModalOpen}
-        onClose={() => {
-          setIsRefundModalOpen(false);
-          setSlotsToRefund([]);
-        }}
-        slots={filteredSlots.filter(slot => slotsToRefund.includes(slot.id)).map(slot => ({
-          id: slot.id,
-          startDate: slot.startDate,
-          endDate: slot.endDate,
-          product_id: slot.productId,
-          status: slot.status,
-          campaign: slot.campaign ? {
-            campaignName: slot.campaign.campaignName,
-            refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
-          } : undefined
-        }))}
-        onSuccess={async () => {
-          await loadCampaignSlots();
-          await fetchAllServiceCounts();
-          setSelectedSlots([]);
-        }}
-      />
     </DashboardTemplate>
   );
 };

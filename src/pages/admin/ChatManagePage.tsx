@@ -5,14 +5,24 @@ import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useDialog } from '@/providers';
 import { useRealtimeSubscription } from '@/hooks';
+import { fileUploadService } from '@/services/fileUploadService';
+import { STORAGE_CONFIG } from '@/config/storage.config';
+import type { AttachmentFile } from '@/types/guarantee-slot.types';
+import { toast } from 'sonner';
 
 // 메시지 아이템 컴포넌트를 메모이제이션하여 불필요한 렌더링 방지
 const MessageItem = memo(({
   message,
-  isCurrentUser
+  isCurrentUser,
+  onImageClick,
+  onFileDownload,
+  downloadingFile
 }: {
   message: IMessage;
-  isCurrentUser: boolean
+  isCurrentUser: boolean;
+  onImageClick: (attachment: AttachmentFile) => void;
+  onFileDownload: (attachment: AttachmentFile) => void;
+  downloadingFile: string | null;
 }) => {
   return (
     <div
@@ -40,6 +50,90 @@ const MessageItem = memo(({
 
         {/* 메시지 내용 */}
         <div className="text-sm whitespace-pre-wrap text-current">{message.content}</div>
+
+        {/* 첨부파일 표시 */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {message.attachments.map((attachment: any, attachIndex: number) => (
+              <div key={attachIndex} className="p-2 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded">
+                <div className="flex items-center gap-2 mb-2">
+                  {attachment.type === 'image' ? (
+                    <img 
+                      src={attachment.url} 
+                      alt={attachment.name}
+                      className="w-12 h-12 object-cover rounded cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() => onImageClick(attachment)}
+                      title="클릭하여 원본 보기"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 flex items-center justify-center bg-orange-100 dark:bg-orange-800 rounded">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600 dark:text-orange-400">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate text-gray-800 dark:text-gray-200" title={attachment.name}>
+                      {attachment.name}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {attachment.size ? fileUploadService.formatFileSize(attachment.size) : ''}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {/* 이미지 파일인 경우 보기 버튼 */}
+                  {attachment.type === 'image' && (
+                    <button
+                      onClick={() => onImageClick(attachment)}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-1 flex-1"
+                      title="원본 보기"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      보기
+                    </button>
+                  )}
+                  
+                  {/* 다운로드 버튼 */}
+                  <button
+                    onClick={async () => {
+                      if (downloadingFile) return;
+                      onFileDownload(attachment);
+                    }}
+                    disabled={downloadingFile === attachment.url}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-1 flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="파일 다운로드"
+                  >
+                    {downloadingFile === attachment.url ? (
+                      <>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                          <path d="M12 2v4m0 12v4m8-8h-4M6 12H2m15.364-6.364L14.95 8.05M9.05 14.95l-2.414 2.414M17.364 17.364L14.95 14.95M9.05 9.05L6.636 6.636"/>
+                        </svg>
+                        처리중...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7,10 12,15 17,10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        다운로드
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 타임스탬프 */}
         <div className="text-right mt-1">
@@ -93,6 +187,14 @@ const ChatManagePage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived' | 'closed'>('all'); // 채팅 상태 필터
   const [isMobileView, setIsMobileView] = useState(false); // 모바일 화면 여부
   const [showChatList, setShowChatList] = useState(true); // 모바일에서 채팅방 목록 표시 여부
+  
+  // 파일 첨부 관련 상태
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; title: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 사용자 역할 확인 (관리자 또는 운영자)
 
@@ -114,7 +216,7 @@ const ChatManagePage: React.FC = () => {
       // 메시지 가져오기 - 관리자 클라이언트 + 페이지네이션 적용
       const { data, error, count } = await supabaseAdmin
         .from('chat_messages')
-        .select('id, room_id, sender_id, sender_name, sender_role, content, created_at, status', { count: 'exact' })
+        .select('id, room_id, sender_id, sender_name, sender_role, content, created_at, status, attachments', { count: 'exact' })
         .eq('room_id', roomId)
         .order('created_at', { ascending: false }) // 최신 메시지부터 가져오기
         .range(page * messagePageSize, (page + 1) * messagePageSize - 1);
@@ -146,7 +248,8 @@ const ChatManagePage: React.FC = () => {
         senderRole: message.sender_role || 'user',
         content: message.content,
         timestamp: message.created_at,
-        status: message.status || 'sent'
+        status: message.status || 'sent',
+        attachments: message.attachments || []
       })).reverse(); // UI에 표시하기 위해 다시 역순으로
 
       // 메시지 저장 (append가 true면 기존 메시지에 추가하면서 중복 제거)
@@ -211,7 +314,7 @@ const ChatManagePage: React.FC = () => {
   const { showAlert } = useDialog();
   
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || !currentRoomId || !currentUser?.id) return;
+    if ((!inputValue.trim() && attachments.length === 0) || !currentRoomId || !currentUser?.id) return;
 
     // 채팅방이 활성 상태가 아니면 메시지 전송 불가
     const roomInfo = allRooms.find(room => room.id === currentRoomId);
@@ -223,10 +326,11 @@ const ChatManagePage: React.FC = () => {
     try {
       const messageId = generateUUID();
       const now = new Date().toISOString();
-      const messageContent = inputValue.trim();
+      const messageContent = inputValue.trim() || (attachments.length > 0 ? '파일을 보냈습니다.' : '');
 
       // 1. 먼저 입력창 초기화 (UI 반응성 개선)
       setInputValue('');
+      setAttachments([]);
 
       // 2. 로컬에 메시지 추가 (즉시 표시)
       const newMessage: IMessage = {
@@ -237,7 +341,15 @@ const ChatManagePage: React.FC = () => {
         senderRole: ChatRole.OPERATOR,
         content: messageContent,
         timestamp: now,
-        status: MessageStatus.SENT
+        status: MessageStatus.SENT,
+        attachments: attachments.length > 0 ? attachments.map((att, idx) => ({
+          id: `${messageId}-${idx}`,
+          messageId: messageId,
+          type: fileUploadService.isImageFile({ type: att.type } as File) ? 'image' as const : 'file' as const,
+          url: att.url,
+          name: att.name,
+          size: att.size
+        })) : undefined
       };
 
       // 로컬 메시지 목록에 추가 (즉시 표시, 중복 방지)
@@ -285,7 +397,15 @@ const ChatManagePage: React.FC = () => {
           content: messageContent,
           status: 'sent',
           created_at: now,
-          updated_at: now
+          updated_at: now,
+          attachments: attachments.length > 0 ? attachments.map((att, idx) => ({
+            id: `${messageId}-${idx}`,
+            messageId: messageId,
+            type: fileUploadService.isImageFile({ type: att.type } as File) ? 'image' : 'file',
+            url: att.url,
+            name: att.name,
+            size: att.size
+          })) : null
         })
         .select();
 
@@ -316,7 +436,7 @@ const ChatManagePage: React.FC = () => {
     } catch (error) {
       showAlert('오류', '메시지 전송 중 오류가 발생했습니다');
     }
-  }, [inputValue, currentRoomId, currentUser, showAlert]);
+  }, [inputValue, currentRoomId, currentUser, showAlert, attachments, allRooms]);
 
   // 모든 채팅방 가져오기 (페이지네이션 적용 + 관리자 클라이언트 사용 + 상태 필터링)
   const fetchAllChatRooms = useCallback(async (page = 0) => {
@@ -502,7 +622,8 @@ const ChatManagePage: React.FC = () => {
         senderRole: newMessage.sender_role || 'user',
         content: newMessage.content,
         timestamp: newMessage.created_at,
-        status: newMessage.status || 'sent'
+        status: newMessage.status || 'sent',
+        attachments: newMessage.attachments || []
       };
 
       // 기존 메시지 목록에 새 메시지 추가 (중복 체크)
@@ -581,6 +702,8 @@ const ChatManagePage: React.FC = () => {
             }
           }, 300); // DOM 업데이트를 위해 약간의 지연 시간 부여
         }
+        // 첨부파일 초기화
+        setAttachments([]);
       })
       .catch(error => {
         // 오류 처리
@@ -839,6 +962,115 @@ const ChatManagePage: React.FC = () => {
       }
     }
   }, [uniqueMessages, currentUser?.id]);
+
+  // 파일 선택 처리
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFiles(true);
+    try {
+      const fileArray = Array.from(files);
+      
+      // 파일 타입 및 크기 검증
+      const validFiles = fileArray.filter(file => {
+        if (!fileUploadService.isValidFileSize(file, STORAGE_CONFIG.LIMITS.MAX_FILE_SIZE_MB)) {
+          toast.error(`${file.name}은(는) 파일 크기가 ${STORAGE_CONFIG.LIMITS.MAX_FILE_SIZE_MB}MB를 초과합니다.`);
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      // 파일 업로드 (chat 폴더 사용)
+      const { data: uploadedFiles, errors } = await fileUploadService.uploadMultipleFiles(
+        validFiles, 
+        STORAGE_CONFIG.UPLOADS_BUCKET, 
+        `chat/${currentUser?.id || 'admin'}`
+      );
+
+      if (errors.length > 0) {
+        console.error('일부 파일 업로드 실패:', errors);
+        toast.error('일부 파일 업로드에 실패했습니다.');
+      }
+
+      if (uploadedFiles.length > 0) {
+        setAttachments(prev => [...prev, ...uploadedFiles]);
+        toast.success(`${uploadedFiles.length}개 파일이 첨부되었습니다.`);
+      }
+    } catch (error) {
+      console.error('파일 업로드 실패:', error);
+      toast.error('파일 업로드에 실패했습니다.');
+    } finally {
+      setUploadingFiles(false);
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 첨부파일 제거
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 이미지 클릭 처리 (모달 보기)
+  const handleImageClick = (attachment: AttachmentFile) => {
+    setSelectedImage({
+      src: attachment.url,
+      title: attachment.name
+    });
+    setIsImageModalOpen(true);
+  };
+
+  // 이미지 모달 닫기
+  const closeImageModal = useCallback(() => {
+    setIsImageModalOpen(false);
+    setSelectedImage(null);
+  }, []);
+
+  // ESC 키로 이미지 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isImageModalOpen) {
+        closeImageModal();
+      }
+    };
+
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isImageModalOpen, closeImageModal]);
+
+  // 파일 다운로드 처리
+  const handleFileDownload = async (attachment: AttachmentFile) => {
+    if (downloadingFile) return; // 이미 다운로드 중이면 무시
+
+    try {
+      setDownloadingFile(attachment.url);
+      
+      if (fileUploadService.isImageFile({ type: attachment.type } as File)) {
+        // 이미지는 모달에서 보기
+        handleImageClick(attachment);
+      } else {
+        // 일반 파일은 다운로드
+        const success = await fileUploadService.downloadFile(attachment.url, attachment.name);
+        if (success) {
+          toast.success('파일 다운로드가 시작되었습니다.');
+        } else {
+          toast.error('파일 다운로드에 실패했습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('파일 처리 실패:', error);
+      toast.error('파일 처리 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
 
   {/* 개발 단계에서는 접근 제한 제거 */ }
 
@@ -1161,6 +1393,9 @@ const ChatManagePage: React.FC = () => {
                     key={message.id}
                     message={message}
                     isCurrentUser={message.senderId === currentUser?.id}
+                    onImageClick={handleImageClick}
+                    onFileDownload={handleFileDownload}
+                    downloadingFile={downloadingFile}
                   />
                 ))}
 
@@ -1182,27 +1417,108 @@ const ChatManagePage: React.FC = () => {
 
           {/* 메시지 입력 */}
           {currentRoomId && currentRoomInfo && currentRoomInfo.status === 'active' ? (
-            <div className="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex">
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                className="flex-1 border rounded-l-lg p-2 outline-none text-sm resize-none dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-white dark:placeholder-opacity-70"
-                placeholder="메시지 입력... (Shift+Enter로 줄바꿈)"
-                rows={2}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || loadingMessages}
-                className="bg-blue-500 dark:bg-blue-800 text-white px-4 rounded-r-lg disabled:opacity-50 hover:bg-blue-600 dark:hover:bg-blue-900"
-              >
-                전송
-              </button>
+            <div className="bg-white dark:bg-slate-800 border-t dark:border-slate-700">
+              {/* 첨부파일 미리보기 */}
+              {attachments.length > 0 && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+                  <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    첨부파일 ({attachments.length}개)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {attachments.map((attachment, index) => (
+                      <div key={index} className="relative group">
+                        {attachment.type && attachment.type.startsWith('image/') ? (
+                          <div className="relative">
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.name}
+                              className="w-16 h-16 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => handleImageClick(attachment)}
+                              title="클릭하여 원본 보기"
+                            />
+                            <button
+                              onClick={() => handleRemoveAttachment(index)}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded min-w-0">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600 dark:text-orange-400 flex-shrink-0">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14,2 14,8 20,8"/>
+                              <line x1="16" y1="13" x2="8" y2="13"/>
+                              <line x1="16" y1="17" x2="8" y2="17"/>
+                              <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate max-w-24 text-gray-800 dark:text-gray-200" title={attachment.name}>
+                                {attachment.name}
+                              </div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                {attachment.size ? fileUploadService.formatFileSize(attachment.size) : ''}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveAttachment(index)}
+                              className="w-4 h-4 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 메시지 입력 영역 */}
+              <div className="px-3 pt-3 pb-3 flex items-center gap-2">
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="flex-1 border rounded-lg px-3 py-2 outline-none text-sm resize-none dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-white dark:placeholder-opacity-70 h-10 m-0 leading-normal"
+                  placeholder="메시지를 입력하세요..."
+                  rows={1}
+                  disabled={loadingMessages || uploadingFiles}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={(!inputValue.trim() && attachments.length === 0) || loadingMessages || uploadingFiles}
+                  className="w-10 h-10 bg-blue-500 dark:bg-blue-800 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-blue-600 dark:hover:bg-blue-900 transition-colors"
+                  title="전송"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingFiles || loadingMessages}
+                  className="w-10 h-10 bg-orange-600 dark:bg-orange-700 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-orange-700 dark:hover:bg-orange-800 transition-colors"
+                  title="파일 첨부"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49"/>
+                  </svg>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept={STORAGE_CONFIG.LIMITS.ALLOWED_TYPES.join(',')}
+                />
+              </div>
             </div>
           ) : currentRoomId && currentRoomInfo && currentRoomInfo.status !== 'active' ? (
             <div className="p-4 bg-gray-100 dark:bg-slate-800 border-t dark:border-slate-700 text-center text-gray-500 dark:text-white font-medium">
@@ -1215,6 +1531,30 @@ const ChatManagePage: React.FC = () => {
           ) : null}
         </div>
       </div>
+      
+      {/* 이미지 모달 */}
+      {isImageModalOpen && selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+          onClick={closeImageModal}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] p-4">
+            <button
+              onClick={closeImageModal}
+              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75"
+            >
+              ×
+            </button>
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.title}
+              className="max-w-full max-h-[85vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="text-white text-center mt-2">{selectedImage.title}</div>
+          </div>
+        </div>
+      )}
     </CommonTemplate>
   );
 };

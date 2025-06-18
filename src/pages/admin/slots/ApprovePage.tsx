@@ -285,7 +285,9 @@ const ApprovePage: React.FC = () => {
         const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
 
         // ADMIN 그룹은 모든 캠페인을, 다른 사용자는 자신의 캠페인만 조회
-        let campaignsQuery = supabase.from('campaigns').select('id, mat_id, campaign_name, service_type, status, description, logo, add_info');
+        let campaignsQuery = supabase.from('campaigns')
+          .select('id, mat_id, campaign_name, service_type, status, description, logo, add_info')
+          .eq('slot_type', 'standard'); // 일반형 캠페인만 필터링
         if (!isAdmin && currentUser.id) {
           campaignsQuery = campaignsQuery.eq('mat_id', currentUser.id);
         }
@@ -1301,7 +1303,7 @@ const ApprovePage: React.FC = () => {
     return (
       <CommonTemplate
         title="일반형 슬롯 관리"
-        description="일반형 캠페인 승인 및 슬롯을 관리합니다."
+        description="일반형 캠페인의 승인 요청 및 슬롯을 관리합니다."
         showPageMenu={false}
       >
         <div className="min-h-[400px] flex items-center justify-center">
@@ -1319,7 +1321,7 @@ const ApprovePage: React.FC = () => {
   return (
     <CommonTemplate
       title="일반형 슬롯 관리"
-      description="일반형 캠페인 승인 및 슬롯을 관리합니다."
+      description="일반형 캠페인의 승인 요청 및 슬롯을 관리합니다."
       showPageMenu={false}
     >
 

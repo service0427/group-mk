@@ -6,8 +6,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
+  DialogBody,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { KeenIcon } from '@/components';
+import { Badge } from '@/components/ui/badge';
 
 interface GuaranteeCompleteModalProps {
   isOpen: boolean;
@@ -30,6 +33,7 @@ const GuaranteeCompleteModal: React.FC<GuaranteeCompleteModalProps> = ({
 }) => {
   const [workMemo, setWorkMemo] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [showConfirm, setShowConfirm] = useState<boolean>(false);
 
   const isEarlyCompletion = completedDays < guaranteeCount;
   const completionRate = guaranteeCount > 0 ? Math.round((completedDays / guaranteeCount) * 100) : 0;
@@ -40,9 +44,14 @@ const GuaranteeCompleteModal: React.FC<GuaranteeCompleteModalProps> = ({
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const handleFinalConfirm = () => {
     onConfirm(workMemo);
     setWorkMemo('');
     setError('');
+    setShowConfirm(false);
     onClose();
   };
 
@@ -55,128 +64,181 @@ const GuaranteeCompleteModal: React.FC<GuaranteeCompleteModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="bg-background py-4 px-6 border-b sticky top-0 z-10">
-          <DialogTitle className="text-lg font-medium text-foreground">보장형 슬롯 완료</DialogTitle>
-          <DialogDescription className="sr-only">
-            보장형 슬롯을 완료 처리하는 모달입니다.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col" aria-describedby={undefined}>
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <KeenIcon icon="check-circle" className="size-5 text-success" />
+              보장형 슬롯 완료
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="p-6 bg-background overflow-y-auto flex-1">
-          {campaignName && (
-            <div className="mb-4">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {campaignName}
-              </h3>
-            </div>
-          )}
+          <DialogBody className="flex-1 overflow-y-auto">
+            <div className="space-y-3">
 
-          <div className="space-y-3 mb-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              작업 진행 현황
-            </h4>
-            <div className="space-y-2 pl-2">
-              <div className="flex items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400 w-24">보장기간:</span>
-                <span className="text-gray-900 dark:text-gray-100">
-                  {guaranteeCount}{guaranteeUnit === 'daily' ? '일' : '회'}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400 w-24">완료 기간:</span>
-                <span className="text-gray-900 dark:text-gray-100">
-                  {completedDays}{guaranteeUnit === 'daily' ? '일' : '회'}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400 w-24">진행률:</span>
-                <span className={`font-semibold ${completionRate >= 100
-                    ? 'text-green-600 dark:text-green-400'
-                    : completionRate > 0
-                      ? 'text-yellow-600 dark:text-yellow-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }`}>
-                  {completionRate}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {isEarlyCompletion && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
-                    조기 완료 경고
-                  </h3>
-                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                    <p>• 잔여 기간: {guaranteeCount - completedDays}{guaranteeUnit === 'daily' ? '일' : '회'}</p>
-                    <p className="font-semibold text-red-600 dark:text-red-400 mt-2">
-                      ※ 미완료분은 사용자에게 환불됩니다.
-                    </p>
+              {/* 캠페인 정보 카드 */}
+              <div className="card">
+                <div className="card-body">
+                  {campaignName && (
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
+                      {campaignName}
+                    </h3>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-xs text-slate-500 dark:text-gray-500">보장기간</span>
+                      <span className="font-medium">
+                        {guaranteeCount}{guaranteeUnit === 'daily' ? '일' : '회'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-xs text-slate-500 dark:text-gray-500">완료 기간</span>
+                      <span className="font-medium">
+                        {completedDays}{guaranteeUnit === 'daily' ? '일' : '회'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 dark:border-gray-700">
+                      <span className="text-xs text-slate-500 dark:text-gray-500">진행률</span>
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "text-xs",
+                          completionRate >= 100 ? 'bg-green-500 hover:bg-green-600' :
+                          completionRate > 0 ? 'bg-amber-500 hover:bg-amber-600' :
+                          'bg-red-500 hover:bg-red-600'
+                        )}
+                      >
+                        {completionRate}%
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {isEarlyCompletion && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <KeenIcon icon="information-2" className="text-sm text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                        조기 완료 경고
+                      </h3>
+                      <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                        <p>• 잔여 기간: {guaranteeCount - completedDays}{guaranteeUnit === 'daily' ? '일' : '회'}</p>
+                        <p className="font-semibold text-red-600 dark:text-red-400 mt-1">
+                          ※ 미완료분은 사용자에게 환불됩니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 작업 완료 메모 카드 */}
+              <div className="card">
+                <div className="card-body">
+                  <label htmlFor="workMemo" className="form-label required text-sm mb-2">
+                    작업 완료 메모
+                  </label>
+                  <Textarea
+                    id="workMemo"
+                    className="textarea textarea-sm resize-none"
+                    rows={4}
+                    placeholder="작업 완료와 관련된 메모를 입력하세요..."
+                    value={workMemo}
+                    onChange={(e) => {
+                      setWorkMemo(e.target.value);
+                      if (e.target.value.trim()) setError('');
+                    }}
+                  />
+                  <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+                    ※ 이 메모는 작업 완료 기록에 저장됩니다.
+                  </p>
+                </div>
+              </div>
+
+              {/* 확인 메시지 */}
+              <div className="bg-slate-50 dark:bg-gray-900 rounded-lg p-3">
+                <p className="text-sm text-slate-700 dark:text-gray-300 font-medium">
+                  슬롯을 완료 처리하시겠습니까?
+                </p>
+                <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+                  ※ 사용자가 확인 후 정산이 진행됩니다.
+                </p>
+              </div>
             </div>
-          )}
+          </DialogBody>
 
-          <div className="space-y-2 mb-2">
-            <label htmlFor="workMemo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              작업 완료 메모 <span className="text-red-500">*</span>
-            </label>
-            <Textarea
-              id="workMemo"
-              className={`w-full px-3 py-2 border rounded-md ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
-                } bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 transition duration-150 ease-in-out`}
-              rows={4}
-              placeholder="작업 완료와 관련된 메모를 입력하세요..."
-              value={workMemo}
-              onChange={(e) => {
-                setWorkMemo(e.target.value);
-                if (e.target.value.trim()) setError('');
-              }}
-            />
-            {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              ※ 이 메모는 작업 완료 기록에 저장됩니다.
-            </p>
-          </div>
-
-          <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-            슬롯을 완료 처리하시겠습니까?
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              ※ 사용자가 확인 후 정산이 진행됩니다.
+          <div className="flex-shrink-0 flex justify-between items-center p-4 border-t border-slate-200 dark:border-gray-700">
+            {error && (
+              <div className="flex items-center gap-1 text-xs text-red-500">
+                <KeenIcon icon="information-2" className="size-3" />
+                <p>{error}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={handleConfirm}
+                className="btn btn-primary btn-sm"
+              >
+                완료
+              </button>
+              <Button
+                variant="light"
+                size="sm"
+                onClick={onClose}
+              >
+                취소
+              </Button>
             </div>
           </div>
-        </div>
+        </DialogContent>
+      </Dialog>
 
-        <div className="flex justify-end items-center gap-3 py-4 px-6 bg-gray-50 dark:bg-gray-800/50 border-t">
-          <Button
-            onClick={handleConfirm}
-            className={isEarlyCompletion
-              ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-              : 'bg-primary hover:bg-primary/90 text-white'
-            }
-          >
-            완료
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            취소
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* 최종 확인 모달 */}
+      {showConfirm && (
+        <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <DialogContent className="max-w-sm" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeenIcon icon="shield-tick" className="size-5 text-success" />
+                최종 확인
+              </DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <div className="py-4">
+                <p className="text-sm text-slate-700 dark:text-gray-300 mb-2">
+                  정말로 이 보장형 슬롯을 완료 처리하시겠습니까?
+                </p>
+                {isEarlyCompletion && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 mt-3">
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>주의:</strong> 조기 완료로 인해 잔여 {guaranteeCount - completedDays}{guaranteeUnit === 'daily' ? '일' : '회'}분은 환불됩니다.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </DialogBody>
+            <div className="flex justify-end items-center gap-2 p-4 border-t border-slate-200 dark:border-gray-700">
+              <button
+                onClick={handleFinalConfirm}
+                className="btn btn-primary btn-sm"
+              >
+                확인
+              </button>
+              <Button
+                variant="light"
+                size="sm"
+                onClick={() => setShowConfirm(false)}
+              >
+                취소
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 

@@ -115,7 +115,9 @@ const MyServicesPage: React.FC = () => {
 
   // 선택된 서비스가 변경될 때 데이터 로드
   useEffect(() => {
+    console.log('[MyServicesPage] selectedService changed:', selectedService, 'currentUser:', currentUser?.id);
     if (selectedService && currentUser?.id) {
+      console.log('[MyServicesPage] Loading campaign slots...');
       loadCampaignSlots();
     }
   }, [selectedService, currentUser?.id]);
@@ -138,7 +140,7 @@ const MyServicesPage: React.FC = () => {
             service_type
           )
         `)
-        .in('status', ['active', 'approved']);
+        .in('status', ['active', 'approved', 'pending', 'submitted']);
 
       // 개발자가 아닌 경우에만 사용자 필터 적용
       if (userRole !== USER_ROLES.DEVELOPER) {
@@ -147,6 +149,8 @@ const MyServicesPage: React.FC = () => {
 
       const { data: activeData, error: activeError } = await activeQuery;
 
+      console.log('[fetchAllServiceCounts] Active slots query result:', activeData);
+      
       if (activeError) {
         console.error('활성 슬롯 수 조회 오류:', activeError);
         return;
@@ -219,12 +223,21 @@ const MyServicesPage: React.FC = () => {
       // 일반형 active 슬롯 카운트 계산
       const generalCounts: Record<string, number> = {};
       if (activeData) {
+        console.log('[fetchAllServiceCounts] Processing active slots...');
         activeData.forEach((slot: any) => {
           if (slot.campaigns?.service_type) {
+            console.log('[fetchAllServiceCounts] Slot:', { 
+              id: slot.id, 
+              status: slot.status,
+              service_type: slot.campaigns.service_type,
+              keyword_id: slot.keyword_id,
+              is_manual: slot.input_data?.is_manual_input
+            });
             generalCounts[slot.campaigns.service_type] = (generalCounts[slot.campaigns.service_type] || 0) + 1;
           }
         });
       }
+      console.log('[fetchAllServiceCounts] General counts:', generalCounts);
 
       // 보장형 active 슬롯 카운트 계산
       const guaranteeCounts: Record<string, number> = {};

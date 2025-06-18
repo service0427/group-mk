@@ -17,6 +17,7 @@ export interface SlotItem {
   processedAt: string | null;
   rejectionReason: string | null;
   userReason: string | null; // 사용자 메모 필드
+  keyword_id?: number; // 키워드 ID (0은 직접입력)
   inputData: {
     productName: string;
     mid: string;
@@ -28,6 +29,10 @@ export interface SlotItem {
     keyword3?: string;
     work_memo?: string;
     work_memo_date?: string;
+    is_manual_input?: boolean;
+    minimum_purchase?: number;
+    work_days?: number;
+    [key: string]: any; // 추가 필드 허용
   };
   deadline: string | null;
   createdAt: string;

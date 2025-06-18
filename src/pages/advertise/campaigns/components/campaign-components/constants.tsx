@@ -60,7 +60,8 @@ export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
   'naver-traffic': 'NaverTraffic',
   'naver-shopping-traffic': 'NaverShoppingTraffic',
   'naver-shopping-rank': 'NaverShoppingRank',
-  'naver-shopping-fakesale': 'NaverShoppingFakesale',
+  'naver-shopping-fakesale': 'NaverShoppingFakeSale',
+  'naver-shopping-fake-sale': 'NaverShoppingFakeSale', // ServiceSelector가 생성하는 형식도 지원
   'naver-place-save': 'NaverPlaceSave',
   'naver-place-share': 'NaverPlaceShare',
   'naver-place-traffic': 'NaverPlaceTraffic',
@@ -68,7 +69,8 @@ export const URL_TO_DB_SERVICE_TYPE: Record<string, string> = {
   'naver-blog-post': 'NaverBlogPost',
   'naver-auto': 'NaverAuto',
   'coupang-traffic': 'CoupangTraffic',
-  'coupang-fakesale': 'CoupangFakesale',
+  'coupang-fakesale': 'CoupangFakeSale',
+  'coupang-fake-sale': 'CoupangFakeSale', // ServiceSelector가 생성하는 형식도 지원
   'ohouse-traffic': 'OhouseTraffic'
 };
 

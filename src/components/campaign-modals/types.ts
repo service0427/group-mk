@@ -174,7 +174,8 @@ export enum FieldType {
   TEXT = 'text',
   INTEGER = 'integer',
   ENUM = 'enum',
-  FILE = 'file'
+  FILE = 'file',
+  TEXTAREA = 'textarea'
 }
 
 // 사용자 입력 필드 타입 정의

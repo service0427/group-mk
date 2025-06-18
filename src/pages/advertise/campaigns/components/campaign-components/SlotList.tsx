@@ -123,6 +123,10 @@ const SlotList: React.FC<SlotListProps> = ({
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
   const [openRefundRejectionId, setOpenRefundRejectionId] = useState<string | null>(null);
+  
+  // 추가 정보 팝오버 상태 (수동 입력 서비스용)
+  const [openInfoPopoverId, setOpenInfoPopoverId] = useState<string | null>(null);
+  const [infoPopoverPosition, setInfoPopoverPosition] = useState({ top: 0, left: 0 });
 
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
@@ -803,8 +807,12 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">상품명</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">키워드</th>
+                    <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">
+                      {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '입력 정보' : '상품명'}
+                    </th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">
+                      {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '' : '키워드'}
+                    </th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
@@ -845,47 +853,100 @@ const SlotList: React.FC<SlotListProps> = ({
                         </td>
                       )}
 
-                      {/* 상품명 */}
+                      {/* 상품명 / 입력 정보 */}
                       <td className="py-2 px-3 w-[20%]">
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <EditableCell
-                            id={item.id}
-                            field="mid"
-                            value={item.inputData?.mid || ''}
-                            editingCell={editingCell}
-                            editingValue={editingValue}
-                            onEditStart={onEditStart}
-                            onEditChange={onEditChange}
-                            onEditSave={onEditSave}
-                            onEditCancel={onEditCancel}
-                            placeholder="MID를 입력해주세요"
-                            disabled={item.status !== 'pending'}
+                        {item.inputData?.is_manual_input ? (
+                          // 수동 입력 서비스인 경우 - 입력된 정보들을 나열
+                          <div 
+                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded p-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setInfoPopoverPosition({
+                                top: rect.top + rect.height / 2,
+                                left: rect.left + rect.width
+                              });
+                              setOpenInfoPopoverId(openInfoPopoverId === item.id ? null : item.id);
+                            }}
                           >
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                              {item.inputData?.mid || '-'}
+                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                              {(() => {
+                                // 필드명 한글 매핑
+                                const fieldNameMap: Record<string, string> = {
+                                  'work_days': '작업일',
+                                  'minimum_purchase': '최소 구매수',
+                                  'url': 'URL',
+                                  'mid': '상점 ID',
+                                  'description': '설명',
+                                  'product_name': '상품명',
+                                  'keywords': '키워드',
+                                  'start_date': '시작일',
+                                  'end_date': '종료일'
+                                };
+                                
+                                // input_data에서 표시할 필드들 추출
+                                const displayFields: string[] = [];
+                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days'];
+                                
+                                Object.entries(item.inputData || {}).forEach(([key, value]) => {
+                                  if (!excludeFields.includes(key) && value && value !== '') {
+                                    const displayKey = fieldNameMap[key] || key;
+                                    displayFields.push(`${displayKey}: ${value}`);
+                                  }
+                                });
+                                
+                                const displayText = displayFields.join(', ');
+                                return displayText.length > 50 ? displayText.substring(0, 50) + '...' : displayText || '-';
+                              })()}
                             </span>
-                          </EditableCell>
+                            <KeenIcon icon="information-2" className="text-gray-400 size-4 flex-shrink-0" />
+                          </div>
+                        ) : (
+                          // 기존 상품명 표시
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <EditableCell
+                              id={item.id}
+                              field="mid"
+                              value={item.inputData?.mid || ''}
+                              editingCell={editingCell}
+                              editingValue={editingValue}
+                              onEditStart={onEditStart}
+                              onEditChange={onEditChange}
+                              onEditSave={onEditSave}
+                              onEditCancel={onEditCancel}
+                              placeholder="MID를 입력해주세요"
+                              disabled={item.status !== 'pending'}
+                            >
+                              <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                {item.inputData?.mid || '-'}
+                              </span>
+                            </EditableCell>
 
-                          <EditableCell
-                            id={item.id}
-                            field="url"
-                            value={item.inputData?.url || ''}
-                            editingCell={editingCell}
-                            editingValue={editingValue}
-                            onEditStart={onEditStart}
-                            onEditChange={onEditChange}
-                            onEditSave={onEditSave}
-                            onEditCancel={onEditCancel}
-                            isUrl={true}
-                            disabled={item.status !== 'pending'}
-                          />
-                        </div>
+                            <EditableCell
+                              id={item.id}
+                              field="url"
+                              value={item.inputData?.url || ''}
+                              editingCell={editingCell}
+                              editingValue={editingValue}
+                              onEditStart={onEditStart}
+                              onEditChange={onEditChange}
+                              onEditSave={onEditSave}
+                              onEditCancel={onEditCancel}
+                              isUrl={true}
+                              disabled={item.status !== 'pending'}
+                            />
+                          </div>
+                        )}
                       </td>
 
                       {/* 키워드 */}
                       <td className="py-2 px-3 w-[15%]">
-                        <div className="flex items-center justify-center gap-1 relative">
-                          {(() => {
+                        {item.inputData?.is_manual_input ? (
+                          // 수동 입력 서비스인 경우 빈 칸
+                          <div></div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1 relative">
+                            {(() => {
                             // 키워드 배열 생성 (메인키워드 + 서브키워드)
                             const keywordArray = [];
                             if (item.inputData.mainKeyword) {
@@ -1008,7 +1069,8 @@ const SlotList: React.FC<SlotListProps> = ({
                               </>
                             );
                           })()}
-                        </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* 캠페인 */}
@@ -1521,6 +1583,87 @@ const SlotList: React.FC<SlotListProps> = ({
             workMemoDate: selectedTransactionSlot.inputData?.work_memo_date
           }}
         />
+      )}
+
+      {/* 수동 입력 정보 팝오버 */}
+      {openInfoPopoverId && filteredSlots.find(slot => slot.id === openInfoPopoverId) && ReactDOM.createPortal(
+        <>
+          {/* 배경 클릭 시 닫기 */}
+          <div
+            className="fixed inset-0"
+            style={{ zIndex: 9998 }}
+            onClick={() => setOpenInfoPopoverId(null)}
+          />
+          {/* 팝오버 내용 */}
+          <div
+            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-4 max-w-sm"
+            style={{
+              zIndex: 9999,
+              left: `${infoPopoverPosition.left + 10}px`,
+              top: `${infoPopoverPosition.top}px`,
+              transform: 'translateY(-50%)'
+            }}
+          >
+            <div className="mb-3">
+              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">입력 정보 상세</h4>
+            </div>
+            <div className="space-y-2">
+              {(() => {
+                const slot = filteredSlots.find(s => s.id === openInfoPopoverId);
+                if (!slot) return null;
+                
+                // 필드명 한글 매핑
+                const fieldNameMap: Record<string, string> = {
+                  'work_days': '작업일',
+                  'minimum_purchase': '최소 구매수',
+                  'url': 'URL',
+                  'mid': '상점 ID',
+                  'description': '설명',
+                  'product_name': '상품명',
+                  'keywords': '키워드',
+                  'start_date': '시작일',
+                  'end_date': '종료일'
+                };
+                
+                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'minimum_purchase', 'work_days'];
+                
+                return Object.entries(slot.inputData || {}).map(([key, value]) => {
+                  if (excludeFields.includes(key) || !value || value === '') return null;
+                  
+                  const displayKey = fieldNameMap[key] || key;
+                  
+                  return (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 min-w-[80px]">
+                        {displayKey}:
+                      </span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300 break-all">
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </span>
+                    </div>
+                  );
+                }).filter(Boolean);
+              })()}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">최소 구매수:</span>
+                  <span className="ml-1 font-medium text-gray-700 dark:text-gray-300">
+                    {filteredSlots.find(s => s.id === openInfoPopoverId)?.inputData?.minimum_purchase || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">작업일:</span>
+                  <span className="ml-1 font-medium text-gray-700 dark:text-gray-300">
+                    {filteredSlots.find(s => s.id === openInfoPopoverId)?.inputData?.work_days || '-'}일
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </>
   );

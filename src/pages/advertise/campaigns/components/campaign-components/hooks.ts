@@ -273,8 +273,10 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
   // 슬롯 데이터 가져오기
   const fetchSlots = useCallback(async () => {
+    console.log('[fetchSlots] Called with serviceType:', serviceType, 'userId:', userId);
+    
     if (!serviceType || !userId) {
-
+      console.log('[fetchSlots] Missing serviceType or userId, returning');
       return;
     }
 
@@ -284,20 +286,34 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     try {
       // URL 서비스 타입을 DB 서비스 타입으로 변환
       const dbServiceType = URL_TO_DB_SERVICE_TYPE[serviceType] || serviceType;
+      console.log('[fetchSlots] Converting serviceType:', serviceType, 'to dbServiceType:', dbServiceType);
 
       // 서비스 타입에 맞는 캠페인 ID들 가져오기
-
+      console.log('[fetchSlots] Fetching campaigns for service type:', dbServiceType);
+      
+      // 먼저 모든 캠페인의 service_type을 확인
+      const { data: allCampaigns } = await supabase
+        .from('campaigns')
+        .select('id, campaign_name, service_type')
+        .ilike('service_type', '%fakesale%');
+      
+      console.log('[fetchSlots] All FakeSale campaigns:', allCampaigns);
+      
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaigns')
         .select('id, campaign_name, logo, status, service_type, add_info, refund_settings')
         .eq('service_type', dbServiceType)
         .order('id', { ascending: true });
 
+      console.log('[fetchSlots] Campaign query result:', { data: campaignData, error: campaignError });
+
       if (campaignError) {
+        console.error('[fetchSlots] Campaign query error:', campaignError);
         throw campaignError;
       }
 
       if (!campaignData || campaignData.length === 0) {
+        console.log('[fetchSlots] No campaigns found for service type:', dbServiceType);
         setSlots([]);
         setFilteredSlots([]);
         setTotalCount(0);
@@ -375,6 +391,17 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
       const { data, error: slotsError, count } = await query.order('created_at', { ascending: false });
 
+      console.log(`[useCampaignSlots] Service type: ${serviceType}, DB Service type: ${dbServiceType}`);
+      console.log(`[useCampaignSlots] Found campaigns:`, campaignData?.map(c => ({ id: c.id, name: c.campaign_name, type: c.service_type })));
+      console.log(`[useCampaignSlots] Found slots:`, data?.length || 0);
+      console.log(`[useCampaignSlots] First few slots:`, data?.slice(0, 3).map(s => ({ 
+        id: s.id, 
+        product_id: s.product_id, 
+        keyword_id: s.keyword_id,
+        status: s.status,
+        mainKeyword: s.input_data?.mainKeyword,
+        is_manual: s.input_data?.is_manual_input
+      })));
 
       if (slotsError) {
         throw slotsError;

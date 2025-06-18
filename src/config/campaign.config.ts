@@ -100,3 +100,80 @@ export function getCampaignNameByServiceType(serviceType: string): string | null
   }
   return null;
 }
+
+// 내키워드 기능을 지원하는 서비스 타입 목록
+export const KEYWORD_SUPPORTED_SERVICES: string[] = [
+  CampaignServiceType.NAVER_SHOPPING_RANK,
+  CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+  CampaignServiceType.NAVER_PLACE_RANK,
+  CampaignServiceType.NAVER_PLACE_TRAFFIC,
+  CampaignServiceType.COUPANG_TRAFFIC
+];
+
+// 서비스 타입이 내키워드 기능을 지원하는지 확인
+export function isKeywordSupported(serviceType: string): boolean {
+  return KEYWORD_SUPPORTED_SERVICES.includes(serviceType);
+}
+
+// 서비스별 필드 매핑 인터페이스
+export interface ServiceFieldMapping {
+  service_type: string;
+  field_mapping: {
+    basic_fields: Record<string, FieldConfig>;
+    additional_fields: Record<string, FieldConfig>;
+  };
+  ui_config: {
+    keyword_support: boolean;
+    allow_direct_input: boolean;
+    default_mode: 'keyword' | 'direct';
+    field_order: string[];
+    hide_for_guarantee?: string[];
+    custom_validation?: Record<string, ValidationRule>;
+  };
+}
+
+export interface FieldConfig {
+  label: string;
+  type: 'text' | 'number' | 'select' | 'date' | 'textarea';
+  required: boolean;
+  default?: any;
+  placeholder?: string;
+  options?: string[];
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    message?: string;
+  };
+}
+
+export interface ValidationRule {
+  pattern?: string;
+  message: string;
+}
+
+// 기본 필드 설정 (모든 서비스 공통)
+export const DEFAULT_BASIC_FIELDS: Record<string, FieldConfig> = {
+  minimum_purchase: {
+    label: '최소 구매수',
+    type: 'number',
+    required: true,
+    default: 10,
+    validation: {
+      min: 1,
+      max: 1000,
+      message: '최소 1개에서 최대 1000개까지 입력 가능합니다'
+    }
+  },
+  work_days: {
+    label: '작업일',
+    type: 'number',
+    required: true,
+    default: 1,
+    validation: {
+      min: 1,
+      max: 30,
+      message: '최소 1일에서 최대 30일까지 입력 가능합니다'
+    }
+  }
+};

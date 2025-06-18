@@ -647,11 +647,15 @@ const ApprovePage: React.FC = () => {
         const end = new Date(slot.end_date);
         dueDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       }
-      // 2. input_data의 dueDays 사용
+      // 2. input_data의 work_days 사용 (직접입력 모드)
+      else if (slot.input_data?.work_days && Number(slot.input_data.work_days) > 0) {
+        dueDays = Number(slot.input_data.work_days);
+      }
+      // 3. input_data의 dueDays 사용
       else if (slot.input_data?.dueDays && Number(slot.input_data.dueDays) > 0) {
         dueDays = Number(slot.input_data.dueDays);
       }
-      // 3. input_data의 workCount가 있으면 작업일수로 사용
+      // 4. input_data의 workCount가 있으면 작업일수로 사용
       else if (slot.input_data?.workCount && Number(slot.input_data.workCount) > 0) {
         dueDays = Number(slot.input_data.workCount);
       }

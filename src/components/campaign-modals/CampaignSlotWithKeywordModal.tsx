@@ -23,8 +23,11 @@ import {
   ServiceCampaignSelector,
   KeywordTableRow,
   KeywordGroupControls,
-  PaymentSummarySection
+  PaymentSummarySection,
+  ManualServiceForm,
+  ManualPaymentSection
 } from './campaign-slot-components';
+import { isKeywordSupported } from '@/config/campaign.config';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -98,6 +101,9 @@ interface CampaignSlotData {
   keywordDetails?: KeywordDetail[];
   // 추가 입력 필드 데이터
   input_data?: Record<string, any>; // 키워드별 추가 입력 필드 데이터
+  // 수동 입력 서비스용 필드
+  minimum_purchase?: number;
+  work_days?: number;
 }
 
 // supabase로부터 가져온 캠페인 데이터 인터페이스
@@ -168,7 +174,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     keyword2: '',
     keyword3: '',
     selectedKeywords: [],
-    keywordDetails: [] // 빈 배열로 초기화하여 undefined 가능성 제거
+    keywordDetails: [], // 빈 배열로 초기화하여 undefined 가능성 제거
+    minimum_purchase: undefined,
+    work_days: undefined,
+    input_data: {}
   });
 
   // 폼 유효성 검사 상태
@@ -335,6 +344,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
         // 캠페인 배너 이미지 가져오기 - fetchCampaignBanner 함수 사용
         fetchCampaignBanner(firstCampaign);
+        
+        // 내키워드 미지원 서비스인 경우 즉시 기본값 설정
+        if (!isKeywordSupported(firstCampaign.service_type)) {
+          console.log('[fetchCampaigns] 첫 캠페인이 내키워드 미지원 - 기본값 설정');
+          console.log('[fetchCampaigns] min_quantity:', firstCampaign.min_quantity);
+          setSlotData(prev => ({
+            ...prev,
+            minimum_purchase: firstCampaign.min_quantity ? Number(firstCampaign.min_quantity) : 1,
+            work_days: prev.work_days || 1
+          }));
+          setKeywordSearchMode(false);
+        }
       } else {
         // 캠페인이 없는 경우 처리
         setCampaigns([]);
@@ -413,6 +434,25 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 모달이 열릴 때만 한 번 데이터 로드 (모든 데이터를 한 번에 로드)
   useEffect(() => {
     if (open) {
+      // 모달이 열릴 때 항상 상태 초기화
+      // 내키워드 미지원 서비스는 기본값 1로 설정 (나중에 캠페인 선택 시 업데이트됨)
+      setSlotData({
+        productName: '',
+        mid: '',
+        url: '',
+        keyword1: '',
+        keyword2: '',
+        keyword3: '',
+        selectedKeywords: [],
+        keywordDetails: [],
+        minimum_purchase: !isKeywordSupported(finalServiceCode) ? 1 : undefined,
+        work_days: !isKeywordSupported(finalServiceCode) ? 1 : undefined,
+        input_data: {}
+      });
+      setErrors({});
+      setSelectedKeywords([]);
+      setKeywordSearchMode(false);
+      
       // campaign prop에서 초기 키워드 데이터 추출
       if (campaign?.initialKeywordData) {
         const initialData = campaign.initialKeywordData;
@@ -426,7 +466,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           keyword2: initialData.keyword2 || '',
           keyword3: initialData.keyword3 || '',
           selectedKeywords: initialData.selectedKeywords || [],
-          keywordDetails: initialData.keywordDetails || []
+          keywordDetails: initialData.keywordDetails || [],
+          minimum_purchase: initialData.minimum_purchase || undefined,
+          work_days: initialData.work_days || undefined,
+          input_data: initialData.input_data || {}
         });
 
         // 선택된 키워드 설정
@@ -441,6 +484,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // fetchKeywordGroups는 캠페인이 로드된 후에 호출됨
 
       // 선택된 그룹 ID 설정은 그룹 목록이 로드된 후에 처리됨 (fetchKeywordGroups 내부에서)
+      
+      // 내키워드 미지원 서비스인 경우 키워드 모드만 false로 설정
+      // minimum_purchase는 캠페인 로드 후 설정하도록 함
+      if (!isKeywordSupported(finalServiceCode)) {
+        console.log('[모달오픈] 내키워드 미지원 서비스 - 키워드 모드 비활성화');
+        setKeywordSearchMode(false);
+      }
     }
   }, [open, finalServiceCode]); // finalServiceCode가 변경될 때만 다시 로드
 
@@ -1291,47 +1341,82 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   };
 
   // 폼 유효성 검사 함수
-  const validateForm = (): boolean => {
-    // 키워드 선택 확인만 체크
-    if (selectedKeywords.length === 0) {
-      showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
-      return false;
-    }
+  const validateForm = (isKeywordSupported: boolean): boolean => {
+    // 내키워드 지원 서비스인 경우
+    if (isKeywordSupported) {
+      // 키워드 선택 확인만 체크
+      if (selectedKeywords.length === 0) {
+        showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
+        return false;
+      }
+      
+      // 키워드 지원 서비스의 추가 필드 검증
+      if (selectedCampaign) {
+        const additionalFields = getAdditionalFields(selectedCampaign);
+        const requiredFields = additionalFields.filter(field => field.isRequired);
 
-    // 필수 입력 필드 검증
-    if (selectedCampaign) {
-      const additionalFields = getAdditionalFields(selectedCampaign);
-      const requiredFields = additionalFields.filter(field => field.isRequired);
-
-      if (requiredFields.length > 0) {
-        // 선택된 키워드들의 필수 필드 값 검사
-        for (const keywordId of selectedKeywords) {
-          const keyword = keywords.find(k => k.id === keywordId);
-          if (keyword) {
-            for (const field of requiredFields) {
-              const value = keyword.inputData?.[field.fieldName];
-              if (!value || value.trim() === '') {
-                showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
-                return false;
-              }
-
-              // INTEGER 타입 필드 검증
-              if (field.fieldType === FieldType.INTEGER && value) {
-                if (!/^\d+$/.test(value)) {
-                  showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 숫자만 입력 가능합니다.`, false);
+        if (requiredFields.length > 0) {
+          // 선택된 키워드들의 필수 필드 값 검사
+          for (const keywordId of selectedKeywords) {
+            const keyword = keywords.find(k => k.id === keywordId);
+            if (keyword) {
+              for (const field of requiredFields) {
+                // 최소 구매수와 작업일은 수동 입력 모드에서만 체크하므로 제외
+                if (field.fieldName === '최소 구매수' || field.fieldName === '작업일') {
+                  continue;
+                }
+                
+                const value = keyword.inputData?.[field.fieldName];
+                if (!value || value.trim() === '') {
+                  showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
                   return false;
                 }
-              }
 
-              // FILE 타입 필드 검증 (필수 파일 필드가 비어있는지 확인)
-              if (field.fieldType === FieldType.FILE && field.isRequired) {
-                const fileUrl = keyword.inputData?.[field.fieldName];
-                if (!fileUrl || fileUrl.trim() === '') {
-                  showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 파일은 필수입니다.`, false);
-                  return false;
+                // INTEGER 타입 필드 검증
+                if (field.fieldType === FieldType.INTEGER && value) {
+                  if (!/^\d+$/.test(value)) {
+                    showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 숫자만 입력 가능합니다.`, false);
+                    return false;
+                  }
+                }
+
+                // FILE 타입 필드 검증 (필수 파일 필드가 비어있는지 확인)
+                if (field.fieldType === FieldType.FILE && field.isRequired) {
+                  const fileUrl = keyword.inputData?.[field.fieldName];
+                  if (!fileUrl || fileUrl.trim() === '') {
+                    showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 파일은 필수입니다.`, false);
+                    return false;
+                  }
                 }
               }
             }
+          }
+        }
+      }
+    } else {
+      // 수동 입력 모드인 경우 - 필수 필드 검증
+      console.log('[validateForm] 수동입력모드 검증 - minimum_purchase:', slotData.minimum_purchase, 'type:', typeof slotData.minimum_purchase);
+      if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
+        console.log('[validateForm] minimum_purchase 검증 실패!');
+        showAlert('알림', '최소 구매수를 입력해주세요.', false);
+        return false;
+      }
+      
+      if (!slotData.work_days || Number(slotData.work_days) < 1) {
+        showAlert('알림', '작업일을 입력해주세요.', false);
+        return false;
+      }
+      
+      // 추가 필수 필드 검증
+      if (selectedCampaign) {
+        const additionalFields = getAdditionalFields(selectedCampaign);
+        const requiredFields = additionalFields.filter(field => field.isRequired);
+        
+        for (const field of requiredFields) {
+          const value = slotData.input_data?.[field.fieldName];
+          if (!value || (typeof value === 'string' && value.trim() === '')) {
+            showAlert('알림', `'${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
+            return false;
           }
         }
       }
@@ -1675,7 +1760,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     if (saving) return;
 
     // 폼 유효성 검사
-    if (!validateForm()) return;
+    if (!validateForm(true)) return; // 키워드 모드이므로 true
 
     // 선택한 캠페인이 없으면 오류 처리
     if (!selectedCampaignId) {
@@ -1768,7 +1853,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // 캠페인 슬롯 데이터 구성
       const campaignSlotData: CampaignSlotData = {
         ...slotData,
-        campaignId: selectedCampaignId,
+        campaignId: selectedCampaignId || undefined,
         selectedKeywords,
         keywordDetails,
         input_data // 키워드 ID별로 구조화된 input_data
@@ -1819,9 +1904,12 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         keyword1: '',
         keyword2: '',
         keyword3: '',
-        campaignId: selectedCampaignId,
+        campaignId: selectedCampaignId || undefined,
         selectedKeywords: [],
-        keywordDetails: []
+        keywordDetails: [],
+        minimum_purchase: undefined,
+        work_days: undefined,
+        input_data: {}
       });
 
       // 결제 금액 초기화
@@ -1846,9 +1934,207 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
+  // 수동 입력 서비스용 저장 함수
+  const handleSaveForManualService = async () => {
+    try {
+      console.log('=== handleSaveForManualService 시작 ===');
+      console.log('keywordSearchMode:', keywordSearchMode);
+      console.log('slotData:', slotData);
+      console.log('minimum_purchase value:', slotData.minimum_purchase, 'type:', typeof slotData.minimum_purchase);
+      console.log('work_days value:', slotData.work_days, 'type:', typeof slotData.work_days);
+      
+      // 폼 유효성 검사
+      if (!validateForm(false)) { // 수동 입력 모드이므로 false
+        console.log('validateForm(false) 실패!');
+        return;
+      }
+
+      setSaving(true);
+
+      if (!selectedCampaign || !currentUser?.id) {
+        throw new Error('필수 정보가 누락되었습니다.');
+      }
+
+      // 잔액 계산
+      const unitPrice = typeof selectedCampaign.unit_price === 'string' 
+        ? parseFloat(selectedCampaign.unit_price) 
+        : (selectedCampaign.unit_price || 0);
+      const quantity = slotData.minimum_purchase || (selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
+      const workDays = slotData.work_days || 1;
+      const totalAmount = Math.round(quantity * workDays * unitPrice * 1.1);
+
+      // 슬롯 데이터 구성
+      const slotToSave = {
+        mat_id: selectedCampaign?.mat_id || currentUser.id, // 총판 ID (없으면 사용자 ID 사용)
+        product_id: selectedCampaign.id,
+        user_id: currentUser.id,
+        status: 'pending',
+        quantity: quantity,
+        keyword_id: 0, // 수동 입력 모드에서는 특수값 0 사용 (null 대신)
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        submitted_at: new Date().toISOString(),
+        input_data: {
+          service_type: selectedServiceCode,
+          campaign_name: selectedCampaign.campaign_name || '',
+          minimum_purchase: quantity,
+          work_days: workDays,
+          workCount: quantity, // 일관성을 위해 workCount도 추가
+          price: totalAmount,
+          is_manual_input: true, // 수동 입력 모드 표시
+          mainKeyword: '직접입력', // 표시용 키워드
+          keyword1: '', // 빈 값으로 설정
+          keyword2: '', // 빈 값으로 설정
+          keyword3: '', // 빈 값으로 설정
+          ...slotData.input_data
+        }
+      };
+      
+      console.log('Manual service - slotToSave:', slotToSave);
+
+      // 잔액 확인
+      const { data: userBalance, error: balanceError } = await supabase
+        .from('user_balances')
+        .select('paid_balance, free_balance, total_balance')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (balanceError || !userBalance) {
+        throw new Error('잔액 정보를 가져올 수 없습니다.');
+      }
+
+      const totalBalance = parseFloat(String(userBalance.total_balance || 0));
+      if (totalBalance < totalAmount) {
+        throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${totalAmount.toLocaleString()}원`);
+      }
+
+      // 슬롯 저장
+      console.log('Inserting slot data:', slotToSave);
+      const { data: savedSlot, error: slotError } = await supabase
+        .from('slots')
+        .insert(slotToSave)
+        .select()
+        .single();
+
+      if (slotError) {
+        console.error('Slot insert error:', slotError);
+        throw new Error(`슬롯 저장에 실패했습니다: ${slotError.message}`);
+      }
+      
+      if (!savedSlot) {
+        throw new Error('슬롯 저장에 실패했습니다: 데이터가 반환되지 않았습니다.');
+      }
+      
+      console.log('Slot saved successfully:', savedSlot);
+
+      // 잔액 차감 및 거래 내역 저장
+      const freeBalance = parseFloat(String(userBalance.free_balance || 0));
+      const paidBalance = parseFloat(String(userBalance.paid_balance || 0));
+      
+      let freeBalanceToUse = Math.min(freeBalance, totalAmount);
+      let paidBalanceToUse = totalAmount - freeBalanceToUse;
+
+      // 잔액 업데이트
+      const { error: updateError } = await supabase
+        .from('user_balances')
+        .update({
+          free_balance: freeBalance - freeBalanceToUse,
+          paid_balance: paidBalance - paidBalanceToUse,
+          total_balance: (freeBalance - freeBalanceToUse) + (paidBalance - paidBalanceToUse),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', currentUser.id);
+
+      if (updateError) {
+        // 실패 시 슬롯 삭제
+        await supabase.from('slots').delete().eq('id', savedSlot.id);
+        throw new Error('잔액 업데이트에 실패했습니다.');
+      }
+
+      // 거래 내역 저장
+      const transactionData = {
+        user_id: currentUser.id,
+        transaction_type: 'purchase',
+        amount: -totalAmount,
+        description: `${selectedCampaign.campaign_name} 구매`,
+        reference_id: savedSlot.id,
+        balance_type: freeBalanceToUse > 0 && paidBalanceToUse > 0 ? 'mixed' : 
+                      freeBalanceToUse > 0 ? 'free' : 'paid'
+      };
+
+      await supabase.from('user_cash_history').insert(transactionData);
+
+      // 알림 생성
+      await createNotification(
+        currentUser.id,
+        '서비스 구매 신청 완료',
+        `${selectedCampaign.campaign_name} - 수동 입력 모드로 구매 신청이 완료되었습니다.`,
+        '/myinfo/services'
+      );
+
+      // 성공 후 초기화 - 캠페인 기본값 유지
+      const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+      console.log('[저장성공] 초기화 - minimum_purchase를 캠페인 기본값으로 설정:', minQuantity);
+      
+      setSlotData({
+        productName: '',
+        mid: '',
+        url: '',
+        keyword1: '',
+        keyword2: '',
+        keyword3: '',
+        campaignId: selectedCampaignId || undefined,
+        selectedKeywords: [],
+        keywordDetails: [],
+        minimum_purchase: minQuantity,  // 캠페인의 최소 구매수로 설정
+        work_days: 1,
+        input_data: {}
+      });
+
+      showAlert('구매 신청 완료', `${selectedCampaign.campaign_name} 구매 신청이 성공적으로 완료되었습니다.`, true);
+
+    } catch (error) {
+      console.error('구매 신청 중 오류:', error);
+      showAlert('구매 신청 실패', error instanceof Error ? error.message : '구매 신청 중 오류가 발생했습니다.', false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
+  
+  // 현재 서비스가 내키워드를 지원하는지 확인
+  const supportsKeyword = isKeywordSupported(selectedServiceCode);
 
+  // 캠페인 선택 시 내키워드 미지원 서비스 처리
+  useEffect(() => {
+    console.log('[캠페인선택] selectedCampaign:', selectedCampaign);
+    console.log('[캠페인선택] isKeywordSupported:', selectedCampaign ? isKeywordSupported(selectedCampaign.service_type) : 'no campaign');
+    console.log('[캠페인선택] keywordSearchMode:', keywordSearchMode);
+    console.log('[캠페인선택] 현재 minimum_purchase:', slotData.minimum_purchase);
+    
+    if (selectedCampaign) {
+      if (!isKeywordSupported(selectedCampaign.service_type)) {
+        // 수동 입력 모드인 경우 최소 구매수와 작업일 기본값 설정
+        const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+        console.log('[캠페인선택] 내키워드 미지원 - 기본값 설정');
+        console.log('[캠페인선택] min_quantity:', selectedCampaign.min_quantity, '-> minimum_purchase:', minQuantity);
+        
+        setSlotData(prev => ({
+          ...prev,
+          minimum_purchase: minQuantity,
+          work_days: prev.work_days || 1
+        }));
+        // 키워드 모드를 명시적으로 false로 설정
+        setKeywordSearchMode(false);
+      } else {
+        // 키워드 지원 서비스인 경우 키워드 모드 활성화
+        console.log('[캠페인선택] 키워드 지원 서비스 - 키워드 모드 활성화');
+        setKeywordSearchMode(true);
+      }
+    }
+  }, [selectedCampaign?.id]); // selectedCampaign.id가 변경될 때만 실행
 
   if (!open || !category) return null;
 
@@ -1930,18 +2216,19 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 )}
               </div>
 
-              {/* 키워드 선택 영역 */}
-              <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
-                <div className="space-y-4 flex-1 flex flex-col min-h-0">
-                  {/* 1행: 제목과 컨트롤들 */}
-                  <KeywordGroupControls
-                    isCompactMode={isCompactMode}
-                    selectedGroupId={selectedGroupId}
-                    keywordGroups={keywordGroups}
-                    searchKeyword={searchKeyword}
-                    setSearchKeyword={setSearchKeyword}
-                    handleGroupSelect={handleGroupSelect}
-                  />
+              {/* 키워드 선택 영역 - 키워드 모드일 때만 표시 */}
+              {keywordSearchMode ? (
+                <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
+                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                    {/* 1행: 제목과 컨트롤들 */}
+                    <KeywordGroupControls
+                      isCompactMode={isCompactMode}
+                      selectedGroupId={selectedGroupId}
+                      keywordGroups={keywordGroups}
+                      searchKeyword={searchKeyword}
+                      setSearchKeyword={setSearchKeyword}
+                      handleGroupSelect={handleGroupSelect}
+                    />
 
 
                   {/* 키워드 목록 - 테이블 구역 최적화 */}
@@ -2119,17 +2406,39 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                   </div>
                 </div>
               </div>
+              ) : (
+                /* 수동 입력 모드 - 추가 필드만 표시 */
+                <ManualServiceForm
+                  selectedCampaign={selectedCampaign}
+                  slotData={slotData}
+                  setSlotData={setSlotData}
+                  getAdditionalFields={getAdditionalFields}
+                />
+              )}
             </div>
           </div>
-          <PaymentSummarySection
-            selectedKeywords={selectedKeywords}
-            selectedCampaign={selectedCampaign}
-            totalPaymentAmount={totalPaymentAmount}
-            loading={loading}
-            saving={saving}
-            selectedCampaignId={selectedCampaignId}
-            handleSave={handleSave}
-          />
+          {/* 결제 요약 섹션 - 키워드 모드에 따라 다르게 표시 */}
+          {keywordSearchMode ? (
+            <PaymentSummarySection
+              selectedKeywords={selectedKeywords}
+              selectedCampaign={selectedCampaign}
+              totalPaymentAmount={totalPaymentAmount}
+              loading={loading}
+              saving={saving}
+              selectedCampaignId={selectedCampaignId}
+              handleSave={handleSave}
+            />
+          ) : (
+            /* 수동 입력 모드용 결제 섹션 */
+            <ManualPaymentSection
+              selectedCampaign={selectedCampaign}
+              slotData={slotData}
+              loading={loading}
+              saving={saving}
+              selectedCampaignId={selectedCampaignId}
+              handleSaveForManualService={handleSaveForManualService}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

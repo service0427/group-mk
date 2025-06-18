@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM, { createPortal } from 'react-dom';
 import { Slot, User, Campaign } from './types';
 import { formatDate } from './constants';
@@ -93,6 +93,12 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   // 키워드 툴팁 상태 관리
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  
+  // 내키워드 지원 여부 확인 - 모든 슬롯이 내키워드 미지원인지 체크
+  const isKeywordUnsupportedService = useMemo(() => {
+    if (slots.length === 0) return false;
+    return slots.every(slot => slot.keyword_id === 0 || slot.input_data?.is_manual_input === true);
+  }, [slots]);
   
   // 이미지 모달 상태 관리
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -408,7 +414,9 @@ const SlotList: React.FC<SlotListProps> = ({
                 </div>
               </th>
               <th className="py-3 px-3 text-start font-medium">사용자</th>
-              <th className="py-3 px-3 text-center font-medium">키워드</th>
+              {!isKeywordUnsupportedService && (
+                <th className="py-3 px-3 text-center font-medium">키워드</th>
+              )}
               <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업수</th>
               <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업기간</th>
               <th className="py-3 px-3 text-center font-medium hidden xl:table-cell">캠페인</th>
@@ -447,9 +455,17 @@ const SlotList: React.FC<SlotListProps> = ({
                 </td>
                 
                 {/* 키워드 정보 */}
-                <td className="py-3 px-3 text-center">
-                  <div className="flex items-center justify-center gap-1 relative">
-                    {(() => {
+                {!isKeywordUnsupportedService && (
+                  <td className="py-3 px-3 text-center">
+                    <div className="flex items-center justify-center gap-1 relative">
+                      {(() => {
+                        // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
+                        const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
+                        
+                        if (isManualInput) {
+                          return <span className="text-gray-500 text-sm">직접입력</span>;
+                        }
+                      
                       // 모든 키워드 수집
                       const allKeywords = [];
                       if (slot.input_data?.mainKeyword) {
@@ -588,7 +604,8 @@ const SlotList: React.FC<SlotListProps> = ({
                       );
                     })()}
                   </div>
-                </td>
+                  </td>
+                )}
                 
                 {/* 작업수 */}
                 <td className="py-3 px-3 text-center hidden lg:table-cell">
@@ -641,9 +658,18 @@ const SlotList: React.FC<SlotListProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">
-                          -
-                        </span>
+                        // 직접입력 모드에서 work_days 표시
+                        slot.input_data?.work_days ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              작업기간: <span className="font-medium text-gray-900 dark:text-gray-100">{slot.input_data.work_days}일</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">
+                            -
+                          </span>
+                        )
                       )
                     )
                   )}
@@ -735,9 +761,9 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 추가정보 */}
                 <td className="py-3 px-3 text-center hidden lg:table-cell">
                   {slot.input_data && (() => {
-                    // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링
+                    // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링, is_manual_input 제외
                     const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
-                      !passItem.includes(key) && !key.endsWith('_fileName')
+                      !passItem.includes(key) && !key.endsWith('_fileName') && key !== 'is_manual_input'
                     );
                     
                     if (userInputFields.length === 0) 
@@ -810,9 +836,29 @@ const SlotList: React.FC<SlotListProps> = ({
                                     const fileNameKey = `${key}_fileName`;
                                     const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
                                     
+                                    // 필드명 한글 변환
+                                    const fieldNameMap: Record<string, string> = {
+                                      'work_days': '작업일',
+                                      'minimum_purchase': '최소 구매수',
+                                      'url': 'URL',
+                                      'mid': '상점 ID',
+                                      'productName': '상품명',
+                                      'mainKeyword': '메인 키워드',
+                                      'keywords': '서브 키워드',
+                                      'keyword1': '키워드1',
+                                      'keyword2': '키워드2', 
+                                      'keyword3': '키워드3',
+                                      'quantity': '작업량',
+                                      'dueDays': '작업기간',
+                                      'workCount': '작업수',
+                                      'start_date': '시작일',
+                                      'end_date': '종료일'
+                                    };
+                                    const displayKey = fieldNameMap[key] || key;
+                                    
                                     return (
                                       <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
-                                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{key}</span>
+                                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{displayKey}</span>
                                         <span className="text-gray-400 dark:text-gray-500">:</span>
                                         <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
                                           {isFileUrl ? (
@@ -991,9 +1037,17 @@ const SlotList: React.FC<SlotListProps> = ({
             
             {/* 요약 정보 */}
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400 mb-2">
-              <span>
-                <span className="text-gray-500">키워드:</span> 
-                {(() => {
+              {!isKeywordUnsupportedService && (
+                <span>
+                  <span className="text-gray-500">키워드:</span> 
+                  {(() => {
+                    // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
+                    const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
+                    
+                    if (isManualInput) {
+                      return <span className="text-gray-500 ml-1">직접입력</span>;
+                    }
+                  
                   // 모든 키워드 수집
                   const allKeywords = [];
                   if (slot.input_data?.mainKeyword) {
@@ -1044,8 +1098,9 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
                     </>
                   );
-                })()}
-              </span>
+                  })()}
+                </span>
+              )}
               <span>
                 <span className="text-gray-500">작업수:</span> 
                 <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">
@@ -1082,7 +1137,8 @@ const SlotList: React.FC<SlotListProps> = ({
                         new Date(slot.input_data.due_date).toLocaleDateString('ko-KR', {
                           year: 'numeric', month: '2-digit', day: '2-digit'
                         }).replace(/\. /g, '-').replace('.', '') : 
-                        slot.input_data?.dueDays ? `${slot.input_data.dueDays}일` : '-'}
+                        slot.input_data?.dueDays ? `${slot.input_data.dueDays}일` : 
+                        slot.input_data?.work_days ? `${slot.input_data.work_days}일` : '-'}
                   </span>
                 </span>
               )}
@@ -1096,9 +1152,9 @@ const SlotList: React.FC<SlotListProps> = ({
             
             {/* 사용자 입력 필드 (접을 수 있는 섹션) */}
             {slot.input_data && (() => {
-              // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링
+              // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링, is_manual_input 제외
               const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
-                !passItem.includes(key) && !key.endsWith('_fileName')
+                !passItem.includes(key) && !key.endsWith('_fileName') && key !== 'is_manual_input'
               );
               
               if (userInputFields.length === 0) return null;
@@ -1122,9 +1178,29 @@ const SlotList: React.FC<SlotListProps> = ({
                         const fileNameKey = `${key}_fileName`;
                         const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
                         
+                        // 필드명 한글 변환
+                        const fieldNameMap: Record<string, string> = {
+                          'work_days': '작업일',
+                          'minimum_purchase': '최소 구매수',
+                          'url': 'URL',
+                          'mid': '상점 ID',
+                          'productName': '상품명',
+                          'mainKeyword': '메인 키워드',
+                          'keywords': '서브 키워드',
+                          'keyword1': '키워드1',
+                          'keyword2': '키워드2', 
+                          'keyword3': '키워드3',
+                          'quantity': '작업량',
+                          'dueDays': '작업기간',
+                          'workCount': '작업수',
+                          'start_date': '시작일',
+                          'end_date': '종료일'
+                        };
+                        const displayKey = fieldNameMap[key] || key;
+                        
                         return (
                           <div key={key} className="flex items-start gap-2 text-xs">
-                            <span className="font-medium text-gray-600 dark:text-gray-400 min-w-[70px]">{key}</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-400 min-w-[70px]">{displayKey}</span>
                             <span className="text-gray-500 dark:text-gray-500">:</span>
                             <span className="text-gray-800 dark:text-gray-200 flex-1">
                               {isFileUrl ? (

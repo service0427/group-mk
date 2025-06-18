@@ -7,13 +7,19 @@ import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.con
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { supabase } from '@/supabase';
 import { KeenIcon } from '@/components';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { GuaranteeNegotiationModal } from '@/components/campaign-modals/GuaranteeNegotiationModal';
 import GuaranteeRejectModal from '@/components/guarantee-slots/GuaranteeRejectModal';
 import GuaranteeApprovalModal from '@/components/guarantee-slots/GuaranteeApprovalModal';
 import GuaranteeCompleteModal from '@/components/guarantee-slots/GuaranteeCompleteModal';
 import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundModal';
+import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlotDetailModal';
+import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
+import GuaranteeExcelExportModal from '@/components/guarantee-slots/GuaranteeExcelExportModal';
+import * as XLSX from 'xlsx';
+import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import type { ExcelColumn } from '@/components/guarantee-slots/GuaranteeExcelExportModal';
 
 // 타입 정의
 interface GuaranteeQuoteRequest {
@@ -77,6 +83,11 @@ const GuaranteeQuotesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchStatus, setSearchStatus] = useState<string>('');
+  const [searchServiceType, setSearchServiceType] = useState<string>('');
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('');
+  const [searchDateFrom, setSearchDateFrom] = useState<string>('');
+  const [searchDateTo, setSearchDateTo] = useState<string>('');
+  const [searchSlotStatus, setSearchSlotStatus] = useState<string>('');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const [negotiationModal, setNegotiationModal] = useState<{
     open: boolean;
@@ -120,13 +131,65 @@ const GuaranteeQuotesPage: React.FC = () => {
     totalAmount?: number;
   } | null>(null);
 
+  // 상세보기 모달 상태
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailRequestId, setDetailRequestId] = useState<string | null>(null);
+
+  // 순위 확인 모달 상태
+  const [rankCheckModalOpen, setRankCheckModalOpen] = useState(false);
+  const [rankCheckSlotData, setRankCheckSlotData] = useState<{
+    slotId: string;
+    campaignName?: string;
+    targetRank: number;
+    keyword?: string;
+  } | null>(null);
+
+  // 엑셀 내보내기 모달 상태
+  const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
+
+  // 캠페인 관련 상태
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [filteredCampaigns, setFilteredCampaigns] = useState<any[]>([]);
+
   // 필터링된 요청 목록
   const filteredRequests = useMemo(() => {
     let filtered = requests;
 
-    // 상태 필터
+    // 서비스 타입 필터
+    if (searchServiceType) {
+      filtered = filtered.filter(req => req.campaigns?.service_type === searchServiceType);
+    }
+
+    // 캠페인 필터
+    if (selectedCampaign && selectedCampaign !== 'all') {
+      filtered = filtered.filter(req => req.campaign_id?.toString() === selectedCampaign);
+    }
+
+    // 견적 상태 필터
     if (searchStatus) {
       filtered = filtered.filter(req => req.status === searchStatus);
+    }
+
+    // 슬롯 상태 필터
+    if (searchSlotStatus) {
+      filtered = filtered.filter(req => {
+        // 슬롯이 있는 경우에만 필터링
+        if (req.guarantee_slots && req.guarantee_slots.length > 0) {
+          return req.guarantee_slots.some(slot => slot.status === searchSlotStatus);
+        }
+        // 슬롯이 없는 경우, pending 선택 시 포함
+        return searchSlotStatus === 'pending';
+      });
+    }
+
+    // 날짜 범위 필터
+    if (searchDateFrom || searchDateTo) {
+      filtered = filtered.filter(req => {
+        const createdDate = new Date(req.created_at);
+        if (searchDateFrom && createdDate < new Date(searchDateFrom)) return false;
+        if (searchDateTo && createdDate > new Date(searchDateTo + 'T23:59:59')) return false;
+        return true;
+      });
     }
 
     // 검색어 필터
@@ -137,12 +200,16 @@ const GuaranteeQuotesPage: React.FC = () => {
         req.user_id?.toLowerCase().includes(term) ||
         req.campaigns?.campaign_name?.toLowerCase().includes(term) ||
         req.users?.email?.toLowerCase().includes(term) ||
-        req.users?.full_name?.toLowerCase().includes(term)
+        req.users?.full_name?.toLowerCase().includes(term) ||
+        req.keywords?.main_keyword?.toLowerCase().includes(term) ||
+        req.keywords?.keyword1?.toLowerCase().includes(term) ||
+        req.keywords?.keyword2?.toLowerCase().includes(term) ||
+        req.keywords?.keyword3?.toLowerCase().includes(term)
       );
     }
 
     return filtered;
-  }, [requests, searchStatus, searchTerm]);
+  }, [requests, searchServiceType, searchStatus, searchSlotStatus, searchDateFrom, searchDateTo, searchTerm, selectedCampaign]);
 
   // 견적 요청 목록 가져오기
   const fetchRequests = useCallback(async () => {
@@ -256,11 +323,48 @@ const GuaranteeQuotesPage: React.FC = () => {
     }
   }, [currentUser, showError]);
 
+  // 캠페인 목록 가져오기
+  const fetchCampaigns = useCallback(async () => {
+    if (!currentUser) return;
+
+    try {
+      let query = supabase
+        .from('campaigns')
+        .select('*')
+        .eq('slot_type', 'guarantee') // 보장형 캠페인만 필터링
+        .order('campaign_name', { ascending: true });
+
+      // 총판인 경우 자신의 캠페인만
+      if (currentUser.role === USER_ROLES.DISTRIBUTOR) {
+        query = query.eq('mat_id', currentUser.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error('캠페인 목록 조회 실패:', error);
+    }
+  }, [currentUser]);
+
+  // 서비스 타입에 따른 캠페인 필터링
+  useEffect(() => {
+    if (searchServiceType) {
+      const filtered = campaigns.filter(c => c.service_type === searchServiceType);
+      setFilteredCampaigns([{ id: 'all', campaign_name: '전체 캠페인' }, ...filtered]);
+    } else {
+      setFilteredCampaigns([{ id: 'all', campaign_name: '전체 캠페인' }, ...campaigns]);
+    }
+  }, [campaigns, searchServiceType]);
+
   useEffect(() => {
     if (!authLoading && currentUser) {
       fetchRequests();
+      fetchCampaigns();
     }
-  }, [authLoading, currentUser, fetchRequests]);
+  }, [authLoading, currentUser, fetchRequests, fetchCampaigns]);
 
   // 상태별 배지 색상
   const getStatusBadgeClass = (status: string) => {
@@ -542,11 +646,20 @@ const GuaranteeQuotesPage: React.FC = () => {
     if (!currentUser || !completeSlotData) return;
 
     try {
-      // TODO: 완료 처리 API 구현 필요
-      showSuccess('슬롯 완료 처리 기능이 곧 구현됩니다.');
+      const { data, error } = await guaranteeSlotService.completeSlot(
+        completeSlotData.slotId,
+        currentUser.id!,
+        workMemo
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      showSuccess('보장형 슬롯이 완료 처리되었습니다.');
       setCompleteModalOpen(false);
       setCompleteSlotData(null);
-      // fetchRequests();
+      fetchRequests();
     } catch (error) {
       console.error('슬롯 완료 실패:', error);
       showError('슬롯 완료 중 오류가 발생했습니다.');
@@ -591,14 +704,137 @@ const GuaranteeQuotesPage: React.FC = () => {
     if (!currentUser || !refundSlotData) return;
 
     try {
-      // TODO: 환불 처리 API 구현 필요
-      showSuccess('슬롯 환불 처리 기능이 곧 구현됩니다.');
+      const { data, error } = await guaranteeSlotService.refundSlot(
+        refundSlotData.slotId,
+        currentUser.id!,
+        reason
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      showSuccess(`보장형 슬롯이 환불 처리되었습니다. ${data?.refundAmount ? `(환불금액: ${data.refundAmount.toLocaleString()}원)` : ''}`);
       setRefundModalOpen(false);
       setRefundSlotData(null);
-      // fetchRequests();
+      fetchRequests();
     } catch (error) {
       console.error('슬롯 환불 실패:', error);
       showError('슬롯 환불 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 엑셀 다운로드 처리
+  const handleExcelExport = () => {
+    setExcelModalOpen(true);
+  };
+
+  // 엑셀 내보내기 실행
+  const handleExcelExportWithColumns = (columns: ExcelColumn[]) => {
+    try {
+      // 다운로드할 데이터 결정 (선택된 항목 또는 전체)
+      const dataToExport = selectedRequests.length > 0
+        ? filteredRequests.filter(req => selectedRequests.includes(req.id))
+        : filteredRequests;
+
+      if (dataToExport.length === 0) {
+        showError('다운로드할 데이터가 없습니다.');
+        return;
+      }
+
+      // 엑셀 데이터 준비
+      const excelData = dataToExport.map(request => {
+        const slot = request.guarantee_slots?.[0];
+        const slotStatus = slot?.status || 'pending';
+
+        // 진행 상태 한글 변환
+        const getSlotStatusText = (status: string) => {
+          const statusMap: Record<string, string> = {
+            'pending': '진행 대기',
+            'active': '진행중',
+            'completed': '진행 완료',
+            'cancelled': '진행 취소',
+            'refunded': '환불 처리',
+            'rejected': '진행 거절'
+          };
+          return statusMap[status] || status;
+        };
+
+        // 견적 상태 한글 변환
+        const getRequestStatusText = (status: string) => {
+          const statusMap: Record<string, string> = {
+            'requested': '요청됨',
+            'negotiating': '협상중',
+            'accepted': '수락됨',
+            'rejected': '거절됨',
+            'expired': '만료됨',
+            'purchased': '구매완료'
+          };
+          return statusMap[status] || status;
+        };
+
+        // 모든 가능한 필드를 객체로 준비
+        const allData: Record<string, any> = {
+          'id': request.id,
+          'service_type': request.campaigns?.service_type || '',
+          'campaign_name': request.campaigns?.campaign_name || '',
+          'user_name': request.users?.full_name || '',
+          'user_email': request.users?.email || request.user_id,
+          'main_keyword': request.keywords?.main_keyword || request.input_data?.mainKeyword || '',
+          'keyword1': request.keywords?.keyword1 || request.input_data?.keyword1 || '',
+          'keyword2': request.keywords?.keyword2 || request.input_data?.keyword2 || '',
+          'keyword3': request.keywords?.keyword3 || request.input_data?.keyword3 || '',
+          'url': request.input_data?.url || '',
+          'target_rank': request.target_rank,
+          'guarantee_period': `${request.guarantee_count}${request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}`,
+          'initial_budget': request.initial_budget || 0,
+          'final_amount': request.final_daily_amount || 0,
+          'total_amount': (request.final_daily_amount || 0) * request.guarantee_count,
+          'quote_status': getRequestStatusText(request.status),
+          'slot_status': getSlotStatusText(slotStatus),
+          'start_date': slot?.start_date ? format(new Date(slot.start_date), 'yyyy-MM-dd') : '',
+          'end_date': slot?.end_date ? format(new Date(slot.end_date), 'yyyy-MM-dd') : '',
+          'created_at': format(new Date(request.created_at), 'yyyy-MM-dd HH:mm:ss'),
+          'updated_at': format(new Date(request.updated_at), 'yyyy-MM-dd HH:mm:ss'),
+          'approved_at': slot?.approved_at ? format(new Date(slot.approved_at), 'yyyy-MM-dd HH:mm:ss') : '',
+          'rejected_at': slot?.rejected_at ? format(new Date(slot.rejected_at), 'yyyy-MM-dd HH:mm:ss') : '',
+          'rejection_reason': slot?.rejection_reason || ''
+        };
+
+        // 선택된 컴럼만 포함한 객체 생성
+        const selectedData: Record<string, any> = {};
+        columns.forEach(col => {
+          if (col.enabled && allData.hasOwnProperty(col.field)) {
+            selectedData[col.label] = allData[col.field];
+          }
+        });
+
+        return selectedData;
+      });
+
+      // 워크시트 생성
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // 컬럼 너비 설정
+      const columnWidths = columns
+        .filter(col => col.enabled)
+        .map(col => ({ wch: col.width || 15 }));
+      worksheet['!cols'] = columnWidths;
+
+      // 워크북 생성
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '보장형슬롯목록');
+
+      // 파일명 생성
+      const fileName = `보장형슬롯목록_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
+
+      // 엑셀 파일 다운로드
+      XLSX.writeFile(workbook, fileName);
+
+      showSuccess(`${dataToExport.length}개의 슬롯 데이터를 다운로드했습니다.`);
+    } catch (error) {
+      console.error('엑셀 다운로드 오류:', error);
+      showError('엑셀 다운로드 중 오류가 발생했습니다.');
     }
   };
 
@@ -606,8 +842,8 @@ const GuaranteeQuotesPage: React.FC = () => {
   if (authLoading || loading) {
     return (
       <CommonTemplate
-        title="견적 요청 목록"
-        description="보장형 캠페인 견적 요청 관리"
+        title="보장형 슬롯 관리"
+        description="보장형 캠페인의 견적 요청 및 슬롯을 관리합니다."
         showPageMenu={false}
       >
         <div className="min-h-[400px] flex items-center justify-center">
@@ -626,8 +862,8 @@ const GuaranteeQuotesPage: React.FC = () => {
   if (!currentUser || !hasPermission(currentUser.role, PERMISSION_GROUPS.DISTRIBUTOR)) {
     return (
       <CommonTemplate
-        title="견적 요청 목록"
-        description="보장형 캠페인 견적 요청 관리"
+        title="보장형 슬롯 관리"
+        description="보장형 캠페인의 견적 요청 및 슬롯을 관리합니다."
         showPageMenu={false}
       >
         <div className="min-h-[400px] flex items-center justify-center">
@@ -643,49 +879,330 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   return (
     <CommonTemplate
-      title="보장형 캠페인 관리"
-      description="보장형 캠페인 견적 요청 및 승인 관리"
+      title="보장형 슬롯 관리"
+      description="보장형 캠페인의 견적 요청 및 슬롯을 관리합니다."
       showPageMenu={false}
     >
       {/* 검색 영역 */}
-      <div className="card mb-6" inert={negotiationModal.open ? '' : undefined}>
-        <div className="card-header">
-          <h3 className="card-title">보장형 캠페인 검색</h3>
+      <div className="card shadow-sm mb-5" inert={negotiationModal.open ? '' : undefined}>
+        <div className="card-header px-6 py-4">
+          <h3 className="card-title">보장형 슬롯 검색</h3>
         </div>
-        <div className="card-body">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="w-full lg:w-48">
+        <div className="card-body px-6 py-4">
+          {/* 데스크탑 검색 폼 */}
+          <div className="hidden md:block space-y-4">
+            {/* 첫 번째 줄 */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-2">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">서비스</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={searchServiceType}
+                    onChange={(e) => setSearchServiceType(e.target.value)}
+                    disabled={negotiationModal.open || loading}
+                  >
+                    <option value="">전체 서비스</option>
+                    {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-span-3">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">캠페인</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={selectedCampaign}
+                    onChange={(e) => setSelectedCampaign(e.target.value)}
+                    disabled={negotiationModal.open || loading || filteredCampaigns.length <= 1}
+                  >
+                    {filteredCampaigns.map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        {campaign.campaign_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">견적상태</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={searchStatus}
+                    onChange={(e) => setSearchStatus(e.target.value)}
+                    disabled={negotiationModal.open}
+                  >
+                    <option value="">전체 상태</option>
+                    <option value="requested">요청됨</option>
+                    <option value="negotiating">협상중</option>
+                    <option value="accepted">수락됨</option>
+                    <option value="rejected">거절됨</option>
+                    <option value="expired">만료됨</option>
+                    <option value="purchased">구매완료</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">슬롯상태</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={searchSlotStatus}
+                    onChange={(e) => setSearchSlotStatus(e.target.value)}
+                    disabled={negotiationModal.open}
+                  >
+                    <option value="">전체 진행</option>
+                    <option value="pending">대기중</option>
+                    <option value="active">진행중</option>
+                    <option value="completed">완료</option>
+                    <option value="cancelled">취소됨</option>
+                    <option value="rejected">거절됨</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-span-3">
+                <div className="flex items-center h-9 justify-end">
+                  <button
+                    className="btn btn-success btn-sm px-4"
+                    onClick={handleExcelExport}
+                    disabled={loading || negotiationModal.open}
+                    title={selectedRequests.length > 0 ? `${selectedRequests.length}개 선택된 항목 다운로드` : `전체 ${filteredRequests.length}개 항목 다운로드`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      엑셀 다운로드
+                      {selectedRequests.length > 0 && <span className="badge badge-sm badge-primary">{selectedRequests.length}</span>}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 두 번째 줄 */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-2">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">시작일</label>
+                  <input
+                    type="date"
+                    className="input input-bordered input-sm w-full"
+                    value={searchDateFrom}
+                    onChange={(e) => setSearchDateFrom(e.target.value)}
+                    disabled={negotiationModal.open}
+                  />
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">종료일</label>
+                  <input
+                    type="date"
+                    className="input input-bordered input-sm w-full"
+                    value={searchDateTo}
+                    onChange={(e) => setSearchDateTo(e.target.value)}
+                    disabled={negotiationModal.open}
+                  />
+                </div>
+              </div>
+
+              <div className="col-span-5">
+                <div className="flex items-center h-9">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">검색어</label>
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="이름, 상품명, URL, 키워드"
+                      className="input input-bordered input-sm w-full pr-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      disabled={negotiationModal.open}
+                    />
+                    {searchTerm && (
+                      <button
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setSearchTerm('')}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-3 flex items-center justify-end">
+                <button
+                  className="btn btn-primary btn-sm px-6"
+                  onClick={fetchRequests}
+                  disabled={loading || negotiationModal.open}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="loading loading-spinner loading-xs"></span>
+                      검색 중
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      검색
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 모바일 검색 폼 */}
+          <div className="block md:hidden space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">서비스 타입</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchServiceType}
+                  onChange={(e) => setSearchServiceType(e.target.value)}
+                  disabled={negotiationModal.open}
+                >
+                  <option value="">전체 서비스</option>
+                  {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">견적상태</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}
+                  disabled={negotiationModal.open}
+                >
+                  <option value="">전체 상태</option>
+                  <option value="requested">요청됨</option>
+                  <option value="negotiating">협상중</option>
+                  <option value="accepted">수락됨</option>
+                  <option value="rejected">거절됨</option>
+                  <option value="expired">만료됨</option>
+                  <option value="purchased">구매완료</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">캠페인</label>
               <select
-                className="select"
-                value={searchStatus}
-                onChange={(e) => setSearchStatus(e.target.value)}
-                disabled={negotiationModal.open}
+                className="select select-bordered select-sm w-full"
+                value={selectedCampaign}
+                onChange={(e) => setSelectedCampaign(e.target.value)}
+                disabled={negotiationModal.open || loading || filteredCampaigns.length <= 1}
               >
-                <option value="">전체 상태</option>
-                <option value="requested">요청됨</option>
-                <option value="negotiating">협상중</option>
-                <option value="accepted">수락됨</option>
-                <option value="rejected">거절됨</option>
-                <option value="expired">만료됨</option>
+                {filteredCampaigns.map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.campaign_name}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="flex-1">
+
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">슬롯상태</label>
+              <select
+                className="select select-bordered select-sm w-full"
+                value={searchSlotStatus}
+                onChange={(e) => setSearchSlotStatus(e.target.value)}
+                disabled={negotiationModal.open}
+              >
+                <option value="">전체 진행</option>
+                <option value="pending">진행 대기</option>
+                <option value="active">진행중</option>
+                <option value="completed">진행 완료</option>
+                <option value="cancelled">진행 취소</option>
+                <option value="refunded">환불 처리</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">검색어</label>
               <input
                 type="text"
-                className="input"
-                placeholder="캠페인명, 요청자명, 이메일로 검색"
+                placeholder="캠페인명, 요청자명, 키워드"
+                className="input input-bordered input-sm w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 disabled={negotiationModal.open}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">시작일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateFrom}
+                  onChange={(e) => setSearchDateFrom(e.target.value)}
+                  disabled={negotiationModal.open}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">종료일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateTo}
+                  onChange={(e) => setSearchDateTo(e.target.value)}
+                  disabled={negotiationModal.open}
+                />
+              </div>
+            </div>
+
             <button
-              className="btn btn-primary"
+              className="btn btn-success btn-sm w-full mb-2"
+              onClick={handleExcelExport}
+              disabled={loading || negotiationModal.open}
+              title={selectedRequests.length > 0 ? `${selectedRequests.length}개 선택된 항목 다운로드` : `전체 ${filteredRequests.length}개 항목 다운로드`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                엑셀 다운로드
+                {selectedRequests.length > 0 && <span className="badge badge-sm badge-primary ml-1">{selectedRequests.length}</span>}
+              </span>
+            </button>
+
+            <button
+              className="btn btn-primary btn-sm w-full"
               onClick={fetchRequests}
               disabled={loading || negotiationModal.open}
             >
-              <KeenIcon icon="magnifier" className="me-2" />
-              검색
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="loading loading-spinner loading-xs"></span>
+                  검색 중...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  검색하기
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -767,7 +1284,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                     <th className="py-3 px-3 text-center font-medium">보장기간</th>
                     <th className="py-3 px-3 text-center font-medium">작업기간</th>
                     <th className="py-3 px-3 text-center font-medium">캠페인</th>
-                    <th className="py-3 px-3 text-center font-medium">상태</th>
+                    <th className="py-3 px-3 text-center font-medium">견적상태</th>
                     <th className="py-3 px-3 text-center font-medium">추가정보</th>
                     <th className="py-3 px-3 text-center font-medium">상세/협상</th>
                     <th className="py-3 px-3 text-center font-medium">작업</th>
@@ -987,8 +1504,8 @@ const GuaranteeQuotesPage: React.FC = () => {
                           <button
                             className="btn btn-icon btn-sm btn-ghost text-blue-600 hover:text-blue-700 hover:bg-blue-100"
                             onClick={() => {
-                              // TODO: 상세보기 구현
-                              console.log('상세보기:', request);
+                              setDetailRequestId(request.id);
+                              setDetailModalOpen(true);
                             }}
                             title="상세보기"
                             disabled={negotiationModal.open}
@@ -1082,6 +1599,22 @@ const GuaranteeQuotesPage: React.FC = () => {
                                     </>
                                   ) : request.guarantee_slots[0].status === 'active' ? (
                                     <>
+                                      <button
+                                        className="px-2 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                        onClick={() => {
+                                          setRankCheckSlotData({
+                                            slotId: request.guarantee_slots![0].id,
+                                            campaignName: request.campaigns?.campaign_name,
+                                            targetRank: request.target_rank,
+                                            keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                          });
+                                          setRankCheckModalOpen(true);
+                                        }}
+                                        title="순위 확인"
+                                        disabled={negotiationModal.open}
+                                      >
+                                        순위확인
+                                      </button>
                                       <button
                                         className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                                         onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
@@ -1184,6 +1717,36 @@ const GuaranteeQuotesPage: React.FC = () => {
         guaranteeUnit={refundSlotData?.guaranteeUnit}
         completedDays={refundSlotData?.completedDays}
         totalAmount={refundSlotData?.totalAmount}
+      />
+
+      {/* 상세보기 모달 */}
+      <GuaranteeSlotDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setDetailRequestId(null);
+        }}
+        requestId={detailRequestId || ''}
+      />
+
+      {/* 순위 확인 모달 */}
+      <GuaranteeRankCheckModal
+        isOpen={rankCheckModalOpen}
+        onClose={() => {
+          setRankCheckModalOpen(false);
+          setRankCheckSlotData(null);
+        }}
+        slotId={rankCheckSlotData?.slotId || ''}
+        campaignName={rankCheckSlotData?.campaignName}
+        targetRank={rankCheckSlotData?.targetRank || 1}
+        keyword={rankCheckSlotData?.keyword}
+      />
+
+      {/* 엑셀 내보내기 모달 */}
+      <GuaranteeExcelExportModal
+        isOpen={excelModalOpen}
+        onClose={() => setExcelModalOpen(false)}
+        onExport={handleExcelExportWithColumns}
       />
     </CommonTemplate>
   );

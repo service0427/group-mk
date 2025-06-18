@@ -293,6 +293,16 @@
   color: #999;
 }
 
+/* 내 메시지(총판)의 발신자 이름 */
+.chat-sticky-message-mine .chat-sticky-message-sender {
+  color: rgba(255, 255, 255, 0.9); /* 흰색 90% 불투명도 */
+}
+
+/* 다크모드 내 메시지(총판)의 발신자 이름 */
+.dark .chat-sticky-message-mine .chat-sticky-message-sender {
+  color: rgba(255, 255, 255, 0.95); /* 흰색 95% 불투명도 */
+}
+
 /* 메시지 내용 */
 .chat-sticky-message-content {
   font-size: 13px;

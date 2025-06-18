@@ -577,7 +577,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
   // 메시지 렌더링
   const renderMessage = (message: NegotiationMessage, index: number) => {
-    const isMyMessage = message.sender_id === currentUser?.id;
+    // 총판 기준으로 무조건 총판이 보내는 입장
+    const isDistributor = message.sender_type === 'distributor';
+    const isMyMessage = isDistributor; // 총판 메시지는 항상 오른쪽
     const isSystemMessage = false; // 시스템 메시지는 현재 지원하지 않음
     const isPriceMessage = message.message_type === 'price_proposal' || message.message_type === 'counter_offer';
 
@@ -596,10 +598,10 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
     return (
       <div key={message.id} className={messageClasses}>
-        {/* 발신자 이름 (내 메시지가 아닌 경우) */}
-        {!isMyMessage && !isSystemMessage && shouldShowTime && (
+        {/* 발신자 이름 - 모든 메시지에 표시 */}
+        {shouldShowTime && (
           <div className="chat-sticky-message-sender">
-            {message.senderName}
+            {isDistributor ? `총판(${message.senderName || '-'})` : `사용자(${message.senderName || '-'})`}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useEffect } from 'react';
 import { SidebarMenu } from './';
 import { useResponsive } from '@/hooks';
 
@@ -9,6 +9,47 @@ interface Props {
 
 const SidebarContent = forwardRef<HTMLDivElement, Props>(({ height = 0, onMenuStateChange }, ref) => {
   const isMobile = !useResponsive('up', 'md');
+  
+  // 컴포넌트 마운트 시 스크롤 강제 리셋 (초기 로드 시에만)
+  useEffect(() => {
+    // 초기 로드인지 확인
+    const isInitialLoad = !sessionStorage.getItem('sidebar_scroll_initialized');
+    
+    if (isInitialLoad) {
+      const forceScrollTop = () => {
+        const container = document.getElementById('sidebar-scrollable-container');
+        if (container) {
+          container.scrollTop = 0;
+          // 브라우저의 스크롤 복원 비활성화
+          if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+          }
+        }
+      };
+
+      // 여러 타이밍에 시도
+      forceScrollTop(); // 즉시
+      setTimeout(forceScrollTop, 0); // 다음 틱
+      setTimeout(forceScrollTop, 100); // 100ms 후
+      setTimeout(forceScrollTop, 300); // 300ms 후
+      
+      // 페이지 로드 완료 후
+      if (document.readyState === 'complete') {
+        forceScrollTop();
+      } else {
+        window.addEventListener('load', forceScrollTop);
+      }
+      
+      // 초기화 완료 표시
+      setTimeout(() => {
+        sessionStorage.setItem('sidebar_scroll_initialized', 'true');
+      }, 500);
+      
+      return () => {
+        window.removeEventListener('load', forceScrollTop);
+      };
+    }
+  }, []);
   
   return (
     <div className={`sidebar-content flex grow shrink-0 ${isMobile ? 'py-2' : 'py-3 md:py-5'} pe-2`}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useAuthContext } from '@/auth';
 import { CommonTemplate } from '@/components/pageTemplate';
@@ -17,6 +17,7 @@ import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundMo
 import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlotDetailModal';
 import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
 import GuaranteeExcelExportModal from '@/components/guarantee-slots/GuaranteeExcelExportModal';
+import GuaranteeMonthlyStatistics, { GuaranteeMonthlyStatisticsRef } from './components/GuaranteeMonthlyStatistics';
 import * as XLSX from 'xlsx';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import type { ExcelColumn } from '@/components/guarantee-slots/GuaranteeExcelExportModal';
@@ -150,6 +151,9 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 캠페인 관련 상태
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<any[]>([]);
+
+  // MonthlyStatistics 컴포넌트 ref
+  const monthlyStatisticsRef = useRef<GuaranteeMonthlyStatisticsRef>(null);
 
   // 필터링된 요청 목록
   const filteredRequests = useMemo(() => {
@@ -576,6 +580,11 @@ const GuaranteeQuotesPage: React.FC = () => {
       setApprovalModalOpen(false);
       setApprovalSlotData(null);
       fetchRequests();
+
+      // 통계 새로고침
+      if (monthlyStatisticsRef.current) {
+        monthlyStatisticsRef.current.refresh();
+      }
     } catch (error) {
       console.error('슬롯 승인 실패:', error);
       showError('슬롯 승인 중 오류가 발생했습니다.');
@@ -603,6 +612,11 @@ const GuaranteeQuotesPage: React.FC = () => {
       setRejectModalOpen(false);
       setRejectSlotId(null);
       fetchRequests();
+
+      // 통계 새로고침
+      if (monthlyStatisticsRef.current) {
+        monthlyStatisticsRef.current.refresh();
+      }
     } catch (error) {
       console.error('슬롯 반려 실패:', error);
       showError('슬롯 반려 중 오류가 발생했습니다.');
@@ -660,6 +674,11 @@ const GuaranteeQuotesPage: React.FC = () => {
       setCompleteModalOpen(false);
       setCompleteSlotData(null);
       fetchRequests();
+
+      // 통계 새로고침
+      if (monthlyStatisticsRef.current) {
+        monthlyStatisticsRef.current.refresh();
+      }
     } catch (error) {
       console.error('슬롯 완료 실패:', error);
       showError('슬롯 완료 중 오류가 발생했습니다.');
@@ -718,6 +737,11 @@ const GuaranteeQuotesPage: React.FC = () => {
       setRefundModalOpen(false);
       setRefundSlotData(null);
       fetchRequests();
+
+      // 통계 새로고침
+      if (monthlyStatisticsRef.current) {
+        monthlyStatisticsRef.current.refresh();
+      }
     } catch (error) {
       console.error('슬롯 환불 실패:', error);
       showError('슬롯 환불 중 오류가 발생했습니다.');
@@ -775,8 +799,6 @@ const GuaranteeQuotesPage: React.FC = () => {
 
         // 모든 가능한 필드를 객체로 준비
         const allData: Record<string, any> = {
-          'id': request.id,
-          'service_type': request.campaigns?.service_type || '',
           'campaign_name': request.campaigns?.campaign_name || '',
           'user_name': request.users?.full_name || '',
           'user_email': request.users?.email || request.user_id,
@@ -883,6 +905,33 @@ const GuaranteeQuotesPage: React.FC = () => {
       description="보장형 캠페인의 견적 요청 및 슬롯을 관리합니다."
       showPageMenu={false}
     >
+      {/* 월간 통계 */}
+      <GuaranteeMonthlyStatistics
+        ref={monthlyStatisticsRef}
+        selectedServiceType={searchServiceType}
+        selectedCampaign={selectedCampaign}
+      />
+
+      {/* 중요 안내사항 */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">보장형 슬롯 운영 안내</h4>
+            <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
+              <li>• 슬롯 승인 시 <strong>사용자의 캐시가 즉시 홀딩</strong>되며, 작업 완료 시까지 환불이 제한됩니다.</li>
+              <li>• 목표 순위 달성 여부는 <strong>총판이 직접 확인</strong>하여 정산을 진행해야 합니다.</li>
+              <li>• 보장 기간 내 목표를 달성하지 못할 경우 <strong>부분 환불</strong>이 가능합니다.</li>
+            </ul>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
+              * 보장형 슬롯은 일반 슬롯과 달리 사전에 비용이 홀딩되므로 신중한 승인이 필요합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 검색 영역 */}
       <div className="card shadow-sm mb-5" inert={negotiationModal.open ? '' : undefined}>
         <div className="card-header px-6 py-4">
@@ -1251,13 +1300,13 @@ const GuaranteeQuotesPage: React.FC = () => {
       {/* 보장형 슬롯 목록 */}
       <div className="card" inert={negotiationModal.open ? '' : undefined}>
         <div className="card-header">
-          <h3 className="card-title">보장형 슬롯 목록 ({filteredRequests.length}건)</h3>
+          <h3 className="card-title">보장형 견적 요청 목록 ({filteredRequests.length}건)</h3>
         </div>
         <div className="card-body">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-10">
               <KeenIcon icon="folder-open" className="text-6xl text-gray-300 mb-4" />
-              <p className="text-gray-500">보장형 슬롯이 없습니다.</p>
+              <p className="text-gray-500">보장형 견적 요청이 없습니다.</p>
             </div>
           ) : (
             <div className="table-responsive">

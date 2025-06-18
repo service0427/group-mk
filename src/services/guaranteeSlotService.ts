@@ -528,6 +528,187 @@ export const guaranteeSlotService = {
       return { data: null, error };
     }
   },
+
+  // 보장형 슬롯 완료 처리
+  async completeSlot(slotId: string, distributorId: string, workMemo: string) {
+    try {
+      // 슬롯 정보 확인
+      const { data: slot, error: slotError } = await supabase
+        .from('guarantee_slots')
+        .select('*')
+        .eq('id', slotId)
+        .eq('distributor_id', distributorId)
+        .eq('status', 'active')
+        .single();
+
+      if (slotError || !slot) {
+        throw new Error('유효하지 않은 슬롯이거나 권한이 없습니다.');
+      }
+
+      // 슬롯 상태를 완료로 변경
+      const { data, error } = await supabase
+        .from('guarantee_slots')
+        .update({
+          status: 'completed' as GuaranteeSlotStatus,
+          completed_at: new Date().toISOString(),
+          completed_by: distributorId,
+          work_memo: workMemo,
+          completed_count: slot.guarantee_count // 전체 보장 횟수만큼 완료 처리
+        })
+        .eq('id', slotId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('보장형 슬롯 완료 처리 실패:', error);
+        throw new Error(error.message || '완료 처리 중 오류가 발생했습니다.');
+      }
+
+      // 홀딩 금액 정산 처리
+      const { data: holding } = await supabase
+        .from('guarantee_slot_holdings')
+        .select('*')
+        .eq('guarantee_slot_id', slotId)
+        .single();
+
+      if (holding && holding.user_holding_amount > 0) {
+        // 남은 홀딩 금액을 모두 총판에게 이동
+        await supabase
+          .from('guarantee_slot_holdings')
+          .update({
+            user_holding_amount: 0,
+            distributor_holding_amount: holding.total_amount,
+            distributor_released_amount: holding.total_amount,
+            status: 'completed'
+          })
+          .eq('id', holding.id);
+
+        // 거래 내역 생성
+        await supabase
+          .from('guarantee_slot_transactions')
+          .insert({
+            guarantee_slot_id: slotId,
+            user_id: slot.user_id,
+            transaction_type: 'settlement',
+            amount: holding.user_holding_amount,
+            description: `보장형 슬롯 완료 정산 - ${workMemo}`
+          });
+      }
+
+      return { 
+        data: {
+          success: true,
+          message: '보장형 슬롯이 완료 처리되었습니다.',
+          slot: data
+        }, 
+        error: null 
+      };
+    } catch (error: any) {
+      console.error('보장형 슬롯 완료 처리 실패:', error);
+      return { data: null, error };
+    }
+  },
+
+  // 보장형 슬롯 환불 처리
+  async refundSlot(slotId: string, distributorId: string, refundReason: string) {
+    try {
+      // 슬롯 정보 확인
+      const { data: slot, error: slotError } = await supabase
+        .from('guarantee_slots')
+        .select('*')
+        .eq('id', slotId)
+        .eq('distributor_id', distributorId)
+        .in('status', ['active', 'completed'])
+        .single();
+
+      if (slotError || !slot) {
+        throw new Error('유효하지 않은 슬롯이거나 권한이 없습니다.');
+      }
+
+      // 홀딩 정보 조회
+      const { data: holding } = await supabase
+        .from('guarantee_slot_holdings')
+        .select('*')
+        .eq('guarantee_slot_id', slotId)
+        .single();
+
+      if (!holding) {
+        throw new Error('홀딩 정보를 찾을 수 없습니다.');
+      }
+
+      // 환불 금액 계산 (완료된 횟수만큼 차감)
+      const completedAmount = slot.daily_guarantee_amount * slot.completed_count * 1.1; // VAT 포함
+      const refundAmount = slot.total_amount - completedAmount;
+
+      if (refundAmount <= 0) {
+        throw new Error('환불 가능한 금액이 없습니다.');
+      }
+
+      // 슬롯 상태를 취소로 변경
+      const { data, error } = await supabase
+        .from('guarantee_slots')
+        .update({
+          status: 'cancelled' as GuaranteeSlotStatus,
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: distributorId,
+          cancellation_reason: refundReason
+        })
+        .eq('id', slotId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('보장형 슬롯 환불 처리 실패:', error);
+        throw new Error(error.message || '환불 처리 중 오류가 발생했습니다.');
+      }
+
+      // 사용자에게 환불
+      const { error: balanceError } = await supabase.rpc('update_user_balance', {
+        p_user_id: slot.user_id,
+        p_amount: refundAmount,
+        p_transaction_type: 'refund',
+        p_description: `보장형 슬롯 환불 - ${refundReason}`
+      });
+
+      if (balanceError) {
+        throw new Error('잔액 환불 중 오류가 발생했습니다.');
+      }
+
+      // 홀딩 상태 업데이트
+      await supabase
+        .from('guarantee_slot_holdings')
+        .update({
+          status: 'refunded',
+          user_holding_amount: 0,
+          distributor_holding_amount: completedAmount
+        })
+        .eq('id', holding.id);
+
+      // 거래 내역 생성
+      await supabase
+        .from('guarantee_slot_transactions')
+        .insert({
+          guarantee_slot_id: slotId,
+          user_id: slot.user_id,
+          transaction_type: 'refund',
+          amount: refundAmount,
+          description: `보장형 슬롯 환불 - ${refundReason}`
+        });
+
+      return { 
+        data: {
+          success: true,
+          message: '보장형 슬롯이 환불 처리되었습니다.',
+          refundAmount,
+          slot: data
+        }, 
+        error: null 
+      };
+    } catch (error: any) {
+      console.error('보장형 슬롯 환불 처리 실패:', error);
+      return { data: null, error };
+    }
+  },
 };
 
 // 통계 및 유틸리티

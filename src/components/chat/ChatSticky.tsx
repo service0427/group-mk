@@ -1347,8 +1347,13 @@ const ChatSticky: React.FC = () => {
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl pointer-events-none"
             />
             <button
-              className="absolute top-4 right-4 w-12 h-12 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-lg"
+              className="w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full flex items-center justify-center shadow-lg transition-colors"
               style={{ 
+                position: 'fixed',
+                top: '16px',
+                right: '16px',
+                left: 'auto',
+                bottom: 'auto',
                 zIndex: 1000000,
                 pointerEvents: 'auto'
               }}
@@ -1362,7 +1367,7 @@ const ChatSticky: React.FC = () => {
                 e.stopPropagation();
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-200">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>

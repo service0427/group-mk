@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthContext } from '@/auth';
 import { supabase, supabaseAdmin } from '@/supabase';
 import { IMessage, IChatRoom, ChatRole, MessageStatus } from '@/types/chat';
@@ -1532,28 +1533,55 @@ const ChatManagePage: React.FC = () => {
         </div>
       </div>
       
-      {/* 이미지 모달 */}
-      {isImageModalOpen && selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
-          onClick={closeImageModal}
+      {/* 이미지 모달 - Portal로 body에 직접 렌더링 */}
+      {isImageModalOpen && selectedImage && createPortal(
+        <div
+          className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/80 p-4"
+          onMouseDown={closeImageModal}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] p-4">
-            <button
-              onClick={closeImageModal}
-              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75"
-            >
-              ×
-            </button>
+          <div 
+            className="relative max-w-4xl max-h-[90vh]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <img
               src={selectedImage.src}
               alt={selectedImage.title}
-              className="max-w-full max-h-[85vh] object-contain"
-              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl pointer-events-none"
             />
-            <div className="text-white text-center mt-2">{selectedImage.title}</div>
+            <button
+              className="w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full flex items-center justify-center shadow-lg transition-colors"
+              style={{ 
+                position: 'fixed',
+                top: '16px',
+                right: '16px',
+                left: 'auto',
+                bottom: 'auto',
+                zIndex: 1000000,
+                pointerEvents: 'auto'
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeImageModal();
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-200">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+                {selectedImage.title}
+              </p>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </CommonTemplate>
   );

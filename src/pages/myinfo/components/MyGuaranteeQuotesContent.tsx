@@ -10,6 +10,7 @@ import { GuaranteeNegotiationModal } from '@/components/campaign-modals/Guarante
 import { GuaranteeQuotesList } from './GuaranteeQuotesList';
 import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundModal';
 import type { GuaranteeSlotRequestStatus } from '@/types/guarantee-slot.types';
+import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 
 // 타입 정의
 interface MyGuaranteeQuoteRequest {
@@ -68,7 +69,7 @@ interface MyGuaranteeQuotesContentProps {
 }
 
 export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> = ({ selectedService }) => {
-  const { currentUser, loading: authLoading } = useAuthContext();
+  const { currentUser, loading: authLoading, userRole } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
 
   const [requests, setRequests] = useState<MyGuaranteeQuoteRequest[]>([]);
@@ -127,8 +128,12 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           ),
           guarantee_slots(*)
         `)
-        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
+
+      // 개발자가 아닌 경우에만 사용자 필터 적용
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        query = query.eq('user_id', currentUser.id);
+      }
 
       // 선택된 서비스가 있으면 해당 서비스의 캠페인만 필터링
       if (selectedService) {
@@ -170,7 +175,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id, authLoading, showError, selectedService]);
+  }, [currentUser?.id, authLoading, showError, selectedService, userRole]);
 
   useEffect(() => {
     fetchRequests();

@@ -69,14 +69,21 @@ export const ServiceCampaignSelector: React.FC<ServiceCampaignSelectorProps> = (
                 onChange={(e) => {
                   const campId = Number(e.target.value);
                   setSelectedCampaignId(campId);
-                  // 캠페인 변경 시 슬롯 데이터 업데이트
-                  setSlotData((prev: any) => ({
-                    ...prev,
-                    campaignId: campId
-                  }));
-                  // 배너 정보 가져오기
+                  
+                  // 선택된 캠페인 찾기
                   const selected = campaigns.find(c => c.id === campId);
                   if (selected) {
+                    // 캠페인 변경 시 슬롯 데이터 업데이트 (최소수량 포함)
+                    const minQuantity = selected.min_quantity ? Number(selected.min_quantity) : 1;
+                    
+                    setSlotData((prev: any) => ({
+                      ...prev,
+                      campaignId: campId,
+                      minimum_purchase: minQuantity,  // 최소수량 추가
+                      work_days: prev.work_days || 1  // 작업일도 기본값 유지
+                    }));
+                    
+                    // 배너 정보 가져오기
                     fetchCampaignBanner(selected);
                   }
                 }}
@@ -142,14 +149,21 @@ export const ServiceCampaignSelector: React.FC<ServiceCampaignSelectorProps> = (
               onChange={(e) => {
                 const campId = Number(e.target.value);
                 setSelectedCampaignId(campId);
-                // 캠페인 변경 시 슬롯 데이터 업데이트
-                setSlotData((prev: any) => ({
-                  ...prev,
-                  campaignId: campId
-                }));
-                // 배너 정보 가져오기
+                
+                // 선택된 캠페인 찾기
                 const selected = campaigns.find(c => c.id === campId);
                 if (selected) {
+                  // 캠페인 변경 시 슬롯 데이터 업데이트 (최소수량 포함)
+                  const minQuantity = selected.min_quantity ? Number(selected.min_quantity) : 1;
+                  
+                  setSlotData((prev: any) => ({
+                    ...prev,
+                    campaignId: campId,
+                    minimum_purchase: minQuantity,  // 최소수량 추가
+                    work_days: prev.work_days || 1  // 작업일도 기본값 유지
+                  }));
+                  
+                  // 배너 정보 가져오기
                   fetchCampaignBanner(selected);
                 }
               }}

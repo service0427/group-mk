@@ -1,6 +1,7 @@
 import React from 'react';
 import { KeenIcon } from '@/components';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 interface KeywordGroupControlsProps {
@@ -10,6 +11,9 @@ interface KeywordGroupControlsProps {
   searchKeyword: string;
   setSearchKeyword: (value: string) => void;
   handleGroupSelect: (groupId: number) => void;
+  keywordSearchMode: boolean;
+  setKeywordSearchMode: (value: boolean) => void;
+  isGuarantee?: boolean;
 }
 
 export const KeywordGroupControls: React.FC<KeywordGroupControlsProps> = ({
@@ -18,24 +22,42 @@ export const KeywordGroupControls: React.FC<KeywordGroupControlsProps> = ({
   keywordGroups,
   searchKeyword,
   setSearchKeyword,
-  handleGroupSelect
+  handleGroupSelect,
+  keywordSearchMode,
+  setKeywordSearchMode,
+  isGuarantee = false
 }) => {
   if (isCompactMode) {
     return (
       <div className="space-y-3">
         {/* 모바일에서는 2행으로 표시 */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 w-full">
-          {/* 첫 번째 행: 제목과 작업시작일 안내 - 데스크톱에서만 표시 */}
+          {/* 첫 번째 행: 스왑 버튼, 제목, 작업시작일 안내 - 데스크톱에서만 표시 */}
           <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+            {!isGuarantee && (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => setKeywordSearchMode(!keywordSearchMode)}
+                className="px-4 py-2 h-9 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+              >
+                {keywordSearchMode ? '직접 입력하기' : '내키워드에서 가져오기'}
+              </Button>
+            )}
             <div className="flex items-center gap-2">
               <KeenIcon icon="pencil" className="text-success size-4" />
-              <span className="text-sm font-medium text-foreground">내 키워드에서 가져오기</span>
+              <span className="text-sm font-medium text-foreground">
+                {keywordSearchMode ? '내 키워드에서 가져오기' : '직접 입력 모드'}
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5">
-              <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
-              <span className="font-semibold">작업 시작일:</span>
-              <span>총판 승인 다음날부터</span>
-            </div>
+            {keywordSearchMode && (
+              <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5">
+                <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
+                <span className="font-semibold">작업 시작일:</span>
+                <span>총판 승인 다음날부터</span>
+              </div>
+            )}
           </div>
 
           {/* 첫 번째 행: 모바일에서는 select들만 표시 */}
@@ -76,11 +98,26 @@ export const KeywordGroupControls: React.FC<KeywordGroupControlsProps> = ({
           </div>
         </div>
 
-        {/* 두 번째 행: 모바일에서만 작업시작일 안내 표시 */}
-        <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5 sm:hidden">
-          <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
-          <span className="font-semibold">작업 시작일:</span>
-          <span>총판 승인 다음날부터</span>
+        {/* 두 번째 행: 모바일에서 스왑 버튼과 작업시작일 안내 표시 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          {!isGuarantee && (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() => setKeywordSearchMode(!keywordSearchMode)}
+              className="flex items-center justify-center px-4 py-2 h-9 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm w-full"
+            >
+              {keywordSearchMode ? '직접 입력하기' : '내키워드에서 가져오기'}
+            </Button>
+          )}
+          {keywordSearchMode && (
+            <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5">
+              <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
+              <span className="font-semibold">작업 시작일:</span>
+              <span>총판 승인 다음날부터</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -89,17 +126,32 @@ export const KeywordGroupControls: React.FC<KeywordGroupControlsProps> = ({
   // 일반 모드
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
-      {/* 좌측: 섹션 제목과 작업시작일 안내 */}
+      {/* 좌측: 스왑 버튼, 섹션 제목, 작업시작일 안내 */}
       <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+        {!isGuarantee && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={() => setKeywordSearchMode(!keywordSearchMode)}
+            className="px-4 py-2 h-9 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+          >
+            {keywordSearchMode ? '직접 입력하기' : '내키워드에서 가져오기'}
+          </Button>
+        )}
         <div className="flex items-center gap-3">
           <KeenIcon icon="pencil" className="text-success size-4" />
-          <span className="text-sm font-medium text-foreground">내 키워드에서 가져오기</span>
+          <span className="text-sm font-medium text-foreground">
+            {keywordSearchMode ? '내 키워드에서 가져오기' : '직접 입력 모드'}
+          </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5">
-          <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
-          <span className="font-semibold">작업 시작일:</span>
-          <span>총판 승인 다음날부터</span>
-        </div>
+        {keywordSearchMode && (
+          <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1.5">
+            <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-3.5" />
+            <span className="font-semibold">작업 시작일:</span>
+            <span>총판 승인 다음날부터</span>
+          </div>
+        )}
       </div>
 
       {/* 우측: 그룹 선택과 키워드 검색 */}

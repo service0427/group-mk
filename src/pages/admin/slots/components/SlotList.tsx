@@ -108,7 +108,7 @@ const SlotList: React.FC<SlotListProps> = ({
   const prevSlotIdsRef = useRef<string[]>([]);
   
   // 노출 안할 inputData
-  const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
+  const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'main_keyword', 'minimum_purchase', 'work_days', 'is_manual_input'];
   
   // 슬롯이 변경될 때 모든 팝오버와 모달 닫기
   useEffect(() => {
@@ -459,14 +459,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   <td className="py-3 px-3 text-center">
                     <div className="flex items-center justify-center gap-1 relative">
                       {(() => {
-                        // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
-                        const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
-                        
-                        if (isManualInput) {
-                          return <span className="text-gray-500 text-sm">직접입력</span>;
-                        }
-                      
-                      // 모든 키워드 수집
+                      // 모든 키워드 수집 (직접입력 모드 포함)
                       const allKeywords = [];
                       if (slot.input_data?.mainKeyword) {
                         allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
@@ -761,9 +754,9 @@ const SlotList: React.FC<SlotListProps> = ({
                 {/* 추가정보 */}
                 <td className="py-3 px-3 text-center hidden lg:table-cell">
                   {slot.input_data && (() => {
-                    // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링, is_manual_input 제외
+                    // passItem에 포함되지 않고, _fileName 또는 _file로 끝나지 않는 필드만 필터링
                     const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
-                      !passItem.includes(key) && !key.endsWith('_fileName') && key !== 'is_manual_input'
+                      !passItem.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
                     );
                     
                     if (userInputFields.length === 0) 
@@ -1041,14 +1034,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 <span>
                   <span className="text-gray-500">키워드:</span> 
                   {(() => {
-                    // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
-                    const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
-                    
-                    if (isManualInput) {
-                      return <span className="text-gray-500 ml-1">직접입력</span>;
-                    }
-                  
-                  // 모든 키워드 수집
+                  // 모든 키워드 수집 (직접입력 모드 포함)
                   const allKeywords = [];
                   if (slot.input_data?.mainKeyword) {
                     allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
@@ -1152,9 +1138,9 @@ const SlotList: React.FC<SlotListProps> = ({
             
             {/* 사용자 입력 필드 (접을 수 있는 섹션) */}
             {slot.input_data && (() => {
-              // passItem에 포함되지 않고, _fileName으로 끝나지 않는 필드만 필터링, is_manual_input 제외
+              // passItem에 포함되지 않고, _fileName 또는 _file로 끝나지 않는 필드만 필터링
               const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
-                !passItem.includes(key) && !key.endsWith('_fileName') && key !== 'is_manual_input'
+                !passItem.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
               );
               
               if (userInputFields.length === 0) return null;

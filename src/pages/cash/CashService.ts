@@ -453,6 +453,123 @@ export class CashService {
   }
 
   /**
+   * 자동 완료 환불의 관련 슬롯 정보를 조회합니다.
+   * @param userId 사용자 ID
+   * @param transactionDate 환불 거래 일시
+   * @param amount 환불 금액
+   * @returns 관련 슬롯 정보
+   */
+  public static async getAutoRefundSlots(
+    userId: string,
+    transactionDate: string,
+    amount: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: any[];
+  }> {
+    try {
+      if (!userId) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      // 환불 시점 전후 1시간 내에 완료된 슬롯들을 검색
+      const startTime = new Date(new Date(transactionDate).getTime() - 60 * 60 * 1000).toISOString();
+      const endTime = new Date(new Date(transactionDate).getTime() + 60 * 60 * 1000).toISOString();
+
+      console.log('자동 환불 슬롯 검색 조건:', {
+        userId,
+        transactionDate,
+        startTime,
+        endTime,
+        amount
+      });
+
+      // 기본 슬롯 정보만 먼저 가져오기
+      const { data: slotsData, error } = await supabase
+        .from('slots')
+        .select(`
+          id,
+          user_slot_number,
+          status,
+          processed_at,
+          start_date,
+          end_date,
+          quantity,
+          input_data,
+          keyword_id,
+          product_id
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('processed_at', startTime)
+        .lte('processed_at', endTime)
+        .order('processed_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase 쿼리 에러:', error);
+        throw new Error(`자동 환불 슬롯 조회 실패: ${error.message}`);
+      }
+
+      console.log('기본 슬롯 데이터:', slotsData);
+
+      // 슬롯이 없으면 빈 배열 반환
+      if (!slotsData || slotsData.length === 0) {
+        return {
+          success: true,
+          message: '자동 환불 슬롯 조회 성공',
+          data: []
+        };
+      }
+
+      // 캠페인 정보 별도로 가져오기
+      const productIds = slotsData.map(slot => slot.product_id).filter(Boolean);
+      let campaignsData: any[] = [];
+      
+      if (productIds.length > 0) {
+        const { data: campaigns } = await supabase
+          .from('campaigns')
+          .select('id, campaign_name, service_type')
+          .in('id', productIds);
+        campaignsData = campaigns || [];
+      }
+
+      // 키워드 정보 별도로 가져오기
+      const keywordIds = slotsData.map(slot => slot.keyword_id).filter(Boolean);
+      let keywordsData: any[] = [];
+      
+      if (keywordIds.length > 0) {
+        const { data: keywords } = await supabase
+          .from('keywords')
+          .select('id, main_keyword, keyword1, keyword2, keyword3')
+          .in('id', keywordIds);
+        keywordsData = keywords || [];
+      }
+
+      // 데이터 조합
+      const enrichedSlots = slotsData.map(slot => ({
+        ...slot,
+        campaigns: campaignsData.find(c => c.id === slot.product_id) || null,
+        keywords: keywordsData.find(k => k.id === slot.keyword_id) || null
+      }));
+
+      console.log('최종 조합된 슬롯 데이터:', enrichedSlots);
+
+      return {
+        success: true,
+        message: '자동 환불 슬롯 조회 성공',
+        data: enrichedSlots
+      };
+    } catch (error: any) {
+      
+      return {
+        success: false,
+        message: error.message || '자동 환불 슬롯 조회 중 오류가 발생했습니다.'
+      };
+    }
+  }
+
+  /**
    * 월별 캐시 사용 통계를 조회합니다.
    * @param userId 사용자 ID
    * @param year 연도

@@ -40,7 +40,7 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
 }, ref) => {
   const { currentUser } = useAuthContext();
   const [stats, setStats] = useState<GuaranteeStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previousStats, setPreviousStats] = useState<GuaranteeStats[]>([]);
 
@@ -54,7 +54,10 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
     if (!currentUser) return;
 
     try {
-      setLoading(true);
+      // 초기 로드가 아닌 경우에만 로딩 표시
+      if (stats.length > 0) {
+        setLoading(true);
+      }
       setError(null);
 
       const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
@@ -206,7 +209,10 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
       console.error('보장형 통계 조회 오류:', err);
       setError('통계 데이터를 불러오는데 실패했습니다.');
     } finally {
-      setLoading(false);
+      // 초기 로드 시에는 로딩 상태를 false로 유지
+      if (stats.length > 0) {
+        setLoading(false);
+      }
     }
   }, [currentUser, selectedServiceType, selectedCampaign]);
 
@@ -318,83 +324,83 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
       {isExpanded && (
         <div className="p-6 pt-0">
           {/* 주요 통계 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
             {/* 전체 견적 요청 */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Package className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 md:p-4">
+              <div className="flex items-center justify-between mb-1 md:mb-2">
+                <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-400" />
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {totalStats.request_count.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">견적 요청</div>
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">견적 요청</div>
             </div>
 
             {/* 협상중/대기 */}
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 md:p-4">
+              <div className="flex items-center justify-between mb-1 md:mb-2">
+                <Clock className="w-4 h-4 md:w-5 md:h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {(totalStats.requested_count + totalStats.negotiating_count + totalStats.pending_slot_count).toLocaleString()}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                 <div>대기/협상중</div>
-                <div className="text-xs text-gray-500 dark:text-gray-500">
+                <div className="hidden sm:block text-xs text-gray-500 dark:text-gray-500">
                   (요청 {totalStats.requested_count} + 협상 {totalStats.negotiating_count} + 슬롯대기 {totalStats.pending_slot_count})
                 </div>
               </div>
             </div>
 
             {/* 구매된 슬롯 */}
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 md:p-4">
+              <div className="flex items-center justify-between mb-1 md:mb-2">
+                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400" />
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {totalStats.slot_count.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                 <div>구매 슬롯</div>
                 <div className="text-xs text-gray-500 dark:text-gray-500">(활성 {totalStats.active_slot_count}개)</div>
               </div>
             </div>
 
             {/* 총 보장 금액 */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 md:p-4">
+              <div className="flex items-center justify-between mb-1 md:mb-2">
+                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                ₩{totalStats.total_guarantee_amount.toLocaleString()}
+              <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <span className="hidden sm:inline">₩</span>{totalStats.total_guarantee_amount.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">총 보장 금액</div>
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">총 보장 금액</div>
             </div>
           </div>
 
           {/* 상태별 통계 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">수락됨</div>
-              <div className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1">수락됨</div>
+              <div className="text-lg md:text-xl font-semibold text-blue-600 dark:text-blue-400">
                 {totalStats.accepted_count.toLocaleString()}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">구매완료</div>
-              <div className="text-xl font-semibold text-green-600 dark:text-green-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1">구매완료</div>
+              <div className="text-lg md:text-xl font-semibold text-green-600 dark:text-green-400">
                 {totalStats.purchased_count.toLocaleString()}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">완료됨</div>
-              <div className="text-xl font-semibold text-purple-600 dark:text-purple-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1">완료됨</div>
+              <div className="text-lg md:text-xl font-semibold text-purple-600 dark:text-purple-400">
                 {totalStats.completed_slot_count.toLocaleString()}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">반려됨</div>
-              <div className="text-xl font-semibold text-red-600 dark:text-red-400">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1">반려됨</div>
+              <div className="text-lg md:text-xl font-semibold text-red-600 dark:text-red-400">
                 {totalStats.rejected_slot_count.toLocaleString()}
               </div>
             </div>
@@ -446,13 +452,13 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2 relative">
+                          <div className="w-24 md:w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2 relative">
                             <div
                               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-12 text-right">
+                          <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 w-12 text-right">
                             {percentage}%
                           </span>
                         </div>

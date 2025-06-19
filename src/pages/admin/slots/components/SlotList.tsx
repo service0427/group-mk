@@ -349,7 +349,7 @@ const SlotList: React.FC<SlotListProps> = ({
       <div dangerouslySetInnerHTML={{ __html: campaignStatusStyles }} />
       <div className="card shadow-sm">
         <div className="card-header px-6 py-4">
-          <h3 className="card-title">슬롯 목록</h3>
+          <h3 className="card-title">일반형 슬롯 목록</h3>
           <div className="card-toolbar">
             <div className="flex flex-wrap justify-between items-center gap-2">
               <h3 className="card-title font-medium text-sm">
@@ -397,68 +397,63 @@ const SlotList: React.FC<SlotListProps> = ({
         </div>
       )}
       
-      {/* 데스크탑 및 태블릿 뷰 - 중간(md) 크기 이상에서만 표시 */}
+      {/* 데스크탑 테이블 뷰 */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="table align-middle text-sm w-full text-left border-separate border-spacing-0">
+        <table className="table table-sm w-full">
           <thead>
-            <tr className="bg-muted dark:bg-gray-800/60">
-              <th className="py-3 px-3 text-start">
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="checkbox checkbox-sm checkbox-primary" 
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    title="전체 선택/해제"
-                  />
-                </div>
+            <tr className="text-gray-800 border-b border-gray-200">
+              <th className="w-10">
+                <input 
+                  type="checkbox" 
+                  className="checkbox checkbox-sm" 
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                  title="전체 선택/해제"
+                />
               </th>
-              <th className="py-3 px-3 text-start font-medium">사용자</th>
+              <th className="py-2 px-2 text-start font-medium">사용자</th>
               {!isKeywordUnsupportedService && (
-                <th className="py-3 px-3 text-center font-medium">키워드</th>
+                <th className="py-2 px-2 text-center font-medium">키워드</th>
               )}
-              <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업수</th>
-              <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">작업기간</th>
-              <th className="py-3 px-3 text-center font-medium hidden xl:table-cell">캠페인</th>
-              <th className="py-3 px-3 text-center font-medium">상태</th>
-              <th className="py-3 px-3 text-center font-medium hidden lg:table-cell">추가정보</th>
-              <th className="py-3 px-3 text-center font-medium">상세/메모</th>
-              <th className="py-3 px-3 text-center font-medium">작업</th>
+              <th className="py-2 px-2 text-center font-medium">작업수</th>
+              <th className="py-2 px-2 text-center font-medium">작업기간</th>
+              <th className="py-2 px-2 text-center font-medium">캠페인</th>
+              <th className="py-2 px-2 text-center font-medium">상태</th>
+              <th className="py-2 px-2 text-center font-medium">추가정보</th>
+              <th className="py-2 px-2 text-center font-medium">상세</th>
+              <th className="py-2 px-2 text-center font-medium">작업</th>
             </tr>
           </thead>
           <tbody>
             {slots.map((slot) => (
-              <tr key={slot.id} className="border-b border-border hover:bg-muted/40">
-                <td className="py-3 px-3">
-                  <div className="flex items-center">
-                    {(slot.status === 'pending' || slot.status === 'submitted') && (
-                      <input 
-                        type="checkbox" 
-                        className="checkbox checkbox-sm checkbox-primary"
-                        checked={selectedSlots.includes(slot.id)} 
-                        onChange={() => handleSlotSelect(slot.id)}
-                      />
-                    )}
-                  </div>
+              <tr key={slot.id} className="hover:bg-gray-50">
+                <td className="py-2 px-2">
+                  {(slot.status === 'pending' || slot.status === 'submitted') && (
+                    <input 
+                      type="checkbox" 
+                      className="checkbox checkbox-sm"
+                      checked={selectedSlots.includes(slot.id)} 
+                      onChange={() => handleSlotSelect(slot.id)}
+                    />
+                  )}
                 </td>
                 
                 {/* 사용자 정보 */}
-                <td className="py-3 px-3">
-                  <div className="flex flex-col">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {userMap[slot.user_id]?.full_name || slot.user?.full_name || '이름 없음'}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">
-                      {userMap[slot.user_id]?.email || slot.user?.email || ''}
-                    </span>
+                <td className="py-2 px-2 max-w-[120px]">
+                  <div className="text-sm font-medium text-gray-900 truncate" title={userMap[slot.user_id]?.full_name || slot.user?.full_name || '사용자'}>
+                    {userMap[slot.user_id]?.full_name || slot.user?.full_name || '사용자'}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate" title={userMap[slot.user_id]?.email || slot.user?.email || ''}>
+                    {userMap[slot.user_id]?.email || slot.user?.email || ''}
                   </div>
                 </td>
                 
                 {/* 키워드 정보 */}
                 {!isKeywordUnsupportedService && (
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-2 px-2 text-center max-w-[100px]">
                     <div className="flex items-center justify-center gap-1 relative">
                       {(() => {
+<<<<<<< HEAD
                       // 모든 키워드 수집 (직접입력 모드 포함)
                       const allKeywords = [];
                       if (slot.input_data?.mainKeyword) {
@@ -478,139 +473,43 @@ const SlotList: React.FC<SlotListProps> = ({
                           allKeywords.push({ keyword: kw, isMain: false });
                         });
                       }
+=======
+                        const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
+                        
+                        if (isManualInput) {
+                          return <span className="text-sm text-gray-500">직접입력</span>;
+                        }
+                      
+                        const mainKeyword = slot.input_data?.mainKeyword || 
+                                          slot.input_data?.keyword1 || 
+                                          (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) ? slot.input_data.keywords[0] : null);
+>>>>>>> feature/jhjang
 
-                      if (allKeywords.length === 0) {
-                        return <span className="text-gray-400">-</span>;
-                      }
+                        if (!mainKeyword) {
+                          return <span className="text-sm text-gray-400">-</span>;
+                        }
 
-                      const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
-                      const additionalCount = allKeywords.length - 1;
-
-                      return (
-                        <>
-                          <span className="text-gray-900 dark:text-gray-100 font-medium">
+                        return (
+                          <div className="text-sm text-gray-900 truncate" title={mainKeyword}>
                             {mainKeyword}
-                          </span>
-                          {additionalCount > 0 && (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  setPopoverPosition({
-                                    top: rect.top - 10,
-                                    left: rect.left + rect.width / 2
-                                  });
-                                  setOpenKeywordTooltipId(openKeywordTooltipId === slot.id ? null : slot.id);
-                                }}
-                              >
-                                +{additionalCount}
-                              </button>
-                              {/* Tooltip */}
-                              {openKeywordTooltipId === slot.id && ReactDOM.createPortal(
-                                <>
-                                  {/* 배경 클릭 시 닫기 */}
-                                  <div 
-                                    className="fixed inset-0" 
-                                    style={{zIndex: 9998}}
-                                    onClick={() => setOpenKeywordTooltipId(null)}
-                                  />
-                                  <div 
-                                    className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
-                                    style={{
-                                      zIndex: 99999,
-                                      left: `${popoverPosition.left}px`,
-                                      top: `${popoverPosition.top}px`,
-                                      transform: 'translate(-50%, -100%)'
-                                    }}
-                                  >
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="font-medium text-gray-100">전체 키워드</div>
-                                      <button
-                                        className="text-gray-400 hover:text-gray-200 transition-colors"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenKeywordTooltipId(null);
-                                        }}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                    <div className="space-y-2">
-                                      {/* 메인 키워드 */}
-                                      <div>
-                                        <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
-                                        <div className="flex flex-wrap gap-1">
-                                          {allKeywords.filter(item => item.isMain).map((item, index) => (
-                                            <span
-                                              key={index}
-                                              className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
-                                            >
-                                              {item.keyword}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                      
-                                      {/* 서브 키워드 */}
-                                      {allKeywords.filter(item => !item.isMain).length > 0 && (
-                                        <>
-                                          <div className="border-t border-gray-700 dark:border-gray-600"></div>
-                                          <div>
-                                            <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
-                                            <div className="flex flex-wrap gap-1">
-                                              {allKeywords.filter(item => !item.isMain).map((item, index) => (
-                                                <span
-                                                  key={index}
-                                                  className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                                                    index % 4 === 0
-                                                    ? 'bg-green-500/20 text-green-200'
-                                                    : index % 4 === 1
-                                                    ? 'bg-purple-500/20 text-purple-200'
-                                                    : index % 4 === 2
-                                                    ? 'bg-orange-500/20 text-orange-200'
-                                                    : 'bg-pink-500/20 text-pink-200'
-                                                  }`}
-                                                >
-                                                  {item.keyword}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                    {/* Arrow */}
-                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                                    </div>
-                                  </div>
-                                </>,
-                                document.body
-                              )}
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </td>
                 )}
                 
                 {/* 작업수 */}
-                <td className="py-3 px-3 text-center hidden lg:table-cell">
-                  <span className="text-gray-700 dark:text-gray-300">
+                <td className="py-2 px-2 text-center">
+                  <div className="text-sm text-gray-700">
                     {slot.quantity ? slot.quantity.toLocaleString() : 
                      slot.input_data?.quantity ? slot.input_data.quantity : 
                      slot.input_data?.workCount ? slot.input_data.workCount : '-'}
-                  </span>
+                  </div>
                 </td>
                 
                 {/* 작업기간 */}
-                <td className="py-3 px-3 text-center hidden lg:table-cell">
+                <td className="py-2 px-2 text-center">
                   {slot.start_date && slot.end_date ? (
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-1 mb-1">
@@ -669,16 +568,16 @@ const SlotList: React.FC<SlotListProps> = ({
                 </td>
                 
                 {/* 캠페인 */}
-                <td className="py-3 px-3 text-center hidden xl:table-cell">
-                  <div className="flex items-center justify-center gap-2">
+                <td className="py-2 px-2 text-center max-w-[120px]">
+                  <div className="flex items-center justify-center gap-1">
                     {getCampaignLogo(slot) && (
                       <img 
                         src={getCampaignLogo(slot)} 
                         alt="campaign logo" 
-                        className="w-5 h-5 object-contain rounded"
+                        className="w-4 h-4 object-contain rounded flex-shrink-0"
                       />
                     )}
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-xs text-gray-700 truncate" title={slot.campaign_name || '-'}>
                       {slot.campaign_name || '-'}
                     </span>
                     {getCampaignStatusDot(slot)}
@@ -686,73 +585,89 @@ const SlotList: React.FC<SlotListProps> = ({
                 </td>
                 
                 {/* 상태 */}
-                <td className="py-3 px-3 text-center">
-                  <div>
+                <td className="py-2 px-2 text-center">
+                  <div className="flex items-center justify-center gap-1 flex-wrap">
                     {slot.status === 'pending' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">대기중</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-600">대기중</span>}
                     {slot.status === 'submitted' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">검토중</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">검토중</span>}
                     {slot.status === 'approved' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">승인</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">승인</span>}
                     {slot.status === 'rejected' && (
-                      <div className="inline-flex items-center gap-1">
-                        <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">반려</span>
+                      <>
+                        <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>
                         {slot.rejection_reason && (
-                          <div className="relative inline-block">
-                            <button
-                              className="text-red-500 cursor-pointer hover:text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenRejectionId(openRejectionId === slot.id ? null : slot.id);
-                              }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                              </svg>
-                            </button>
-                            {openRejectionId === slot.id && (
-                              <>
-                                <div className="fixed inset-0 z-40" onClick={() => setOpenRejectionId(null)} />
-                                <div className="absolute z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="font-medium">반려 사유</div>
-                                    <button 
-                                      className="text-gray-400 hover:text-gray-200 transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenRejectionId(null);
-                                      }}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div className="text-gray-200 dark:text-gray-300">{slot.rejection_reason}</div>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          <button 
+                            className="inline-flex items-center justify-center ml-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setPopoverPosition({
+                                top: rect.top - 10,
+                                left: rect.left + rect.width / 2
+                              });
+                              setOpenRejectionId(openRejectionId === slot.id ? null : slot.id);
+                            }}
+                            title="반려 사유 보기"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </button>
                         )}
-                      </div>
+                      </>
                     )}
                     {slot.status === 'success' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">완료</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">완료</span>}
                     {slot.status === 'complete' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 dark:bg-gray-700 text-white">종료</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">종료</span>}
                     {slot.status === 'completed' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">완료</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">완료</span>}
                     {slot.status === 'pending_user_confirm' && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">사용자확인대기</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">사용자확인대기</span>}
                     {!slot.status && 
-                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">-</span>}
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500">-</span>}
                   </div>
+                  {/* 반려 사유 팝오버 */}
+                  {openRejectionId === slot.id && slot.rejection_reason && ReactDOM.createPortal(
+                    <>
+                      {/* 배경 클릭 시 닫기 */}
+                      <div 
+                        className="fixed inset-0" 
+                        style={{zIndex: 9998}}
+                        onClick={() => setOpenRejectionId(null)}
+                      />
+                      <div 
+                        className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600" 
+                        style={{
+                          zIndex: 9999,
+                          left: `${popoverPosition.left}px`,
+                          top: `${popoverPosition.top}px`,
+                          transform: 'translate(-50%, -100%)'
+                        }}>
+                        <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
+                          <span className="font-medium text-gray-100 dark:text-gray-200">반려 사유</span>
+                          <button
+                            className="text-gray-400 hover:text-gray-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenRejectionId(null);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="text-gray-100 dark:text-gray-200">{slot.rejection_reason}</div>
+                      </div>
+                    </>,
+                    document.body
+                  )}
                 </td>
                 
                 {/* 추가정보 */}
-                <td className="py-3 px-3 text-center hidden lg:table-cell">
+                <td className="py-2 px-2 text-center">
                   {slot.input_data && (() => {
                     // passItem에 포함되지 않고, _fileName 또는 _file로 끝나지 않는 필드만 필터링
                     const userInputFields = Object.entries(slot.input_data).filter(([key]) => 

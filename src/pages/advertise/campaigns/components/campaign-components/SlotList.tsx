@@ -743,7 +743,7 @@ const SlotList: React.FC<SlotListProps> = ({
         <div className="card-header px-6 py-3.5" style={{ minHeight: '60px' }}>
           <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-3">
-              <h3 className="card-title text-base">슬롯 목록</h3>
+              <h3 className="card-title text-base">일반형 슬롯 목록</h3>
               {selectedSlots.length > 0 && (
                 <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                   {selectedSlots.length}개 선택됨

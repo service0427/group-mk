@@ -27,6 +27,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CAMPAIGNS } from '@/config/campaign.config';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import GuaranteeNegotiationCompleteModal from '@/components/guarantee-slots/GuaranteeNegotiationCompleteModal';
+import GuaranteeNegotiationRejectModal from '@/components/guarantee-slots/GuaranteeNegotiationRejectModal';
 
 interface GuaranteeNegotiationModalProps {
   open: boolean;
@@ -39,6 +42,7 @@ interface GuaranteeNegotiationModalProps {
 
 interface NegotiationMessage extends GuaranteeSlotNegotiation {
   senderName?: string;
+  sender_role?: string;
 }
 
 export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps> = ({
@@ -70,6 +74,12 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [renegotiateLoading, setRenegotiateLoading] = useState(false);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
+  const [showNegotiationCompleteModal, setShowNegotiationCompleteModal] = useState(false);
+  const [negotiationCompleteData, setNegotiationCompleteData] = useState<{
+    proposedAmount: number;
+    guaranteeCount: number;
+  } | null>(null);
+  const [showNegotiationRejectModal, setShowNegotiationRejectModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef<boolean>(true);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -173,6 +183,14 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           // 구매 확인 모달만 닫기
           setShowPurchaseModal(false);
           setTimeout(() => { isProcessing = false; }, 100);
+        } else if (showNegotiationCompleteModal) {
+          // 협상 완료 확인 모달 닫기
+          setShowNegotiationCompleteModal(false);
+          setTimeout(() => { isProcessing = false; }, 100);
+        } else if (showNegotiationRejectModal) {
+          // 협상 거절 확인 모달 닫기
+          setShowNegotiationRejectModal(false);
+          setTimeout(() => { isProcessing = false; }, 100);
         } else if (isImageModalOpen) {
           // 이미지 모달 닫기
           closeImageModal();
@@ -184,12 +202,12 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     };
 
     // 모달이 하나라도 열려있을 때만 이벤트 리스너 추가
-    if (showFinalConfirm || showPurchaseModal || isImageModalOpen) {
+    if (showFinalConfirm || showPurchaseModal || isImageModalOpen || showNegotiationCompleteModal || showNegotiationRejectModal) {
       // capture phase에서 처리하여 이벤트 전파 차단
       window.addEventListener('keydown', handleEsc, true);
       return () => window.removeEventListener('keydown', handleEsc, true);
     }
-  }, [showFinalConfirm, showPurchaseModal, isImageModalOpen, purchaseLoading]);
+  }, [showFinalConfirm, showPurchaseModal, isImageModalOpen, showNegotiationCompleteModal, showNegotiationRejectModal, purchaseLoading]);
 
   // 견적 요청 정보 가져오기
   const fetchRequestInfo = useCallback(async () => {
@@ -200,6 +218,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (error) throw error;
 
       if (isMountedRef.current) {
+        console.log('fetchRequestInfo 응답 데이터:', data);
         setRequestInfo(data);
       }
     } catch (error) {
@@ -234,7 +253,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         const senderIds = [...new Set(negotiations.map(n => n.sender_id))];
         const { data: users, error: usersError } = await supabase
           .from('users')
-          .select('id, full_name, email')
+          .select('id, full_name, email, role')
           .in('id', senderIds);
 
         if (usersError) throw usersError;
@@ -254,7 +273,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (isMountedRef.current) {
         const formattedMessages: NegotiationMessage[] = data.map((msg: any) => ({
           ...msg,
-          senderName: msg.users?.full_name || msg.users?.email || '사용자'
+          senderName: msg.users?.full_name || msg.users?.email || '사용자',
+          sender_role: msg.users?.role
         }));
         
         setMessages(formattedMessages);
@@ -410,40 +430,71 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     }
   };
 
-  // 협상 수락
-  const handleAcceptNegotiation = async () => {
-    if (!currentUser?.id || loading) return;
-
+  // 협상 수락 버튼 클릭 시 확인 모달 표시
+  const handleAcceptNegotiationClick = () => {
     const lastPriceMessage = [...messages]
       .reverse()
       .find(m => m.message_type === 'price_proposal' || m.message_type === 'counter_offer');
+
+    console.log('협상 수락 클릭 - 마지막 가격 메시지:', lastPriceMessage);
 
     if (!lastPriceMessage?.proposed_daily_amount) {
       toast.error('확정할 가격이 없습니다.');
       return;
     }
 
+    const finalGuaranteeCount = lastPriceMessage.proposed_guarantee_count || requestInfo?.guarantee_count || 0;
+    
+    const completeData = {
+      proposedAmount: lastPriceMessage.proposed_daily_amount,
+      guaranteeCount: finalGuaranteeCount
+    };
+    
+    console.log('설정할 협상 완료 데이터:', completeData);
+    
+    setNegotiationCompleteData(completeData);
+    setShowNegotiationCompleteModal(true);
+  };
+
+  // 협상 수락 처리
+  const handleAcceptNegotiation = async () => {
+    if (!currentUser?.id || loading || !negotiationCompleteData) return;
+
+    console.log('협상 수락 처리 시작:', {
+      negotiationCompleteData,
+      requestId
+    });
+
     try {
       setLoading(true);
 
       // 견적 상태를 수락으로 변경
-      const { error } = await guaranteeSlotRequestService.updateRequestStatus(
+      const { data: updateResult, error } = await guaranteeSlotRequestService.updateRequestStatus(
         requestId,
         'accepted',
-        lastPriceMessage.proposed_daily_amount,
-        lastPriceMessage.proposed_guarantee_count
+        negotiationCompleteData.proposedAmount,
+        negotiationCompleteData.guaranteeCount
       );
+
+      console.log('updateRequestStatus 결과:', { error, updateResult });
 
       if (error) throw error;
 
+      // 업데이트 즉시 로컬 상태도 동기화
+      setRequestInfo((prev: any) => prev ? {
+        ...prev,
+        status: 'accepted',
+        final_daily_amount: negotiationCompleteData.proposedAmount,
+        guarantee_count: negotiationCompleteData.guaranteeCount
+      } : prev);
+
       // 수락 메시지 전송
-      const finalGuaranteeCount = lastPriceMessage.proposed_guarantee_count || requestInfo?.guarantee_count || 0;
-      const totalAmount = lastPriceMessage.proposed_daily_amount * finalGuaranteeCount;
+      const totalAmount = negotiationCompleteData.proposedAmount * negotiationCompleteData.guaranteeCount;
 
       await negotiationService.createMessage(
         {
           request_id: requestId,
-          message: `협상이 완료되었습니다. 최종 조건: ${lastPriceMessage.proposed_daily_amount.toLocaleString()}원/${getGuaranteeUnit()} × ${finalGuaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`,
+          message: `협상이 완료되었습니다. 최종 조건: ${negotiationCompleteData.proposedAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${negotiationCompleteData.guaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`,
           message_type: 'message'
         },
         currentUser.id,
@@ -453,9 +504,10 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (isMountedRef.current) {
         toast.success('협상이 완료되었습니다.');
         onStatusChange?.('accepted');
+        setShowNegotiationCompleteModal(false);
+        setNegotiationCompleteData(null);
         await fetchMessages(false); // 로딩 표시 없이 메시지만 업데이트
-        // 요청 정보만 직접 업데이트
-        setRequestInfo((prev: any) => prev ? { ...prev, status: 'accepted', final_daily_amount: lastPriceMessage.proposed_daily_amount, guarantee_count: finalGuaranteeCount } : prev);
+        console.log('협상 수락 후 처리 완료');
       }
     } catch (error) {
       console.error('협상 수락 실패:', error);
@@ -469,7 +521,12 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     }
   };
 
-  // 협상 거절
+  // 협상 거절 버튼 클릭 시 확인 모달 표시
+  const handleRejectNegotiationClick = () => {
+    setShowNegotiationRejectModal(true);
+  };
+
+  // 협상 거절 처리
   const handleRejectNegotiation = async () => {
     if (!currentUser?.id || loading) return;
 
@@ -495,7 +552,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (isMountedRef.current) {
         toast.success('협상이 거절되었습니다.');
         onStatusChange?.('rejected');
+        setShowNegotiationRejectModal(false);
         await fetchMessages();
+        await fetchRequestInfo(); // 상태 새로고침 추가
       }
     } catch (error) {
       console.error('협상 거절 실패:', error);
@@ -561,7 +620,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           const senderIds = [...new Set(newMessages.map(n => n.sender_id))];
           const { data: users } = await supabase
             .from('users')
-            .select('id, full_name, email')
+            .select('id, full_name, email, role')
             .in('id', senderIds);
 
           const usersMap = users?.reduce((acc: Record<string, any>, user) => {
@@ -571,7 +630,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
           const formattedNewMessages: NegotiationMessage[] = newMessages.map((msg: any) => ({
             ...msg,
-            senderName: usersMap[msg.sender_id]?.full_name || usersMap[msg.sender_id]?.email || '사용자'
+            senderName: usersMap[msg.sender_id]?.full_name || usersMap[msg.sender_id]?.email || '사용자',
+            sender_role: usersMap[msg.sender_id]?.role
           }));
 
           // 새 메시지만 추가 (깜빡임 없음)
@@ -604,6 +664,20 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
           // 마지막 확인 시간 업데이트
           lastCheckedTime = new Date().toISOString();
+          
+          // 협상 완료 메시지가 있으면 요청 정보도 새로고침
+          const hasCompletionMessage = formattedNewMessages.some(msg => 
+            msg.message?.includes('협상이 완료되었습니다')
+          );
+          
+          // 재협상 메시지가 있으면 요청 정보도 새로고침
+          const hasRenegotiateMessage = formattedNewMessages.some(msg => 
+            msg.message?.includes('재협상을 요청합니다')
+          );
+          
+          if (hasCompletionMessage || hasRenegotiateMessage) {
+            await fetchRequestInfo();
+          }
         }
       } catch (error) {
         console.error('새 메시지 확인 실패:', error);
@@ -614,7 +688,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     const interval = setInterval(checkNewMessages, 2000);
 
     return () => clearInterval(interval);
-  }, [open, requestId, currentUser?.id]);
+  }, [open, requestId, currentUser?.id, fetchRequestInfo]);
 
   // 가격 포맷팅
   const formatCurrency = (value: string) => {
@@ -636,9 +710,19 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
   // 메시지 렌더링
   const renderMessage = (message: NegotiationMessage, index: number) => {
-    // 총판 기준으로 무조건 총판이 보내는 입장
+    // 메시지 발신자 확인
     const isDistributor = message.sender_type === 'distributor';
-    const isMyMessage = isDistributor; // 총판 메시지는 항상 오른쪽
+    
+    // 현재 사용자가 보는 화면에 따라 메시지 위치 결정
+    let isMyMessage: boolean;
+    if (currentUserRole === 'user') {
+      // 일반 사용자가 보는 경우: 자신이 보낸 메시지가 오른쪽(파란색)
+      isMyMessage = message.sender_id === currentUser?.id;
+    } else {
+      // 총판/운영자가 보는 경우: 총판이 보낸 메시지가 오른쪽(파란색)
+      isMyMessage = isDistributor;
+    }
+    
     const isSystemMessage = false; // 시스템 메시지는 현재 지원하지 않음
     const isPriceMessage = message.message_type === 'price_proposal' || message.message_type === 'counter_offer';
 
@@ -659,8 +743,42 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       <div key={message.id} className={messageClasses}>
         {/* 발신자 이름 - 모든 메시지에 표시 */}
         {shouldShowTime && (
-          <div className="chat-sticky-message-sender">
-            {isDistributor ? `총판(${message.senderName || '-'})` : `사용자(${message.senderName || '-'})`}
+          <div className="chat-sticky-message-sender flex items-center gap-2">
+            <span>{message.senderName || '-'}</span>
+            {(() => {
+              // 메시지 발신자의 역할 확인
+              const senderRole = message.sender_type === 'distributor' ? 
+                USER_ROLES.DISTRIBUTOR : 
+                message.sender_role;
+              
+              // 역할별 배지 표시
+              if (senderRole === USER_ROLES.DEVELOPER) {
+                return (
+                  <span className="badge badge-outline rounded-[30px] text-purple-600 border-purple-600 text-xs px-2 py-0.5">
+                    개발자
+                  </span>
+                );
+              } else if (senderRole === USER_ROLES.OPERATOR) {
+                return (
+                  <span className="badge badge-outline rounded-[30px] text-indigo-600 border-indigo-600 text-xs px-2 py-0.5">
+                    운영자
+                  </span>
+                );
+              } else if (senderRole === USER_ROLES.DISTRIBUTOR) {
+                return (
+                  <span className="badge badge-outline rounded-[30px] text-amber-600 border-amber-600 text-xs px-2 py-0.5">
+                    총판
+                  </span>
+                );
+              } else {
+                // 대행사, 광고주, 비기너는 모두 '사용자'로 표시
+                return (
+                  <span className="badge badge-outline rounded-[30px] text-blue-600 border-blue-600 text-xs px-2 py-0.5">
+                    사용자
+                  </span>
+                );
+              }
+            })()}
           </div>
         )}
 
@@ -1000,14 +1118,33 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
   const isNegotiationActive = currentStatus === 'requested' || currentStatus === 'negotiating';
   const canSendMessages = isNegotiationActive;
 
+  // 디버깅을 위한 로깅
+  React.useEffect(() => {
+    if (open && requestInfo) {
+      console.log('협상 모달 상태 디버깅:', {
+        currentStatus,
+        currentUserRole,
+        final_daily_amount: requestInfo.final_daily_amount,
+        guarantee_count: requestInfo.guarantee_count,
+        canShowPurchase: currentStatus === 'accepted' && currentUserRole === 'user' && requestInfo?.final_daily_amount
+      });
+    }
+  }, [open, currentStatus, currentUserRole, requestInfo?.final_daily_amount, requestInfo?.guarantee_count]);
+
   return (
     <>
-      <Dialog open={open} onOpenChange={isImageModalOpen || showPurchaseModal || showFinalConfirm ? undefined : onClose}>
+      <Dialog 
+        open={open} 
+        onOpenChange={isImageModalOpen || showPurchaseModal || showFinalConfirm || showNegotiationCompleteModal || showNegotiationRejectModal ? undefined : onClose}
+      >
         <DialogContent
           className="max-w-3xl h-[80vh] flex flex-col"
           aria-describedby={undefined}
-          style={{ pointerEvents: showPurchaseModal || showFinalConfirm ? 'none' : 'auto' }}
         >
+          {/* 확인 모달이 열렸을 때 협상 모달을 가리는 오버레이 */}
+          {(showNegotiationCompleteModal || showNegotiationRejectModal) && (
+            <div className="absolute inset-0 bg-black/20 z-[10005] rounded-lg" />
+          )}
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <KeenIcon icon="message-text" className="size-5 text-primary" />
@@ -1430,14 +1567,13 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
                   {/* 수락/거절/닫기 버튼 */}
                   <div className="flex gap-2">
-                    {/* 수락/거절 버튼 (협상 완료 권한이 있는 경우만) */}
-                    {currentUserRole === 'distributor' && messages.some(m =>
-                      m.message_type === 'price_proposal' || m.message_type === 'counter_offer'
-                    ) && (
+                    {/* 수락/거절 버튼 (총판/운영자/개발자이고 가격 제안이 있는 경우) */}
+                    {(currentUserRole === 'distributor' || hasPermission(currentUser?.role, PERMISSION_GROUPS.ADMIN)) && 
+                     messages.some(m => m.message_type === 'price_proposal' || m.message_type === 'counter_offer') && (
                         <>
                           <Button
                             size="sm"
-                            onClick={handleAcceptNegotiation}
+                            onClick={handleAcceptNegotiationClick}
                             disabled={loading}
                             className="bg-green-600 hover:bg-green-700"
                           >
@@ -1447,7 +1583,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleRejectNegotiation}
+                            onClick={handleRejectNegotiationClick}
                             disabled={loading}
                             className="border-red-200 text-red-600 hover:bg-red-50"
                           >
@@ -1474,6 +1610,27 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
               </div>
             ) : (
               <div className="flex-shrink-0 space-y-4">
+                {/* 재협상 안내 (협상중 상태로 변경되었을 때) */}
+                {currentStatus === 'negotiating' && messages.some(msg => msg.message?.includes('재협상을 요청합니다')) && (
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-orange-800 dark:text-orange-200 mb-2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                        <path d="M3 21v-5h5" />
+                      </svg>
+                      <span className="font-semibold">재협상이 시작되었습니다</span>
+                    </div>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">
+                      {currentUserRole === 'user' ? 
+                        '총판이 재협상을 요청했습니다. 새로운 조건을 협의해주세요.' :
+                        '재협상이 진행 중입니다. 새로운 조건을 제안해주세요.'
+                      }
+                    </p>
+                  </div>
+                )}
+
                 {/* 구매 섹션 (협상 완료 시 광고주에게만 표시) */}
                 {currentStatus === 'accepted' && currentUserRole === 'user' && requestInfo?.final_daily_amount && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -1535,36 +1692,23 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                   </div>
                 )}
 
-                {/* 총판용 재협상 섹션 (협상 완료 시 총판에게만 표시) */}
-                {currentStatus === 'accepted' && currentUserRole === 'distributor' && (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-200 flex items-center gap-1">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600">
-                          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                          <path d="M21 3v5h-5" />
-                          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                          <path d="M3 21v-5h5" />
-                        </svg>
-                        협상 관리
-                      </h4>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
-                          {requestInfo?.final_daily_amount && requestInfo?.guarantee_count ?
-                            (requestInfo.final_daily_amount * requestInfo.guarantee_count).toLocaleString() : '0'}원
-                        </div>
-                        <div className="text-xs text-orange-600 dark:text-orange-400">
-                          (VAT 포함: {requestInfo?.final_daily_amount && requestInfo?.guarantee_count ?
-                            Math.floor(requestInfo.final_daily_amount * requestInfo.guarantee_count * 1.1).toLocaleString() : '0'}원)
-                        </div>
-                      </div>
+                {/* 총판용 협상 완료 안내 (협상 완료 시 총판에게만 표시) */}
+                {currentStatus === 'accepted' && (currentUserRole === 'distributor' || hasPermission(currentUser?.role, PERMISSION_GROUPS.ADMIN)) && (
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-green-800 dark:text-green-200 mb-2">
+                      <KeenIcon icon="check-circle" className="size-5" />
+                      <span className="font-semibold">협상이 완료되었습니다!</span>
                     </div>
-
-                    <div className="text-xs text-orange-700 dark:text-orange-300 mb-2">
-                      합의 완료: {getUnitText()} {requestInfo?.final_daily_amount?.toLocaleString() || '0'}원 × {requestInfo?.guarantee_count || '0'}{getGuaranteeUnit()}
+                    <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                      <p>최종 조건: {requestInfo?.final_daily_amount?.toLocaleString() || 0}원/{getUnitText()} × {requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</p>
+                      <p>총 금액: {requestInfo?.final_daily_amount && requestInfo?.guarantee_count ?
+                        (requestInfo.final_daily_amount * requestInfo.guarantee_count).toLocaleString() : '0'}원 (VAT 별도)</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                        <KeenIcon icon="information-2" className="size-3 inline mr-1" />
+                        사용자가 구매를 진행할 수 있도록 알림이 전송되었습니다.
+                      </p>
                     </div>
-
-                    <div className="pt-2 border-t border-orange-200 dark:border-orange-700 flex justify-center">
+                    <div className="pt-2 border-t border-green-200 dark:border-green-700 flex justify-center">
                       <Button
                         variant="outline"
                         onClick={handleRenegotiate}
@@ -2068,6 +2212,34 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         </div>,
         document.body
       )}
+      
+      
+      {/* 협상 완료 확인 모달 */}
+      <GuaranteeNegotiationCompleteModal
+        isOpen={showNegotiationCompleteModal}
+        onClose={() => {
+          setShowNegotiationCompleteModal(false);
+          setNegotiationCompleteData(null);
+        }}
+        onConfirm={handleAcceptNegotiation}
+        campaignName={requestInfo?.campaigns?.campaign_name}
+        proposedAmount={negotiationCompleteData?.proposedAmount || 0}
+        guaranteeCount={negotiationCompleteData?.guaranteeCount || 0}
+        guaranteeUnit={requestInfo?.campaigns?.guarantee_unit}
+        targetRank={requestInfo?.target_rank || 1}
+        isLoading={loading}
+      />
+      
+      {/* 협상 거절 확인 모달 */}
+      <GuaranteeNegotiationRejectModal
+        isOpen={showNegotiationRejectModal}
+        onClose={() => {
+          setShowNegotiationRejectModal(false);
+        }}
+        onConfirm={handleRejectNegotiation}
+        campaignName={requestInfo?.campaigns?.campaign_name}
+        isLoading={loading}
+      />
     </>
   );
 };

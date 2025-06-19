@@ -5,3 +5,4 @@ export { KeywordGroupControls } from './KeywordGroupControls';
 export { PaymentSummarySection } from './PaymentSummarySection';
 export { ManualServiceForm } from './ManualServiceForm';
 export { ManualPaymentSection } from './ManualPaymentSection';
+export { DirectInputKeywordForm } from './DirectInputKeywordForm';

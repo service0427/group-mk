@@ -577,7 +577,7 @@ const MyServicesPage: React.FC = () => {
 
       {/* 메인 콘텐츠 - 뷰 모드에 따라 다른 컴포넌트 표시 */}
       {viewMode === 'guarantee' ? (
-        <MyGuaranteeQuotesContent />
+        <MyGuaranteeQuotesContent selectedService={selectedService} />
       ) : (
         <>
           {/* 검색 카드 */}
@@ -590,7 +590,7 @@ const MyServicesPage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <h3 className="text-base font-medium mb-4">슬롯 검색</h3>
+                  <h3 className="text-base font-medium mb-4">일반형 슬롯 검색</h3>
 
               {/* 데스크톱 검색 폼 */}
               <div className="hidden md:block space-y-4">

@@ -456,16 +456,34 @@ const SlotList: React.FC<SlotListProps> = ({
                         const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
                         
                         if (isManualInput) {
-                          return <span className="text-sm text-gray-500">직접입력</span>;
+                          return <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">직접입력</span>;
                         }
                       
-                        const mainKeyword = slot.input_data?.mainKeyword || 
-                                          slot.input_data?.keyword1 || 
-                                          (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) ? slot.input_data.keywords[0] : null);
+                        // 모든 키워드 수집
+                        const allKeywords = [];
+                        if (slot.input_data?.mainKeyword) {
+                          allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
+                        }
+                        if (slot.input_data?.keyword1) {
+                          allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
+                        }
+                        if (slot.input_data?.keyword2) {
+                          allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
+                        }
+                        if (slot.input_data?.keyword3) {
+                          allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
+                        }
+                        if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
+                          slot.input_data.keywords.forEach((kw: string) => {
+                            allKeywords.push({ keyword: kw, isMain: false });
+                          });
+                        }
 
-                        if (!mainKeyword) {
+                        if (allKeywords.length === 0) {
                           return <span className="text-sm text-gray-400">-</span>;
                         }
+
+                        const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
 
                         return (
                           <div className="text-sm text-gray-900 truncate" title={mainKeyword}>
@@ -931,7 +949,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
                     
                     if (isManualInput) {
-                      return <span className="text-gray-500 ml-1">직접입력</span>;
+                      return <span className="text-purple-600 dark:text-purple-400 font-medium ml-1">직접입력</span>;
                     }
                   
                   // 모든 키워드 수집

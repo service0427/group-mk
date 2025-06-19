@@ -455,14 +455,11 @@ const SlotList: React.FC<SlotListProps> = ({
                       {(() => {
                         const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
                         
-                        if (isManualInput) {
-                          return <div className="font-medium text-purple-600 dark:text-purple-400">직접입력</div>;
-                        }
-                        
+                        // 직접입력이든 내 키워드든 동일한 방식으로 표시
                         return (
                           <>
                             <div className="font-medium text-blue-600 dark:text-blue-400">
-                              {slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
+                              {slot.input_data?.main_keyword || slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
                             </div>
                             
                             {/* 추가 키워드 */}

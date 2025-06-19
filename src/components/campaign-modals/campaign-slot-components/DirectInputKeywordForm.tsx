@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FieldType } from '../types';
 import { useKeywordFieldConfig } from '@/pages/keyword/hooks/useKeywordFieldConfig';
+import { useAuthContext } from '@/auth/useAuthContext';
+import { supabase } from '@/supabase';
 
 interface DirectInputKeywordFormProps {
   slotData: any;
@@ -21,6 +23,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
   resetTrigger
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
+  const { currentUser } = useAuthContext();
   
   // resetTrigger가 변경되면 uploadedFiles 초기화 및 입력 필드 초기화
   React.useEffect(() => {
@@ -78,6 +81,51 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
       
       return newData;
     });
+  };
+  
+  // 파일을 Supabase에 업로드하는 함수
+  const uploadFileToSupabase = async (file: File, field: any) => {
+    try {
+      // 파일명을 안전하게 처리
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const filePath = `campaign-files/${currentUser?.id || 'anonymous'}/${safeFileName}`;
+
+      // Supabase Storage에 업로드
+      const { data, error } = await supabase.storage
+        .from('campaign-files')
+        .upload(filePath, file, {
+          upsert: true,
+          cacheControl: '3600'
+        });
+
+      if (error) {
+        console.error('파일 업로드 오류:', error);
+        alert('파일 업로드 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // 공개 URL 가져오기
+      const { data: urlData } = supabase.storage
+        .from('campaign-files')
+        .getPublicUrl(filePath);
+
+      if (urlData?.publicUrl) {
+        // 파일 URL과 파일명을 input_data에 저장
+        setSlotData((prev: any) => ({
+          ...prev,
+          input_data: {
+            ...prev.input_data,
+            [field.fieldName]: file.name,  // 필드명으로 파일명 저장 (검증용)
+            [`${field.fieldName}_fileName`]: file.name,
+            [`${field.fieldName}_file`]: urlData.publicUrl
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('파일 업로드 오류:', error);
+      alert('파일 업로드 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -215,14 +263,9 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                         }
                         
                         setUploadedFiles(prev => ({ ...prev, [field.fieldName]: file }));
-                        setSlotData((prev: any) => ({
-                          ...prev,
-                          input_data: {
-                            ...prev.input_data,
-                            [field.fieldName]: file.name,
-                            [`${field.fieldName}_file`]: file
-                          }
-                        }));
+                        
+                        // 파일을 Supabase에 업로드하는 함수 호출
+                        uploadFileToSupabase(file, field);
                       }
                     }}
                     className="hidden"
@@ -251,8 +294,9 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                             ...prev,
                             input_data: {
                               ...prev.input_data,
-                              [field.fieldName]: '',
-                              [`${field.fieldName}_file`]: null
+                              [field.fieldName]: '',  // 필드명도 초기화
+                              [`${field.fieldName}_fileName`]: '',
+                              [`${field.fieldName}_file`]: ''
                             }
                           }));
                         }}

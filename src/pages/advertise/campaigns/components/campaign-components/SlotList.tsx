@@ -621,7 +621,7 @@ const SlotList: React.FC<SlotListProps> = ({
     // 캠페인의 serviceType이나 URL의 serviceType 체크
     const service = item.campaign?.serviceType || serviceType;
     if (service?.includes('Naver') || service?.includes('naver')) {
-      return '/media/ad-brand/naver-ci.png';
+      return '/media/ad-brand/naver.png';
     } else if (service?.includes('Coupang') || service?.includes('coupang')) {
       return '/media/ad-brand/coupang-app.png';
     } else if (service?.includes('ohouse')) {

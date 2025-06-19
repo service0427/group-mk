@@ -88,7 +88,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     // 없으면 서비스 타입에 따른 기본 로고 사용
     const service = item?.campaigns?.service_type || item?.service_type || '';
     if (service.includes('naver') || service.includes('Naver')) {
-      return '/media/ad-brand/naver-ci.png';
+      return '/media/ad-brand/naver.png';
     } else if (service.includes('coupang') || service.includes('Coupang')) {
       return '/media/ad-brand/coupang-app.png';
     } else if (service.includes('ohouse')) {
@@ -114,7 +114,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         } else if (serviceType.includes('Blog')) {
           logo = '/media/ad-brand/naver-blog.png';
         } else if (serviceType.includes('Auto')) {
-          logo = '/media/ad-brand/naver-ci.png';
+          logo = '/media/ad-brand/naver.png';
         } else if (serviceType.includes('Coupang')) {
           logo = '/media/ad-brand/coupang-app.png';
         } else {

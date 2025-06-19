@@ -182,7 +182,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                       } else if (serviceType.includes('NaverBlog')) {
                         logo = '/media/ad-brand/naver-blog.png';
                       } else if (serviceType.includes('Naver')) {
-                        logo = '/media/ad-brand/naver-ci.png';
+                        logo = '/media/ad-brand/naver.png';
                       } else if (serviceType.includes('Coupang')) {
                         logo = '/media/ad-brand/coupang-app.png';
                       } else if (serviceType.includes('Instagram')) {

@@ -102,7 +102,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
     // 없으면 서비스 타입에 따른 기본 로고 사용
     const service = item.service_type || '';
     if (service.includes('naver') || service.includes('Naver')) {
-      return '/media/ad-brand/naver-ci.png';
+      return '/media/ad-brand/naver.png';
     } else if (service.includes('coupang') || service.includes('Coupang')) {
       return '/media/ad-brand/coupang-app.png';
     } else if (service.includes('ohouse')) {

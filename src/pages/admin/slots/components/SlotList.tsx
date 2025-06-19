@@ -337,7 +337,7 @@ const SlotList: React.FC<SlotListProps> = ({
     // 없으면 서비스 타입에 따른 기본 로고 사용
     const serviceType = slot.input_data?.service_type;
     if (serviceType?.includes('Naver')) {
-      return '/media/ad-brand/naver-ci.png';
+      return '/media/ad-brand/naver.png';
     } else if (serviceType?.includes('Coupang')) {
       return '/media/ad-brand/coupang-app.png';
     }
@@ -450,45 +450,50 @@ const SlotList: React.FC<SlotListProps> = ({
                 
                 {/* 키워드 정보 */}
                 {!isKeywordUnsupportedService && (
-                  <td className="py-2 px-2 text-center max-w-[100px]">
-                    <div className="flex items-center justify-center gap-1 relative">
+                  <td className="py-2 px-2">
+                    <div className="flex flex-col">
                       {(() => {
                         const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
                         
                         if (isManualInput) {
-                          return <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">직접입력</span>;
+                          return <div className="font-medium text-purple-600 dark:text-purple-400">직접입력</div>;
                         }
-                      
-                        // 모든 키워드 수집
-                        const allKeywords = [];
-                        if (slot.input_data?.mainKeyword) {
-                          allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
-                        }
-                        if (slot.input_data?.keyword1) {
-                          allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
-                        }
-                        if (slot.input_data?.keyword2) {
-                          allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
-                        }
-                        if (slot.input_data?.keyword3) {
-                          allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
-                        }
-                        if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
-                          slot.input_data.keywords.forEach((kw: string) => {
-                            allKeywords.push({ keyword: kw, isMain: false });
-                          });
-                        }
-
-                        if (allKeywords.length === 0) {
-                          return <span className="text-sm text-gray-400">-</span>;
-                        }
-
-                        const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
-
+                        
                         return (
-                          <div className="text-sm text-gray-900 truncate" title={mainKeyword}>
-                            {mainKeyword}
-                          </div>
+                          <>
+                            <div className="font-medium text-blue-600 dark:text-blue-400">
+                              {slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
+                            </div>
+                            
+                            {/* 추가 키워드 */}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 0 ? (
+                                slot.input_data.keywords.map((keyword: any, idx: number) => (
+                                  <span key={idx} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                    {keyword}
+                                  </span>
+                                ))
+                              ) : (
+                                <>
+                                  {slot.input_data?.keyword1 && (
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                      {slot.input_data.keyword1}
+                                    </span>
+                                  )}
+                                  {slot.input_data?.keyword2 && (
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                      {slot.input_data.keyword2}
+                                    </span>
+                                  )}
+                                  {slot.input_data?.keyword3 && (
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                      {slot.input_data.keyword3}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </>
                         );
                       })()}
                     </div>

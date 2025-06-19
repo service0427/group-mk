@@ -40,6 +40,13 @@ interface GuaranteeItem {
     guarantee_unit?: string;
     logo?: string;
   };
+  // 보장형 슬롯 정보
+  guarantee_slots?: Array<{
+    id: string;
+    status: 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
 interface GuaranteeQuotesListProps {
@@ -52,6 +59,7 @@ interface GuaranteeQuotesListProps {
   selectedRequests?: string[];
   onSelectedRequestsChange?: (selected: string[]) => void;
   showBulkActions?: boolean;
+  onRefundRequest?: (requestId: string) => void;
 }
 
 export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
@@ -62,7 +70,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
   hasFilters = false,
   selectedRequests = [],
   onSelectedRequestsChange,
-  showBulkActions = false
+  showBulkActions = false,
+  onRefundRequest
 }) => {
   // 체크박스 선택 함수
   const handleRequestSelect = (requestId: string) => {
@@ -257,8 +266,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                 <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">키워드</th>
                 <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                 <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
-                <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">협상신청일</th>
-                <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
+                <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">신청일</th>
+                <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일/종료일</th>
                 <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
                 <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">관리</th>
               </tr>
@@ -357,36 +366,43 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                       </span>
                     </td>
                     
-                    {/* 협상신청일 */}
+                    {/* 신청일 */}
                     <td className="py-2 px-3 text-center w-[8%]">
                       <span className="text-xs text-gray-500">
                         {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
                       </span>
                     </td>
                     
-                    {/* 마감일 */}
+                    {/* 시작일/종료일 */}
                     <td className="py-2 px-3 text-center w-[8%]">
-                      <span className="text-xs text-gray-500">
-                        {item.end_date ? 
-                          new Date(item.end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) :
-                          '-'
-                        }
-                      </span>
+                      <div className="text-xs text-gray-500">
+                        {item.status === 'purchased' && item.guarantee_slots?.[0]?.status === 'active' && item.guarantee_slots[0].start_date ? (
+                          <>
+                            <div>{new Date(item.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</div>
+                            <div className="text-[10px] text-gray-400">~{item.guarantee_slots[0].end_date ? new Date(item.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</div>
+                          </>
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </div>
                     </td>
                     
                     {/* 남은일 */}
                     <td className="py-2 px-3 text-center w-[6%]">
                       <span className="text-xs text-gray-500">
                         {(() => {
-                          if (!item.end_date) return '-';
-                          const today = new Date();
-                          const endDate = new Date(item.end_date);
-                          const diffTime = endDate.getTime() - today.getTime();
-                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                          
-                          if (diffDays < 0) return '마감';
-                          if (diffDays === 0) return '오늘';
-                          return `${diffDays}일`;
+                          // 활성 슬롯의 경우 종료일 기준으로 계산
+                          if (item.status === 'purchased' && item.guarantee_slots?.[0]?.status === 'active' && item.guarantee_slots[0].end_date) {
+                            const today = new Date();
+                            const endDate = new Date(item.guarantee_slots[0].end_date);
+                            const diffTime = endDate.getTime() - today.getTime();
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            if (diffDays < 0) return '종료';
+                            if (diffDays === 0) return '오늘';
+                            return `D-${diffDays}`;
+                          }
+                          return '-';
                         })()}
                       </span>
                     </td>
@@ -396,13 +412,12 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                       <div className="flex items-center justify-center gap-2">
                         {(item.status === 'requested' || item.status === 'negotiating') && (
                           <Button
-                            variant="outline"
                             size="sm"
                             onClick={() => onOpenNegotiationModal(item)}
-                            className="text-xs"
+                            className="text-xs bg-amber-500 hover:bg-amber-600 text-white"
                           >
                             <KeenIcon icon="message-programming" className="size-3 mr-1" />
-                            {item.status === 'requested' ? '메시지 확인' : '협상'}
+                            협상
                           </Button>
                         )}
                         {item.status === 'accepted' && (
@@ -419,13 +434,23 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                           </Button>
                         )}
                         {item.status === 'purchased' && (
-                          <span className="text-xs text-green-600 font-medium">구매완료</span>
+                          <>
+                            {item.guarantee_slots?.[0]?.status === 'active' ? (
+                              <Button
+                                size="sm"
+                                onClick={() => onRefundRequest?.(item.id)}
+                                className="text-xs bg-red-500 hover:bg-red-600 text-white"
+                              >
+                                <KeenIcon icon="wallet" className="size-3 mr-1" />
+                                환불
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-green-600 font-medium">구매완료</span>
+                            )}
+                          </>
                         )}
                         {item.status === 'rejected' && (
                           <span className="text-xs text-red-500">거절됨</span>
-                        )}
-                        {item.status === 'requested' && (
-                          <span className="text-xs text-gray-500">대기중</span>
                         )}
                       </div>
                     </td>
@@ -516,13 +541,12 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                 <div>
                   {(item.status === 'requested' || item.status === 'negotiating') && (
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={() => onOpenNegotiationModal(item)}
-                      className="text-xs"
+                      className="text-xs bg-amber-500 hover:bg-amber-600 text-white"
                     >
                       <KeenIcon icon="message-programming" className="size-3 mr-1" />
-                      {item.status === 'requested' ? '메시지 확인' : '협상'}
+                      협상
                     </Button>
                   )}
                   {item.status === 'accepted' && (
@@ -539,7 +563,20 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                     </Button>
                   )}
                   {item.status === 'purchased' && (
-                    <span className="text-xs text-green-600 font-medium">구매완료</span>
+                    <>
+                      {item.guarantee_slots?.[0]?.status === 'active' ? (
+                        <Button
+                          size="sm"
+                          onClick={() => onRefundRequest?.(item.id)}
+                          className="text-xs bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          <KeenIcon icon="wallet" className="size-3 mr-1" />
+                          환불
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-green-600 font-medium">구매완료</span>
+                      )}
+                    </>
                   )}
                   {item.status === 'rejected' && (
                     <span className="text-xs text-red-500">거절됨</span>

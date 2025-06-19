@@ -18,6 +18,9 @@ import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlot
 import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
 import GuaranteeExcelExportModal from '@/components/guarantee-slots/GuaranteeExcelExportModal';
 import GuaranteeMonthlyStatistics, { GuaranteeMonthlyStatisticsRef } from './components/GuaranteeMonthlyStatistics';
+import GuaranteeRequestApprovalModal from '@/components/guarantee-slots/GuaranteeRequestApprovalModal';
+import GuaranteeRequestRejectModal from '@/components/guarantee-slots/GuaranteeRequestRejectModal';
+import GuaranteeRequestCancelRejectModal from '@/components/guarantee-slots/GuaranteeRequestCancelRejectModal';
 import * as XLSX from 'xlsx';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import type { ExcelColumn } from '@/components/guarantee-slots/GuaranteeExcelExportModal';
@@ -147,6 +150,24 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   // 엑셀 내보내기 모달 상태
   const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
+
+  // 요청 승인/반려 모달 상태
+  const [requestApprovalModalOpen, setRequestApprovalModalOpen] = useState(false);
+  const [requestApprovalData, setRequestApprovalData] = useState<{
+    requestId: string;
+    campaignName?: string;
+  } | null>(null);
+  const [requestRejectModalOpen, setRequestRejectModalOpen] = useState(false);
+  const [requestRejectData, setRequestRejectData] = useState<{
+    requestId: string;
+    campaignName?: string;
+  } | null>(null);
+  const [requestCancelRejectModalOpen, setRequestCancelRejectModalOpen] = useState(false);
+  const [requestCancelRejectData, setRequestCancelRejectData] = useState<{
+    requestId: string;
+    campaignName?: string;
+  } | null>(null);
+  const [requestProcessing, setRequestProcessing] = useState(false);
 
   // 캠페인 관련 상태
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -488,37 +509,93 @@ const GuaranteeQuotesPage: React.FC = () => {
     return logo;
   };
 
+  // 요청 승인 모달 열기
+  const handleOpenApprovalModal = (requestId: string, campaignName?: string) => {
+    setRequestApprovalData({ requestId, campaignName });
+    setRequestApprovalModalOpen(true);
+  };
+
   // 요청 승인
-  const handleApproveRequest = async (requestId: string) => {
+  const handleApproveRequest = async () => {
+    if (!requestApprovalData) return;
+    
     try {
-      const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestId, 'accepted');
+      setRequestProcessing(true);
+      const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestApprovalData.requestId, 'accepted');
 
       if (error) {
         throw error;
       }
 
       showSuccess('견적 요청이 승인되었습니다.');
+      setRequestApprovalModalOpen(false);
+      setRequestApprovalData(null);
       fetchRequests();
     } catch (error) {
       console.error('승인 실패:', error);
       showError('요청 승인 중 오류가 발생했습니다.');
+    } finally {
+      setRequestProcessing(false);
     }
   };
 
+  // 요청 반려 모달 열기
+  const handleOpenRejectModal = (requestId: string, campaignName?: string) => {
+    setRequestRejectData({ requestId, campaignName });
+    setRequestRejectModalOpen(true);
+  };
+
   // 요청 거절
-  const handleRejectRequest = async (requestId: string) => {
+  const handleRejectRequest = async () => {
+    if (!requestRejectData) return;
+    
     try {
-      const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestId, 'rejected');
+      setRequestProcessing(true);
+      const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestRejectData.requestId, 'rejected');
 
       if (error) {
         throw error;
       }
 
       showSuccess('견적 요청이 거절되었습니다.');
+      setRequestRejectModalOpen(false);
+      setRequestRejectData(null);
       fetchRequests();
     } catch (error) {
       console.error('거절 실패:', error);
       showError('요청 거절 중 오류가 발생했습니다.');
+    } finally {
+      setRequestProcessing(false);
+    }
+  };
+
+  // 요청 거절 취소 모달 열기
+  const handleOpenCancelRejectModal = (requestId: string, campaignName?: string) => {
+    setRequestCancelRejectData({ requestId, campaignName });
+    setRequestCancelRejectModalOpen(true);
+  };
+
+  // 요청 거절 취소 처리
+  const handleCancelRejectRequest = async () => {
+    if (!requestCancelRejectData) return;
+    
+    try {
+      setRequestProcessing(true);
+      const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestCancelRejectData.requestId, 'negotiating');
+
+      if (error) {
+        throw error;
+      }
+
+      showSuccess('거절이 취소되었습니다. 협상 상태로 돌아갔습니다.');
+      setRequestCancelRejectModalOpen(false);
+      setRequestCancelRejectData(null);
+      fetchRequests();
+    } catch (error) {
+      console.error('거절 취소 실패:', error);
+      showError('거절 취소 중 오류가 발생했습니다.');
+    } finally {
+      setRequestProcessing(false);
     }
   };
 
@@ -1357,7 +1434,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                           {request.status === 'negotiating' &&
                             <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
                           {request.status === 'accepted' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">승인</span>}
+                            <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">구매결정</span>}
                           {request.status === 'rejected' &&
                             <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">거절</span>}
                           {request.status === 'expired' &&
@@ -1383,17 +1460,32 @@ const GuaranteeQuotesPage: React.FC = () => {
                       </td>
                       {/* 상세 */}
                       <td className="py-2 px-2 text-center">
-                        <button
-                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                          onClick={() => {
-                            setDetailRequestId(request.id);
-                            setDetailModalOpen(true);
-                          }}
-                          title="상세보기"
-                          disabled={negotiationModal.open}
-                        >
-                          상세
-                        </button>
+                        <div className="flex gap-1 justify-center">
+                          <button
+                            className="btn btn-icon btn-sm btn-ghost text-blue-600"
+                            onClick={() => {
+                              setDetailRequestId(request.id);
+                              setDetailModalOpen(true);
+                            }}
+                            title="상세보기"
+                            disabled={negotiationModal.open}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                          </button>
+                          <button
+                            className="btn btn-icon btn-sm btn-ghost text-amber-600"
+                            onClick={() => handleOpenNegotiation(request)}
+                            title="협상하기"
+                            disabled={negotiationModal.open}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                       {/* 작업 */}
                       <td className="py-2 px-1 text-center">
@@ -1412,36 +1504,26 @@ const GuaranteeQuotesPage: React.FC = () => {
                                 </button>
                               )}
                               {request.status === 'negotiating' && (
-                                <>
-                                  <button
-                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
-                                    onClick={() => handleApproveRequest(request.id)}
-                                    title="승인"
-                                    disabled={negotiationModal.open}
-                                  >
-                                    승인
-                                  </button>
-                                  <button
-                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
-                                    onClick={() => handleRejectRequest(request.id)}
-                                    title="거절"
-                                    disabled={negotiationModal.open}
-                                  >
-                                    반려
-                                  </button>
-                                </>
-                              )}
-                              {request.status === 'accepted' && (
                                 <button
-                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                                  onClick={() => {
-                                    // TODO: 구매 확인 구현
-                                    console.log('구매 확인:', request);
-                                  }}
-                                  title="구매 확인"
+                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                                  onClick={() => handleOpenNegotiation(request)}
+                                  title="협상하기"
                                   disabled={negotiationModal.open}
                                 >
-                                  완료
+                                  협상
+                                </button>
+                              )}
+                              {request.status === 'accepted' && (
+                                <span className="text-xs text-gray-500">-</span>
+                              )}
+                              {request.status === 'rejected' && (
+                                <button
+                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
+                                  onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
+                                  title="거절 취소"
+                                  disabled={negotiationModal.open}
+                                >
+                                  거절 취소
                                 </button>
                               )}
                               {request.status === 'purchased' && request.guarantee_slots && request.guarantee_slots.length > 0 && (
@@ -1637,20 +1719,20 @@ const GuaranteeQuotesPage: React.FC = () => {
                           </button>
                         )}
                         {request.status === 'negotiating' && (
-                          <>
-                            <button
-                              className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
-                              onClick={() => handleApproveRequest(request.id)}
-                            >
-                              승인
-                            </button>
-                            <button
-                              className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
-                              onClick={() => handleRejectRequest(request.id)}
-                            >
-                              반려
-                            </button>
-                          </>
+                          <button
+                            className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
+                            onClick={() => handleOpenNegotiation(request)}
+                          >
+                            협상
+                          </button>
+                        )}
+                        {request.status === 'rejected' && (
+                          <button
+                            className="px-2 py-1 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white"
+                            onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
+                          >
+                            거절 취소
+                          </button>
                         )}
                         {request.status === 'purchased' && request.guarantee_slots?.[0] && (
                           <>
@@ -1805,6 +1887,42 @@ const GuaranteeQuotesPage: React.FC = () => {
         isOpen={excelModalOpen}
         onClose={() => setExcelModalOpen(false)}
         onExport={handleExcelExportWithColumns}
+      />
+      
+      {/* 요청 승인 확인 모달 */}
+      <GuaranteeRequestApprovalModal
+        isOpen={requestApprovalModalOpen}
+        onClose={() => {
+          setRequestApprovalModalOpen(false);
+          setRequestApprovalData(null);
+        }}
+        onConfirm={handleApproveRequest}
+        campaignName={requestApprovalData?.campaignName}
+        isLoading={requestProcessing}
+      />
+      
+      {/* 요청 반려 확인 모달 */}
+      <GuaranteeRequestRejectModal
+        isOpen={requestRejectModalOpen}
+        onClose={() => {
+          setRequestRejectModalOpen(false);
+          setRequestRejectData(null);
+        }}
+        onConfirm={handleRejectRequest}
+        campaignName={requestRejectData?.campaignName}
+        isLoading={requestProcessing}
+      />
+      
+      {/* 요청 거절 취소 확인 모달 */}
+      <GuaranteeRequestCancelRejectModal
+        isOpen={requestCancelRejectModalOpen}
+        onClose={() => {
+          setRequestCancelRejectModalOpen(false);
+          setRequestCancelRejectData(null);
+        }}
+        onConfirm={handleCancelRejectRequest}
+        campaignName={requestCancelRejectData?.campaignName}
+        isLoading={requestProcessing}
       />
     </CommonTemplate>
   );

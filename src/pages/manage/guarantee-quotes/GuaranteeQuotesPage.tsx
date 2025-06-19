@@ -365,8 +365,12 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading && currentUser) {
-      fetchRequests();
-      fetchCampaigns();
+      const timeoutId = setTimeout(() => {
+        fetchRequests();
+        fetchCampaigns();
+      }, 100); // 짧은 딜레이로 중복 호출 방지
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [authLoading, currentUser, fetchRequests, fetchCampaigns]);
 
@@ -933,180 +937,164 @@ const GuaranteeQuotesPage: React.FC = () => {
       </div>
 
       {/* 검색 영역 */}
-      <div className="card shadow-sm mb-5" inert={negotiationModal.open ? '' : undefined}>
-        <div className="card-header px-6 py-4">
-          <h3 className="card-title">보장형 슬롯 검색</h3>
+      <div className="card shadow-sm mb-4" inert={negotiationModal.open ? '' : undefined}>
+        <div className="card-header px-4 py-3">
+          <h3 className="card-title text-sm">보장형 슬롯 검색</h3>
         </div>
-        <div className="card-body px-6 py-4">
+        <div className="card-body px-4 py-3">
           {/* 데스크탑 검색 폼 */}
-          <div className="hidden md:block space-y-4">
+          <div className="hidden md:block space-y-3">
             {/* 첫 번째 줄 */}
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-12 gap-3">
               <div className="col-span-2">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">서비스</label>
-                  <select
-                    className="select select-bordered select-sm w-full"
-                    value={searchServiceType}
-                    onChange={(e) => setSearchServiceType(e.target.value)}
-                    disabled={negotiationModal.open || loading}
-                  >
-                    <option value="">전체 서비스</option>
-                    {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">서비스 타입</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchServiceType}
+                  onChange={(e) => setSearchServiceType(e.target.value)}
+                  disabled={negotiationModal.open || loading}
+                >
+                  <option value="">전체 서비스</option>
+                  {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-span-3">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">캠페인</label>
-                  <select
-                    className="select select-bordered select-sm w-full"
-                    value={selectedCampaign}
-                    onChange={(e) => setSelectedCampaign(e.target.value)}
-                    disabled={negotiationModal.open || loading || filteredCampaigns.length <= 1}
-                  >
-                    {filteredCampaigns.map((campaign) => (
-                      <option key={campaign.id} value={campaign.id}>
-                        {campaign.campaign_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">캠페인</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={selectedCampaign}
+                  onChange={(e) => setSelectedCampaign(e.target.value)}
+                  disabled={negotiationModal.open || loading || filteredCampaigns.length <= 1}
+                >
+                  {filteredCampaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.campaign_name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-span-2">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">견적상태</label>
-                  <select
-                    className="select select-bordered select-sm w-full"
-                    value={searchStatus}
-                    onChange={(e) => setSearchStatus(e.target.value)}
-                    disabled={negotiationModal.open}
-                  >
-                    <option value="">전체 상태</option>
-                    <option value="requested">요청됨</option>
-                    <option value="negotiating">협상중</option>
-                    <option value="accepted">수락됨</option>
-                    <option value="rejected">거절됨</option>
-                    <option value="expired">만료됨</option>
-                    <option value="purchased">구매완료</option>
-                  </select>
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">견적 상태</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}
+                  disabled={negotiationModal.open}
+                >
+                  <option value="">전체</option>
+                  <option value="requested">요청됨</option>
+                  <option value="negotiating">협상중</option>
+                  <option value="accepted">수락됨</option>
+                  <option value="rejected">거절됨</option>
+                  <option value="expired">만료됨</option>
+                  <option value="purchased">구매완료</option>
+                </select>
               </div>
 
               <div className="col-span-2">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">슬롯상태</label>
-                  <select
-                    className="select select-bordered select-sm w-full"
-                    value={searchSlotStatus}
-                    onChange={(e) => setSearchSlotStatus(e.target.value)}
-                    disabled={negotiationModal.open}
-                  >
-                    <option value="">전체 진행</option>
-                    <option value="pending">대기중</option>
-                    <option value="active">진행중</option>
-                    <option value="completed">완료</option>
-                    <option value="cancelled">취소됨</option>
-                    <option value="rejected">거절됨</option>
-                  </select>
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">슬롯 상태</label>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={searchSlotStatus}
+                  onChange={(e) => setSearchSlotStatus(e.target.value)}
+                  disabled={negotiationModal.open}
+                >
+                  <option value="">전체</option>
+                  <option value="pending">대기중</option>
+                  <option value="active">진행중</option>
+                  <option value="completed">완료</option>
+                  <option value="cancelled">취소됨</option>
+                  <option value="rejected">거절됨</option>
+                </select>
               </div>
 
-              <div className="col-span-3">
-                <div className="flex items-center h-9 justify-end">
-                  <button
-                    className="btn btn-success btn-sm px-4"
-                    onClick={handleExcelExport}
-                    disabled={loading || negotiationModal.open}
-                    title={selectedRequests.length > 0 ? `${selectedRequests.length}개 선택된 항목 다운로드` : `전체 ${filteredRequests.length}개 항목 다운로드`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      엑셀 다운로드
-                      {selectedRequests.length > 0 && <span className="badge badge-sm badge-primary">{selectedRequests.length}</span>}
-                    </span>
-                  </button>
-                </div>
+              <div className="col-span-3 flex items-end">
+                <button
+                  className="btn btn-success btn-sm w-full"
+                  onClick={handleExcelExport}
+                  disabled={loading || negotiationModal.open}
+                  title={selectedRequests.length > 0 ? `${selectedRequests.length}개 선택된 항목 다운로드` : `전체 ${filteredRequests.length}개 항목 다운로드`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    엑셀 다운로드
+                    {selectedRequests.length > 0 && <span className="badge badge-sm badge-primary ml-1">{selectedRequests.length}</span>}
+                  </span>
+                </button>
               </div>
             </div>
 
             {/* 두 번째 줄 */}
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-12 gap-3">
               <div className="col-span-2">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">시작일</label>
-                  <input
-                    type="date"
-                    className="input input-bordered input-sm w-full"
-                    value={searchDateFrom}
-                    onChange={(e) => setSearchDateFrom(e.target.value)}
-                    disabled={negotiationModal.open}
-                  />
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">시작일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateFrom}
+                  onChange={(e) => setSearchDateFrom(e.target.value)}
+                  disabled={negotiationModal.open}
+                />
               </div>
 
               <div className="col-span-2">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">종료일</label>
-                  <input
-                    type="date"
-                    className="input input-bordered input-sm w-full"
-                    value={searchDateTo}
-                    onChange={(e) => setSearchDateTo(e.target.value)}
-                    disabled={negotiationModal.open}
-                  />
-                </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">종료일</label>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={searchDateTo}
+                  onChange={(e) => setSearchDateTo(e.target.value)}
+                  disabled={negotiationModal.open}
+                />
               </div>
 
               <div className="col-span-5">
-                <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px]">검색어</label>
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      placeholder="이름, 상품명, URL, 키워드"
-                      className="input input-bordered input-sm w-full pr-8"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      disabled={negotiationModal.open}
-                    />
-                    {searchTerm && (
-                      <button
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        onClick={() => setSearchTerm('')}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">검색어</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="이름, 상품명, URL, 키워드 검색"
+                    className="input input-bordered input-sm w-full pr-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={negotiationModal.open}
+                  />
+                  {searchTerm && (
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      onClick={() => setSearchTerm('')}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="col-span-3 flex items-center justify-end">
+              <div className="col-span-3 flex items-end">
                 <button
-                  className="btn btn-primary btn-sm px-6"
+                  className="btn btn-primary btn-sm w-full"
                   onClick={fetchRequests}
                   disabled={loading || negotiationModal.open}
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center justify-center gap-2">
                       <span className="loading loading-spinner loading-xs"></span>
-                      검색 중
+                      검색 중...
                     </span>
                   ) : (
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center justify-center gap-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      검색
+                      검색하기
                     </span>
                   )}
                 </button>
@@ -1230,7 +1218,6 @@ const GuaranteeQuotesPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 엑셀 다운로드
-                {selectedRequests.length > 0 && <span className="badge badge-sm badge-primary ml-1">{selectedRequests.length}</span>}
               </span>
             </button>
 
@@ -1257,62 +1244,32 @@ const GuaranteeQuotesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 일괄 작업 버튼 */}
-      {currentUser?.role === USER_ROLES.DISTRIBUTOR && selectedRequests.length > 0 && (
-        <div className="mb-4 flex gap-2" inert={negotiationModal.open ? '' : undefined}>
-          <button
-            className="btn btn-sm btn-success"
-            onClick={() => {
-              // 선택된 요청들 일괄 승인
-              selectedRequests.forEach(id => {
-                const request = filteredRequests.find(r => r.id === id);
-                if (request && (request.status === 'requested' || request.status === 'negotiating')) {
-                  handleApproveRequest(id);
-                }
-              });
-              setSelectedRequests([]);
-            }}
-            disabled={negotiationModal.open}
-          >
-            <KeenIcon icon="check-circle" className="me-2" />
-            선택 항목 일괄 승인 ({selectedRequests.length}건)
-          </button>
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              // 선택된 요청들 일괄 거절
-              selectedRequests.forEach(id => {
-                const request = filteredRequests.find(r => r.id === id);
-                if (request && (request.status === 'requested' || request.status === 'negotiating')) {
-                  handleRejectRequest(id);
-                }
-              });
-              setSelectedRequests([]);
-            }}
-            disabled={negotiationModal.open}
-          >
-            <KeenIcon icon="cross-circle" className="me-2" />
-            선택 항목 일괄 거절 ({selectedRequests.length}건)
-          </button>
-        </div>
-      )}
 
       {/* 보장형 슬롯 목록 */}
       <div className="card" inert={negotiationModal.open ? '' : undefined}>
-        <div className="card-header">
-          <h3 className="card-title">보장형 견적 요청 목록 ({filteredRequests.length}건)</h3>
+        <div className="card-header px-6 py-4">
+          <h3 className="card-title">보장형 슬롯 목록</h3>
+          <div className="card-toolbar">
+            <div className="flex flex-wrap justify-between items-center gap-2">
+              <h3 className="card-title font-medium text-sm">
+                전체 <span className="text-primary font-medium">{filteredRequests.length}</span> 건
+              </h3>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
+        <div className="card-body p-0 lg:p-6">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-10">
               <KeenIcon icon="folder-open" className="text-6xl text-gray-300 mb-4" />
               <p className="text-gray-500">보장형 견적 요청이 없습니다.</p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-rounded table-striped table-hover">
+            <>
+              {/* 데스크탑 테이블 뷰 */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="table table-sm w-full">
                 <thead>
-                  <tr className="fw-bold fs-6 text-gray-800">
+                  <tr className="text-gray-800 border-b border-gray-200">
                     <th className="w-10">
                       <input
                         type="checkbox"
@@ -1328,21 +1285,19 @@ const GuaranteeQuotesPage: React.FC = () => {
                         disabled={negotiationModal.open}
                       />
                     </th>
-                    <th className="py-3 px-3 text-start font-medium">사용자</th>
-                    <th className="py-3 px-3 text-center font-medium">키워드</th>
-                    <th className="py-3 px-3 text-center font-medium">보장기간</th>
-                    <th className="py-3 px-3 text-center font-medium">작업기간</th>
-                    <th className="py-3 px-3 text-center font-medium">캠페인</th>
-                    <th className="py-3 px-3 text-center font-medium">견적상태</th>
-                    <th className="py-3 px-3 text-center font-medium">추가정보</th>
-                    <th className="py-3 px-3 text-center font-medium">상세/협상</th>
-                    <th className="py-3 px-3 text-center font-medium">작업</th>
+                    <th className="py-2 px-2 text-start font-medium">사용자</th>
+                    <th className="py-2 px-2 text-center font-medium">키워드</th>
+                    <th className="py-2 px-2 text-center font-medium">보장기간</th>
+                    <th className="py-2 px-2 text-center font-medium">캠페인</th>
+                    <th className="py-2 px-2 text-center font-medium">상태</th>
+                    <th className="py-2 px-2 text-center font-medium">상세</th>
+                    <th className="py-2 px-2 text-center font-medium">작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRequests.map((request) => (
-                    <tr key={request.id}>
-                      <td className="py-3 px-3">
+                    <tr key={request.id} className="hover:bg-gray-50">
+                      <td className="py-2 px-2">
                         <input
                           type="checkbox"
                           className="checkbox checkbox-sm"
@@ -1358,81 +1313,45 @@ const GuaranteeQuotesPage: React.FC = () => {
                         />
                       </td>
                       {/* 사용자 */}
-                      <td className="py-3 px-3">
-                        <div>
-                          <div className="font-medium text-gray-900">{request.users?.full_name || '사용자'}</div>
-                          <div className="text-xs text-gray-500">{request.users?.email || request.user_id}</div>
+                      <td className="py-2 px-2 max-w-[120px]">
+                        <div className="text-sm font-medium text-gray-900 truncate" title={request.users?.full_name || '사용자'}>
+                          {request.users?.full_name || '사용자'}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate" title={request.users?.email || request.user_id}>
+                          {request.users?.email || request.user_id}
                         </div>
                       </td>
                       {/* 키워드 */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="text-gray-900">
+                      <td className="py-2 px-2 text-center max-w-[100px]">
+                        <div className="text-sm text-gray-900 truncate mx-auto" title={request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}>
                           {request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}
                         </div>
                       </td>
                       {/* 보장기간 */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm text-gray-700">
-                            {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
-                          </span>
-                          {request.start_date && request.end_date && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {new Date(request.start_date).toLocaleDateString('ko-KR', {
-                                month: '2-digit', day: '2-digit'
-                              }).replace(/\. /g, '-').replace('.', '')}
-                              ~
-                              {new Date(request.end_date).toLocaleDateString('ko-KR', {
-                                month: '2-digit', day: '2-digit'
-                              }).replace(/\. /g, '-').replace('.', '')}
-                            </div>
-                          )}
+                      <td className="py-2 px-2 text-center">
+                        <div className="text-sm text-gray-700">
+                          {request.guarantee_count}{request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
                         </div>
                       </td>
-                      {/* 작업기간 */}
-                      <td className="py-3 px-3 text-center">
-                        {request.guarantee_slots?.[0] && request.guarantee_slots[0].start_date && request.guarantee_slots[0].end_date ? (
-                          <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1 mb-1">
-                              <span className="text-xs text-gray-600">시작:</span>
-                              <span className="text-xs font-medium text-green-600">
-                                {new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', {
-                                  year: 'numeric', month: '2-digit', day: '2-digit'
-                                }).replace(/\. /g, '-').replace('.', '')}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-gray-600">종료:</span>
-                              <span className="text-xs font-medium text-red-600">
-                                {new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', {
-                                  year: 'numeric', month: '2-digit', day: '2-digit'
-                                }).replace(/\. /g, '-').replace('.', '')}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
                       {/* 캠페인 */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="py-2 px-2 text-center max-w-[120px]">
+                        <div className="flex items-center justify-center gap-1">
                           {getCampaignLogo(request.campaigns?.logo) && (
                             <img
                               src={getCampaignLogo(request.campaigns?.logo)}
                               alt="campaign logo"
-                              className="w-5 h-5 object-contain rounded"
+                              className="w-4 h-4 object-contain rounded flex-shrink-0"
                             />
                           )}
-                          <span className="text-gray-700">
+                          <span className="text-xs text-gray-700 truncate" title={request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}>
                             {request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}
                           </span>
                           {getCampaignStatusDot(request.campaigns)}
                         </div>
                       </td>
                       {/* 상태 */}
-                      <td className="py-3 px-3 text-center">
-                        <div>
+                      <td className="py-2 px-2 text-center">
+                        <div className="flex items-center justify-center gap-1 flex-wrap">
                           {request.status === 'requested' &&
                             <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
                           {request.status === 'negotiating' &&
@@ -1444,147 +1363,47 @@ const GuaranteeQuotesPage: React.FC = () => {
                           {request.status === 'expired' &&
                             <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
                           {request.status === 'purchased' && (
-                            <div className="flex flex-col gap-1">
-                              <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매완료</span>
+                            <>
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
                               {request.guarantee_slots?.[0] && (
                                 <>
                                   {request.guarantee_slots[0].status === 'pending' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">슬롯 승인대기</span>}
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>}
                                   {request.guarantee_slots[0].status === 'active' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">슬롯 활성</span>}
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">활성</span>}
                                   {request.guarantee_slots[0].status === 'rejected' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">슬롯 반려</span>}
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>}
                                   {request.guarantee_slots[0].status === 'completed' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">슬롯 완료</span>}
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">완료</span>}
                                 </>
                               )}
-                            </div>
+                            </>
                           )}
                         </div>
                       </td>
-                      {/* 추가정보 */}
-                      <td className="py-3 px-3 text-center">
-                        {request.input_data && (() => {
-                          const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1', 'keyword2', 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
-                          const userInputFields = Object.entries(request.input_data).filter(([key]) =>
-                            !passItem.includes(key) && !key.endsWith('_fileName')
-                          );
-
-                          if (userInputFields.length === 0)
-                            return <span className="text-xs text-gray-400">-</span>;
-
-                          return (
-                            <div className="relative inline-block">
-                              <button
-                                className="text-xs text-gray-600 hover:text-gray-900 underline cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  setPopoverPosition({
-                                    top: rect.top - 10,
-                                    left: rect.left + rect.width / 2
-                                  });
-                                  setOpenPopoverId(openPopoverId === request.id ? null : request.id);
-                                }}
-                              >
-                                {userInputFields.length}개 필드
-                              </button>
-                              {/* 클릭 시 표시되는 팝오버 */}
-                              {openPopoverId === request.id && ReactDOM.createPortal(
-                                <>
-                                  {/* 배경 클릭 시 닫기 */}
-                                  <div
-                                    className="fixed inset-0"
-                                    style={{ zIndex: 9998 }}
-                                    onClick={() => setOpenPopoverId(null)}
-                                  />
-                                  <div
-                                    className="fixed bg-gray-900 text-white text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700"
-                                    style={{
-                                      zIndex: 9999,
-                                      left: `${popoverPosition.left}px`,
-                                      top: `${popoverPosition.top}px`,
-                                      transform: 'translate(-50%, -100%)'
-                                    }}>
-                                    <div className="flex items-center justify-between mb-2 border-b border-gray-700 pb-1">
-                                      <span className="font-medium text-gray-100">추가 정보</span>
-                                      <button
-                                        className="text-gray-400 hover:text-gray-200 transition-colors"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenPopoverId(null);
-                                        }}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                    <div
-                                      className="overflow-y-auto max-h-48 pr-2"
-                                      style={{
-                                        scrollbarWidth: 'thin',
-                                        scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
-                                      }}
-                                    >
-                                      <div className="space-y-1">
-                                        {userInputFields.map(([key, value]) => (
-                                          <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 last:border-0">
-                                            <span className="font-medium text-gray-300 min-w-[80px] shrink-0">{key}</span>
-                                            <span className="text-gray-400">:</span>
-                                            <span className="text-gray-100 flex-1 break-words">
-                                              {value ? String(value) : '-'}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </>,
-                                document.body
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      {/* 상세/협상 */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            className="btn btn-icon btn-sm btn-ghost text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                            onClick={() => {
-                              setDetailRequestId(request.id);
-                              setDetailModalOpen(true);
-                            }}
-                            title="상세보기"
-                            disabled={negotiationModal.open}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                              <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                          </button>
-                          <button
-                            className="btn btn-icon btn-sm btn-ghost text-amber-600 hover:text-amber-700 hover:bg-amber-100"
-                            onClick={() => handleOpenNegotiation(request)}
-                            title="협상하기"
-                            disabled={negotiationModal.open}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                          </button>
-                        </div>
+                      {/* 상세 */}
+                      <td className="py-2 px-2 text-center">
+                        <button
+                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                          onClick={() => {
+                            setDetailRequestId(request.id);
+                            setDetailModalOpen(true);
+                          }}
+                          title="상세보기"
+                          disabled={negotiationModal.open}
+                        >
+                          상세
+                        </button>
                       </td>
                       {/* 작업 */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex gap-1 justify-center">
+                      <td className="py-2 px-1 text-center">
+                        <div className="flex gap-0.5 justify-center flex-wrap">
                           {/* 총판 이상 권한인 경우 상태별 액션 버튼 표시 */}
                           {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
                             <>
                               {request.status === 'requested' && (
                                 <button
-                                  className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
                                   onClick={() => handleOpenNegotiation(request)}
                                   title="협상하기"
                                   disabled={negotiationModal.open}
@@ -1595,7 +1414,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                               {request.status === 'negotiating' && (
                                 <>
                                   <button
-                                    className="px-2 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
                                     onClick={() => handleApproveRequest(request.id)}
                                     title="승인"
                                     disabled={negotiationModal.open}
@@ -1603,7 +1422,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                     승인
                                   </button>
                                   <button
-                                    className="px-2 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
                                     onClick={() => handleRejectRequest(request.id)}
                                     title="거절"
                                     disabled={negotiationModal.open}
@@ -1614,7 +1433,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                               )}
                               {request.status === 'accepted' && (
                                 <button
-                                  className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                                   onClick={() => {
                                     // TODO: 구매 확인 구현
                                     console.log('구매 확인:', request);
@@ -1630,7 +1449,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   {request.guarantee_slots[0].status === 'pending' ? (
                                     <>
                                       <button
-                                        className="px-2 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
                                         onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
                                         title="슬롯 승인"
                                         disabled={negotiationModal.open}
@@ -1638,7 +1457,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                         승인
                                       </button>
                                       <button
-                                        className="px-2 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
                                         onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
                                         title="슬롯 반려"
                                         disabled={negotiationModal.open}
@@ -1649,7 +1468,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   ) : request.guarantee_slots[0].status === 'active' ? (
                                     <>
                                       <button
-                                        className="px-2 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
                                         onClick={() => {
                                           setRankCheckSlotData({
                                             slotId: request.guarantee_slots![0].id,
@@ -1662,10 +1481,10 @@ const GuaranteeQuotesPage: React.FC = () => {
                                         title="순위 확인"
                                         disabled={negotiationModal.open}
                                       >
-                                        순위확인
+                                        순위
                                       </button>
                                       <button
-                                        className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                                         onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
                                         title="슬롯 완료"
                                         disabled={negotiationModal.open}
@@ -1673,7 +1492,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                         완료
                                       </button>
                                       <button
-                                        className="px-2 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
                                         onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
                                         title="환불 처리"
                                         disabled={negotiationModal.open}
@@ -1700,6 +1519,196 @@ const GuaranteeQuotesPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            
+            {/* 모바일 카드 뷰 */}
+            <div className="md:hidden space-y-4 p-4">
+              {filteredRequests.map((request) => (
+                <div key={request.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                  {/* 체크박스와 기본 정보 */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-sm mt-1"
+                      checked={selectedRequests.includes(request.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedRequests([...selectedRequests, request.id]);
+                        } else {
+                          setSelectedRequests(selectedRequests.filter(id => id !== request.id));
+                        }
+                      }}
+                      disabled={negotiationModal.open}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getCampaignLogo(request.campaigns?.logo) && (
+                          <img
+                            src={getCampaignLogo(request.campaigns?.logo)}
+                            alt="campaign logo"
+                            className="w-8 h-8 object-contain rounded"
+                          />
+                        )}
+                        <div>
+                          <div className="font-medium text-sm">{request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}</div>
+                          <div className="text-xs text-gray-500">{request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-500">사용자:</span>
+                          <div className="font-medium">{request.users?.full_name || '사용자'}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">보장기간:</span>
+                          <div className="font-medium">{request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 상태 레이블 */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {request.status === 'requested' &&
+                      <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
+                    {request.status === 'negotiating' &&
+                      <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
+                    {request.status === 'accepted' &&
+                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">승인</span>}
+                    {request.status === 'rejected' &&
+                      <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">거절</span>}
+                    {request.status === 'expired' &&
+                      <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">만료</span>}
+                    {request.status === 'purchased' && (
+                      <>
+                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">구매완료</span>
+                        {request.guarantee_slots?.[0] && (
+                          <>
+                            {request.guarantee_slots[0].status === 'pending' &&
+                              <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>}
+                            {request.guarantee_slots[0].status === 'active' &&
+                              <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">활성</span>}
+                            {request.guarantee_slots[0].status === 'rejected' &&
+                              <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">반려</span>}
+                            {request.guarantee_slots[0].status === 'completed' &&
+                              <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">완료</span>}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* 액션 버튼 */}
+                  <div className="flex gap-2 justify-between">
+                    <div className="flex gap-1">
+                      <button
+                        className="btn btn-icon btn-sm btn-ghost text-blue-600"
+                        onClick={() => {
+                          setDetailRequestId(request.id);
+                          setDetailModalOpen(true);
+                        }}
+                        title="상세보기"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                      <button
+                        className="btn btn-icon btn-sm btn-ghost text-amber-600"
+                        onClick={() => handleOpenNegotiation(request)}
+                        title="협상하기"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* 작업 버튼 */}
+                    {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
+                      <div className="flex gap-1 flex-wrap justify-end">
+                        {request.status === 'requested' && (
+                          <button
+                            className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
+                            onClick={() => handleOpenNegotiation(request)}
+                          >
+                            협상
+                          </button>
+                        )}
+                        {request.status === 'negotiating' && (
+                          <>
+                            <button
+                              className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                              onClick={() => handleApproveRequest(request.id)}
+                            >
+                              승인
+                            </button>
+                            <button
+                              className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
+                              onClick={() => handleRejectRequest(request.id)}
+                            >
+                              반려
+                            </button>
+                          </>
+                        )}
+                        {request.status === 'purchased' && request.guarantee_slots?.[0] && (
+                          <>
+                            {request.guarantee_slots[0].status === 'pending' && (
+                              <>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                                  onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
+                                >
+                                  승인
+                                </button>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
+                                  onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
+                                >
+                                  반려
+                                </button>
+                              </>
+                            )}
+                            {request.guarantee_slots[0].status === 'active' && (
+                              <>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                                  onClick={() => {
+                                    setRankCheckSlotData({
+                                      slotId: request.guarantee_slots![0].id,
+                                      campaignName: request.campaigns?.campaign_name,
+                                      targetRank: request.target_rank,
+                                      keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                    });
+                                    setRankCheckModalOpen(true);
+                                  }}
+                                >
+                                  순위
+                                </button>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                  onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
+                                >
+                                  완료
+                                </button>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white"
+                                  onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
+                                >
+                                  환불
+                                </button>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )}
         </div>
       </div>

@@ -357,7 +357,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
 
                           {/* input_data 표시 */}
                           {requestData.input_data && (() => {
-                            const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1', 'keyword2', 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords'];
+                            const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1', 'keyword2', 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'is_manual_input'];
                             const userInputFields = Object.entries(requestData.input_data).filter(([key]) =>
                               !passItem.includes(key) && !key.endsWith('_fileName')
                             );
@@ -368,14 +368,64 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                               <div>
                                 <span className="text-xs text-slate-500 dark:text-gray-500 block mb-1">사용자 입력 필드</span>
                                 <div className="p-3 bg-slate-50 dark:bg-gray-800 rounded space-y-2">
-                                  {userInputFields.map(([key, value]) => (
-                                    <div key={key} className="flex items-start gap-2 text-sm">
-                                      <span className="font-medium text-slate-600 dark:text-gray-400 min-w-[100px]">{key}:</span>
-                                      <span className="text-slate-700 dark:text-gray-300 flex-1 break-words">
-                                        {value ? String(value) : '-'}
-                                      </span>
-                                    </div>
-                                  ))}
+                                  {userInputFields.map(([key, value]) => {
+                                    // 파일 URL인지 확인
+                                    const isFileUrl = value && typeof value === 'string' && 
+                                      (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                                    
+                                    // 이미지 파일인지 확인
+                                    const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                                    
+                                    // 파일명 추출
+                                    const fileNameKey = `${key}_fileName`;
+                                    const fileName = requestData.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                                    
+                                    // 필드명 한글 변환
+                                    const fieldNameMap: Record<string, string> = {
+                                      'work_days': '작업일',
+                                      'minimum_purchase': '최소 구매수',
+                                      'url': 'URL',
+                                      'mid': '상점 ID',
+                                      'productName': '상품명',
+                                      'mainKeyword': '메인 키워드',
+                                      'keywords': '서브 키워드',
+                                      'keyword1': '키워드1',
+                                      'keyword2': '키워드2', 
+                                      'keyword3': '키워드3',
+                                      'quantity': '작업량',
+                                      'dueDays': '작업기간',
+                                      'workCount': '작업수',
+                                      'start_date': '시작일',
+                                      'end_date': '종료일'
+                                    };
+                                    const displayKey = fieldNameMap[key] || key;
+                                    
+                                    return (
+                                      <div key={key} className="flex items-start gap-2 text-sm">
+                                        <span className="font-medium text-slate-600 dark:text-gray-400 min-w-[100px]">{displayKey}:</span>
+                                        <span className="text-slate-700 dark:text-gray-300 flex-1 break-words">
+                                          {isFileUrl ? (
+                                            isImage ? (
+                                              <span className="text-blue-600 dark:text-blue-400">
+                                                {fileName} (이미지)
+                                              </span>
+                                            ) : (
+                                              <a
+                                                href={value}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                                              >
+                                                {fileName}
+                                              </a>
+                                            )
+                                          ) : (
+                                            value ? String(value) : '-'
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             );

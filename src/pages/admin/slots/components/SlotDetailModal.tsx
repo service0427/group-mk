@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Dialog,
@@ -30,6 +30,18 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
 }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null);
+
+  // 이미지 클릭 핸들러 - Hook을 상단으로 이동
+  const handleImageClick = useCallback((url: string, title: string) => {
+    setSelectedImage({ url, title });
+    setImageModalOpen(true);
+  }, []);
+  
+  // 이미지 모달 닫기 핸들러 - Hook을 상단으로 이동
+  const handleCloseImageModal = useCallback(() => {
+    setImageModalOpen(false);
+    setSelectedImage(null);
+  }, []);
 
   // ESC 키로 이미지 모달 닫기 - Hook을 조건문 밖으로 이동
   useEffect(() => {
@@ -71,17 +83,18 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
 
   const inputData = slot.input_data || {};
 
-  // 필수 필드를 제외한 추가 필드만 필터링 (_fileName으로 끝나는 필드도 제외)
+  // 필수 필드를 제외한 추가 필드만 필터링 (_fileName과 _file로 끝나는 필드도 제외)
+  // SlotList.tsx의 passItem과 동일하게 설정
   const excludeFields = [
     'campaign_name', 'dueDays', 'expected_deadline', 
     'keyword1', 'keyword2', 'keyword3', 'keywordId', 
     'mainKeyword', 'mid', 'price', 'service_type', 
-    'url', 'workCount', 'keywords', 'productName',
-    'quantity', 'due_date', 'product_url', 'ohouse_url'
+    'url', 'workCount', 'keywords', 'main_keyword', 
+    'minimum_purchase', 'work_days', 'is_manual_input'
   ];
   
   const additionalFields = Object.entries(inputData).filter(
-    ([key]) => !excludeFields.includes(key) && !key.endsWith('_fileName')
+    ([key]) => !excludeFields.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
   );
 
   // 키워드 목록 가져오기
@@ -104,12 +117,8 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
 
   const keywords = getKeywords();
 
-  // 이미지 클릭 핸들러
-  const handleImageClick = (url: string, title: string) => {
-    setSelectedImage({ url, title });
-    setImageModalOpen(true);
-  };
-
+  // 내 키워드 미지원 서비스 여부 확인
+  const isKeywordUnsupportedService = slot.keyword_id === 0 || inputData?.is_manual_input === true;
 
   // 상태 배지 스타일 통일
   const getStatusBadge = (status: string) => {
@@ -179,6 +188,12 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
         <DialogContent
           className="max-w-2xl max-h-[85vh] flex flex-col"
           aria-describedby={undefined}
+          onPointerDownOutside={(e) => {
+            // 이미지 모달이 열려있을 때는 상세 모달이 닫히지 않도록 함
+            if (imageModalOpen) {
+              e.preventDefault();
+            }
+          }}
         >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center justify-between">
@@ -245,8 +260,12 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 dark:text-gray-400">
-                  <span>요청일: {formatDate(slot.created_at)}</span>
-                  <span>처리일: {slot.processed_at ? formatDate(slot.processed_at) : '-'}</span>
+                  <span>요청일: {new Date(slot.created_at).toLocaleDateString('ko-KR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit'
+                  }).replace(/\. /g, '-').replace('.', '')}</span>
+                  <span>처리일: {slot.processed_at ? new Date(slot.processed_at).toLocaleDateString('ko-KR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit'
+                  }).replace(/\. /g, '-').replace('.', '') : '-'}</span>
                 </div>
               </div>
 
@@ -301,7 +320,13 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
                           <span className="text-xs text-slate-500 dark:text-gray-500 block">작업 기간</span>
                           <span className="text-sm font-medium">
                             {slot.start_date && slot.end_date ? (
-                              <>{formatDate(slot.start_date)} ~ {formatDate(slot.end_date)}</>
+                              <>
+                                {new Date(slot.start_date).toLocaleDateString('ko-KR', {
+                                  year: 'numeric', month: '2-digit', day: '2-digit'
+                                }).replace(/\. /g, '-').replace('.', '')} ~ {new Date(slot.end_date).toLocaleDateString('ko-KR', {
+                                  year: 'numeric', month: '2-digit', day: '2-digit'
+                                }).replace(/\. /g, '-').replace('.', '')}
+                              </>
                             ) : inputData.dueDays ? (
                               `${inputData.dueDays}일`
                             ) : '-'}
@@ -327,8 +352,8 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* 키워드 정보 */}
-              {keywords.length > 0 && (
+              {/* 키워드 정보 - 내 키워드 지원 서비스인 경우에만 표시 */}
+              {!isKeywordUnsupportedService && keywords.length > 0 && (
                 <div className="card">
                   <div className="card-body">
                     <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
@@ -354,20 +379,23 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
                       <div>
                         <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
                           <KeenIcon icon="document" className="text-sm" />
-                          추가 정보
+                          {isKeywordUnsupportedService ? '입력정보' : '추가 정보'}
                         </h3>
                         <div className="space-y-3">
                           {additionalFields.map(([key, value]) => {
-                            // 파일 URL인지 확인
-                            const isFileUrl = value && typeof value === 'string' && 
-                              (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                            // 파일명인지 확인 (이미지 확장자로 끝나는 경우)
+                            const isImageFileName = value && typeof value === 'string' && 
+                              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value) && 
+                              !value.includes('http') && !value.includes('/');
                             
-                            // 이미지 파일인지 확인
-                            const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                            // 연관된 이미지 URL 찾기 (필드명_file 형식)
+                            const relatedImageUrl = isImageFileName ? inputData[`${key}_file`] : null;
                             
-                            // 파일명 추출
-                            const fileNameKey = `${key}_fileName`;
-                            const fileName = inputData[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                            // 값이 이미지 URL인지 확인
+                            const isImageUrl = value && typeof value === 'string' && 
+                              (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/') || 
+                               value.startsWith('http')) && 
+                              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
                             
                             // 필드명 한글 변환
                             const fieldNameMap: Record<string, string> = {
@@ -393,21 +421,20 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
                               <div key={key} className="flex items-start gap-2 text-sm">
                                 <span className="font-medium text-slate-600 dark:text-gray-400 min-w-[100px]">{displayKey}:</span>
                                 <span className="text-slate-700 dark:text-gray-300 flex-1 break-words">
-                                  {isFileUrl ? (
-                                    isImage ? (
-                                      <span className="text-blue-600 dark:text-blue-400">
-                                        {fileName} (이미지)
-                                      </span>
-                                    ) : (
-                                      <a
-                                        href={value}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 dark:text-blue-400 hover:underline"
-                                      >
-                                        {fileName}
-                                      </a>
-                                    )
+                                  {isImageFileName && relatedImageUrl ? (
+                                    <button
+                                      className="text-blue-600 dark:text-blue-400 hover:underline text-left"
+                                      onClick={() => handleImageClick(relatedImageUrl, value)}
+                                    >
+                                      {value}
+                                    </button>
+                                  ) : isImageUrl ? (
+                                    <button
+                                      className="text-blue-600 dark:text-blue-400 hover:underline text-left"
+                                      onClick={() => handleImageClick(value, displayKey)}
+                                    >
+                                      {value}
+                                    </button>
                                   ) : (
                                     value ? String(value) : '-'
                                   )}
@@ -481,41 +508,41 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
         </DialogContent>
       </Dialog>
     
-    {/* 이미지 모달 - SlotList와 동일한 스타일 */}
-    {imageModalOpen && selectedImage && createPortal(
-      <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
-        onClick={() => {
-          setImageModalOpen(false);
-          setSelectedImage(null);
-        }}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-      >
-        <div className="relative max-w-4xl max-h-[90vh]">
-          <img
-            src={selectedImage.url}
-            alt={selectedImage.title}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+      {/* 이미지 확대 모달 - 상세 모달과 완전히 독립적으로 렌더링 */}
+      {imageModalOpen && selectedImage && createPortal(
+        <>
+          {/* 배경 오버레이 */}
+          <div
+            className="fixed inset-0 bg-black/80"
+            style={{ zIndex: 10000 }}
+            onClick={handleCloseImageModal}
           />
-          <button
-            className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
-            onClick={() => {
-              setImageModalOpen(false);
-              setSelectedImage(null);
-            }}
+          {/* 이미지 컨텐츠 */}
+          <div
+            className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
+            style={{ zIndex: 10001 }}
           >
-            <KeenIcon icon="cross" className="text-lg" />
-          </button>
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
-              {selectedImage.title}
-            </p>
+            <div className="relative flex flex-col items-center gap-4 pointer-events-auto">
+              <button
+                className="self-end mb-2 btn btn-sm btn-light shadow-lg"
+                type="button"
+                onClick={handleCloseImageModal}
+              >
+                <KeenIcon icon="cross" className="text-lg" />
+              </button>
+              <img
+                src={selectedImage.url}
+                alt={selectedImage.title}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+              />
+              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+                {selectedImage.title}
+              </p>
+            </div>
           </div>
-        </div>
-      </div>,
-      document.body
-    )}
+        </>,
+        document.body
+      )}
     </>
   );
 };

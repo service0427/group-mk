@@ -88,7 +88,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     // 없으면 서비스 타입에 따른 기본 로고 사용
     const service = item?.campaigns?.service_type || item?.service_type || '';
     if (service.includes('naver') || service.includes('Naver')) {
-      return '/media/ad-brand/naver-ci.png';
+      return '/media/ad-brand/naver.png';
     } else if (service.includes('coupang') || service.includes('Coupang')) {
       return '/media/ad-brand/coupang-app.png';
     } else if (service.includes('ohouse')) {
@@ -114,7 +114,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         } else if (serviceType.includes('Blog')) {
           logo = '/media/ad-brand/naver-blog.png';
         } else if (serviceType.includes('Auto')) {
-          logo = '/media/ad-brand/naver-ci.png';
+          logo = '/media/ad-brand/naver.png';
         } else if (serviceType.includes('Coupang')) {
           logo = '/media/ad-brand/coupang-app.png';
         } else {
@@ -210,12 +210,14 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     }
   }, [requestId]);
 
-  // 협상 메시지 가져오기
-  const fetchMessages = useCallback(async () => {
+  // 협상 메시지 가져오기 (초기 로드용)
+  const fetchMessages = useCallback(async (isInitialLoad = false) => {
     if (!requestId || !isMountedRef.current) return;
 
     try {
-      setLoadingMessages(true);
+      if (isInitialLoad) {
+        setLoadingMessages(true);
+      }
 
       // 1. 먼저 협상 메시지들을 가져오기
       const { data: negotiations, error } = await supabase
@@ -254,6 +256,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           ...msg,
           senderName: msg.users?.full_name || msg.users?.email || '사용자'
         }));
+        
         setMessages(formattedMessages);
 
         // 읽지 않은 메시지 읽음 처리
@@ -264,6 +267,13 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         if (unreadMessages.length > 0) {
           await negotiationService.markAsRead(unreadMessages.map(msg => msg.id));
         }
+
+        // 초기 로드 시에만 스크롤
+        if (isInitialLoad) {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          }, 100);
+        }
       }
     } catch (error) {
       console.error('협상 메시지 조회 실패:', error);
@@ -271,7 +281,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         toast.error('협상 내역을 불러오는데 실패했습니다.');
       }
     } finally {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && isInitialLoad) {
         setLoadingMessages(false);
       }
     }
@@ -443,8 +453,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (isMountedRef.current) {
         toast.success('협상이 완료되었습니다.');
         onStatusChange?.('accepted');
-        await fetchMessages();
-        await fetchRequestInfo(); // 요청 정보 새로고침
+        await fetchMessages(false); // 로딩 표시 없이 메시지만 업데이트
+        // 요청 정보만 직접 업데이트
+        setRequestInfo((prev: any) => prev ? { ...prev, status: 'accepted', final_daily_amount: lastPriceMessage.proposed_daily_amount, guarantee_count: finalGuaranteeCount } : prev);
       }
     } catch (error) {
       console.error('협상 수락 실패:', error);
@@ -502,19 +513,13 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
   useEffect(() => {
     if (open && requestId) {
       fetchRequestInfo();
-      fetchMessages();
+      fetchMessages(true); // 초기 로드임을 표시
     } else if (!open) {
       // 모달이 닫힐 때 툴팁도 닫기
       setShowInputDataTooltip(false);
     }
   }, [open, requestId, fetchRequestInfo, fetchMessages]);
 
-  // 메시지가 로드되거나 모달이 열릴 때 스크롤을 맨 아래로
-  useEffect(() => {
-    if (messagesEndRef.current && messages.length > 0 && open) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, open]);
 
   // 툴팁 외부 클릭시 닫기
   useEffect(() => {
@@ -530,32 +535,86 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     }
   }, [showInputDataTooltip]);
 
-  // 실시간 구독 설정
+  // 새로운 메시지 확인 (실시간 구독 대신 효율적인 폴링)
   useEffect(() => {
     if (!open || !requestId) return;
 
-    const channel = supabase
-      .channel(`guarantee_negotiations_${requestId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'guarantee_slot_negotiations',
-          filter: `request_id=eq.${requestId}`
-        },
-        () => {
-          if (isMountedRef.current) {
-            fetchMessages();
-          }
-        }
-      )
-      .subscribe();
+    // 마지막으로 확인한 시간 추적
+    let lastCheckedTime = new Date().toISOString();
 
-    return () => {
-      supabase.removeChannel(channel);
+    const checkNewMessages = async () => {
+      if (!isMountedRef.current || document.hidden) return;
+
+      try {
+        // 마지막 확인 시간 이후의 메시지만 가져오기
+        const { data: newMessages, error } = await supabase
+          .from('guarantee_slot_negotiations')
+          .select('*')
+          .eq('request_id', requestId)
+          .gt('created_at', lastCheckedTime)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (newMessages && newMessages.length > 0) {
+          // 발신자 정보 가져오기
+          const senderIds = [...new Set(newMessages.map(n => n.sender_id))];
+          const { data: users } = await supabase
+            .from('users')
+            .select('id, full_name, email')
+            .in('id', senderIds);
+
+          const usersMap = users?.reduce((acc: Record<string, any>, user) => {
+            acc[user.id] = user;
+            return acc;
+          }, {}) || {};
+
+          const formattedNewMessages: NegotiationMessage[] = newMessages.map((msg: any) => ({
+            ...msg,
+            senderName: usersMap[msg.sender_id]?.full_name || usersMap[msg.sender_id]?.email || '사용자'
+          }));
+
+          // 새 메시지만 추가 (깜빡임 없음)
+          setMessages(prev => {
+            // 중복 방지
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNewMessages = formattedNewMessages.filter(m => !existingIds.has(m.id));
+            if (uniqueNewMessages.length === 0) return prev;
+            return [...prev, ...uniqueNewMessages];
+          });
+
+          // 자신이 보낸 메시지가 아닌 경우 읽음 처리
+          const unreadMessages = formattedNewMessages.filter(
+            msg => msg.sender_id !== currentUser?.id && !msg.is_read
+          );
+          if (unreadMessages.length > 0) {
+            await negotiationService.markAsRead(unreadMessages.map(msg => msg.id));
+          }
+
+          // 스크롤 위치 확인 후 자동 스크롤
+          const container = messagesEndRef.current?.parentElement;
+          if (container) {
+            const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+            if (isAtBottom) {
+              setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }, 50);
+            }
+          }
+
+          // 마지막 확인 시간 업데이트
+          lastCheckedTime = new Date().toISOString();
+        }
+      } catch (error) {
+        console.error('새 메시지 확인 실패:', error);
+      }
     };
-  }, [open, requestId, fetchMessages]);
+
+    // 2초마다 새 메시지 확인
+    const interval = setInterval(checkNewMessages, 2000);
+
+    return () => clearInterval(interval);
+  }, [open, requestId, currentUser?.id]);
 
   // 가격 포맷팅
   const formatCurrency = (value: string) => {
@@ -1069,10 +1128,20 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">추가 정보:</span>
                       <div className="flex items-center gap-2 mt-1">
-                        {requestInfo.input_data || requestData?.input_data ? (
-                          <>
+                        {(() => {
+                          const inputData = requestInfo.input_data || requestData?.input_data;
+                          if (!inputData) return <span className="text-gray-400 text-xs">없음</span>;
+                          
+                          const passItem = ['keywords', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'due_date', 'dueDays', 'is_manual_input'];
+                          const userInputFields = Object.entries(inputData).filter(([key]) => 
+                            !passItem.includes(key) && !key.endsWith('_fileName')
+                          );
+                          
+                          if (userInputFields.length === 0) return <span className="text-gray-400 text-xs">없음</span>;
+                          
+                          return (
                             <button
-                              className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors cursor-pointer"
+                              className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const rect = e.currentTarget.getBoundingClientRect();
@@ -1083,13 +1152,10 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                                 setShowInputDataTooltip(!showInputDataTooltip);
                               }}
                             >
-                              <KeenIcon icon="information-2" className="size-3 mr-1" />
-                              보기
+                              {userInputFields.length}개 필드
                             </button>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 text-xs">없음</span>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1549,37 +1615,124 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
         {/* 추가 정보 툴팁 */}
         {showInputDataTooltip && (requestInfo?.input_data || requestData?.input_data) && ReactDOM.createPortal(
-          <div
-            className="fixed z-[9999] bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg max-w-sm"
-            style={{
-              top: tooltipPosition.top,
-              left: tooltipPosition.left,
-              transform: 'translate(-50%, -100%)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="space-y-2">
-              {(() => {
-                const inputData = requestInfo?.input_data || requestData?.input_data;
-
-                return Object.entries(inputData).map(([key, value]) => {
-                  if (!value || (typeof value === 'string' && !value.trim())) return null;
-
-                  return (
-                    <div key={key} className="border-b border-gray-600 pb-1 last:border-b-0">
-                      <div className="font-medium text-gray-300 mb-1">
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </div>
-                      <div className="text-white">
-                        {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-                      </div>
-                    </div>
-                  );
-                }).filter(Boolean);
-              })()}
+          <>
+            {/* 배경 클릭 시 닫기 */}
+            <div 
+              className="fixed inset-0" 
+              style={{zIndex: 9998}}
+              onClick={() => setShowInputDataTooltip(false)}
+            />
+            <div
+              className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600"
+              style={{
+                zIndex: 9999,
+                left: `${tooltipPosition.left}px`,
+                top: `${tooltipPosition.top}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+            >
+              <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
+                <span className="font-medium text-gray-100 dark:text-gray-200">추가 정보</span>
+                <button
+                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowInputDataTooltip(false);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div 
+                className="overflow-y-auto max-h-48 pr-2"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                <div className="space-y-1">
+                  {(() => {
+                    const inputData = requestInfo?.input_data || requestData?.input_data;
+                    const passItem = ['keywords', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'due_date', 'dueDays', 'is_manual_input'];
+                    const userInputFields = Object.entries(inputData).filter(([key]) => 
+                      !passItem.includes(key) && !key.endsWith('_fileName')
+                    );
+                    
+                    return userInputFields.map(([key, value]) => {
+                      // 파일 URL인지 확인
+                      const isFileUrl = value && typeof value === 'string' && 
+                        (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                      
+                      // 이미지 파일인지 확인
+                      const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                      
+                      // 파일명 추출
+                      const fileNameKey = `${key}_fileName`;
+                      const fileName = inputData[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                      
+                      // 필드명 한글 변환
+                      const fieldNameMap: Record<string, string> = {
+                        'work_days': '작업일',
+                        'minimum_purchase': '최소 구매수',
+                        'url': 'URL',
+                        'mid': '상점 ID',
+                        'productName': '상품명',
+                        'mainKeyword': '메인 키워드',
+                        'keywords': '서브 키워드',
+                        'keyword1': '키워드1',
+                        'keyword2': '키워드2', 
+                        'keyword3': '키워드3',
+                        'quantity': '작업량',
+                        'dueDays': '작업기간',
+                        'workCount': '작업수',
+                        'start_date': '시작일',
+                        'end_date': '종료일'
+                      };
+                      const displayKey = fieldNameMap[key] || key;
+                      
+                      return (
+                        <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
+                          <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{displayKey}</span>
+                          <span className="text-gray-400 dark:text-gray-500">:</span>
+                          <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
+                            {isFileUrl ? (
+                              isImage ? (
+                                <button
+                                  className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedImage({ src: value, title: fileName });
+                                    setIsImageModalOpen(true);
+                                    setShowInputDataTooltip(false);
+                                  }}
+                                >
+                                  {fileName}
+                                </button>
+                              ) : (
+                                <a
+                                  href={value}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {fileName}
+                                </a>
+                              )
+                            ) : (
+                              value ? String(value) : '-'
+                            )}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
             </div>
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-          </div>,
+          </>,
           document.body
         )}
 

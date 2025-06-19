@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Dialog } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+} from '@/components/ui/dialog';
 import { Slot } from './types';
 import { formatDate } from './constants';
-import { X, Calendar, User, Tag, Link, FileText, MessageSquare, Clock, Package, AlertCircle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 interface SlotDetailModalProps {
   isOpen: boolean;
@@ -101,339 +110,376 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
     setImageModalOpen(true);
   };
 
-  // 상태 배지 렌더링
-  const renderStatusBadge = (status: string) => {
-    const statusConfig: { [key: string]: { bg: string; text: string; label: string } } = {
-      pending: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', label: '대기중' },
-      submitted: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300', label: '검토중' },
-      approved: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', label: '승인' },
-      rejected: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300', label: '반려' },
-      completed: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', label: '완료' },
-      success: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', label: '완료' },
-      refund: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300', label: '환불' }
+
+  // 상태 배지 스타일 통일
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string; className?: string }> = {
+      pending: { variant: 'outline', label: '대기중', className: 'border-gray-500 text-gray-600' },
+      submitted: { variant: 'outline', label: '검토중', className: 'border-yellow-500 text-yellow-600' },
+      approved: { variant: 'outline', label: '승인', className: 'border-blue-500 text-blue-600' },
+      rejected: { variant: 'destructive', label: '반려' },
+      completed: { variant: 'outline', label: '완료', className: 'border-green-500 text-green-600' },
+      success: { variant: 'outline', label: '완료', className: 'border-blue-500 text-blue-600' },
+      refund: { variant: 'outline', label: '환불', className: 'border-purple-500 text-purple-600' }
     };
 
-    const config = statusConfig[status] || statusConfig.pending;
-    
+    const config = statusConfig[status] || { variant: 'secondary', label: status };
+
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <Badge variant={config.variant} className={cn('text-xs', config.className)}>
         {config.label}
-      </span>
+      </Badge>
+    );
+  };
+
+  // 캠페인 로고 가져오기
+  const getCampaignLogo = (logo?: string): string | undefined => {
+    if (!logo) return undefined;
+
+    // animal/svg/ 형태의 경로면 /media/ 추가
+    if (logo.includes('animal/svg/') && !logo.startsWith('/media/')) {
+      return `/media/${logo}`;
+    }
+    // http로 시작하거나 /로 시작하면 그대로 사용
+    if (logo.startsWith('http') || logo.startsWith('/')) {
+      return logo;
+    }
+    // 단순 동물 이름이면 경로 구성
+    if (!logo.includes('/')) {
+      return `/media/animal/svg/${logo}.svg`;
+    }
+    return logo;
+  };
+
+  // 캠페인 상태 점 표시
+  const getCampaignStatusDot = (campaign?: { status?: string }) => {
+    if (!campaign?.status) return null;
+
+    const statusConfig = {
+      active: { color: 'bg-green-500', text: '진행중' },
+      paused: { color: 'bg-yellow-500', text: '일시중지' },
+      completed: { color: 'bg-gray-500', text: '종료' },
+      pending: { color: 'bg-blue-500', text: '대기중' }
+    };
+
+    const config = statusConfig[campaign.status as keyof typeof statusConfig] ||
+      { color: 'bg-gray-400', text: '알 수 없음' };
+
+    return (
+      <span
+        className={`inline-block w-2 h-2 rounded-full ${config.color}`}
+        title={config.text}
+      />
     );
   };
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* 백드롭 */}
-          <div 
-            className="fixed inset-0 bg-black/50" 
-            onClick={onClose}
-          />
-          
-          {/* 모달 컨텐츠 */}
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden z-10 animate-in fade-in-0 zoom-in-95 duration-200">
-          {/* 헤더 */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/70 dark:to-gray-800/50">
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl shadow-md">
-                <FileText className="w-6 h-6 text-white" />
+        <DialogContent
+          className="max-w-2xl max-h-[85vh] flex flex-col"
+          aria-describedby={undefined}
+        >
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeenIcon icon="information-2" className="text-base text-primary" />
+                <span className="text-base">일반형 슬롯 상세</span>
+                {slot && getStatusBadge(slot.status)}
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  슬롯 상세 정보
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                  {slot.campaign_name || '캠페인 정보'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 hover:scale-110"
-            >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-          </div>
-          
-          {/* 바디 */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)] space-y-8">
-            {/* 기본 정보 */}
-            <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  기본 정보
-                </h4>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-5 border border-gray-200/50 dark:border-gray-700/50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
-                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">사용자</label>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">
-                        {slot.user?.full_name || '알 수 없음'}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                        {slot.user?.email || ''}
-                      </p>
-                    </div>
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              {/* 캠페인 헤더 정보 - 카드 밖에 배치 */}
+              <div className="px-1 pb-3 border-b border-slate-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getCampaignLogo(slot.campaign_logo) && (
+                      <img
+                        src={getCampaignLogo(slot.campaign_logo)}
+                        alt="campaign logo"
+                        className="w-5 h-5 object-contain rounded"
+                      />
+                    )}
+                    <span className="font-semibold">
+                      {slot.campaign_name || '-'}
+                    </span>
+                    {getCampaignStatusDot(slot.campaign)}
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
-                      <CheckCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <div className="flex items-center gap-1.5">
+                    {(() => {
+                      const serviceType = slot.campaign?.service_type || selectedServiceType || '';
+                      let logo = '/media/app/mini-logo-circle-gray.svg';
+
+                      if (serviceType.includes('NaverShopping')) {
+                        logo = '/media/ad-brand/naver-shopping.png';
+                      } else if (serviceType.includes('NaverPlace')) {
+                        logo = '/media/ad-brand/naver-place.png';
+                      } else if (serviceType.includes('NaverBlog')) {
+                        logo = '/media/ad-brand/naver-blog.png';
+                      } else if (serviceType.includes('Naver')) {
+                        logo = '/media/ad-brand/naver.png';
+                      } else if (serviceType.includes('Coupang')) {
+                        logo = '/media/ad-brand/coupang-app.png';
+                      } else if (serviceType.includes('Instagram')) {
+                        logo = '/media/ad-brand/instagram.png';
+                      }
+
+                      return (
+                        <>
+                          <img
+                            src={logo}
+                            alt="service logo"
+                            className="w-4 h-4 object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
+                            }}
+                          />
+                          <Badge variant="outline" className="text-xs">
+                            {SERVICE_TYPE_LABELS[serviceType] || serviceType || '-'}
+                          </Badge>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 dark:text-gray-400">
+                  <span>요청일: {formatDate(slot.created_at)}</span>
+                  <span>처리일: {slot.processed_at ? formatDate(slot.processed_at) : '-'}</span>
+                </div>
+              </div>
+
+              {/* 기본 정보 카드 */}
+              <div className="card">
+                <div className="card-body">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* 왼쪽: 사용자 정보 & 상태 */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                          <KeenIcon icon="user" className="text-sm" />
+                          사용자 정보
+                        </h3>
+                        <div className="space-y-2 pl-5">
+                          <div>
+                            <span className="text-xs text-slate-500 dark:text-gray-500 block">이름</span>
+                            <span className="text-sm font-medium">{slot.user?.full_name || '알 수 없음'}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-slate-500 dark:text-gray-500 block">이메일</span>
+                            <span className="text-sm">{slot.user?.email || '-'}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-slate-500 dark:text-gray-500 block">상태</span>
+                            <div className="mt-1">{getStatusBadge(slot.status)}</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">상태</label>
-                      <div className="mt-1.5">
-                        {renderStatusBadge(slot.status)}
+
+                    {/* 오른쪽: 작업 정보 */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                        <KeenIcon icon="briefcase" className="text-sm" />
+                        작업 정보
+                      </h3>
+                      <div className="space-y-2 pl-5">
+                        <div>
+                          <span className="text-xs text-slate-500 dark:text-gray-500 block">상품명</span>
+                          <span className="text-sm font-medium">{inputData.productName || slot.campaign_name || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500 dark:text-gray-500 block">작업수</span>
+                          <span className="text-sm font-medium">
+                            {slot.quantity ? slot.quantity.toLocaleString() : 
+                             inputData.quantity ? inputData.quantity.toLocaleString() : 
+                             inputData.workCount ? inputData.workCount.toLocaleString() : '-'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500 dark:text-gray-500 block">작업 기간</span>
+                          <span className="text-sm font-medium">
+                            {slot.start_date && slot.end_date ? (
+                              <>{formatDate(slot.start_date)} ~ {formatDate(slot.end_date)}</>
+                            ) : inputData.dueDays ? (
+                              `${inputData.dueDays}일`
+                            ) : '-'}
+                          </span>
+                        </div>
+                        {(inputData.url || inputData.product_url || inputData.ohouse_url) && (
+                          <div>
+                            <span className="text-xs text-slate-500 dark:text-gray-500 block mb-1">URL</span>
+                            <a
+                              href={inputData.url || inputData.product_url || inputData.ohouse_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:text-primary-active inline-flex items-center gap-1"
+                            >
+                              <span className="truncate max-w-[200px]">{inputData.url || inputData.product_url || inputData.ohouse_url}</span>
+                              <KeenIcon icon="exit-up" className="text-xs" />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
-                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">생성일</label>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">
-                        {formatDate(slot.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
-                      <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">처리일</label>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">
-                        {slot.processed_at ? formatDate(slot.processed_at) : '-'}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 상품 정보 */}
-            <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  상품 정보
-                </h4>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-5 border border-gray-200/50 dark:border-gray-700/50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">상품명</label>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1.5">
-                      {inputData.productName || slot.campaign_name || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">작업수</label>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1.5">
-                      {slot.quantity ? slot.quantity.toLocaleString() : 
-                       inputData.quantity ? inputData.quantity.toLocaleString() : 
-                       inputData.workCount ? inputData.workCount.toLocaleString() : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">작업 기간</label>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1.5">
-                      {slot.start_date && slot.end_date ? (
-                        <>{formatDate(slot.start_date)} ~ {formatDate(slot.end_date)}</>
-                      ) : inputData.dueDays ? (
-                        `${inputData.dueDays}일`
-                      ) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">URL</label>
-                    {inputData.url || inputData.product_url || inputData.ohouse_url ? (
-                      <a 
-                        href={inputData.url || inputData.product_url || inputData.ohouse_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mt-1.5 transition-colors"
-                      >
-                        <Link className="w-4 h-4" />
-                        링크 바로가기
-                      </a>
-                    ) : (
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1.5">-</p>
-                    )}
+              {/* 키워드 정보 */}
+              {keywords.length > 0 && (
+                <div className="card">
+                  <div className="card-body">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                      <KeenIcon icon="magnifier" className="text-sm" />
+                      키워드 정보
+                    </h3>
+                    <div className="flex flex-wrap gap-2 pl-5">
+                      {keywords.map((keyword, index) => (
+                        <Badge key={index} variant="outline" className="text-xs border-blue-500 text-blue-600">
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )}
 
-            {/* 키워드 정보 */}
-            {keywords.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <Tag className="w-4 h-4 text-green-600 dark:text-green-400" />
+              {/* 추가 정보 */}
+              {additionalFields.length > 0 && (
+                <div className="card">
+                  <div className="card-body">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                          <KeenIcon icon="document" className="text-sm" />
+                          추가 정보
+                        </h3>
+                        <div className="space-y-3">
+                          {additionalFields.map(([key, value]) => {
+                            // 파일 URL인지 확인
+                            const isFileUrl = value && typeof value === 'string' && 
+                              (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                            
+                            // 이미지 파일인지 확인
+                            const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                            
+                            // 파일명 추출
+                            const fileNameKey = `${key}_fileName`;
+                            const fileName = inputData[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                            
+                            // 필드명 한글 변환
+                            const fieldNameMap: Record<string, string> = {
+                              'work_days': '작업일',
+                              'minimum_purchase': '최소 구매수',
+                              'url': 'URL',
+                              'mid': '상점 ID',
+                              'productName': '상품명',
+                              'mainKeyword': '메인 키워드',
+                              'keywords': '서브 키워드',
+                              'keyword1': '키워드1',
+                              'keyword2': '키워드2', 
+                              'keyword3': '키워드3',
+                              'quantity': '작업량',
+                              'dueDays': '작업기간',
+                              'workCount': '작업수',
+                              'start_date': '시작일',
+                              'end_date': '종료일'
+                            };
+                            const displayKey = fieldNameMap[key] || key;
+                            
+                            return (
+                              <div key={key} className="flex items-start gap-2 text-sm">
+                                <span className="font-medium text-slate-600 dark:text-gray-400 min-w-[100px]">{displayKey}:</span>
+                                <span className="text-slate-700 dark:text-gray-300 flex-1 break-words">
+                                  {isFileUrl ? (
+                                    isImage ? (
+                                      <span className="text-blue-600 dark:text-blue-400">
+                                        {fileName} (이미지)
+                                      </span>
+                                    ) : (
+                                      <a
+                                        href={value}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                                      >
+                                        {fileName}
+                                      </a>
+                                    )
+                                  ) : (
+                                    value ? String(value) : '-'
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    키워드
-                  </h4>
                 </div>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-5 border border-gray-200/50 dark:border-gray-700/50">
-                  <div className="flex flex-wrap gap-2.5">
-                    {keywords.map((keyword, index) => (
-                      <span
-                        key={index}
-                        className="px-3.5 py-2 text-sm bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-full font-medium shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 추가 정보 */}
-            {additionalFields.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                    <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    추가 정보
-                  </h4>
-                </div>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-5 border border-gray-200/50 dark:border-gray-700/50">
-                  <div className="space-y-3">
-                    {additionalFields.map(([key, value]) => {
-                      // 파일 URL인지 확인 (Supabase Storage URL 패턴)
-                      const isFileUrl = value && typeof value === 'string' && 
-                        (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
-                      
-                      // 이미지 파일인지 확인
-                      const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
-                      
-                      // 파일명 추출
-                      const fileNameKey = `${key}_fileName`;
-                      const fileName = inputData[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
-                      
-                      return (
-                        <div key={key} className="flex items-start gap-4 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30 rounded-lg transition-colors">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[140px] flex-shrink-0 font-semibold">
-                            {key}
-                          </span>
-                          <div className="flex-1">
-                            {isFileUrl ? (
-                              isImage ? (
-                                // 이미지인 경우 클릭 가능한 썸네일 표시
-                                <div className="inline-block">
-                                  <div 
-                                    className="cursor-pointer group"
-                                    onClick={() => handleImageClick(value, key)}
-                                  >
-                                    <img
-                                      src={value}
-                                      alt={key}
-                                      className="max-w-[200px] max-h-[150px] rounded-lg border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-all duration-200 object-cover shadow-md group-hover:shadow-lg"
-                                    />
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 font-medium">{fileName}</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                // 일반 파일인 경우 링크로 표시
-                                <a
-                                  href={value}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  {fileName}
-                                </a>
-                              )
-                            ) : (
-                              // 일반 텍스트인 경우
-                              <span className="text-sm text-gray-900 dark:text-gray-100">
-                                {value ? String(value) : '-'}
-                              </span>
-                            )}
+              {/* 메모 */}
+              {(slot.mat_reason || slot.user_reason) && (
+                <div className="card">
+                  <div className="card-body">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                      <KeenIcon icon="message-text" className="text-sm" />
+                      메모
+                    </h3>
+                    <div className="space-y-3">
+                      {slot.mat_reason && (
+                        <div>
+                          <span className="text-xs text-slate-500 dark:text-gray-500 block mb-1">관리자 메모</span>
+                          <div className="p-2 bg-slate-50 dark:bg-gray-800 rounded text-sm text-slate-700 dark:text-gray-300">
+                            {slot.mat_reason}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 메모 */}
-            {(slot.mat_reason || slot.user_reason) && (
-              <div>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <MessageSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    메모
-                  </h4>
-                </div>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-5 border border-gray-200/50 dark:border-gray-700/50 space-y-4">
-                  {slot.mat_reason && (
-                    <div className="p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">관리자 메모</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap mt-2 leading-relaxed">
-                        {slot.mat_reason}
-                      </p>
+                      )}
+                      {slot.user_reason && (
+                        <div>
+                          <span className="text-xs text-slate-500 dark:text-gray-500 block mb-1">사용자 메모</span>
+                          <div className="p-2 bg-slate-50 dark:bg-gray-800 rounded text-sm text-slate-700 dark:text-gray-300">
+                            {slot.user_reason}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {slot.user_reason && (
-                    <div className="p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">사용자 메모</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap mt-2 leading-relaxed">
-                        {slot.user_reason}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 반려 사유 */}
-            {slot.rejection_reason && (
-              <div className="p-5 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 rounded-xl border border-red-200 dark:border-red-800/30 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-base font-bold text-red-700 dark:text-red-300 mb-2">
+                </div>
+              )}
+
+              {/* 반려 사유 */}
+              {slot.rejection_reason && (
+                <div className="card border-red-200 dark:border-red-800">
+                  <div className="card-body">
+                    <h3 className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3 flex items-center gap-1.5">
+                      <KeenIcon icon="shield-cross" className="text-sm text-red-600" />
                       반려 사유
-                    </h4>
-                    <p className="text-sm text-red-700 dark:text-red-400 leading-relaxed">
+                    </h3>
+                    <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm text-red-700 dark:text-red-400">
                       {slot.rejection_reason}
-                    </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </DialogBody>
+
+          <div className="flex-shrink-0 flex justify-end p-4 border-t border-slate-200 dark:border-gray-700">
+            <Button
+              variant="light"
+              size="sm"
+              onClick={onClose}
+            >
+              닫기
+            </Button>
           </div>
-        </div>
-      </div>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
     
     {/* 이미지 모달 - SlotList와 동일한 스타일 */}
     {imageModalOpen && selectedImage && createPortal(

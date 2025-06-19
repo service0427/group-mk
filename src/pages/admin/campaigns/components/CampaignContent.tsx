@@ -673,7 +673,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '60px' }}>
                     No
                   </th>
-                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '100px' }}>
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider" style={{ width: '120px' }}>
                     서비스타입
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[200px]">
@@ -712,7 +712,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         campaign.originalData?.slot_type === 'guarantee' 
                           ? 'badge-info' 
                           : 'badge-primary'
-                      } text-xs`}>
+                      } badge-outline rounded-[30px] h-auto py-0.5 text-xs`}>
                         {campaign.originalData?.slot_type === 'guarantee' ? '보장형' : '일반형'}
                       </span>
                     </td>

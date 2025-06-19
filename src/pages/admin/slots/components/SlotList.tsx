@@ -453,27 +453,6 @@ const SlotList: React.FC<SlotListProps> = ({
                   <td className="py-2 px-2 text-center max-w-[100px]">
                     <div className="flex items-center justify-center gap-1 relative">
                       {(() => {
-<<<<<<< HEAD
-                      // 모든 키워드 수집 (직접입력 모드 포함)
-                      const allKeywords = [];
-                      if (slot.input_data?.mainKeyword) {
-                        allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
-                      }
-                      if (slot.input_data?.keyword1) {
-                        allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
-                      }
-                      if (slot.input_data?.keyword2) {
-                        allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
-                      }
-                      if (slot.input_data?.keyword3) {
-                        allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
-                      }
-                      if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
-                        slot.input_data.keywords.forEach((kw: string) => {
-                          allKeywords.push({ keyword: kw, isMain: false });
-                        });
-                      }
-=======
                         const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
                         
                         if (isManualInput) {
@@ -483,7 +462,6 @@ const SlotList: React.FC<SlotListProps> = ({
                         const mainKeyword = slot.input_data?.mainKeyword || 
                                           slot.input_data?.keyword1 || 
                                           (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) ? slot.input_data.keywords[0] : null);
->>>>>>> feature/jhjang
 
                         if (!mainKeyword) {
                           return <span className="text-sm text-gray-400">-</span>;
@@ -949,7 +927,14 @@ const SlotList: React.FC<SlotListProps> = ({
                 <span>
                   <span className="text-gray-500">키워드:</span> 
                   {(() => {
-                  // 모든 키워드 수집 (직접입력 모드 포함)
+                    // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
+                    const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
+                    
+                    if (isManualInput) {
+                      return <span className="text-gray-500 ml-1">직접입력</span>;
+                    }
+                  
+                  // 모든 키워드 수집
                   const allKeywords = [];
                   if (slot.input_data?.mainKeyword) {
                     allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });

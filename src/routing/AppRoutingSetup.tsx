@@ -34,7 +34,7 @@ export const NotificationsPage = lazyWithPreload(() => import('@/pages/myinfo/no
 // 캐시 페이지 lazy loading with preload
 export const GuidePage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.GuidePage })));
 export const ChargePage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.ChargePage })));
-export const CashHistoryPage = lazyWithPreload(() => import('@/pages/cash').then(m => ({ default: m.HistoryPage })));
+export const CashHistoryPage = lazyWithPreload(() => import('@/pages/cash/HistoryPage').then(m => ({ default: m.HistoryPage })));
 
 // 포인트 페이지 lazy loading with preload
 export const PointHistoryPage = lazyWithPreload(() => import('@/pages/point').then(m => ({ default: m.HistoryPage })));

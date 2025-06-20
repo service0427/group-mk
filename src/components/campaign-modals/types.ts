@@ -166,6 +166,10 @@ export interface ICampaign {
   targetRank?: string | number;
   isNegotiable?: boolean;
   refundSettings?: any; // 환불 설정
+  // 총판 정보 추가
+  matName?: string;
+  matEmail?: string;
+  matDisplay?: string;
 }
 
 // 확장된 캠페인 인터페이스

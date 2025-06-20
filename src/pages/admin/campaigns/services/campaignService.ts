@@ -158,6 +158,25 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
     console.error('fetchCampaigns 오류:', error);
     return [];
   }
+
+  // mat_id들 추출 (중복 제거)
+  const matIds = [...new Set(data.map(item => item.mat_id).filter(id => id))];
+  
+  // 총판 정보 조회
+  let matUsers: Record<string, any> = {};
+  if (matIds.length > 0) {
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name, email')
+      .in('id', matIds);
+    
+    if (!usersError && usersData) {
+      matUsers = usersData.reduce((acc: Record<string, any>, user) => {
+        acc[user.id] = user;
+        return acc;
+      }, {});
+    }
+  }
   
   // DB 데이터를 프론트엔드에서 사용하는 형태로 변환
   return data.map(item => {
@@ -180,6 +199,11 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
       }
     }
 
+    // 총판 정보 추출
+    const matInfo = parsedItem.mat_id ? matUsers[parsedItem.mat_id] : null;
+    const matName = matInfo?.full_name || '알 수 없음';
+    const matEmail = matInfo?.email || '';
+
     return {
       id: parsedItem.id.toString(),
       campaignName: parsedItem.campaign_name,
@@ -196,6 +220,10 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
       additionalLogic: parsedItem.additional_logic ? parsedItem.additional_logic.toString() : '',
       // 상세 설명을 분리해서 명시적으로 가져오기
       detailedDescription: parsedItem.detailed_description || '',
+      // 총판 정보 추가
+      matName: matName,
+      matEmail: matEmail,
+      matDisplay: `${matName} (${matEmail})`,
       // 원본 데이터도 포함 (파싱된 add_info 포함)
       originalData: parsedItem
     };

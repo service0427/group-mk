@@ -508,13 +508,20 @@ const ApprovePage: React.FC = () => {
           query = query.eq('status', searchStatus);
         }
 
-        // 날짜 필터 적용 (submitted_at 필드 기준)
-        if (searchDateFrom) {
-          query = query.gte('submitted_at', `${searchDateFrom}T00:00:00`);
-        }
-
-        if (searchDateTo) {
-          query = query.lte('submitted_at', `${searchDateTo}T23:59:59`);
+        // 날짜 필터 적용
+        console.log('날짜 필터 적용:', { searchDateFrom, searchDateTo });
+        
+        if (searchDateFrom && searchDateTo) {
+          // 둘 다 선택: start_date >= 시작일 AND end_date <= 종료일
+          query = query
+            .gte('start_date', searchDateFrom)
+            .lte('end_date', searchDateTo);
+        } else if (searchDateFrom) {
+          // 시작일만 선택: start_date >= 검색시작일
+          query = query.gte('start_date', searchDateFrom);
+        } else if (searchDateTo) {
+          // 종료일만 선택: end_date <= 검색종료일
+          query = query.lte('end_date', searchDateTo);
         }
 
         // 문자열 검색 - 조인된 사용자 정보에서 필터링
@@ -525,7 +532,7 @@ const ApprovePage: React.FC = () => {
         const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
-
+          console.error('슬롯 조회 에러:', error);
           setError('슬롯 정보를 가져오는데 실패했습니다.');
           return;
         }
@@ -533,6 +540,13 @@ const ApprovePage: React.FC = () => {
 
 
         if (data) {
+          console.log('조회된 슬롯 데이터 샘플:', data.slice(0, 3).map(slot => ({
+            id: slot.id,
+            start_date: slot.start_date,
+            end_date: slot.end_date,
+            created_at: slot.created_at
+          })));
+          
           // 모든 데이터에 대해 조인된 데이터 형식 변환 (빈 배열이어도 처리)
           const enrichedSlots = data.map(slot => {
             // users 처리 - 배열 또는 단일 객체일 수 있음
@@ -1273,10 +1287,12 @@ const ApprovePage: React.FC = () => {
   };
 
   const handleSearchDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('시작일 변경:', e.target.value);
     setSearchDateFrom(e.target.value);
   };
 
   const handleSearchDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('종료일 변경:', e.target.value);
     setSearchDateTo(e.target.value);
   };
 

@@ -194,15 +194,7 @@ const AuthProviderV2 = ({ children }: PropsWithChildren) => {
     useEffect(() => {
         if (!isAuthenticated) return;
         
-        // 초기 5초 후 한 번 확인
-        const initialCheck = setTimeout(() => {
-            // 로그아웃 중이거나 인증되지 않은 경우 실행하지 않음
-            if (!isLoggingOut && isAuthenticated) {
-                storeRefreshUserRole();
-            }
-        }, 5000);
-        
-        // 이후 5분마다 확인
+        // 5분마다 확인 (초기 5초 확인 제거)
         const interval = setInterval(() => {
             // 로그아웃 중이거나 인증되지 않은 경우 실행하지 않음
             if (!isLoggingOut && isAuthenticated) {
@@ -211,7 +203,6 @@ const AuthProviderV2 = ({ children }: PropsWithChildren) => {
         }, 5 * 60 * 1000);
         
         return () => {
-            clearTimeout(initialCheck);
             clearInterval(interval);
         };
     }, [isAuthenticated, storeRefreshUserRole, isLoggingOut]);

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { KeenIcon } from '@/components';
 import { Badge } from '@/components/ui/badge';
+import RefundConfirmModal from './RefundConfirmModal';
 
 interface GuaranteeRefundModalProps {
   isOpen: boolean;
@@ -20,6 +21,11 @@ interface GuaranteeRefundModalProps {
   guaranteeUnit?: string;
   completedDays?: number;
   totalAmount?: number;
+  refundSettings?: {
+    type: 'immediate' | 'delayed' | 'cutoff_based';
+    delay_days?: number;
+    cutoff_time?: string;
+  };
 }
 
 const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
@@ -31,6 +37,7 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
   guaranteeUnit = 'daily',
   completedDays = 0,
   totalAmount = 0,
+  refundSettings,
 }) => {
   const [reason, setReason] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -140,6 +147,31 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
                 </div>
               </div>
 
+              {/* 환불 정책 안내 */}
+              {refundSettings && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <KeenIcon icon="information-2" className="text-sm text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-1">
+                        환불 정책
+                      </h3>
+                      <div className="text-xs text-blue-700 dark:text-blue-300">
+                        {refundSettings.type === 'immediate' && (
+                          <p>이 캠페인은 <span className="font-semibold">즉시 환불</span> 정책이 적용됩니다.</p>
+                        )}
+                        {refundSettings.type === 'delayed' && (
+                          <p>이 캠페인은 승인일로부터 <span className="font-semibold">{refundSettings.delay_days}일 후</span> 환불이 처리됩니다.</p>
+                        )}
+                        {refundSettings.type === 'cutoff_based' && (
+                          <p>이 캠페인은 <span className="font-semibold">매일 {refundSettings.cutoff_time}</span> 이후 환불이 처리됩니다.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 환불 사유 카드 */}
               <div className="card">
                 <div className="card-body">
@@ -199,52 +231,18 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
       </Dialog>
 
       {/* 최종 확인 모달 */}
-      {showConfirm && (
-        <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <DialogContent className="max-w-sm" aria-describedby={undefined}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <KeenIcon icon="shield-slash" className="size-5 text-danger" />
-                최종 확인
-              </DialogTitle>
-            </DialogHeader>
-            <DialogBody>
-              <div className="py-4">
-                <p className="text-sm text-slate-700 dark:text-gray-300 mb-3">
-                  정말로 이 보장형 슬롯을 환불 처리하시겠습니까?
-                </p>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3">
-                  <div className="space-y-2">
-                    <p className="text-sm text-red-700 dark:text-red-300">
-                      <strong>경고:</strong> 이 작업은 취소할 수 없습니다.
-                    </p>
-                    {refundAmount > 0 && (
-                      <p className="text-sm text-red-700 dark:text-red-300">
-                        <strong>환불 예정금액:</strong> {refundAmount.toLocaleString()}원
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </DialogBody>
-            <div className="flex justify-end items-center gap-2 p-4 border-t border-slate-200 dark:border-gray-700">
-              <button
-                onClick={handleFinalConfirm}
-                className="btn btn-danger btn-sm"
-              >
-                환불
-              </button>
-              <Button
-                variant="light"
-                size="sm"
-                onClick={() => setShowConfirm(false)}
-              >
-                취소
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <RefundConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleFinalConfirm}
+        type="refund"
+        campaignName={campaignName}
+        refundAmount={refundAmount}
+        refundReason={reason}
+        totalAmount={totalAmount}
+        guaranteeCount={guaranteeCount}
+        completedDays={completedDays}
+      />
     </>
   );
 };

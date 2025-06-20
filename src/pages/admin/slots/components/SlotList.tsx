@@ -349,12 +349,29 @@ const SlotList: React.FC<SlotListProps> = ({
       <div dangerouslySetInnerHTML={{ __html: campaignStatusStyles }} />
       <div className="card shadow-sm">
         <div className="card-header px-6 py-4">
-          <h3 className="card-title">일반형 슬롯 목록</h3>
-          <div className="card-toolbar">
-            <div className="flex flex-wrap justify-between items-center gap-2">
-              <h3 className="card-title font-medium text-sm">
-                전체 <span className="text-primary font-medium">{slots.length}</span> 건
-              </h3>
+          <div className="flex items-center justify-between w-full">
+            <h3 className="card-title">일반형 슬롯 목록</h3>
+            <div className="flex items-center gap-4">
+              {/* 전체 건수 */}
+              <div className="text-sm">
+                전체 <span className="text-primary font-semibold">{slots.length}</span> 건
+              </div>
+              {/* 메모 색상 안내 */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-500">메모:</span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                  <span className="text-gray-600 dark:text-gray-400">총판</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                  <span className="text-gray-600 dark:text-gray-400">사용자</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                  <span className="text-gray-600 dark:text-gray-400">모두</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -829,14 +846,30 @@ const SlotList: React.FC<SlotListProps> = ({
                     
                     {/* 메모 버튼 */}
                     <button
-                      className="btn btn-icon btn-sm btn-ghost text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/30"
+                      className={`btn btn-icon btn-sm btn-ghost text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/30 relative ${
+                        slot.mat_reason ? 'ring-2 ring-blue-400' : ''
+                      } ${slot.user_reason ? 'ring-2 ring-yellow-400' : ''} ${
+                        slot.mat_reason && slot.user_reason ? 'ring-2 ring-purple-400' : ''
+                      }`}
                       onClick={() => onMemo(slot.id)}
-                      title="메모 추가"
+                      title={
+                        slot.mat_reason && slot.user_reason ? "메모 (총판/사용자 모두 작성됨)" :
+                        slot.mat_reason ? "메모 (총판 작성됨)" :
+                        slot.user_reason ? "메모 (사용자 작성됨)" :
+                        "메모 추가"
+                      }
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
+                      {(slot.mat_reason || slot.user_reason) && (
+                        <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                          slot.mat_reason && slot.user_reason ? 'bg-purple-400' :
+                          slot.mat_reason ? 'bg-blue-400' :
+                          'bg-yellow-400'
+                        }`}></span>
+                      )}
                     </button>
                   </div>
                 </td>
@@ -914,7 +947,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   </span>
                 </div>
               </div>
-              <div>
+              <div className="flex items-center gap-1">
                 {slot.status === 'pending' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">대기중</span>}
                 {slot.status === 'submitted' && 
@@ -931,6 +964,19 @@ const SlotList: React.FC<SlotListProps> = ({
                   <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">완료</span>}
                 {slot.status === 'pending_user_confirm' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">사용자확인대기</span>}
+                
+                {/* 메모 표시 */}
+                {(slot.mat_reason || slot.user_reason) && (
+                  <span className={`px-1.5 py-0.5 text-xs rounded ${
+                    slot.mat_reason && slot.user_reason ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+                    slot.mat_reason ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                  }`}>
+                    {slot.mat_reason && slot.user_reason ? '메모(모두)' :
+                     slot.mat_reason ? '메모(총판)' :
+                     '메모(사용자)'}
+                  </span>
+                )}
               </div>
             </div>
             
@@ -1167,14 +1213,30 @@ const SlotList: React.FC<SlotListProps> = ({
                 
                 {/* 메모 버튼 */}
                 <button
-                  className="btn btn-icon btn-sm btn-ghost text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/30"
+                  className={`btn btn-icon btn-sm btn-ghost text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/30 relative ${
+                    slot.mat_reason ? 'ring-2 ring-blue-400' : ''
+                  } ${slot.user_reason ? 'ring-2 ring-yellow-400' : ''} ${
+                    slot.mat_reason && slot.user_reason ? 'ring-2 ring-purple-400' : ''
+                  }`}
                   onClick={() => onMemo(slot.id)}
-                  title="메모 추가"
+                  title={
+                    slot.mat_reason && slot.user_reason ? "메모 (총판/사용자 모두 작성됨)" :
+                    slot.mat_reason ? "메모 (총판 작성됨)" :
+                    slot.user_reason ? "메모 (사용자 작성됨)" :
+                    "메모 추가"
+                  }
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
+                  {(slot.mat_reason || slot.user_reason) && (
+                    <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                      slot.mat_reason && slot.user_reason ? 'bg-purple-400' :
+                      slot.mat_reason ? 'bg-blue-400' :
+                      'bg-yellow-400'
+                    }`}></span>
+                  )}
                 </button>
               </div>
               

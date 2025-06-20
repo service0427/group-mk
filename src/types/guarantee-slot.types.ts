@@ -5,7 +5,7 @@
 export type GuaranteeSlotRequestStatus = 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
 
 // 협상 메시지 타입
-export type NegotiationMessageType = 'message' | 'price_proposal' | 'counter_offer';
+export type NegotiationMessageType = 'message' | 'price_proposal' | 'counter_offer' | 'acceptance';
 
 // 보장성 슬롯 상태
 export type GuaranteeSlotStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
@@ -86,6 +86,17 @@ export interface GuaranteeSlot {
   cancellation_reason?: string;
   created_at: string;
   updated_at: string;
+  // 환불 요청 정보
+  refund_requests?: Array<{
+    id: string;
+    status: 'pending' | 'approved' | 'rejected';
+    refund_reason: string;
+    approval_notes?: string;
+    request_date: string;
+    approval_date?: string;
+    refund_amount?: number;
+    approver_id?: string;
+  }>;
 }
 
 // 홀딩 금액 관리

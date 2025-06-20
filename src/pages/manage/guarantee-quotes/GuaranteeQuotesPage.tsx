@@ -17,6 +17,7 @@ import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundMo
 import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlotDetailModal';
 import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
 import GuaranteeExcelExportModal from '@/components/guarantee-slots/GuaranteeExcelExportModal';
+import GuaranteeRefundRequestModal from '@/components/guarantee-slots/GuaranteeRefundRequestModal';
 import GuaranteeMonthlyStatistics, { GuaranteeMonthlyStatisticsRef } from './components/GuaranteeMonthlyStatistics';
 import GuaranteeRequestApprovalModal from '@/components/guarantee-slots/GuaranteeRequestApprovalModal';
 import GuaranteeRequestRejectModal from '@/components/guarantee-slots/GuaranteeRequestRejectModal';
@@ -24,6 +25,7 @@ import GuaranteeRequestCancelRejectModal from '@/components/guarantee-slots/Guar
 import * as XLSX from 'xlsx';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 import type { ExcelColumn } from '@/components/guarantee-slots/GuaranteeExcelExportModal';
+import { InquiryChatModal } from '@/components/inquiry';
 
 // 타입 정의
 interface GuaranteeQuoteRequest {
@@ -39,7 +41,15 @@ interface GuaranteeQuoteRequest {
   start_date?: string;
   end_date?: string;
   keyword_id?: number;
-  input_data?: Record<string, any>;
+  input_data?: {
+    mid?: string;
+    url?: string;
+    mainKeyword?: string;
+    keyword1?: string;
+    keyword2?: string;
+    keyword3?: string;
+    [key: string]: any;
+  };
   created_at: string;
   updated_at: string;
   // 조인된 데이터
@@ -53,6 +63,7 @@ interface GuaranteeQuoteRequest {
     guarantee_unit?: string;
     logo?: string;
     status?: string;
+    refund_settings?: any;
   };
   users?: {
     id: string;
@@ -65,6 +76,8 @@ interface GuaranteeQuoteRequest {
     keyword1?: string;
     keyword2?: string;
     keyword3?: string;
+    url?: string;
+    mid?: string;
   };
   guarantee_slots?: Array<{
     id: string;
@@ -76,15 +89,29 @@ interface GuaranteeQuoteRequest {
     rejection_reason?: string;
     start_date?: string;
     end_date?: string;
+    refund_requests?: Array<{
+      id: string;
+      status: 'pending' | 'approved' | 'rejected';
+      refund_reason: string;
+      approval_notes?: string;
+      request_date: string;
+      approval_date?: string;
+      refund_amount?: number;
+    }>;
   }>;
 }
 
 const GuaranteeQuotesPage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
+  
+  // 함수 참조를 안정화하기 위한 ref
+  const showErrorRef = useRef(showError);
+  showErrorRef.current = showError;
 
   const [requests, setRequests] = useState<GuaranteeQuoteRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initialLoadDone, setInitialLoadDone] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchStatus, setSearchStatus] = useState<string>('');
   const [searchServiceType, setSearchServiceType] = useState<string>('');
@@ -133,6 +160,7 @@ const GuaranteeQuotesPage: React.FC = () => {
     guaranteeUnit?: string;
     completedDays?: number;
     totalAmount?: number;
+    refundSettings?: any;
   } | null>(null);
 
   // 상세보기 모달 상태
@@ -168,6 +196,32 @@ const GuaranteeQuotesPage: React.FC = () => {
     campaignName?: string;
   } | null>(null);
   const [requestProcessing, setRequestProcessing] = useState(false);
+  
+  // 문의 모달 상태
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  
+  // 환불 요청 승인/거절 모달 상태
+  const [refundRequestModalOpen, setRefundRequestModalOpen] = useState(false);
+  const [refundRequestData, setRefundRequestData] = useState<{
+    slotId: string;
+    requestId: string;
+    campaignName?: string;
+    refundAmount: number;
+    refundReason: string;
+    requesterName?: string;
+    // 환불 계산용 추가 정보
+    guaranteeCount?: number;
+    guaranteeUnit?: string;
+    completedDays?: number;
+    totalAmount?: number;
+    requestDate?: string;
+  } | null>(null);
+  const [inquiryData, setInquiryData] = useState<{
+    slotId?: string;
+    campaignId?: number;
+    distributorId?: string;
+    title?: string;
+  } | null>(null);
 
   // 캠페인 관련 상태
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -175,6 +229,43 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   // MonthlyStatistics 컴포넌트 ref
   const monthlyStatisticsRef = useRef<GuaranteeMonthlyStatisticsRef>(null);
+  
+  // 키워드 툴팁 상태
+  const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  
+  // 남은 일수 계산 함수
+  const calculateRemainingDays = (endDate: string | null): number | null => {
+    if (!endDate) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    
+    const diffTime = end.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+
+  // 남은 일수에 따른 색상 클래스 반환
+  const getRemainingDaysColorClass = (days: number | null): string => {
+    if (days === null) return 'text-gray-400';
+    if (days < 0) return 'text-gray-500'; // 마감됨
+    if (days === 0) return 'text-red-600 font-bold'; // 오늘 마감
+    if (days <= 3) return 'text-orange-500 font-semibold'; // 3일 이하
+    if (days <= 7) return 'text-yellow-600'; // 7일 이하
+    return 'text-gray-700 dark:text-gray-300'; // 일반
+  };
+
+  // 남은 일수 표시 텍스트
+  const getRemainingDaysText = (days: number | null): string => {
+    if (days === null) return '-';
+    if (days < 0) return '마감';
+    if (days === 0) return '오늘';
+    return `D-${days}`;
+  };
 
   // 필터링된 요청 목록
   const filteredRequests = useMemo(() => {
@@ -236,9 +327,13 @@ const GuaranteeQuotesPage: React.FC = () => {
     return filtered;
   }, [requests, searchServiceType, searchStatus, searchSlotStatus, searchDateFrom, searchDateTo, searchTerm, selectedCampaign]);
 
+  // 사용자 정보를 안정화
+  const userId = currentUser?.id;
+  const userRole = currentUser?.role;
+  
   // 견적 요청 목록 가져오기
   const fetchRequests = useCallback(async () => {
-    if (!currentUser) return;
+    if (!userId) return;
 
     try {
       setLoading(true);
@@ -246,7 +341,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       let allRequests: GuaranteeQuoteRequest[] = [];
 
       // ADMIN 그룹은 모든 요청을 볼 수 있음
-      if (hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN)) {
+      if (hasPermission(userRole, PERMISSION_GROUPS.ADMIN)) {
         const { data, error } = await guaranteeSlotRequestService.getRequests({});
         if (error) throw error;
         allRequests = data || [];
@@ -269,9 +364,9 @@ const GuaranteeQuotesPage: React.FC = () => {
         }
       }
       // 총판은 자신이 distributor로 지정된 요청만 볼 수 있음
-      else if (currentUser.role === USER_ROLES.DISTRIBUTOR) {
+      else if (userRole === USER_ROLES.DISTRIBUTOR) {
         const { data, error } = await guaranteeSlotRequestService.getRequests({
-          distributor_id: currentUser.id
+          distributor_id: userId
         });
         if (error) throw error;
         allRequests = data || [];
@@ -296,7 +391,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       // 일반 사용자는 자신의 요청만
       else {
         const { data, error } = await guaranteeSlotRequestService.getRequests({
-          user_id: currentUser.id
+          user_id: userId
         });
         if (error) throw error;
         allRequests = data || [];
@@ -305,9 +400,9 @@ const GuaranteeQuotesPage: React.FC = () => {
         allRequests = allRequests.map(req => ({
           ...req,
           users: {
-            id: currentUser.id!,
-            email: currentUser.email!,
-            full_name: currentUser.full_name || '사용자'
+            id: userId!,
+            email: currentUser?.email!,
+            full_name: currentUser?.full_name || '사용자'
           }
         }));
       }
@@ -318,7 +413,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         const requestIds = purchasedRequests.map(r => r.id);
         const { data: slotsData } = await supabase
           .from('guarantee_slots')
-          .select('id, status, approved_at, approved_by, rejected_at, rejected_by, rejection_reason, start_date, end_date, request_id')
+          .select('id, status, approved_at, approved_by, rejected_at, rejected_by, rejection_reason, start_date, end_date, request_id, refund_requests')
           .in('request_id', requestIds);
 
         if (slotsData) {
@@ -342,15 +437,15 @@ const GuaranteeQuotesPage: React.FC = () => {
       setRequests(allRequests);
     } catch (error) {
       console.error('견적 요청 목록 조회 실패:', error);
-      showError('견적 요청 목록을 불러오는데 실패했습니다.');
+      showErrorRef.current('견적 요청 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [currentUser, showError]);
+  }, [userId, userRole]);
 
   // 캠페인 목록 가져오기
   const fetchCampaigns = useCallback(async () => {
-    if (!currentUser) return;
+    if (!userId) return;
 
     try {
       let query = supabase
@@ -360,8 +455,8 @@ const GuaranteeQuotesPage: React.FC = () => {
         .order('campaign_name', { ascending: true });
 
       // 총판인 경우 자신의 캠페인만
-      if (currentUser.role === USER_ROLES.DISTRIBUTOR) {
-        query = query.eq('mat_id', currentUser.id);
+      if (userRole === USER_ROLES.DISTRIBUTOR) {
+        query = query.eq('mat_id', userId);
       }
 
       const { data, error } = await query;
@@ -372,7 +467,7 @@ const GuaranteeQuotesPage: React.FC = () => {
     } catch (error) {
       console.error('캠페인 목록 조회 실패:', error);
     }
-  }, [currentUser]);
+  }, [userId, userRole]);
 
   // 서비스 타입에 따른 캠페인 필터링
   useEffect(() => {
@@ -384,16 +479,15 @@ const GuaranteeQuotesPage: React.FC = () => {
     }
   }, [campaigns, searchServiceType]);
 
+  // 초기 데이터 로드를 위한 useEffect
   useEffect(() => {
-    if (!authLoading && currentUser) {
-      const timeoutId = setTimeout(() => {
-        fetchRequests();
-        fetchCampaigns();
-      }, 100); // 짧은 딜레이로 중복 호출 방지
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [authLoading, currentUser, fetchRequests, fetchCampaigns]);
+    // 이미 초기 로드가 완료되었으면 실행하지 않음
+    if (initialLoadDone || authLoading || !userId) return;
+    
+    setInitialLoadDone(true);
+    fetchRequests();
+    fetchCampaigns();
+  }, [authLoading, userId, initialLoadDone, fetchRequests, fetchCampaigns]);
 
   // 상태별 배지 색상
   const getStatusBadgeClass = (status: string) => {
@@ -794,7 +888,8 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0
+      totalAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0,
+      refundSettings: request.campaigns?.refund_settings
     });
     setRefundModalOpen(true);
   };
@@ -826,6 +921,84 @@ const GuaranteeQuotesPage: React.FC = () => {
     } catch (error) {
       console.error('슬롯 환불 실패:', error);
       showError('슬롯 환불 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 환불 요청 승인/거절 모달 열기
+  const handleRefundRequestModal = (slotId: string, refundRequest: any, request: GuaranteeQuoteRequest) => {
+    setRefundRequestData({
+      slotId,
+      requestId: refundRequest.id,
+      campaignName: request.campaigns?.campaign_name,
+      refundAmount: refundRequest.refund_amount,
+      refundReason: refundRequest.refund_reason,
+      requesterName: request.users?.full_name,
+      // 환불 계산용 추가 정보
+      guaranteeCount: request.guarantee_count,
+      guaranteeUnit: request.campaigns?.guarantee_unit,
+      completedDays: 0, // TODO: 실제 완료일수 계산 필요
+      totalAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0,
+      requestDate: refundRequest.request_date
+    });
+    setRefundRequestModalOpen(true);
+  };
+
+  // 환불 요청 승인 처리
+  const handleRefundRequestApprove = async (notes?: string) => {
+    if (!currentUser || !refundRequestData) return;
+
+    try {
+      const { data, error } = await supabase.rpc('process_refund_request', {
+        p_slot_id: refundRequestData.slotId,
+        p_request_id: refundRequestData.requestId,
+        p_distributor_id: currentUser.id,
+        p_action: 'approve',
+        p_notes: notes || null
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      showSuccess('환불 요청이 승인되어 처리되었습니다.');
+      setRefundRequestModalOpen(false);
+      setRefundRequestData(null);
+      fetchRequests();
+
+      // 통계 새로고침
+      if (monthlyStatisticsRef.current) {
+        monthlyStatisticsRef.current.refresh();
+      }
+    } catch (error: any) {
+      console.error('환불 요청 승인 실패:', error);
+      showError(error.message || '환불 요청 승인 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 환불 요청 거절 처리
+  const handleRefundRequestReject = async (notes: string) => {
+    if (!currentUser || !refundRequestData) return;
+
+    try {
+      const { data, error } = await supabase.rpc('process_refund_request', {
+        p_slot_id: refundRequestData.slotId,
+        p_request_id: refundRequestData.requestId,
+        p_distributor_id: currentUser.id,
+        p_action: 'reject',
+        p_notes: notes
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      showSuccess('환불 요청이 거절되었습니다.');
+      setRefundRequestModalOpen(false);
+      setRefundRequestData(null);
+      fetchRequests();
+    } catch (error: any) {
+      console.error('환불 요청 거절 실패:', error);
+      showError(error.message || '환불 요청 거절 중 오류가 발생했습니다.');
     }
   };
 
@@ -1363,10 +1536,13 @@ const GuaranteeQuotesPage: React.FC = () => {
                       />
                     </th>
                     <th className="py-2 px-2 text-start font-medium">사용자</th>
+                    <th className="py-2 px-2 text-start font-medium">입력정보</th>
                     <th className="py-2 px-2 text-center font-medium">키워드</th>
-                    <th className="py-2 px-2 text-center font-medium">보장기간</th>
+                    <th className="py-2 px-2 text-center font-medium">보장</th>
                     <th className="py-2 px-2 text-center font-medium">캠페인</th>
                     <th className="py-2 px-2 text-center font-medium">상태</th>
+                    <th className="py-2 px-2 text-center font-medium">기간</th>
+                    <th className="py-2 px-2 text-center font-medium">남은일</th>
                     <th className="py-2 px-2 text-center font-medium">상세</th>
                     <th className="py-2 px-2 text-center font-medium">작업</th>
                   </tr>
@@ -1398,15 +1574,160 @@ const GuaranteeQuotesPage: React.FC = () => {
                           {request.users?.email || request.user_id}
                         </div>
                       </td>
-                      {/* 키워드 */}
-                      <td className="py-2 px-2 text-center max-w-[100px]">
-                        <div className="text-sm text-gray-900 truncate mx-auto" title={request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}>
-                          {request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}
+                      {/* 입력정보 */}
+                      <td className="py-2 px-2 max-w-[150px]">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={request.keywords?.mid || request.input_data?.mid || '-'}>
+                            {request.keywords?.mid || request.input_data?.mid || '-'}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <a 
+                              href={request.keywords?.url || request.input_data?.url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline"
+                              title={request.keywords?.url || request.input_data?.url || '-'}
+                              onClick={(e) => {
+                                if (!request.keywords?.url && !request.input_data?.url) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                              {request.keywords?.url || request.input_data?.url || '-'}
+                            </a>
+                          </div>
                         </div>
                       </td>
-                      {/* 보장기간 */}
+                      {/* 키워드 */}
+                      <td className="py-2 px-2 text-center max-w-[100px]">
+                        <div className="flex items-center justify-center gap-1 relative">
+                          {(() => {
+                            // 키워드 배열 생성
+                            const keywordArray = [];
+                            if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
+                              keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
+                            }
+                            if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
+                            if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
+                            if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
+
+                            if (keywordArray.length === 0) {
+                              return <span className="text-gray-400 text-sm">-</span>;
+                            }
+
+                            const mainKeyword = keywordArray[0];
+                            const additionalCount = keywordArray.length - 1;
+
+                            return (
+                              <>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium text-sm truncate" title={mainKeyword}>
+                                  {mainKeyword}
+                                </span>
+                                {additionalCount > 0 && (
+                                  <>
+                                    <button
+                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setPopoverPosition({
+                                          top: rect.top - 10,
+                                          left: rect.left + rect.width / 2
+                                        });
+                                        setOpenKeywordTooltipId(openKeywordTooltipId === request.id ? null : request.id);
+                                      }}
+                                    >
+                                      +{additionalCount}
+                                    </button>
+                                    {/* Tooltip */}
+                                    {openKeywordTooltipId === request.id && ReactDOM.createPortal(
+                                      <>
+                                        {/* 배경 클릭 시 닫기 */}
+                                        <div
+                                          className="fixed inset-0"
+                                          style={{ zIndex: 9998 }}
+                                          onClick={() => setOpenKeywordTooltipId(null)}
+                                        />
+                                        <div
+                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                          style={{
+                                            zIndex: 99999,
+                                            left: `${popoverPosition.left}px`,
+                                            top: `${popoverPosition.top}px`,
+                                            transform: 'translate(-50%, -100%)'
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="font-medium text-gray-100">전체 키워드</div>
+                                            <button
+                                              className="text-gray-400 hover:text-gray-200 transition-colors"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenKeywordTooltipId(null);
+                                              }}
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                              </svg>
+                                            </button>
+                                          </div>
+                                          <div className="space-y-2">
+                                            {/* 메인 키워드 */}
+                                            <div>
+                                              <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
+                                              <div className="flex flex-wrap gap-1">
+                                                <span className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium">
+                                                  {mainKeyword}
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            {/* 서브 키워드 */}
+                                            {additionalCount > 0 && (
+                                              <>
+                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                                <div>
+                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {keywordArray.slice(1).map((keyword, index) => (
+                                                      <span
+                                                        key={index}
+                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
+                                                          index % 4 === 0
+                                                            ? 'bg-green-500/20 text-green-200'
+                                                            : index % 4 === 1
+                                                              ? 'bg-purple-500/20 text-purple-200'
+                                                              : index % 4 === 2
+                                                                ? 'bg-orange-500/20 text-orange-200'
+                                                                : 'bg-pink-500/20 text-pink-200'
+                                                        }`}
+                                                      >
+                                                        {keyword}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                          {/* Arrow */}
+                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                          </div>
+                                        </div>
+                                      </>,
+                                      document.body
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      {/* 보장 */}
                       <td className="py-2 px-2 text-center">
-                        <div className="text-sm text-gray-700">
+                        <div className="text-xs font-medium">
                           {request.guarantee_count}{request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
                         </div>
                       </td>
@@ -1441,22 +1762,89 @@ const GuaranteeQuotesPage: React.FC = () => {
                             <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
                           {request.status === 'purchased' && (
                             <>
-                              <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
+                              {/* 슬롯이 없거나 pending 상태일 때만 구매 상태 표시 */}
+                              {(!request.guarantee_slots?.[0] || request.guarantee_slots[0].status === 'pending') && (
+                                <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
+                              )}
                               {request.guarantee_slots?.[0] && (
                                 <>
-                                  {request.guarantee_slots[0].status === 'pending' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>}
-                                  {request.guarantee_slots[0].status === 'active' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">활성</span>}
-                                  {request.guarantee_slots[0].status === 'rejected' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>}
-                                  {request.guarantee_slots[0].status === 'completed' &&
-                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">완료</span>}
+                                  {(() => {
+                                    // 환불 요청 상태 우선 확인
+                                    const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending' || req.status === 'approved' || req.status === 'rejected');
+                                    
+                                    if (refundRequest) {
+                                      // 환불 요청 상태가 있으면 환불 상태 표시
+                                      switch (refundRequest.status) {
+                                        case 'pending':
+                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
+                                            <KeenIcon icon="clock" className="text-xs" />
+                                            환불 검토중
+                                          </span>;
+                                        case 'approved':
+                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
+                                            환불승인
+                                          </span>;
+                                        case 'rejected':
+                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
+                                            <KeenIcon icon="cross-circle" className="text-xs" />
+                                            환불 거절됨
+                                          </span>;
+                                        default:
+                                          return null;
+                                      }
+                                    }
+                                    
+                                    // 환불 요청이 없으면 기존 슬롯 상태 표시
+                                    if (request.guarantee_slots[0].status === 'pending') {
+                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>;
+                                    }
+                                    if (request.guarantee_slots[0].status === 'active') {
+                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">활성</span>;
+                                    }
+                                    if (request.guarantee_slots[0].status === 'rejected') {
+                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>;
+                                    }
+                                    if (request.guarantee_slots[0].status === 'completed') {
+                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">완료</span>;
+                                    }
+                                    return null;
+                                  })()}
                                 </>
                               )}
                             </>
                           )}
                         </div>
+                      </td>
+                      {/* 시작일/종료일 */}
+                      <td className="py-2 px-2 text-center">
+                        <div className="text-xs">
+                          {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date ? (
+                            <>
+                              <div className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</div>
+                              <div className="text-[10px] text-red-600">~{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</div>
+                            </>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </div>
+                      </td>
+                      {/* 남은일 */}
+                      <td className="py-2 px-2 text-center">
+                        {(() => {
+                          // 활성 슬롯의 경우 종료일 기준으로 계산
+                          if (request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].end_date) {
+                            const days = calculateRemainingDays(request.guarantee_slots[0].end_date);
+                            const colorClass = getRemainingDaysColorClass(days);
+                            const text = getRemainingDaysText(days);
+                            
+                            return (
+                              <span className={`text-xs ${colorClass}`}>
+                                {text}
+                              </span>
+                            );
+                          }
+                          return <span className="text-xs text-gray-500">-</span>;
+                        })()}
                       </td>
                       {/* 상세 */}
                       <td className="py-2 px-2 text-center">
@@ -1485,6 +1873,25 @@ const GuaranteeQuotesPage: React.FC = () => {
                               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
                           </button>
+                          {/* 1:1 문의 버튼 - 구매된 슬롯이 있을 때 표시 (환불승인 포함) */}
+                          {request.status === 'purchased' && request.guarantee_slots?.[0] && (
+                            <button
+                              className="btn btn-icon btn-sm btn-ghost text-purple-600"
+                              onClick={() => {
+                                setInquiryData({
+                                  slotId: request.guarantee_slots![0].id,
+                                  campaignId: request.campaign_id,
+                                  distributorId: request.distributor_id,
+                                  title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+                                });
+                                setInquiryModalOpen(true);
+                              }}
+                              title="1:1 문의"
+                              disabled={negotiationModal.open}
+                            >
+                              <KeenIcon icon="messages" />
+                            </button>
+                          )}
                         </div>
                       </td>
                       {/* 작업 */}
@@ -1549,6 +1956,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                     </>
                                   ) : request.guarantee_slots[0].status === 'active' ? (
                                     <>
+                                      {/* 작업 버튼들 */}
                                       <button
                                         className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
                                         onClick={() => {
@@ -1573,14 +1981,36 @@ const GuaranteeQuotesPage: React.FC = () => {
                                       >
                                         완료
                                       </button>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
-                                        onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
-                                        title="환불 처리"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        환불
-                                      </button>
+                                      {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
+                                      {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending') && (
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                          onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
+                                          title="환불 처리"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          환불
+                                        </button>
+                                      )}
+                                      {/* 환불 요청 처리 버튼 (pending 상태일 때만 추가) */}
+                                      {(() => {
+                                        const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
+                                        if (refundRequest) {
+                                          return (
+                                            <button
+                                              className="px-1.5 py-0.5 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                              onClick={() => {
+                                                handleRefundRequestModal(request.guarantee_slots![0].id, refundRequest, request);
+                                              }}
+                                              title="환불 요청 처리"
+                                              disabled={negotiationModal.open}
+                                            >
+                                              환불처리
+                                            </button>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                     </>
                                   ) : request.guarantee_slots[0].status === 'rejected' ? (
                                     <span className="text-xs text-red-600">반려됨</span>
@@ -1642,10 +2072,78 @@ const GuaranteeQuotesPage: React.FC = () => {
                           <div className="font-medium">{request.users?.full_name || '사용자'}</div>
                         </div>
                         <div>
-                          <span className="text-gray-500">보장기간:</span>
-                          <div className="font-medium">{request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}</div>
+                          <span className="text-gray-500">보장:</span>
+                          <div className="font-medium">
+                            {request.guarantee_count}{request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* 입력정보 및 키워드 */}
+                      <div className="grid grid-cols-1 gap-2 text-xs mt-2">
+                        <div>
+                          <span className="text-gray-500">입력정보:</span>
+                          <div className="font-medium">
+                            <div>MID: {request.keywords?.mid || request.input_data?.mid || '-'}</div>
+                            <div className="text-blue-600 hover:underline">
+                              <a 
+                                href={request.keywords?.url || request.input_data?.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  if (!request.keywords?.url && !request.input_data?.url) {
+                                    e.preventDefault();
+                                  }
+                                }}
+                              >
+                                {request.keywords?.url || request.input_data?.url || '-'}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* 키워드 */}
+                        <div>
+                          <span className="text-gray-500">키워드:</span>
+                          <div className="font-medium">
+                            {(() => {
+                              const keywordArray = [];
+                              if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
+                                keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
+                              }
+                              if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
+                              if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
+                              if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
+
+                              if (keywordArray.length === 0) {
+                                return '-';
+                              }
+
+                              return keywordArray.join(', ');
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 기간 및 남은일 정보 */}
+                      {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date && (
+                        <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                          <div>
+                            <span className="text-gray-500">기간:</span>
+                            <div>
+                              <span className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                              <span className="text-gray-400 mx-1">~</span>
+                              <span className="text-red-600">{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</span>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">남은일:</span>
+                            <div className={getRemainingDaysColorClass(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}>
+                              {getRemainingDaysText(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -1705,6 +2203,24 @@ const GuaranteeQuotesPage: React.FC = () => {
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                       </button>
+                      {/* 1:1 문의 버튼 - 활성 슬롯이 있을 때만 표시 */}
+                      {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && (
+                        <button
+                          className="btn btn-icon btn-sm btn-ghost text-purple-600"
+                          onClick={() => {
+                            setInquiryData({
+                              slotId: request.guarantee_slots![0].id,
+                              campaignId: request.campaign_id,
+                              distributorId: request.distributor_id,
+                              title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+                            });
+                            setInquiryModalOpen(true);
+                          }}
+                          title="1:1 문의"
+                        >
+                          <KeenIcon icon="messages" />
+                        </button>
+                      )}
                     </div>
                     
                     {/* 작업 버튼 */}
@@ -1775,11 +2291,58 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   완료
                                 </button>
                                 <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white"
+                                  className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
                                   onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
                                 >
                                   환불
                                 </button>
+                                {/* 작업 버튼들 - 모바일 */}
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                                  onClick={() => {
+                                    setRankCheckSlotData({
+                                      slotId: request.guarantee_slots![0].id,
+                                      campaignName: request.campaigns?.campaign_name,
+                                      targetRank: request.target_rank,
+                                      keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                    });
+                                    setRankCheckModalOpen(true);
+                                  }}
+                                >
+                                  순위
+                                </button>
+                                <button
+                                  className="px-2 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                  onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
+                                >
+                                  완료
+                                </button>
+                                {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
+                                {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending') && (
+                                  <button
+                                    className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
+                                    onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
+                                  >
+                                    환불
+                                  </button>
+                                )}
+                                {/* 환불 요청 처리 버튼 (pending 상태일 때만 추가) - 모바일 */}
+                                {(() => {
+                                  const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
+                                  if (refundRequest) {
+                                    return (
+                                      <button
+                                        className="px-2 py-1 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white"
+                                        onClick={() => {
+                                          handleRefundRequestModal(request.guarantee_slots![0].id, refundRequest, request);
+                                        }}
+                                      >
+                                        환불처리
+                                      </button>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </>
                             )}
                           </>
@@ -1857,6 +2420,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         guaranteeUnit={refundSlotData?.guaranteeUnit}
         completedDays={refundSlotData?.completedDays}
         totalAmount={refundSlotData?.totalAmount}
+        refundSettings={refundSlotData?.refundSettings}
       />
 
       {/* 상세보기 모달 */}
@@ -1923,6 +2487,39 @@ const GuaranteeQuotesPage: React.FC = () => {
         onConfirm={handleCancelRejectRequest}
         campaignName={requestCancelRejectData?.campaignName}
         isLoading={requestProcessing}
+      />
+      
+      {/* 환불 요청 승인/거절 모달 */}
+      <GuaranteeRefundRequestModal
+        isOpen={refundRequestModalOpen}
+        onClose={() => {
+          setRefundRequestModalOpen(false);
+          setRefundRequestData(null);
+        }}
+        onApprove={handleRefundRequestApprove}
+        onReject={handleRefundRequestReject}
+        campaignName={refundRequestData?.campaignName}
+        refundAmount={refundRequestData?.refundAmount || 0}
+        refundReason={refundRequestData?.refundReason || ''}
+        requesterName={refundRequestData?.requesterName}
+        guaranteeCount={refundRequestData?.guaranteeCount}
+        guaranteeUnit={refundRequestData?.guaranteeUnit}
+        completedDays={refundRequestData?.completedDays}
+        totalAmount={refundRequestData?.totalAmount}
+        requestDate={refundRequestData?.requestDate}
+      />
+      
+      {/* 1:1 문의 모달 */}
+      <InquiryChatModal
+        open={inquiryModalOpen}
+        onClose={() => {
+          setInquiryModalOpen(false);
+          setInquiryData(null);
+        }}
+        guaranteeSlotId={inquiryData?.slotId}  // 보장형 슬롯 ID로 전달
+        campaignId={inquiryData?.campaignId}
+        distributorId={inquiryData?.distributorId}
+        initialTitle={inquiryData?.title}
       />
     </CommonTemplate>
   );

@@ -54,10 +54,7 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
     if (!currentUser) return;
 
     try {
-      // 초기 로드가 아닌 경우에만 로딩 표시
-      if (stats.length > 0) {
-        setLoading(true);
-      }
+      setLoading(true);
       setError(null);
 
       const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
@@ -209,10 +206,7 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
       console.error('보장형 통계 조회 오류:', err);
       setError('통계 데이터를 불러오는데 실패했습니다.');
     } finally {
-      // 초기 로드 시에는 로딩 상태를 false로 유지
-      if (stats.length > 0) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }, [currentUser, selectedServiceType, selectedCampaign]);
 

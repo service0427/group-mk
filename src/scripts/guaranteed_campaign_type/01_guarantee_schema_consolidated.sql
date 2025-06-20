@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS public.guarantee_slot_negotiations (
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT sender_role_check CHECK (sender_role IN ('user', 'distributor', 'admin')),
-    CONSTRAINT message_type_check CHECK (message_type IN ('message', 'price_proposal', 'counter_offer'))
+    CONSTRAINT message_type_check CHECK (message_type IN ('message', 'price_proposal', 'counter_offer', 'acceptance'))
 );
 
 -- 인덱스 생성

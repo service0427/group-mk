@@ -5,6 +5,7 @@ export interface Campaign {
   status: string;
   serviceType: string;
   refund_settings?: any;
+  distributor_id?: string;
 }
 
 export interface SlotItem {

@@ -115,9 +115,6 @@ export const ServiceCampaignSelector: React.FC<ServiceCampaignSelectorProps> = (
         {/* 서비스 선택 */}
         <div className="flex items-center gap-2">
           <KeenIcon icon="category" className="text-green-500 size-4" />
-          <label htmlFor="service-select" className="text-sm font-medium text-muted-foreground">
-            서비스:
-          </label>
           <select
             id="service-select"
             value={selectedServiceCode}
@@ -137,9 +134,6 @@ export const ServiceCampaignSelector: React.FC<ServiceCampaignSelectorProps> = (
         {/* 캠페인 선택 */}
         <div className="flex items-center gap-2">
           <KeenIcon icon="document" className="text-blue-500 size-4" />
-          <label htmlFor="campaign-select" className="text-sm font-medium text-muted-foreground">
-            캠페인:
-          </label>
           {loading ? (
             <div className="text-sm text-muted-foreground">로딩중...</div>
           ) : campaigns.length > 0 ? (

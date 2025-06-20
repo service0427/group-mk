@@ -31,6 +31,7 @@ interface SlotListProps {
   onSelectedSlotsChange?: (selectedSlots: string[]) => void;
   showBulkCancel?: boolean;
   customStatusLabels?: Record<string, string>; // 커스텀 상태 라벨
+  onInquiry?: (slot: SlotItem) => void; // 1:1 문의 핸들러 추가
 }
 
 // CSS for tooltip
@@ -103,7 +104,8 @@ const SlotList: React.FC<SlotListProps> = ({
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange,
   showBulkCancel = false,
-  customStatusLabels
+  customStatusLabels,
+  onInquiry
 }) => {
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
@@ -1216,6 +1218,19 @@ const SlotList: React.FC<SlotListProps> = ({
                               <KeenIcon icon="wallet"/>
                             </button>
                           )}
+                          {/* 활성 슬롯일 때만 1:1 문의 버튼 표시 */}
+                          {onInquiry && item.status === 'active' && (
+                            <button
+                              className="btn btn-sm btn-icon btn-clear btn-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onInquiry(item);
+                              }}
+                              title="1:1 문의"
+                            >
+                              <KeenIcon icon="messages" />
+                            </button>
+                          )}
                           <button
                             className="btn btn-sm btn-icon btn-clear btn-danger"
                             onClick={(e) => {
@@ -1548,6 +1563,16 @@ const SlotList: React.FC<SlotListProps> = ({
                           title="환불"
                         >
                           <KeenIcon icon="dollar-circle" />
+                        </button>
+                      )}
+                      {/* 활성 슬롯일 때만 1:1 문의 버튼 표시 */}
+                      {onInquiry && item.status === 'active' && (
+                        <button
+                          className="btn btn-sm btn-icon btn-clear btn-primary"
+                          onClick={() => onInquiry(item)}
+                          title="1:1 문의"
+                        >
+                          <KeenIcon icon="messages" />
                         </button>
                       )}
                       {/* 대기중 상태일 때만 삭제 버튼 표시 */}

@@ -352,8 +352,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         
         // 서비스 타입에 관계없이 기본값 설정
         const minQuantity = firstCampaign.min_quantity ? Number(firstCampaign.min_quantity) : 1;
-        console.log('[fetchCampaigns] 첫 캠페인 기본값 설정');
-        console.log('[fetchCampaigns] min_quantity:', firstCampaign.min_quantity, '-> minimum_purchase:', minQuantity);
         
         setSlotData(prev => ({
           ...prev,
@@ -363,10 +361,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         
         // 내키워드 미지원 서비스인 경우 키워드 모드 비활성화
         if (!isKeywordSupported(firstCampaign.service_type)) {
-          console.log('[fetchCampaigns] 내키워드 미지원 - 키워드 모드 비활성화');
           setKeywordSearchMode(false);
         } else {
-          console.log('[fetchCampaigns] 내키워드 지원 - 키워드 모드 활성화');
           setKeywordSearchMode(true);
         }
       } else {
@@ -501,7 +497,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // 내키워드 미지원 서비스인 경우 키워드 모드만 false로 설정
       // minimum_purchase는 캠페인 로드 후 설정하도록 함
       if (!isKeywordSupported(finalServiceCode)) {
-        console.log('[모달오픈] 내키워드 미지원 서비스 - 키워드 모드 비활성화');
         setKeywordSearchMode(false);
       }
     }
@@ -727,10 +722,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 캠페인의 service_type이 있으면 campaign_type으로 필터링
       if (campaignServiceType) {
-        console.log('Filtering keyword groups by campaign_type:', campaignServiceType);
         query = query.eq('campaign_type', campaignServiceType);
       } else {
-        console.log('No campaignServiceType found, fetching all groups');
       }
 
       const { data, error } = await query;
@@ -740,11 +733,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         return;
       }
       
-      console.log('Fetched keyword groups:', data?.map(g => ({ 
-        id: g.id, 
-        name: g.name, 
-        campaign_type: g.campaign_type 
-      })));
 
       // 스네이크 케이스에서 카멜 케이스로 변환
       const transformedData = data.map(item => ({
@@ -1493,9 +1481,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
     } else {
       // 내키워드 미지원 서비스 (수동 입력 모드)
-      console.log('[validateForm] 수동입력모드 검증 - minimum_purchase:', slotData.minimum_purchase, 'type:', typeof slotData.minimum_purchase);
       if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
-        console.log('[validateForm] minimum_purchase 검증 실패!');
         showAlert('알림', '최소 구매수를 입력해주세요.', false);
         return false;
       }
@@ -2069,15 +2055,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 수동 입력 서비스용 저장 함수
   const handleSaveForManualService = async () => {
     try {
-      console.log('=== handleSaveForManualService 시작 ===');
-      console.log('keywordSearchMode:', keywordSearchMode);
-      console.log('slotData:', slotData);
-      console.log('minimum_purchase value:', slotData.minimum_purchase, 'type:', typeof slotData.minimum_purchase);
-      console.log('work_days value:', slotData.work_days, 'type:', typeof slotData.work_days);
       
       // 폼 유효성 검사
       if (!validateForm(supportsKeyword)) { // 서비스 타입에 따라 검증
-        console.log('validateForm 실패!');
         return;
       }
 
@@ -2123,7 +2103,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         }
       };
       
-      console.log('Manual service - slotToSave:', slotToSave);
 
       // 잔액 확인
       const { data: userBalance, error: balanceError } = await supabase
@@ -2142,7 +2121,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       // 슬롯 저장
-      console.log('Inserting slot data:', slotToSave);
       const { data: savedSlot, error: slotError } = await supabase
         .from('slots')
         .insert(slotToSave)
@@ -2158,7 +2136,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         throw new Error('슬롯 저장에 실패했습니다: 데이터가 반환되지 않았습니다.');
       }
       
-      console.log('Slot saved successfully:', savedSlot);
 
       // 잔액 차감 및 거래 내역 저장
       const freeBalance = parseFloat(String(userBalance.free_balance || 0));
@@ -2207,7 +2184,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 성공 후 초기화 - 캠페인 기본값 유지
       const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-      console.log('[저장성공] 초기화 - minimum_purchase를 캠페인 기본값으로 설정:', minQuantity);
       
       setSlotData({
         productName: '',
@@ -2247,17 +2223,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 캠페인 선택 시 내키워드 미지원 서비스 처리
   useEffect(() => {
-    console.log('[캠페인선택] selectedCampaign:', selectedCampaign);
-    console.log('[캠페인선택] isKeywordSupported:', selectedCampaign ? isKeywordSupported(selectedCampaign.service_type) : 'no campaign');
-    console.log('[캠페인선택] keywordSearchMode:', keywordSearchMode);
-    console.log('[캠페인선택] 현재 minimum_purchase:', slotData.minimum_purchase);
     
     if (selectedCampaign) {
       if (!isKeywordSupported(selectedCampaign.service_type)) {
         // 수동 입력 모드인 경우 최소 구매수와 작업일 기본값 설정
         const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-        console.log('[캠페인선택] 내키워드 미지원 - 기본값 설정');
-        console.log('[캠페인선택] min_quantity:', selectedCampaign.min_quantity, '-> minimum_purchase:', minQuantity);
         
         setSlotData(prev => ({
           ...prev,
@@ -2269,8 +2239,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       } else {
         // 키워드 지원 서비스인 경우에도 기본값 설정
         const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-        console.log('[캠페인선택] 키워드 지원 서비스 - 기본값 설정');
-        console.log('[캠페인선택] min_quantity:', selectedCampaign.min_quantity, '-> minimum_purchase:', minQuantity);
         
         setSlotData(prev => ({
           ...prev,

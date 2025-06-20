@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuthContext } from '@/auth';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { guaranteeSlotRequestService } from '@/services/guaranteeSlotService';
+import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { supabase } from '@/supabase';
 import { KeenIcon } from '@/components';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,8 +9,11 @@ import { Button } from '@/components/ui/button';
 import { GuaranteeNegotiationModal } from '@/components/campaign-modals/GuaranteeNegotiationModal';
 import { GuaranteeQuotesList } from './GuaranteeQuotesList';
 import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundModal';
+import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlotDetailModal';
+import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
 import type { GuaranteeSlotRequestStatus } from '@/types/guarantee-slot.types';
 import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
+import { InquiryChatModal } from '@/components/inquiry';
 
 // 타입 정의
 interface MyGuaranteeQuoteRequest {
@@ -39,6 +42,8 @@ interface MyGuaranteeQuoteRequest {
     service_type: string;
     guarantee_unit?: string;
     logo?: string;
+    status?: string;
+    refund_settings?: any;
   };
   keywords?: {
     id: number;
@@ -61,6 +66,15 @@ interface MyGuaranteeQuoteRequest {
     end_date?: string;
     created_at: string;
     updated_at: string;
+    refund_requests?: Array<{
+      id: string;
+      status: 'pending' | 'approved' | 'rejected';
+      refund_reason: string;
+      approval_notes?: string;
+      request_date: string;
+      approval_date?: string;
+      refund_amount?: number;
+    }>;
   }>;
 }
 
@@ -115,7 +129,9 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             campaign_name,
             service_type,
             guarantee_unit,
-            logo
+            logo,
+            status,
+            refund_settings
           ),
           keywords:keyword_id(
             id,
@@ -143,12 +159,11 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join('');
         
-        console.log('선택된 서비스:', selectedService, '→ 변환된 타입:', serviceType);
         
         // 캠페인 테이블에서 해당 service_type을 가진 캠페인 ID들을 먼저 조회
         const { data: campaigns, error: campaignError } = await supabase
           .from('campaigns')
-          .select('id')
+          .select('id, campaign_name, logo, status, service_type')
           .eq('service_type', serviceType);
         
         if (campaignError) throw campaignError;
@@ -170,7 +185,6 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
       setRequests(data || []);
     } catch (error) {
-      console.error('보장형 데이터 조회 실패:', error);
       showError('보장형 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -207,6 +221,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
       keywords: request.keywords, // 키워드 정보 전체 전달
       status: request.status,
       created_at: request.created_at,
+      campaign_id: request.campaign_id,
+      distributor_id: request.distributor_id,
       // 견적 요청 전용 필드
       target_rank: request.target_rank,
       guarantee_count: request.guarantee_count,
@@ -277,6 +293,29 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     fetchRequests();
   };
 
+  // 문의 모달 상태
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [inquiryData, setInquiryData] = useState<{
+    slotId?: string;
+    guaranteeSlotId?: string;
+    campaignId?: number;
+    distributorId?: string;
+    title?: string;
+  } | null>(null);
+  
+  // 상세 모달 상태
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailRequestId, setDetailRequestId] = useState<string | null>(null);
+  
+  // 순위 확인 모달 상태
+  const [rankCheckModalOpen, setRankCheckModalOpen] = useState(false);
+  const [rankCheckSlotData, setRankCheckSlotData] = useState<{
+    slotId: string;
+    campaignName?: string;
+    targetRank?: number;
+    keyword?: string;
+  } | null>(null);
+
   // 환불 요청 핸들러
   const handleRefundRequest = (requestId: string) => {
     const request = requests.find(req => req.id === requestId);
@@ -293,21 +332,27 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
   // 환불 확인 핸들러
   const handleRefundConfirm = async (reason: string) => {
-    if (!refundModal.requestData || !refundModal.requestData.guarantee_slots?.[0]) return;
+    if (!refundModal.requestData || !refundModal.requestData.guarantee_slots?.[0] || !currentUser?.id) return;
 
     try {
-      // TODO: 실제 환불 API 호출
       const slotId = refundModal.requestData.guarantee_slots[0].id;
       
-      // 현재는 메시지만 표시
-      showSuccess('환불 신청이 접수되었습니다.');
+      // 실제 환불 신청 API 호출
+      const { data, error } = await guaranteeSlotService.requestRefund(slotId, currentUser.id, reason);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // 성공 메시지 표시
+      showSuccess(data?.message || '환불 신청이 접수되었습니다.');
       
       // 모달 닫기 및 리프레시
       setRefundModal({ open: false });
       fetchRequests();
-    } catch (error) {
-      console.error('환불 신청 오류:', error);
-      showError('환불 신청 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      console.error('환불 신청 실패:', error);
+      showError(error.message || '환불 신청 중 오류가 발생했습니다.');
     }
   };
 
@@ -574,6 +619,32 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             onSelectedRequestsChange={setSelectedRequests}
             showBulkActions={true}
             onRefundRequest={handleRefundRequest}
+            onInquiry={(request) => {
+              if (request.guarantee_slots?.[0]) {
+                setInquiryData({
+                  guaranteeSlotId: request.guarantee_slots[0].id,
+                  campaignId: request.campaigns?.id,
+                  distributorId: request.distributor_id,
+                  title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+                });
+                setInquiryModalOpen(true);
+              }
+            }}
+            onDetailView={(request) => {
+              setDetailRequestId(request.id);
+              setDetailModalOpen(true);
+            }}
+            onRankCheck={(request) => {
+              if (request.guarantee_slots?.[0]?.status === 'active') {
+                setRankCheckSlotData({
+                  slotId: request.guarantee_slots[0].id,
+                  campaignName: request.campaigns?.campaign_name,
+                  targetRank: request.target_rank,
+                  keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                });
+                setRankCheckModalOpen(true);
+              }
+            }}
           />
         </div>
       </div>
@@ -604,6 +675,44 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         })()}
         totalAmount={refundModal.requestData?.final_daily_amount ? 
           refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_count || 0) : 0}
+        refundSettings={refundModal.requestData?.campaigns?.refund_settings}
+      />
+
+      {/* 1:1 문의 모달 */}
+      <InquiryChatModal
+        open={inquiryModalOpen}
+        onClose={() => {
+          setInquiryModalOpen(false);
+          setInquiryData(null);
+        }}
+        slotId={inquiryData?.slotId}
+        guaranteeSlotId={inquiryData?.guaranteeSlotId}
+        campaignId={inquiryData?.campaignId}
+        distributorId={inquiryData?.distributorId}
+        initialTitle={inquiryData?.title}
+      />
+      
+      {/* 상세 보기 모달 */}
+      <GuaranteeSlotDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setDetailRequestId(null);
+        }}
+        requestId={detailRequestId || ''}
+      />
+      
+      {/* 순위 확인 모달 */}
+      <GuaranteeRankCheckModal
+        isOpen={rankCheckModalOpen}
+        onClose={() => {
+          setRankCheckModalOpen(false);
+          setRankCheckSlotData(null);
+        }}
+        slotId={rankCheckSlotData?.slotId || ''}
+        campaignName={rankCheckSlotData?.campaignName}
+        targetRank={rankCheckSlotData?.targetRank || 1}
+        keyword={rankCheckSlotData?.keyword}
       />
     </>
   );

@@ -8,7 +8,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { supabase } from '@/supabase';
-import { Slot } from './types';
+import { Slot, User } from './types';
 
 interface SlotMemoModalProps {
   open: boolean;
@@ -46,26 +46,27 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
   onSave,
   slot
 }) => {
-  const [memo, setMemo] = useState(initialMemo);
+  const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
   const [slotData, setSlotData] = useState<Slot | null>(null);
   const [userReason, setUserReason] = useState<string | null>(null);
   
   // 사용자 메모(user_reason) 찾기
   useEffect(() => {
-    if (slotData && slotData.user_reason) {
-      
-      
-      // 1. 직접 input_data에 있는 경우
+    if (slotData) {
+      // 1. slots 테이블의 user_reason 필드 확인 (우선순위 1)
       if (slotData.user_reason) {
-        
+        console.log('슬롯 테이블에서 user_reason 발견:', slotData.user_reason);
         setUserReason(slotData.user_reason);
       } 
-      // 2. 재귀적으로 탐색
-      else {
+      // 2. input_data에서 재귀적으로 탐색 (우선순위 2)
+      else if (slotData.input_data) {
         const foundReason = findValueByKey(slotData.input_data, 'user_reason');
-        
+        console.log('input_data에서 user_reason 탐색 결과:', foundReason);
         setUserReason(foundReason);
+      } else {
+        console.log('user_reason을 찾을 수 없음');
+        setUserReason(null);
       }
     }
   }, [slotData]);
@@ -73,18 +74,16 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
   // 슬롯 데이터 가져오기
   useEffect(() => {
     if (open && slotId) {
-      
-      
+      // 메모 초기화 - mat_reason으로 설정
+      setMemo(initialMemo || '');
       
       if (slot) {
-        
         setSlotData(slot);
       } else {
-        
         fetchSlotData();
       }
     }
-  }, [open, slotId, slot]);
+  }, [open, slotId, slot, initialMemo]);
   
   // 상태 모니터링
   useEffect(() => {
@@ -101,8 +100,21 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
       const { data, error } = await supabase
         .from('slots')
         .select(`
-          *,
-          users:user_id (id, full_name, email)
+          id,
+          mat_id,
+          user_id,
+          product_id,
+          status,
+          created_at,
+          submitted_at,
+          processed_at,
+          input_data,
+          mat_reason,
+          user_reason,
+          quantity,
+          start_date,
+          end_date,
+          user:users!user_id (id, full_name, email)
         `)
         .eq('id', slotId)
         .single();
@@ -144,10 +156,17 @@ const SlotMemoModal: React.FC<SlotMemoModalProps> = ({
           
         }
         
-        // 사용자 정보 변환
-        const user = data.users;
-        const { users, ...slotWithoutUsers } = data;
-        setSlotData({ ...slotWithoutUsers, user });
+        // 사용자 정보 변환 (user는 단일 객체)
+        const finalSlotData: Slot = data as any;
+        
+        console.log('슬롯 데이터 최종 설정:', {
+          id: finalSlotData.id,
+          mat_reason: finalSlotData.mat_reason,
+          user_reason: finalSlotData.user_reason,
+          user: finalSlotData.user
+        });
+        
+        setSlotData(finalSlotData);
       }
     } catch (error) {
       

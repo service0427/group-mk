@@ -34,6 +34,9 @@ export interface ICampaign {
   matId?: string; // 매트 ID
   serviceName?: string; // 서비스 이름
   updatedAt?: string; // 업데이트 시간
+  matName?: string; // 총판 이름
+  matEmail?: string; // 총판 이메일
+  matDisplay?: string; // 총판 표시명
 }
 
 // 캠페인 콘텐츠 컴포넌트 props 정의
@@ -578,6 +581,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                       <p className="text-sm text-foreground line-clamp-2">
                         {campaign.description || '-'}
                       </p>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        총판: {campaign.matDisplay || `${campaign.matName || '알 수 없음'} (${campaign.matEmail || ''})`}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 mb-4">
@@ -683,6 +689,9 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     캠페인 설명
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    총판
+                  </th>
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     상승효율
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
@@ -776,6 +785,12 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     <td className="px-3 lg:px-6 py-4 hidden xl:table-cell">
                       <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
                         {campaign.description || '-'}
+                      </div>
+                    </td>
+                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
+                      <div className="text-sm text-muted-foreground">
+                        <div className="font-medium">{campaign.matName || '알 수 없음'}</div>
+                        <div className="text-xs">{campaign.matEmail || ''}</div>
                       </div>
                     </td>
                     <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">

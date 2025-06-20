@@ -1208,12 +1208,17 @@ export const getSlotList = async (
     // 필요한 경우 추가 로직으로 서비스 타입에 해당하는 product_id 필터링 구현 필요
 
     // 날짜 필터
-    if (filters.dateFrom) {
-      query = query.gte('created_at', `${filters.dateFrom}T00:00:00`);
-    }
-
-    if (filters.dateTo) {
-      query = query.lte('created_at', `${filters.dateTo}T23:59:59`);
+    if (filters.dateFrom && filters.dateTo) {
+      // 둘 다 선택: start_date >= 시작일 AND end_date <= 종료일
+      query = query
+        .gte('start_date', filters.dateFrom)
+        .lte('end_date', filters.dateTo);
+    } else if (filters.dateFrom) {
+      // 시작일만 선택: start_date >= 검색시작일
+      query = query.gte('start_date', filters.dateFrom);
+    } else if (filters.dateTo) {
+      // 종료일만 선택: end_date <= 검색종료일
+      query = query.lte('end_date', filters.dateTo);
     }
 
     // 검색어 필터

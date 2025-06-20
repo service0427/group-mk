@@ -1178,14 +1178,17 @@ const SlotList: React.FC<SlotListProps> = ({
                       <td className="py-2 px-3 w-[8%]">
                         <div className="flex justify-center items-center gap-1">
                           <button
-                            className="btn btn-sm btn-icon btn-clear btn-primary h-8 w-8"
+                            className={`btn btn-sm btn-icon btn-clear btn-primary h-8 w-8 relative ${item.userReason ? 'ring-2 ring-yellow-400' : ''}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenMemoModal(item.id);
                             }}
-                            title="메모"
+                            title={item.userReason ? "메모 (작성됨)" : "메모"}
                           >
                             <KeenIcon icon="notepad-edit" />
+                            {item.userReason && (
+                              <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
+                            )}
                           </button>
                           {/* 승인 전 상태일 때만 취소 버튼 표시 */}
                           {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
@@ -1518,11 +1521,14 @@ const SlotList: React.FC<SlotListProps> = ({
                   ) : (
                     <>
                       <button
-                        className="btn btn-sm btn-icon btn-clear btn-primary"
+                        className={`btn btn-sm btn-icon btn-clear btn-primary relative ${item.userReason ? 'ring-2 ring-yellow-400' : ''}`}
                         onClick={() => onOpenMemoModal(item.id)}
-                        title="메모"
+                        title={item.userReason ? "메모 (작성됨)" : "메모"}
                       >
                         <KeenIcon icon="notepad-edit" />
+                        {item.userReason && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
+                        )}
                       </button>
                       {/* 승인 전 상태일 때만 취소 버튼 표시 */}
                       {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (

@@ -611,13 +611,30 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                       required
                       disabled={isEditMode} // 수정 모드에서는 변경 불가
                     >
-                      <option value={USER_ROLES.DISTRIBUTOR}>총판 등업 신청</option>
-                      <option value={USER_ROLES.AGENCY}>대행사 등업 신청</option>
+                      {/* 현재 역할에 따른 등업 가능 옵션 표시 */}
+                      {currentUser?.role === USER_ROLES.BEGINNER && (
+                        <>
+                          <option value={USER_ROLES.ADVERTISER}>광고주 등업 신청</option>
+                          <option value={USER_ROLES.AGENCY}>대행사 등업 신청</option>
+                          <option value={USER_ROLES.DISTRIBUTOR}>총판 등업 신청</option>
+                        </>
+                      )}
+                      {currentUser?.role === USER_ROLES.ADVERTISER && (
+                        <>
+                          <option value={USER_ROLES.AGENCY}>대행사 등업 신청</option>
+                          <option value={USER_ROLES.DISTRIBUTOR}>총판 등업 신청</option>
+                        </>
+                      )}
+                      {currentUser?.role === USER_ROLES.AGENCY && (
+                        <option value={USER_ROLES.DISTRIBUTOR}>총판 등업 신청</option>
+                      )}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
                       {formData.target_role === USER_ROLES.DISTRIBUTOR
                         ? '총판은 직접 서비스를 제공하고 정산할 수 있습니다.'
-                        : '대행사는 광고주를 관리하고 서비스를 대행할 수 있습니다.'}
+                        : formData.target_role === USER_ROLES.AGENCY
+                        ? '대행사는 광고주를 관리하고 서비스를 대행할 수 있습니다.'
+                        : '광고주는 서비스를 이용하고 관리할 수 있습니다.'}
                     </p>
                   </div>
                 </div>

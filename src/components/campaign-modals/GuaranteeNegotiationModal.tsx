@@ -39,6 +39,7 @@ interface GuaranteeNegotiationModalProps {
   currentUserRole: 'user' | 'distributor';
   onStatusChange?: (status: GuaranteeSlotRequestStatus) => void;
   isPurchaseMode?: boolean; // 구매 버튼으로 열린 경우
+  isFromDistributorPage?: boolean; // 보장형 슬롯 관리 페이지에서 열렸는지
 }
 
 interface NegotiationMessage extends GuaranteeSlotNegotiation {
@@ -53,7 +54,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
   requestData,
   currentUserRole,
   onStatusChange,
-  isPurchaseMode = false
+  isPurchaseMode = false,
+  isFromDistributorPage = false
 }) => {
   const { currentUser } = useAuthContext();
   const [messages, setMessages] = useState<NegotiationMessage[]>([]);
@@ -265,7 +267,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
               {
                 request_id: requestId,
                 message: requestMessage,
-                message_type: 'message'
+                message_type: 'message',
+                isFromDistributorPage
               },
               data.user_id,
               'user'
@@ -280,7 +283,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                 message: priceMessage,
                 message_type: 'price_proposal',
                 proposed_daily_amount: data.initial_budget,
-                proposed_guarantee_count: data.guarantee_count
+                proposed_guarantee_count: data.guarantee_count,
+                isFromDistributorPage
               },
               data.user_id,
               'user'
@@ -390,7 +394,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           request_id: requestId,
           message: inputValue.trim() || '파일을 첨부했습니다.',
           message_type: 'message',
-          attachments: attachments.length > 0 ? attachments : undefined
+          attachments: attachments.length > 0 ? attachments : undefined,
+          isFromDistributorPage
         },
         currentUser.id,
         currentUserRole
@@ -406,7 +411,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         if (data) {
           const newMessage: NegotiationMessage = {
             ...data,
-            senderName: currentUser.full_name || currentUser.email || '사용자'
+            senderName: currentUser.full_name || currentUser.email || '사용자',
+            sender_role: currentUserRole
           };
           setMessages(prev => [...prev, newMessage]);
         }
@@ -460,7 +466,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           message_type: messageType,
           proposed_daily_amount: amount,
           proposed_guarantee_count: guaranteeCount,
-          attachments: attachments.length > 0 ? attachments : undefined
+          attachments: attachments.length > 0 ? attachments : undefined,
+          isFromDistributorPage
         },
         currentUser.id,
         currentUserRole
@@ -479,7 +486,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         if (data) {
           const newMessage: NegotiationMessage = {
             ...data,
-            senderName: currentUser.full_name || currentUser.email || '사용자'
+            senderName: currentUser.full_name || currentUser.email || '사용자',
+            sender_role: currentUserRole
           };
           setMessages(prev => [...prev, newMessage]);
         }
@@ -534,23 +542,35 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       // 사용자가 수락하는 경우, 수락 메시지만 전송하고 상태는 변경하지 않음
       if (currentUserRole === 'user') {
         // 사용자 수락 메시지 전송
-        await negotiationService.createMessage(
+        const { data, error } = await negotiationService.createMessage(
           {
             request_id: requestId,
             message: `제안된 조건을 수락합니다. (${negotiationCompleteData.proposedAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${negotiationCompleteData.guaranteeCount}${getGuaranteeUnit()})`,
             message_type: 'acceptance',
             proposed_daily_amount: negotiationCompleteData.proposedAmount,
-            proposed_guarantee_count: negotiationCompleteData.guaranteeCount
+            proposed_guarantee_count: negotiationCompleteData.guaranteeCount,
+            isFromDistributorPage
           },
           currentUser.id,
           currentUserRole
         );
 
+        if (error) throw error;
+
         if (isMountedRef.current) {
+          // 새 메시지를 즉시 추가
+          if (data) {
+            const newMessage: NegotiationMessage = {
+              ...data,
+              senderName: currentUser.full_name || currentUser.email || '사용자',
+              sender_role: 'user'
+            };
+            setMessages(prev => [...prev, newMessage]);
+          }
+          
           toast.success('협상 수락을 전송했습니다. 총판의 최종 승인을 기다려주세요.');
           setShowNegotiationCompleteModal(false);
           setNegotiationCompleteData(null);
-          await fetchMessages(false);
         }
       } else {
         // 총판이 수락하는 경우
@@ -595,7 +615,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
             {
               request_id: requestId,
               message: `협상이 완료되었습니다. 최종 조건: ${negotiationCompleteData.proposedAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${negotiationCompleteData.guaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`,
-              message_type: 'message'
+              message_type: 'message',
+              isFromDistributorPage
             },
             currentUser.id,
             currentUserRole
@@ -631,7 +652,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
             {
               request_id: requestId,
               message: `협상이 완료되었습니다. 최종 조건: ${negotiationCompleteData.proposedAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${negotiationCompleteData.guaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`,
-              message_type: 'message'
+              message_type: 'message',
+              isFromDistributorPage
             },
             currentUser.id,
             currentUserRole
@@ -649,7 +671,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
               message: `총판이 조건을 수락했습니다. (${negotiationCompleteData.proposedAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${negotiationCompleteData.guaranteeCount}${getGuaranteeUnit()}) 사용자의 최종 승인을 기다립니다.`,
               message_type: 'acceptance',
               proposed_daily_amount: negotiationCompleteData.proposedAmount,
-              proposed_guarantee_count: negotiationCompleteData.guaranteeCount
+              proposed_guarantee_count: negotiationCompleteData.guaranteeCount,
+              isFromDistributorPage
             },
             currentUser.id,
             currentUserRole
@@ -699,7 +722,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         {
           request_id: requestId,
           message: '협상이 거절되었습니다.',
-          message_type: 'message'
+          message_type: 'message',
+          isFromDistributorPage
         },
         currentUser.id,
         currentUserRole
@@ -1254,7 +1278,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         {
           request_id: requestId,
           message: '재협상을 요청합니다. 조건을 다시 협의해주세요.',
-          message_type: 'message'
+          message_type: 'renegotiation_request',
+          isFromDistributorPage
         },
         currentUser.id,
         currentUserRole
@@ -1470,7 +1495,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
               </div>
             )}
 
-            {/* 메시지 영역 (기존 채팅과 동일한 구조) */}
+            {/* 메시지 영역 (기존 채팅과 동일한 구조) - isPurchaseMode일 때는 숨김 */}
+            {!isPurchaseMode && (
             <div className="flex-1 chat-sticky-messages overflow-y-auto relative">
               {/* 양측 수락 상태 표시 - 채팅 영역 상단에 고정 오버레이 */}
               {canSendMessages && messages.some(m => m.message_type === 'price_proposal' || m.message_type === 'counter_offer') && (() => {
@@ -1548,9 +1574,10 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                 </>
               )}
             </div>
+            )}
 
-            {/* 입력 영역 */}
-            {canSendMessages ? (
+            {/* 입력 영역 - isPurchaseMode일 때는 숨김 */}
+            {!isPurchaseMode && canSendMessages ? (
               <div className="flex-shrink-0 space-y-3">
                 {/* 가격 제안 폼 */}
                 {showPriceForm && (
@@ -1913,40 +1940,30 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       목표 {requestInfo.target_rank}위 · {requestInfo.guarantee_count}{getGuaranteeUnit()} · {getUnitText()} {requestInfo.final_daily_amount.toLocaleString()}원
                     </div>
 
-                    <div className="pt-2 border-t border-blue-200 dark:border-blue-700 flex justify-between">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={handleRenegotiate}
-                          disabled={purchaseLoading || renegotiateLoading}
-                          className="border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 font-medium px-6"
-                        >
-                          {renegotiateLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
-                              처리 중...
-                            </>
-                          ) : (
-                            <>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                                <path d="M21 3v5h-5" />
-                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                                <path d="M3 21v-5h5" />
-                              </svg>
-                              재협상
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={onClose}
-                          className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                        >
-                          <KeenIcon icon="cross" className="size-4 me-1" />
-                          닫기
-                        </Button>
-                      </div>
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-700 flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleRenegotiate}
+                        disabled={purchaseLoading || renegotiateLoading}
+                        className="border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 font-medium px-6"
+                      >
+                        {renegotiateLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                            처리 중...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
+                              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                              <path d="M21 3v5h-5" />
+                              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                              <path d="M3 21v-5h5" />
+                            </svg>
+                            재협상
+                          </>
+                        )}
+                      </Button>
                       <Button
                         onClick={() => setShowPurchaseModal(true)}
                         disabled={purchaseLoading || renegotiateLoading}
@@ -1957,6 +1974,14 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                           <line x1="2" x2="22" y1="10" y2="10" />
                         </svg>
                         구매하기
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={onClose}
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        <KeenIcon icon="cross" className="size-4 me-1" />
+                        닫기
                       </Button>
                     </div>
                   </div>

@@ -5,7 +5,7 @@
 export type GuaranteeSlotRequestStatus = 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
 
 // 협상 메시지 타입
-export type NegotiationMessageType = 'message' | 'price_proposal' | 'counter_offer' | 'acceptance';
+export type NegotiationMessageType = 'message' | 'price_proposal' | 'counter_offer' | 'acceptance' | 'renegotiation_request';
 
 // 보장성 슬롯 상태
 export type GuaranteeSlotStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
@@ -179,6 +179,7 @@ export interface CreateNegotiationMessageParams {
   proposed_guarantee_count?: number;
   message_type: NegotiationMessageType;
   attachments?: AttachmentFile[];
+  isFromDistributorPage?: boolean; // 보장형 슬롯 관리 페이지에서 보낸 것인지
 }
 
 export interface PurchaseGuaranteeSlotParams {

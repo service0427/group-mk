@@ -201,7 +201,9 @@ const CardAdCampaignRow = ({
               {/* 총판 또는 운영자 역할이 아닌 경우에만 구매하기 버튼 표시 */}
               {userRole !== USER_ROLES.DISTRIBUTOR && userRole !== USER_ROLES.OPERATOR && (
                 <button
-                  className="btn btn-sm btn-primary"
+                  className={`btn btn-sm ${isGuaranteeType 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0' 
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0'}`}
                   onClick={(e) => {
                     e.preventDefault();
                     setSlotModalOpen(true);
@@ -235,7 +237,8 @@ const CardAdCampaignRow = ({
           id: rawId || 1, // 실제 ID 사용
           campaign_name: title,
           status: status.label,
-          service_type: serviceTypeCode || 'NaverTraffic' // 전달받은 서비스 타입 코드 사용
+          service_type: serviceTypeCode || 'NaverTraffic', // 전달받은 서비스 타입 코드 사용
+          slot_type: rawData?.slot_type // 보장형 여부 전달
         }}
         serviceCode={serviceTypeCode || 'NaverTraffic'} // 전달받은 서비스 타입 코드 사용
       />

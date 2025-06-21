@@ -92,85 +92,93 @@ export const KeywordTableRow: React.FC<KeywordTableRowProps> = ({
         }
         return null;
       })()}
-      <td className="min-w-[80px] px-3 py-3 border border-gray-200 align-middle">
-        <input
-          type="text"
-          placeholder="작업수"
-          value={keyword.workCount === null || keyword.workCount === undefined ? '' : keyword.workCount}
-          onChange={(e) => {
-            const inputValue = e.target.value;
-            if (inputValue === '') {
-              // 빈 문자열은 임시로 null 처리
-              handleWorkCountChange(keyword.id, null);
-              return;
-            }
+      {/* 보장형이 아닌 경우에만 작업수 표시 */}
+      {selectedCampaign?.slot_type !== 'guarantee' && (
+        <td className="min-w-[80px] px-3 py-3 border border-gray-200 align-middle">
+          <input
+            type="text"
+            placeholder="작업수"
+            value={keyword.workCount === null || keyword.workCount === undefined ? '' : keyword.workCount}
+            onChange={(e) => {
+              const inputValue = e.target.value;
+              if (inputValue === '') {
+                // 빈 문자열은 임시로 null 처리
+                handleWorkCountChange(keyword.id, null);
+                return;
+              }
 
-            // 숫자만 입력 허용
-            if (/^\d+$/.test(inputValue)) {
-              const numValue = parseInt(inputValue);
-              handleWorkCountChange(keyword.id, numValue);
-            }
-          }}
-          onBlur={() => handleWorkCountBlur(keyword.id)}
-          className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
-          onClick={e => e.stopPropagation()}
-        />
-      </td>
-      <td className="min-w-[100px] px-3 py-3 border border-gray-200 align-middle">
-        <input
-          type="text"
-          placeholder="작업기간"
-          value={keyword.dueDays === null ? '' : keyword.dueDays}
-          onChange={(e) => {
-            // 빈 문자열이거나 숫자가 아니면 null로 처리
-            const inputValue = e.target.value;
-            if (inputValue === '') {
-              // 빈 문자열을 허용하고 임시로 null 처리
-              setKeywords(prev =>
-                prev.map(k =>
-                  k.id === keyword.id ? { ...k, dueDays: null } : k
-                )
-              );
-              return;
-            }
+              // 숫자만 입력 허용
+              if (/^\d+$/.test(inputValue)) {
+                const numValue = parseInt(inputValue);
+                handleWorkCountChange(keyword.id, numValue);
+              }
+            }}
+            onBlur={() => handleWorkCountBlur(keyword.id)}
+            className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+            onClick={e => e.stopPropagation()}
+          />
+        </td>
+      )}
+      {/* 보장형이 아닌 경우에만 작업기간 표시 */}
+      {selectedCampaign?.slot_type !== 'guarantee' && (
+        <>
+          <td className="min-w-[100px] px-3 py-3 border border-gray-200 align-middle">
+            <input
+              type="text"
+              placeholder="작업기간"
+              value={keyword.dueDays === null ? '' : keyword.dueDays}
+              onChange={(e) => {
+                // 빈 문자열이거나 숫자가 아니면 null로 처리
+                const inputValue = e.target.value;
+                if (inputValue === '') {
+                  // 빈 문자열을 허용하고 임시로 null 처리
+                  setKeywords(prev =>
+                    prev.map(k =>
+                      k.id === keyword.id ? { ...k, dueDays: null } : k
+                    )
+                  );
+                  return;
+                }
 
-            // 숫자만 입력 허용
-            if (/^\d+$/.test(inputValue)) {
-              const numValue = parseInt(inputValue);
-              handleDueDaysChange(keyword.id, numValue);
-            }
-          }}
-          onBlur={(e) => {
-            // 포커스를 잃을 때 빈 값이면 기본값 1로 설정
-            if (e.target.value === '' || keyword.dueDays === null) {
-              handleDueDaysChange(keyword.id, 1);
-            }
+                // 숫자만 입력 허용
+                if (/^\d+$/.test(inputValue)) {
+                  const numValue = parseInt(inputValue);
+                  handleDueDaysChange(keyword.id, numValue);
+                }
+              }}
+              onBlur={(e) => {
+                // 포커스를 잃을 때 빈 값이면 기본값 1로 설정
+                if (e.target.value === '' || keyword.dueDays === null) {
+                  handleDueDaysChange(keyword.id, 1);
+                }
 
-            // 해당 키워드가 선택된 상태인 경우 금액 재계산
-            if (selectedKeywords.includes(keyword.id)) {
-              setTimeout(() => calculateTotalPayment(), 0);
-            }
-          }}
-          className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
-          onClick={e => e.stopPropagation()}
-        />
-      </td>
-      <td className="min-w-[150px] px-3 py-3 border border-gray-200 align-middle">
-        {keyword.dueDays && keyword.dueDays > 0 && (
-          <div className="text-xs text-gray-700 dark:text-gray-300">
-            <div className="flex flex-col gap-1.5">
-              <div className="whitespace-nowrap">
-                <span className="font-semibold text-gray-600 dark:text-gray-400">시작:</span>
-                <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).startDate}</span>
+                // 해당 키워드가 선택된 상태인 경우 금액 재계산
+                if (selectedKeywords.includes(keyword.id)) {
+                  setTimeout(() => calculateTotalPayment(), 0);
+                }
+              }}
+              className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+              onClick={e => e.stopPropagation()}
+            />
+          </td>
+          <td className="min-w-[150px] px-3 py-3 border border-gray-200 align-middle">
+            {keyword.dueDays && keyword.dueDays > 0 && (
+              <div className="text-xs text-gray-700 dark:text-gray-300">
+                <div className="flex flex-col gap-1.5">
+                  <div className="whitespace-nowrap">
+                    <span className="font-semibold text-gray-600 dark:text-gray-400">시작:</span>
+                    <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).startDate}</span>
+                  </div>
+                  <div className="whitespace-nowrap">
+                    <span className="font-semibold text-gray-600 dark:text-gray-400">완료:</span>
+                    <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).endDate}</span>
+                  </div>
+                </div>
               </div>
-              <div className="whitespace-nowrap">
-                <span className="font-semibold text-gray-600 dark:text-gray-400">완료:</span>
-                <span className="ml-1 font-medium">{calculateExpectedDate(keyword.dueDays || 1).endDate}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </td>
+            )}
+          </td>
+        </>
+      )}
       {/* 각 추가 필드를 별도의 td로 분리 */}
       {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
         <td

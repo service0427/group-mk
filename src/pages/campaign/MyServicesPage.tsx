@@ -799,6 +799,11 @@ const MyServicesPage: React.FC = () => {
             loadCampaignSlots();
             fetchAllServiceCounts(); // 서비스별 카운트 업데이트
           }}
+          onSave={() => {
+            // 구매 성공 시 데이터 즉시 갱신
+            loadCampaignSlots();
+            fetchAllServiceCounts();
+          }}
           serviceCode={selectedService || ''}
           category={serviceCategoryLabel}
         />

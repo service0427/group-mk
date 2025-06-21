@@ -56,6 +56,13 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
             <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
             {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
           </span>
+          {/* 보장형인 경우 보장 순위 배지 추가 */}
+          {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
+            <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0">
+              <KeenIcon icon="ranking" className="size-3 me-1" />
+              {selectedCampaign.target_rank}위 보장
+            </span>
+          )}
           {/* 상태 배지 */}
           <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
             <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1`}></span>
@@ -171,6 +178,13 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                 <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3.5 me-1.5" />
                 {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
               </span>
+              {/* 보장형인 경우 보장 순위 배지 추가 */}
+              {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
+                <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-1">
+                  <KeenIcon icon="ranking" className="size-3.5 me-1.5" />
+                  {selectedCampaign.target_rank}위 보장
+                </span>
+              )}
               <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-1`}>
                 <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1.5`}></span>
                 {getStatusLabel(selectedCampaign.status)}

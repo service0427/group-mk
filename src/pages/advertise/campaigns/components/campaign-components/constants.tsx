@@ -29,6 +29,7 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'NaverTraffic': 'N 트래픽',
   'NaverShoppingTraffic': 'NS 트래픽',
   'NaverShoppingFakesale': 'NS 가구매',
+  'NaverShoppingFakeSale': 'NS 가구매', // DB에서 사용하는 형식 추가
   'NaverShoppingRank': 'NS 순위확인',
   'NaverPlaceSave': 'NP 저장하기',
   'NaverPlaceShare': 'NP 블로그공유',
@@ -37,6 +38,8 @@ export const SERVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'NaverBlogPost': 'NB 포스팅',
   'NaverAuto': 'N 자동완성',
   'CoupangTraffic': 'CP 트래픽',
+  'CoupangFakesale': 'CP 가구매',
+  'CoupangFakeSale': 'CP 가구매', // DB에서 사용하는 형식 추가
   'OhouseTraffic': 'OH 트래픽',
   
   // URL 매핑 (새 URL 구조 지원)

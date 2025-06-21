@@ -2120,7 +2120,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           dueDays: slotData.work_days || 1,
           inputData: {
             ...slotData.input_data,
-            is_manual_input: true,
+            is_manual_input: 'true',
             mid: slotData.input_data?.mid || slotData.mid || '',
             url: slotData.input_data?.url || slotData.url || '',
             keyword1: slotData.input_data?.keyword1 || slotData.keyword1 || '',

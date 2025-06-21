@@ -119,7 +119,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
           originalData: {
             ...campaign.originalData,
             refundSettings: campaign.refundSettings, // 환불 설정 추가
-            target_rank: rawCampaignData.target_rank // target_rank 추가
+            targetRank: rawCampaignData.target_rank // target_rank 추가
           }
         };
       });

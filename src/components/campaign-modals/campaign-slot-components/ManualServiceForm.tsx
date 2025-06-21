@@ -167,7 +167,7 @@ export const ManualServiceForm: React.FC<ManualServiceFormProps> = ({
                         required={field.isRequired}
                       >
                         <option value="">선택하세요</option>
-                        {field.enumOptions?.map((option) => (
+                        {field.enumOptions?.map((option: string) => (
                           <option key={option} value={option}>
                             {option}
                           </option>

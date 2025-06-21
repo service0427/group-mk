@@ -423,8 +423,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                             if (item.input_data?.mid) return item.input_data.mid;
                             
                             // 3. input_data.keywords[0].input_data 확인 (중첩 구조)
-                            if (item.input_data?.keywords?.[0]?.input_data) {
-                              const nestedData = item.input_data.keywords[0].input_data;
+                            if ((item.input_data as any)?.keywords?.[0]?.input_data) {
+                              const nestedData = (item.input_data as any).keywords[0].input_data;
                               
                               // mid 필드 찾기
                               if (nestedData.mid) return nestedData.mid;
@@ -463,8 +463,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                             if (item.input_data?.url) return item.input_data.url;
                             
                             // 3. input_data.keywords[0].input_data 확인 (중첩 구조)
-                            if (item.input_data?.keywords?.[0]?.input_data?.url) {
-                              return item.input_data.keywords[0].input_data.url;
+                            if ((item.input_data as any)?.keywords?.[0]?.input_data?.url) {
+                              return (item.input_data as any).keywords[0].input_data.url;
                             }
                             
                             return '-';
@@ -533,8 +533,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                 }
                                 
                                 // 2. 중첩된 keywords[0].input_data 필드들
-                                if (item.input_data?.keywords?.[0]?.input_data) {
-                                  Object.entries(item.input_data.keywords[0].input_data).forEach(([key, value]) => {
+                                if ((item.input_data as any)?.keywords?.[0]?.input_data) {
+                                  Object.entries((item.input_data as any).keywords[0].input_data).forEach(([key, value]) => {
                                     if (!['is_manual_input', 'mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3'].includes(key) && value) {
                                       displayData[key] = value;
                                     }

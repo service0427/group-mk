@@ -379,8 +379,8 @@ export const inquiryMessageService = {
                 slotInfo.guaranteeCount = requestData.guarantee_count;
                 
                 // 키워드 정보 우선순위: keywords 테이블 > input_data
-                if (requestData.keywords?.main_keyword) {
-                  slotInfo.keyword = requestData.keywords.main_keyword;
+                if ((requestData.keywords as any)?.main_keyword) {
+                  slotInfo.keyword = (requestData.keywords as any).main_keyword;
                 } else if (requestData.input_data?.keyword) {
                   slotInfo.keyword = requestData.input_data.keyword;
                 } else if (slotData.input_data?.keyword) {

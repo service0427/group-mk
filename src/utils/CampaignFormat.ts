@@ -22,6 +22,7 @@ export interface CampaignData {
   guarantee_unit?: string; // 추가: 보장 단위 (일, 주, 월)
   min_guarantee_price?: number; // 추가: 최소 보장 가격
   max_guarantee_price?: number; // 추가: 최대 보장 가격
+  target_rank?: string | number; // 추가: 목표 순위
   add_info?: {
     logo_url?: string;
     banner_url?: string;

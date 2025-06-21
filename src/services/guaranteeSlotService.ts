@@ -18,6 +18,20 @@ import type {
   GuaranteeSlotRequestStatus,
   GuaranteeSlotStatus,
 } from '@/types/guarantee-slot.types';
+import { 
+  createGuaranteeQuoteRequestNotification,
+  createNegotiationMessageNotification,
+  createGuaranteePurchaseNotification,
+  createGuaranteeApprovalNotification,
+  createNegotiationCompleteNotification,
+  createRenegotiationRequestNotification
+} from '@/utils/notificationActions';
+import { SERVICE_TYPE_TO_CATEGORY } from '@/pages/advertise/campaigns/components/campaign-components/constants';
+
+// 서비스 타입을 한글명으로 변환하는 함수
+const getServiceTypeName = (serviceType: string): string => {
+  return SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType;
+};
 
 // 보장성 슬롯 견적 요청 관련
 export const guaranteeSlotRequestService = {
@@ -36,25 +50,32 @@ export const guaranteeSlotRequestService = {
         throw new Error('유효하지 않은 보장성 캠페인입니다.');
       }
 
+      // 견적 요청 데이터 준비
+      const requestData: any = {
+        campaign_id: params.campaign_id,
+        user_id: userId,
+        distributor_id: campaign.mat_id, // 캠페인의 담당 총판
+        target_rank: params.target_rank,
+        guarantee_count: params.guarantee_count,
+        initial_budget: params.initial_budget,
+        status: 'requested' as GuaranteeSlotRequestStatus,
+        input_data: params.input_data || {},
+        start_date: params.start_date,
+        end_date: params.end_date,
+        quantity: params.quantity || 1,
+        user_reason: params.user_reason,
+        additional_requirements: params.additional_requirements,
+      };
+      
+      // keyword_id가 있고 양수인 경우에만 추가 (수동 입력은 -1이므로 제외)
+      if (params.keyword_id && params.keyword_id > 0) {
+        requestData.keyword_id = params.keyword_id;
+      }
+
       // 견적 요청 생성
       const { data, error } = await supabase
         .from('guarantee_slot_requests')
-        .insert({
-          campaign_id: params.campaign_id,
-          user_id: userId,
-          distributor_id: campaign.mat_id, // 캠페인의 담당 총판
-          target_rank: params.target_rank,
-          guarantee_count: params.guarantee_count,
-          initial_budget: params.initial_budget,
-          status: 'requested' as GuaranteeSlotRequestStatus,
-          keyword_id: params.keyword_id,
-          input_data: params.input_data || {},
-          start_date: params.start_date,
-          end_date: params.end_date,
-          quantity: params.quantity || 1,
-          user_reason: params.user_reason,
-          additional_requirements: params.additional_requirements,
-        })
+        .insert(requestData)
         .select()
         .single();
 
@@ -70,6 +91,16 @@ export const guaranteeSlotRequestService = {
           message: params.message,
         });
       }
+
+      // 총판에게 알림 전송
+      const serviceName = getServiceTypeName(campaign.service_type);
+      await createGuaranteeQuoteRequestNotification(
+        campaign.mat_id,
+        campaign.campaign_name,
+        data.id,
+        serviceName,
+        campaign.slot_type
+      );
 
       return { data, error: null };
     } catch (error) {
@@ -144,6 +175,54 @@ export const guaranteeSlotRequestService = {
         .single();
 
       if (error) throw error;
+
+      // 협상이 완료(accepted)된 경우 사용자에게 구매 가능 알림 전송
+      if (status === 'accepted' && finalDailyAmount) {
+        // 캠페인 정보와 키워드 정보 조회
+        const { data: requestInfo } = await supabase
+          .from('guarantee_slot_requests')
+          .select(`
+            *,
+            campaigns (
+              campaign_name,
+              service_type,
+              slot_type
+            ),
+            keywords (
+              main_keyword
+            )
+          `)
+          .eq('id', requestId)
+          .single();
+
+        if (requestInfo) {
+          const serviceName = getServiceTypeName(requestInfo.campaigns?.service_type || '');
+          
+          // 키워드 정보 가져오기
+          let keyword = '';
+          if (requestInfo.keywords?.main_keyword) {
+            keyword = requestInfo.keywords.main_keyword;
+          } else if (requestInfo.input_data?.keyword) {
+            keyword = requestInfo.input_data.keyword;
+          }
+          
+          await createNegotiationCompleteNotification(
+            requestInfo.user_id,
+            requestInfo.campaigns?.campaign_name || '캠페인',
+            requestId,
+            serviceName,
+            requestInfo.campaigns?.slot_type || 'standard',
+            finalDailyAmount,
+            {
+              startDate: requestInfo.start_date,
+              endDate: requestInfo.end_date,
+              guaranteeCount: finalGuaranteeCount || requestInfo.guarantee_count,
+              keyword
+            }
+          );
+        }
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('견적 요청 상태 업데이트 실패:', error);
@@ -202,7 +281,7 @@ export const negotiationService = {
         .insert({
           request_id: params.request_id,
           sender_id: senderId,
-          sender_type: senderType,
+          sender_type: senderType,  // 프론트엔드와 일치하도록 sender_type 사용
           message_type: params.message_type,
           message: params.message,
           proposed_daily_amount: params.proposed_daily_amount,
@@ -217,6 +296,112 @@ export const negotiationService = {
       // 협상 중 상태로 업데이트
       if (params.message_type === 'price_proposal' || params.message_type === 'counter_offer') {
         await guaranteeSlotRequestService.updateRequestStatus(params.request_id, 'negotiating');
+      }
+      
+      // 재협상 요청인 경우 상태를 negotiating으로 변경
+      if (params.message_type === 'renegotiation_request') {
+        await guaranteeSlotRequestService.updateRequestStatus(params.request_id, 'negotiating');
+      }
+
+      // 견적 요청 정보와 관련 정보 조회
+      const { data: requestInfo, error: requestError } = await supabase
+        .from('guarantee_slot_requests')
+        .select(`
+          *,
+          campaign:campaigns!guarantee_slot_requests_campaign_id_fkey (
+            campaign_name,
+            mat_id,
+            service_type,
+            slot_type
+          )
+        `)
+        .eq('id', params.request_id)
+        .single();
+
+      if (!requestError && requestInfo) {
+        // 수신자 결정 (발신자와 반대)
+        const recipientId = senderType === 'user' 
+          ? requestInfo.distributor_id 
+          : requestInfo.user_id;
+        
+        const serviceName = getServiceTypeName(requestInfo.campaign?.service_type || '');
+        
+        // 재협상 요청인 경우 특별한 알림 전송
+        if (params.message_type === 'renegotiation_request') {
+          console.log('재협상 요청 알림 전송:', {
+            senderType,
+            senderId,
+            recipientId,
+            requestInfo: requestInfo?.distributor_id
+          });
+          // 키워드 정보 조회
+          let keyword = '';
+          if (requestInfo.keyword_id) {
+            const { data: keywordData } = await supabase
+              .from('keywords')
+              .select('main_keyword')
+              .eq('id', requestInfo.keyword_id)
+              .single();
+            keyword = keywordData?.main_keyword || '';
+          } else if (requestInfo.input_data) {
+            // input_data에서 키워드 찾기 (여러 가능한 위치 확인)
+            keyword = requestInfo.input_data.keyword || 
+                     requestInfo.input_data.main_keyword || 
+                     requestInfo.input_data['키워드'] ||
+                     requestInfo.input_data['검색어'] || '';
+          }
+          
+          // 재협상 요청 알림은 상대방에게 전송 (recipientId 사용)
+          // isFromDistributorPage 플래그를 그대로 전달
+          await createRenegotiationRequestNotification(
+            recipientId,
+            requestInfo.campaign?.campaign_name || '캠페인',
+            params.request_id,
+            serviceName,
+            requestInfo.campaign?.slot_type || 'standard',
+            {
+              keyword,
+              targetRank: requestInfo.target_rank,
+              finalDailyAmount: requestInfo.final_daily_amount,
+              guaranteeCount: requestInfo.guarantee_count
+            },
+            params.isFromDistributorPage || false
+          );
+        } else {
+          // 키워드 정보 조회
+          let keyword = '';
+          if (requestInfo.keyword_id) {
+            const { data: keywordData } = await supabase
+              .from('keywords')
+              .select('main_keyword')
+              .eq('id', requestInfo.keyword_id)
+              .single();
+            keyword = keywordData?.main_keyword || '';
+          } else if (requestInfo.input_data) {
+            // input_data에서 키워드 찾기 (여러 가능한 위치 확인)
+            keyword = requestInfo.input_data.keyword || 
+                     requestInfo.input_data.main_keyword || 
+                     requestInfo.input_data['키워드'] ||
+                     requestInfo.input_data['검색어'] || '';
+          }
+          
+          // 일반 협상 메시지 알림 전송 (디바운싱 적용)
+          await createNegotiationMessageNotification(
+            recipientId,
+            requestInfo.campaign?.campaign_name || '캠페인',
+            params.request_id,
+            serviceName,
+            requestInfo.campaign?.slot_type || 'standard',
+            {
+              keyword,
+              targetRank: requestInfo.target_rank,
+              guaranteeCount: requestInfo.guarantee_count
+            },
+            params.message_type,
+            params.proposed_daily_amount,
+            params.isFromDistributorPage || false
+          );
+        }
       }
 
       return { data, error: null };
@@ -296,6 +481,18 @@ export const guaranteeSlotService = {
       if (error) {
         console.error('보장형 슬롯 구매 RPC 오류:', error);
         throw new Error(error.message || '구매 처리 중 오류가 발생했습니다.');
+      }
+
+      if (data?.slot_id) {
+        // 총판에게 구매 알림 전송
+        const serviceName = getServiceTypeName(request.campaigns?.service_type || '');
+        await createGuaranteePurchaseNotification(
+          request.distributor_id,
+          request.campaigns?.campaign_name || '캠페인',
+          data.slot_id,
+          serviceName,
+          request.campaigns?.slot_type || 'standard'
+        );
       }
 
       return { 
@@ -479,6 +676,47 @@ export const guaranteeSlotService = {
   // 보장형 슬롯 승인
   async approveSlot(slotId: string, distributorId: string) {
     try {
+      // 슬롯 정보 먼저 조회
+      const { data: slotInfo, error: slotError } = await supabase
+        .from('guarantee_slots')
+        .select(`
+          *,
+          campaigns:product_id (
+            campaign_name,
+            service_type,
+            slot_type
+          )
+        `)
+        .eq('id', slotId)
+        .single();
+
+      if (slotError) throw slotError;
+
+      // 반려된 슬롯인 경우 먼저 pending 상태로 변경만 하고 리턴
+      if (slotInfo.status === 'rejected') {
+        const { error: updateError } = await supabase
+          .from('guarantee_slots')
+          .update({ 
+            status: 'pending',
+            rejected_at: null,
+            rejected_by: null,
+            rejection_reason: null
+          })
+          .eq('id', slotId);
+
+        if (updateError) throw updateError;
+
+        // 재승인 (반려 취소)인 경우 알림 없이 성공 메시지만 반환
+        return { 
+          data: {
+            success: true,
+            message: '반려가 취소되었습니다. 슬롯이 대기 상태로 변경되었습니다.'
+          }, 
+          error: null 
+        };
+      }
+
+      // 정상적인 승인 프로세스
       const { data, error } = await supabase.rpc('approve_guarantee_slot', {
         p_slot_id: slotId,
         p_distributor_id: distributorId
@@ -487,6 +725,19 @@ export const guaranteeSlotService = {
       if (error) {
         console.error('보장형 슬롯 승인 실패:', error);
         throw new Error(error.message || '승인 처리 중 오류가 발생했습니다.');
+      }
+
+      // 사용자에게 승인 알림 전송 (정상 승인일 때만)
+      if (slotInfo?.user_id) {
+        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        await createGuaranteeApprovalNotification(
+          slotInfo.user_id,
+          slotInfo.campaigns?.campaign_name || '캠페인',
+          slotId,
+          true,
+          serviceName,
+          slotInfo.campaigns?.slot_type || 'standard'
+        );
       }
 
       return { 
@@ -506,6 +757,22 @@ export const guaranteeSlotService = {
   // 보장형 슬롯 반려
   async rejectSlot(slotId: string, distributorId: string, rejectionReason: string) {
     try {
+      // 슬롯 정보 먼저 조회
+      const { data: slotInfo, error: slotError } = await supabase
+        .from('guarantee_slots')
+        .select(`
+          *,
+          campaigns:product_id (
+            campaign_name,
+            service_type,
+            slot_type
+          )
+        `)
+        .eq('id', slotId)
+        .single();
+
+      if (slotError) throw slotError;
+
       const { data, error } = await supabase.rpc('reject_guarantee_slot', {
         p_slot_id: slotId,
         p_distributor_id: distributorId,
@@ -515,6 +782,20 @@ export const guaranteeSlotService = {
       if (error) {
         console.error('보장형 슬롯 반려 실패:', error);
         throw new Error(error.message || '반려 처리 중 오류가 발생했습니다.');
+      }
+
+      // 사용자에게 반려 알림 전송
+      if (slotInfo?.user_id) {
+        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        await createGuaranteeApprovalNotification(
+          slotInfo.user_id,
+          slotInfo.campaigns?.campaign_name || '캠페인',
+          slotId,
+          false,
+          serviceName,
+          slotInfo.campaigns?.slot_type || 'standard',
+          rejectionReason
+        );
       }
 
       return { 

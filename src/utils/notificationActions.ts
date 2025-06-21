@@ -306,3 +306,403 @@ export const createRoleChangeNotification = async (
     priority: NotificationPriority.HIGH
   });
 };
+
+/**
+ * 보장형 견적요청 알림 생성 (사용자 → 총판)
+ * @param distributorId 총판 ID
+ * @param campaignName 캠페인 이름
+ * @param quoteId 견적요청 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ */
+export const createGuaranteeQuoteRequestNotification = async (
+  distributorId: string,
+  campaignName: string,
+  quoteId: string,
+  serviceName: string,
+  slotType: string
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  return await createNotification({
+    userId: distributorId,
+    type: NotificationType.SERVICE,
+    title: '새로운 보장형 견적요청',
+    message: `[${serviceName}/${slotTypeName}] ${campaignName} 캠페인에 대한 새로운 견적 요청이 있습니다.`,
+    link: `/manage/guarantee-quotes?quoteId=${quoteId}`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 보장형 구매 알림 생성 (사용자 → 총판)
+ * @param distributorId 총판 ID
+ * @param campaignName 캠페인 이름
+ * @param slotId 슬롯 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ */
+export const createGuaranteePurchaseNotification = async (
+  distributorId: string,
+  campaignName: string,
+  slotId: string,
+  serviceName: string,
+  slotType: string
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  return await createNotification({
+    userId: distributorId,
+    type: NotificationType.SLOT,
+    title: '보장형 슬롯 구매 알림',
+    message: `[${serviceName}/${slotTypeName}] ${campaignName} 슬롯이 구매되었습니다. 승인이 필요합니다.`,
+    link: `/manage/guarantee-quotes?slotId=${slotId}`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 보장형 승인 알림 생성 (총판 → 사용자)
+ * @param userId 사용자 ID
+ * @param campaignName 캠페인 이름
+ * @param slotId 슬롯 ID
+ * @param isApproved 승인 여부
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ * @param reason 반려 사유 (반려시)
+ */
+export const createGuaranteeApprovalNotification = async (
+  userId: string,
+  campaignName: string,
+  slotId: string,
+  isApproved: boolean,
+  serviceName: string,
+  slotType: string,
+  reason?: string
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  const title = isApproved ? '보장형 슬롯 승인 완료' : '보장형 슬롯 반려';
+  const message = isApproved
+    ? `[${serviceName}/${slotTypeName}] ${campaignName} 슬롯이 승인되었습니다.`
+    : `[${serviceName}/${slotTypeName}] ${campaignName} 슬롯이 반려되었습니다. 사유: ${reason}`;
+
+  return await createNotification({
+    userId,
+    type: NotificationType.SLOT,
+    title,
+    message,
+    link: `/my-services?slotId=${slotId}`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 보장형 협상 완료 알림 생성 (총판 → 사용자)
+ * @param userId 사용자 ID
+ * @param campaignName 캠페인 이름
+ * @param quoteId 견적요청 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ * @param finalPrice 최종 협상 가격
+ * @param slotInfo 슬롯 정보 (날짜, 보장 횟수 등)
+ */
+export const createNegotiationCompleteNotification = async (
+  userId: string,
+  campaignName: string,
+  quoteId: string,
+  serviceName: string,
+  slotType: string,
+  finalPrice: number,
+  slotInfo?: {
+    startDate?: string;
+    endDate?: string;
+    guaranteeCount?: number;
+    keyword?: string;
+  }
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  let message = `[${serviceName}/${slotTypeName}] ${campaignName}`;
+  
+  if (slotInfo?.keyword) {
+    message += ` (${slotInfo.keyword})`;
+  }
+  
+  message += ` 협상이 완료되었습니다. `;
+  
+  // 날짜 정보 추가
+  if (slotInfo?.startDate && slotInfo?.endDate) {
+    const start = new Date(slotInfo.startDate).toLocaleDateString('ko-KR');
+    const end = new Date(slotInfo.endDate).toLocaleDateString('ko-KR');
+    message += `${start} ~ ${end}, `;
+  }
+  
+  message += `일일 ${finalPrice.toLocaleString()}원`;
+  
+  if (slotInfo?.guaranteeCount) {
+    message += ` × ${slotInfo.guaranteeCount}회`;
+  }
+  
+  message += `으로 구매 가능합니다.`;
+  
+  return await createNotification({
+    userId,
+    type: NotificationType.SERVICE,
+    title: '협상 완료 - 구매 가능',
+    message,
+    link: `/my-services?quoteId=${quoteId}&openPurchase=true`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 보장형 재협상 요청 알림 생성 (양방향)
+ * @param recipientId 수신자 ID
+ * @param campaignName 캠페인 이름
+ * @param quoteId 견적요청 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ * @param slotInfo 슬롯 정보 (키워드, 금액 등)
+ * @param isFromDistributorPage 보장형 슬롯 관리 페이지에서 보낸 것인지
+ */
+export const createRenegotiationRequestNotification = async (
+  recipientId: string,
+  campaignName: string,
+  quoteId: string,
+  serviceName: string,
+  slotType: string,
+  slotInfo?: {
+    keyword?: string;
+    targetRank?: number;
+    finalDailyAmount?: number;
+    guaranteeCount?: number;
+  },
+  isFromDistributorPage: boolean = false
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  let message = `[${serviceName}/${slotTypeName}] ${campaignName} 협상 재개 요청이 있습니다.`;
+  
+  // 추가 정보가 있으면 포함
+  if (slotInfo) {
+    const details: string[] = [];
+    if (slotInfo.keyword) details.push(`키워드: ${slotInfo.keyword}`);
+    if (slotInfo.targetRank) details.push(`목표순위: ${slotInfo.targetRank}위`);
+    if (slotInfo.finalDailyAmount && slotInfo.guaranteeCount) {
+      details.push(`기존협상: 일일 ${slotInfo.finalDailyAmount.toLocaleString()}원 × ${slotInfo.guaranteeCount}회`);
+    }
+    if (details.length > 0) {
+      message += ` (${details.join(', ')})`;
+    }
+  }
+  
+  // 발신 페이지에 따라 링크 설정
+  // 보장형 슬롯 관리에서 보냈으면 → 수신자는 이용 중인 서비스로
+  // 이용 중인 서비스에서 보냈으면 → 수신자는 보장형 슬롯 관리로
+  const link = isFromDistributorPage 
+    ? `/my-services?quoteId=${quoteId}`              // 사용자: 이용 중인 서비스로
+    : `/manage/guarantee-quotes?quoteId=${quoteId}`;  // 총판: 보장형 슬롯 관리로
+  
+  return await createNotification({
+    userId: recipientId,
+    type: NotificationType.SERVICE,
+    title: '재협상 요청',
+    message,
+    link,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+// 메시지 알림 디바운싱을 위한 맵
+const messageNotificationQueue = new Map<string, { timer: NodeJS.Timeout; count: number }>();
+
+/**
+ * 협상 메시지 알림 생성 (양방향, 디바운싱 적용)
+ * @param recipientId 수신자 ID
+ * @param campaignName 캠페인 이름
+ * @param negotiationId 협상 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ * @param slotInfo 슬롯 정보
+ * @param messageType 메시지 타입
+ * @param proposedPrice 제안 가격
+ * @param isFromDistributorPage 보장형 슬롯 관리 페이지에서 보낸 것인지
+ * @param messageCount 안읽은 메시지 수
+ */
+export const createNegotiationMessageNotification = async (
+  recipientId: string,
+  campaignName: string,
+  negotiationId: string,
+  serviceName: string,
+  slotType: string,
+  slotInfo?: {
+    keyword?: string;
+    targetRank?: number;
+    guaranteeCount?: number;
+  },
+  messageType?: string,
+  proposedPrice?: number,
+  isFromDistributorPage: boolean = false,
+  messageCount: number = 1
+) => {
+  const queueKey = `negotiation-${recipientId}-${negotiationId}`;
+  
+  // 주요 메시지 타입은 즉시 전송 (디바운싱 제외)
+  const importantMessageTypes = ['price_proposal', 'counter_offer', 'acceptance', 'renegotiation_request'];
+  const isImportantMessage = messageType && importantMessageTypes.includes(messageType);
+  
+  if (isImportantMessage) {
+    // 주요 메시지는 즉시 전송
+    const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+    let message = `[${serviceName}/${slotTypeName}] ${campaignName}`;
+    
+    // 슬롯 정보 추가
+    if (slotInfo && slotInfo.keyword) {
+      message += ` (${slotInfo.keyword})`;
+    }
+    
+    // 메시지 타입에 따라 다른 내용 표시
+    if (messageType === 'price_proposal' && proposedPrice) {
+      message += ` 협상에서 새로운 가격 제안이 있습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    } else if (messageType === 'counter_offer' && proposedPrice) {
+      message += ` 협상에서 역제안이 있습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    } else if (messageType === 'acceptance' && proposedPrice) {
+      message += ` 협상 조건이 수락되었습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    }
+    
+    // 발신 페이지에 따라 링크 설정
+    const link = isFromDistributorPage 
+      ? `/my-services?negotiationId=${negotiationId}&openModal=true`
+      : `/manage/guarantee-quotes?negotiationId=${negotiationId}&openModal=true`;
+    
+    await createNotification({
+      userId: recipientId,
+      type: NotificationType.SERVICE,
+      title: messageType === 'price_proposal' ? '가격 제안' : 
+             messageType === 'counter_offer' ? '역제안' : 
+             messageType === 'acceptance' ? '협상 수락' : '협상 메시지',
+      message,
+      link,
+      priority: NotificationPriority.HIGH // 주요 메시지는 높은 우선순위
+    });
+    
+    // 큐에서 해당 키 제거 (디바운싱 중인 일반 메시지가 있다면)
+    if (messageNotificationQueue.has(queueKey)) {
+      const existing = messageNotificationQueue.get(queueKey)!;
+      clearTimeout(existing.timer);
+      messageNotificationQueue.delete(queueKey);
+    }
+    
+    return;
+  }
+  
+  // 일반 메시지는 기존 디바운싱 로직 적용
+  // 기존 타이머가 있으면 취소
+  if (messageNotificationQueue.has(queueKey)) {
+    const existing = messageNotificationQueue.get(queueKey)!;
+    clearTimeout(existing.timer);
+    messageCount = existing.count + messageCount;
+  }
+  
+  // 30초 디바운싱
+  const timer = setTimeout(async () => {
+    const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+    let message = `[${serviceName}/${slotTypeName}] ${campaignName}`;
+    
+    // 슬롯 정보 추가
+    if (slotInfo && slotInfo.keyword) {
+      message += ` (${slotInfo.keyword})`;
+    }
+    
+    // 메시지 타입에 따라 다른 내용 표시
+    if (messageType === 'price_proposal' && proposedPrice) {
+      message += ` 협상에서 새로운 가격 제안이 있습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    } else if (messageType === 'counter_offer' && proposedPrice) {
+      message += ` 협상에서 역제안이 있습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    } else if (messageType === 'acceptance' && proposedPrice) {
+      message += ` 협상 조건이 수락되었습니다. (일일 ${proposedPrice.toLocaleString()}원)`;
+    } else {
+      message += ` 협상에서 ${messageCount}개의 새 메시지가 있습니다.`;
+    }
+    
+    // 발신 페이지에 따라 링크 설정
+    // 보장형 슬롯 관리에서 보냈으면 → 수신자는 이용 중인 서비스로
+    // 이용 중인 서비스에서 보냈으면 → 수신자는 보장형 슬롯 관리로
+    const link = isFromDistributorPage 
+      ? `/my-services?negotiationId=${negotiationId}&openModal=true`              // 사용자: 이용 중인 서비스로
+      : `/manage/guarantee-quotes?negotiationId=${negotiationId}&openModal=true`;  // 총판: 보장형 슬롯 관리로
+    
+    await createNotification({
+      userId: recipientId,
+      type: NotificationType.SERVICE,
+      title: messageType === 'price_proposal' ? '가격 제안' : 
+             messageType === 'counter_offer' ? '역제안' : 
+             messageType === 'acceptance' ? '협상 수락' : '협상 메시지',
+      message,
+      link,
+      priority: NotificationPriority.MEDIUM
+    });
+    
+    messageNotificationQueue.delete(queueKey);
+  }, 30000);
+  
+  messageNotificationQueue.set(queueKey, { timer, count: messageCount });
+};
+
+/**
+ * 1:1 문의 메시지 알림 생성 (양방향, 디바운싱 적용)
+ * @param recipientId 수신자 ID
+ * @param inquiryTitle 문의 제목
+ * @param inquiryId 문의 ID
+ * @param serviceName 서비스명
+ * @param campaignName 캠페인명
+ * @param slotType 슬롯 타입
+ * @param slotInfo 슬롯 정보
+ * @param messageCount 안읽은 메시지 수
+ */
+export const createInquiryMessageNotification = async (
+  recipientId: string,
+  inquiryTitle: string,
+  inquiryId: string,
+  serviceName: string,
+  campaignName: string,
+  slotType: string,
+  slotInfo?: {
+    keyword?: string;
+    targetRank?: number;
+    startDate?: string;
+    endDate?: string;
+  },
+  messageCount: number = 1
+) => {
+  const queueKey = `inquiry-${recipientId}-${inquiryId}`;
+  
+  // 기존 타이머가 있으면 취소
+  if (messageNotificationQueue.has(queueKey)) {
+    const existing = messageNotificationQueue.get(queueKey)!;
+    clearTimeout(existing.timer);
+    messageCount = existing.count + messageCount;
+  }
+  
+  // 30초 디바운싱
+  const timer = setTimeout(async () => {
+    const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+    let message = `[${serviceName}/${slotTypeName}] ${campaignName}`;
+    
+    // 슬롯 정보 추가
+    if (slotInfo && slotInfo.keyword) {
+      message += ` (${slotInfo.keyword})`;
+    }
+    
+    message += ` - "${inquiryTitle}" 문의에 ${messageCount}개의 새 메시지가 있습니다.`;
+    
+    await createNotification({
+      userId: recipientId,
+      type: NotificationType.SERVICE,
+      title: '1:1 문의 답변',
+      message,
+      link: `/my-services?inquiryId=${inquiryId}&openModal=true`,
+      priority: NotificationPriority.MEDIUM
+    });
+    
+    messageNotificationQueue.delete(queueKey);
+  }, 30000);
+  
+  messageNotificationQueue.set(queueKey, { timer, count: messageCount });
+};

@@ -233,6 +233,13 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 키워드 툴팁 상태
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   
+  // 입력정보 툴팁 상태
+  const [openInputDataTooltipId, setOpenInputDataTooltipId] = useState<string | null>(null);
+  
+  // 환불 정보 툴팁 상태
+  const [openRefundInfoId, setOpenRefundInfoId] = useState<string | null>(null);
+  const [refundTooltipPosition, setRefundTooltipPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
     if (!endDate) return null;
@@ -1062,7 +1069,7 @@ const GuaranteeQuotesPage: React.FC = () => {
           'keyword3': request.keywords?.keyword3 || request.input_data?.keyword3 || '',
           'url': request.input_data?.url || '',
           'target_rank': request.target_rank,
-          'guarantee_period': `${request.guarantee_count}${request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}`,
+          'guarantee_period': `${request.guarantee_count}${request.campaigns?.guarantee_unit || '일'}`,
           'initial_budget': request.initial_budget || 0,
           'final_amount': request.final_daily_amount || 0,
           'total_amount': (request.final_daily_amount || 0) * request.guarantee_count,
@@ -1576,26 +1583,139 @@ const GuaranteeQuotesPage: React.FC = () => {
                       </td>
                       {/* 입력정보 */}
                       <td className="py-2 px-2 max-w-[150px]">
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={request.keywords?.mid || request.input_data?.mid || '-'}>
-                            {request.keywords?.mid || request.input_data?.mid || '-'}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            <a 
-                              href={request.keywords?.url || request.input_data?.url || '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline"
-                              title={request.keywords?.url || request.input_data?.url || '-'}
-                              onClick={(e) => {
-                                if (!request.keywords?.url && !request.input_data?.url) {
-                                  e.preventDefault();
+                        <div className="flex items-start gap-1 min-w-0">
+                          {(() => {
+                            // 중첩된 input_data 구조 확인
+                            let mid = request.keywords?.mid || request.input_data?.mid;
+                            let url = request.keywords?.url || request.input_data?.url;
+                            let hasAdditionalData = false;
+                            let additionalData: Record<string, any> = {};
+
+                            // 중첩된 구조 확인 (keywords 배열 안의 input_data)
+                            if (request.input_data?.keywords?.[0]?.input_data) {
+                              const nestedData = request.input_data.keywords[0].input_data;
+                              mid = nestedData.mid || mid;
+                              url = nestedData.url || url;
+                              
+                              // 추가 필드 확인
+                              Object.entries(nestedData).forEach(([key, value]) => {
+                                if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
+                                  hasAdditionalData = true;
+                                  additionalData[key] = value;
                                 }
-                              }}
-                            >
-                              {request.keywords?.url || request.input_data?.url || '-'}
-                            </a>
-                          </div>
+                              });
+                            } else if (request.input_data) {
+                              // 일반 input_data 구조에서 추가 필드 확인
+                              Object.entries(request.input_data).forEach(([key, value]) => {
+                                if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
+                                  hasAdditionalData = true;
+                                  additionalData[key] = value;
+                                }
+                              });
+                            }
+
+                            return (
+                              <>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={mid || '-'}>
+                                    {mid || '-'}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <a 
+                                      href={url || '#'}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="hover:underline"
+                                      title={url || '-'}
+                                      onClick={(e) => {
+                                        if (!url) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                    >
+                                      {url || '-'}
+                                    </a>
+                                  </div>
+                                </div>
+                                <button
+                                  className="flex-shrink-0 text-primary hover:text-primary-dark transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setPopoverPosition({
+                                      top: rect.top - 10,
+                                      left: rect.left + rect.width / 2
+                                    });
+                                    setOpenInputDataTooltipId(openInputDataTooltipId === request.id ? null : request.id);
+                                  }}
+                                >
+                                  <KeenIcon icon="information-2" className="text-base" />
+                                </button>
+                                {/* 입력정보 팝오버 */}
+                                {openInputDataTooltipId === request.id && ReactDOM.createPortal(
+                                  <>
+                                    <div
+                                      className="fixed inset-0"
+                                      style={{ zIndex: 9998 }}
+                                      onClick={() => setOpenInputDataTooltipId(null)}
+                                    />
+                                    <div
+                                      className="fixed bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm rounded-lg p-4 w-80 shadow-xl border border-gray-200 dark:border-gray-600"
+                                      style={{
+                                        zIndex: 99999,
+                                        left: `${popoverPosition.left}px`,
+                                        top: `${popoverPosition.top}px`,
+                                        transform: 'translate(-50%, -100%)'
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="font-medium">입력 정보</div>
+                                        <button
+                                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenInputDataTooltipId(null);
+                                          }}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                      <div className="space-y-2">
+                                        {hasAdditionalData ? (
+                                          Object.entries(additionalData).map(([key, value]) => (
+                                            <div key={key} className="flex gap-2">
+                                              <span className="text-gray-500 dark:text-gray-400 min-w-[80px]">{key}:</span>
+                                              <span className="text-gray-900 dark:text-gray-100">
+                                                {typeof value === 'string' && value.startsWith('http') ? (
+                                                  <a href={value} target="_blank" rel="noopener noreferrer" 
+                                                     className="text-blue-600 hover:underline break-all">
+                                                    {value}
+                                                  </a>
+                                                ) : (
+                                                  <span className="break-all">{String(value)}</span>
+                                                )}
+                                              </span>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                            입력 필드 데이터가 없습니다.
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* Arrow */}
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-gray-800"></div>
+                                      </div>
+                                    </div>
+                                  </>,
+                                  document.body
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                       {/* 키워드 */}
@@ -1728,7 +1848,9 @@ const GuaranteeQuotesPage: React.FC = () => {
                       {/* 보장 */}
                       <td className="py-2 px-2 text-center">
                         <div className="text-xs font-medium">
-                          {request.guarantee_count}{request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
+                          <span className={request.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}>
+                            {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
+                          </span>
                         </div>
                       </td>
                       {/* 캠페인 */}
@@ -1762,8 +1884,10 @@ const GuaranteeQuotesPage: React.FC = () => {
                             <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
                           {request.status === 'purchased' && (
                             <>
-                              {/* 슬롯이 없거나 pending 상태일 때만 구매 상태 표시 */}
-                              {(!request.guarantee_slots?.[0] || request.guarantee_slots[0].status === 'pending') && (
+                              {/* 슬롯이 없거나 pending/rejected 상태일 때 구매 상태 표시 */}
+                              {(!request.guarantee_slots?.[0] || 
+                                request.guarantee_slots[0].status === 'pending' || 
+                                request.guarantee_slots[0].status === 'rejected') && (
                                 <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
                               )}
                               {request.guarantee_slots?.[0] && (
@@ -1781,9 +1905,28 @@ const GuaranteeQuotesPage: React.FC = () => {
                                             환불 검토중
                                           </span>;
                                         case 'approved':
-                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
-                                            환불승인
-                                          </span>;
+                                          return (
+                                            <div className="flex items-center gap-1">
+                                              <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
+                                                환불승인
+                                              </span>
+                                              <button
+                                                className="text-danger hover:text-danger-dark transition-colors"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const rect = e.currentTarget.getBoundingClientRect();
+                                                  setRefundTooltipPosition({
+                                                    top: rect.top - 10,
+                                                    left: rect.left + rect.width / 2
+                                                  });
+                                                  setOpenRefundInfoId(openRefundInfoId === request.id ? null : request.id);
+                                                }}
+                                                title="환불 정보"
+                                              >
+                                                <KeenIcon icon="information-2" className="text-sm" />
+                                              </button>
+                                            </div>
+                                          );
                                         case 'rejected':
                                           return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
                                             <KeenIcon icon="cross-circle" className="text-xs" />
@@ -2013,7 +2156,24 @@ const GuaranteeQuotesPage: React.FC = () => {
                                       })()}
                                     </>
                                   ) : request.guarantee_slots[0].status === 'rejected' ? (
-                                    <span className="text-xs text-red-600">반려됨</span>
+                                    <>
+                                      <button
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-info hover:bg-info-dark text-white transition-colors"
+                                        onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
+                                        title="대기로 변경"
+                                        disabled={negotiationModal.open}
+                                      >
+                                        대기
+                                      </button>
+                                      <button
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                        onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
+                                        title="반려"
+                                        disabled={negotiationModal.open}
+                                      >
+                                        반려
+                                      </button>
+                                    </>
                                   ) : request.guarantee_slots[0].status === 'completed' ? (
                                     <span className="text-xs text-gray-500">완료됨</span>
                                   ) : null}
@@ -2031,6 +2191,92 @@ const GuaranteeQuotesPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            
+            {/* 환불 정보 툴팁 */}
+            {openRefundInfoId && (() => {
+              const request = filteredRequests.find(r => r.id === openRefundInfoId);
+              const refundRequest = request?.guarantee_slots?.[0]?.refund_requests?.find(
+                req => req.status === 'approved'
+              );
+              
+              if (!request || !refundRequest) return null;
+              
+              return ReactDOM.createPortal(
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setOpenRefundInfoId(null)} 
+                  />
+                  <div 
+                    className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
+                    style={{
+                      left: `${refundTooltipPosition.left}px`,
+                      top: `${refundTooltipPosition.top}px`,
+                      transform: 'translate(-50%, -100%)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-sm flex items-center gap-2">
+                        <KeenIcon icon="check-circle" className="text-green-400" />
+                        환불 승인됨
+                      </div>
+                      <button
+                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenRefundInfoId(null);
+                        }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-green-400 mb-1">
+                        <KeenIcon icon="wallet" className="text-base" />
+                        <span className="font-medium">환불 완료</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">환불 사유:</span>
+                        <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
+                      </div>
+                      {refundRequest.refund_amount && (
+                        <div>
+                          <span className="text-gray-400">환불 금액:</span>
+                          <div className="text-green-400 font-medium mt-1">
+                            {refundRequest.refund_amount.toLocaleString()}원
+                          </div>
+                        </div>
+                      )}
+                      <div className="text-gray-400 text-xs">
+                        신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                      </div>
+                      {refundRequest.approval_date && (
+                        <div className="text-gray-400 text-xs">
+                          승인일: {new Date(refundRequest.approval_date).toLocaleDateString('ko-KR')}
+                        </div>
+                      )}
+                      {refundRequest.approval_notes && (
+                        <div className="mt-2">
+                          <span className="text-gray-400 text-xs">승인 메시지:</span>
+                          <div className="bg-green-900/30 border border-green-700/50 rounded-md p-2 mt-1">
+                            <div className="text-green-300 text-xs">
+                              {refundRequest.approval_notes}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* Arrow */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                    </div>
+                  </div>
+                </>,
+                document.body
+              );
+            })()}
             
             {/* 모바일 카드 뷰 */}
             <div className="md:hidden space-y-4 p-4">
@@ -2073,8 +2319,8 @@ const GuaranteeQuotesPage: React.FC = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">보장:</span>
-                          <div className="font-medium">
-                            {request.guarantee_count}{request.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
+                          <div className={`font-medium ${request.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}`}>
+                            {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
                           </div>
                         </div>
                       </div>
@@ -2366,6 +2612,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         requestData={negotiationModal.requestData}
         currentUserRole={currentUser?.role === USER_ROLES.DISTRIBUTOR ? 'distributor' : 'user'}
         onStatusChange={handleNegotiationStatusChange}
+        isFromDistributorPage={true}
       />
 
       {/* 반려 모달 */}

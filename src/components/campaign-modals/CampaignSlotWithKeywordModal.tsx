@@ -29,6 +29,8 @@ import {
   DirectInputKeywordForm
 } from './campaign-slot-components';
 import { isKeywordSupported } from '@/config/campaign.config';
+import { STORAGE_CONFIG, getUploadPath } from '@/config/storage.config';
+import { fileUploadService } from '@/services/fileUploadService';
 
 // 사용자 키워드 인터페이스
 interface Keyword {
@@ -623,7 +625,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // Supabase 쿼리 준비
       let query = supabase
         .from('campaigns')
-        .select('*, mat_id, add_info') // mat_id와 add_info 필드도 가져오기
+        .select('*, mat_id, add_info, slot_type, is_guarantee') // mat_id, add_info, slot_type, is_guarantee 필드도 가져오기
         .eq('status', 'active') // 항상 active 상태인 캠페인만 가져오기
         .order('id', { ascending: true });
 
@@ -1341,6 +1343,36 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     handleInputDataChange(keywordId, `${fieldName}_fileName`, '');
   };
 
+  // 수동 입력 모드용 파일 업로드 함수
+  const handleManualFileUpload = async (file: File, fieldName: string): Promise<{ url: string; fileName: string }> => {
+    try {
+      
+      const { data, error } = await fileUploadService.uploadFile({
+        file: file,
+        bucket: STORAGE_CONFIG.UPLOADS_BUCKET,
+        folder: 'campaigns/slots'
+      });
+
+      if (error) {
+        console.error('파일 업로드 에러:', error);
+        throw new Error(error.message || '파일 업로드에 실패했습니다.');
+      }
+
+      if (!data) {
+        throw new Error('업로드된 파일 정보를 가져올 수 없습니다.');
+      }
+
+
+      return {
+        url: data.url,
+        fileName: data.name
+      };
+    } catch (error) {
+      console.error('handleManualFileUpload 에러:', error);
+      throw error;
+    }
+  };
+
   // URL 유효성 검사 함수
   const isValidUrl = (url: string): boolean => {
     try {
@@ -2044,6 +2076,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       
       // 성공 알림 표시
       showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      
+      // onSave 콜백 호출
+      if (onSave) {
+        onSave(slotData);
+      }
     } catch (error) {
       console.error('키워드 구매 신청 중 오류:', error);
       showAlert('구매 신청 실패', (error instanceof Error ? error.message : '키워드 구매 신청 중 오류가 발생했습니다. 다시 시도해주세요.'), false);
@@ -2065,6 +2102,50 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       if (!selectedCampaign || !currentUser?.id) {
         throw new Error('필수 정보가 누락되었습니다.');
+      }
+
+      console.log('선택된 캠페인 정보:', {
+        campaign: selectedCampaign,
+        slot_type: selectedCampaign.slot_type,
+        is_guarantee: selectedCampaign.is_guarantee
+      });
+
+      // 보장형 캠페인인 경우 견적 요청 모달 열기
+      if (selectedCampaign.slot_type === 'guarantee' || selectedCampaign.is_guarantee) {
+        // 수동 입력 데이터를 견적 요청용 키워드 형식으로 변환 (DB 키워드 생성 없이)
+        const manualKeywordDetail = {
+          id: -1, // 가상의 ID 사용
+          mainKeyword: slotData.input_data?.mainKeyword || slotData.mainKeyword || '직접입력',
+          workCount: slotData.minimum_purchase || 1,
+          dueDays: slotData.work_days || 1,
+          inputData: {
+            ...slotData.input_data,
+            is_manual_input: 'true',
+            mid: slotData.input_data?.mid || slotData.mid || '',
+            url: slotData.input_data?.url || slotData.url || '',
+            keyword1: slotData.input_data?.keyword1 || slotData.keyword1 || '',
+            keyword2: slotData.input_data?.keyword2 || slotData.keyword2 || '',
+            keyword3: slotData.input_data?.keyword3 || slotData.keyword3 || ''
+          }
+        };
+        
+        // 수동 입력용 키워드 데이터 설정
+        setSelectedKeywords([-1]); // 가상 ID 사용
+        setKeywords([{
+          id: -1,
+          groupId: -1,
+          mainKeyword: manualKeywordDetail.mainKeyword,
+          workCount: manualKeywordDetail.workCount,
+          dueDays: manualKeywordDetail.dueDays,
+          inputData: manualKeywordDetail.inputData,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }]);
+        
+        setSaving(false);
+        setQuoteRequestModalOpen(true);
+        return;
       }
 
       // 잔액 계산
@@ -2094,14 +2175,23 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           workCount: quantity, // 일관성을 위해 workCount도 추가
           price: totalAmount,
           is_manual_input: true, // 수동 입력 모드 표시
-          mainKeyword: slotData.mainKeyword || '직접입력', // 사용자가 입력한 메인 키워드 또는 기본값
+          mainKeyword: slotData.mainKeyword || slotData.input_data?.main_keyword || '직접입력',
           keyword1: slotData.input_data?.keyword1 || slotData.keywords?.[0] || '',
           keyword2: slotData.input_data?.keyword2 || slotData.keywords?.[1] || '',
           keyword3: slotData.input_data?.keyword3 || slotData.keywords?.[2] || '',
           keywords: slotData.keywords || [],
-          ...slotData.input_data
+          // 추가 필드들 (mid, url 등)
+          mid: slotData.input_data?.mid || '',
+          url: slotData.input_data?.url || '',
+          ...slotData.input_data // 나머지 모든 필드들
         }
       };
+      
+      // 디버그: 저장되는 데이터 확인
+      console.log('수동 입력 슬롯 저장 데이터:', {
+        slotData,
+        inputData: slotToSave.input_data
+      });
       
 
       // 잔액 확인
@@ -2206,6 +2296,11 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       setResetTrigger(prev => prev + 1);
       
       showAlert('구매 신청 완료', `${selectedCampaign.campaign_name} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      
+      // onSave 콜백 호출
+      if (onSave) {
+        onSave(slotData);
+      }
 
     } catch (error) {
       console.error('구매 신청 중 오류:', error);
@@ -2217,6 +2312,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
+  
   
   // 현재 서비스가 내키워드를 지원하는지 확인
   const supportsKeyword = isKeywordSupported(selectedServiceCode);
@@ -2448,9 +2544,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                                     }
                                     return null;
                                   })()}
-                                  <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업수</th>
-                                  <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
-                                  <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
+                                  {/* 보장형이 아닌 경우에만 작업수 헤더 표시 */}
+                                  {selectedCampaign?.slot_type !== 'guarantee' && (
+                                    <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업수</th>
+                                  )}
+                                  {/* 보장형이 아닌 경우에만 작업기간 헤더 표시 */}
+                                  {selectedCampaign?.slot_type !== 'guarantee' && (
+                                    <>
+                                      <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
+                                      <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
+                                    </>
+                                  )}
                                   {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
                                     <th
                                       key={index}
@@ -2559,6 +2663,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     slotData={slotData}
                     setSlotData={setSlotData}
                     getAdditionalFields={getAdditionalFields}
+                    onFileUpload={handleManualFileUpload}
                   />
                 )
               )}

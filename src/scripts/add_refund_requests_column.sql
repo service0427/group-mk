@@ -156,7 +156,7 @@ BEGIN
     -- 사용자 잔액에 환불 금액 추가
     UPDATE user_balances
     SET 
-      free_balance = free_balance + v_refund_amount,
+      paid_balance = paid_balance + v_refund_amount,
       total_balance = total_balance + v_refund_amount
     WHERE user_id = v_slot.user_id;
     
@@ -196,7 +196,7 @@ BEGIN
       v_refund_amount,
       '보장형 슬롯 환불',
       p_slot_id,
-      'free'
+      'paid'
     );
   END IF;
   

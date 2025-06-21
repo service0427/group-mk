@@ -625,6 +625,36 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </tr>
 
 
+                {/* 보장 순위 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">
+                    보장 순위 <span className="text-red-500">*</span>
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="30"
+                          value={formData.targetRank || ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 30)) {
+                              handleChange('targetRank', value);
+                            }
+                          }}
+                          className="w-24 sm:w-32"
+                          placeholder="1"
+                          disabled={loading}
+                        />
+                        <span className="text-xs sm:text-sm text-muted-foreground">위</span>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">보장할 목표 순위를 입력하세요. (1-30위)</p>
+                    </div>
+                  </td>
+                </tr>
+
                 {/* 최소 보장 가격 */}
                 <tr>
                   <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide min-w-[96px] max-w-[96px] sm:min-w-[128px] sm:max-w-[128px] md:min-w-[160px] md:max-w-[160px]">

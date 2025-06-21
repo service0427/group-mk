@@ -22,33 +22,34 @@ export const PaymentSummarySection: React.FC<PaymentSummarySectionProps> = ({
   selectedCampaignId,
   handleSave
 }) => {
+  
   return (
     <div className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
       <div className="flex items-center">
         {selectedKeywords.length > 0 && (
           <div className={cn(
             "flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border shadow-sm w-full sm:w-auto",
-            selectedCampaign?.slot_type === 'guarantee'
-              ? "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/40 dark:to-purple-900/40 border-purple-200 dark:border-purple-800"
+            (selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee)
+              ? "bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border-emerald-200 dark:border-emerald-800"
               : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-blue-100 dark:border-blue-900"
           )}>
             <KeenIcon icon="wallet" className={cn(
               "size-5 mr-2 translate-y-[4px]",
-              selectedCampaign?.slot_type === 'guarantee' ? "text-purple-600 dark:text-purple-400" : "text-primary"
+              (selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
             )} />
             <div className="flex items-baseline flex-wrap">
               <span className="font-semibold text-gray-600 dark:text-gray-300 text-sm">
-                {selectedCampaign?.slot_type === 'guarantee' ? '예상 금액:' : '결제 금액:'}
+                {(selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) ? '예상 금액:' : '결제 금액:'}
               </span>
               <span className={cn(
                 "ml-2 font-extrabold text-base sm:text-lg",
-                selectedCampaign?.slot_type === 'guarantee'
-                  ? "text-purple-600 dark:text-purple-400"
+                (selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee)
+                  ? "text-emerald-600 dark:text-emerald-400"
                   : "text-primary dark:text-primary-foreground"
               )}>
-                {selectedCampaign?.slot_type === 'guarantee' ? '견적 요청 필요' : `${totalPaymentAmount.toLocaleString()}원`}
+                {(selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) ? '견적 요청 필요' : `${totalPaymentAmount.toLocaleString()}원`}
               </span>
-              {selectedCampaign?.slot_type !== 'guarantee' && (
+              {!(selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) && (
                 <span className="ml-1 text-xs font-medium text-gray-500 dark:text-gray-400">(부가세 포함)</span>
               )}
             </div>
@@ -60,20 +61,20 @@ export const PaymentSummarySection: React.FC<PaymentSummarySectionProps> = ({
         type="button"
         className={cn(
           "px-4 sm:px-6 md:px-8 text-white transition-all duration-300 h-9 sm:h-10 rounded-md shadow-sm w-full sm:w-auto",
-          selectedCampaign?.slot_type === 'guarantee'
-            ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700"
-            : "bg-primary hover:bg-primary/90"
+          (selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee)
+            ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
         )}
         disabled={loading || saving || !selectedCampaignId || selectedKeywords.length === 0}
       >
         {saving ? (
           <>
             <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full me-2" role="status" aria-hidden="true"></span>
-            {selectedCampaign?.slot_type === 'guarantee' ? '요청 중...' : '구매 중...'}
+            {(selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) ? '요청 중...' : '구매 중...'}
           </>
         ) : (
           <>
-            {selectedCampaign?.slot_type === 'guarantee' ? (
+            {(selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee) ? (
               <>
                 <KeenIcon icon="message-text" className="size-4 me-1.5" />
                 견적요청

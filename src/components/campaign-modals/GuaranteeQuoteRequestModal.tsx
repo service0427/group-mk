@@ -151,8 +151,23 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           work_count: kd.workCount,
           due_days: kd.dueDays,
           input_data: kd.inputData || {}
-        }))
+        })),
+        // 수동 입력인 경우 추가 정보 포함
+        ...(keywordDetails[0]?.id === -1 && keywordDetails[0]?.inputData ? {
+          is_manual_input: true,
+          mid: keywordDetails[0].inputData.mid || '',
+          url: keywordDetails[0].inputData.url || '',
+          mainKeyword: keywordDetails[0].mainKeyword || '',
+          keyword1: keywordDetails[0].inputData.keyword1 || '',
+          keyword2: keywordDetails[0].inputData.keyword2 || '',
+          keyword3: keywordDetails[0].inputData.keyword3 || ''
+        } : {})
       };
+      
+      console.log('보장형 견적 요청 데이터:', {
+        keywordDetails,
+        inputData
+      });
 
       // 견적 요청 생성
       const { data, error } = await guaranteeSlotRequestService.createRequest({
@@ -160,7 +175,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         target_rank: parseInt(formData.targetRank),
         guarantee_count: parseInt(guaranteeCount.toString()),
         initial_budget: parseInt(formData.dailyBudget.replace(/,/g, '')), // 일별 금액을 initial_budget으로 전송
-        keyword_id: firstKeyword?.id, // 첫 번째 키워드 ID
+        keyword_id: (firstKeyword?.id && firstKeyword.id > 0) ? firstKeyword.id : undefined, // 첫 번째 키워드 ID (수동 입력인 경우 undefined)
         input_data: inputData,
         quantity: keywordDetails.reduce((sum, kd) => sum + (kd.workCount || 0), 0), // 총 작업수
         user_reason: formData.message, // 사용자 요청 사유

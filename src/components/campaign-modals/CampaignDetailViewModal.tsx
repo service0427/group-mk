@@ -694,6 +694,13 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                       <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
                       {isGuaranteeType ? '보장형' : '일반형'}
                     </span>
+                    {/* 보장형인 경우 보장 순위 배지 추가 */}
+                    {isGuaranteeType && campaign?.target_rank && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                        <KeenIcon icon="ranking" className="mr-1.5 size-3.5" />
+                        {campaign.target_rank}위 보장
+                      </span>
+                    )}
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusDotColor === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
                         statusDotColor === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
                           statusDotColor === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :

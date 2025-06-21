@@ -109,7 +109,8 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
           guarantee_count: rawCampaignData.guarantee_count,
           guarantee_unit: rawCampaignData.guarantee_unit,
           min_guarantee_price: rawCampaignData.min_guarantee_price,
-          max_guarantee_price: rawCampaignData.max_guarantee_price
+          max_guarantee_price: rawCampaignData.max_guarantee_price,
+          target_rank: rawCampaignData.target_rank
         }, index, serviceTypeCode);
 
         return {
@@ -117,7 +118,8 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
           rawId: campaign.id, // 원본 ID 저장
           originalData: {
             ...campaign.originalData,
-            refundSettings: campaign.refundSettings // 환불 설정 추가
+            refundSettings: campaign.refundSettings, // 환불 설정 추가
+            target_rank: rawCampaignData.target_rank // target_rank 추가
           }
         };
       });

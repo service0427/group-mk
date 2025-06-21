@@ -358,16 +358,34 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                           {/* input_data 표시 */}
                           {requestData.input_data && (() => {
                             const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1', 'keyword2', 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'is_manual_input'];
-                            const userInputFields = Object.entries(requestData.input_data).filter(([key]) =>
-                              !passItem.includes(key) && !key.endsWith('_fileName')
-                            );
+                            
+                            let displayData: Record<string, any> = {};
+                            
+                            // 1. 중첩된 구조 확인 (keywords[0].input_data)
+                            if (requestData.input_data.keywords?.[0]?.input_data) {
+                              const nestedData = requestData.input_data.keywords[0].input_data;
+                              Object.entries(nestedData).forEach(([key, value]) => {
+                                if (!passItem.includes(key) && !key.endsWith('_fileName') && value) {
+                                  displayData[key] = value;
+                                }
+                              });
+                            } else {
+                              // 2. 일반 input_data 구조
+                              Object.entries(requestData.input_data).forEach(([key, value]) => {
+                                if (!passItem.includes(key) && !key.endsWith('_fileName') && value) {
+                                  displayData[key] = value;
+                                }
+                              });
+                            }
+                            
+                            const userInputFields = Object.entries(displayData);
 
                             if (userInputFields.length === 0) return null;
 
                             return (
                               <div>
                                 <span className="text-xs text-slate-500 dark:text-gray-500 block mb-1">사용자 입력 필드</span>
-                                <div className="p-3 bg-slate-50 dark:bg-gray-800 rounded space-y-2">
+                                <div className="p-3 bg-blue-50/30 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded space-y-2">
                                   {userInputFields.map(([key, value]) => {
                                     // 파일 URL인지 확인
                                     const isFileUrl = value && typeof value === 'string' && 
@@ -376,9 +394,16 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                                     // 이미지 파일인지 확인
                                     const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
                                     
-                                    // 파일명 추출
+                                    // 파일명 추출 (중첩된 구조도 확인)
                                     const fileNameKey = `${key}_fileName`;
-                                    const fileName = requestData.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                                    let fileName = '';
+                                    if (requestData.input_data.keywords?.[0]?.input_data?.[fileNameKey]) {
+                                      fileName = requestData.input_data.keywords[0].input_data[fileNameKey];
+                                    } else if (requestData.input_data[fileNameKey]) {
+                                      fileName = requestData.input_data[fileNameKey];
+                                    } else if (isFileUrl) {
+                                      fileName = value.split('/').pop() || '파일';
+                                    }
                                     
                                     // 필드명 한글 변환
                                     const fieldNameMap: Record<string, string> = {

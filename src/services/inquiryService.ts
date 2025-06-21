@@ -9,6 +9,8 @@ import type {
   InquiryFilter,
   InquirySenderRole
 } from '@/types/inquiry.types';
+import { createInquiryMessageNotification } from '@/utils/notificationActions';
+import { SERVICE_TYPE_TO_CATEGORY } from '@/pages/advertise/campaigns/components/campaign-components/constants';
 
 /**
  * 1:1 문의 서비스
@@ -307,6 +309,111 @@ export const inquiryMessageService = {
         .update({ status: 'in_progress' })
         .eq('id', params.inquiry_id)
         .eq('status', 'open');
+
+      // 문의 정보와 관련 정보 조회
+      const { data: inquiryInfo, error: inquiryError } = await supabase
+        .from('inquiries')
+        .select(`
+          *,
+          campaigns:campaign_id (
+            campaign_name,
+            service_type,
+            slot_type
+          )
+        `)
+        .eq('id', params.inquiry_id)
+        .single();
+
+      if (!inquiryError && inquiryInfo) {
+        // 수신자 결정 (발신자와 반대)
+        const recipientId = senderRole === 'user' 
+          ? inquiryInfo.distributor_id 
+          : inquiryInfo.user_id;
+        
+        // 서비스명 가져오기
+        const serviceType = inquiryInfo.campaigns?.service_type || '';
+        const serviceName = SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType;
+        const slotType = inquiryInfo.campaigns?.slot_type || 'standard';
+        const campaignName = inquiryInfo.campaigns?.campaign_name || '캠페인';
+        
+        // 슬롯 정보 가져오기
+        let slotInfo: any = {};
+        if (inquiryInfo.slot_id) {
+          // 먼저 guarantee_slots에서 request_id 가져오기
+          const { data: slotData } = await supabase
+            .from('guarantee_slots')
+            .select(`
+              target_rank,
+              start_date,
+              end_date,
+              keyword_id,
+              input_data,
+              request_id
+            `)
+            .eq('id', inquiryInfo.slot_id)
+            .single();
+            
+          if (slotData) {
+            slotInfo.targetRank = slotData.target_rank;
+            slotInfo.startDate = slotData.start_date;
+            slotInfo.endDate = slotData.end_date;
+            
+            // request_id가 있으면 guarantee_slot_requests에서 추가 정보 가져오기
+            if (slotData.request_id) {
+              const { data: requestData } = await supabase
+                .from('guarantee_slot_requests')
+                .select(`
+                  target_rank,
+                  guarantee_count,
+                  keyword_id,
+                  input_data,
+                  keywords (
+                    main_keyword
+                  )
+                `)
+                .eq('id', slotData.request_id)
+                .single();
+                
+              if (requestData) {
+                slotInfo.targetRank = requestData.target_rank || slotData.target_rank;
+                slotInfo.guaranteeCount = requestData.guarantee_count;
+                
+                // 키워드 정보 우선순위: keywords 테이블 > input_data
+                if (requestData.keywords?.main_keyword) {
+                  slotInfo.keyword = requestData.keywords.main_keyword;
+                } else if (requestData.input_data?.keyword) {
+                  slotInfo.keyword = requestData.input_data.keyword;
+                } else if (slotData.input_data?.keyword) {
+                  slotInfo.keyword = slotData.input_data.keyword;
+                }
+              }
+            } else {
+              // request_id가 없으면 직접 키워드 조회
+              if (slotData.keyword_id) {
+                const { data: keywordData } = await supabase
+                  .from('keywords')
+                  .select('main_keyword')
+                  .eq('id', slotData.keyword_id)
+                  .single();
+                slotInfo.keyword = keywordData?.main_keyword || '';
+              } else if (slotData.input_data?.keyword) {
+                slotInfo.keyword = slotData.input_data.keyword;
+              }
+            }
+          }
+        }
+        
+        // 1:1 문의 메시지 알림 전송 (디바운싱 적용)
+        await createInquiryMessageNotification(
+          recipientId,
+          inquiryInfo.title || '1:1 문의',
+          params.inquiry_id,
+          serviceName,
+          campaignName,
+          slotType,
+          slotInfo
+        );
+      }
 
       return { data: data as InquiryMessage, error: null };
     } catch (error) {

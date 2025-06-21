@@ -412,27 +412,157 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                     
                     {/* 입력정보 */}
                     <td className="py-2 px-2 max-w-[150px]">
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={item.keywords?.mid || item.input_data?.mid || '-'}>
-                          {item.keywords?.mid || item.input_data?.mid || '-'}
+                      <div className="flex items-start gap-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                          {(() => {
+                            // 1. 키워드에서 mid 확인
+                            if (item.keywords?.mid) return item.keywords.mid;
+                            
+                            // 2. input_data 직접 확인
+                            if (item.input_data?.mid) return item.input_data.mid;
+                            
+                            // 3. input_data.keywords[0].input_data 확인 (중첩 구조)
+                            if (item.input_data?.keywords?.[0]?.input_data) {
+                              const nestedData = item.input_data.keywords[0].input_data;
+                              
+                              // mid 필드 찾기
+                              if (nestedData.mid) return nestedData.mid;
+                              
+                              // 한글 필드명 찾기
+                              const midField = Object.entries(nestedData).find(([key, value]) => 
+                                (key === '나' || key.includes('나') || key.toLowerCase().includes('mid')) && value
+                              );
+                              if (midField) return midField[1];
+                              
+                              // 첫 번째 의미있는 필드
+                              const firstField = Object.entries(nestedData).find(([key, value]) => 
+                                !['is_manual_input', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3'].includes(key) && value
+                              );
+                              if (firstField) return `${firstField[0]}: ${firstField[1]}`;
+                            }
+                            
+                            // 4. input_data 최상위 레벨 확인
+                            if (item.input_data) {
+                              const fields = Object.entries(item.input_data).find(([key, value]) => 
+                                !['keywords', 'is_manual_input', 'mainKeyword'].includes(key) && 
+                                typeof value === 'string' && value
+                              );
+                              if (fields) return fields[1];
+                            }
+                            
+                            return '-';
+                          })()}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {(() => {
+                            // 1. 키워드에서 url 확인
+                            if (item.keywords?.url) return item.keywords.url;
+                            
+                            // 2. input_data 직접 확인
+                            if (item.input_data?.url) return item.input_data.url;
+                            
+                            // 3. input_data.keywords[0].input_data 확인 (중첩 구조)
+                            if (item.input_data?.keywords?.[0]?.input_data?.url) {
+                              return item.input_data.keywords[0].input_data.url;
+                            }
+                            
+                            return '-';
+                          })()}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          <a 
-                            href={item.keywords?.url || item.input_data?.url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                            title={item.keywords?.url || item.input_data?.url || '-'}
-                            onClick={(e) => {
-                              if (!item.keywords?.url && !item.input_data?.url) {
-                                e.preventDefault();
-                              }
+                        {/* 입력정보 info 아이콘 항상 표시 */}
+                        <button
+                          className="flex-shrink-0 text-primary hover:text-primary-dark transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopoverPosition({
+                              top: rect.top - 10,
+                              left: rect.left + rect.width / 2
+                            });
+                            setOpenKeywordTooltipId(openKeywordTooltipId === `info-${item.id}` ? null : `info-${item.id}`);
+                          }}
+                        >
+                          <KeenIcon icon="information-2" className="text-base" />
+                        </button>
+                      </div>
+                      
+                      {/* 입력정보 팝오버 */}
+                      {openKeywordTooltipId === `info-${item.id}` && ReactDOM.createPortal(
+                        <>
+                          <div
+                            className="fixed inset-0"
+                            style={{ zIndex: 9998 }}
+                            onClick={() => setOpenKeywordTooltipId(null)}
+                          />
+                          <div
+                            className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-72 shadow-xl border border-gray-700 dark:border-gray-600"
+                            style={{
+                              zIndex: 99999,
+                              left: `${popoverPosition.left}px`,
+                              top: `${popoverPosition.top}px`,
+                              transform: 'translate(-50%, -100%)'
                             }}
                           >
-                            {item.keywords?.url || item.input_data?.url || '-'}
-                          </a>
-                        </div>
-                      </div>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="font-medium text-gray-100">입력 정보</div>
+                              <button
+                                className="text-gray-400 hover:text-gray-200 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenKeywordTooltipId(null);
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const displayData: Record<string, any> = {};
+                                
+                                // 1. input_data 직접 필드들
+                                if (item.input_data) {
+                                  Object.entries(item.input_data).forEach(([key, value]) => {
+                                    if (!['keywords', 'is_manual_input', 'mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3'].includes(key) && value && typeof value !== 'object') {
+                                      displayData[key] = value;
+                                    }
+                                  });
+                                }
+                                
+                                // 2. 중첩된 keywords[0].input_data 필드들
+                                if (item.input_data?.keywords?.[0]?.input_data) {
+                                  Object.entries(item.input_data.keywords[0].input_data).forEach(([key, value]) => {
+                                    if (!['is_manual_input', 'mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3'].includes(key) && value) {
+                                      displayData[key] = value;
+                                    }
+                                  });
+                                }
+                                
+                                // 3. 표시할 데이터가 없으면 기본 메시지
+                                if (Object.keys(displayData).length === 0) {
+                                  return <div className="text-gray-400 text-center py-2">입력 필드 데이터가 없습니다.</div>;
+                                }
+                                
+                                // 4. 데이터 표시
+                                return Object.entries(displayData).map(([key, value]) => (
+                                  <div key={key} className="flex items-start gap-2">
+                                    <span className="text-gray-400 min-w-[60px]">{key}:</span>
+                                    <span className="text-gray-100 break-all">{String(value)}</span>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                            {/* Arrow */}
+                            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                            </div>
+                          </div>
+                        </>,
+                        document.body
+                      )}
                     </td>
                     
                     {/* 키워드 */}
@@ -566,7 +696,9 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                     {/* 보장 */}
                     <td className="py-2 px-2 text-center">
                       <div className="text-xs font-medium">
-                        {item.guarantee_count}{item.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
+                        <span className={item.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}>
+                          {item.guarantee_count}{item.campaigns?.guarantee_unit || '일'}
+                        </span>
                       </div>
                     </td>
                     
@@ -594,11 +726,11 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                         <span className={`badge badge-sm ${statusInfo.color} whitespace-nowrap`}>
                           {statusInfo.label}
                         </span>
-                        {/* 환불 검토중일 때 정보 아이콘 표시 */}
-                        {refundRequest?.status === 'pending' && (
+                        {/* 환불 관련 정보 아이콘 표시 */}
+                        {(refundRequest?.status === 'pending' || refundRequest?.status === 'approved') && (
                           <div className="relative">
                             <button
-                              className="text-gray-500 hover:text-gray-700 transition-colors"
+                              className="text-danger hover:text-danger-dark transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const rect = e.currentTarget.getBoundingClientRect();
@@ -644,8 +776,17 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                 >
                                   <div className="flex items-center justify-between mb-3">
                                     <div className="font-medium text-sm flex items-center gap-2">
-                                      <KeenIcon icon="clock" className="text-orange-400" />
-                                      환불 검토 중
+                                      {refundRequest?.status === 'pending' ? (
+                                        <>
+                                          <KeenIcon icon="clock" className="text-orange-400" />
+                                          환불 검토 중
+                                        </>
+                                      ) : (
+                                        <>
+                                          <KeenIcon icon="check-circle" className="text-green-400" />
+                                          환불 승인됨
+                                        </>
+                                      )}
                                     </div>
                                     <button
                                       className="text-gray-400 hover:text-gray-200 transition-colors"
@@ -660,25 +801,66 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                     </button>
                                   </div>
                                   <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-orange-400 mb-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <polyline points="12 6 12 12 16 14"/>
-                                      </svg>
-                                      <span className="font-medium">총판 검토 대기 중</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-gray-400">환불 사유:</span>
-                                      <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
-                                    </div>
-                                    <div className="text-gray-400 text-xs">
-                                      신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
-                                    </div>
-                                    <div className="bg-orange-900/30 border border-orange-700/50 rounded-md p-2 mt-2">
-                                      <div className="text-orange-300 text-xs">
-                                        💡 총판이 검토 중입니다. 처리까지 시간이 소요될 수 있습니다.
-                                      </div>
-                                    </div>
+                                    {refundRequest?.status === 'pending' ? (
+                                      <>
+                                        <div className="flex items-center gap-2 text-orange-400 mb-1">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                          </svg>
+                                          <span className="font-medium">총판 검토 대기 중</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-400">환불 사유:</span>
+                                          <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
+                                        </div>
+                                        <div className="text-gray-400 text-xs">
+                                          신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                                        </div>
+                                        <div className="bg-orange-900/30 border border-orange-700/50 rounded-md p-2 mt-2">
+                                          <div className="text-orange-300 text-xs">
+                                            💡 총판이 검토 중입니다. 처리까지 시간이 소요될 수 있습니다.
+                                          </div>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center gap-2 text-green-400 mb-1">
+                                          <KeenIcon icon="wallet" className="text-base" />
+                                          <span className="font-medium">환불 완료</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-400">환불 사유:</span>
+                                          <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
+                                        </div>
+                                        {refundRequest.refund_amount && (
+                                          <div>
+                                            <span className="text-gray-400">환불 금액:</span>
+                                            <div className="text-green-400 font-medium mt-1">
+                                              {refundRequest.refund_amount.toLocaleString()}원
+                                            </div>
+                                          </div>
+                                        )}
+                                        <div className="text-gray-400 text-xs">
+                                          신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                                        </div>
+                                        {refundRequest.approval_date && (
+                                          <div className="text-gray-400 text-xs">
+                                            승인일: {new Date(refundRequest.approval_date).toLocaleDateString('ko-KR')}
+                                          </div>
+                                        )}
+                                        {refundRequest.approval_notes && (
+                                          <div className="mt-2">
+                                            <span className="text-gray-400 text-xs">승인 메시지:</span>
+                                            <div className="bg-green-900/30 border border-green-700/50 rounded-md p-2 mt-1">
+                                              <div className="text-green-300 text-xs">
+                                                {refundRequest.approval_notes}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </>,
@@ -833,7 +1015,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                 )}
                               </>
                             ) : (
-                              // 기타 구매완료 상태 (pending 등)
+                              // 기타 구매완료 상태 (pending, 슬롯 없음 등)
                               <>
                                 {/* 협상 내용 확인 (이전 내역) */}
                                 <button
@@ -843,12 +1025,12 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                 >
                                   <KeenIcon icon="message-programming" />
                                 </button>
-                                {/* 1:1 문의 확인 (이전 내역) */}
-                                {onInquiry && (
+                                {/* 1:1 문의 - 슬롯이 있을 때만 표시 */}
+                                {onInquiry && item.guarantee_slots?.[0] && (
                                   <button
-                                    className="btn btn-sm btn-icon btn-clear btn-secondary"
+                                    className="btn btn-sm btn-icon btn-clear btn-primary"
                                     onClick={() => onInquiry(item)}
-                                    title="문의 내용 확인"
+                                    title="1:1 문의"
                                   >
                                     <KeenIcon icon="messages" />
                                   </button>
@@ -1037,8 +1219,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
               <div className="grid grid-cols-2 gap-3 text-xs mb-2">
                 <div>
                   <span className="text-muted-foreground">보장:</span>
-                  <span className="ml-1 font-medium text-card-foreground">
-                    {item.guarantee_count}{item.campaigns?.guarantee_unit === 'daily' ? '일' : '회'}
+                  <span className={`ml-1 font-medium ${item.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}`}>
+                    {item.guarantee_count}{item.campaigns?.guarantee_unit || '일'}
                   </span>
                 </div>
                 <div>

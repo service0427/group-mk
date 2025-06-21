@@ -124,6 +124,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         .from('guarantee_slot_requests')
         .select(`
           *,
+          input_data,
           campaigns:campaign_id(
             id,
             campaign_name,
@@ -219,6 +220,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
       service_type: request.campaigns?.service_type,
       campaigns: request.campaigns, // 캠페인 정보 전체 전달
       keywords: request.keywords, // 키워드 정보 전체 전달
+      input_data: request.input_data, // input_data 전달 추가
       status: request.status,
       created_at: request.created_at,
       campaign_id: request.campaign_id,
@@ -620,15 +622,13 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             showBulkActions={true}
             onRefundRequest={handleRefundRequest}
             onInquiry={(request) => {
-              if (request.guarantee_slots?.[0]) {
-                setInquiryData({
-                  guaranteeSlotId: request.guarantee_slots[0].id,
-                  campaignId: request.campaigns?.id,
-                  distributorId: request.distributor_id,
-                  title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
-                });
-                setInquiryModalOpen(true);
-              }
+              setInquiryData({
+                guaranteeSlotId: request.guarantee_slots?.[0]?.id,
+                campaignId: request.campaigns?.id || request.campaign_id,
+                distributorId: request.distributor_id,
+                title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+              });
+              setInquiryModalOpen(true);
             }}
             onDetailView={(request) => {
               setDetailRequestId(request.id);
@@ -657,6 +657,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         requestData={negotiationModal.requestData}
         currentUserRole="user"
         onStatusChange={handleStatusChange}
+        isFromDistributorPage={false}
       />
       
       {/* 환불 모달 */}

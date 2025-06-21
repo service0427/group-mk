@@ -358,7 +358,9 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
       // 상태 필터 적용
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        // 'active'는 실제로 'approved' 상태를 의미함
+        const actualStatus = statusFilter === 'active' ? 'approved' : statusFilter;
+        query = query.eq('status', actualStatus);
       }
 
       // 검색어 필터 적용은 클라이언트 측에서 처리 (JSONB 필드 검색 제한 회피)
@@ -457,63 +459,38 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
     } finally {
       setIsLoading(false);
     }
-  }, [serviceType, userId, userRole, statusFilter, searchInput, searchDateFrom, searchDateTo, selectedCampaignId]);
+  }, [serviceType, userId, userRole, statusFilter, searchDateFrom, searchDateTo, selectedCampaignId]);
 
   // 필터 변경 시 데이터 다시 필터링
   useEffect(() => {
-    if (statusFilter !== 'all' || searchInput || searchDateFrom || searchDateTo || selectedCampaignId !== 'all') {
-      let filtered = [...slots];
-
-      // 캠페인 필터링 (클라이언트 측)
-      if (selectedCampaignId !== 'all') {
-        filtered = filtered.filter(item => item.productId === selectedCampaignId);
-      }
-
-      // 상태 필터링
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(item => item.status === statusFilter);
-      }
-
-      // 검색어 필터링
-      if (searchInput) {
-        const normalizedSearchTerm = searchInput.toLowerCase().trim();
-        filtered = filtered.filter(item =>
-          item.inputData.productName?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.mid?.toString().toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.mainKeyword?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.keyword1?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.keyword2?.toLowerCase().includes(normalizedSearchTerm) ||
-          item.inputData.keyword3?.toLowerCase().includes(normalizedSearchTerm) ||
-          (Array.isArray(item.inputData.keywords) && item.inputData.keywords.some(keyword =>
-            keyword.toLowerCase().includes(normalizedSearchTerm)
-          ))
-        );
-      }
-
-      // 날짜 필터링 (클라이언트 측)
-      if (searchDateFrom) {
-        const fromDate = new Date(`${searchDateFrom}T00:00:00`);
-        filtered = filtered.filter(item => new Date(item.createdAt) >= fromDate);
-      }
-
-      if (searchDateTo) {
-        const toDate = new Date(`${searchDateTo}T23:59:59`);
-        filtered = filtered.filter(item => new Date(item.createdAt) <= toDate);
-      }
-
+    // 검색어 필터만 클라이언트 측에서 처리 (서버에서 JSONB 검색 제한)
+    if (searchInput) {
+      const normalizedSearchTerm = searchInput.toLowerCase().trim();
+      const filtered = slots.filter(item =>
+        item.inputData.productName?.toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.mid?.toString().toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.url?.toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.mainKeyword?.toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.keyword1?.toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.keyword2?.toLowerCase().includes(normalizedSearchTerm) ||
+        item.inputData.keyword3?.toLowerCase().includes(normalizedSearchTerm) ||
+        (Array.isArray(item.inputData.keywords) && item.inputData.keywords.some(keyword =>
+          keyword.toLowerCase().includes(normalizedSearchTerm)
+        ))
+      );
       setFilteredSlots(filtered);
     } else {
+      // 검색어가 없으면 서버에서 필터링된 slots를 그대로 사용
       setFilteredSlots(slots);
     }
-  }, [statusFilter, searchInput, searchDateFrom, searchDateTo, selectedCampaignId, slots]);
+  }, [searchInput, slots]);
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 필터나 서비스 타입 변경 시 데이터 로드
   useEffect(() => {
     if (serviceType && userId) {
       fetchSlots();
     }
-  }, [serviceType, userId, userRole, fetchSlots]);
+  }, [fetchSlots]);
 
   // 슬롯 삭제 핸들러
   const handleDeleteSlot = async (id: string) => {

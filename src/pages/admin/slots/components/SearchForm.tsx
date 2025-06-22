@@ -1,7 +1,7 @@
 import React from 'react';
 import { Campaign } from './types';
 import { STATUS_OPTIONS } from './constants';
-import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from '@/components/campaign-modals/types';
 import { USER_ROLES } from '@/config/roles.config';
 
 interface SearchFormProps {
@@ -53,8 +53,8 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const isDistributor = userRole === USER_ROLES.DISTRIBUTOR;
   const hasAvailableServices = availableServiceTypes && availableServiceTypes.length > 0;
   
-  // 실제로 표시할 서비스 타입들
-  const serviceTypesToDisplay = availableServiceTypes || Object.keys(SERVICE_TYPE_LABELS);
+  // 실제로 표시할 서비스 타입들 (메뉴 순서대로 정렬)
+  const serviceTypesToDisplay = availableServiceTypes || SERVICE_TYPE_ORDER;
   return (
     <div className="card shadow-sm mb-5">
       <div className="card-header px-6 py-4">
@@ -78,6 +78,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   onChange={onServiceTypeChange}
                   disabled={loading || serviceTypesToDisplay.length === 0}
                 >
+                  <option value="">전체 서비스</option>
                   {serviceTypesToDisplay.map((serviceType) => (
                     <option key={serviceType} value={serviceType}>
                       {SERVICE_TYPE_LABELS[serviceType] || serviceType}
@@ -227,6 +228,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   onChange={onServiceTypeChange}
                   disabled={loading || serviceTypesToDisplay.length === 0}
                 >
+                  <option value="">전체 서비스</option>
                   {serviceTypesToDisplay.map((serviceType) => (
                     <option key={serviceType} value={serviceType}>
                       {SERVICE_TYPE_LABELS[serviceType] || serviceType}

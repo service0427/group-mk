@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WithdrawRequest, getRecentWithdrawRequests } from '../services/withdrawService';
+import { useNavigate } from 'react-router-dom';
 
 interface WithdrawHistoryProps {
   userId: string;
@@ -9,6 +10,7 @@ interface WithdrawHistoryProps {
 const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigger }) => {
   const [recentRequests, setRecentRequests] = useState<WithdrawRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
   
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -54,7 +56,7 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
     setIsLoading(true);
     
     try {
-      const data = await getRecentWithdrawRequests(userId);
+      const data = await getRecentWithdrawRequests(userId, 3);
       setRecentRequests(data);
     } catch (err) {
       
@@ -73,8 +75,18 @@ const WithdrawHistory: React.FC<WithdrawHistoryProps> = ({ userId, refreshTrigge
 
   return (
     <div className="mb-8 pt-10">
-      <div className="mb-3">
-        <p className="text-sm font-medium">최근 출금 요청 내역</p>
+      <div className="mb-3 flex justify-between items-center">
+        <p className="text-sm font-medium">최근 출금 요청 내역 (최근 3건)</p>
+        <button
+          type="button"
+          className="text-xs text-primary hover:text-primary-dark hover:underline flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer"
+          onClick={() => navigate('/cash/history')}
+        >
+          <span>상세보기</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
       
       {isLoading ? (

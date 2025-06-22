@@ -9,7 +9,7 @@ import debounce from 'lodash/debounce';
 import { useAuthContext } from '../../useAuthContext';
 import { toAbsoluteUrl } from '@/utils';
 import { Alert, KeenIcon } from '@/components';
-import { useLayout } from '@/providers';
+import { useLayout, useToast } from '@/providers';
 
 const initialValues = {
   email: '',
@@ -44,6 +44,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { currentLayout } = useLayout();
+  const toast = useToast();
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [isEmailTaken, setIsEmailTaken] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
@@ -73,12 +74,19 @@ const Signup = () => {
         // 추출한 이메일 앞부분을 full_name으로 사용
         await register(values.email, emailUsername, values.password, values.changepassword);
         
+        // 성공 메시지 표시
+        toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다...');
+        
         // 회원가입 완료 후 로그인 페이지로 이동하면서 이메일 정보 전달
         const loginPath = currentLayout?.name === 'auth-branded' ? '/auth/login' : '/auth/classic/login';
-        navigate(loginPath, { 
-          replace: true,
-          state: { registeredEmail: values.email }
-        });
+        
+        // 약간의 딜레이 후 페이지 이동
+        setTimeout(() => {
+          navigate(loginPath, { 
+            replace: true,
+            state: { registeredEmail: values.email }
+          });
+        }, 1000);
       } catch (error) {
         setStatus('회원가입에 실패했습니다. 입력 정보를 확인해주세요.');
         setSubmitting(false);

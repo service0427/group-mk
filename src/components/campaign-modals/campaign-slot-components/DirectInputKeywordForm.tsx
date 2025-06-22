@@ -131,8 +131,8 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
   return (
     <div className="w-full">
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-4">
-        {/* DB 설정 기반 키워드 필드 */}
-        {keywordFields.map((field) => (
+        {/* DB 설정 기반 키워드 필드 - 임시 주석 처리 */}
+        {/* {keywordFields.map((field) => (
           <div key={field.fieldName}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {field.label || field.fieldName} 
@@ -153,7 +153,22 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
               <p className="text-xs text-gray-500 mt-1">{field.tooltip}</p>
             )}
           </div>
-        ))}
+        ))} */}
+
+        {/* 메인 키워드 필드 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            메인 키워드 <span className="text-red-500">*</span>
+          </label>
+          <Input
+            type="text"
+            value={slotData.mainKeyword || slotData.input_data?.main_keyword || ''}
+            onChange={(e) => handleFieldChange('main_keyword', e.target.value)}
+            placeholder="메인 키워드를 입력하세요"
+            className="w-full"
+          />
+          <p className="text-xs text-gray-500 mt-1">작업의 핵심이 되는 메인 키워드를 입력해주세요.</p>
+        </div>
 
         {/* 기본 필드 (최소 구매수, 작업일) */}
         <div className="grid grid-cols-2 gap-4">

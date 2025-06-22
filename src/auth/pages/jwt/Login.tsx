@@ -6,9 +6,8 @@ import { useFormik } from 'formik';
 import { KeenIcon } from '@/components';
 import { toAbsoluteUrl } from '@/utils';
 import { useAuthContext } from '@/auth';
-import { useLayout } from '@/providers';
+import { useLayout, useToast } from '@/providers';
 import { Alert } from '@/components';
-import { toast } from 'sonner';
 
 // 유효성 검증 스키마 - 한글 메시지로 변경
 const loginSchema = Yup.object().shape({
@@ -81,6 +80,7 @@ const Login = () => {
   const [showErrorHelp, setShowErrorHelp] = useState(false);
   const { login, resetPassword } = useAuthContext();
   const { currentLayout } = useLayout();
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -245,8 +245,8 @@ const Login = () => {
                         key={role}
                         type="button"
                         className={`px-2 py-1 rounded text-xs ${selectedRole === role
-                            ? 'bg-blue-600 text-white font-semibold'
-                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                          ? 'bg-blue-600 text-white font-semibold'
+                          : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                           }`}
                         onClick={() => setSelectedRole(role as keyof typeof testCredentials)}
                       >
@@ -258,6 +258,18 @@ const Login = () => {
               </div>
             )}
           </div>
+
+          {/* 회원가입 완료 메시지 표시 */}
+          {location.state?.registeredEmail && (
+            <Alert variant="success" className="mb-4">
+              <div className="flex items-start gap-2">
+                <div>
+                  <div className="font-semibold mb-1">회원가입이 완료되었습니다!</div>
+                  <div className="text-sm">가입하신 이메일과 비밀번호로 로그인해주세요.</div>
+                </div>
+              </div>
+            </Alert>
+          )}
 
           {formik.status && <Alert variant="danger">{formik.status}</Alert>}
 

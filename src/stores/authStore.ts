@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthState>()(
               options: {
                 data: {
                   full_name,
-                  role: 'beginner'
+                  role: 'advertiser'
                 }
               }
             });
@@ -396,15 +396,20 @@ export const useAuthStore = create<AuthState>()(
         // 이메일 중복 확인
         checkEmailExists: async (email: string) => {
           try {
+            // auth.users 대신 RPC 함수 사용 (RLS 우회)
             const { data, error } = await supabase
-              .from('users')
-              .select('id')
-              .eq('email', email)
-              .single();
+              .rpc('check_email_exists', { email_to_check: email });
             
-            return !error && !!data;
+            if (error) {
+              console.warn('이메일 중복 확인 실패, 기본값으로 처리:', error);
+              // 406 에러 등으로 실패하면 중복이 아닌 것으로 처리
+              return false;
+            }
+            
+            return data || false;
           } catch (error) {
-            // 이메일 확인 실패
+            console.warn('이메일 중복 확인 실패:', error);
+            // 에러 발생 시 중복이 아닌 것으로 처리
             return false;
           }
         },

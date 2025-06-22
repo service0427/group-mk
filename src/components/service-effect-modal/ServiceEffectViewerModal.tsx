@@ -34,6 +34,9 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
   const { userRole, currentUser } = useAuthContext();
   const { showToast } = useCustomToast();
   
+  // 다크모드 감지
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  
   // DialogProvider 내부에서만 사용하도록 try-catch로 안전하게 처리
   let dialogMethods: any = null;
   try {
@@ -193,9 +196,9 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl w-[90vw] h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl w-[90vw] h-[85vh] overflow-hidden flex flex-col bg-white dark:bg-gray-900">
         <DialogHeader>
-          <DialogTitle>{serviceName} 효과 및 사용법</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-gray-100">{serviceName} 효과 및 사용법</DialogTitle>
           <DialogDescription className="sr-only">
             {serviceName} 서비스의 효과와 사용법을 확인하실 수 있습니다.
           </DialogDescription>
@@ -216,7 +219,7 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
         <DialogBody className="px-6 py-4 flex-1 min-h-0">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">로딩 중...</div>
+              <div className="text-gray-500 dark:text-gray-400">로딩 중...</div>
             </div>
           ) : isEditMode ? (
             <div className="h-full">
@@ -224,7 +227,7 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
                 content={content}
                 onChange={setContent}
                 height="100%"
-                theme="light"
+                theme={isDarkMode ? "dark" : "light"}
                 placeholder="효과 및 사용법을 입력하세요..."
               />
             </div>
@@ -233,7 +236,7 @@ export const ServiceEffectViewerModal: React.FC<ServiceEffectViewerModalProps> =
               <ToastUIViewer
                 content={content}
                 height="auto"
-                theme="light"
+                theme={isDarkMode ? "dark" : "light"}
               />
             </div>
           )}

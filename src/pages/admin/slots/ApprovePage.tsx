@@ -10,7 +10,7 @@ import { useDialog } from '@/providers';
 
 // 타입 및 상수 가져오기
 import { Campaign, Slot } from './components/types';
-import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { CampaignServiceType, SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from '@/components/campaign-modals/types';
 
 // 슬롯 서비스 import
 import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat } from './services/slotService';
@@ -104,9 +104,9 @@ const ApprovePage: React.FC = () => {
 
   // 총판 사용자가 가진 서비스 타입들을 계산
   const availableServiceTypes = useMemo(() => {
-    // 총판이 아닌 경우 전체 서비스 타입 반환
+    // 총판이 아닌 경우 전체 서비스 타입 반환 (메뉴 순서대로)
     if (!currentUser || currentUser.role !== USER_ROLES.DISTRIBUTOR) {
-      return Object.keys(SERVICE_TYPE_LABELS);
+      return SERVICE_TYPE_ORDER;
     }
 
     // 총판인 경우 자신의 캠페인이 있는 서비스 타입만 반환
@@ -116,8 +116,9 @@ const ApprovePage: React.FC = () => {
 
     // 중복 제거하여 고유한 서비스 타입만 추출
     const uniqueServiceTypes = [...new Set(distributorCampaigns.map(c => c.service_type))];
-
-    return uniqueServiceTypes;
+    
+    // 메뉴 순서에 맞게 정렬
+    return SERVICE_TYPE_ORDER.filter(type => uniqueServiceTypes.includes(type));
   }, [campaigns, currentUser]);
 
   // 필터링된 슬롯들을 useMemo로 계산
@@ -313,17 +314,9 @@ const ApprovePage: React.FC = () => {
           setCampaigns(parsedCampaigns);
 
           // selectedServiceType이 아직 설정되지 않은 경우에만 기본값 설정
-          if (!selectedServiceType && parsedCampaigns.length > 0) {
-            // 사용자가 가진 캠페인의 서비스 타입 중 첫 번째를 선택
-            const userServiceTypes = [...new Set(parsedCampaigns.map(c => c.service_type))];
-            if (userServiceTypes.length > 0) {
-              // 사용자가 실제로 가진 서비스 타입 중 첫 번째 선택
-              setSelectedServiceType(userServiceTypes[0]);
-            } else {
-              // 캠페인이 없는 경우 SERVICE_TYPE_LABELS의 첫 번째 키를 기본값으로 사용
-              const firstServiceType = Object.keys(SERVICE_TYPE_LABELS)[0];
-              setSelectedServiceType(firstServiceType);
-            }
+          if (!selectedServiceType) {
+            // 기본값은 빈 문자열 (전체 서비스)로 설정
+            setSelectedServiceType('');
           }
         }
       } catch (err: any) {
@@ -362,20 +355,25 @@ const ApprovePage: React.FC = () => {
 
   // 선택된 서비스 타입에 따라 캠페인 필터링
   useEffect(() => {
-    if (!selectedServiceType || campaigns.length === 0) return;
-
-
+    if (campaigns.length === 0) return;
 
     // 중요: 서비스 타입이 변경되면 error는 항상 초기화
     setError(null);
 
-    const filtered = campaigns.filter(campaign =>
-      campaign.service_type === selectedServiceType
-    );
+    let filtered;
+    if (!selectedServiceType) {
+      // 전체 서비스인 경우 모든 캠페인 표시
+      filtered = campaigns;
+    } else {
+      // 특정 서비스 타입인 경우 필터링
+      filtered = campaigns.filter(campaign =>
+        campaign.service_type === selectedServiceType
+      );
+    }
 
     // 필터링된 캠페인 목록에 "전체" 옵션 추가
     setFilteredCampaigns([
-      { id: -1, mat_id: 'all', campaign_name: '전체', service_type: selectedServiceType, status: 'active', description: '' },
+      { id: -1, mat_id: 'all', campaign_name: '전체', service_type: selectedServiceType || 'all', status: 'active', description: '' },
       ...filtered
     ]);
 
@@ -395,11 +393,8 @@ const ApprovePage: React.FC = () => {
           return;
         }
 
-        // 서비스 타입이 선택되지 않았으면 종료
-        if (!selectedServiceType) {
-          setSlots([]);
-          return;
-        }
+        // 서비스 타입이 선택되지 않았으면 모든 서비스 타입 조회
+        // (전체 서비스 옵션)
 
         // 캠페인 데이터가 아직 로드되지 않았으면 대기
         // 초기 로드 시 campaigns가 비어있을 때 -999 검색을 방지
@@ -440,44 +435,49 @@ const ApprovePage: React.FC = () => {
         // 사용자 역할 확인
         const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
 
-        // 1. 먼저 서비스 타입으로 필터링
-        // 해당 서비스 타입을 가진 캠페인들 찾기
-        const serviceTypeCampaigns = campaigns.filter(campaign =>
-          campaign.service_type === selectedServiceType
-        );
+        // 1. 서비스 타입으로 필터링
+        let relevantCampaigns = campaigns;
+        
+        if (selectedServiceType) {
+          // 특정 서비스 타입이 선택된 경우
+          relevantCampaigns = campaigns.filter(campaign =>
+            campaign.service_type === selectedServiceType
+          );
+          
+          // 서비스 타입에 해당하는 캠페인이 없으면 빈 결과 반환
+          if (relevantCampaigns.length === 0) {
+            const { data: emptyData, error } = await query
+              .eq('product_id', -999)
+              .order('created_at', { ascending: false });
 
-        // 서비스 타입에 해당하는 캠페인이 없으면 빈 결과 반환
-        if (!selectedServiceType || serviceTypeCampaigns.length === 0) {
-          // 빈 결과를 위해 Supabase에서 잘 작동하는 방법 사용
-          const { data: emptyData, error } = await query
-            .eq('product_id', -999)
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            setError('슬롯 정보를 가져오는데 실패했습니다.');
-          } else {
-            setSlots([]);
-          }
-          return; // 여기서 함수 종료
-        } else {
-          // 2. 사용자 역할에 따른 필터링
-          if (!isAdmin) {
-            // 일반 사용자: 자신의 mat_id + 서비스 타입에 해당하는 캠페인만 필터링
-            const myCampaigns = serviceTypeCampaigns.filter(campaign =>
-              campaign.mat_id === currentUser.id
-            );
-
-            if (myCampaigns.length > 0) {
-              // 내 캠페인 중 해당 서비스 타입의 캠페인 ID들로 필터링
-              const myCampaignIds = myCampaigns.map(campaign => campaign.id);
-              query = query.eq('mat_id', currentUser.id).in('product_id', myCampaignIds);
+            if (error) {
+              setError('슬롯 정보를 가져오는데 실패했습니다.');
             } else {
-              // 내 캠페인이 없으면 빈 결과
-              query = query.eq('product_id', -999);
+              setSlots([]);
             }
+            return;
+          }
+        }
+
+        // 2. 사용자 역할에 따른 필터링
+        if (!isAdmin) {
+          // 일반 사용자: 자신의 mat_id에 해당하는 캠페인만 필터링
+          const myCampaigns = relevantCampaigns.filter(campaign =>
+            campaign.mat_id === currentUser.id
+          );
+
+          if (myCampaigns.length > 0) {
+            // 내 캠페인의 ID들로 필터링
+            const myCampaignIds = myCampaigns.map(campaign => campaign.id);
+            query = query.eq('mat_id', currentUser.id).in('product_id', myCampaignIds);
           } else {
-            // ADMIN: 서비스 타입의 모든 캠페인 ID로 필터링
-            const campaignIds = serviceTypeCampaigns.map(campaign => campaign.id);
+            // 내 캠페인이 없으면 빈 결과
+            query = query.eq('product_id', -999);
+          }
+        } else {
+          // ADMIN: 전체 또는 서비스 타입의 모든 캠페인 ID로 필터링
+          if (relevantCampaigns.length > 0) {
+            const campaignIds = relevantCampaigns.map(campaign => campaign.id);
             query = query.in('product_id', campaignIds);
           }
 
@@ -509,8 +509,6 @@ const ApprovePage: React.FC = () => {
         }
 
         // 날짜 필터 적용
-        console.log('날짜 필터 적용:', { searchDateFrom, searchDateTo });
-        
         if (searchDateFrom && searchDateTo) {
           // 둘 다 선택: start_date >= 시작일 AND end_date <= 종료일
           query = query
@@ -540,13 +538,6 @@ const ApprovePage: React.FC = () => {
 
 
         if (data) {
-          console.log('조회된 슬롯 데이터 샘플:', data.slice(0, 3).map(slot => ({
-            id: slot.id,
-            start_date: slot.start_date,
-            end_date: slot.end_date,
-            created_at: slot.created_at
-          })));
-          
           // 모든 데이터에 대해 조인된 데이터 형식 변환 (빈 배열이어도 처리)
           const enrichedSlots = data.map(slot => {
             // users 처리 - 배열 또는 단일 객체일 수 있음
@@ -1287,12 +1278,10 @@ const ApprovePage: React.FC = () => {
   };
 
   const handleSearchDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('시작일 변경:', e.target.value);
     setSearchDateFrom(e.target.value);
   };
 
   const handleSearchDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('종료일 변경:', e.target.value);
     setSearchDateTo(e.target.value);
   };
 

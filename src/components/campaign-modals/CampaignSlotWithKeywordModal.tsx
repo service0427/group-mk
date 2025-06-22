@@ -1881,7 +1881,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         .from('notifications')
         .insert({
           user_id: userId,
-          type: 'slot_created', // 슬롯 생성 타입
+          type: 'service', // 서비스 타입
           title: title,
           message: message,
           link: link,
@@ -2016,6 +2016,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           `${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드 구매 신청이 완료되었습니다.`,
           '/myinfo/services'
         );
+        
+        // 총판에게 알림 전송 (mat_id가 있는 경우)
+        if (selectedCampaign?.mat_id && selectedCampaign.mat_id !== currentUser?.id) {
+          await createNotification(
+            selectedCampaign.mat_id,
+            '새로운 슬롯 구매 신청',
+            `${currentUser?.email || '사용자'}님이 ${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드를 구매 신청했습니다.`,
+            '/manage/slots/approve'
+          );
+        }
       }
 
       // 상위 컴포넌트에 데이터 전달 (기존 동작 유지)
@@ -2267,6 +2277,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         `${selectedCampaign.campaign_name} - 수동 입력 모드로 구매 신청이 완료되었습니다.`,
         '/myinfo/services'
       );
+      
+      // 총판에게 알림 전송 (mat_id가 있는 경우)
+      if (selectedCampaign?.mat_id && selectedCampaign.mat_id !== currentUser?.id) {
+        await createNotification(
+          selectedCampaign.mat_id,
+          '새로운 슬롯 구매 신청',
+          `${currentUser?.email || '사용자'}님이 ${selectedCampaign?.campaign_name || ''} - 수동 입력 모드로 구매 신청했습니다.`,
+          '/manage/slots/approve'
+        );
+      }
 
       // 성공 후 초기화 - 캠페인 기본값 유지
       const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;

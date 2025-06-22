@@ -39,10 +39,18 @@ function fixDarkMode(isDarkMode) {
       element.style.zIndex = '10';
     });
     
-    // 컨트롤 요소들의 z-index 조정
-    const controlElements = document.querySelectorAll('button, a, input, select, [role="button"]');
+    // 컨트롤 요소들의 z-index 조정 - 로더 요소는 제외
+    const controlElements = document.querySelectorAll('button:not(.loader):not(.spinner), a:not(.loader), input, select, [role="button"]:not(.loader)');
     controlElements.forEach(function(element) {
-      if (!element.hasAttribute('data-original-z-index')) {
+      // 로더 관련 클래스가 없는 경우에만 처리
+      const hasLoaderClass = element.className && (
+        element.className.includes('loader') || 
+        element.className.includes('loading') || 
+        element.className.includes('spinner') ||
+        element.className.includes('progress')
+      );
+      
+      if (!hasLoaderClass && !element.hasAttribute('data-original-z-index')) {
         element.setAttribute('data-original-z-index', getComputedStyle(element).zIndex);
         element.style.position = 'relative';
         element.style.zIndex = '20';

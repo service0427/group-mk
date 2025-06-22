@@ -58,7 +58,7 @@ export const USER_ROLE_LIST = Object.values(USER_ROLES);
  */
 export const USER_ROLE_DISPLAY_NAMES = {
   [USER_ROLES.DEVELOPER]: '개발자',
-  [USER_ROLES.OPERATOR]: '관리자',
+  [USER_ROLES.OPERATOR]: '운영자',
   [USER_ROLES.DISTRIBUTOR]: '총판',
   [USER_ROLES.AGENCY]: '대행사',
   [USER_ROLES.ADVERTISER]: '광고주',

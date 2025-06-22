@@ -397,13 +397,12 @@ const SearchShopInfo: React.FC = () => {
                   <th className="py-3 px-3 text-start font-medium">상품명</th>
                   <th className="py-3 px-3 text-center font-medium w-[120px]">MID</th>
                   <th className="py-3 px-3 text-start font-medium w-[180px]">쇼핑몰</th>
-                  <th className="py-3 px-3 text-center font-medium w-[160px]">내키워드로 추가</th>
                 </tr>
               </thead>
               <tbody>
                 {results.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center">
+                    <td colSpan={5} className="py-12 text-center">
                       <h4 className="text-lg font-medium text-foreground mb-2">
                         {searchTerm.trim() === '' ? '검색어를 입력하세요' : '조회된 상품이 없습니다'}
                       </h4>
@@ -449,18 +448,6 @@ const SearchShopInfo: React.FC = () => {
                       </td>
                       <td className="py-3 px-3">
                         <div className="text-sm">{item.mallName || '-'}</div>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddKeyword(item);
-                          }}
-                          className="btn btn-xs btn-primary"
-                          title="내 키워드에 추가"
-                        >
-                          <KeenIcon icon="plus" className="text-sm" />
-                        </button>
                       </td>
                     </tr>
                   ))

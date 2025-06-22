@@ -21,117 +21,147 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
   // 컴팩트 모드
   if (isCompactMode) {
     return (
-      <div className={cn(
-        "flex flex-col gap-2 px-3 py-2 border-2 rounded-md",
-        selectedCampaign.slot_type === 'guarantee'
-          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-400 dark:border-purple-600"
-          : "bg-blue-50 dark:bg-blue-900/20 border-blue-400 dark:border-blue-600"
-      )}>
-        {/* 캠페인명과 상태 */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            {/* 캠페인 로고 */}
-            <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden flex items-center justify-center bg-white border border-gray-200">
-              {bannerUrl ? (
-                <img
-                  src={bannerUrl}
-                  alt={selectedCampaign.campaign_name}
-                  className="w-6 h-6 object-contain"
-                  onError={() => setBannerUrl(null)}
-                />
-              ) : (
-                <KeenIcon icon="image" className="size-4 text-gray-400" />
-              )}
-            </div>
-            {/* 캠페인명 */}
-            <h3 className="text-sm font-semibold text-foreground truncate flex-1">
-              {selectedCampaign.campaign_name}
-            </h3>
-          </div>
-          {/* 서비스 타입 배지 */}
-          <span className={`badge ${selectedCampaign.slot_type === 'guarantee'
-            ? 'badge-info'
-            : 'badge-primary'
-            } badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
-            <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
-            {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
-          </span>
-          {/* 보장형인 경우 보장 순위 배지 추가 */}
-          {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
-            <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0">
-              <KeenIcon icon="ranking" className="size-3 me-1" />
-              {selectedCampaign.target_rank}위 보장
-            </span>
-          )}
-          {/* 상태 배지 */}
-          <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
-            <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1`}></span>
-            {getStatusLabel(selectedCampaign.status)}
-          </span>
-        </div>
-        {/* 캠페인 상세 정보 */}
+      <div className="flex gap-2 border-2 rounded-md overflow-hidden border-gray-200 dark:border-gray-700">
         <div className={cn(
-          "text-xs flex flex-wrap items-center gap-x-3 gap-y-1",
+          "flex-1 flex flex-col gap-2 px-3 py-2",
           selectedCampaign.slot_type === 'guarantee'
-            ? "text-purple-700 dark:text-purple-300"
-            : "text-blue-700 dark:text-blue-300"
+            ? "bg-purple-50 dark:bg-purple-900/20"
+            : "bg-blue-50 dark:bg-blue-900/20"
         )}>
-          {selectedCampaign.slot_type === 'guarantee' ? (
-            <>
-              <span className="flex items-center gap-1">
-                <span className="text-purple-600 dark:text-purple-400">가격범위:</span>
-                <span className="font-semibold text-primary">
-                  {(() => {
-                    const minPrice = Number(selectedCampaign.min_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
-                    const maxPrice = Number(selectedCampaign.max_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
+          {/* 캠페인명과 상태 */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* 캠페인 로고 */}
+              <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden flex items-center justify-center bg-white border border-gray-200">
+                {bannerUrl ? (
+                  <img
+                    src={bannerUrl}
+                    alt={selectedCampaign.campaign_name}
+                    className="w-6 h-6 object-contain"
+                    onError={() => setBannerUrl(null)}
+                  />
+                ) : (
+                  <KeenIcon icon="image" className="size-4 text-gray-400" />
+                )}
+              </div>
+              {/* 캠페인명 */}
+              <h3 className="text-sm font-semibold text-foreground truncate flex-1">
+                {selectedCampaign.campaign_name}
+              </h3>
+            </div>
+            {/* 서비스 타입 배지 */}
+            <span className={`badge ${selectedCampaign.slot_type === 'guarantee'
+              ? 'badge-info'
+              : 'badge-primary'
+              } badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
+              <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
+              {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
+            </span>
+            {/* 보장형인 경우 보장 순위 배지 추가 */}
+            {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
+              <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0">
+                <KeenIcon icon="ranking" className="size-3 me-1" />
+                {selectedCampaign.target_rank}위 보장
+              </span>
+            )}
+            {/* 상태 배지 */}
+            <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
+              <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1`}></span>
+              {getStatusLabel(selectedCampaign.status)}
+            </span>
+          </div>
+          {/* 캠페인 상세 정보 */}
+          <div className={cn(
+            "text-xs flex flex-wrap items-center gap-x-3 gap-y-1",
+            selectedCampaign.slot_type === 'guarantee'
+              ? "text-purple-700 dark:text-purple-300"
+              : "text-blue-700 dark:text-blue-300"
+          )}>
+            {selectedCampaign.slot_type === 'guarantee' ? (
+              <>
+                <span className="flex items-center gap-1">
+                  <span className="text-purple-600 dark:text-purple-400">가격범위:</span>
+                  <span className="font-semibold text-primary">
+                    {(() => {
+                      const minPrice = Number(selectedCampaign.min_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
+                      const maxPrice = Number(selectedCampaign.max_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
 
-                    if (minPrice && maxPrice) {
-                      const formatPrice = (price: number) => {
-                        if (price >= 100000000) {
-                          const billions = price / 100000000;
-                          return billions % 1 === 0 ? `${billions}억` : `${billions.toFixed(1)}억`;
-                        } else if (price >= 10000000) {
-                          const tenMillions = price / 10000000;
-                          return tenMillions % 1 === 0 ? `${tenMillions}천만` : `${tenMillions.toFixed(1)}천만`;
-                        } else if (price >= 10000) {
-                          const tenThousands = price / 10000;
-                          return tenThousands % 1 === 0 ? `${tenThousands}만` : `${tenThousands.toFixed(1)}만`;
-                        }
-                        return price.toLocaleString();
-                      };
+                      if (minPrice && maxPrice) {
+                        const formatPrice = (price: number) => {
+                          if (price >= 100000000) {
+                            const billions = price / 100000000;
+                            return billions % 1 === 0 ? `${billions}억` : `${billions.toFixed(1)}억`;
+                          } else if (price >= 10000000) {
+                            const tenMillions = price / 10000000;
+                            return tenMillions % 1 === 0 ? `${tenMillions}천만` : `${tenMillions.toFixed(1)}천만`;
+                          } else if (price >= 10000) {
+                            const tenThousands = price / 10000;
+                            return tenThousands % 1 === 0 ? `${tenThousands}만` : `${tenThousands.toFixed(1)}만`;
+                          }
+                          return price.toLocaleString();
+                        };
 
-                      return `${formatPrice(minPrice)}~${formatPrice(maxPrice)}원`;
-                    }
-                    return '가격 협의';
-                  })()}
+                        return `${formatPrice(minPrice)}~${formatPrice(maxPrice)}원`;
+                      }
+                      return '가격 협의';
+                    })()}
+                  </span>
                 </span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-purple-600 dark:text-purple-400">{selectedCampaign.guarantee_unit === '회' ? '보장회수:' : '보장일수:'}</span>
-                <span className="font-semibold">{selectedCampaign.guarantee_count || 30}{selectedCampaign.guarantee_unit || '일'}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-purple-600 dark:text-purple-400">효율:</span>
-                <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="flex items-center gap-1">
-                <span className="text-blue-600 dark:text-blue-400">단가:</span>
-                <span className="font-semibold text-primary">{selectedCampaign.unit_price ? `${Number(selectedCampaign.unit_price.toString().replace(/[^\d]/g, '')).toLocaleString()}원` : '1,000원'}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-blue-600 dark:text-blue-400">최소:</span>
-                <span className="font-semibold">{selectedCampaign.min_quantity ? `${Number(selectedCampaign.min_quantity.toString().replace(/[^\d]/g, '')).toLocaleString()}개` : '1개'}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-blue-600 dark:text-blue-400">효율:</span>
-                <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
-              </span>
-            </>
-          )}
+                <span className="flex items-center gap-1">
+                  <span className="text-purple-600 dark:text-purple-400">{selectedCampaign.guarantee_unit === '회' ? '보장회수:' : '보장일수:'}</span>
+                  <span className="font-semibold">{selectedCampaign.guarantee_count || 30}{selectedCampaign.guarantee_unit || '일'}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-purple-600 dark:text-purple-400">효율:</span>
+                  <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-600 dark:text-blue-400">단가:</span>
+                  <span className="font-semibold text-primary">{selectedCampaign.unit_price ? `${Number(selectedCampaign.unit_price.toString().replace(/[^\d]/g, '')).toLocaleString()}원` : '1,000원'}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-600 dark:text-blue-400">최소:</span>
+                  <span className="font-semibold">{selectedCampaign.min_quantity ? `${Number(selectedCampaign.min_quantity.toString().replace(/[^\d]/g, '')).toLocaleString()}개` : '1개'}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-600 dark:text-blue-400">효율:</span>
+                  <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
+                </span>
+              </>
+            )}
+          </div>
         </div>
+        {/* 환불 정책 표시 - 컴팩트 모드 우측 배치 */}
+        {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled && (
+          <div className="w-[350px] shrink-0 bg-amber-50 dark:bg-amber-900/20 p-2">
+            <div>
+              <div className="flex items-start gap-1">
+                <KeenIcon icon="shield-tick" className="text-amber-600 size-3.5 mt-0.5 shrink-0" />
+                <div className="text-xs text-gray-700 space-y-1">
+                  <div className="font-medium text-amber-700">환불 정책</div>
+                  <div className="space-y-0.5">
+                    <div>
+                      • {selectedCampaign.refund_settings.type === 'immediate' ? '즉시 환불' : 
+                        selectedCampaign.refund_settings.type === 'delayed' ? `${selectedCampaign.refund_settings.delay_days}일 후 환불` : 
+                        `마감시간(${selectedCampaign.refund_settings.cutoff_time}) 기준 환불`}
+                    </div>
+                    {selectedCampaign.refund_settings.refund_rules && (
+                      <div>
+                        • 사용 {selectedCampaign.refund_settings.refund_rules.min_usage_days || 0}일 이상, {selectedCampaign.refund_settings.refund_rules.max_refund_days || 7}일 이내 환불 가능
+                      </div>
+                    )}
+                    {selectedCampaign.refund_settings.requires_approval && (
+                      <div className="text-orange-600">• 총판 승인 필요</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -165,7 +195,8 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex gap-3">
+            <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h2 className="text-lg font-bold text-foreground truncate">
                 {selectedCampaign.campaign_name}
@@ -273,17 +304,20 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
               )}
             </div>
 
-            <div className="text-sm space-y-2">
-              <div className="bg-blue-50/50 p-2 rounded border border-blue-100/50 text-gray-700 line-clamp-2">
-                {selectedCampaign.description || '설명이 없습니다.'}
+              <div className="text-sm">
+                <div className="bg-blue-50/50 p-2 rounded border border-blue-100/50 text-gray-700 line-clamp-2">
+                  {selectedCampaign.description || '설명이 없습니다.'}
+                </div>
               </div>
-              
-              {/* 환불 정책 표시 */}
-              {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled && (
+            </div>
+            
+            {/* 환불 정책 표시 - 오른쪽에 배치 */}
+            {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled && (
+              <div className="w-[350px] shrink-0">
                 <div className="bg-amber-50/50 p-2 rounded border border-amber-100/50">
                   <div className="flex items-start gap-1.5">
                     <KeenIcon icon="shield-tick" className="text-amber-600 size-4 mt-0.5 shrink-0" />
-                    <div className="text-xs text-gray-700 space-y-0.5">
+                    <div className="text-sm text-gray-700 space-y-1">
                       <div className="font-medium text-amber-700">환불 정책</div>
                       <div>
                         • {selectedCampaign.refund_settings.type === 'immediate' ? '즉시 환불' : 
@@ -301,8 +335,8 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (

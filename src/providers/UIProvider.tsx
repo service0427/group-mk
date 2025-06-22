@@ -322,8 +322,12 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
           <ToastContext.Provider value={toastValue}>
             <DialogContext.Provider value={dialogValue}>
               {children}
-              {progressBarLoader && <ProgressBarLoader />}
-              {screenLoader && <ScreenLoader />}
+              {/* 로더는 하나만 표시되도록 조건부 렌더링 */}
+              {screenLoader ? (
+                <ScreenLoader />
+              ) : progressBarLoader ? (
+                <ProgressBarLoader />
+              ) : null}
               {/* Toast 컴포넌트들 */}
               <ToastPortal>
                 <ToastContainer>

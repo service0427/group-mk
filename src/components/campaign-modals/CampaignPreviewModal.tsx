@@ -311,7 +311,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                     <div className="space-y-3">
                       {/* 환불 가능 시점 */}
                       <div className="flex items-start gap-2">
-                        <KeenIcon icon="time-half-pass" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                        <KeenIcon icon="time" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
                         <div className="text-sm">
                           <span className="font-medium text-amber-700 dark:text-amber-300">환불 가능 시점: </span>
                           <span className="text-gray-700 dark:text-gray-300">
@@ -367,7 +367,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                           </div>
 
                           <div className="flex items-start gap-2">
-                            <KeenIcon icon="percentage-circle" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
+                            <KeenIcon icon="percentage" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
                             <div className="text-sm">
                               <span className="font-medium text-amber-700 dark:text-amber-300">부분 환불: </span>
                               <span className="text-gray-700 dark:text-gray-300">

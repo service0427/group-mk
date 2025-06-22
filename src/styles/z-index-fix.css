@@ -89,12 +89,14 @@ tbody tr {
 
 /* 다이얼로그 요소의 z-index는 dialog.css에서 처리 (z-index: 50~52) */
 
-/* 로더는 최상위에 표시 */
-.loader,
-.progress-bar,
-.spinner,
-[class*="loader"],
-[class*="progress"],
-[class*="circular"] {
+/* 로더는 최상위에 표시 - 중복 방지를 위해 특정 로더에만 적용 */
+.screen-loader,
+.progress-bar-loader {
   z-index: 10001 !important; /* 다이얼로그의 close 버튼 (10000)보다 높게 설정 */
+}
+
+/* Content Loader는 상대적으로 낮은 z-index 사용 */
+.content-loader,
+.MuiCircularProgress-root {
+  z-index: 15 !important; /* 콘텐츠 영역 내에서만 표시 */
 }

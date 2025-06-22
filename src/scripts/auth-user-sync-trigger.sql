@@ -20,7 +20,7 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'beginner'), -- 기본값: beginner
+    COALESCE(NEW.raw_user_meta_data->>'role', 'advertiser'), -- 기본값: advertiser
     'active',
     NOW(),
     NOW()
@@ -113,7 +113,7 @@ SELECT
   au.id,
   au.email,
   COALESCE(au.raw_user_meta_data->>'full_name', ''),
-  COALESCE(au.raw_user_meta_data->>'role', 'beginner'),
+  COALESCE(au.raw_user_meta_data->>'role', 'advertiser'),
   'active',
   au.created_at,
   au.created_at

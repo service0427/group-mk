@@ -1,5 +1,5 @@
 import { KeenIcon } from '@/components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toAbsoluteUrl } from '@/utils/Assets';
 import { useNavigate } from 'react-router-dom';
 import { CampaignDetailViewModal, CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
@@ -7,6 +7,7 @@ import { IAdCampaignItem, IAdCampaignProps } from './CardAdCampaign';
 import { getStatusColorClass, formatCampaignDetailData } from '@/utils/CampaignFormat';
 import { useAuthContext } from '@/auth';
 import { USER_ROLES } from '@/config/roles.config';
+import { supabase } from '@/supabase';
 
 const CardAdCampaignRow = ({
   logo,
@@ -25,12 +26,40 @@ const CardAdCampaignRow = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [ownerInfo, setOwnerInfo] = useState<{ name: string; mat_id: string; email: string } | null>(null);
 
   // 사용자 역할 가져오기
   const { userRole } = useAuthContext();
 
   // 보장형 여부 확인
   const isGuaranteeType = rawData?.slot_type === 'guarantee';
+
+  // 운영자/개발자 권한일 때 캠페인 소유자 정보 가져오기
+  useEffect(() => {
+    const fetchOwnerInfo = async () => {
+      if ((userRole === USER_ROLES.OPERATOR || userRole === USER_ROLES.DEVELOPER) && rawData?.mat_id) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id, email, full_name')
+            .eq('id', rawData.mat_id)
+            .single();
+
+          if (data && !error) {
+            setOwnerInfo({
+              mat_id: data.id,
+              name: data.full_name || '이름 없음',
+              email: data.email || '이메일 없음'
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch owner info:', error);
+        }
+      }
+    };
+
+    fetchOwnerInfo();
+  }, [userRole, rawData?.mat_id]);
 
   // 이제 props로 받은 rawData와 ID만 사용
   // 원본 데이터는 더 이상 확인하지 않음, 모달에서 직접 조회
@@ -86,9 +115,12 @@ const CardAdCampaignRow = ({
 
             <div className="">
               <div className="flex items-center gap-2 mb-1">
-                <a href={url} className="text-lg font-medium text-gray-900 hover:text-primary">
+                <button 
+                  onClick={() => setModalOpen(true)}
+                  className="text-lg font-medium text-gray-900 hover:text-primary text-left"
+                >
                   {title}
-                </a>
+                </button>
                 {/* 서비스 타입 배지 */}
                 <span className={`badge ${isGuaranteeType
                     ? 'badge-info'
@@ -104,9 +136,10 @@ const CardAdCampaignRow = ({
                 </span>
               </div>
 
-              <div className="flex text-sm text-gray-700 items-center" style={{ height: '3rem' }}>
-                {/* 3줄 이상인 경우와 2줄 이하인 경우 다르게 처리 */}
-                {(description.split('\n').length > 2 || description.length > 80) ? (
+              <div className="flex flex-col">
+                <div className="flex text-sm text-gray-700 items-center" style={{ height: '3rem' }}>
+                  {/* 3줄 이상인 경우와 2줄 이하인 경우 다르게 처리 */}
+                  {(description.split('\n').length > 2 || description.length > 80) ? (
                   /* 3줄 이상인 경우: 2줄만 표시 + ... */
                   <div className="h-[3rem] relative w-full">
                     <div className="h-[3rem] overflow-hidden" style={{
@@ -124,6 +157,13 @@ const CardAdCampaignRow = ({
                     lineHeight: '1.5rem'
                   }}>
                     {description}
+                  </div>
+                  )}
+                </div>
+                {/* 운영자/개발자 권한일 때 캠페인 소유자 정보 표시 */}
+                {(userRole === USER_ROLES.OPERATOR || userRole === USER_ROLES.DEVELOPER) && ownerInfo && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    판매자: {ownerInfo.name} ({ownerInfo.email})
                   </div>
                 )}
               </div>
@@ -158,7 +198,7 @@ const CardAdCampaignRow = ({
                         key={index}
                         className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
                       >
-                        <span className="text-gray-900 text-sm leading-none font-medium">
+                        <span className="text-gray-900 text-xs leading-none font-medium">
                           {formatPrice(Number(minPrice))}~{formatPrice(Number(maxPrice))}원
                         </span>
                         <span className="text-gray-700 text-xs">💎가격범위</span>

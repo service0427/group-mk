@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'; // Br
 import { useSettings } from '@/providers/SettingsProvider';
 import { AppRouting } from '@/routing';
 import { PathnameProvider } from '@/providers';
-import { ScrollToTop, ScrollToTopButton, StatusBarTap } from '@/components';
+import { ScrollToTop, StatusBarTap } from '@/components';
 import { LogoutTransition } from '@/components/loaders';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { AuthProviderV2 } from '@/auth/providers/AuthProviderV2';
@@ -15,16 +15,16 @@ const App = () => {
   const { isLoggingOut } = useLogoutContext();
 
   useEffect(() => {
-    // 다크모드 전환 시 transitioning 클래스 추가
-    document.documentElement.classList.add('transitioning');
+    // 다크모드 전환 시 theme-transitioning 클래스 추가
+    document.documentElement.classList.add('theme-transitioning');
 
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.remove('light');
     document.documentElement.classList.add(settings.themeMode);
 
-    // 트랜지션 완료 후 transitioning 클래스 제거
+    // 트랜지션 완료 후 theme-transitioning 클래스 제거
     const timer = setTimeout(() => {
-      document.documentElement.classList.remove('transitioning');
+      document.documentElement.classList.remove('theme-transitioning');
     }, 300);
 
     return () => clearTimeout(timer);
@@ -98,8 +98,6 @@ const App = () => {
               <Route path="/*" element={<AppRouting />} />
             </Routes>
 
-            {/* 맨 위로 가기 버튼 */}
-            <ScrollToTopButton />
           </PathnameProvider>
         </ServiceEffectModalProvider>
       </AuthProviderV2>

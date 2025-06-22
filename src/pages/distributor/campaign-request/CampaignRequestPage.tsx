@@ -156,7 +156,7 @@ const CampaignRequestPage: React.FC = () => {
                     <div className="relative inline-block mr-3">
                       <img src={service.icon} alt={service.name} className="w-6 h-6" />
                       {service.iconAbbr && (
-                        <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                        <span className="icon-abbr-badge">
                           {service.iconAbbr}
                         </span>
                       )}

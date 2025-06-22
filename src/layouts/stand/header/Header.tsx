@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import { useEffect } from 'react';
-// MegaMenu removed
+import { MegaMenu } from '../mega-menu';
 import { HeaderLogo, HeaderTopbar } from './';
-import { Breadcrumbs, useStandLayout } from '../';
+import { useStandLayout } from '../';
 import { useLocation } from 'react-router';
 import ImportantNoticeMarquee from '@/components/notice/ImportantNoticeMarquee';
 import { useMediaQuery } from '@/hooks';
@@ -68,7 +68,7 @@ const Header = () => {
 
           {/* 메뉴 영역: PC에서는 왼쪽 정렬 */}
           <div className="flex items-center justify-start lg:pl-0 flex-grow">
-            <Breadcrumbs />
+            <MegaMenu />
           </div>
 
           {/* 툴바 영역: 항상 오른쪽 정렬 */}

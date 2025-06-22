@@ -273,7 +273,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                             email: user.email || '',
                             full_name: user.user_metadata?.full_name || '',
                             phone_number: '',
-                            role: metadataRole || USER_ROLES.BEGINNER,
+                            role: metadataRole || USER_ROLES.ADVERTISER,
                             status: 'active',
                             raw_user_meta_data: user.user_metadata
                         };
@@ -288,7 +288,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                         email: user.email || '',
                         full_name: user.user_metadata?.full_name || '',
                         phone_number: '',
-                        role: metadataRole || USER_ROLES.BEGINNER,
+                        role: metadataRole || USER_ROLES.ADVERTISER,
                         status: 'active',
                         raw_user_meta_data: user.user_metadata
                     };

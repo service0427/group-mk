@@ -82,20 +82,20 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
       <tbody className="divide-y divide-border">
         {/* 환불 허용 */}
         <tr>
-          <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+          <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
             환불 허용
           </th>
-          <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                이 캠페인의 환불 가능 여부를 설정합니다
-              </p>
+          <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+            <div className="flex items-center gap-3">
               <Switch
                 id="refund-enabled"
                 checked={settings.enabled}
                 onCheckedChange={handleToggleRefund}
                 disabled={disabled}
               />
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                이 캠페인의 환불 가능 여부를 설정합니다
+              </p>
             </div>
           </td>
         </tr>
@@ -104,16 +104,16 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
           <>
             {/* 환불 시점 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 환불 시점
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="space-y-3">
                   {isModal ? (
                     <select
                       value={settings.type}
                       onChange={(e) => handleTypeChange(e.target.value as RefundSettings['type'])}
-                      className="w-full h-10 px-3 py-2 border border-gray-200 bg-white text-foreground rounded-md"
+                      className="select select-bordered select-sm w-full max-w-xs"
                       disabled={disabled}
                     >
                       <option value="immediate">즉시 환불</option>
@@ -145,7 +145,7 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                         max="30"
                         disabled={disabled}
                       />
-                      <span className="text-sm">일 후 환불</span>
+                      <span className="text-sm ml-2">일 후 환불</span>
                     </div>
                   )}
 
@@ -169,30 +169,30 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
 
             {/* 총판 승인 필요 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 총판 승인 필요
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    환불 시 총판의 승인이 필요한지 설정합니다
-                  </p>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="flex items-center gap-3">
                   <Switch
                     id="requires-approval"
                     checked={settings.requires_approval}
                     onCheckedChange={handleRequiresApprovalChange}
                     disabled={disabled}
                   />
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    환불 시 총판의 승인이 필요한지 설정합니다
+                  </p>
                 </div>
               </td>
             </tr>
 
             {/* 최소 사용 일수 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 최소 사용 일수
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -203,7 +203,7 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     max="365"
                     disabled={disabled}
                   />
-                  <span className="text-sm">일</span>
+                  <span className="text-sm ml-2">일</span>
                   <span className="text-xs text-muted-foreground ml-2">
                     (이 기간 이상 사용해야 환불 가능)
                   </span>
@@ -213,10 +213,10 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
 
             {/* 최대 환불 가능 일수 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 최대 환불 가능 일수
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -227,7 +227,7 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     max="365"
                     disabled={disabled}
                   />
-                  <span className="text-sm">일</span>
+                  <span className="text-sm ml-2">일</span>
                   <span className="text-xs text-muted-foreground ml-2">
                     (사용 시작 후 이 기간 내에만 환불 가능)
                   </span>
@@ -237,38 +237,38 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
 
             {/* 일할 계산 환불 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 일할 계산 환불
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    사용한 기간을 제외한 금액만 환불 (실제 환불 금액은 작업량과 상황에 따라 결정)
-                  </p>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="flex items-center gap-3">
                   <Switch
                     id="partial-refund"
                     checked={settings.refund_rules.partial_refund}
                     onCheckedChange={(checked) => handleRulesChange('partial_refund', checked)}
                     disabled={disabled}
                   />
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    사용한 기간을 제외한 금액만 환불 (실제 환불 금액은 작업량과 상황에 따라 결정)
+                  </p>
                 </div>
               </td>
             </tr>
 
             {/* 환불 정책 요약 */}
             <tr>
-              <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-1/4">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                 환불 정책 요약
               </th>
-              <td className="px-6 py-4 bg-white dark:bg-gray-800/20">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                  <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                  <ul className="space-y-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                     <li className="flex items-start gap-2">
                       <KeenIcon icon="check" className="size-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <span>
-                        환불 시점: {settings.type === 'immediate' ? '즉시' : 
-                          settings.type === 'delayed' ? `${settings.delay_days}일 후` : 
-                          `마감시간(${settings.cutoff_time}) 기준`}
+                        환불 시점: {settings.type === 'immediate' ? '즉시' :
+                          settings.type === 'delayed' ? `${settings.delay_days}일 후` :
+                            `마감시간(${settings.cutoff_time}) 기준`}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">

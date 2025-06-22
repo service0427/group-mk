@@ -23,7 +23,7 @@ import GuaranteeRequestApprovalModal from '@/components/guarantee-slots/Guarante
 import GuaranteeRequestRejectModal from '@/components/guarantee-slots/GuaranteeRequestRejectModal';
 import GuaranteeRequestCancelRejectModal from '@/components/guarantee-slots/GuaranteeRequestCancelRejectModal';
 import * as XLSX from 'xlsx';
-import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from '@/components/campaign-modals/types';
 import type { ExcelColumn } from '@/components/guarantee-slots/GuaranteeExcelExportModal';
 import { InquiryChatModal } from '@/components/inquiry';
 
@@ -475,6 +475,25 @@ const GuaranteeQuotesPage: React.FC = () => {
       console.error('캠페인 목록 조회 실패:', error);
     }
   }, [userId, userRole]);
+
+  // 총판 사용자가 가진 서비스 타입들을 계산
+  const availableServiceTypes = useMemo(() => {
+    // 총판이 아닌 경우 전체 서비스 타입 반환 (메뉴 순서대로)
+    if (!currentUser || userRole !== USER_ROLES.DISTRIBUTOR) {
+      return SERVICE_TYPE_ORDER;
+    }
+
+    // 총판인 경우 자신의 캠페인이 있는 서비스 타입만 반환
+    const distributorCampaigns = campaigns.filter(campaign =>
+      campaign.mat_id === currentUser.id
+    );
+
+    // 중복 제거하여 고유한 서비스 타입만 추출
+    const uniqueServiceTypes = [...new Set(distributorCampaigns.map(c => c.service_type))];
+    
+    // 메뉴 순서에 맞게 정렬
+    return SERVICE_TYPE_ORDER.filter(type => uniqueServiceTypes.includes(type));
+  }, [campaigns, currentUser, userRole]);
 
   // 서비스 타입에 따른 캠페인 필터링
   useEffect(() => {
@@ -1212,8 +1231,10 @@ const GuaranteeQuotesPage: React.FC = () => {
                   disabled={negotiationModal.open || loading}
                 >
                   <option value="">전체 서비스</option>
-                  {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  {availableServiceTypes.map((serviceType) => (
+                    <option key={serviceType} value={serviceType}>
+                      {SERVICE_TYPE_LABELS[serviceType] || serviceType}
+                    </option>
                   ))}
                 </select>
               </div>

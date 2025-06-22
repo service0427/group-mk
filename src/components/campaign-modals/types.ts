@@ -37,6 +37,25 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   [CampaignServiceType.LIVE_BROADCASTING]: '라이브방송'
 };
 
+// 메뉴 순서대로 정렬된 서비스 타입 배열
+export const SERVICE_TYPE_ORDER = [
+  CampaignServiceType.NAVER_TRAFFIC,
+  CampaignServiceType.NAVER_SHOPPING_RANK,
+  CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+  CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+  CampaignServiceType.NAVER_PLACE_RANK,
+  CampaignServiceType.NAVER_PLACE_TRAFFIC,
+  CampaignServiceType.NAVER_PLACE_SAVE,
+  CampaignServiceType.NAVER_PLACE_SHARE,
+  CampaignServiceType.NAVER_BLOG_POST,
+  CampaignServiceType.NAVER_AUTO,
+  CampaignServiceType.COUPANG_TRAFFIC,
+  CampaignServiceType.COUPANG_FAKESALE,
+  CampaignServiceType.INSTAGRAM,
+  CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
+  CampaignServiceType.LIVE_BROADCASTING
+];
+
 // DB의 snake_case를 enum의 PascalCase로 변환하는 함수
 export const convertDbServiceTypeToEnum = (dbServiceType: string): string => {
   const typeMap: { [key: string]: string } = {

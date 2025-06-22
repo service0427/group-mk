@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Container } from '@/components';
+import { CommonTemplate } from '@/components/pageTemplate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
-  Wallet, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
   RefreshCw,
   CircleDollarSign,
   ArrowUpRight,
@@ -120,7 +120,7 @@ const HistoryPage = () => {
 
   const loadData = async () => {
     if (!currentUser?.id) return;
-    
+
     setLoading(true);
     try {
       // 잔액 조회
@@ -161,10 +161,10 @@ const HistoryPage = () => {
   // 자동 완료 환불의 관련 슬롯 정보 로드
   const loadAutoRefundSlots = async (transaction: CashTransaction) => {
     console.log('loadAutoRefundSlots 호출됨:', transaction);
-    
-    if (!currentUser?.id || 
-        transaction.transaction_type !== 'refund' || 
-        !transaction.description?.includes('슬롯 자동 완료 환불')) {
+
+    if (!currentUser?.id ||
+      transaction.transaction_type !== 'refund' ||
+      !transaction.description?.includes('슬롯 자동 완료 환불')) {
       console.log('자동 환불이 아님, 조건 체크:', {
         hasUserId: !!currentUser?.id,
         isRefund: transaction.transaction_type === 'refund',
@@ -187,9 +187,9 @@ const HistoryPage = () => {
         transaction.transaction_at,
         Math.abs(transaction.amount)
       );
-      
+
       console.log('자동 환불 슬롯 조회 결과:', result);
-      
+
       if (result.success && result.data) {
         console.log('자동 환불 슬롯 설정:', result.data);
         setAutoRefundSlots(result.data);
@@ -264,7 +264,7 @@ const HistoryPage = () => {
     const isIncome = ['charge', 'free', 'referral_bonus', 'refund'].includes(type);
     const sign = isIncome ? '+' : '-';
     const className = isIncome ? 'text-green-600' : 'text-red-600';
-    
+
     return (
       <span className={`font-medium ${className}`}>
         {sign}{Math.abs(amount).toLocaleString()}원
@@ -275,12 +275,24 @@ const HistoryPage = () => {
   const filteredTransactions = getFilteredTransactions();
 
   return (
-    <Container>
+    <CommonTemplate
+      title="캐시 충전/사용내역"
+      description="캐시 잔액 및 거래 내역을 확인하세요"
+      showPageMenu={false}
+      childrenClassName=""
+      toolbarActions={
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-primary-600 text-white hover:bg-primary-700"
+          onClick={loadData}
+        >
+          <RefreshCw className="md:me-2 flex-none" />
+          새로고침
+        </Button>
+      }
+    >
       <div className="mx-auto max-w-7xl py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">캐시 충전/사용내역</h1>
-          <p className="text-gray-600 mt-1">캐시 잔액 및 거래 내역을 확인하세요</p>
-        </div>
 
         {/* 잔액 카드 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
@@ -361,13 +373,7 @@ const HistoryPage = () => {
         {/* 거래 내역 */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>거래 내역</CardTitle>
-              <Button variant="outline" size="sm" onClick={loadData}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                새로고침
-              </Button>
-            </div>
+            <CardTitle>거래 내역</CardTitle>
           </CardHeader>
           <CardContent>
             {/* 필터 탭 */}
@@ -375,41 +381,37 @@ const HistoryPage = () => {
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                 <button
                   onClick={() => setActiveTab('all')}
-                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    activeTab === 'all'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   전체
                 </button>
                 <button
                   onClick={() => setActiveTab('charge')}
-                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    activeTab === 'charge'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === 'charge'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   충전
                 </button>
                 <button
                   onClick={() => setActiveTab('use')}
-                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    activeTab === 'use'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === 'use'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   사용
                 </button>
                 <button
                   onClick={() => setActiveTab('refund')}
-                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    activeTab === 'refund'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === 'refund'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   환불
                 </button>
@@ -421,11 +423,11 @@ const HistoryPage = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 w-36">날짜</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 w-20">구분</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900 w-36">날짜</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900 w-20">구분</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-gray-900">내용</th>
-                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-900 w-24">금액</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 w-16">타입</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900 w-36">금액</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900 w-16">타입</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-gray-900 w-16">상세</th>
                   </tr>
                 </thead>
@@ -445,11 +447,11 @@ const HistoryPage = () => {
                   ) : (
                     filteredTransactions.map((transaction) => (
                       <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-2 text-sm">
+                        <td className="py-3 px-2 text-sm text-center">
                           {format(new Date(transaction.transaction_at), 'yyyy.MM.dd HH:mm', { locale: ko })}
                         </td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center gap-1">
+                        <td className="py-3 px-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
                             {getTransactionIcon(transaction.transaction_type)}
                             <span className="text-xs font-medium">
                               {getTransactionTypeName(transaction.transaction_type)}
@@ -465,7 +467,7 @@ const HistoryPage = () => {
                                   슬롯 #{transaction.user_slot_number} 환불
                                 </div>
                               )}
-                              
+
                               {/* 키워드 테이블에서 가져온 경우 */}
                               {transaction.main_keyword ? (
                                 <>
@@ -488,24 +490,24 @@ const HistoryPage = () => {
                                     {(() => {
                                       const inputData = transaction.slot_input_data;
                                       const campaignAddInfo = transaction.campaign_add_info;
-                                      
-                                      
+
+
                                       // 필드 매핑이 있으면 우선순위에 따라 표시
                                       let mainDisplay = '';
                                       const additionalInfo: string[] = [];
-                                      
+
                                       // campaigns.add_info의 add_field 배열 확인
                                       if (campaignAddInfo?.add_field && Array.isArray(campaignAddInfo.add_field) && inputData) {
                                         const addFields = campaignAddInfo.add_field;
-                                        
+
                                         // 첫 번째 필드를 메인 표시로, 나머지는 추가 정보로
                                         addFields.forEach((field: any, index: number) => {
                                           // fieldName이 키임 (예: '항목명 1')
                                           const fieldName = field.fieldName;
                                           const fieldLabel = fieldName; // 간단하게 필드명 사용
                                           const value = inputData[fieldName];
-                                          
-                                          
+
+
                                           if (value && value.toString().trim() !== '') {
                                             if (index === 0) {
                                               mainDisplay = value;
@@ -515,30 +517,30 @@ const HistoryPage = () => {
                                           }
                                         });
                                       }
-                                      
+
                                       // 필드 매핑이 없으면 기존 로직 사용
                                       if (!mainDisplay && inputData) {
-                                        mainDisplay = inputData.productName || 
-                                                     inputData.title || 
-                                                     inputData.main_keyword || 
-                                                     inputData.keyword ||
-                                                     inputData.keywords ||
-                                                     '';
-                                        
+                                        mainDisplay = inputData.productName ||
+                                          inputData.title ||
+                                          inputData.main_keyword ||
+                                          inputData.keyword ||
+                                          inputData.keywords ||
+                                          '';
+
                                         // 여전히 없으면 첫 번째 의미있는 필드
                                         if (!mainDisplay) {
                                           const excludeFields = ['mid', 'url', 'price', 'quantity', 'id', 'created_at', 'updated_at'];
                                           for (const [key, value] of Object.entries(inputData)) {
-                                            if (!excludeFields.includes(key) && 
-                                                typeof value === 'string' && 
-                                                value.trim() !== '') {
+                                            if (!excludeFields.includes(key) &&
+                                              typeof value === 'string' &&
+                                              value.trim() !== '') {
                                               mainDisplay = value;
                                               break;
                                             }
                                           }
                                         }
                                       }
-                                      
+
                                       return (
                                         <>
                                           <div className="text-xs font-medium text-gray-900 truncate">
@@ -550,7 +552,7 @@ const HistoryPage = () => {
                                   </>
                                 ) : null
                               )}
-                              
+
                               {/* 캠페인 정보 */}
                               {transaction.campaign_name && (
                                 <div className="text-xs text-blue-600 mt-1 truncate">
@@ -561,8 +563,8 @@ const HistoryPage = () => {
                           ) : (
                             <>
                               {/* 슬롯 자동 완료 환불 특별 처리 */}
-                              {transaction.transaction_type === 'refund' && 
-                               transaction.description?.includes('슬롯 자동 완료 환불') ? (
+                              {transaction.transaction_type === 'refund' &&
+                                transaction.description?.includes('슬롯 자동 완료 환불') ? (
                                 <div className="truncate">
                                   <div className="text-xs text-orange-600 font-medium">
                                     {transaction.description}
@@ -580,27 +582,27 @@ const HistoryPage = () => {
                         <td className="py-3 px-2 text-right">
                           {formatAmount(transaction.amount, transaction.transaction_type)}
                         </td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 text-center">
                           {transaction.balance_type && (
                             <Badge variant="outline" className="text-xs">
-                              {transaction.balance_type === 'free' ? '무료' : 
-                               transaction.balance_type === 'paid' ? '유료' : '혼합'}
+                              {transaction.balance_type === 'free' ? '무료' :
+                                transaction.balance_type === 'paid' ? '유료' : '혼합'}
                             </Badge>
                           )}
                         </td>
                         <td className="py-3 px-2 text-center">
-                          {(transaction.is_slot_transaction || 
-                            (transaction.transaction_type === 'refund' && 
-                             transaction.description?.includes('슬롯 자동 완료 환불'))) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => handleOpenDetailModal(transaction)}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
+                          {(transaction.is_slot_transaction ||
+                            (transaction.transaction_type === 'refund' &&
+                              transaction.description?.includes('슬롯 자동 완료 환불'))) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleOpenDetailModal(transaction)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                         </td>
                       </tr>
                     ))
@@ -627,21 +629,21 @@ const HistoryPage = () => {
                         <div className="text-right">
                           {formatAmount(transaction.amount, transaction.transaction_type)}
                         </div>
-                        {(transaction.is_slot_transaction || 
-                          (transaction.transaction_type === 'refund' && 
-                           transaction.description?.includes('슬롯 자동 완료 환불'))) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => handleOpenDetailModal(transaction)}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                        )}
+                        {(transaction.is_slot_transaction ||
+                          (transaction.transaction_type === 'refund' &&
+                            transaction.description?.includes('슬롯 자동 완료 환불'))) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleOpenDetailModal(transaction)}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          )}
                       </div>
                     </div>
-                    
+
                     {/* 중단: 구분과 내용 */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -651,12 +653,12 @@ const HistoryPage = () => {
                         </span>
                         {transaction.balance_type && (
                           <Badge variant="outline" className="text-xs">
-                            {transaction.balance_type === 'free' ? '무료' : 
-                             transaction.balance_type === 'paid' ? '유료' : '혼합'}
+                            {transaction.balance_type === 'free' ? '무료' :
+                              transaction.balance_type === 'paid' ? '유료' : '혼합'}
                           </Badge>
                         )}
                       </div>
-                      
+
                       {/* 내용 표시 */}
                       <div className="text-sm text-gray-600">
                         {transaction.is_slot_transaction ? (
@@ -667,7 +669,7 @@ const HistoryPage = () => {
                                 슬롯 #{transaction.user_slot_number} 환불
                               </div>
                             )}
-                            
+
                             {/* 키워드 정보 또는 슬롯 정보 표시 로직 */}
                             {transaction.main_keyword ? (
                               <>
@@ -692,8 +694,8 @@ const HistoryPage = () => {
                         ) : (
                           <>
                             {/* 슬롯 자동 완료 환불 특별 처리 */}
-                            {transaction.transaction_type === 'refund' && 
-                             transaction.description?.includes('슬롯 자동 완료 환불') ? (
+                            {transaction.transaction_type === 'refund' &&
+                              transaction.description?.includes('슬롯 자동 완료 환불') ? (
                               <div>
                                 <div className="text-xs text-orange-600 font-medium">
                                   {transaction.description}
@@ -743,14 +745,14 @@ const HistoryPage = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* 상세보기 모달 */}
       <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>거래 상세 정보</DialogTitle>
           </DialogHeader>
-          
+
           {selectedTransaction && (
             <div className="overflow-y-auto flex-1 px-6 pb-6">
               <div className="space-y-4">
@@ -769,7 +771,7 @@ const HistoryPage = () => {
                     <p className="text-sm font-medium">{formatAmount(selectedTransaction.amount, selectedTransaction.transaction_type)}</p>
                   </div>
                 </div>
-                
+
                 {/* 슬롯 정보 */}
                 {selectedTransaction.is_slot_transaction && (
                   <>
@@ -795,7 +797,7 @@ const HistoryPage = () => {
                             <div className="mb-2">
                               <p className="text-xs text-gray-500">원래 작업 기간</p>
                               <p className="text-sm">
-                                {format(new Date(selectedTransaction.slot_start_date), 'yyyy.MM.dd', { locale: ko })} ~ 
+                                {format(new Date(selectedTransaction.slot_start_date), 'yyyy.MM.dd', { locale: ko })} ~
                                 {format(new Date(selectedTransaction.slot_end_date), 'yyyy.MM.dd', { locale: ko })}
                               </p>
                             </div>
@@ -811,71 +813,71 @@ const HistoryPage = () => {
                     </div>
                   </>
                 )}
-                
+
                 {/* 자동 완료 환불 정보 */}
-                {selectedTransaction.transaction_type === 'refund' && 
-                 selectedTransaction.description?.includes('슬롯 자동 완료 환불') && (
-                  <>
-                    <hr />
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">자동 환불 정보</h4>
-                      <div className="mb-2">
-                        <p className="text-xs text-gray-500">환불 유형</p>
-                        <p className="text-sm">시스템 자동 환불</p>
-                      </div>
-                      <div className="mb-2">
-                        <p className="text-xs text-gray-500">설명</p>
-                        <p className="text-sm">{selectedTransaction.description}</p>
-                      </div>
-                      {selectedTransaction.reference_id && (
+                {selectedTransaction.transaction_type === 'refund' &&
+                  selectedTransaction.description?.includes('슬롯 자동 완료 환불') && (
+                    <>
+                      <hr />
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">자동 환불 정보</h4>
                         <div className="mb-2">
-                          <p className="text-xs text-gray-500">참조 ID</p>
-                          <p className="text-sm text-gray-600">{selectedTransaction.reference_id}</p>
+                          <p className="text-xs text-gray-500">환불 유형</p>
+                          <p className="text-sm">시스템 자동 환불</p>
                         </div>
-                      )}
-                      
-                      {/* 자동 환불 관련 슬롯 목록 */}
-                      {autoRefundSlots.length > 0 && (
                         <div className="mb-2">
-                          <p className="text-xs text-gray-500">환불된 슬롯 ({autoRefundSlots.length}개)</p>
-                          <div className="space-y-2 mt-1">
-                            {autoRefundSlots.map((slot, index) => (
-                              <div key={slot.id} className="bg-white p-3 rounded border text-sm">
-                                <div className="flex justify-between items-start mb-1">
-                                  <span className="font-medium">슬롯 #{slot.user_slot_number}</span>
-                                  <span className="text-xs text-gray-500">
-                                    {format(new Date(slot.processed_at), 'MM/dd HH:mm', { locale: ko })}
-                                  </span>
-                                </div>
-                                {slot.campaigns && (
-                                  <div className="text-xs text-blue-600">
-                                    {slot.campaigns.campaign_name} - {SERVICE_TYPE_LABELS[slot.campaigns.service_type as keyof typeof SERVICE_TYPE_LABELS] || slot.campaigns.service_type}
-                                  </div>
-                                )}
-                                {slot.keywords?.main_keyword && (
-                                  <div className="text-xs text-gray-600 mt-1">
-                                    키워드: {slot.keywords.main_keyword}
-                                    {(slot.keywords.keyword1 || slot.keywords.keyword2 || slot.keywords.keyword3) && (
-                                      <span className="text-gray-500">
-                                        {' '}+ {[slot.keywords.keyword1, slot.keywords.keyword2, slot.keywords.keyword3].filter(Boolean).length}개
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                                {slot.start_date && slot.end_date && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    작업기간: {format(new Date(slot.start_date), 'MM/dd', { locale: ko })} ~ {format(new Date(slot.end_date), 'MM/dd', { locale: ko })}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                          <p className="text-xs text-gray-500">설명</p>
+                          <p className="text-sm">{selectedTransaction.description}</p>
+                        </div>
+                        {selectedTransaction.reference_id && (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-500">참조 ID</p>
+                            <p className="text-sm text-gray-600">{selectedTransaction.reference_id}</p>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                
+                        )}
+
+                        {/* 자동 환불 관련 슬롯 목록 */}
+                        {autoRefundSlots.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-500">환불된 슬롯 ({autoRefundSlots.length}개)</p>
+                            <div className="space-y-2 mt-1">
+                              {autoRefundSlots.map((slot, index) => (
+                                <div key={slot.id} className="bg-white p-3 rounded border text-sm">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="font-medium">슬롯 #{slot.user_slot_number}</span>
+                                    <span className="text-xs text-gray-500">
+                                      {format(new Date(slot.processed_at), 'MM/dd HH:mm', { locale: ko })}
+                                    </span>
+                                  </div>
+                                  {slot.campaigns && (
+                                    <div className="text-xs text-blue-600">
+                                      {slot.campaigns.campaign_name} - {SERVICE_TYPE_LABELS[slot.campaigns.service_type as keyof typeof SERVICE_TYPE_LABELS] || slot.campaigns.service_type}
+                                    </div>
+                                  )}
+                                  {slot.keywords?.main_keyword && (
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      키워드: {slot.keywords.main_keyword}
+                                      {(slot.keywords.keyword1 || slot.keywords.keyword2 || slot.keywords.keyword3) && (
+                                        <span className="text-gray-500">
+                                          {' '}+ {[slot.keywords.keyword1, slot.keywords.keyword2, slot.keywords.keyword3].filter(Boolean).length}개
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {slot.start_date && slot.end_date && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      작업기간: {format(new Date(slot.start_date), 'MM/dd', { locale: ko })} ~ {format(new Date(slot.end_date), 'MM/dd', { locale: ko })}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                 {/* 추가 입력 필드 정보 */}
                 {selectedTransaction.slot_input_data && (
                   <>
@@ -886,10 +888,10 @@ const HistoryPage = () => {
                         {(() => {
                           const inputData = selectedTransaction.slot_input_data;
                           const campaignAddInfo = selectedTransaction.campaign_add_info;
-                          
+
                           // 표시할 필드들을 정리
                           const fieldsToDisplay: { label: string; value: any }[] = [];
-                          
+
                           // 슬롯 승인 페이지처럼 제외할 필드들 정의
                           const excludeFields = [
                             // 시스템 필드
@@ -907,7 +909,7 @@ const HistoryPage = () => {
                             'is_manual_input', 'dueDays', 'expected_deadline',
                             'workCount', 'quantity'
                           ];
-                          
+
                           // 필드명 한글 매핑
                           const fieldNameMap: Record<string, string> = {
                             'productName': '상품명',
@@ -919,70 +921,70 @@ const HistoryPage = () => {
                             'description': '설명',
                             'content': '내용'
                           };
-                          
+
                           // campaign add_field가 있으면 그것을 우선 사용
                           if (campaignAddInfo?.add_field && Array.isArray(campaignAddInfo.add_field)) {
                             campaignAddInfo.add_field.forEach((field: any) => {
                               const fieldName = field.fieldName;
                               const value = inputData[fieldName];
-                              
+
                               // 빈 값이거나 빈 객체인 경우 제외
-                              if (value === undefined || value === null || value === '' || 
-                                  (typeof value === 'object' && Object.keys(value).length === 0)) {
+                              if (value === undefined || value === null || value === '' ||
+                                (typeof value === 'object' && Object.keys(value).length === 0)) {
                                 return;
                               }
-                              
+
                               // 이미지 필드인지 확인
-                              const isImage = field.type === 'image' || 
-                                            (typeof value === 'string' && 
-                                             value.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i));
-                              
+                              const isImage = field.type === 'image' ||
+                                (typeof value === 'string' &&
+                                  value.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i));
+
                               fieldsToDisplay.push({
                                 label: field.fieldLabel || fieldName,
                                 value: isImage ? { type: 'image', url: value } : value
                               });
                             });
                           }
-                          
+
                           // add_field에 없는 나머지 필드들 중 중요한 것만 표시
                           if (inputData) {
                             const displayedFields = campaignAddInfo?.add_field?.map((f: any) => f.fieldName) || [];
-                            
+
                             // 표시할 만한 중요 필드들
                             const importantFields = ['title', 'productName', 'keyword', 'keywords', 'main_keyword', 'url', 'link'];
-                            
+
                             Object.entries(inputData).forEach(([key, value]) => {
                               // 제외할 필드인 경우 스킵
                               if (excludeFields.includes(key) || displayedFields.includes(key)) {
                                 return;
                               }
-                              
+
                               // 파일 관련 필드는 제외 (_fileName, _file로 끝나는 필드)
                               if (key.endsWith('_fileName') || key.endsWith('_file')) {
                                 return;
                               }
-                              
+
                               // 빈 값이거나 빈 객체인 경우 제외
-                              if (value === undefined || value === null || value === '' || 
-                                  (typeof value === 'object' && Object.keys(value).length === 0)) {
+                              if (value === undefined || value === null || value === '' ||
+                                (typeof value === 'object' && Object.keys(value).length === 0)) {
                                 return;
                               }
-                              
+
                               // URL인지 확인
                               const isUrl = typeof value === 'string' && value.match(/^https?:\/\//);
                               const isImage = isUrl && value.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                              
+
                               // 필드명 변환 (한글 매핑이 있으면 사용, 없으면 원본 사용)
                               const displayLabel = fieldNameMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                              
+
                               fieldsToDisplay.push({
                                 label: displayLabel,
-                                value: isImage ? { type: 'image', url: value } : 
-                                      isUrl ? { type: 'url', url: value } : value
+                                value: isImage ? { type: 'image', url: value } :
+                                  isUrl ? { type: 'url', url: value } : value
                               });
                             });
                           }
-                          
+
                           // 필드가 없으면 원본 JSON 표시
                           if (fieldsToDisplay.length === 0) {
                             return (
@@ -993,20 +995,20 @@ const HistoryPage = () => {
                               </div>
                             );
                           }
-                          
+
                           // 필드별로 이쁘게 표시
                           return fieldsToDisplay.map((field, index) => (
                             <div key={index} className="bg-gray-50 p-4 rounded-lg">
                               <p className="text-xs font-medium text-gray-700 mb-2">{field.label}</p>
                               {field.value?.type === 'image' ? (
-                                <img 
-                                  src={field.value.url} 
+                                <img
+                                  src={field.value.url}
                                   alt={field.label}
                                   className="max-w-full h-auto rounded-md shadow-sm"
                                   style={{ maxHeight: '200px', objectFit: 'contain' }}
                                 />
                               ) : field.value?.type === 'url' ? (
-                                <a 
+                                <a
                                   href={field.value.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -1016,8 +1018,8 @@ const HistoryPage = () => {
                                 </a>
                               ) : (
                                 <p className="text-gray-800">
-                                  {typeof field.value === 'object' && field.value !== null ? 
-                                    JSON.stringify(field.value, null, 2) : 
+                                  {typeof field.value === 'object' && field.value !== null ?
+                                    JSON.stringify(field.value, null, 2) :
                                     String(field.value)
                                   }
                                 </p>
@@ -1034,7 +1036,7 @@ const HistoryPage = () => {
           )}
         </DialogContent>
       </Dialog>
-    </Container>
+    </CommonTemplate>
   );
 };
 

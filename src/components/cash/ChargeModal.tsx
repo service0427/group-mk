@@ -177,7 +177,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
     setIsLoadingHistory(true);
 
     try {
-      const result = await CashService.getChargeRequestHistory(currentUser.id || '', 5);
+      const result = await CashService.getChargeRequestHistory(currentUser.id || '', 3);
 
       if (result.success) {
         const requests = result.data || [];
@@ -568,18 +568,18 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
             {/* 최근 충전 요청 내역 */}
             <div className="mb-4">
               <div className="mb-3 flex justify-between items-center">
-                <p className="text-sm font-medium">최근 충전 요청 내역</p>
+                <p className="text-sm font-medium">최근 충전 내역 (최근 3건)</p>
                 <button
                   type="button"
-                  className="text-xs text-primary hover:text-primary-dark hover:underline flex items-center bg-transparent border-0 p-0 cursor-pointer"
+                  className="text-xs text-primary hover:text-primary-dark hover:underline flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer"
                   onClick={() => {
                     // 모달 닫고 해당 페이지로 이동
                     handleModalClose();
                     navigate('/cash/history');
                   }}
                 >
-                  <span>충전내역 확인</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <span>상세보기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -591,7 +591,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
                 </div>
               ) : recentRequests.length > 0 ? (
                 <div className="border border-border rounded-md overflow-hidden">
-                  <div className="h-[200px] overflow-auto">
+                  <div className="max-h-[200px] overflow-auto">
                     <table className="w-full text-sm table-fixed">
                       <colgroup>
                         <col className="w-[25%]" />

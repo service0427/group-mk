@@ -107,7 +107,6 @@ const RefundManagementPage: React.FC = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error details:', error);
         if (error.code === '42P01') {
           // 테이블이 존재하지 않는 경우
           showError('환불 요청 테이블이 아직 생성되지 않았습니다. 관리자에게 문의해주세요.');
@@ -121,9 +120,7 @@ const RefundManagementPage: React.FC = () => {
         request.slot?.mat_id === currentUser.id
       );
       setRefundRequests(filteredData);
-      console.log('Fetched refund requests:', filteredData);
     } catch (error) {
-      console.error('Error fetching refund requests:', error);
       showError('환불 요청 목록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -264,7 +261,9 @@ const RefundManagementPage: React.FC = () => {
             status: 'pending'
           });
 
-        if (scheduleError) console.error('Error creating refund schedule:', scheduleError);
+        if (scheduleError) {
+          // 스케줄 생성 실패는 조용히 처리 (메인 프로세스에는 영향 없음)
+        }
       }
       
       // 환불 차액이 있으면 총판에게 캐시 지급
@@ -306,12 +305,11 @@ const RefundManagementPage: React.FC = () => {
             });
           
           if (historyError) {
-            console.error('Error creating cash history:', historyError);
+            // 캐시 히스토리 생성 실패는 조용히 처리
           }
           
           showSuccess(`환불 요청이 승인되었습니다.\n환불 차액 ${refundDifference.toLocaleString()}원이 총판에게 지급되었습니다.`);
         } catch (error) {
-          console.error('Error updating distributor balance:', error);
           showSuccess('환불 요청이 승인되었습니다.\n(차액 지급 중 오류가 발생했습니다)');
         }
       } else {
@@ -324,7 +322,6 @@ const RefundManagementPage: React.FC = () => {
       setApprovalReason('');
       fetchRefundRequests();
     } catch (error) {
-      console.error('Error approving refund:', error);
       showError('환불 승인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -366,7 +363,6 @@ const RefundManagementPage: React.FC = () => {
       setRejectionReason('');
       fetchRefundRequests();
     } catch (error) {
-      console.error('Error rejecting refund:', error);
       showError('환불 거절 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);

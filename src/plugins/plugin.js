@@ -48,7 +48,7 @@ export default plugin(({ config, addBase, addComponents, addVariant, e }) => {
     '.menu-accordion': {
       'display': 'none',
       'transition': 'height .3s ease',
-      '.show:not(.menu-dropdown) > &, .transitioning:not(.menu-dropdown) > &, &.show': {
+      '.show:not(.menu-dropdown) > &, .menu-item.transitioning:not(.menu-dropdown) > &, &.show': {
         'display': 'flex',
       }
     }

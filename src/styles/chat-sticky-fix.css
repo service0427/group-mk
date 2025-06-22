@@ -32,7 +32,7 @@ html:not(.dark) .chat-sticky-button {
 }
 
 /* 다크모드 전환 시 애니메이션 일시 정지 */
-html.transitioning .chat-sticky-button {
+html.theme-transitioning .chat-sticky-button {
   animation-play-state: paused !important;
   transition: none !important;
 }

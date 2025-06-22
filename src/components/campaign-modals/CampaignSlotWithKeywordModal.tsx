@@ -233,7 +233,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   const [selectedKeywords, setSelectedKeywords] = useState<number[]>([]);
   const [keywordLoading, setKeywordLoading] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
-  const [keywordSearchMode, setKeywordSearchMode] = useState<boolean>(false); // 키워드 검색 모드
+  const [keywordSearchMode, setKeywordSearchMode] = useState<boolean>(false); // 키워드 검색 모드 - 항상 false로 고정
   const [resetTrigger, setResetTrigger] = useState<number>(0); // 초기화 트리거
 
   // 비동기 작업 오류 상태
@@ -361,12 +361,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           work_days: prev.work_days || 1
         }));
         
-        // 내키워드 미지원 서비스인 경우 키워드 모드 비활성화
-        if (!isKeywordSupported(firstCampaign.service_type)) {
-          setKeywordSearchMode(false);
-        } else {
-          setKeywordSearchMode(true);
-        }
+        // 내키워드 기능 제거 - 항상 직접 입력 모드 사용
+        setKeywordSearchMode(false);
       } else {
         // 캠페인이 없는 경우 처리
         setCampaigns([]);
@@ -2330,7 +2326,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           minimum_purchase: minQuantity,
           work_days: prev.work_days || 1
         }));
-        // 키워드 모드를 명시적으로 false로 설정
+        // 내키워드 기능 제거 - 항상 직접 입력 모드 사용
         setKeywordSearchMode(false);
       } else {
         // 키워드 지원 서비스인 경우에도 기본값 설정
@@ -2342,8 +2338,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           work_days: prev.work_days || 1
         }));
         
-        // 키워드 모드 활성화
-        setKeywordSearchMode(true);
+        // 내키워드 기능 제거 - 항상 직접 입력 모드 사용
+        setKeywordSearchMode(false);
       }
     }
   }, [selectedCampaign?.id]); // selectedCampaign.id가 변경될 때만 실행
@@ -2428,8 +2424,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 )}
               </div>
 
-              {/* 키워드 선택 영역 - 키워드 모드일 때만 표시 */}
-              {keywordSearchMode ? (
+              {/* 내키워드 기능 제거 - 직접 입력 모드만 사용 */}
+              {false ? ( // 항상 false로 내키워드 모드 비활성화
                 <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
                   <div className="space-y-4 flex-1 flex flex-col min-h-0">
                     {/* 1행: 제목과 컨트롤들 */}
@@ -2635,18 +2631,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                   /* 내키워드 지원 서비스의 직접 입력 모드 */
                   <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
                     <div className="space-y-4 flex-1 flex flex-col min-h-0">
-                      {/* 스왑 버튼 표시 */}
-                      <KeywordGroupControls
-                        isCompactMode={isCompactMode}
-                        selectedGroupId={selectedGroupId}
-                        keywordGroups={keywordGroups}
-                        searchKeyword={searchKeyword}
-                        setSearchKeyword={setSearchKeyword}
-                        handleGroupSelect={handleGroupSelect}
-                        keywordSearchMode={keywordSearchMode}
-                        setKeywordSearchMode={setKeywordSearchMode}
-                        isGuarantee={selectedCampaign?.is_guarantee || selectedCampaign?.slot_type === 'guarantee'}
-                      />
+                      {/* 내키워드 기능 제거 - 스왑 버튼 숨김 */}
                       <DirectInputKeywordForm
                         selectedCampaign={selectedCampaign}
                         slotData={slotData}
@@ -2669,8 +2654,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               )}
             </div>
           </div>
-          {/* 결제 요약 섹션 - 모드와 서비스 타입에 따라 다르게 표시 */}
-          {keywordSearchMode ? (
+          {/* 결제 요약 섹션 - 내키워드 기능 제거로 항상 직접 입력 모드 사용 */}
+          {false ? ( // 항상 false로 내키워드 모드 비활성화
             <PaymentSummarySection
               selectedKeywords={selectedKeywords}
               selectedCampaign={selectedCampaign}

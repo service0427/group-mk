@@ -117,7 +117,7 @@ export const CampaignInfoTemplate: React.FC<CampaignInfoTemplateProps> = ({ serv
           ...formattedData,
           rawId: campaign.id, // 원본 ID 저장
           originalData: {
-            ...campaign.originalData,
+            ...rawCampaignData, // 원본 DB 데이터 전체 포함 (mat_id 포함)
             refundSettings: campaign.refundSettings, // 환불 설정 추가
             targetRank: rawCampaignData.target_rank // target_rank 추가
           }

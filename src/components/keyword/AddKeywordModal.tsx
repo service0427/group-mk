@@ -321,8 +321,7 @@ export const AddKeywordModal: React.FC<AddKeywordModalProps> = ({ isOpen, onClos
 
                         return (
                           <option key={group.id} value={group.id}>
-                            {group.name}
-                            {campaignLabel && ` (${campaignLabel})`}
+                            {campaignLabel ? `${campaignLabel} (${group.name})` : group.name}
                           </option>
                         );
                       })}

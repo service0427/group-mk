@@ -118,7 +118,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
                 <div className="relative inline-block">
                   <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
                   {item.iconAbbr && (
-                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                    <span className="icon-abbr-badge">
                       {item.iconAbbr}
                     </span>
                   )}
@@ -168,7 +168,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
                 <div className="relative inline-block">
                   <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
                   {item.iconAbbr && (
-                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                    <span className="icon-abbr-badge">
                       {item.iconAbbr}
                     </span>
                   )}
@@ -261,7 +261,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
                 <div className="relative inline-block">
                   <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
                   {item.iconAbbr && (
-                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                    <span className="icon-abbr-badge">
                       {item.iconAbbr}
                     </span>
                   )}
@@ -327,7 +327,7 @@ const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
                 <div className="relative inline-block">
                   <img src={item.iconImage} alt={item.title} className="w-[18px] h-[18px]" />
                   {item.iconAbbr && (
-                    <span className="absolute -bottom-0.5 -right-0.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[7px] font-bold px-1 rounded leading-tight min-w-[14px] text-center">
+                    <span className="icon-abbr-badge">
                       {item.iconAbbr}
                     </span>
                   )}

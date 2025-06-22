@@ -7,18 +7,6 @@ import {
 } from './roles.config';
 
 export const MENU_SIDEBAR: TMenuConfig = [
-  {
-    title: '내 키워드',
-    icon: 'pencil text-success',
-    path: '/keyword',
-    authCheck: (role) => role === USER_ROLES.BEGINNER || role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 비기너, 개발자 역할이거나 광고주 이상(총판, 운영자 제외)
-  },
-  {
-    title: '이용 중인 서비스',
-    icon: 'setting-4 text-info',
-    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
-    path: '/my-services',
-  },
   // {
   //   title: '캐쉬/포인트 관리',
   //   icon: 'dollar text-warning',
@@ -49,6 +37,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
   {
     heading: '서비스',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
+  },
+  {
+    title: '이용 중인 서비스',
+    icon: 'setting-4 text-info',
+    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 비기너 이상(총판, 운영자 제외)
+    path: '/my-services',
   },
   {
     title: '캠페인 소개',
@@ -385,6 +379,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
     icon: 'code text-info',
     authCheck: (role) => role === USER_ROLES.DEVELOPER,  // 개발자 역할만 볼 수 있도록 제한
     children: [
+      {
+        title: '내 키워드',
+        icon: 'pencil text-success',
+        path: '/keyword',
+        authCheck: (role) => role === USER_ROLES.DEVELOPER,
+      },
       {
         title: '역할별 대시보드',
         icon: 'element-11 text-primary',

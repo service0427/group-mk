@@ -27,7 +27,7 @@ const NotificationIcon: React.FC<NotificationIconProps> = ({
       case NotificationType.SLOT:
         return 'cube-2';
       case NotificationType.MARKETING:
-        return 'percentage-circle';
+        return 'percentage';
       default:
         return 'notification';
     }

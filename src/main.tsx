@@ -11,6 +11,7 @@ import './styles/layout-overrides.css'; // 새로운 레이아웃 오버라이�
 import './styles/auth-verification.css'; // 인증 검증 및 로딩 스타일
 import './styles/logout-transition.css'; // 로그아웃 전환 개선 스타일
 import './styles/loading-animation.css'; // 페이지 로딩 애니메이션
+import './styles/loader-fix.css'; // 로더 중복 표시 방지 스타일
 import './scripts/dark-mode-debug.js'; // 다크모드 z-index 문제 디버그 스크립트
 import './utils/logoutSafety'; // 로그아웃 중 404 오류 방지 모듈
 

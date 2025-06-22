@@ -220,8 +220,8 @@ const SearchHistoryPage: React.FC = () => {
 
               {/* 페이지네이션 */}
               <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">페이지당:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
                   <select
                     value={pageSize}
                     onChange={handlePageSizeChange}
@@ -242,14 +242,16 @@ const SearchHistoryPage: React.FC = () => {
                     <Button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="btn btn-sm btn-light"
+                      variant="outline"
+                      size="sm"
                     >
                       <KeenIcon icon="left" />
                     </Button>
                     <Button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="btn btn-sm btn-light"
+                      variant="outline"
+                      size="sm"
                     >
                       <KeenIcon icon="right" />
                     </Button>

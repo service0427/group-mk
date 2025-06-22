@@ -18,8 +18,8 @@
 
 /* 다크모드 스타일 */
 .dark .icon-abbr-badge {
-  background-color: white;
-  color: #1a1a1a;
+  background-color: white !important;
+  color: #1a1a1a !important;
   border-color: rgba(0, 0, 0, 0.1);
 }
 

@@ -365,13 +365,12 @@ const SearchPlaceInfo: React.FC = () => {
                   <th className="py-3 px-3 text-center font-medium w-[120px]">이미지</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">예약</th>
                   <th className="py-3 px-3 text-center font-medium w-[80px]">페이</th>
-                  <th className="py-3 px-3 text-center font-medium w-[160px]">내키워드로 추가</th>
                 </tr>
               </thead>
               <tbody>
                 {results.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <h4 className="text-lg font-medium text-foreground mb-2">
                         {searchTerm.trim() === '' ? '검색어를 입력하세요' : '조회된 정보가 없습니다'}
                       </h4>
@@ -437,18 +436,6 @@ const SearchPlaceInfo: React.FC = () => {
                           }`}>
                           {place.npay === 'Y' ? '가능' : '불가'}
                         </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddKeyword(place);
-                          }}
-                          className="btn btn-xs btn-primary"
-                          title="내 키워드에 추가"
-                        >
-                          <KeenIcon icon="plus" className="text-sm" />
-                        </button>
                       </td>
                     </tr>
                   ))

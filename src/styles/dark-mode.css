@@ -93,12 +93,12 @@
 }
 
 /* 글자 색상 스타일 */
-.dark .text-gray-400,
-.dark .text-gray-500,
-.dark .text-gray-600,
-.dark .text-gray-700,
-.dark .text-gray-800,
-.dark .text-gray-900 {
+.dark .text-gray-400:not(.icon-abbr-badge),
+.dark .text-gray-500:not(.icon-abbr-badge),
+.dark .text-gray-600:not(.icon-abbr-badge),
+.dark .text-gray-700:not(.icon-abbr-badge),
+.dark .text-gray-800:not(.icon-abbr-badge),
+.dark .text-gray-900:not(.icon-abbr-badge) {
   color: #f0f0f0 !important;
 }
 

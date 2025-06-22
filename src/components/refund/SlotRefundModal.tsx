@@ -390,7 +390,7 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
                           사용: {calc.usedDays}일
                         </span>
                         <span className="flex items-center gap-1">
-                          <KeenIcon icon="time-half-pass" className="size-3" />
+                          <KeenIcon icon="time" className="size-3" />
                           남은: {calc.remainingDays}일
                         </span>
                         {slot.status && (

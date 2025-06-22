@@ -755,7 +755,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                 options: {
                     data: {
                         full_name: full_name,
-                        role: USER_ROLES.BEGINNER // 비기너로 기본 역할 설정
+                        role: USER_ROLES.ADVERTISER // 광고주로 기본 역할 설정
                     }
                 }
             });
@@ -777,7 +777,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
                     email: email,
                     full_name: full_name,
                     status: 'active',
-                    role: USER_ROLES.BEGINNER // 비기너로 기본 역할 설정
+                    role: USER_ROLES.ADVERTISER // 광고주로 기본 역할 설정
                 };
 
                 const hashPassword = await supabase.rpc('hash_password', {

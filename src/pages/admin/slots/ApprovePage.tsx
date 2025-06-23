@@ -1471,6 +1471,7 @@ const ApprovePage: React.FC = () => {
               isOpen={excelModalOpen}
               onClose={() => setExcelModalOpen(false)}
               onExport={handleExcelExport}
+              slots={filteredSlots}
             />
           )}
 

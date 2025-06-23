@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { cn } from '@/lib/utils';
@@ -22,18 +22,24 @@ export const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 }) => {
   // 보장형 여부 확인
   const isGuarantee = selectedCampaign?.slot_type === 'guarantee' || selectedCampaign?.is_guarantee;
-  // 결제 금액 계산
-  const calculateTotalPrice = () => {
-    const workCount = slotData.minimum_purchase || (selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
-    const workDays = slotData.work_days || 1;
+  
+  // 결제 금액 계산 - useMemo로 slotData 변경 시 재계산
+  const totalPrice = useMemo(() => {
+    // 필수값이 입력되지 않았으면 0 반환
+    if (!slotData.minimum_purchase || !slotData.work_days) {
+      return 0;
+    }
+    
+    const workCount = slotData.minimum_purchase;
+    const workDays = slotData.work_days;
     const unitPrice = selectedCampaign?.unit_price 
       ? (typeof selectedCampaign.unit_price === 'string' 
         ? parseFloat(selectedCampaign.unit_price) 
         : selectedCampaign.unit_price)
       : 0;
-    const totalPrice = workCount * workDays * unitPrice * 1.1; // 부가세 포함
-    return Math.round(totalPrice);
-  };
+    const price = workCount * workDays * unitPrice * 1.1; // 부가세 포함
+    return Math.round(price);
+  }, [slotData.minimum_purchase, slotData.work_days, selectedCampaign?.unit_price]);
 
   return (
     <div className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0 bg-background">
@@ -58,7 +64,7 @@ export const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 ? "text-emerald-600 dark:text-emerald-400"
                 : "text-primary dark:text-primary-foreground"
             )}>
-              {isGuarantee ? '견적 요청 필요' : `${calculateTotalPrice().toLocaleString()}원`}
+              {isGuarantee ? '견적 요청 필요' : `${totalPrice.toLocaleString()}원`}
             </span>
             {!isGuarantee && (
               <span className="ml-1 text-xs font-medium text-gray-500 dark:text-gray-400">(부가세 포함)</span>

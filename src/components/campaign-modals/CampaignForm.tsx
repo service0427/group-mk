@@ -821,7 +821,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                                 <SelectTrigger className="w-full bg-white border-gray-200 focus:border-blue-500">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent position="popper" sideOffset={5} className="z-[9999] bg-background border shadow-lg">
                                   <SelectItem value={FieldType.TEXT}>텍스트</SelectItem>
                                   <SelectItem value={FieldType.INTEGER}>숫자</SelectItem>
                                   <SelectItem value={FieldType.ENUM}>선택목록</SelectItem>

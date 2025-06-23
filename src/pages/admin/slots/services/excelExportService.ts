@@ -232,6 +232,35 @@ export const exportSlotsToExcel = (
     const columnWidths = enabledColumns.map(col => ({ wch: col.width || 20 }));
     worksheet['!cols'] = columnWidths;
 
+    // 상태 컬럼 찾기
+    const statusColumnIndex = enabledColumns.findIndex(col => col.field === 'status');
+    
+    // 상태 컬럼이 있으면 데이터 유효성 검사 추가
+    if (statusColumnIndex !== -1) {
+      // 상태 옵션들
+      const statusOptions = ['대기중', '승인됨', '반려됨', '완료', '환불', '사용자 확인 대기'];
+      
+      // 데이터 유효성 검사 배열 초기화
+      if (!worksheet['!dataValidation']) {
+        worksheet['!dataValidation'] = [];
+      }
+      
+      // 헤더 행을 제외한 모든 데이터 행에 드롭다운 추가
+      const columnLetter = String.fromCharCode(65 + statusColumnIndex); // A, B, C...
+      
+      // 각 데이터 행에 대해 데이터 유효성 검사 추가
+      for (let i = 0; i < rows.length; i++) {
+        const cellRef = `${columnLetter}${i + 2}`; // 헤더가 1행이므로 데이터는 2행부터
+        
+        worksheet['!dataValidation'].push({
+          type: 'list',
+          formula1: `"${statusOptions.join(',')}"`,
+          showDropDown: true,
+          sqref: cellRef
+        });
+      }
+    }
+
     // 워크북 생성
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '슬롯 목록');

@@ -1293,14 +1293,22 @@ const ApprovePage: React.FC = () => {
   // 엑셀 내보내기 처리
   const handleExcelExport = useCallback((template: ExcelTemplate) => {
     try {
+      let slotsToExport = filteredSlots;
+      
+      // 템플릿에 저장된 상태 필터가 있으면 추가 필터링
+      if (template.statusFilter && template.statusFilter !== 'all') {
+        slotsToExport = filteredSlots.filter(slot => slot.status === template.statusFilter);
+      }
+      
       if (selectedSlots.length > 0) {
-        // 선택된 슬롯만 내보내기
-        exportSelectedSlotsToExcel(filteredSlots, selectedSlots, template);
-        showSuccess(`${selectedSlots.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
+        // 선택된 슬롯만 내보내기 (상태 필터도 적용)
+        const selectedAndFiltered = slotsToExport.filter(slot => selectedSlots.includes(slot.id));
+        exportSelectedSlotsToExcel(slotsToExport, selectedAndFiltered.map(s => s.id), template);
+        showSuccess(`${selectedAndFiltered.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
       } else {
         // 필터링된 전체 슬롯 내보내기
-        exportFilteredSlotsToExcel(filteredSlots, template);
-        showSuccess(`${filteredSlots.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
+        exportFilteredSlotsToExcel(slotsToExport, template);
+        showSuccess(`${slotsToExport.length}개의 슬롯이 엑셀로 내보내졌습니다.`);
       }
     } catch (error: any) {
       showError(error.message || '엑셀 내보내기 중 오류가 발생했습니다.');

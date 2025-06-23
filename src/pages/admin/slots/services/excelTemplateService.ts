@@ -6,6 +6,7 @@ export interface DBExcelTemplate {
   user_id: string;
   name: string;
   columns: ExcelColumn[];
+  status_filter?: string;
   is_default: boolean;
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ export const getExcelTemplates = async (): Promise<ExcelTemplate[]> => {
       id: item.id,
       name: item.name,
       columns: item.columns,
+      statusFilter: item.status_filter,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     }));
@@ -48,7 +50,8 @@ export const getExcelTemplates = async (): Promise<ExcelTemplate[]> => {
 // 템플릿 생성
 export const createExcelTemplate = async (
   name: string,
-  columns: ExcelColumn[]
+  columns: ExcelColumn[],
+  statusFilter?: string
 ): Promise<ExcelTemplate> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -63,6 +66,7 @@ export const createExcelTemplate = async (
         user_id: user.id,
         name,
         columns,
+        status_filter: statusFilter,
         is_default: false
       })
       .select();
@@ -79,6 +83,7 @@ export const createExcelTemplate = async (
       id: insertedData.id,
       name: insertedData.name,
       columns: insertedData.columns,
+      statusFilter: insertedData.status_filter,
       createdAt: insertedData.created_at,
       updatedAt: insertedData.updated_at,
     };
@@ -92,7 +97,8 @@ export const createExcelTemplate = async (
 export const updateExcelTemplate = async (
   templateId: string,
   name: string,
-  columns: ExcelColumn[]
+  columns: ExcelColumn[],
+  statusFilter?: string
 ): Promise<ExcelTemplate> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -106,6 +112,7 @@ export const updateExcelTemplate = async (
       .update({
         name,
         columns,
+        status_filter: statusFilter,
         updated_at: new Date().toISOString()
       })
       .eq('id', templateId)
@@ -124,6 +131,7 @@ export const updateExcelTemplate = async (
       id: updatedData.id,
       name: updatedData.name,
       columns: updatedData.columns,
+      statusFilter: updatedData.status_filter,
       createdAt: updatedData.created_at,
       updatedAt: updatedData.updated_at,
     };

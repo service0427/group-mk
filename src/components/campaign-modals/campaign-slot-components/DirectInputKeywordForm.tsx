@@ -2,10 +2,18 @@ import React, { useState } from 'react';
 import { KeenIcon } from '@/components';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldType } from '../types';
 import { useKeywordFieldConfig } from '@/pages/keyword/hooks/useKeywordFieldConfig';
 import { useAuthContext } from '@/auth/useAuthContext';
 import { supabase } from '@/supabase';
+import { SpreadsheetGrid } from './SpreadsheetGrid';
 
 interface DirectInputKeywordFormProps {
   slotData: any;
@@ -13,6 +21,8 @@ interface DirectInputKeywordFormProps {
   selectedCampaign: any;
   getAdditionalFields: (campaign: any) => any[];
   resetTrigger?: number; // 초기화 트리거
+  onDataChange?: () => void; // 데이터 변경 콜백 추가
+  showAlert?: (title: string, description: string, success?: boolean) => void; // alert 함수 추가
 }
 
 export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
@@ -20,9 +30,12 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
   setSlotData,
   selectedCampaign,
   getAdditionalFields,
-  resetTrigger
+  resetTrigger,
+  onDataChange,
+  showAlert
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
+  const [useSpreadsheet, setUseSpreadsheet] = useState(false); // 기본값을 false로 변경
   const { currentUser } = useAuthContext();
   
   // resetTrigger가 변경되면 uploadedFiles 초기화 및 입력 필드 초기화
@@ -38,6 +51,28 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
       }));
     }
   }, [resetTrigger, setSlotData]);
+  
+  // 캠페인 변경 시 최소 구매수 업데이트 및 보장형 체크
+  React.useEffect(() => {
+    if (selectedCampaign) {
+      // 보장형 캠페인인 경우 스프레드시트 모드 비활성화
+      if (selectedCampaign.slot_type === 'guarantee' && useSpreadsheet) {
+        setUseSpreadsheet(false);
+      }
+      
+      // 스프레드시트 모드에서 최소 구매수 업데이트
+      if (useSpreadsheet) {
+        const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+        // 기존 데이터가 없거나 최소값보다 작은 경우에만 업데이트
+        if (!slotData.minimum_purchase || slotData.minimum_purchase < minQuantity) {
+          setSlotData((prev: any) => ({
+            ...prev,
+            minimum_purchase: minQuantity
+          }));
+        }
+      }
+    }
+  }, [selectedCampaign?.id, selectedCampaign?.slot_type, useSpreadsheet]);
   
   // DB에서 필드 설정 가져오기
   const { orderedFields, getFieldConfig, isHidden } = useKeywordFieldConfig(
@@ -155,60 +190,342 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
           </div>
         ))} */}
 
-        {/* 메인 키워드 필드 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            메인 키워드 <span className="text-red-500">*</span>
-          </label>
-          <Input
-            type="text"
-            value={slotData.mainKeyword || slotData.input_data?.main_keyword || ''}
-            onChange={(e) => handleFieldChange('main_keyword', e.target.value)}
-            placeholder="메인 키워드를 입력하세요"
-            className="w-full"
-          />
-          <p className="text-xs text-gray-500 mt-1">작업의 핵심이 되는 메인 키워드를 입력해주세요.</p>
-        </div>
+        {/* 입력 모드 전환 버튼 - 보장형 캠페인에서는 숨김 */}
+        {selectedCampaign?.slot_type !== 'guarantee' && (
+          <div className="flex justify-between items-center mb-4">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              키워드 입력
+            </label>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setUseSpreadsheet(!useSpreadsheet)}
+              className="flex items-center gap-1"
+            >
+              <KeenIcon icon={useSpreadsheet ? "document" : "grid"} className="size-3" />
+              {useSpreadsheet ? "기본 입력으로 전환" : "엑셀 시트로 전환"}
+            </Button>
+          </div>
+        )}
 
-        {/* 기본 필드 (최소 구매수, 작업일) */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              최소 구매수 <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="number"
-              value={slotData.minimum_purchase || ''}
-              onChange={(e) => setSlotData((prev: any) => ({
-                ...prev,
-                minimum_purchase: parseInt(e.target.value) || 0
-              }))}
-              placeholder="최소 구매수"
-              min={selectedCampaign?.min_quantity || 1}
-              className="w-full"
+        {useSpreadsheet ? (
+          // 스프레드시트 모드
+          <div className="space-y-4">
+            <SpreadsheetGrid
+              minPurchaseQuantity={parseInt(selectedCampaign?.min_quantity) || 1}
+              showAlert={showAlert}
+              columns={(() => {
+                // 기본 컬럼 - 기본 입력 폼과 동일하게
+                const baseColumns: any[] = [
+                  { name: '메인 키워드', required: true },
+                  { name: '최소 구매수', type: 'number', required: true },
+                  { name: '작업일', type: 'number', required: true }
+                ];
+                
+                // 추가 필드 중 텍스트, 숫자, 드롭다운 포함
+                const additionalFields = getAdditionalFields(selectedCampaign)
+                  .filter(field => field.fieldType !== FieldType.FILE)
+                  .map(field => {
+                    if (field.fieldType === FieldType.ENUM && field.enumOptions) {
+                      return {
+                        name: field.fieldName,
+                        type: 'dropdown' as const,
+                        options: field.enumOptions,
+                        required: field.isRequired
+                      };
+                    } else if (field.fieldType === FieldType.INTEGER) {
+                      return {
+                        name: field.fieldName,
+                        type: 'number' as const,
+                        required: field.isRequired
+                      };
+                    } else {
+                      return {
+                        name: field.fieldName,
+                        type: 'text' as const,
+                        required: field.isRequired
+                      };
+                    }
+                  });
+                
+                // 파일 필드는 별도로 처리
+                const fileFields = getAdditionalFields(selectedCampaign)
+                  .filter(field => field.fieldType === FieldType.FILE)
+                  .map(field => ({
+                    name: field.fieldName,
+                    type: 'file' as const,
+                    required: field.isRequired,
+                    fileHandler: (file: File, rowIndex: number) => {
+                      // 파일 업로드 처리
+                      uploadFileToSupabase(file, field);
+                    }
+                  }));
+                
+                return [...baseColumns, ...additionalFields, ...fileFields];
+              })()}
+              initialData={(() => {
+                // 캠페인의 최소 구매수를 우선적으로 사용
+                const minPurchase = selectedCampaign?.min_quantity 
+                  ? selectedCampaign.min_quantity.toString() 
+                  : (slotData.minimum_purchase?.toString() || '1');
+                
+                const row = [
+                  slotData.mainKeyword || slotData.input_data?.main_keyword || '',
+                  minPurchase,
+                  slotData.work_days?.toString() || '1'
+                ];
+                
+                // 추가 필드 데이터 추가
+                const additionalFields = getAdditionalFields(selectedCampaign);
+                
+                additionalFields.forEach(field => {
+                  if (field.fieldType === FieldType.FILE) {
+                    row.push(slotData.input_data?.[`${field.fieldName}_fileName`] || '');
+                  } else {
+                    row.push(slotData.input_data?.[field.fieldName] || '');
+                  }
+                });
+                
+                return [row]; // 배열 안에 행 배열을 넣어야 함
+              })()}
+              onChange={(data) => {
+                // 여러 행의 데이터 처리
+                const additionalFields = getAdditionalFields(selectedCampaign);
+                
+                // 필수 필드 인덱스 확인
+                const requiredFieldIndices: number[] = [0, 1, 2]; // 메인 키워드, 최소 구매수, 작업일
+                
+                // 추가 필드 중 필수 필드의 인덱스 추가
+                additionalFields.forEach((field, index) => {
+                  if (field.isRequired) {
+                    requiredFieldIndices.push(3 + index);
+                  }
+                });
+                
+                // 필수값이 모두 입력된 행만 필터링
+                const validRows = data.filter(row => {
+                  // 빈 행 체크 (모든 셀이 비어있으면 제외)
+                  const hasAnyValue = row.some(cell => cell && cell.trim() !== '');
+                  if (!hasAnyValue) return false;
+                  
+                  // 필수값 체크
+                  return requiredFieldIndices.every(index => {
+                    const value = row[index];
+                    return value && value.toString().trim() !== '';
+                  });
+                });
+                
+                if (validRows.length > 0) {
+                  const firstRow = validRows[0];
+                  
+                  // 총 구매수와 작업일 계산
+                  let totalPurchase = 0;
+                  let totalWorkDays = 0;
+                  
+                  // 모든 행의 keywordDetails 생성
+                  const keywordDetails = validRows.map((row, rowIndex) => {
+                    const minQuantity = parseInt(selectedCampaign?.min_quantity) || 1;
+                    let purchaseCount = parseInt(row[1]) || minQuantity;
+                    
+                    // 최소 구매수보다 작으면 최소 구매수로 설정
+                    if (purchaseCount < minQuantity) {
+                      purchaseCount = minQuantity;
+                      // 데이터는 업데이트하지 않음 (SpreadsheetGrid에서 처리)
+                    }
+                    
+                    const workDays = parseInt(row[2]) || 1;
+                    
+                    totalPurchase += purchaseCount;
+                    totalWorkDays += purchaseCount * workDays; // 각 행의 구매수 * 작업일
+                    
+                    const rowAdditionalData: any = {};
+                    additionalFields.forEach((field, fieldIndex) => {
+                      const colIndex = 3 + fieldIndex;
+                      if (row[colIndex] !== undefined) {
+                        if (field.fieldType === FieldType.FILE) {
+                          rowAdditionalData[`${field.fieldName}_fileName`] = row[colIndex];
+                        } else {
+                          rowAdditionalData[field.fieldName] = row[colIndex];
+                        }
+                      }
+                    });
+                    
+                    return {
+                      id: rowIndex + 1,
+                      mainKeyword: row[0],
+                      workCount: purchaseCount,
+                      dueDays: workDays,
+                      inputData: {
+                        ...rowAdditionalData
+                      }
+                    };
+                  });
+                  
+                  // 첫 번째 행의 추가 필드 데이터
+                  const additionalFieldsData: any = {};
+                  additionalFields.forEach((field, index) => {
+                    const colIndex = 3 + index;
+                    if (firstRow[colIndex] !== undefined) {
+                      if (field.fieldType === FieldType.FILE) {
+                        additionalFieldsData[`${field.fieldName}_fileName`] = firstRow[colIndex];
+                      } else {
+                        additionalFieldsData[field.fieldName] = firstRow[colIndex];
+                      }
+                    }
+                  });
+                  
+                  setSlotData((prev: any) => ({
+                    ...prev,
+                    input_data: {
+                      ...prev.input_data,
+                      main_keyword: firstRow[0],
+                      ...additionalFieldsData
+                    },
+                    mainKeyword: firstRow[0],
+                    keywords: [],
+                    // 총 구매수와 평균 작업일로 계산
+                    minimum_purchase: totalPurchase,
+                    work_days: totalPurchase > 0 ? Math.round(totalWorkDays / totalPurchase) : 1,
+                    // 전체 구매 정보
+                    total_purchase: totalPurchase,
+                    total_work_days: totalWorkDays,
+                    keywordDetails: keywordDetails
+                  }));
+                  
+                  // 데이터 변경 콜백 호출
+                  if (onDataChange) {
+                    onDataChange();
+                  }
+                } else {
+                  // 유효한 행이 없으면 구매수와 작업일을 0으로 설정
+                  setSlotData((prev: any) => ({
+                    ...prev,
+                    minimum_purchase: 0,
+                    work_days: 0,
+                    total_purchase: 0,
+                    total_work_days: 0,
+                    keywordDetails: []
+                  }));
+                  
+                  // 데이터 변경 콜백 호출
+                  if (onDataChange) {
+                    onDataChange();
+                  }
+                }
+              }}
+              minRows={3}
+              placeholder="클릭하여 입력"
+              onFileUpload={(file, fieldName, rowIndex) => {
+                // 파일 업로드 핸들러
+                const field = getAdditionalFields(selectedCampaign)
+                  .find(f => f.fieldName === fieldName);
+                if (field) {
+                  uploadFileToSupabase(file, field);
+                }
+              }}
             />
+            
+            <div className="text-xs text-gray-500 space-y-1">
+              <p>💡 팁: 엑셀에서 데이터를 복사(Ctrl+C)한 후, 셀을 선택하고 붙여넣기(Ctrl+V)하세요.</p>
+              <p>• 더블클릭 또는 Enter로 셀 편집</p>
+              <p>• Tab 키로 다음 셀로 이동</p>
+              <p>• 화살표 키로 셀 간 이동</p>
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              작업일 <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="number"
-              value={slotData.work_days || ''}
-              onChange={(e) => setSlotData((prev: any) => ({
-                ...prev,
-                work_days: parseInt(e.target.value) || 0
-              }))}
-              placeholder="작업일"
-              min={1}
-              className="w-full"
-            />
-          </div>
-        </div>
+        ) : (
+          // 기본 입력 모드
+          <>
+            {/* 메인 키워드 필드 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                메인 키워드 <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="text"
+                value={slotData.mainKeyword || slotData.input_data?.main_keyword || ''}
+                onChange={(e) => handleFieldChange('main_keyword', e.target.value)}
+                placeholder="메인 키워드를 입력하세요"
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">작업의 핵심이 되는 메인 키워드를 입력해주세요.</p>
+            </div>
+
+            {/* 기본 필드 (최소 구매수, 작업일) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  최소 구매수 <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  value={slotData.minimum_purchase || selectedCampaign?.min_quantity || ''}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+                    // 최소값보다 작은 값은 입력 불가
+                    const finalValue = value < minQuantity ? minQuantity : value;
+                    
+                    setSlotData((prev: any) => ({
+                      ...prev,
+                      minimum_purchase: finalValue
+                    }));
+                    // 데이터 변경 콜백 호출
+                    if (onDataChange) {
+                      onDataChange();
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // 포커스를 잃을 때 최소값 체크
+                    const value = parseInt(e.target.value) || 0;
+                    const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+                    if (value < minQuantity) {
+                      setSlotData((prev: any) => ({
+                        ...prev,
+                        minimum_purchase: minQuantity
+                      }));
+                      if (showAlert) {
+                        showAlert('최소 구매수 제한', `최소 구매수는 ${minQuantity}개 이상이어야 합니다.`, false);
+                      }
+                    }
+                  }}
+                  placeholder="최소 구매수"
+                  min={selectedCampaign?.min_quantity || 1}
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  작업일 <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  value={slotData.work_days || ''}
+                  onChange={(e) => {
+                    setSlotData((prev: any) => ({
+                      ...prev,
+                      work_days: parseInt(e.target.value) || 0
+                    }));
+                    // 데이터 변경 콜백 호출
+                    if (onDataChange) {
+                      onDataChange();
+                    }
+                  }}
+                  placeholder="작업일"
+                  min={1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         {/* 서비스별 추가 필드 */}
-        {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
+        {selectedCampaign && getAdditionalFields(selectedCampaign)
+          // 스프레드시트 모드에서는 기본 필드들은 제외
+          .filter(field => !useSpreadsheet || !['productName', 'mid', 'url'].includes(field.fieldName))
+          .map((field, index) => (
           <div key={index}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {field.fieldName} {field.isRequired && <span className="text-red-500">*</span>}
@@ -219,24 +536,27 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
             
             {field.fieldType === FieldType.ENUM && field.enumOptions ? (
               /* 드롭박스 필드 */
-              <select
+              <Select
                 value={slotData.input_data?.[field.fieldName] || ''}
-                onChange={(e) => setSlotData((prev: any) => ({
+                onValueChange={(value) => setSlotData((prev: any) => ({
                   ...prev,
                   input_data: {
                     ...prev.input_data,
-                    [field.fieldName]: e.target.value
+                    [field.fieldName]: value
                   }
                 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">선택하세요</option>
-                {field.enumOptions.map((option: string) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {field.enumOptions.map((option: string) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : field.fieldType === FieldType.INTEGER ? (
               /* 숫자 입력 필드 */
               <Input

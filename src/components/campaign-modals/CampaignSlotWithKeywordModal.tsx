@@ -407,6 +407,51 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     }
   };
 
+  // 모달 초기화 함수
+  const resetModal = () => {
+    // 슬롯 데이터 초기화
+    setSlotData({
+      productName: '',
+      mid: '',
+      url: '',
+      keyword1: '',
+      keyword2: '',
+      keyword3: '',
+      selectedKeywords: [],
+      keywordDetails: [],
+      minimum_purchase: 1,
+      work_days: 1,
+      input_data: {},
+      mainKeyword: '',
+      keywords: []
+    });
+    
+    // 키워드 관련 초기화
+    setSelectedKeywords([]);
+    setKeywords(prev =>
+      prev.map(k => ({
+        ...k,
+        workCount: null,
+        dueDays: null,
+        inputData: {}
+      }))
+    );
+    
+    // 결제 금액 초기화
+    setTotalPaymentAmount(0);
+    
+    // 초기화 트리거 증가
+    setResetTrigger(prev => prev + 1);
+    
+    // 캐시 잔액 다시 가져오기
+    fetchUserBalance();
+    
+    // 키워드 목록 다시 가져오기
+    if (selectedGroupId) {
+      fetchKeywords(selectedGroupId);
+    }
+  };
+
   // 현재 위치 정보 가져오기
   const location = useLocation();
 
@@ -2033,55 +2078,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         onSave(campaignSlotData);
       }
 
-      // 구매 완료 후 상태 초기화
-      // 선택된 키워드 초기화
-      setSelectedKeywords([]);
-
-      // 키워드 입력 데이터 초기화
-      setKeywords(prev =>
-        prev.map(k => ({
-          ...k,
-          workCount: null,
-          dueDays: null,
-          inputData: {}
-        }))
-      );
-
-      // 슬롯 데이터 초기화
-      setSlotData({
-        productName: '',
-        mid: '',
-        url: '',
-        keyword1: '',
-        keyword2: '',
-        keyword3: '',
-        campaignId: selectedCampaignId || undefined,
-        selectedKeywords: [],
-        keywordDetails: [],
-        minimum_purchase: selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : undefined,
-        work_days: 1,
-        input_data: {},
-        mainKeyword: '',  // 메인 키워드도 초기화
-        keywords: []      // keywords 배열도 초기화
-      });
-
-      // 결제 금액 초기화
-      setTotalPaymentAmount(0);
-
       // 이미 등록된 키워드 목록 다시 가져오기
       if (selectedCampaignId) {
         await fetchAlreadyRegisteredKeywords(selectedCampaignId);
-        // 키워드 목록도 다시 가져오기 (등록된 키워드 표시를 위해)
-        if (selectedGroupId) {
-          await fetchKeywords(selectedGroupId);
-        }
       }
-
-      // 초기화 트리거 증가
-      setResetTrigger(prev => prev + 1);
       
       // 성공 알림 표시
       showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      
+      // 모달 초기화
+      resetModal();
       
       // onSave 콜백 호출
       if (onSave) {
@@ -2154,49 +2160,93 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         return;
       }
 
+      // 스프레드시트 모드에서 여러 행을 처리하는지 확인
+      const isSpreadsheetMode = slotData.keywordDetails && slotData.keywordDetails.length > 0;
+      
       // 잔액 계산
       const unitPrice = typeof selectedCampaign.unit_price === 'string' 
         ? parseFloat(selectedCampaign.unit_price) 
         : (selectedCampaign.unit_price || 0);
-      const quantity = slotData.minimum_purchase || (selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
-      const workDays = slotData.work_days || 1;
-      const totalAmount = Math.round(quantity * workDays * unitPrice * 1.1);
-
-      // 슬롯 데이터 구성
-      const slotToSave = {
-        mat_id: selectedCampaign?.mat_id || currentUser.id, // 총판 ID (없으면 사용자 ID 사용)
-        product_id: selectedCampaign.id,
-        user_id: currentUser.id,
-        status: 'pending',
-        quantity: quantity,
-        keyword_id: 0, // 수동 입력 모드에서는 특수값 0 사용 (null 대신)
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        submitted_at: new Date().toISOString(),
-        input_data: {
-          service_type: selectedServiceCode,
-          campaign_name: selectedCampaign.campaign_name || '',
-          minimum_purchase: quantity,
-          work_days: workDays,
-          workCount: quantity, // 일관성을 위해 workCount도 추가
-          price: totalAmount,
-          is_manual_input: true, // 수동 입력 모드 표시
-          mainKeyword: slotData.mainKeyword || slotData.input_data?.main_keyword || '직접입력',
-          keyword1: slotData.input_data?.keyword1 || slotData.keywords?.[0] || '',
-          keyword2: slotData.input_data?.keyword2 || slotData.keywords?.[1] || '',
-          keyword3: slotData.input_data?.keyword3 || slotData.keywords?.[2] || '',
-          keywords: slotData.keywords || [],
-          // 추가 필드들 (mid, url 등)
-          mid: slotData.input_data?.mid || '',
-          url: slotData.input_data?.url || '',
-          ...slotData.input_data // 나머지 모든 필드들
-        }
-      };
       
+      let totalAmount = 0;
+      let slotsToSave = [];
+      
+      if (isSpreadsheetMode) {
+        // 스프레드시트 모드: 여러 행 처리
+        for (const detail of slotData.keywordDetails || []) {
+          const quantity = detail.workCount || 1;
+          const workDays = detail.dueDays || 1;
+          const rowAmount = Math.round(quantity * workDays * unitPrice * 1.1);
+          totalAmount += rowAmount;
+          
+          // 각 행에 대한 슬롯 데이터 생성
+          const slotData = {
+            mat_id: selectedCampaign?.mat_id || currentUser.id,
+            product_id: selectedCampaign.id,
+            user_id: currentUser.id,
+            status: 'pending',
+            quantity: quantity,
+            keyword_id: 0, // 수동 입력 모드에서는 특수값 0 사용
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            submitted_at: new Date().toISOString(),
+            input_data: {
+              service_type: selectedServiceCode,
+              campaign_name: selectedCampaign.campaign_name || '',
+              minimum_purchase: quantity,
+              work_days: workDays,
+              workCount: quantity,
+              price: rowAmount,
+              is_manual_input: true,
+              mainKeyword: detail.mainKeyword || '직접입력',
+              ...detail.inputData // 행별 추가 필드 데이터
+            }
+          };
+          slotsToSave.push(slotData);
+        }
+      } else {
+        // 기본 모드: 단일 슬롯 처리
+        const quantity = slotData.minimum_purchase || (selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
+        const workDays = slotData.work_days || 1;
+        totalAmount = Math.round(quantity * workDays * unitPrice * 1.1);
+        
+        const slotToSave = {
+          mat_id: selectedCampaign?.mat_id || currentUser.id,
+          product_id: selectedCampaign.id,
+          user_id: currentUser.id,
+          status: 'pending',
+          quantity: quantity,
+          keyword_id: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          submitted_at: new Date().toISOString(),
+          input_data: {
+            service_type: selectedServiceCode,
+            campaign_name: selectedCampaign.campaign_name || '',
+            minimum_purchase: quantity,
+            work_days: workDays,
+            workCount: quantity,
+            price: totalAmount,
+            is_manual_input: true,
+            mainKeyword: slotData.mainKeyword || slotData.input_data?.main_keyword || '직접입력',
+            keyword1: slotData.input_data?.keyword1 || slotData.keywords?.[0] || '',
+            keyword2: slotData.input_data?.keyword2 || slotData.keywords?.[1] || '',
+            keyword3: slotData.input_data?.keyword3 || slotData.keywords?.[2] || '',
+            keywords: slotData.keywords || [],
+            mid: slotData.input_data?.mid || '',
+            url: slotData.input_data?.url || '',
+            ...slotData.input_data
+          }
+        };
+        slotsToSave = [slotToSave];
+      }
+
       // 디버그: 저장되는 데이터 확인
       console.log('수동 입력 슬롯 저장 데이터:', {
-        slotData,
-        inputData: slotToSave.input_data
+        isSpreadsheetMode,
+        slotsCount: slotsToSave.length,
+        totalAmount,
+        slotData
       });
       
 
@@ -2216,19 +2266,18 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         throw new Error(`잔액이 부족합니다. 현재 잔액: ${totalBalance.toLocaleString()}원, 필요 금액: ${totalAmount.toLocaleString()}원`);
       }
 
-      // 슬롯 저장
-      const { data: savedSlot, error: slotError } = await supabase
+      // 슬롯 저장 (여러 개 또는 단일)
+      const { data: savedSlots, error: slotError } = await supabase
         .from('slots')
-        .insert(slotToSave)
-        .select()
-        .single();
+        .insert(slotsToSave)
+        .select();
 
       if (slotError) {
         console.error('Slot insert error:', slotError);
         throw new Error(`슬롯 저장에 실패했습니다: ${slotError.message}`);
       }
       
-      if (!savedSlot) {
+      if (!savedSlots || savedSlots.length === 0) {
         throw new Error('슬롯 저장에 실패했습니다: 데이터가 반환되지 않았습니다.');
       }
       
@@ -2253,7 +2302,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       if (updateError) {
         // 실패 시 슬롯 삭제
-        await supabase.from('slots').delete().eq('id', savedSlot.id);
+        const slotIds = savedSlots.map(slot => slot.id);
+        await supabase.from('slots').delete().in('id', slotIds);
         throw new Error('잔액 업데이트에 실패했습니다.');
       }
 
@@ -2262,8 +2312,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         user_id: currentUser.id,
         transaction_type: 'purchase',
         amount: -totalAmount,
-        description: `${selectedCampaign.campaign_name} 구매`,
-        reference_id: savedSlot.id,
+        description: `${selectedCampaign.campaign_name} 구매 (${savedSlots.length}개)`,
+        reference_id: savedSlots[0].id, // 첫 번째 슬롯 ID를 참조
         balance_type: freeBalanceToUse > 0 && paidBalanceToUse > 0 ? 'mixed' : 
                       freeBalanceToUse > 0 ? 'free' : 'paid'
       };
@@ -2274,7 +2324,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       await createNotification(
         currentUser.id,
         '서비스 구매 신청 완료',
-        `${selectedCampaign.campaign_name} - 수동 입력 모드로 구매 신청이 완료되었습니다.`,
+        `${selectedCampaign.campaign_name} - ${savedSlots.length}개의 ${isSpreadsheetMode ? '키워드' : '슬롯'} 구매 신청이 완료되었습니다.`,
         '/myinfo/services'
       );
       
@@ -2283,35 +2333,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         await createNotification(
           selectedCampaign.mat_id,
           '새로운 슬롯 구매 신청',
-          `${currentUser?.email || '사용자'}님이 ${selectedCampaign?.campaign_name || ''} - 수동 입력 모드로 구매 신청했습니다.`,
+          `${currentUser?.email || '사용자'}님이 ${selectedCampaign?.campaign_name || ''} - ${savedSlots.length}개의 ${isSpreadsheetMode ? '키워드' : '슬롯'}을 구매 신청했습니다.`,
           '/manage/slots/approve'
         );
       }
 
-      // 성공 후 초기화 - 캠페인 기본값 유지
-      const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+      // 성공 알림 표시
+      showAlert('구매 신청 완료', `${selectedCampaign.campaign_name} - ${savedSlots.length}개의 ${isSpreadsheetMode ? '키워드' : '슬롯'} 구매 신청이 성공적으로 완료되었습니다.`, true);
       
-      setSlotData({
-        productName: '',
-        mid: '',
-        url: '',
-        keyword1: '',
-        keyword2: '',
-        keyword3: '',
-        campaignId: selectedCampaignId || undefined,
-        selectedKeywords: [],
-        keywordDetails: [],
-        minimum_purchase: minQuantity,  // 캠페인의 최소 구매수로 설정
-        work_days: 1,
-        input_data: {},
-        mainKeyword: '',  // 메인 키워드도 초기화
-        keywords: []      // keywords 배열도 초기화
-      });
-
-      // 초기화 트리거 증가
-      setResetTrigger(prev => prev + 1);
-      
-      showAlert('구매 신청 완료', `${selectedCampaign.campaign_name} 구매 신청이 성공적으로 완료되었습니다.`, true);
+      // 모달 초기화 (캐시 잔액 업데이트 및 상태 초기화 포함)
+      resetModal();
       
       // onSave 콜백 호출
       if (onSave) {
@@ -2646,31 +2677,23 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 </div>
               </div>
               ) : (
-                /* 직접 입력 모드 */
-                supportsKeyword ? (
-                  /* 내키워드 지원 서비스의 직접 입력 모드 */
-                  <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
-                    <div className="space-y-4 flex-1 flex flex-col min-h-0">
-                      {/* 내키워드 기능 제거 - 스왑 버튼 숨김 */}
-                      <DirectInputKeywordForm
-                        selectedCampaign={selectedCampaign}
-                        slotData={slotData}
-                        setSlotData={setSlotData}
-                        getAdditionalFields={getAdditionalFields}
-                        resetTrigger={resetTrigger}
-                      />
-                    </div>
+                /* 직접 입력 모드 - 모든 서비스에서 스프레드시트 사용 가능 */
+                <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">
+                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                    <DirectInputKeywordForm
+                      selectedCampaign={selectedCampaign}
+                      slotData={slotData}
+                      setSlotData={setSlotData}
+                      getAdditionalFields={getAdditionalFields}
+                      resetTrigger={resetTrigger}
+                      showAlert={showAlert}
+                      onDataChange={() => {
+                        // 가격 계산 트리거
+                        // ManualPaymentSection이 자체적으로 계산하므로 여기서는 별도 작업 불필요
+                      }}
+                    />
                   </div>
-                ) : (
-                  /* 내키워드 미지원 서비스 - 기존 수동 입력 폼 */
-                  <ManualServiceForm
-                    selectedCampaign={selectedCampaign}
-                    slotData={slotData}
-                    setSlotData={setSlotData}
-                    getAdditionalFields={getAdditionalFields}
-                    onFileUpload={handleManualFileUpload}
-                  />
-                )
+                </div>
               )}
             </div>
           </div>

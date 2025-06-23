@@ -36,6 +36,7 @@ export interface ExcelTemplate {
   id: string;
   name: string;
   columns: ExcelColumn[];
+  statusFilter?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,7 +76,7 @@ const DEFAULT_SELECTED_FIELDS: string[] = [];
 interface ExcelExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (template: ExcelTemplate) => void;
+  onExport: (template: ExcelTemplate, filters?: { status?: string }) => void;
 }
 
 const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
@@ -94,6 +95,7 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
   const [selectedChosen, setSelectedChosen] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // 저장된 템플릿 불러오기 (DB에서)
   useEffect(() => {
@@ -156,6 +158,8 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
           .map(col => col.field)
       );
       setTemplateName(template.name);
+      // 상태 필터도 로드
+      setStatusFilter(template.statusFilter || 'all');
     }
   };
 
@@ -269,14 +273,14 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
       
       if (isCreatingNew) {
         // 새 템플릿 생성
-        savedTemplate = await createExcelTemplate(templateName, columns);
+        savedTemplate = await createExcelTemplate(templateName, columns, statusFilter);
         setTemplates([...templates, savedTemplate]);
         setSelectedTemplateId(savedTemplate.id);
         setIsCreatingNew(false);
       } else {
         // 기존 템플릿 수정
         
-        savedTemplate = await updateExcelTemplate(selectedTemplateId, templateName, columns);
+        savedTemplate = await updateExcelTemplate(selectedTemplateId, templateName, columns, statusFilter);
         setTemplates(templates.map(t =>
           t.id === selectedTemplateId ? savedTemplate : t
         ));
@@ -339,6 +343,7 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
       id: selectedTemplateId || 'custom',
       name: templateName || '사용자 정의',
       columns: columns,
+      statusFilter: statusFilter,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -538,7 +543,7 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                       title="모두 선택"
                       className="h-8 w-8"
                     >
-                      <KeenIcon icon="double-arrow-right" className="size-4" />
+                      <KeenIcon icon="double-arrow-next" className="size-4" />
                     </Button>
                     <Button
                       variant="outline"
@@ -601,6 +606,23 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                       <span className="text-sm font-medium text-primary">
                         선택된 컬럼 ({selectedColumns.length})
                       </span>
+                      <Select
+                        value={statusFilter}
+                        onValueChange={setStatusFilter}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-36">
+                          <SelectValue placeholder="상태: 전체" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" sideOffset={5} className="z-[9999]">
+                          <SelectItem value="all">상태: 전체</SelectItem>
+                          <SelectItem value="pending">대기중</SelectItem>
+                          <SelectItem value="approved">승인됨</SelectItem>
+                          <SelectItem value="rejected">반려됨</SelectItem>
+                          <SelectItem value="success">완료</SelectItem>
+                          <SelectItem value="refund">환불</SelectItem>
+                          <SelectItem value="pending_user_confirm">확인대기</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="border border-primary/30 rounded-b-md overflow-hidden">
                       <ScrollArea className="h-[350px]">

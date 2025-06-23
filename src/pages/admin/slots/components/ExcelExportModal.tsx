@@ -73,16 +73,86 @@ const AVAILABLE_COLUMNS = [
 // 기본 선택 컬럼 (비워둠)
 const DEFAULT_SELECTED_FIELDS: string[] = [];
 
+// input_data에서 동적 필드 추출
+const extractDynamicFields = (slots: Slot[]): { field: string; label: string; width: number }[] => {
+  const fieldCountMap = new Map<string, number>();
+  
+  // 모든 슬롯의 input_data에서 필드 수집 및 빈도 계산
+  slots.forEach(slot => {
+    if (slot.input_data && typeof slot.input_data === 'object') {
+      Object.keys(slot.input_data).forEach(key => {
+        // 제외할 필드들
+        const excludeFields = [
+          // 기본 키워드 관련
+          'productName', 'keywords', 'mainKeyword', 'main_keyword', 'keyword1', 'keyword2', 'keyword3',
+          'url', 'mid', 'quantity', 'dueDays', 'workCount', 'work_days', 'minimum_purchase',
+          // 시스템 필드
+          'service_type', 'campaign_name', 'campaignName', 'campaign_id', 'campaignId',
+          'is_manual_input', 'keywordId', 'keyword_id', 'expected_deadline',
+          'slot_id', 'slotId', 'user_id', 'userId', 'status',
+          // 내부 관리 필드
+          'mat_id', 'batch_id', 'group_id', 'groupId',
+          'processed', 'approved', 'rejected', 'completed',
+          'payment_amount', 'payment_status', 'payment_id',
+          // 기타 메타데이터
+          'version', 'type', 'source', 'target', 'meta',
+          'temp', 'tmp', 'test', 'debug'
+        ];
+        
+        if (!excludeFields.includes(key) &&
+            !key.endsWith('_file') && !key.endsWith('_fileName') &&
+            !key.endsWith('_id') && !key.endsWith('Id') &&
+            !key.includes('created_at') && !key.includes('updated_at') &&
+            !key.includes('_at') && !key.includes('_by')) {
+          fieldCountMap.set(key, (fieldCountMap.get(key) || 0) + 1);
+        }
+      });
+    }
+  });
+  
+  // 최소 사용 빈도 (전체 슬롯의 5% 이상에서 사용된 필드만 표시)
+  const minFrequency = Math.max(1, Math.floor(slots.length * 0.05));
+  const dynamicFieldsSet = new Set<string>();
+  
+  // 빈도수가 충분한 필드만 추가
+  fieldCountMap.forEach((count, field) => {
+    if (count >= minFrequency) {
+      dynamicFieldsSet.add(field);
+    }
+  });
+
+  // 필드명 한글 변환 매핑 (영문 필드만 변환)
+  const fieldLabelMap: Record<string, string> = {
+    'work_days': '작업일',
+    'minimum_purchase': '최소 구매수',
+    'ohouse_url': '오늘의집 URL',
+    'product_url': '상품 URL',
+    'price': '가격',
+    'total_price': '총 가격',
+    'unit_price': '단가',
+    // 영문 필드명만 추가
+  };
+
+  // Set을 배열로 변환하고 필드 정보 생성
+  return Array.from(dynamicFieldsSet).map(field => ({
+    field: `input_data.${field}`,
+    label: fieldLabelMap[field] || field,
+    width: 20
+  }));
+};
+
 interface ExcelExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: (template: ExcelTemplate, filters?: { status?: string }) => void;
+  slots?: Slot[]; // 슬롯 데이터 추가
 }
 
 const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
   isOpen,
   onClose,
   onExport,
+  slots = [],
 }) => {
   const { showSuccess, showError } = useCustomToast();
   const [templates, setTemplates] = useState<ExcelTemplate[]>([]);
@@ -96,6 +166,8 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
   const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
   const [selectedChosen, setSelectedChosen] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showDynamicFields, setShowDynamicFields] = useState<boolean>(true); // 동적 필드 표시 여부
+  const [columnSearchTerm, setColumnSearchTerm] = useState<string>(''); // 컬럼 검색어
 
   // 저장된 템플릿 불러오기 (DB에서)
   useEffect(() => {
@@ -119,9 +191,13 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
           setIsCreatingNew(false);
         }
         
+        // 기본 컬럼과 동적 필드 합치기
+        const dynamicFields = extractDynamicFields(slots);
+        const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+        
         // 컬럼은 항상 비어있는 상태로 시작
         setSelectedColumns([]);
-        setAvailableColumns(AVAILABLE_COLUMNS.map(col => col.field));
+        setAvailableColumns(allColumns.map(col => col.field));
       } catch (error: any) {
         console.error('템플릿 로드 오류:', error);
         showError('템플릿을 불러오는 중 오류가 발생했습니다.');
@@ -138,8 +214,10 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
     if (templateId === 'new') {
       setIsCreatingNew(true);
       setTemplateName('');
+      const dynamicFields = extractDynamicFields(slots);
+      const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
       setSelectedColumns([]);
-      setAvailableColumns(AVAILABLE_COLUMNS.map(col => col.field));
+      setAvailableColumns(allColumns.map(col => col.field));
       setSelectedTemplateId('new'); // 'new'로 설정
       return;
     }
@@ -152,8 +230,13 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
       // 저장된 컬럼들만 선택된 컬럼으로 설정
       const selectedFields = template.columns.map(col => col.field);
       setSelectedColumns(selectedFields);
+      
+      // 기본 컬럼과 동적 필드 합치기
+      const dynamicFields = extractDynamicFields(slots);
+      const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+      
       setAvailableColumns(
-        AVAILABLE_COLUMNS
+        allColumns
           .filter(col => !selectedFields.includes(col.field))
           .map(col => col.field)
       );
@@ -246,7 +329,10 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
 
   // 컬럼 라벨 가져오기
   const getColumnLabel = (field: string) => {
-    return AVAILABLE_COLUMNS.find(col => col.field === field)?.label || field;
+    // 기본 컬럼과 동적 필드 합치기
+    const dynamicFields = extractDynamicFields(slots);
+    const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+    return allColumns.find(col => col.field === field)?.label || field;
   };
 
   // 템플릿 저장 (DB로)
@@ -258,9 +344,13 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
 
     setIsSaving(true);
     try {
+      // 기본 컬럼과 동적 필드 합치기
+      const dynamicFields = extractDynamicFields(slots);
+      const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+      
       // 선택된 컬럼만 저장
       const columns: ExcelColumn[] = selectedColumns.map(field => {
-        const col = AVAILABLE_COLUMNS.find(c => c.field === field)!;
+        const col = allColumns.find(c => c.field === field)!;
         return {
           field: col.field,
           label: col.label,
@@ -333,9 +423,13 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
       return;
     }
 
+    // 기본 컬럼과 동적 필드 합치기
+    const dynamicFields = extractDynamicFields(slots);
+    const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+    
     // 현재 컬럼 설정을 ExcelColumn 형식으로 변환
     const columns: ExcelColumn[] = selectedColumns.map(field => {
-      const col = AVAILABLE_COLUMNS.find(c => c.field === field)!;
+      const col = allColumns.find(c => c.field === field)!;
       return { ...col, enabled: true };
     });
 
@@ -405,7 +499,11 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                       setIsCreatingNew(true);
                       setTemplateName('');
                       setSelectedColumns([]);
-                      setAvailableColumns(AVAILABLE_COLUMNS.map(col => col.field));
+                      
+                      // 기본 컬럼과 동적 필드 합치기
+                      const dynamicFields = extractDynamicFields(slots);
+                      const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+                      setAvailableColumns(allColumns.map(col => col.field));
                     }}
                     title="새 템플릿 추가"
                     className="border-green-200 hover:border-green-400 hover:bg-green-50 text-green-600 hover:text-green-700"
@@ -426,8 +524,13 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                         // 현재 템플릿의 컬럼 설정 복사
                         const selectedFields = currentTemplate.columns.map(col => col.field);
                         setSelectedColumns(selectedFields);
+                        
+                        // 기본 컬럼과 동적 필드 합치기
+                        const dynamicFields = extractDynamicFields(slots);
+                        const allColumns = [...AVAILABLE_COLUMNS, ...dynamicFields];
+                        
                         setAvailableColumns(
-                          AVAILABLE_COLUMNS
+                          allColumns
                             .filter(col => !selectedFields.includes(col.field))
                             .map(col => col.field)
                         );
@@ -505,15 +608,97 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                 <div className="grid grid-cols-[1fr,auto,1fr] gap-4">
                   {/* 사용 가능한 컬럼 */}
                   <div className="space-y-2">
+                    {/* 검색 input */}
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        placeholder="컬럼 검색..."
+                        value={columnSearchTerm}
+                        onChange={(e) => setColumnSearchTerm(e.target.value)}
+                        className="w-full pl-8 pr-3 h-8 text-sm"
+                      />
+                      <KeenIcon 
+                        icon="search" 
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-gray-400"
+                      />
+                      {columnSearchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => setColumnSearchTerm('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <KeenIcon icon="cross" className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    
                     <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-t-md">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        사용 가능한 컬럼 ({availableColumns.length})
+                        사용 가능한 컬럼 ({
+                          availableColumns.filter(field => {
+                            // 검색어 필터
+                            if (columnSearchTerm) {
+                              const label = getColumnLabel(field).toLowerCase();
+                              const searchLower = columnSearchTerm.toLowerCase();
+                              if (!label.includes(searchLower)) {
+                                return false;
+                              }
+                            }
+                            // 동적 필드 필터
+                            if (!showDynamicFields && field.startsWith('input_data.')) {
+                              const basicInputFields = [
+                                'input_data.keywords', 'input_data.mainKeyword', 
+                                'input_data.keyword1', 'input_data.keyword2', 'input_data.keyword3',
+                                'input_data.url', 'input_data.mid', 'input_data.dueDays'
+                              ];
+                              return basicInputFields.includes(field);
+                            }
+                            return true;
+                          }).length
+                        })
                       </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowDynamicFields(!showDynamicFields)}
+                          className={cn(
+                            "text-xs px-2 py-1 rounded transition-colors",
+                            showDynamicFields 
+                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400" 
+                              : "bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-400"
+                          )}
+                        >
+                          <KeenIcon icon="filter" className="size-3 inline mr-1" />
+                          사용자 입력 필드 {showDynamicFields ? '포함' : '제외'}
+                        </button>
+                      </div>
                     </div>
                     <div className="border rounded-b-md overflow-hidden">
                       <ScrollArea className="h-[350px]">
                         <div className="p-2 space-y-1">
-                          {availableColumns.map((field, index) => (
+                          {availableColumns
+                            .filter(field => {
+                              // 검색어 필터
+                              if (columnSearchTerm) {
+                                const label = getColumnLabel(field).toLowerCase();
+                                const searchLower = columnSearchTerm.toLowerCase();
+                                if (!label.includes(searchLower)) {
+                                  return false;
+                                }
+                              }
+                              // 동적 필드 표시 여부에 따라 필터링
+                              if (!showDynamicFields && field.startsWith('input_data.')) {
+                                // input_data로 시작하지만 기본 필드는 표시
+                                const basicInputFields = [
+                                  'input_data.keywords', 'input_data.mainKeyword', 
+                                  'input_data.keyword1', 'input_data.keyword2', 'input_data.keyword3',
+                                  'input_data.url', 'input_data.mid', 'input_data.dueDays'
+                                ];
+                                return basicInputFields.includes(field);
+                              }
+                              return true;
+                            })
+                            .map((field, index) => (
                             <div
                               key={field}
                               className={cn(
@@ -525,7 +710,15 @@ const ExcelExportModal: React.FC<ExcelExportModalProps> = ({
                               <span className="text-sm text-gray-500 dark:text-gray-400 w-6 text-right">
                                 {index + 1}
                               </span>
-                              <span className="text-sm flex-1">{getColumnLabel(field)}</span>
+                              <span className="text-sm flex-1">
+                                {getColumnLabel(field)}
+                                {field.startsWith('input_data.') && 
+                                 !['input_data.keywords', 'input_data.mainKeyword', 
+                                   'input_data.keyword1', 'input_data.keyword2', 'input_data.keyword3',
+                                   'input_data.url', 'input_data.mid', 'input_data.dueDays'].includes(field) && (
+                                  <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(사용자 입력)</span>
+                                )}
+                              </span>
                             </div>
                           ))}
                         </div>

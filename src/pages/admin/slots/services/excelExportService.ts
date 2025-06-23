@@ -202,7 +202,30 @@ const convertSlotToRow = (slot: Slot, columns: ExcelColumn[]): any => {
         break;
 
       default:
-        value = '';
+        // input_data의 동적 필드 처리
+        if (column.field.startsWith('input_data.')) {
+          const fieldName = column.field.replace('input_data.', '');
+          const fieldValue = slot.input_data?.[fieldName];
+          
+          // 파일 필드 처리 (_file로 끝나는 필드는 URL이므로 파일명으로 변환)
+          if (fieldName.endsWith('_file') && fieldValue) {
+            // URL에서 파일명 추출
+            const fileName = slot.input_data?.[fieldName.replace('_file', '_fileName')] || 
+                           slot.input_data?.[fieldName.replace('_file', '')];
+            value = fileName || fieldValue;
+          } else if (fieldValue !== undefined && fieldValue !== null) {
+            // 배열이나 객체인 경우 JSON 문자열로 변환
+            if (typeof fieldValue === 'object') {
+              value = JSON.stringify(fieldValue);
+            } else {
+              value = String(fieldValue);
+            }
+          } else {
+            value = '';
+          }
+        } else {
+          value = '';
+        }
     }
 
     // 값을 row에 할당

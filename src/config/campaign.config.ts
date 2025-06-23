@@ -103,11 +103,13 @@ export function getCampaignNameByServiceType(serviceType: string): string | null
 
 // 내키워드 기능을 지원하는 서비스 타입 목록
 export const KEYWORD_SUPPORTED_SERVICES: string[] = [
+  /*
   CampaignServiceType.NAVER_SHOPPING_RANK,
   CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
   CampaignServiceType.NAVER_PLACE_RANK,
   CampaignServiceType.NAVER_PLACE_TRAFFIC,
   CampaignServiceType.COUPANG_TRAFFIC
+  */
 ];
 
 // 서비스 타입이 내키워드 기능을 지원하는지 확인

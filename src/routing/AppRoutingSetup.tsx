@@ -87,6 +87,7 @@ export const RefundTestPage = lazyWithPreload(() => import('@/pages/test/RefundT
 
 // 테스트 페이지 이지만 나중엔 메뉴로 뺄수도 있는 메뉴들
 export const KeywordToolPage = lazyWithPreload(() => import('@/pages/test/keyword'));
+export const ShoppingRankingPage = lazyWithPreload(() => import('@/pages/test/shopping_ranking'));
 
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
@@ -267,6 +268,7 @@ const AppRoutingSetup = (): ReactElement => {
       <Route element={<RequireAuth allowedRoles={[USER_ROLES.OPERATOR, USER_ROLES.DEVELOPER]} />}>
         <Route element={<StandLayout />}>
           <Route path="/test/keyword" element={<SuspenseWrapper><KeywordToolPage /></SuspenseWrapper>} />
+          <Route path="/test/shopping_ranking" element={<SuspenseWrapper><ShoppingRankingPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -351,6 +353,7 @@ initializeComponentMap({
   // 테스트 페이지
   '/test/refund': RefundTestPage,
   '/test/keyword': KeywordToolPage,
+  '/test/shopping_ranking': ShoppingRankingPage,
 });
 
 export { AppRoutingSetup };

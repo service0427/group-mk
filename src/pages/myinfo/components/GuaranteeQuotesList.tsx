@@ -367,8 +367,11 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
             </thead>
             <tbody>
               {filteredRequests.map((item) => {
-                // 환불 요청 상태 우선 확인
-                const refundRequest = item.guarantee_slots?.[0]?.refund_requests?.find(r => r.status === 'pending' || r.status === 'approved' || r.status === 'rejected');
+                // 슬롯이 cancelled 상태가 아닌 경우에만 환불 요청 상태 확인
+                const slot = item.guarantee_slots?.[0];
+                const refundRequest = slot?.status !== 'cancelled' 
+                  ? slot?.refund_requests?.find(r => r.status === 'pending' || r.status === 'rejected')
+                  : null;
                 
                 let statusInfo;
                 if (refundRequest) {
@@ -376,9 +379,6 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                   switch (refundRequest.status) {
                     case 'pending':
                       statusInfo = { label: '환불 검토중', color: 'badge-danger', icon: 'clock' };
-                      break;
-                    case 'approved':
-                      statusInfo = { label: '환불승인', color: 'badge-danger' };
                       break;
                     case 'rejected':
                       statusInfo = { label: '환불 거절됨', color: 'badge-danger', icon: 'cross-circle' };
@@ -726,8 +726,8 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                         <span className={`badge badge-sm ${statusInfo.color} whitespace-nowrap`}>
                           {statusInfo.label}
                         </span>
-                        {/* 환불 관련 정보 아이콘 표시 */}
-                        {(refundRequest?.status === 'pending' || refundRequest?.status === 'approved') && (
+                        {/* 환불 관련 정보 아이콘 표시 - cancelled 상태가 아닌 경우만 */}
+                        {slot?.status !== 'cancelled' && refundRequest?.status === 'pending' && (
                           <div className="relative">
                             <button
                               className="text-danger hover:text-danger-dark transition-colors"

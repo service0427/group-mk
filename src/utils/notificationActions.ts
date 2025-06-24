@@ -136,6 +136,56 @@ export const createWithdrawRejectedNotification = async (userId: string, amount:
 };
 
 /**
+ * 보장형 슬롯 환불 반려 알림 생성
+ * @param userId 사용자 ID
+ * @param campaignName 캠페인명
+ * @param amount 환불 요청 금액
+ * @param reason 반려 사유
+ */
+export const createRefundRejectedNotification = async (
+  userId: string, 
+  campaignName: string, 
+  amount: number, 
+  reason: string
+) => {
+  return await createNotification({
+    userId,
+    type: NotificationType.TRANSACTION,
+    title: '환불 요청 반려',
+    message: `[${campaignName}] 요청하신 ${amount.toLocaleString()}원의 환불이 반려되었습니다. 사유: ${reason}`,
+    link: '/my-services',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 보장형 슬롯 환불 승인 알림 생성
+ * @param userId 사용자 ID
+ * @param campaignName 캠페인명
+ * @param amount 환불 금액
+ * @param notes 처리 메모 (선택)
+ */
+export const createRefundApprovedNotification = async (
+  userId: string, 
+  campaignName: string, 
+  amount: number, 
+  notes?: string
+) => {
+  const message = notes 
+    ? `[${campaignName}] 요청하신 ${amount.toLocaleString()}원의 환불이 승인되었습니다. 메모: ${notes}`
+    : `[${campaignName}] 요청하신 ${amount.toLocaleString()}원의 환불이 승인되었습니다.`;
+    
+  return await createNotification({
+    userId,
+    type: NotificationType.TRANSACTION,
+    title: '환불 완료',
+    message,
+    link: '/my-services',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
  * 신규 출금 요청 알림 생성 (모든 운영자)
  * @param userId 사용자 ID
  * @param amount 출금 금액

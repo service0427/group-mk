@@ -331,7 +331,7 @@ const MyGuaranteeQuotesPage: React.FC = () => {
                               {formatPrice(request.final_daily_amount)}원/일
                             </div>
                             <div className="text-xs text-gray-500">
-                              총 {formatPrice(request.final_daily_amount * request.guarantee_count)}원
+                              총 {formatPrice(request.final_daily_amount * (request.guarantee_period || request.guarantee_count))}원
                             </div>
                           </div>
                         ) : (

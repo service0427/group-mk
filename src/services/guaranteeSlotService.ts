@@ -480,10 +480,10 @@ export const guaranteeSlotService = {
       const workDays = request.guarantee_period || request.guarantee_count;
       const totalAmount = Math.floor(request.final_daily_amount * workDays * 1.1); // VAT 포함
 
-      // 사용자 잔액 확인
+      // 사용자 잔액 확인 (유료캐시만 확인)
       const { data: userBalance, error: balanceError } = await supabase
         .from('user_balances')
-        .select('total_balance')
+        .select('total_balance, paid_balance')
         .eq('user_id', userId)
         .single();
 
@@ -491,8 +491,9 @@ export const guaranteeSlotService = {
         throw new Error('사용자 잔액 정보를 조회할 수 없습니다.');
       }
 
-      if (userBalance.total_balance < totalAmount) {
-        throw new Error('잔액이 부족합니다.');
+      // 유료캐시만 확인
+      if (!userBalance.paid_balance || userBalance.paid_balance < totalAmount) {
+        throw new Error(`유료캐시가 부족합니다. 필요금액: ${totalAmount.toLocaleString()}원, 유료캐시 잔액: ${(userBalance.paid_balance || 0).toLocaleString()}원`);
       }
 
       // Supabase RPC 직접 호출로 구매 처리
@@ -1003,7 +1004,7 @@ export const guaranteeSlotService = {
       if (slot.request_id) {
         const { data: requestData, error: requestError } = await supabase
           .from('guarantee_slot_requests')
-          .select('id, final_daily_amount, guarantee_count')
+          .select('id, final_daily_amount, guarantee_count, guarantee_period')
           .eq('id', slot.request_id)
           .single();
 
@@ -1015,10 +1016,11 @@ export const guaranteeSlotService = {
       // 견적 요청 정보가 없으면 슬롯 정보로 계산
       const finalDailyAmount = request?.final_daily_amount || slot.daily_guarantee_amount || 0;
       const guaranteeCount = request?.guarantee_count || slot.guarantee_count || 0;
+      const workPeriod = request?.guarantee_period || guaranteeCount; // 작업기간 우선 사용
       const completedDays = slot.completed_count || 0;
 
-      // 환불 금액 계산 (VAT 포함)
-      const totalAmount = finalDailyAmount * guaranteeCount * 1.1;
+      // 환불 금액 계산 (VAT 포함) - 작업기간 기준으로 계산
+      const totalAmount = finalDailyAmount * workPeriod * 1.1;
       const completedAmount = finalDailyAmount * completedDays * 1.1;
       const refundAmount = Math.max(0, totalAmount - completedAmount);
 

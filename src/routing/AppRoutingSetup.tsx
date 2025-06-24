@@ -85,6 +85,9 @@ export const RefundManagementPage = lazyWithPreload(() => import('@/pages/distri
 // 테스트 페이지 lazy loading with preload (숨김 페이지)
 export const RefundTestPage = lazyWithPreload(() => import('@/pages/test/RefundTestPage'));
 
+// 테스트 페이지 이지만 나중엔 메뉴로 뺄수도 있는 메뉴들
+export const KeywordToolPage = lazyWithPreload(() => import('@/pages/test/keyword'));
+
 // 관리자 페이지 직접 import (나중에 사용되므로 그대로 유지)
 import {
   Campaigns,
@@ -260,6 +263,13 @@ const AppRoutingSetup = (): ReactElement => {
         </Route>
       </Route>
 
+      {/* 키워드 도구 페이지 (운영자, 개발자만 접근 가능) */}
+      <Route element={<RequireAuth allowedRoles={[USER_ROLES.OPERATOR, USER_ROLES.DEVELOPER]} />}>
+        <Route element={<StandLayout />}>
+          <Route path="/test/keyword" element={<SuspenseWrapper><KeywordToolPage /></SuspenseWrapper>} />
+        </Route>
+      </Route>
+
       {/* 인증 및 에러 페이지 */}
       <Route path="error/*" element={<ErrorsRouting />} />
       <Route path="auth/*" element={<AuthPage />} />
@@ -340,6 +350,7 @@ initializeComponentMap({
   
   // 테스트 페이지
   '/test/refund': RefundTestPage,
+  '/test/keyword': KeywordToolPage,
 });
 
 export { AppRoutingSetup };

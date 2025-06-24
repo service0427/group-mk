@@ -36,6 +36,7 @@ interface GuaranteeQuoteRequest {
   distributor_id?: string;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
   status: 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
   final_daily_amount?: number;

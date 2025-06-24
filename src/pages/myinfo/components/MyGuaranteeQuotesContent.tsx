@@ -23,6 +23,7 @@ interface MyGuaranteeQuoteRequest {
   distributor_id?: string;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
   status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;

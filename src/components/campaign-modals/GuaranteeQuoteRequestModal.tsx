@@ -35,18 +35,35 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
   const [validationError, setValidationError] = useState<string>('');
 
   const [formData, setFormData] = useState({
-    targetRank: '1', // 목표 순위 입력값
-    guaranteeCount: campaign?.guarantee_count?.toString() || '',
+    targetRank: campaign?.target_rank?.toString() || '1', // 캠페인의 목표 순위 사용
+    guaranteeCount: campaign?.guarantee_period?.toString() || '', // guarantee_period 사용
     dailyBudget: '', // 일별/단위별 금액으로 변경
     message: ''
   });
+  
+  const [priceInputType, setPriceInputType] = useState<'daily' | 'total'>('daily');
 
   // 실시간 총 금액 계산
   const calculateTotalAmount = useCallback(() => {
-    const daily = parseInt(formData.dailyBudget.replace(/,/g, '') || '0');
-    const count = parseInt(formData.guaranteeCount || '0');
-    return daily * count;
-  }, [formData.dailyBudget, formData.guaranteeCount]);
+    const inputAmount = parseInt(formData.dailyBudget.replace(/,/g, '') || '0');
+    const period = parseInt(formData.guaranteeCount || '0');
+    
+    if (priceInputType === 'daily') {
+      return inputAmount * period;
+    } else {
+      return inputAmount;
+    }
+  }, [formData.dailyBudget, formData.guaranteeCount, priceInputType]);
+  
+  // 일별 단가 계산 (총 단가 입력 시)
+  const calculateDailyAmount = useCallback(() => {
+    if (priceInputType === 'total') {
+      const totalAmount = parseInt(formData.dailyBudget.replace(/,/g, '') || '0');
+      const period = parseInt(formData.guaranteeCount || '1');
+      return Math.round(totalAmount / period);
+    }
+    return parseInt(formData.dailyBudget.replace(/,/g, '') || '0');
+  }, [formData.dailyBudget, formData.guaranteeCount, priceInputType]);
 
   // 최소 일별/회당 단가 계산
   const calculateMinDailyAmount = useCallback(() => {
@@ -88,7 +105,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
     if (campaign) {
       setFormData(prev => ({
         ...prev,
-        guaranteeCount: campaign.guarantee_count?.toString() || prev.guaranteeCount,
+        targetRank: campaign.target_rank?.toString() || '1', // 캠페인의 목표 순위 사용
+        guaranteeCount: campaign.guarantee_period?.toString() || prev.guaranteeCount, // guarantee_period 사용
         // dailyBudget는 초기값을 비워둠
         dailyBudget: ''
       }));
@@ -104,18 +122,30 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
       // 유효성 검사
       if (!formData.dailyBudget) {
-        setValidationError(`${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가를 입력해주세요.`);
+        setValidationError(priceInputType === 'daily' 
+          ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가를 입력해주세요.`
+          : '총 단가를 입력해주세요.'
+        );
         setLoading(false);
         return;
       }
 
       // 최소 가격 체크
-      const dailyAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
-      const minDailyAmount = calculateMinDailyAmount();
-      if (minDailyAmount && dailyAmount < minDailyAmount) {
-        setValidationError(`${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가는 최소 ${minDailyAmount.toLocaleString()}원 이상이어야 합니다.`);
-        setLoading(false);
-        return;
+      const inputAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
+      if (priceInputType === 'daily') {
+        const minDailyAmount = calculateMinDailyAmount();
+        if (minDailyAmount && inputAmount < minDailyAmount) {
+          setValidationError(`${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가는 최소 ${minDailyAmount.toLocaleString()}원 이상이어야 합니다.`);
+          setLoading(false);
+          return;
+        }
+      } else {
+        // 총 단가인 경우 최소 총액 체크
+        if (campaign?.min_guarantee_price && inputAmount < parseInt(campaign.min_guarantee_price)) {
+          setValidationError(`총 단가는 최소 ${parseInt(campaign.min_guarantee_price).toLocaleString()}원 이상이어야 합니다.`);
+          setLoading(false);
+          return;
+        }
       }
 
       if (!formData.targetRank || parseInt(formData.targetRank) < 1) {
@@ -124,10 +154,21 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         return;
       }
 
-      // 보장 기간이 없으면 캠페인 기본값 사용
-      const guaranteeCount = formData.guaranteeCount || campaign?.guarantee_count;
-      if (!guaranteeCount) {
-        setValidationError('보장 기간 정보가 없습니다.');
+      // 작업기간(guaranteePeriod)이 없으면 캠페인 기본값 사용
+      // 주의: formData.guaranteeCount는 실제로 guarantee_period를 저장하고 있음
+      const guaranteePeriod = formData.guaranteeCount || campaign?.guarantee_period;
+      if (!guaranteePeriod) {
+        setValidationError('작업기간 정보가 없습니다.');
+        setLoading(false);
+        return;
+      }
+      
+      // 실제 보장 횟수/일수는 캠페인에서 가져옴
+      const guaranteeCount = campaign?.guarantee_count;
+      
+      // 작업기간이 보장 횟수/일수보다 작으면 안 됨
+      if (guaranteeCount && parseInt(guaranteePeriod) < parseInt(guaranteeCount.toString())) {
+        setValidationError(`작업기간은 최소 ${guaranteeCount}${campaign?.guarantee_unit || '일'} 이상이어야 합니다.`);
         setLoading(false);
         return;
       }
@@ -174,7 +215,9 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         campaign_id: campaign.id,
         target_rank: parseInt(formData.targetRank),
         guarantee_count: parseInt(guaranteeCount.toString()),
-        initial_budget: parseInt(formData.dailyBudget.replace(/,/g, '')), // 일별 금액을 initial_budget으로 전송
+        guarantee_period: parseInt(guaranteePeriod.toString()), // 작업기간 추가
+        initial_budget: parseInt(formData.dailyBudget.replace(/,/g, '')), // 입력한 금액 그대로 전송
+        budget_type: priceInputType, // 입력 방식 추가
         keyword_id: (firstKeyword?.id && firstKeyword.id > 0) ? firstKeyword.id : undefined, // 첫 번째 키워드 ID (수동 입력인 경우 undefined)
         input_data: inputData,
         quantity: keywordDetails.reduce((sum, kd) => sum + (kd.workCount || 0), 0), // 총 작업수
@@ -184,6 +227,83 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
       if (error) {
         throw error;
+      }
+
+      // 견적 요청 생성 성공 시 초기 메시지도 함께 생성
+      if (data?.id) {
+        try {
+          // 1. 견적 요청 메시지 생성
+          const keywords = keywordDetails.map(kd => kd.mainKeyword).join(', ');
+          let requestMessage = '견적을 요청합니다.\n\n';
+          if (keywords) {
+            requestMessage += `키워드: ${keywords}\n`;
+          }
+          requestMessage += `목표 순위: ${formData.targetRank}위\n`;
+          requestMessage += `작업기간: ${guaranteePeriod}${campaign?.guarantee_unit || '일'}\n`;
+          requestMessage += `보장: ${guaranteeCount}${campaign?.guarantee_unit || '일'}`;
+
+          // 사용자 메시지가 있으면 추가
+          if (formData.message) {
+            requestMessage += '\n\n요청사항: ' + formData.message;
+          }
+
+          // negotiationService import가 필요
+          const { negotiationService } = await import('@/services/guaranteeSlotService');
+          
+          await negotiationService.createMessage(
+            {
+              request_id: data.id,
+              message: requestMessage,
+              message_type: 'message',
+              isFromDistributorPage: false
+            },
+            userId,
+            'user'
+          );
+
+          // 2. 가격 제안 메시지
+          let priceMessage = '';
+          
+          if (priceInputType === 'total') {
+            // 총 단가로 입력한 경우
+            const totalAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
+            const dailyAmount = Math.round(totalAmount / parseInt(guaranteePeriod));
+            priceMessage = `희망 예산: 총 ${totalAmount.toLocaleString()}원 (${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${dailyAmount.toLocaleString()}원 × ${guaranteePeriod}${campaign?.guarantee_unit || '일'})`;
+            
+            // 총액인 경우, proposed_daily_amount에 총액을 저장하고 메시지로 구분
+            await negotiationService.createMessage(
+              {
+                request_id: data.id,
+                message: priceMessage,
+                message_type: 'price_proposal',
+                proposed_daily_amount: totalAmount, // 총액 그대로 저장
+                proposed_guarantee_count: parseInt(guaranteeCount),
+                isFromDistributorPage: false
+              },
+              userId,
+              'user'
+            );
+          } else {
+            // 일별/회당 단가로 입력한 경우 (기본)
+            priceMessage = `희망 예산: ${formData.dailyBudget}원/${campaign?.guarantee_unit || '일'} × ${guaranteePeriod}${campaign?.guarantee_unit || '일'} (총 ${(parseInt(formData.dailyBudget.replace(/,/g, '')) * parseInt(guaranteePeriod)).toLocaleString()}원)`;
+            
+            await negotiationService.createMessage(
+              {
+                request_id: data.id,
+                message: priceMessage,
+                message_type: 'price_proposal',
+                proposed_daily_amount: parseInt(formData.dailyBudget.replace(/,/g, '')),
+                proposed_guarantee_count: parseInt(guaranteeCount),
+                isFromDistributorPage: false
+              },
+              userId,
+              'user'
+            );
+          }
+        } catch (messageError) {
+          console.error('초기 메시지 생성 실패:', messageError);
+          // 메시지 생성 실패는 무시하고 진행 (견적 요청은 이미 성공)
+        }
       }
 
       toast.success('견적 요청이 성공적으로 접수되었습니다.');
@@ -228,22 +348,20 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   <span className="text-gray-600 dark:text-gray-400">캠페인명:</span>
                   <span className="font-medium">{campaign?.campaign_name}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">선택한 키워드:</span>
-                  <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
-                    {keywordDetails.map((keyword, index) => (
-                      <span key={index} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs">
-                        {keyword.mainKeyword} ({keyword.workCount}개, {keyword.dueDays}일)
-                      </span>
-                    ))}
+                
+                {/* 보장 요약 정보 */}
+                {campaign?.guarantee_period && campaign?.guarantee_count && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">보장 요약:</span>
+                    <span className="font-medium text-purple-600">
+                      {campaign.guarantee_unit === '일' 
+                        ? `${campaign.guarantee_period}일 안에 ${campaign.target_rank || '__'}위 이내 ${campaign.guarantee_count}일 보장`
+                        : `${campaign.guarantee_period}일 안에 ${campaign.guarantee_count}회 보장`
+                      }
+                    </span>
                   </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">총 작업수:</span>
-                  <span className="font-medium">
-                    {keywordDetails.reduce((sum, kd) => sum + (kd.workCount || 0), 0)}개
-                  </span>
-                </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">가격 범위:</span>
                   <span className="font-medium text-purple-600">
@@ -271,6 +389,98 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       : '협의 필요'}
                   </span>
                 </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">선택한 키워드:</span>
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
+                    {keywordDetails.map((keyword, index) => (
+                      <span key={index} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs">
+                        {keyword.mainKeyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* 사용자 입력 필드 정보 */}
+                {keywordDetails.some(kd => kd.inputData && Object.keys(kd.inputData).length > 0) && (
+                  <div className="pt-2 mt-2 border-t border-purple-100 dark:border-purple-700">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">입력 정보:</div>
+                    <div className="space-y-2">
+                      {keywordDetails.map((keyword, index) => {
+                        if (!keyword.inputData || Object.keys(keyword.inputData).length === 0) return null;
+                        
+                        // 캠페인의 사용자 입력 필드 정의 가져오기
+                        const userInputFields = campaign?.originalData?.add_info?.add_field || campaign?.userInputFields || [];
+                        
+                        return (
+                          <div key={index} className="text-xs bg-purple-50/50 dark:bg-purple-900/20 p-2 rounded">
+                            <div className="font-medium text-purple-700 dark:text-purple-300 mb-1">
+                              {keyword.mainKeyword}
+                            </div>
+                            
+                            {/* 정의된 순서대로 필드 표시 */}
+                            {userInputFields.map((field: any) => {
+                              const fieldName = field.fieldName;
+                              const fieldDescription = field.description || fieldName;
+                              const value = keyword.inputData[fieldName];
+                              
+                              // 값이 없거나 제외할 필드면 표시하지 않음
+                              if (!value || ['main_keyword', 'is_manual_input'].includes(fieldName)) return null;
+                              
+                              return (
+                                <div key={fieldName} className="flex gap-2">
+                                  <span className="text-gray-500">{fieldName}({fieldDescription}):</span>
+                                  <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{String(value)}</span>
+                                </div>
+                              );
+                            })}
+                            
+                            {/* userInputFields에 정의되지 않은 필드들 (예: url, mid, keyword1,2,3) */}
+                            {keyword.inputData.url && !userInputFields.some((f: any) => f.fieldName === 'url') && (
+                              <div className="flex gap-2">
+                                <span className="text-gray-500">url(URL):</span>
+                                <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{keyword.inputData.url}</span>
+                              </div>
+                            )}
+                            {keyword.inputData.mid && !userInputFields.some((f: any) => f.fieldName === 'mid') && (
+                              <div className="flex gap-2">
+                                <span className="text-gray-500">mid(MID):</span>
+                                <span className="text-gray-700 dark:text-gray-300">{keyword.inputData.mid}</span>
+                              </div>
+                            )}
+                            {(keyword.inputData.keyword1 || keyword.inputData.keyword2 || keyword.inputData.keyword3) && 
+                             !userInputFields.some((f: any) => ['keyword1', 'keyword2', 'keyword3'].includes(f.fieldName)) && (
+                              <div className="flex gap-2">
+                                <span className="text-gray-500">keywords(추가 키워드):</span>
+                                <span className="text-gray-700 dark:text-gray-300">
+                                  {[keyword.inputData.keyword1, keyword.inputData.keyword2, keyword.inputData.keyword3]
+                                    .filter(Boolean)
+                                    .join(', ')}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* 정의되지 않은 나머지 필드들 */}
+                            {Object.entries(keyword.inputData).map(([key, value]) => {
+                              // 이미 표시했거나 제외할 필드들
+                              if (['url', 'mid', 'keyword1', 'keyword2', 'keyword3', 'main_keyword', 'is_manual_input'].includes(key)) return null;
+                              // userInputFields에 정의된 필드면 이미 표시했으므로 제외
+                              if (userInputFields.some((f: any) => f.fieldName === key)) return null;
+                              if (!value) return null;
+                              
+                              return (
+                                <div key={key} className="flex gap-2">
+                                  <span className="text-gray-500">{key}:</span>
+                                  <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{String(value)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -287,17 +497,17 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     setFormData({ ...formData, targetRank: e.target.value });
                     setValidationError('');
                   }}
-                  placeholder="목표 순위를 입력하세요 (예: 1)"
+                  placeholder="목표 순위를 입력하세요"
                   min="1"
                   max="100"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  * 검색 결과에서 노출되길 원하는 순위를 입력하세요
+                  * 캠페인 기본값: {campaign?.target_rank || '1'}위
                 </p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  보장 {campaign?.guarantee_unit === '회' ? '회수' : '일수'}
+                  작업기간 ({campaign?.guarantee_unit === '회' ? '회' : '일'})
                 </label>
                 <Input
                   type="number"
@@ -306,15 +516,48 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     setFormData({ ...formData, guaranteeCount: e.target.value });
                     setValidationError('');
                   }}
-                  placeholder={`보장 ${campaign?.guarantee_unit === '회' ? '회수' : '일수'}를 입력하세요`}
-                  min="1"
+                  placeholder={`작업기간을 입력하세요`}
+                  min={campaign?.guarantee_count?.toString() || "1"}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  * 캠페인 기본값: {campaign?.guarantee_period || '0'}{campaign?.guarantee_unit || '일'} 
+                  (최소: {campaign?.guarantee_count || '0'}{campaign?.guarantee_unit || '일'})
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  {campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가 <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                    {priceInputType === 'daily' 
+                      ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가`
+                      : '총 단가'
+                    } <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPriceInputType('daily')}
+                      className={`px-3 py-1 text-xs rounded-l-md transition-colors ${
+                        priceInputType === 'daily' 
+                          ? 'bg-purple-500 text-white' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {campaign?.guarantee_unit === '회' ? '회당' : '일별'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPriceInputType('total')}
+                      className={`px-3 py-1 text-xs rounded-r-md transition-colors ${
+                        priceInputType === 'total' 
+                          ? 'bg-purple-500 text-white' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      총액
+                    </button>
+                  </div>
+                </div>
                 <Input
                   type="text"
                   value={formData.dailyBudget}
@@ -323,17 +566,29 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     setFormData({ ...formData, dailyBudget: formatCurrency(value) });
                     setValidationError('');
                   }}
-                  placeholder={`${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 금액을 입력하세요`}
+                  placeholder={priceInputType === 'daily' 
+                    ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 금액을 입력하세요`
+                    : '총 금액을 입력하세요'
+                  }
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  * 실제 금액은 판매자와 협의를 통해 결정됩니다
-                  {calculateMinDailyAmount() && (
-                    <>
-                      <br />
-                      * 최소 {campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가: <span className="font-semibold text-purple-600 dark:text-purple-400">{calculateMinDailyAmount()?.toLocaleString()}원</span> 이상
-                    </>
+                <div className="text-xs text-gray-500 mt-1 space-y-1">
+                  <p>* 실제 금액은 판매자와 협의를 통해 결정됩니다</p>
+                  {priceInputType === 'daily' && calculateMinDailyAmount() && (
+                    <p>* 최소 {campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가: <span className="font-semibold text-purple-600 dark:text-purple-400">{calculateMinDailyAmount()?.toLocaleString()}원</span> 이상</p>
                   )}
-                </p>
+                  {priceInputType === 'total' && campaign?.min_guarantee_price && (
+                    <p>* 최소 총 단가: <span className="font-semibold text-purple-600 dark:text-purple-400">{parseInt(campaign.min_guarantee_price).toLocaleString()}원</span> 이상</p>
+                  )}
+                  {/* 실시간 변환 표시 */}
+                  {formData.dailyBudget && formData.guaranteeCount && (
+                    <p className="text-purple-600 dark:text-purple-400 font-medium">
+                      {priceInputType === 'daily' 
+                        ? `→ 총 ${calculateTotalAmount().toLocaleString()}원`
+                        : `→ ${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${calculateDailyAmount().toLocaleString()}원`
+                      }
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* 실시간 계산 결과 표시 */}
@@ -346,31 +601,55 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가:
+                        {priceInputType === 'daily' 
+                          ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가:`
+                          : '총 단가:'
+                        }
                       </span>
                       <span className="font-medium">{formData.dailyBudget}원</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">
-                        × 보장 {campaign?.guarantee_unit === '회' ? '횟수' : '일수'}:
+                        {priceInputType === 'daily' ? '× 작업기간:' : '작업기간:'}
                       </span>
                       <span className="font-medium">{formData.guaranteeCount}{campaign?.guarantee_unit || '일'}</span>
                     </div>
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">총 금액 (VAT 제외):</span>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          <span className="hidden md:inline">{formatAmountDesktop(calculateTotalAmount())}</span>
-                          <span className="md:hidden">{formatAmountMobile(calculateTotalAmount())}</span>
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-purple-600 dark:text-purple-400">
-                        <span>총 금액 (VAT 포함):</span>
-                        <span className="font-semibold">
-                          <span className="hidden md:inline">{formatAmountDesktop(Math.round(calculateTotalAmount() * 1.1))}</span>
-                          <span className="md:hidden">{formatAmountMobile(Math.round(calculateTotalAmount() * 1.1))}</span>
-                        </span>
-                      </div>
+                      {priceInputType === 'daily' ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">총 금액 (VAT 제외):</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                              <span className="hidden md:inline">{formatAmountDesktop(calculateTotalAmount())}</span>
+                              <span className="md:hidden">{formatAmountMobile(calculateTotalAmount())}</span>
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                            <span>총 금액 (VAT 포함):</span>
+                            <span className="font-semibold">
+                              <span className="hidden md:inline">{formatAmountDesktop(Math.round(calculateTotalAmount() * 1.1))}</span>
+                              <span className="md:hidden">{formatAmountMobile(Math.round(calculateTotalAmount() * 1.1))}</span>
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">{campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가:</span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                              <span className="hidden md:inline">{formatAmountDesktop(calculateDailyAmount())}</span>
+                              <span className="md:hidden">{formatAmountMobile(calculateDailyAmount())}</span>
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                            <span>VAT 포함:</span>
+                            <span className="font-semibold">
+                              <span className="hidden md:inline">{formatAmountDesktop(Math.round(calculateTotalAmount() * 1.1))}</span>
+                              <span className="md:hidden">{formatAmountMobile(Math.round(calculateTotalAmount() * 1.1))}</span>
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

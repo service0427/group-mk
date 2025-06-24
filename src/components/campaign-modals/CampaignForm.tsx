@@ -16,6 +16,47 @@ import { CampaignServiceType, FieldType, UserInputField } from './types';
 import { RefundSettings } from '@/types/refund.types';
 import { RefundSettingsForm } from '@/components/refund';
 
+// 숫자를 한글 원 단위로 변환하는 함수
+const toKoreanWon = (num: string | number): string => {
+  const value = typeof num === 'string' ? parseInt(num.replace(/[^0-9]/g, '')) : num;
+  if (isNaN(value) || value === 0) return '';
+
+  const units = ['', '만', '억', '조'];
+  let result = '';
+  let remainingValue = value;
+
+  // 조 단위
+  if (remainingValue >= 1000000000000) {
+    const cho = Math.floor(remainingValue / 1000000000000);
+    result += cho.toLocaleString() + '조';
+    remainingValue = remainingValue % 1000000000000;
+  }
+
+  // 억 단위
+  if (remainingValue >= 100000000) {
+    const eok = Math.floor(remainingValue / 100000000);
+    if (result) result += ' ';
+    result += eok.toLocaleString() + '억';
+    remainingValue = remainingValue % 100000000;
+  }
+
+  // 만 단위
+  if (remainingValue >= 10000) {
+    const man = Math.floor(remainingValue / 10000);
+    if (result) result += ' ';
+    result += man.toLocaleString() + '만';
+    remainingValue = remainingValue % 10000;
+  }
+
+  // 남은 금액
+  if (remainingValue > 0) {
+    if (result) result += ' ';
+    result += remainingValue.toLocaleString();
+  }
+
+  return result + '원';
+};
+
 // 캠페인 폼 데이터 인터페이스
 interface CampaignFormInputData {
   campaignName: string;
@@ -30,6 +71,7 @@ interface CampaignFormInputData {
   isNegotiable?: boolean;
   guaranteeCount?: string;
   guaranteeUnit?: '일' | '회';
+  guaranteePeriod?: string;
   targetRank?: string;
   minGuaranteePrice?: string;
   maxGuaranteePrice?: string;
@@ -119,6 +161,7 @@ interface CampaignFormProps {
   // 업로드된 이미지 상태
   previewUrl?: string | null;
   onLogoUpload?: (file: File) => void;
+  onLogoRemove?: () => void;
   bannerImagePreviewUrl?: string | null;
   onBannerImageUpload?: (file: File) => void;
   onBannerImageRemove?: () => void;
@@ -137,6 +180,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
   onBannerPreview,
   previewUrl,
   onLogoUpload,
+  onLogoRemove,
   bannerImagePreviewUrl,
   onBannerImageUpload,
   onBannerImageRemove,
@@ -233,16 +277,96 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
         </div>
       )}
 
-      {/* 헤더 정보 - 표 스타일로 통일 */}
+      {/* 배너 및 로고 영역 */}
       <div className={`${containerClass} bg-background`}>
+        {/* 배너 영역 */}
+        <div className={headerClass}>
+          <div className="relative flex-shrink-0 mx-auto sm:mx-0 sm:mr-4">
+            {bannerImagePreviewUrl ? (
+              <div className="relative">
+                <img
+                  src={bannerImagePreviewUrl}
+                  alt="배너 이미지"
+                  className="h-16 w-auto rounded-md border border-gray-200 shadow-sm object-cover"
+                  style={{ maxWidth: '200px' }}
+                />
+                <button
+                  type="button"
+                  onClick={onBannerImageRemove}
+                  className="absolute -top-2 -right-2 size-5 flex items-center justify-center bg-red-500 rounded-full text-white shadow-md hover:bg-red-600"
+                  title="이미지 제거"
+                >
+                  <span className="text-xs font-bold leading-none">×</span>
+                </button>
+              </div>
+            ) : (
+              <div className="h-16 w-32 bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-medium border border-gray-200 shadow-sm rounded-md">
+                배너
+              </div>
+            )}
+            <input
+              ref={bannerImageFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleBannerImageUpload}
+              className="hidden"
+            />
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => bannerImageFileInputRef.current?.click()}
+                className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto"
+                size="sm"
+                disabled={loading}
+              >
+                <KeenIcon icon="picture" className="me-1.5 size-4" />
+                배너 이미지 업로드
+              </Button>
+
+              {bannerImagePreviewUrl && onBannerPreview && (
+                <Button
+                  type="button"
+                  onClick={onBannerPreview}
+                  className="bg-gray-500 hover:bg-gray-600 text-white w-full sm:w-auto"
+                  size="sm"
+                >
+                  <KeenIcon icon="eye" className="me-1.5 size-4" />
+                  배너 크게 보기
+                </Button>
+              )}
+            </div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+              캠페인 상세 페이지에 표시될 배너 이미지를 업로드하세요. 업로드되지 않을 경우 기본 배너 이미지를 사용합니다.
+            </p>
+          </div>
+        </div>
+
+        {/* 구분선 */}
+        <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+        {/* 로고 영역 */}
         <div className={headerClass}>
           <div className="relative flex-shrink-0 mx-auto sm:mx-0 sm:mr-4">
             {previewUrl || formData.logo ? (
-              <img
-                src={previewUrl || (formData.logo.startsWith('/media/') ? toAbsoluteUrl(formData.logo) : toAbsoluteUrl(`/media/${formData.logo}`))}
-                className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
-                alt="캠페인 로고"
-              />
+              <div className="relative">
+                <img
+                  src={previewUrl || (formData.logo.startsWith('/media/') ? toAbsoluteUrl(formData.logo) : toAbsoluteUrl(`/media/${formData.logo}`))}
+                  className="rounded-full size-16 object-cover border border-gray-200 shadow-sm"
+                  alt="캠페인 로고"
+                />
+                {previewUrl && onLogoRemove && (
+                  <button
+                    type="button"
+                    onClick={onLogoRemove}
+                    className="absolute -top-2 -right-2 size-5 flex items-center justify-center bg-red-500 rounded-full text-white shadow-md hover:bg-red-600"
+                    title="이미지 제거"
+                  >
+                    <span className="text-xs font-bold leading-none">×</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="rounded-full size-16 bg-gray-100 flex items-center justify-center text-gray-400 font-medium border border-gray-200 shadow-sm">
                 로고
@@ -495,67 +619,6 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               </tr>
             )}
 
-            <tr>
-              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
-                배너 이미지
-              </th>
-              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-start gap-4">
-                    <Button
-                      type="button"
-                      onClick={() => bannerImageFileInputRef.current?.click()}
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
-                      size="sm"
-                      disabled={loading}
-                    >
-                      <KeenIcon icon="picture" className="me-1.5 size-4" />
-                      배너 이미지 업로드
-                    </Button>
-                    <input
-                      ref={bannerImageFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBannerImageUpload}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {bannerImagePreviewUrl && (
-                    <div className="mt-2 relative flex items-start gap-2">
-                      <div className="relative">
-                        <img
-                          src={bannerImagePreviewUrl}
-                          alt="배너 이미지 미리보기"
-                          className="w-40 h-auto rounded-md border border-border object-cover"
-                          style={{ maxHeight: '60px' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={onBannerImageRemove}
-                          className="absolute -top-2 -right-2 size-5 flex items-center justify-center bg-red-500 rounded-full text-white shadow-md hover:bg-red-600"
-                          title="이미지 제거"
-                        >
-                          <KeenIcon icon="cross" className="size-2.5" />
-                        </button>
-                      </div>
-                      {onBannerPreview && (
-                        <Button
-                          type="button"
-                          onClick={onBannerPreview}
-                          className="bg-blue-500 hover:bg-blue-600 text-white"
-                          size="sm"
-                        >
-                          <KeenIcon icon="eye" className="me-1.5 size-4" />
-                          크게 보기
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 상세 페이지에 표시될 배너 이미지를 업로드하세요.</p>
-                </div>
-              </td>
-            </tr>
 
             {/* 최소수량 - 일반 서비스일 때만 표시 */}
             {formData.slotType !== 'guarantee' && (
@@ -586,7 +649,33 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             {/* 보장성 슬롯 관련 필드들 - 보장성 슬롯 선택 시에만 표시 */}
             {formData.slotType === 'guarantee' && (
               <>
-                {/* 보장 횟수/일수 */}
+                {/* 작업 기간 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                    작업 기간 <span className="text-red-500">*</span>
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          value={formData.guaranteePeriod || ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            handleChange('guaranteePeriod', value);
+                          }}
+                          className="w-24 sm:w-32"
+                          placeholder="30"
+                          disabled={loading}
+                        />
+                        <span className="text-xs sm:text-sm text-muted-foreground">일</span>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">목표를 달성하기 위한 전체 작업 기간을 입력하세요.</p>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* 보장 일수(횟수) */}
                 <tr>
                   <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
                     보장 일수(횟수) <span className="text-red-500">*</span>
@@ -599,7 +688,12 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           value={formData.guaranteeCount || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^0-9]/g, '');
-                            handleChange('guaranteeCount', value);
+                            // 일 단위일 때만 90일 제한 적용
+                            if (formData.guaranteeUnit === '일' && value !== '' && parseInt(value) > 90) {
+                              handleChange('guaranteeCount', '90');
+                            } else {
+                              handleChange('guaranteeCount', value);
+                            }
                           }}
                           className="w-24 sm:w-32"
                           placeholder="10"
@@ -619,7 +713,10 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">목표 순위 혹은 목표 작업량을 보장할 기간 혹은 횟수를 입력하세요.</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        작업 기간 내에 실제로 보장할 일수 또는 횟수를 입력하세요.
+                        {formData.guaranteeUnit === '일' && <span className="text-red-500"> (최대 90일)</span>}
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -628,7 +725,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 {/* 보장 순위 */}
                 <tr>
                   <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
-                    보장 순위 <span className="text-red-500">*</span>
+                    보장 순위 {formData.guaranteeUnit === '일' && <span className="text-red-500">*</span>}
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                     <div className="flex flex-col gap-2">
@@ -644,57 +741,104 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                               handleChange('targetRank', value);
                             }
                           }}
-                          className="w-24 sm:w-32"
+                          className={`w-24 sm:w-32 ${formData.guaranteeUnit === '회' ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                           placeholder="1"
-                          disabled={loading}
+                          disabled={loading || formData.guaranteeUnit === '회'}
                         />
                         <span className="text-xs sm:text-sm text-muted-foreground">위</span>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">보장할 목표 순위를 입력하세요. (1-30위)</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        {formData.guaranteeUnit === '회'
+                          ? '횟수 보장 시 순위는 입력하지 않습니다.'
+                          : '보장할 목표 순위를 입력하세요. (1-30위)'}
+                      </p>
                     </div>
                   </td>
                 </tr>
 
-                {/* 최소 보장 가격 */}
+                {/* 보장 요약 정보 */}
                 <tr>
                   <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
-                    최소 가격 <span className="text-red-500">*</span>
+                    보장 요약 정보
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        value={formData.minGuaranteePrice || ''}
-                        onChange={(e) => handleChange('minGuaranteePrice', e.target.value)}
-                        className="w-24 sm:w-32"
-                        placeholder=""
-                        disabled={loading}
-                      />
-                      <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <KeenIcon icon="check" className="size-4 text-blue-500 flex-shrink-0" />
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {formData.guaranteeUnit === '일'
+                            ? `${formData.guaranteePeriod || '___'}일 안에 ${formData.targetRank || '__'}위 이내 ${formData.guaranteeCount || '___'}일 보장`
+                            : `${formData.guaranteePeriod || '___'}일 안에 ${formData.guaranteeCount || '___'}회 보장`
+                          }
+                        </p>
+                      </div>
                     </div>
                   </td>
                 </tr>
 
-                {/* 최대 보장 가격 */}
+                {/* 최소/최대 보장 가격 */}
                 <tr>
                   <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
-                    최대 가격 <span className="text-red-500">*</span>
+                    가격 <span className="text-red-500">*</span>
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        value={formData.maxGuaranteePrice || ''}
-                        onChange={(e) => handleChange('maxGuaranteePrice', e.target.value)}
-                        className="w-24 sm:w-32"
-                        placeholder=""
-                        disabled={loading}
-                      />
-                      <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={formData.minGuaranteePrice || ''}
+                            onChange={(e) => handleChange('minGuaranteePrice', e.target.value)}
+                            className="w-24 sm:w-32"
+                            placeholder="최소"
+                            disabled={loading}
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                        </div>
+                        <span className="text-xs sm:text-sm text-muted-foreground">~</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={formData.maxGuaranteePrice || ''}
+                            onChange={(e) => handleChange('maxGuaranteePrice', e.target.value)}
+                            className="w-24 sm:w-32"
+                            placeholder="최대"
+                            disabled={loading}
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        최소 가격과 최대 가격 범위를 입력하세요.
+                        {(formData.minGuaranteePrice || formData.maxGuaranteePrice) && (
+                          <span className="text-blue-600 dark:text-blue-400 font-medium ml-2">
+                            (현재: {toKoreanWon(formData.minGuaranteePrice || '0') || '0원'} ~ {toKoreanWon(formData.maxGuaranteePrice || '0') || '0원'})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* 캐시 지급 안내 - 보장형 서비스일 때만 표시 */}
+                <tr>
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                    캐시 지급 안내
+                  </th>
+                  <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                      <div className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-300">
+                        <p className="flex items-center gap-1.5 font-medium mb-1 text-xs sm:text-sm">
+                          <KeenIcon icon="check-circle" className="size-4 text-amber-600 dark:text-amber-400" />
+                          캐시 지급 안내
+                        </p>
+                        <p>• 목표 일수를 모두 채운 경우, +48시간 후 자동 지급됩니다. (고객이 완료 승인 시 즉시 지급)</p>
+                        <p>• 목표 일수를 채우지 못한 경우, 마감일 기준으로 달성한 일 수만큼 지급됩니다. (총 금액 ÷ 성공 일 수 기준)</p>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -735,7 +879,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px] align-top">
-                사용자 입력 필드
+                사용자 입력 필드 <span className="text-red-500">*</span>
               </th>
               <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
                 <div className="space-y-2">
@@ -834,18 +978,38 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           {/* 필드명 입력 */}
                           <div className="w-full sm:w-1/5">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">필드명</label>
-                            <Input
-                              type="text"
-                              value={field.fieldName}
-                              onChange={(e) => {
-                                const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], fieldName: e.target.value };
-                                handleChange('userInputFields', updatedFields);
-                              }}
-                              placeholder="필드명"
-                              disabled={loading}
-                              className="text-sm"
-                            />
+                            <div className="relative">
+                              <Input
+                                type="text"
+                                value={field.fieldName}
+                                onChange={(e) => {
+                                  // 특수문자 제거 (영문, 한글, 숫자, 공백만 허용)
+                                  const filteredValue = e.target.value.replace(/[^a-zA-Z0-9ㄱ-ㅎ가-힣\s]/g, '');
+                                  const updatedFields = [...(formData.userInputFields || [])];
+                                  updatedFields[index] = { ...updatedFields[index], fieldName: filteredValue };
+                                  handleChange('userInputFields', updatedFields);
+                                }}
+                                placeholder="필드명"
+                                disabled={loading}
+                                className={`text-sm pr-8 ${field.fieldName &&
+                                    (formData.userInputFields || []).filter((f, i) => i !== index && f.fieldName === field.fieldName).length > 0
+                                    ? 'border-red-500 focus:border-red-500'
+                                    : ''
+                                  }`}
+                              />
+                              {field.fieldName &&
+                                (formData.userInputFields || []).filter((f, i) => i !== index && f.fieldName === field.fieldName).length > 0 && (
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 group">
+                                    <KeenIcon icon="information" className="size-4 text-red-500 cursor-help" />
+                                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                                      <div className="bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                                        중복된 필드명입니다
+                                        <div className="absolute top-full right-2 -mt-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
                           </div>
 
                           {/* 화살표 (데스크톱에서만 표시) */}
@@ -858,8 +1022,10 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                               type="text"
                               value={field.description}
                               onChange={(e) => {
+                                // 특수문자 제거 (영문, 한글, 숫자, 공백만 허용)
+                                const filteredValue = e.target.value.replace(/[^a-zA-Z0-9ㄱ-ㅎ가-힣\s]/g, '');
                                 const updatedFields = [...(formData.userInputFields || [])];
-                                updatedFields[index] = { ...updatedFields[index], description: e.target.value };
+                                updatedFields[index] = { ...updatedFields[index], description: filteredValue };
                                 handleChange('userInputFields', updatedFields);
                               }}
                               placeholder="필드 설명"
@@ -965,7 +1131,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </div>
 
                 <div className="text-xs sm:text-sm text-muted-foreground mt-3">
-                  <p>사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
+                  <p className="text-red-500 font-medium">※ 최소 1개 이상의 입력필드를 추가해야 합니다.</p>
+                  <p className="mt-1">사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
                   <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>
                   <p className="mt-1">• '필수' 체크 시 사용자가 반드시 입력해야 하는 필드가 됩니다.</p>

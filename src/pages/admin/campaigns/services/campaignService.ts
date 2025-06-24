@@ -456,6 +456,13 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       status?: string;
       rejected_reason?: string;
       refund_settings?: any; // 환불 설정 추가
+      // 보장형 슬롯 관련 필드
+      guarantee_count?: number | null;
+      guarantee_unit?: string | null;
+      guarantee_period?: number | null;
+      target_rank?: number | null;
+      min_guarantee_price?: number | null;
+      max_guarantee_price?: number | null;
     }
 
     // 이제 additionalInfo에 이미 add_field가 포함되어 있음
@@ -473,7 +480,14 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       // 로고 이미지 경로 변경 (업로드된 로고가 있거나 로고 값이 있을 경우)
       ...(data.uploadedLogo || data.logo ? { logo: data.logo } : {}),
       // 환불 설정 추가
-      ...(data.refundSettings ? { refund_settings: data.refundSettings } : {})
+      ...(data.refundSettings ? { refund_settings: data.refundSettings } : {}),
+      // 보장형 슬롯 관련 필드 추가
+      ...(data.guaranteeCount !== undefined ? { guarantee_count: parseInt(data.guaranteeCount) || null } : {}),
+      ...(data.guaranteeUnit !== undefined ? { guarantee_unit: data.guaranteeUnit } : {}),
+      ...(data.guaranteePeriod !== undefined ? { guarantee_period: parseInt(data.guaranteePeriod) || null } : {}),
+      ...(data.targetRank !== undefined ? { target_rank: parseInt(data.targetRank) || null } : {}),
+      ...(data.minGuaranteePrice !== undefined ? { min_guarantee_price: parseFloat(data.minGuaranteePrice) || null } : {}),
+      ...(data.maxGuaranteePrice !== undefined ? { max_guarantee_price: parseFloat(data.maxGuaranteePrice) || null } : {})
     };
 
     // 상태 변경 플래그와 이전 상태 저장
@@ -783,6 +797,7 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       is_negotiable: data.isNegotiable || false,
       guarantee_count: data.slotType === 'guarantee' && data.guaranteeCount ? parseInt(data.guaranteeCount) : null,
       guarantee_unit: data.slotType === 'guarantee' && data.guaranteeUnit ? data.guaranteeUnit : null,
+      guarantee_period: data.slotType === 'guarantee' && data.guaranteePeriod ? parseInt(data.guaranteePeriod) : null,
       target_rank: data.slotType === 'guarantee' && data.targetRank ? parseInt(data.targetRank) : null,
       min_guarantee_price: data.slotType === 'guarantee' && data.minGuaranteePrice ? parseFloat(data.minGuaranteePrice) : null,
       max_guarantee_price: data.slotType === 'guarantee' && data.maxGuaranteePrice ? parseFloat(data.maxGuaranteePrice) : null,

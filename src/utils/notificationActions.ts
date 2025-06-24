@@ -152,6 +152,30 @@ export const createNewWithdrawRequestNotification = async (userId: string, amoun
 };
 
 /**
+ * 서비스 타입 코드를 한글명으로 변환하는 함수
+ */
+const getServiceTypeLabel = (serviceType: string): string => {
+  // DB 코드를 CampaignServiceType enum으로 매핑
+  const codeToEnumMap: Record<string, CampaignServiceType> = {
+    'ntraffic': CampaignServiceType.NAVER_SHOPPING_TRAFFIC,
+    'nrank': CampaignServiceType.NAVER_SHOPPING_RANK,
+    'nplacetraffic': CampaignServiceType.NAVER_PLACE_TRAFFIC,
+    'nplacesave': CampaignServiceType.NAVER_PLACE_SAVE,
+    'nplaceshare': CampaignServiceType.NAVER_PLACE_SHARE,
+    'nplacerank': CampaignServiceType.NAVER_PLACE_RANK,
+    'nauto': CampaignServiceType.NAVER_AUTO,
+    'ctraffic': CampaignServiceType.COUPANG_TRAFFIC,
+    'cfakesale': CampaignServiceType.COUPANG_FAKESALE,
+    'instagram': CampaignServiceType.INSTAGRAM,
+    'photovideo': CampaignServiceType.PHOTO_VIDEO_PRODUCTION,
+    'livebroadcast': CampaignServiceType.LIVE_BROADCASTING
+  };
+
+  const enumType = codeToEnumMap[serviceType] || serviceType;
+  return SERVICE_TYPE_LABELS[enumType as CampaignServiceType] || serviceType;
+};
+
+/**
  * 신규 캠페인 신청 알림 생성 (운영자에게)
  * @param campaignId 캠페인 ID
  * @param campaignName 캠페인 이름
@@ -164,9 +188,10 @@ export const createCampaignRequestNotification = async (
   matId: string,
   serviceType: string
 ) => {
+  const serviceTypeLabel = getServiceTypeLabel(serviceType);
   return await notifyOperators(
     '새로운 캠페인 신청',
-    `[${campaignName}] 캠페인이 신청되었습니다. (서비스: ${serviceType})`,
+    `[${campaignName}] 캠페인이 신청되었습니다. (서비스: ${serviceTypeLabel})`,
     `/admin/campaigns/all`
   );
 };
@@ -177,7 +202,7 @@ export const createCampaignRequestNotification = async (
  * @param campaignId 캠페인 ID
  * @param campaignName 캠페인 이름
  */
-import { CampaignServiceType } from '@/components/campaign-modals/types';
+import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 서비스 타입을 URL 경로 형식으로 변환하는 함수
 const getServiceTypeUrlPath = (serviceType?: string): string => {

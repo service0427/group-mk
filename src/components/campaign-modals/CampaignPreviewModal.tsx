@@ -275,6 +275,21 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                 </div>
               </div>
 
+              {/* 보장 요약 정보 - 보장형일 때만 표시 */}
+              {isGuaranteeType && campaign.originalData?.guarantee_period && campaign.originalData?.guarantee_count && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center gap-2">
+                    <KeenIcon icon="check" className="size-5 text-purple-500 flex-shrink-0" />
+                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      {campaign.originalData.guarantee_unit === '일' 
+                        ? `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.target_rank || '__'}위 이내 ${campaign.originalData.guarantee_count}일 보장`
+                        : `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.guarantee_count}회 보장`
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* 캠페인 정보 */}
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3">캠페인 정보</h3>

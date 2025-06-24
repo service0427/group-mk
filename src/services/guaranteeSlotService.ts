@@ -18,7 +18,7 @@ import type {
   GuaranteeSlotRequestStatus,
   GuaranteeSlotStatus,
 } from '@/types/guarantee-slot.types';
-import { 
+import {
   createGuaranteeQuoteRequestNotification,
   createNegotiationMessageNotification,
   createGuaranteePurchaseNotification,
@@ -57,7 +57,9 @@ export const guaranteeSlotRequestService = {
         distributor_id: campaign.mat_id, // 캠페인의 담당 총판
         target_rank: params.target_rank,
         guarantee_count: params.guarantee_count,
+        guarantee_period: params.guarantee_period,
         initial_budget: params.initial_budget,
+        budget_type: params.budget_type || 'daily',
         status: 'requested' as GuaranteeSlotRequestStatus,
         input_data: params.input_data || {},
         start_date: params.start_date,
@@ -66,7 +68,7 @@ export const guaranteeSlotRequestService = {
         user_reason: params.user_reason,
         additional_requirements: params.additional_requirements,
       };
-      
+
       // keyword_id가 있고 양수인 경우에만 추가 (수동 입력은 -1이므로 제외)
       if (params.keyword_id && params.keyword_id > 0) {
         requestData.keyword_id = params.keyword_id;
@@ -157,7 +159,16 @@ export const guaranteeSlotRequestService = {
   },
 
   // 견적 요청 상태 업데이트
-  async updateRequestStatus(requestId: string, status: GuaranteeSlotRequestStatus, finalDailyAmount?: number, finalGuaranteeCount?: number) {
+  async updateRequestStatus(
+    requestId: string,
+    status: GuaranteeSlotRequestStatus,
+    finalDailyAmount?: number,
+    finalGuaranteeCount?: number,
+    finalBudgetType?: 'daily' | 'total',
+    finalTotalAmount?: number,
+    finalTargetRank?: number,
+    finalGuaranteePeriod?: number
+  ) {
     try {
       const updateData: any = { status };
       if (finalDailyAmount !== undefined) {
@@ -165,6 +176,18 @@ export const guaranteeSlotRequestService = {
       }
       if (finalGuaranteeCount !== undefined) {
         updateData.guarantee_count = finalGuaranteeCount;
+      }
+      if (finalBudgetType !== undefined) {
+        updateData.final_budget_type = finalBudgetType;
+      }
+      if (finalTotalAmount !== undefined) {
+        updateData.final_total_amount = finalTotalAmount;
+      }
+      if (finalTargetRank !== undefined) {
+        updateData.target_rank = finalTargetRank;
+      }
+      if (finalGuaranteePeriod !== undefined) {
+        updateData.guarantee_period = finalGuaranteePeriod;
       }
 
       const { data, error } = await supabase
@@ -197,7 +220,7 @@ export const guaranteeSlotRequestService = {
 
         if (requestInfo) {
           const serviceName = getServiceTypeName(requestInfo.campaigns?.service_type || '');
-          
+
           // 키워드 정보 가져오기
           let keyword = '';
           if (requestInfo.keywords?.main_keyword) {
@@ -205,7 +228,7 @@ export const guaranteeSlotRequestService = {
           } else if (requestInfo.input_data?.keyword) {
             keyword = requestInfo.input_data.keyword;
           }
-          
+
           await createNegotiationCompleteNotification(
             requestInfo.user_id,
             requestInfo.campaigns?.campaign_name || '캠페인',
@@ -286,6 +309,10 @@ export const negotiationService = {
           message: params.message,
           proposed_daily_amount: params.proposed_daily_amount,
           proposed_guarantee_count: params.proposed_guarantee_count,
+          proposed_total_amount: params.proposed_total_amount,
+          proposed_work_period: params.proposed_work_period,
+          proposed_target_rank: params.proposed_target_rank,
+          budget_type: params.budget_type || 'daily',
           attachments: params.attachments || [],
         })
         .select()
@@ -297,7 +324,7 @@ export const negotiationService = {
       if (params.message_type === 'price_proposal' || params.message_type === 'counter_offer') {
         await guaranteeSlotRequestService.updateRequestStatus(params.request_id, 'negotiating');
       }
-      
+
       // 재협상 요청인 경우 상태를 negotiating으로 변경
       if (params.message_type === 'renegotiation_request') {
         await guaranteeSlotRequestService.updateRequestStatus(params.request_id, 'negotiating');
@@ -320,20 +347,15 @@ export const negotiationService = {
 
       if (!requestError && requestInfo) {
         // 수신자 결정 (발신자와 반대)
-        const recipientId = senderType === 'user' 
-          ? requestInfo.distributor_id 
+        const recipientId = senderType === 'user'
+          ? requestInfo.distributor_id
           : requestInfo.user_id;
-        
+
         const serviceName = getServiceTypeName(requestInfo.campaign?.service_type || '');
-        
+
         // 재협상 요청인 경우 특별한 알림 전송
         if (params.message_type === 'renegotiation_request') {
-          console.log('재협상 요청 알림 전송:', {
-            senderType,
-            senderId,
-            recipientId,
-            requestInfo: requestInfo?.distributor_id
-          });
+
           // 키워드 정보 조회
           let keyword = '';
           if (requestInfo.keyword_id) {
@@ -345,12 +367,12 @@ export const negotiationService = {
             keyword = keywordData?.main_keyword || '';
           } else if (requestInfo.input_data) {
             // input_data에서 키워드 찾기 (여러 가능한 위치 확인)
-            keyword = requestInfo.input_data.keyword || 
-                     requestInfo.input_data.main_keyword || 
-                     requestInfo.input_data['키워드'] ||
-                     requestInfo.input_data['검색어'] || '';
+            keyword = requestInfo.input_data.keyword ||
+              requestInfo.input_data.main_keyword ||
+              requestInfo.input_data['키워드'] ||
+              requestInfo.input_data['검색어'] || '';
           }
-          
+
           // 재협상 요청 알림은 상대방에게 전송 (recipientId 사용)
           // isFromDistributorPage 플래그를 그대로 전달
           await createRenegotiationRequestNotification(
@@ -379,12 +401,12 @@ export const negotiationService = {
             keyword = keywordData?.main_keyword || '';
           } else if (requestInfo.input_data) {
             // input_data에서 키워드 찾기 (여러 가능한 위치 확인)
-            keyword = requestInfo.input_data.keyword || 
-                     requestInfo.input_data.main_keyword || 
-                     requestInfo.input_data['키워드'] ||
-                     requestInfo.input_data['검색어'] || '';
+            keyword = requestInfo.input_data.keyword ||
+              requestInfo.input_data.main_keyword ||
+              requestInfo.input_data['키워드'] ||
+              requestInfo.input_data['검색어'] || '';
           }
-          
+
           // 일반 협상 메시지 알림 전송 (디바운싱 적용)
           await createNegotiationMessageNotification(
             recipientId,
@@ -454,7 +476,9 @@ export const guaranteeSlotService = {
         throw new Error('보장 횟수가 확정되지 않았습니다.');
       }
 
-      const totalAmount = Math.floor(request.final_daily_amount * request.guarantee_count * 1.1); // VAT 포함
+      // 전체 작업기간으로 계산 (guarantee_period 사용)
+      const workDays = request.guarantee_period || request.guarantee_count;
+      const totalAmount = Math.floor(request.final_daily_amount * workDays * 1.1); // VAT 포함
 
       // 사용자 잔액 확인
       const { data: userBalance, error: balanceError } = await supabase
@@ -495,13 +519,13 @@ export const guaranteeSlotService = {
         );
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: '보장형 슬롯 구매가 완료되었습니다.',
           ...data
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error) {
       console.error('보장형 슬롯 구매 실패:', error);
@@ -696,7 +720,7 @@ export const guaranteeSlotService = {
       if (slotInfo.status === 'rejected') {
         const { error: updateError } = await supabase
           .from('guarantee_slots')
-          .update({ 
+          .update({
             status: 'pending',
             rejected_at: null,
             rejected_by: null,
@@ -707,12 +731,12 @@ export const guaranteeSlotService = {
         if (updateError) throw updateError;
 
         // 재승인 (반려 취소)인 경우 알림 없이 성공 메시지만 반환
-        return { 
+        return {
           data: {
             success: true,
             message: '반려가 취소되었습니다. 슬롯이 대기 상태로 변경되었습니다.'
-          }, 
-          error: null 
+          },
+          error: null
         };
       }
 
@@ -740,13 +764,13 @@ export const guaranteeSlotService = {
         );
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: '보장형 슬롯이 승인되었습니다.',
           ...data
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error: any) {
       console.error('보장형 슬롯 승인 실패:', error);
@@ -798,13 +822,13 @@ export const guaranteeSlotService = {
         );
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: '보장형 슬롯이 반려되었습니다.',
           ...data
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error: any) {
       console.error('보장형 슬롯 반려 실패:', error);
@@ -878,13 +902,13 @@ export const guaranteeSlotService = {
           });
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: '보장형 슬롯이 완료 처리되었습니다.',
           slot: data
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error: any) {
       console.error('보장형 슬롯 완료 처리 실패:', error);
@@ -941,14 +965,14 @@ export const guaranteeSlotService = {
         throw new Error(error.message || '환불 요청 처리 중 오류가 발생했습니다.');
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: '환불 요청이 접수되었습니다. 검토 후 처리됩니다.',
           refundAmount,
           request_id: data.request_id
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error: any) {
       console.error('보장형 슬롯 환불 처리 실패:', error);
@@ -982,7 +1006,7 @@ export const guaranteeSlotService = {
           .select('id, final_daily_amount, guarantee_count')
           .eq('id', slot.request_id)
           .single();
-        
+
         if (!requestError && requestData) {
           request = requestData;
         }
@@ -992,7 +1016,7 @@ export const guaranteeSlotService = {
       const finalDailyAmount = request?.final_daily_amount || slot.daily_guarantee_amount || 0;
       const guaranteeCount = request?.guarantee_count || slot.guarantee_count || 0;
       const completedDays = slot.completed_count || 0;
-      
+
       // 환불 금액 계산 (VAT 포함)
       const totalAmount = finalDailyAmount * guaranteeCount * 1.1;
       const completedAmount = finalDailyAmount * completedDays * 1.1;
@@ -1015,14 +1039,14 @@ export const guaranteeSlotService = {
         throw new Error(error.message || '환불 신청 중 오류가 발생했습니다.');
       }
 
-      return { 
+      return {
         data: {
           success: true,
           message: data?.message || '환불 신청이 접수되었습니다. 총판 검토 후 처리됩니다.',
           refundAmount: data?.refund_amount || refundAmount,
           requestId: data?.request_id
-        }, 
-        error: null 
+        },
+        error: null
       };
     } catch (error: any) {
       console.error('환불 신청 실패:', error);
@@ -1046,17 +1070,17 @@ export const guaranteeSlotUtils = {
   // 예상 완료일 계산
   estimateCompletionDate(startDate: string, completedCount: number, guaranteeCount: number): Date | null {
     if (completedCount === 0) return null;
-    
+
     const start = new Date(startDate);
     const today = new Date();
     const daysPassed = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const averageDaysPerCompletion = daysPassed / completedCount;
     const remainingCount = guaranteeCount - completedCount;
     const estimatedDaysRemaining = Math.ceil(remainingCount * averageDaysPerCompletion);
-    
+
     const estimatedDate = new Date();
     estimatedDate.setDate(estimatedDate.getDate() + estimatedDaysRemaining);
-    
+
     return estimatedDate;
   },
 };

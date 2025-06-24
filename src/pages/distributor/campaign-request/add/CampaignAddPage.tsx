@@ -60,6 +60,7 @@ const CampaignAddPage: React.FC = () => {
     isNegotiable: false,
     guaranteeCount: '',
     guaranteeUnit: '일', // 기본값 일
+    guaranteePeriod: '', // 보장 기간 추가
     targetRank: '1', // 기본값 1위
     minGuaranteePrice: '',
     maxGuaranteePrice: '',
@@ -187,6 +188,13 @@ const CampaignAddPage: React.FC = () => {
     setUploadedBannerImage(null);
   };
 
+  // 로고 이미지 제거 핸들러
+  const handleLogoRemove = () => {
+    setPreviewUrl(null);
+    setUploadedLogo(null);
+    setFormData(prev => ({ ...prev, logo: '' }));
+  };
+
   // 폼 데이터 업데이트 핸들러
   const handleFormDataChange = (newFormData: CampaignFormData) => {
     setFormData(newFormData);
@@ -226,10 +234,46 @@ const CampaignAddPage: React.FC = () => {
       return false;
     }
 
+    // 입력필드 필수 검증 - 최소 1개 이상의 입력필드가 필요
+    if (!formData.userInputFields || formData.userInputFields.length === 0) {
+      setError('최소 1개 이상의 입력필드를 추가해주세요.');
+      return false;
+    }
+
+    // 입력필드 내용 검증
+    const invalidFields = formData.userInputFields.filter(field => 
+      !field.fieldName.trim() || !field.description.trim()
+    );
+    if (invalidFields.length > 0) {
+      setError('모든 입력필드의 필드명과 설명을 입력해주세요.');
+      return false;
+    }
+
+    // 입력필드명 중복 검증
+    const fieldNames = formData.userInputFields.map(field => field.fieldName.trim());
+    const duplicateFields = fieldNames.filter((name, index) => 
+      name && fieldNames.indexOf(name) !== index
+    );
+    if (duplicateFields.length > 0) {
+      setError('중복된 필드명이 있습니다. 각 필드명은 고유해야 합니다.');
+      return false;
+    }
+
     // 보장성 슬롯 관련 검증
     if (formData.slotType === 'guarantee') {
+      if (!formData.guaranteePeriod || formData.guaranteePeriod === '0' || formData.guaranteePeriod === '') {
+        setError('작업 일수는 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
       if (!formData.guaranteeCount || formData.guaranteeCount === '0' || formData.guaranteeCount === '') {
-        setError('보장 횟수는 필수이며 0보다 큰 값이어야 합니다.');
+        setError('보장 일수(횟수)는 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
+      // 보장 순위는 일 단위일 때만 필수
+      if (formData.guaranteeUnit === '일' && (!formData.targetRank || formData.targetRank === '0' || formData.targetRank === '')) {
+        setError('보장 순위는 필수이며 1-30 사이의 값이어야 합니다.');
         return false;
       }
 
@@ -284,6 +328,7 @@ const CampaignAddPage: React.FC = () => {
         isNegotiable: formData.isNegotiable,
         guaranteeCount: formData.guaranteeCount,
         guaranteeUnit: formData.guaranteeUnit,
+        guaranteePeriod: formData.guaranteePeriod,
         targetRank: formData.targetRank || '1',
         minGuaranteePrice: formData.minGuaranteePrice,
         maxGuaranteePrice: formData.maxGuaranteePrice
@@ -338,6 +383,7 @@ const CampaignAddPage: React.FC = () => {
             onBannerPreview={() => setBannerPreviewModalOpen(true)}
             previewUrl={previewUrl}
             onLogoUpload={handleLogoUpload}
+            onLogoRemove={handleLogoRemove}
             bannerImagePreviewUrl={bannerImagePreviewUrl}
             onBannerImageUpload={handleBannerImageUpload}
             onBannerImageRemove={handleBannerImageRemove}
@@ -455,22 +501,10 @@ const CampaignAddPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 p-3 sm:p-4 border-t">
-              <a
-                href={bannerImagePreviewUrl || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors w-full sm:w-auto text-sm sm:text-base"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                <span>새 탭에서 열기</span>
-              </a>
-
+            <div className="flex justify-center items-center p-3 sm:p-4 border-t">
               <button
                 onClick={() => setBannerPreviewModalOpen(false)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors w-full sm:w-auto text-sm sm:text-base"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors text-sm sm:text-base"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

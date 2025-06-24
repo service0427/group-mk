@@ -180,6 +180,7 @@ export interface ICampaign {
   slotType?: 'standard' | 'guarantee';
   guaranteeCount?: string | number;
   guaranteeUnit?: '일' | '회';
+  guaranteePeriod?: string | number;
   minGuaranteePrice?: string | number;
   maxGuaranteePrice?: string | number;
   targetRank?: string | number;

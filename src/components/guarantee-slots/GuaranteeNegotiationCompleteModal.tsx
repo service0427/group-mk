@@ -18,6 +18,10 @@ interface GuaranteeNegotiationCompleteModalProps {
   guaranteeUnit?: string;
   targetRank: number;
   isLoading?: boolean;
+  budgetType?: 'daily' | 'total';
+  proposedDailyAmount?: number;
+  proposedTotalAmount?: number;
+  workPeriod?: number;
 }
 
 const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteModalProps> = ({
@@ -29,11 +33,20 @@ const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteMo
   guaranteeCount,
   guaranteeUnit = '일',
   targetRank,
-  isLoading = false
+  isLoading = false,
+  budgetType = 'daily',
+  proposedDailyAmount,
+  proposedTotalAmount,
+  workPeriod
 }) => {
   if (!isOpen) return null;
 
-  const totalAmount = proposedAmount * guaranteeCount;
+  // 작업기간 (workPeriod가 있으면 사용, 없으면 guaranteeCount 사용)
+  const actualWorkPeriod = workPeriod || guaranteeCount;
+  
+  // 일별 금액과 총액 계산
+  const dailyAmount = proposedDailyAmount || proposedAmount;
+  const totalAmount = proposedTotalAmount || (dailyAmount * actualWorkPeriod);
   const totalAmountWithVAT = Math.floor(totalAmount * 1.1);
 
   return (
@@ -68,11 +81,21 @@ const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteMo
                     <span className="font-medium text-gray-900 dark:text-white">{targetRank}위</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{guaranteeUnit === '일' ? '일' : '회'}당 금액:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{proposedAmount.toLocaleString()}원</span>
+                    <span className="text-gray-600 dark:text-gray-400">제안 방식:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {budgetType === 'total' ? '총액 제안' : '일별 제안'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">보장 기간:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{guaranteeUnit === '일' ? '일' : '회'}당 금액:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{dailyAmount.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">작업 기간:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{actualWorkPeriod}{guaranteeUnit}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">보장 횟수:</span>
                     <span className="font-medium text-gray-900 dark:text-white">{guaranteeCount}{guaranteeUnit}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">

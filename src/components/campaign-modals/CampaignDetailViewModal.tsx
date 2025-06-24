@@ -694,13 +694,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                       <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
                       {isGuaranteeType ? '보장형' : '일반형'}
                     </span>
-                    {/* 보장형인 경우 보장 순위 배지 추가 */}
-                    {isGuaranteeType && campaign?.targetRank && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                        <KeenIcon icon="ranking" className="mr-1.5 size-3.5" />
-                        {campaign.targetRank}위 보장
-                      </span>
-                    )}
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusDotColor === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
                         statusDotColor === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
                           statusDotColor === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
@@ -796,6 +789,21 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* 보장 요약 정보 - 보장형일 때만 표시 */}
+              {isGuaranteeType && campaign?.originalData?.guarantee_period && campaign?.originalData?.guarantee_count && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center gap-2">
+                    <KeenIcon icon="check" className="size-5 text-purple-500 flex-shrink-0" />
+                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      {campaign.originalData.guarantee_unit === '일' 
+                        ? `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.target_rank || '__'}위 이내 ${campaign.originalData.guarantee_count}일 보장`
+                        : `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.guarantee_count}회 보장`
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* 중간: 캠페인 설명 */}
               <div>

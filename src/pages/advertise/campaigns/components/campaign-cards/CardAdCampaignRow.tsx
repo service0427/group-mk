@@ -220,7 +220,7 @@ const CardAdCampaignRow = ({
                       <span className="text-gray-900 text-sm leading-none font-medium">
                         {guaranteeCount ? `${guaranteeCount}${guaranteeUnit}` : '-'}
                       </span>
-                      <span className="text-gray-700 text-xs">🛡️{guaranteeUnit === '일' ? '보장일수' : '보장회수'}</span>
+                      <span className="text-gray-700 text-xs">🛡️{guaranteeUnit === '일' ? '보장일수' : '보장횟수'}</span>
                     </div>
                   );
                 }

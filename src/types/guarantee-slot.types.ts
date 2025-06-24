@@ -24,9 +24,13 @@ export interface GuaranteeSlotRequest {
   distributor_id?: string;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
+  budget_type?: 'daily' | 'total';
   status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;
+  final_budget_type?: 'daily' | 'total';
+  final_total_amount?: number;
   keyword_id?: number;
   input_data?: Record<string, any>;
   start_date?: string;
@@ -57,6 +61,10 @@ export interface GuaranteeSlotNegotiation {
   message: string;
   proposed_daily_amount?: number;
   proposed_guarantee_count?: number;
+  proposed_total_amount?: number;
+  proposed_work_period?: number;
+  proposed_target_rank?: number;
+  budget_type?: 'daily' | 'total';
   attachments?: AttachmentFile[];
   is_read: boolean;
   created_at: string;
@@ -161,7 +169,9 @@ export interface CreateGuaranteeSlotRequestParams {
   campaign_id: number;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
+  budget_type?: 'daily' | 'total';
   message?: string;
   keyword_id?: number;
   input_data?: Record<string, any>;
@@ -177,7 +187,11 @@ export interface CreateNegotiationMessageParams {
   message: string;
   proposed_daily_amount?: number;
   proposed_guarantee_count?: number;
+  proposed_total_amount?: number;
+  proposed_work_period?: number;
+  proposed_target_rank?: number;
   message_type: NegotiationMessageType;
+  budget_type?: 'daily' | 'total';
   attachments?: AttachmentFile[];
   isFromDistributorPage?: boolean; // 보장형 슬롯 관리 페이지에서 보낸 것인지
 }

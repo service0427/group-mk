@@ -80,7 +80,6 @@ class SearchKeywordService {
       const { data, error } = await supabase
         .from('search_keywords')
         .select('*')
-        .eq('user_id', userId)
         .order('searched_at', { ascending: false });
 
       if (error) {
@@ -103,7 +102,6 @@ class SearchKeywordService {
       const { data, error } = await supabase
         .from('search_keywords')
         .select('keyword')
-        .eq('user_id', userId)
         .in('keyword', keywords);
 
       if (error) {

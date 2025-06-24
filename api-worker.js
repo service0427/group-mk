@@ -252,6 +252,28 @@ async function handleRequest(request) {
               ...corsHeaders
             }
           });
+        } else if (url.pathname === '/api/keyword-analysis' && request.method === 'POST') {
+          // 모의 키워드 분석 데이터
+          return new Response(JSON.stringify({
+            keywordList: [
+              {
+                relKeyword: "테스트 키워드",
+                monthlyPcQcCnt: 1000,
+                monthlyMobileQcCnt: 5000,
+                monthlyAvePcClkCnt: 50,
+                monthlyAveMobileClkCnt: 250,
+                monthlyAvePcCtr: 5.0,
+                monthlyAveMobileCtr: 5.0,
+                plAvgDepth: 15,
+                compIdx: "낮음"
+              }
+            ]
+          }), {
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
         }
       } else {
         // 실제 API 호출 시도
@@ -264,6 +286,8 @@ async function handleRequest(request) {
             return await handlePlacesRequest(request, url, corsHeaders);
           } else if (url.pathname === '/api/shop') {
             return await handleShopRequest(request, url, corsHeaders);
+          } else if (url.pathname === '/api/keyword-analysis' && request.method === 'POST') {
+            return await handleKeywordAnalysis(request, corsHeaders);
           }
         } catch (apiError) {
           console.error(`[Worker] API call failed: ${apiError.message}`);
@@ -902,4 +926,103 @@ function cleanShopItemTags(item) {
 function stripShopTags(str) {
   if (!str) return '';
   return str.replace(/<\/?[^>]+(>|$)/g, '');
+}
+
+/**
+ * HMAC-SHA256 서명 생성 (네이버 검색광고 API용)
+ */
+async function generateSignature(secretKey, timestamp, method, path) {
+  const encoder = new TextEncoder();
+  const sign = `${timestamp}.${method}.${path}`;
+  
+  // Secret Key를 그대로 사용 (Base64 디코딩 하지 않음)
+  const keyData = encoder.encode(secretKey);
+  
+  // HMAC-SHA256 키 생성
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  // 서명 생성
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(sign));
+  const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
+  
+  return signature;
+}
+
+/**
+ * 키워드 분석 요청 처리 (네이버 검색광고 API)
+ */
+async function handleKeywordAnalysis(request, corsHeaders) {
+  const { keyword, apiKey, secretKey, customerId } = await request.json();
+  
+  if (!keyword || !apiKey || !secretKey || !customerId) {
+    return new Response(JSON.stringify({ 
+      error: '필수 파라미터가 누락되었습니다.',
+      required: ['keyword', 'apiKey', 'secretKey', 'customerId']
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    // 타임스탬프 생성
+    const timestamp = Date.now().toString();
+    
+    // 서명 생성
+    const signature = await generateSignature(secretKey, timestamp, 'GET', '/keywordstool');
+    
+    // 네이버 API 호출
+    const naverUrl = `https://api.searchad.naver.com/keywordstool?hintKeywords=${encodeURIComponent(keyword.toUpperCase())}&showDetail=1`;
+    
+    const response = await fetch(naverUrl, {
+      method: 'GET',
+      headers: {
+        'X-Timestamp': timestamp,
+        'X-Customer': customerId,
+        'X-API-KEY': apiKey,
+        'X-Signature': signature,
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    });
+    
+    const responseText = await response.text();
+    let data;
+    
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Response parsing error:', responseText);
+      data = { error: responseText };
+    }
+    
+    if (!response.ok) {
+      console.error('네이버 API 오류 상세:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      throw new Error(`네이버 API 오류: ${response.status} ${response.statusText} - ${JSON.stringify(data)}`);
+    }
+    
+    return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('키워드 분석 오류:', error);
+    return new Response(JSON.stringify({ 
+      error: '키워드 분석 중 오류가 발생했습니다.',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }

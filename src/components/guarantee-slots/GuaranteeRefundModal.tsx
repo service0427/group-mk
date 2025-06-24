@@ -43,10 +43,15 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
   const [error, setError] = useState<string>('');
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
 
+  // 환불 금액 계산 수정: 총 금액이 이미 VAT 포함되어 있어야 함
+  // 완료된 금액 = (총금액 / 작업기간) * 완료일수
+  const dailyAmountWithVat = totalAmount > 0 && guaranteeCount > 0 ? totalAmount / guaranteeCount : 0;
+  const completedAmount = dailyAmountWithVat * completedDays;
+  const refundAmount = Math.max(0, Math.round(totalAmount - completedAmount));
+  
   const remainingDays = Math.max(0, guaranteeCount - completedDays);
   const completionRate = guaranteeCount > 0 ? Math.round((completedDays / guaranteeCount) * 100) : 0;
-  const refundRate = guaranteeCount > 0 ? Math.round((remainingDays / guaranteeCount) * 100) : 100;
-  const refundAmount = Math.round(totalAmount * (refundRate / 100));
+  const refundRate = totalAmount > 0 ? Math.round((refundAmount / totalAmount) * 100) : 0;
 
   const handleConfirm = () => {
     if (!reason.trim()) {
@@ -115,12 +120,23 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
                       </Badge>
                     </div>
                     {totalAmount > 0 && (
-                      <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 dark:border-gray-700">
-                        <span className="text-xs text-slate-500 dark:text-gray-500">환불 예정액</span>
-                        <span className="font-semibold text-danger">
-                          {refundAmount.toLocaleString()}원
-                        </span>
-                      </div>
+                      <>
+                        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 dark:border-gray-700">
+                          <span className="text-xs text-slate-500 dark:text-gray-500">총 결제금액</span>
+                          <span className="font-medium">
+                            {totalAmount.toLocaleString()}원
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-xs text-slate-500 dark:text-gray-500">환불 예정액</span>
+                          <span className="font-semibold text-danger">
+                            {refundAmount.toLocaleString()}원
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-gray-400 text-right">
+                          (VAT 포함)
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>

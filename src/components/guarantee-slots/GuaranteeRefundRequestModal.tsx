@@ -159,12 +159,14 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
                         <span className="text-xs text-slate-500 dark:text-gray-500">원래 결제금액</span>
                         <span className="font-medium">
                           {formatNumber(totalAmount)}원
+                          <span className="text-xs text-slate-400 ml-1">(VAT 포함)</span>
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span className="text-xs text-slate-500 dark:text-gray-500">환불 신청액</span>
                         <span className="font-semibold text-danger">
                           {formatNumber(refundAmount)}원
+                          <span className="text-xs text-red-400 ml-1">(VAT 포함)</span>
                         </span>
                       </div>
                     </div>
@@ -201,31 +203,37 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
                         <div className="text-sm space-y-2">
                           <div className="flex justify-between">
                             <span>전체 결제금액:</span>
-                            <span className="font-medium">{formatNumber(totalAmount)}원</span>
+                            <span className="font-medium">{formatNumber(totalAmount)}원 (VAT 포함)</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>전체 보장기간:</span>
+                            <span>작업 기간:</span>
                             <span className="font-medium">{guaranteeCount}일</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>완료 기간:</span>
+                            <span>완료 일수:</span>
                             <span className="font-medium">{completedDays}일</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>잔여 기간:</span>
+                            <span>잔여 일수:</span>
                             <span className="font-medium text-orange-600">{remainingDays}일</span>
                           </div>
                           <hr className="border-slate-200 dark:border-gray-700" />
                           <div className="flex justify-between text-sm">
-                            <span>계산식:</span>
-                            <span className="font-mono text-xs text-slate-600 dark:text-gray-400">
-                              ({formatNumber(totalAmount)} ÷ {guaranteeCount}) × {remainingDays}
+                            <span>일일 단가:</span>
+                            <span className="font-mono text-xs">
+                              {formatNumber(Math.round(totalAmount / guaranteeCount))}원 (VAT 포함)
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>완료 금액:</span>
+                            <span className="font-mono text-xs">
+                              {formatNumber(Math.round((totalAmount / guaranteeCount) * completedDays))}원
                             </span>
                           </div>
                           <div className="flex justify-between font-semibold text-base">
                             <span>환불 예상액:</span>
                             <span className="text-red-600">
-                              {formatNumber(Math.round((totalAmount / guaranteeCount) * remainingDays))}원
+                              {formatNumber(Math.round(totalAmount - ((totalAmount / guaranteeCount) * completedDays)))}원
                             </span>
                           </div>
                           {refundAmount !== Math.round((totalAmount / guaranteeCount) * remainingDays) && (

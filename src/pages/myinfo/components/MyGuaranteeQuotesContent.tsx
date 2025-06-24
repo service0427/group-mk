@@ -23,6 +23,7 @@ interface MyGuaranteeQuoteRequest {
   distributor_id?: string;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
   status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;
@@ -675,7 +676,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           return Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
         })()}
         totalAmount={refundModal.requestData?.final_daily_amount ? 
-          refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_count || 0) : 0}
+          refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_period || refundModal.requestData.guarantee_count || 0) * 1.1 : 0}
         refundSettings={refundModal.requestData?.campaigns?.refund_settings}
       />
 

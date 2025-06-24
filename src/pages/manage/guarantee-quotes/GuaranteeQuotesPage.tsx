@@ -5,6 +5,7 @@ import { CommonTemplate } from '@/components/pageTemplate';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
+import { createRefundApprovedNotification } from '@/utils/notificationActions';
 import { supabase } from '@/supabase';
 import { KeenIcon } from '@/components';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -35,6 +36,7 @@ interface GuaranteeQuoteRequest {
   distributor_id?: string;
   target_rank: number;
   guarantee_count: number;
+  guarantee_period?: number;
   initial_budget?: number;
   status: 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
   final_daily_amount?: number;
@@ -843,7 +845,7 @@ const GuaranteeQuotesPage: React.FC = () => {
     if (slot.start_date) {
       const start = new Date(slot.start_date);
       const today = new Date();
-      completedDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      completedDays = Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     }
 
     setCompleteSlotData({
@@ -905,7 +907,7 @@ const GuaranteeQuotesPage: React.FC = () => {
     if (slot.start_date) {
       const start = new Date(slot.start_date);
       const today = new Date();
-      completedDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      completedDays = Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     }
 
     setRefundSlotData({
@@ -914,7 +916,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0,
+      totalAmount: request.final_daily_amount ? request.final_daily_amount * (request.guarantee_period || request.guarantee_count) : 0,
       refundSettings: request.campaigns?.refund_settings
     });
     setRefundModalOpen(true);
@@ -963,7 +965,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays: 0, // TODO: 실제 완료일수 계산 필요
-      totalAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0,
+      totalAmount: request.final_daily_amount ? request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1 : 0,
       requestDate: refundRequest.request_date
     });
     setRefundRequestModalOpen(true);
@@ -984,6 +986,16 @@ const GuaranteeQuotesPage: React.FC = () => {
 
       if (error) {
         throw error;
+      }
+
+      // 환불 승인 알림 발송
+      if (data?.user_id && refundRequestData.campaignName && refundRequestData.refundAmount) {
+        await createRefundApprovedNotification(
+          data.user_id,
+          refundRequestData.campaignName,
+          refundRequestData.refundAmount,
+          notes
+        );
       }
 
       showSuccess('환불 요청이 승인되어 처리되었습니다.');
@@ -1016,6 +1028,21 @@ const GuaranteeQuotesPage: React.FC = () => {
 
       if (error) {
         throw error;
+      }
+
+      // 사용자에게 환불 거절 알림 전송
+      const request = requests.find(req => 
+        req.guarantee_slots?.some(slot => slot.id === refundRequestData.slotId)
+      );
+      
+      if (request?.user_id) {
+        const { createRefundRejectedNotification } = await import('@/utils/notificationActions');
+        await createRefundRejectedNotification(
+          request.user_id,
+          refundRequestData.campaignName || '캠페인',
+          refundRequestData.refundAmount,
+          notes
+        );
       }
 
       showSuccess('환불 요청이 거절되었습니다.');
@@ -1091,7 +1118,7 @@ const GuaranteeQuotesPage: React.FC = () => {
           'guarantee_period': `${request.guarantee_count}${request.campaigns?.guarantee_unit || '일'}`,
           'initial_budget': request.initial_budget || 0,
           'final_amount': request.final_daily_amount || 0,
-          'total_amount': (request.final_daily_amount || 0) * request.guarantee_count,
+          'total_amount': (request.final_daily_amount || 0) * (request.guarantee_period || request.guarantee_count),
           'quote_status': getRequestStatusText(request.status),
           'slot_status': getSlotStatusText(slotStatus),
           'start_date': slot?.start_date ? format(new Date(slot.start_date), 'yyyy-MM-dd') : '',
@@ -1905,9 +1932,9 @@ const GuaranteeQuotesPage: React.FC = () => {
                             <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
                           {request.status === 'purchased' && (
                             <>
-                              {/* 슬롯이 없거나 pending/rejected 상태일 때 구매 상태 표시 */}
+                              {/* 슬롯이 없거나 pending/rejected 상태일 때 구매 상태 표시 (환불 요청이 없는 경우만) */}
                               {(!request.guarantee_slots?.[0] || 
-                                request.guarantee_slots[0].status === 'pending' || 
+                                (request.guarantee_slots[0].status === 'pending' && !request.guarantee_slots[0].refund_requests?.length) || 
                                 request.guarantee_slots[0].status === 'rejected') && (
                                 <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
                               )}

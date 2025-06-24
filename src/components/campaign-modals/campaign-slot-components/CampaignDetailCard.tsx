@@ -57,13 +57,6 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
               <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3 me-1" />
               {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
             </span>
-            {/* 보장형인 경우 보장 순위 배지 추가 */}
-            {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
-              <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0">
-                <KeenIcon icon="ranking" className="size-3 me-1" />
-                {selectedCampaign.target_rank}위 보장
-              </span>
-            )}
             {/* 상태 배지 */}
             <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-0.5 px-2 text-xs shrink-0`}>
               <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1`}></span>
@@ -80,7 +73,8 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
             {selectedCampaign.slot_type === 'guarantee' ? (
               <>
                 <span className="flex items-center gap-1">
-                  <span className="text-purple-600 dark:text-purple-400">가격범위:</span>
+                  <KeenIcon icon="wallet" className="text-primary size-3" />
+                  <span className="text-purple-600 dark:text-purple-400">가격:</span>
                   <span className="font-semibold text-primary">
                     {(() => {
                       const minPrice = Number(selectedCampaign.min_guarantee_price?.toString().replace(/[^\d]/g, '') || 0);
@@ -108,25 +102,49 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                   </span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="text-purple-600 dark:text-purple-400">{selectedCampaign.guarantee_unit === '회' ? '보장회수:' : '보장일수:'}</span>
+                  <KeenIcon icon="shield-tick" className="text-purple-500 size-3" />
+                  <span className="text-purple-600 dark:text-purple-400">{selectedCampaign.guarantee_unit === '회' ? '보장:' : '보장:'}</span>
                   <span className="font-semibold">{selectedCampaign.guarantee_count || 30}{selectedCampaign.guarantee_unit || '일'}</span>
                 </span>
+                {selectedCampaign.guarantee_period && (
+                  <span className="flex items-center gap-1">
+                    <KeenIcon icon="calendar-tick" className="text-purple-500 size-3" />
+                    <span className="text-purple-600 dark:text-purple-400">작업:</span>
+                    <span className="font-semibold">{selectedCampaign.guarantee_period}일</span>
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
+                  <KeenIcon icon="rocket" className="text-green-500 size-3" />
                   <span className="text-purple-600 dark:text-purple-400">효율:</span>
                   <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
                 </span>
+                {/* 보장 요약 정보 - 효율 오른쪽에 표시 */}
+                {selectedCampaign.guarantee_period && selectedCampaign.guarantee_count && (
+                  <span className="flex items-center gap-1">
+                    <KeenIcon icon="check" className="size-3 text-purple-500" />
+                    <span className="font-semibold text-purple-700 dark:text-purple-300">
+                      {selectedCampaign.guarantee_unit === '일' 
+                        ? `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.target_rank || '__'}위 ${selectedCampaign.guarantee_count}일`
+                        : `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.guarantee_count}회`
+                      }
+                    </span>
+                  </span>
+                )}
               </>
             ) : (
               <>
                 <span className="flex items-center gap-1">
+                  <KeenIcon icon="wallet" className="text-primary size-3" />
                   <span className="text-blue-600 dark:text-blue-400">단가:</span>
                   <span className="font-semibold text-primary">{selectedCampaign.unit_price ? `${Number(selectedCampaign.unit_price.toString().replace(/[^\d]/g, '')).toLocaleString()}원` : '1,000원'}</span>
                 </span>
                 <span className="flex items-center gap-1">
+                  <KeenIcon icon="purchase" className="text-orange-500 size-3" />
                   <span className="text-blue-600 dark:text-blue-400">최소:</span>
                   <span className="font-semibold">{selectedCampaign.min_quantity ? `${Number(selectedCampaign.min_quantity.toString().replace(/[^\d]/g, '')).toLocaleString()}개` : '1개'}</span>
                 </span>
                 <span className="flex items-center gap-1">
+                  <KeenIcon icon="rocket" className="text-green-500 size-3" />
                   <span className="text-blue-600 dark:text-blue-400">효율:</span>
                   <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
                 </span>
@@ -209,13 +227,6 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                 <KeenIcon icon={selectedCampaign.slot_type === 'guarantee' ? 'shield-tick' : 'element-11'} className="size-3.5 me-1.5" />
                 {selectedCampaign.slot_type === 'guarantee' ? '보장형' : '일반형'}
               </span>
-              {/* 보장형인 경우 보장 순위 배지 추가 */}
-              {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.target_rank && (
-                <span className="badge badge-warning badge-outline rounded-[30px] h-auto py-1">
-                  <KeenIcon icon="ranking" className="size-3.5 me-1.5" />
-                  {selectedCampaign.target_rank}위 보장
-                </span>
-              )}
               <span className={`badge badge-${getStatusColor(selectedCampaign.status)} badge-outline rounded-[30px] h-auto py-1`}>
                 <span className={`size-1.5 rounded-full bg-${getStatusColor(selectedCampaign.status)} me-1.5`}></span>
                 {getStatusLabel(selectedCampaign.status)}
@@ -257,11 +268,21 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
 
                   <div className="flex items-center gap-1.5">
                     <KeenIcon icon="shield-tick" className="text-purple-500 size-4" />
-                    <span className="text-muted-foreground">{selectedCampaign.guarantee_unit === '회' ? '보장회수:' : '보장일수:'}</span>
+                    <span className="text-muted-foreground">{selectedCampaign.guarantee_unit === '회' ? '보장횟수:' : '보장일수:'}</span>
                     <span className="font-bold">
                       {selectedCampaign.guarantee_count || 30}{selectedCampaign.guarantee_unit || '일'}
                     </span>
                   </div>
+
+                  {selectedCampaign.guarantee_period && (
+                    <div className="flex items-center gap-1.5">
+                      <KeenIcon icon="calendar-tick" className="text-purple-500 size-4" />
+                      <span className="text-muted-foreground">작업일수:</span>
+                      <span className="font-bold">
+                        {selectedCampaign.guarantee_period}일
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-1.5">
                     <KeenIcon icon="rocket" className="text-green-500 size-4" />
@@ -309,6 +330,23 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                   {selectedCampaign.description || '설명이 없습니다.'}
                 </div>
               </div>
+
+              {/* 보장 요약 정보 - 보장형일 때만 표시 */}
+              {selectedCampaign.slot_type === 'guarantee' && selectedCampaign.guarantee_period && selectedCampaign.guarantee_count && (
+                <div className="mt-2">
+                  <div className="bg-purple-50/50 p-2 rounded border border-purple-100/50">
+                    <div className="flex items-center gap-1.5">
+                      <KeenIcon icon="check" className="size-4 text-purple-500 flex-shrink-0" />
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        {selectedCampaign.guarantee_unit === '일' 
+                          ? `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.target_rank || '__'}위 이내 ${selectedCampaign.guarantee_count}일 보장`
+                          : `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.guarantee_count}회 보장`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* 환불 정책 표시 - 오른쪽에 배치 */}

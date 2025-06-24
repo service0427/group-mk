@@ -78,9 +78,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     validateField('business_number', formData.business_number);
     validateField('business_name', formData.business_name);
     validateField('representative_name', formData.representative_name);
-    if (formData.business_email) {
-      validateField('business_email', formData.business_email);
-    }
+    validateField('business_email', formData.business_email || ''); // 필수로 변경
     if (!hasExistingBankAccount) {
       validateField('bank_bank_name', formData.bank_account?.bank_name || '');
       validateField('bank_account_number', formData.bank_account?.account_number || '');
@@ -157,13 +155,17 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
       }
     }
 
-    // 이메일 검증 (선택사항)
-    if (name === 'business_email' && value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        errors.business_email = '올바른 이메일 형식이 아닙니다.';
+    // 이메일 검증 (필수)
+    if (name === 'business_email') {
+      if (!value) {
+        errors.business_email = '사업자용 이메일은 필수입니다.';
       } else {
-        delete errors.business_email;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+          errors.business_email = '올바른 이메일 형식이 아닙니다.';
+        } else {
+          delete errors.business_email;
+        }
       }
     }
 
@@ -260,8 +262,8 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     }
 
     // 유효성 검사
-    if (!formData.business_number || !formData.business_name || !formData.representative_name) {
-      setError('사업자등록번호, 상호명, 대표자명은 필수 입력 항목입니다.');
+    if (!formData.business_number || !formData.business_name || !formData.representative_name || !formData.business_email) {
+      setError('사업자등록번호, 상호명, 대표자명, 사업자용 이메일은 필수 입력 항목입니다.');
       setLoading(false);
       return;
     }
@@ -602,7 +604,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                   <h5 className="font-medium text-sm mb-3 text-gray-700">등업 신청 타입</h5>
                   <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">신청 대상 역할 <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">신청 대상 역할</label>
                     <select
                       name="target_role"
                       value={formData.target_role}
@@ -641,11 +643,14 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
                 {/* 기본 정보 섹션 */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-medium text-sm mb-3 text-gray-700">기본 정보</h5>
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="font-medium text-sm text-gray-700">기본 정보</h5>
+                    <span className="text-xs text-red-500">* 모든 항목 필수 입력</span>
+                  </div>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">사업자 등록번호 <span className="text-red-500">*</span></label>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">사업자 등록번호</label>
                         <input
                           type="text"
                           name="business_number"
@@ -660,7 +665,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                         )}
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">상호명 <span className="text-red-500">*</span></label>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">상호명</label>
                         <input
                           type="text"
                           name="business_name"
@@ -677,7 +682,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">대표자명 <span className="text-red-500">*</span></label>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">대표자명</label>
                         <input
                           type="text"
                           name="representative_name"
@@ -700,6 +705,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           onChange={handleChange}
                           placeholder="email@example.com"
                           className={`input input-sm w-full ${validationErrors.business_email ? 'input-error' : ''}`}
+                          required
                         />
                         {validationErrors.business_email && (
                           <p className="text-xs text-red-500 mt-1">{validationErrors.business_email}</p>
@@ -711,7 +717,10 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
                 {/* 출금 계좌 정보 섹션 */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-medium text-sm mb-2 text-gray-700">출금 계좌 정보</h5>
+                  <div className="flex items-center justify-between mb-2">
+                    <h5 className="font-medium text-sm text-gray-700">출금 계좌 정보</h5>
+                    {!hasExistingBankAccount && <span className="text-xs text-red-500">* 모든 항목 필수 입력</span>}
+                  </div>
                   <p className="text-xs text-gray-500 mb-3">정확한 입금을 위해 출금 계좌 정보를 입력해 주세요.</p>
 
                   {hasExistingBankAccount ? (
@@ -738,7 +747,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="text-xs font-medium text-gray-600 mb-1 block">은행명 <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">은행명</label>
                           <input
                             type="text"
                             name="bank_bank_name"
@@ -753,7 +762,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           )}
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-gray-600 mb-1 block">계좌번호 <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">계좌번호</label>
                           <input
                             type="text"
                             name="bank_account_number"
@@ -768,7 +777,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           )}
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-gray-600 mb-1 block">예금주 <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">예금주</label>
                           <input
                             type="text"
                             name="bank_account_holder"

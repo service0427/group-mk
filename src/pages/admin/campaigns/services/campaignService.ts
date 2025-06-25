@@ -186,16 +186,19 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
       try {
         parsedItem.add_info = JSON.parse(parsedItem.add_info);
-
+        console.log(`Campaign ${parsedItem.id} - Parsed add_info from string:`, parsedItem.add_info);
       } catch (error) {
-
+        console.error(`Campaign ${parsedItem.id} - Failed to parse add_info:`, error);
         // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
         const logoUrlMatch = parsedItem.add_info.match(/"logo_url":\s*"([^"]+)"/);
         if (logoUrlMatch && logoUrlMatch[1]) {
           parsedItem.add_info_logo_url = logoUrlMatch[1];
-
         }
+        // 파싱 실패 시 빈 객체로 설정
+        parsedItem.add_info = {};
       }
+    } else if (parsedItem.add_info && typeof parsedItem.add_info === 'object') {
+      console.log(`Campaign ${parsedItem.id} - add_info is already an object:`, parsedItem.add_info);
     }
 
     // 총판 정보 추출
@@ -369,6 +372,8 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       // 사용자 입력 필드가 있으면 add_field로 저장
       add_field: data.add_field
     };
+    
+    console.log('Updating campaign with add_field:', data.add_field);
 
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();
@@ -465,6 +470,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     }
 
     // 이제 additionalInfo에 이미 add_field가 포함되어 있음
+    console.log('Final additionalInfo to save:', additionalInfo);
     
     // DB 컬럼명에 맞게 데이터 변환
     let updateData: IUpdateData = {
@@ -512,16 +518,10 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       updateData.rejected_reason = rejectionReason;
 
       // 2. add_info JSON 내부에도 저장 (하위 호환성)
-      if (typeof additionalInfo === 'object') {
-        additionalInfo.rejection_reason = rejectionReason;
-        updateData.add_info = additionalInfo;
-      } else {
-        // add_info가 객체가 아닌 경우 새로 생성
-        updateData.add_info = {
-          ...additionalInfo,
-          rejection_reason: rejectionReason
-        };
-      }
+      // 기존 add_info 유지하면서 rejection_reason만 추가
+      // additionalInfo에는 이미 기존 데이터가 병합되어 있음
+      additionalInfo.rejection_reason = rejectionReason;
+      updateData.add_info = additionalInfo;
     }
 
     // 상태는 rejected이지만 사유가 없는 경우 경고

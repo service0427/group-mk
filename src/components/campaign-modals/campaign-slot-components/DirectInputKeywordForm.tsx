@@ -435,7 +435,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   }
                 }
               }}
-              minRows={3}
+              minRows={10}
               placeholder="클릭하여 입력"
               onFileUpload={(file, fieldName, rowIndex) => {
                 // 파일 업로드 핸들러
@@ -527,10 +527,8 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
           </>
         )}
 
-        {/* 서비스별 추가 필드 */}
-        {selectedCampaign && getAdditionalFields(selectedCampaign)
-          // 스프레드시트 모드에서는 기본 필드들은 제외
-          .filter(field => !useSpreadsheet || !['productName', 'mid', 'url'].includes(field.fieldName))
+        {/* 서비스별 추가 필드 - 스프레드시트 모드에서는 표시하지 않음 */}
+        {!useSpreadsheet && selectedCampaign && getAdditionalFields(selectedCampaign)
           .map((field, index) => (
           <div key={index}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

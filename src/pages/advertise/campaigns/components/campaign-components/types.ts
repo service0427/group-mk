@@ -41,6 +41,7 @@ export interface SlotItem {
   startDate: string | null;
   endDate: string | null;
   campaign?: Campaign;
+  campaign_name?: string; // 캠페인 이름 직접 참조용
   user?: {
     id: string;
     email: string;

@@ -138,6 +138,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     setSelectedCell({ row, col, value: data[row][col] });
     setSelectedRange(null);
     setEditingCell(null);
+    setIsComposing(false); // 셀 선택 시 isComposing 초기화
     
     // 선택된 셀에 포커스 주기
     setTimeout(() => {
@@ -154,6 +155,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     if (!data[row] || !normalizedColumns[col]) return;
     
     setEditingCell({ row, col, value: data[row][col] });
+    setIsComposing(false); // 편집 시작 시 isComposing 초기화
     
     // 초기값 설정 - 한글은 항상 빈 값으로 시작
     setEditValue(initialValue && !/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(initialValue) ? initialValue : (data[row][col] || ''));
@@ -192,10 +194,40 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       let finalValue = editValue;
       let alertShown = false;
       
+      // number 타입 필드 검증
+      if (normalizedColumns[editingCell.col].type === 'number') {
+        // 숫자가 아닌 문자 제거
+        const cleanedValue = editValue.replace(/[^0-9]/g, '');
+        let numValue = parseInt(cleanedValue) || 0;
+        
+        // 최소 구매수인 경우 0이면 캠페인 최소값으로 설정
+        if (editingCell.col === 1 && normalizedColumns[1].name === '최소 구매수' && numValue === 0) {
+          numValue = minPurchaseQuantity;
+        }
+        // 작업일인 경우 0이면 1로 설정
+        else if (editingCell.col === 2 && normalizedColumns[2].name === '작업일' && numValue === 0) {
+          numValue = 1;
+        }
+        
+        // 값이 다르면 정리된 값으로 설정
+        if (editValue !== cleanedValue && editValue.trim() !== '') {
+          finalValue = numValue.toString();
+          
+          // 최소 구매수가 아닌 경우에는 알림 표시하지 않음
+          // 최소 구매수는 아래에서 별도로 처리됨
+          if (editingCell.col !== 1 || normalizedColumns[1].name !== '최소 구매수') {
+            // 다른 숫자 필드는 조용히 정리만 수행
+            console.log(`${normalizedColumns[editingCell.col].name}: 숫자만 입력 가능 (입력값: ${editValue} → ${finalValue})`);
+          }
+        } else {
+          finalValue = numValue.toString();
+        }
+      }
+      
       // 최소 구매수 컬럼(index 1)인 경우 최소값 체크
       if (editingCell.col === 1 && normalizedColumns[1].name === '최소 구매수') {
-        const inputValue = parseInt(editValue) || 0;
-        if (inputValue < minPurchaseQuantity && inputValue > 0) {
+        const inputValue = parseInt(finalValue) || minPurchaseQuantity;
+        if (inputValue < minPurchaseQuantity) {
           finalValue = minPurchaseQuantity.toString();
           if (showAlert) {
             showAlert('최소 구매수 제한', `최소 구매수는 ${minPurchaseQuantity}개 이상이어야 합니다.`, false);
@@ -213,9 +245,11 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       
       setEditingCell(null);
       setEditValue('');
+      setIsComposing(false); // 편집 완료 시 isComposing 초기화
       
       // 편집 종료 후 해당 셀에 포커스 유지
       if (shouldFocus) {
+        // 포커스 설정 함수
         const focusCell = () => {
           const cell = gridRef.current?.querySelector(
             `tr:nth-child(${prevRow + 1}) td:nth-child(${prevCol + 2})`
@@ -225,18 +259,27 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
             // 포커스가 제대로 설정되었는지 확인
             if (document.activeElement !== cell) {
               // 포커스가 실패하면 다시 시도
-              requestAnimationFrame(() => cell.focus());
+              setTimeout(() => cell.focus(), 10);
             }
           }
         };
         
         if (alertShown) {
-          // 모달이 표시된 경우 포커스 복구를 위한 정보 저장
+          // 알림이 표시된 경우 포커스 정보 저장
           setLastFocusedCell({ row: prevRow, col: prevCol });
-          // 모달이 표시된 경우 여러 번 시도
-          setTimeout(focusCell, 300);
-          setTimeout(focusCell, 600);
-          setTimeout(focusCell, 1000);
+          // 알림 모달이 닫힌 후 포커스 복구
+          const checkAndFocus = () => {
+            // 알림 모달이 아직 열려있는지 확인
+            const modalElement = document.querySelector('[role="dialog"]');
+            if (!modalElement) {
+              // 모달이 닫혔으면 포커스 복구
+              focusCell();
+            } else {
+              // 아직 열려있으면 다시 시도
+              setTimeout(checkAndFocus, 100);
+            }
+          };
+          setTimeout(checkAndFocus, 100);
         } else {
           // 일반적인 경우
           setLastFocusedCell(null);
@@ -350,6 +393,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         // 일반 문자 입력 시 편집 모드로 전환
         // 한글 조합 중이거나 한글 자음/모음인 경우 제외
         const isKoreanChar = /^[ㄱ-ㅎㅏ-ㅣ가-힣]$/.test(e.key);
+        
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !isComposing && !isKoreanChar && normalizedColumns[col].type !== 'file' && e.key !== 'Process') {
           e.preventDefault();
           startEditing(row, col, e.key);
@@ -530,8 +574,6 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       }
                     }}
                     onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                    onCompositionStart={() => setIsComposing(true)}
-                    onCompositionEnd={() => setIsComposing(false)}
                     tabIndex={0}
                   >
                     {editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
@@ -573,19 +615,38 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       ) : (
                         <input
                           ref={inputRef}
-                          type={normalizedColumns[colIndex] && normalizedColumns[colIndex].type === 'number' ? 'number' : 'text'}
+                          type={normalizedColumns[colIndex] && normalizedColumns[colIndex].type === 'number' ? 'text' : 'text'}
                           value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
+                          onChange={(e) => {
+                            if (normalizedColumns[colIndex] && normalizedColumns[colIndex].type === 'number') {
+                              // number 타입일 때는 숫자만 입력 가능
+                              const value = e.target.value;
+                              // 빈 문자열이거나 숫자만 있는 경우 그대로 설정
+                              if (value === '' || /^[0-9]+$/.test(value)) {
+                                setEditValue(value);
+                              }
+                              // 숫자가 아닌 문자가 포함된 경우만 필터링
+                              else {
+                                const cleanedValue = value.replace(/[^0-9]/g, '');
+                                setEditValue(cleanedValue);
+                              }
+                            } else {
+                              setEditValue(e.target.value);
+                            }
+                          }}
                           onBlur={() => finishEditing(false)}
                           onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
                           onCompositionStart={() => setIsComposing(true)}
                           onCompositionEnd={(e) => {
                             setIsComposing(false);
                             // 한글 조합이 끝났을 때 값 업데이트
-                            setEditValue(e.currentTarget.value);
+                            if (normalizedColumns[colIndex] && normalizedColumns[colIndex].type !== 'number') {
+                              setEditValue(e.currentTarget.value);
+                            }
                           }}
                           className="absolute inset-0 w-full h-full px-2 border-2 border-green-500 outline-none bg-white dark:bg-gray-900 text-sm z-10"
                           autoFocus
+                          inputMode={normalizedColumns[colIndex] && normalizedColumns[colIndex].type === 'number' ? 'numeric' : 'text'}
                         />
                       )
                     ) : (

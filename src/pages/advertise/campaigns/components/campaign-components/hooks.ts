@@ -494,32 +494,106 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
   // 슬롯 삭제 핸들러
   const handleDeleteSlot = async (id: string) => {
-    if (!window.confirm('정말로 이 슬롯을 삭제하시겠습니까?')) {
+    if (!window.confirm('정말로 이 슬롯을 취소하시겠습니까?')) {
       return;
     }
 
     try {
-      // Supabase에서 삭제
-      const { error: deleteError } = await supabase
-        .from('slots')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) {
-        throw deleteError;
+      // 슬롯 정보 확인
+      const slot = slots.find(s => s.id === id);
+      if (!slot) {
+        throw new Error('슬롯을 찾을 수 없습니다.');
       }
 
-      // 로컬 상태 업데이트
-      const updatedSlots = slots.filter(item => item.id !== id);
+      // pending, submitted 상태만 취소 가능
+      if (!['pending', 'submitted'].includes(slot.status)) {
+        alert('이미 처리된 슬롯은 취소할 수 없습니다.');
+        return;
+      }
+
+      // 1. 슬롯 상태를 cancelled로 변경
+      const { error: updateError } = await supabase
+        .from('slots')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // 2. slot_pending_balances 상태도 cancelled로 변경
+      const { error: pendingError } = await supabase
+        .from('slot_pending_balances')
+        .update({ status: 'cancelled' })
+        .eq('slot_id', id);
+
+      if (pendingError) {
+        console.error('pending balance 업데이트 오류:', pendingError);
+      }
+
+      // 3. 환불 처리
+      const { data: pendingBalance } = await supabase
+        .from('slot_pending_balances')
+        .select('amount')
+        .eq('slot_id', id)
+        .single();
+
+      if (pendingBalance && pendingBalance.amount > 0) {
+        // user_balances 업데이트
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          // 현재 잔액 조회
+          const { data: currentBalance } = await supabase
+            .from('user_balances')
+            .select('amount')
+            .eq('user_id', userData.user.id)
+            .single();
+
+          if (currentBalance) {
+            // 잔액 증가
+            await supabase
+              .from('user_balances')
+              .update({ 
+                amount: Number(currentBalance.amount) + Number(pendingBalance.amount),
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userData.user.id);
+
+            // cash history 추가
+            await supabase
+              .from('user_cash_history')
+              .insert({
+                user_id: userData.user.id,
+                amount: pendingBalance.amount,
+                transaction_type: 'refund',
+                description: `슬롯 취소 환불 - ${slot.campaign?.campaignName || slot.campaign_name || ''}`,
+                status: 'completed',
+                created_at: new Date().toISOString()
+              });
+          }
+        }
+      }
+
+      // 로컬 상태 업데이트 (상태만 변경)
+      const updatedSlots = slots.map(item => 
+        item.id === id ? { ...item, status: 'cancelled' } : item
+      );
       setSlots(updatedSlots);
 
       // 필터링된 슬롯도 업데이트
-      const updatedFilteredSlots = filteredSlots.filter(item => item.id !== id);
+      const updatedFilteredSlots = filteredSlots.map(item => 
+        item.id === id ? { ...item, status: 'cancelled' } : item
+      );
       setFilteredSlots(updatedFilteredSlots);
 
-    } catch (err) {
+      alert('슬롯이 성공적으로 취소되었습니다.');
 
-      alert('슬롯 삭제 중 오류가 발생했습니다.');
+    } catch (err: any) {
+      console.error('슬롯 취소 오류:', err);
+      alert(err.message || '슬롯 취소 중 오류가 발생했습니다.');
     }
   };
 

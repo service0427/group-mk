@@ -17,6 +17,9 @@ interface GuaranteeApprovalModalProps {
   guaranteeUnit?: string;
   startDate?: string;
   endDate?: string;
+  targetRank?: number;
+  workPeriod?: number;
+  refundSettings?: any;
 }
 
 const GuaranteeApprovalModal: React.FC<GuaranteeApprovalModalProps> = ({
@@ -28,6 +31,9 @@ const GuaranteeApprovalModal: React.FC<GuaranteeApprovalModalProps> = ({
   guaranteeUnit = 'daily',
   startDate,
   endDate,
+  targetRank,
+  workPeriod,
+  refundSettings,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -53,15 +59,33 @@ const GuaranteeApprovalModal: React.FC<GuaranteeApprovalModalProps> = ({
               보장 정보
             </h4>
             <div className="space-y-2 pl-2">
+              {targetRank && (
+                <div className="flex items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400 w-24">목표 순위:</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    {targetRank}위
+                  </span>
+                </div>
+              )}
               <div className="flex items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400 w-24">보장기간:</span>
+                <span className="text-gray-600 dark:text-gray-400 w-24">
+                  {(guaranteeUnit === 'daily' || guaranteeUnit === '일') ? '보장기간:' : '보장횟수:'}
+                </span>
                 <span className="text-gray-900 dark:text-gray-100">
-                  {guaranteeCount}{guaranteeUnit === 'daily' ? '일' : '회'}
+                  {guaranteeCount}{(guaranteeUnit === 'daily' || guaranteeUnit === '일') ? '일' : '회'}
                 </span>
               </div>
-              {startDate && endDate && (
+              {workPeriod && (
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400 w-24">작업기간:</span>
+                  <span className="text-gray-900 dark:text-gray-100">
+                    {workPeriod}일 (실작업기간)
+                  </span>
+                </div>
+              )}
+              {startDate && endDate && (
+                <div className="flex items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400 w-24">작업일정:</span>
                   <span className="text-gray-900 dark:text-gray-100">
                     {startDate} ~ {endDate}
                   </span>
@@ -89,6 +113,28 @@ const GuaranteeApprovalModal: React.FC<GuaranteeApprovalModalProps> = ({
               </div>
             </div>
           </div>
+
+          {refundSettings && (
+            <div className="space-y-3 mb-4">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                환불 정책
+              </h4>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-sm space-y-2">
+                {refundSettings.refund_rate && (
+                  <div className="flex items-center">
+                    <span className="text-gray-600 dark:text-gray-400 w-24">환불율:</span>
+                    <span className="text-gray-900 dark:text-gray-100">{refundSettings.refund_rate}%</span>
+                  </div>
+                )}
+                {refundSettings.refund_description && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">환불 조건:</span>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{refundSettings.refund_description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
             이 보장형 슬롯을 승인하시겠습니까?

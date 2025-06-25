@@ -27,6 +27,7 @@ interface MyGuaranteeQuoteRequest {
   initial_budget?: number;
   status: GuaranteeSlotRequestStatus;
   final_daily_amount?: number;
+  final_total_amount?: number;
   keyword_id?: number;
   input_data?: Record<string, any>;
   start_date?: string;
@@ -69,7 +70,7 @@ interface MyGuaranteeQuoteRequest {
     updated_at: string;
     refund_requests?: Array<{
       id: string;
-      status: 'pending' | 'approved' | 'rejected';
+      status: 'pending' | 'approved' | 'rejected' | 'pending_user_confirmation';
       refund_reason: string;
       approval_notes?: string;
       request_date: string;
@@ -102,7 +103,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     open: false,
     requestId: ''
   });
-  
+
   // 환불 모달 상태
   const [refundModal, setRefundModal] = useState<{
     open: boolean;
@@ -110,17 +111,17 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
   }>({
     open: false
   });
-  
+
   // 선택 관련 상태
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
   // 견적 요청 목록 조회
   const fetchRequests = useCallback(async () => {
     if (!currentUser?.id || authLoading) return;
-    
+
     try {
       setLoading(true);
-      
+
       let query = supabase
         .from('guarantee_slot_requests')
         .select(`
@@ -160,16 +161,16 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           .split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join('');
-        
-        
+
+
         // 캠페인 테이블에서 해당 service_type을 가진 캠페인 ID들을 먼저 조회
         const { data: campaigns, error: campaignError } = await supabase
           .from('campaigns')
           .select('id, campaign_name, logo, status, service_type')
           .eq('service_type', serviceType);
-        
+
         if (campaignError) throw campaignError;
-        
+
         if (campaigns && campaigns.length > 0) {
           const campaignIds = campaigns.map(c => c.id);
           query = query.in('campaign_id', campaignIds);
@@ -241,26 +242,26 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
   // 검색 필터링
   const filteredItems = useMemo(() => {
     return guaranteeItems.filter(item => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.keywords?.main_keyword?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.keywords?.url?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.keywords?.mid?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+        String(item.keywords?.mid || '').toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesStatus = !searchStatus || item.status === searchStatus;
-      
-      const matchesCampaign = selectedCampaignId === 'all' || 
+
+      const matchesCampaign = selectedCampaignId === 'all' ||
         item.campaigns?.id === selectedCampaignId;
-      
-      const matchesDateFrom = !searchDateFrom || 
+
+      const matchesDateFrom = !searchDateFrom ||
         new Date(item.created_at) >= new Date(searchDateFrom);
-      
-      const matchesDateTo = !searchDateTo || 
+
+      const matchesDateTo = !searchDateTo ||
         new Date(item.created_at) <= new Date(searchDateTo + 'T23:59:59');
-      
-      return matchesSearch && matchesStatus && matchesCampaign && 
-             matchesDateFrom && matchesDateTo;
+
+      return matchesSearch && matchesStatus && matchesCampaign &&
+        matchesDateFrom && matchesDateTo;
     });
   }, [guaranteeItems, searchTerm, searchStatus, selectedCampaignId, searchDateFrom, searchDateTo]);
 
@@ -305,11 +306,11 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     distributorId?: string;
     title?: string;
   } | null>(null);
-  
+
   // 상세 모달 상태
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailRequestId, setDetailRequestId] = useState<string | null>(null);
-  
+
   // 순위 확인 모달 상태
   const [rankCheckModalOpen, setRankCheckModalOpen] = useState(false);
   const [rankCheckSlotData, setRankCheckSlotData] = useState<{
@@ -339,23 +340,51 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
     try {
       const slotId = refundModal.requestData.guarantee_slots[0].id;
-      
+
       // 실제 환불 신청 API 호출
       const { data, error } = await guaranteeSlotService.requestRefund(slotId, currentUser.id, reason);
-      
+
       if (error) {
         throw error;
       }
-      
+
       // 성공 메시지 표시
       showSuccess(data?.message || '환불 신청이 접수되었습니다.');
-      
+
       // 모달 닫기 및 리프레시
       setRefundModal({ open: false });
       fetchRequests();
     } catch (error: any) {
       console.error('환불 신청 실패:', error);
       showError(error.message || '환불 신청 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 총판 환불 요청 확인/거절 핸들러
+  const handleRefundConfirmRequest = async (slotId: string, refundRequestId: string, approve: boolean) => {
+    if (!currentUser?.id) return;
+
+    try {
+      // 환불 요청 승인/거절 API 호출
+      const { data, error } = await guaranteeSlotService.confirmRefundRequest(
+        slotId, 
+        refundRequestId, 
+        currentUser.id, 
+        approve
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      // 성공 메시지 표시
+      showSuccess(data?.message || (approve ? '환불이 승인되었습니다.' : '환불이 거절되었습니다.'));
+
+      // 리프레시
+      fetchRequests();
+    } catch (error: any) {
+      console.error('환불 확인 실패:', error);
+      showError(error.message || '환불 확인 중 오류가 발생했습니다.');
     }
   };
 
@@ -407,15 +436,15 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     <>
       {/* 검색 카드 */}
       <Card inert={negotiationModal.open ? '' : undefined}>
-        <CardContent className="p-6">
-          <h3 className="text-base font-medium mb-4">보장형 슬롯 검색</h3>
-          
+        <CardContent className="p-4 sm:p-6">
+          <h3 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">보장형 슬롯 검색</h3>
+
           {/* 데스크톱 검색 폼 */}
           <div className="hidden md:block space-y-4">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-4">
                 <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">캠페인</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px] lg:min-w-[80px]">캠페인</label>
                   <select
                     className="select select-bordered select-sm w-full"
                     value={selectedCampaignId}
@@ -433,7 +462,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
               </div>
               <div className="col-span-3">
                 <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">상태</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px] lg:min-w-[80px]">상태</label>
                   <select
                     className="select select-bordered select-sm w-full"
                     value={searchStatus}
@@ -451,7 +480,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
               </div>
               <div className="col-span-5">
                 <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">검색어</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px] lg:min-w-[80px]">검색어</label>
                   <input
                     type="text"
                     className="input input-bordered input-sm w-full"
@@ -467,7 +496,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-7">
                 <div className="flex items-center h-9">
-                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">등록일</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px] lg:min-w-[80px]">등록일</label>
                   <div className="flex items-center gap-2 w-full">
                     <input
                       type="date"
@@ -575,7 +604,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
       {/* 견적 목록 카드 */}
       <div className="card shadow-sm" inert={negotiationModal.open ? '' : undefined}>
         {/* 보장형 서비스 안내 */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-800/50 rounded-full flex items-center justify-center">
               <KeenIcon icon="information-2" className="text-blue-600 dark:text-blue-400 size-5" />
@@ -595,10 +624,10 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           </div>
         </div>
 
-        <div className="card-header px-6 py-3.5" style={{ minHeight: '60px' }}>
+        <div className="card-header px-4 sm:px-6 py-3 sm:py-3.5" style={{ minHeight: '60px' }}>
           <div className="flex items-center justify-between w-full h-full">
-            <div className="flex items-center gap-3">
-              <h3 className="card-title text-base">보장형 슬롯 목록</h3>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <h3 className="card-title text-sm sm:text-base">보장형 슬롯 목록</h3>
             </div>
             <div className="card-toolbar">
               <div className="flex items-center gap-2">
@@ -611,7 +640,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           </div>
         </div>
 
-        <div className="card-body px-6 py-4">
+        <div className="card-body px-4 sm:px-6 py-3 sm:py-4">
           <GuaranteeQuotesList
             filteredRequests={filteredItems}
             isLoading={loading}
@@ -646,6 +675,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
                 setRankCheckModalOpen(true);
               }
             }}
+            onRefundConfirm={handleRefundConfirmRequest}
           />
         </div>
       </div>
@@ -660,13 +690,16 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         onStatusChange={handleStatusChange}
         isFromDistributorPage={false}
       />
-      
+
       {/* 환불 모달 */}
       <GuaranteeRefundModal
         isOpen={refundModal.open}
         onClose={() => setRefundModal({ open: false })}
         onConfirm={handleRefundConfirm}
         campaignName={refundModal.requestData?.campaigns?.campaign_name}
+        campaignLogo={refundModal.requestData?.campaigns?.logo}
+        serviceType={refundModal.requestData?.campaigns?.service_type}
+        slotStatus={refundModal.requestData?.guarantee_slots?.[0]?.status}
         guaranteeCount={refundModal.requestData?.guarantee_count || 0}
         guaranteeUnit={refundModal.requestData?.campaigns?.guarantee_unit}
         completedDays={(() => {
@@ -675,9 +708,15 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           const today = new Date();
           return Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
         })()}
-        totalAmount={refundModal.requestData?.final_daily_amount ? 
-          refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_period || refundModal.requestData.guarantee_count || 0) * 1.1 : 0}
+        totalAmount={refundModal.requestData?.final_daily_amount ?
+          Math.floor(refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_period || refundModal.requestData.guarantee_count || 0) * 1.1) : 0}
+        negotiatedAmount={refundModal.requestData?.final_total_amount || (refundModal.requestData?.final_daily_amount ? 
+          refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count : 0)}
+        startDate={refundModal.requestData?.guarantee_slots?.[0]?.start_date}
+        endDate={refundModal.requestData?.guarantee_slots?.[0]?.end_date}
+        actualCompletedCount={0}
         refundSettings={refundModal.requestData?.campaigns?.refund_settings}
+        currentUserRole="user"
       />
 
       {/* 1:1 문의 모달 */}
@@ -693,7 +732,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         distributorId={inquiryData?.distributorId}
         initialTitle={inquiryData?.title}
       />
-      
+
       {/* 상세 보기 모달 */}
       <GuaranteeSlotDetailModal
         isOpen={detailModalOpen}
@@ -703,7 +742,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         }}
         requestId={detailRequestId || ''}
       />
-      
+
       {/* 순위 확인 모달 */}
       <GuaranteeRankCheckModal
         isOpen={rankCheckModalOpen}
@@ -716,6 +755,28 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         targetRank={rankCheckSlotData?.targetRank || 1}
         keyword={rankCheckSlotData?.keyword}
       />
+
+      {/* 환불 모달 */}
+      {refundModal.requestData && refundModal.requestData.guarantee_slots?.[0] && (
+        <GuaranteeRefundModal
+          isOpen={refundModal.open}
+          onClose={() => setRefundModal({ open: false })}
+          onConfirm={handleRefundConfirm}
+          campaignName={refundModal.requestData.campaigns?.campaign_name}
+          campaignLogo={refundModal.requestData.campaigns?.logo}
+          serviceType={refundModal.requestData.campaigns?.service_type}
+          slotStatus={refundModal.requestData.guarantee_slots[0].status}
+          guaranteeCount={refundModal.requestData.guarantee_count}
+          guaranteeUnit={refundModal.requestData.campaigns?.guarantee_unit}
+          completedDays={0} // TODO: 실제 완료일수 계산 필요
+          totalAmount={refundModal.requestData.final_daily_amount ? Math.floor(refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_period || refundModal.requestData.guarantee_count) * 1.1) : 0}
+          negotiatedAmount={refundModal.requestData.final_total_amount || (refundModal.requestData.final_daily_amount ? refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count : 0)}
+          startDate={refundModal.requestData.guarantee_slots[0].start_date}
+          endDate={refundModal.requestData.guarantee_slots[0].end_date}
+          refundSettings={refundModal.requestData.campaigns?.refund_settings}
+          currentUserRole="user"
+        />
+      )}
     </>
   );
 };

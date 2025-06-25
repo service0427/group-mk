@@ -13,7 +13,7 @@ import { Campaign, Slot } from './components/types';
 import { CampaignServiceType, SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from '@/components/campaign-modals/types';
 
 // 슬롯 서비스 import
-import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat } from './services/slotService';
+import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat, deleteSlot } from './services/slotService';
 
 // 모달 컴포넌트 import
 // ApproveModal 제거
@@ -1019,6 +1019,37 @@ const ApprovePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 슬롯 삭제 처리 함수
+  const handleDeleteSlot = async (slotId: string | string[]) => {
+    showConfirm(
+      '슬롯 삭제',
+      '정말로 선택한 슬롯을 삭제하시겠습니까?',
+      async (confirmed) => {
+        if (!confirmed) return;
+        
+        try {
+          const result = await deleteSlot(slotId);
+          if (result.success) {
+            showSuccess('슬롯이 삭제되었습니다.');
+            
+            // UI에서 삭제된 슬롯 제거
+            const slotIds = Array.isArray(slotId) ? slotId : [slotId];
+            setSlots(prevSlots => prevSlots.filter(slot => !slotIds.includes(slot.id)));
+            
+            // 통계 새로고침
+            if (monthlyStatisticsRef.current) {
+              monthlyStatisticsRef.current.refresh();
+            }
+          } else {
+            showError('슬롯 삭제 중 오류가 발생했습니다.');
+          }
+        } catch (error) {
+          showError('슬롯 삭제 중 오류가 발생했습니다.');
+        }
+      }
+    );
   };
 
   // 슬롯 완료 처리 함수

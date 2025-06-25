@@ -11,6 +11,9 @@ export const STORAGE_CONFIG = {
       GUARANTEE: 'negotiations/guarantee',
       GENERAL: 'negotiations/general',
     },
+    INQUIRIES: {
+      ATTACHMENTS: 'inquiries/attachments',
+    },
     USERS: {
       PROFILE: 'users',
       DOCUMENTS: 'users',
@@ -48,6 +51,9 @@ export const getUploadPath = {
 
   generalNegotiation: (slotId: string) =>
     `${STORAGE_CONFIG.FOLDERS.NEGOTIATIONS.GENERAL}/${slotId}`,
+
+  inquiryAttachments: (inquiryId?: string) =>
+    inquiryId ? `${STORAGE_CONFIG.FOLDERS.INQUIRIES.ATTACHMENTS}/${inquiryId}` : STORAGE_CONFIG.FOLDERS.INQUIRIES.ATTACHMENTS,
 
   userProfile: (userId: string) =>
     `${STORAGE_CONFIG.FOLDERS.USERS.PROFILE}/${userId}/profile`,

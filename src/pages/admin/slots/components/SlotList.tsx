@@ -761,21 +761,71 @@ const SlotList: React.FC<SlotListProps> = ({
                                     
                                     // 필드명 한글 변환
                                     const fieldNameMap: Record<string, string> = {
+                                      // 기본 필드
                                       'work_days': '작업일',
                                       'minimum_purchase': '최소 구매수',
                                       'url': 'URL',
                                       'mid': '상점 ID',
                                       'productName': '상품명',
                                       'mainKeyword': '메인 키워드',
+                                      'main_keyword': '메인 키워드',
                                       'keywords': '서브 키워드',
                                       'keyword1': '키워드1',
                                       'keyword2': '키워드2', 
                                       'keyword3': '키워드3',
                                       'quantity': '작업량',
                                       'dueDays': '작업기간',
+                                      'due_days': '작업기간',
                                       'workCount': '작업수',
+                                      'work_count': '작업수',
                                       'start_date': '시작일',
-                                      'end_date': '종료일'
+                                      'end_date': '종료일',
+                                      
+                                      // 가격 관련
+                                      'price': '가격',
+                                      'total_price': '총 가격',
+                                      'unit_price': '단가',
+                                      'daily_price': '일별 가격',
+                                      
+                                      // 보장 관련
+                                      'guarantee_days': '보장일수',
+                                      'guarantee_rank': '보장순위',
+                                      'target_rank': '목표순위',
+                                      'guarantee_info': '보장정보',
+                                      
+                                      // 캐시/포인트 관련
+                                      'cash_amount': '캐시 지급액',
+                                      'cash_info': '캐시 지급 안내',
+                                      'point_amount': '포인트 금액',
+                                      
+                                      // 기타 정보
+                                      'note': '비고',
+                                      'description': '설명',
+                                      'requirements': '요구사항',
+                                      'additional_info': '추가정보',
+                                      'work_period': '작업기간',
+                                      'company_name': '회사명',
+                                      'business_number': '사업자번호',
+                                      'contact': '연락처',
+                                      'email': '이메일',
+                                      'phone': '전화번호',
+                                      'mobile': '휴대폰번호',
+                                      'address': '주소',
+                                      'bank_name': '은행명',
+                                      'account_number': '계좌번호',
+                                      'account_holder': '예금주',
+                                      
+                                      // 상태 관련
+                                      'status': '상태',
+                                      'is_active': '활성화',
+                                      'is_manual': '수동입력',
+                                      'is_manual_input': '수동입력',
+                                      
+                                      // 날짜 관련
+                                      'created_at': '생성일',
+                                      'updated_at': '수정일',
+                                      'completed_at': '완료일',
+                                      'canceled_at': '취소일'
                                     };
                                     const displayKey = fieldNameMap[key] || key;
                                     

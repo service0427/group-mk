@@ -309,7 +309,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                               <span className="text-sm font-medium">총 예상 금액</span>
                               <div className="text-right">
                                 <div className="text-base font-bold">
-                                  {formatPrice(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count) * 1.1)}
+                                  {formatPrice(Math.floor(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count) * 1.1))}
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-gray-500">VAT 10% 포함</div>
                               </div>
@@ -358,9 +358,9 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                           {/* input_data 표시 */}
                           {requestData.input_data && (() => {
                             const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1', 'keyword2', 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'is_manual_input'];
-                            
+
                             let displayData: Record<string, any> = {};
-                            
+
                             // 1. 중첩된 구조 확인 (keywords[0].input_data)
                             if (requestData.input_data.keywords?.[0]?.input_data) {
                               const nestedData = requestData.input_data.keywords[0].input_data;
@@ -377,7 +377,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                                 }
                               });
                             }
-                            
+
                             const userInputFields = Object.entries(displayData);
 
                             if (userInputFields.length === 0) return null;
@@ -388,12 +388,12 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                                 <div className="p-3 bg-blue-50/30 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded space-y-2">
                                   {userInputFields.map(([key, value]) => {
                                     // 파일 URL인지 확인
-                                    const isFileUrl = value && typeof value === 'string' && 
+                                    const isFileUrl = value && typeof value === 'string' &&
                                       (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
-                                    
+
                                     // 이미지 파일인지 확인
                                     const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
-                                    
+
                                     // 파일명 추출 (중첩된 구조도 확인)
                                     const fileNameKey = `${key}_fileName`;
                                     let fileName = '';
@@ -404,27 +404,71 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                                     } else if (isFileUrl) {
                                       fileName = value.split('/').pop() || '파일';
                                     }
-                                    
+
                                     // 필드명 한글 변환
                                     const fieldNameMap: Record<string, string> = {
+                                      // 기본 필드
                                       'work_days': '작업일',
                                       'minimum_purchase': '최소 구매수',
                                       'url': 'URL',
                                       'mid': '상점 ID',
                                       'productName': '상품명',
+                                      'product_name': '상품명',
+                                      'service_type': '서비스 타입',
+
+                                      // 키워드 관련
                                       'mainKeyword': '메인 키워드',
+                                      'main_keyword': '메인 키워드',
                                       'keywords': '서브 키워드',
                                       'keyword1': '키워드1',
-                                      'keyword2': '키워드2', 
+                                      'keyword2': '키워드2',
                                       'keyword3': '키워드3',
+
+                                      // 작업 관련
                                       'quantity': '작업량',
                                       'dueDays': '작업기간',
+                                      'due_days': '작업기간',
                                       'workCount': '작업수',
+                                      'work_count': '작업수',
                                       'start_date': '시작일',
-                                      'end_date': '종료일'
+                                      'end_date': '종료일',
+                                      'deadline': '마감일',
+
+                                      // 가격 관련
+                                      'price': '가격',
+                                      'unit_price': '단가',
+                                      'total_price': '총 가격',
+                                      'budget': '예산',
+                                      'daily_amount': '일일 금액',
+                                      'monthly_amount': '월별 금액',
+
+                                      // 보장형 관련
+                                      'guarantee_days': '보장일수',
+                                      'guarantee_count': '보장횟수',
+                                      'target_rank': '목표순위',
+                                      'current_rank': '현재순위',
+                                      'work_period': '작업기간',
+                                      'refund_policy': '환불정책',
+                                      'guarantee_summary': '보장요약정보',
+
+                                      // 캐시/포인트 관련
+                                      'cash_amount': '캐시 지급액',
+                                      'cash_info': '캐시 지급 안내',
+                                      'point_amount': '포인트 금액',
+
+                                      // 기타 정보
+                                      'note': '비고',
+                                      'description': '설명',
+                                      'requirements': '요구사항',
+                                      'additional_info': '추가정보',
+                                      'company_name': '회사명',
+                                      'business_number': '사업자번호',
+                                      'contact': '연락처',
+                                      'email': '이메일',
+                                      'phone': '전화번호'
                                     };
                                     const displayKey = fieldNameMap[key] || key;
-                                    
+
                                     return (
                                       <div key={key} className="flex items-start gap-2 text-sm">
                                         <span className="font-medium text-slate-600 dark:text-gray-400 min-w-[100px]">{displayKey}:</span>

@@ -5,7 +5,7 @@
 }
 
 /* 모바일 사이드바 스크롤 수정 */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   /* Sheet 컨테이너 높이 설정 */
   [data-radix-dialog-content] {
     height: 100vh !important;
@@ -158,7 +158,7 @@ body[data-sidebar-open="true"] {
 }
 
 /* PC 환경에서 CSS 변수 활용 */
-@media (min-width: 769px) {
+@media (min-width: 1024px) {
   /* 사이드바 스크롤 컨테이너 높이 */
   #sidebar-scrollable-container {
     max-height: var(--sidebar-scrollable-height, calc(100vh - 80px));

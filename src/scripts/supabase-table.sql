@@ -435,7 +435,7 @@ create index IF not exists idx_system_logs_created_at on public.system_logs usin
 
 create index IF not exists idx_system_logs_log_type on public.system_logs using btree (log_type) TABLESPACE pg_default;
 
-create table public.campaigns (
+ccreate table public.campaigns (
   id serial not null,
   group_id character varying(30) null,
   service_type character varying(30) not null,
@@ -464,6 +464,7 @@ create table public.campaigns (
   max_guarantee_price numeric(10, 2) null,
   guarantee_unit character varying(10) null default '일'::character varying,
   refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "cutoff_time": "00:00", "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}, "approval_roles": ["distributor", "advertiser"], "requires_approval": false}'::jsonb,
+  guarantee_period integer null,
   constraint campaigns_pkey_new primary key (id),
   constraint guarantee_count_check check (
     (
@@ -475,6 +476,19 @@ create table public.campaigns (
       or (
         ((slot_type)::text = 'standard'::text)
         and (guarantee_count is null)
+      )
+    )
+  ),
+  constraint guarantee_period_check check (
+    (
+      (
+        ((slot_type)::text = 'guarantee'::text)
+        and (guarantee_period is not null)
+        and (guarantee_period > 0)
+      )
+      or (
+        ((slot_type)::text = 'standard'::text)
+        and (guarantee_period is null)
       )
     )
   ),
@@ -533,6 +547,10 @@ create index IF not exists idx_campaigns_slot_type on public.campaigns using btr
 create index IF not exists idx_campaigns_is_guarantee on public.campaigns using btree (is_guarantee) TABLESPACE pg_default;
 
 create index IF not exists idx_campaigns_guarantee_unit on public.campaigns using btree (guarantee_unit) TABLESPACE pg_default
+where
+  ((slot_type)::text = 'guarantee'::text);
+
+create index IF not exists idx_campaigns_guarantee_period on public.campaigns using btree (guarantee_period) TABLESPACE pg_default
 where
   ((slot_type)::text = 'guarantee'::text);
 

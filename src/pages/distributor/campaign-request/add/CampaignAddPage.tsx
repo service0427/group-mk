@@ -234,9 +234,9 @@ const CampaignAddPage: React.FC = () => {
       return false;
     }
 
-    // 입력필드 필수 검증 - 최소 1개 이상의 입력필드가 필요
+    // 입력필드 필수 검증 - 최소 1개 이상의 필수 입력필드가 필요
     if (!formData.userInputFields || formData.userInputFields.length === 0) {
-      setError('최소 1개 이상의 입력필드를 추가해주세요.');
+      setError('최소 1개 이상의 필수 s입력필드를 추가해주세요.');
       return false;
     }
 
@@ -256,6 +256,13 @@ const CampaignAddPage: React.FC = () => {
     );
     if (duplicateFields.length > 0) {
       setError('중복된 필드명이 있습니다. 각 필드명은 고유해야 합니다.');
+      return false;
+    }
+
+    // 최소 1개 이상의 필수 입력 필드 검증
+    const hasRequiredField = formData.userInputFields.some(field => field.isRequired === true);
+    if (!hasRequiredField) {
+      setError('최소 1개 이상의 필수 입력 필드가 필요합니다.');
       return false;
     }
 

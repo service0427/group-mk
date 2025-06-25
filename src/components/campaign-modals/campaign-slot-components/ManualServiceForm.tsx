@@ -234,7 +234,6 @@ export const ManualServiceForm: React.FC<ManualServiceFormProps> = ({
                                     }));
                                     toast.success('파일이 업로드되었습니다.');
                                   } catch (error) {
-                                    console.error('파일 업로드 에러:', error);
                                     toast.error(error instanceof Error ? error.message : '파일 업로드에 실패했습니다.');
                                     e.target.value = ''; // input 초기화
                                   } finally {

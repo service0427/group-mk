@@ -70,6 +70,14 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
             minimum_purchase: minQuantity
           }));
         }
+      } else {
+        // 기본 입력 모드로 전환 시 keywordDetails 제거
+        if (slotData.keywordDetails) {
+          setSlotData((prev: any) => {
+            const { keywordDetails, hasPartiallyFilledRows, partiallyFilledRows, ...rest } = prev;
+            return rest;
+          });
+        }
       }
     }
   }, [selectedCampaign?.id, selectedCampaign?.slot_type, useSpreadsheet]);
@@ -303,18 +311,33 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   }
                 });
                 
+                
+                // 부분적으로 입력된 행 체크
+                const partiallyFilledRows: number[] = [];
+                let hasPartiallyFilledRows = false;
+                
                 // 필수값이 모두 입력된 행만 필터링
-                const validRows = data.filter(row => {
+                const validRows = data.filter((row, rowIndex) => {
                   // 빈 행 체크 (모든 셀이 비어있으면 제외)
                   const hasAnyValue = row.some(cell => cell && cell.trim() !== '');
                   if (!hasAnyValue) return false;
                   
                   // 필수값 체크
-                  return requiredFieldIndices.every(index => {
+                  const allRequiredFilled = requiredFieldIndices.every(index => {
                     const value = row[index];
                     return value && value.toString().trim() !== '';
                   });
+                  
+                  
+                  // 부분적으로만 입력된 행 추적
+                  if (!allRequiredFilled && hasAnyValue) {
+                    partiallyFilledRows.push(rowIndex + 1);
+                    hasPartiallyFilledRows = true;
+                  }
+                  
+                  return allRequiredFilled;
                 });
+                
                 
                 if (validRows.length > 0) {
                   const firstRow = validRows[0];
@@ -390,7 +413,10 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                     // 전체 구매 정보
                     total_purchase: totalPurchase,
                     total_work_days: totalWorkDays,
-                    keywordDetails: keywordDetails
+                    keywordDetails: keywordDetails,
+                    // 부분 입력 정보 추가
+                    hasPartiallyFilledRows: hasPartiallyFilledRows,
+                    partiallyFilledRows: partiallyFilledRows
                   }));
                   
                   // 데이터 변경 콜백 호출
@@ -405,7 +431,10 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                     work_days: 0,
                     total_purchase: 0,
                     total_work_days: 0,
-                    keywordDetails: []
+                    keywordDetails: [],
+                    // 부분 입력 정보 추가
+                    hasPartiallyFilledRows: hasPartiallyFilledRows,
+                    partiallyFilledRows: partiallyFilledRows
                   }));
                   
                   // 데이터 변경 콜백 호출

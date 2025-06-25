@@ -40,21 +40,21 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
     dailyBudget: '', // 일별/단위별 금액으로 변경
     message: ''
   });
-  
+
   const [priceInputType, setPriceInputType] = useState<'daily' | 'total'>('daily');
 
   // 실시간 총 금액 계산
   const calculateTotalAmount = useCallback(() => {
     const inputAmount = parseInt(formData.dailyBudget.replace(/,/g, '') || '0');
     const period = parseInt(formData.guaranteeCount || '0');
-    
+
     if (priceInputType === 'daily') {
       return inputAmount * period;
     } else {
       return inputAmount;
     }
   }, [formData.dailyBudget, formData.guaranteeCount, priceInputType]);
-  
+
   // 일별 단가 계산 (총 단가 입력 시)
   const calculateDailyAmount = useCallback(() => {
     if (priceInputType === 'total') {
@@ -122,7 +122,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
       // 유효성 검사
       if (!formData.dailyBudget) {
-        setValidationError(priceInputType === 'daily' 
+        setValidationError(priceInputType === 'daily'
           ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가를 입력해주세요.`
           : '총 단가를 입력해주세요.'
         );
@@ -148,7 +148,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         }
       }
 
-      if (!formData.targetRank || parseInt(formData.targetRank) < 1) {
+      // '일' 단위일 때만 목표 순위 검증
+      if (campaign?.guarantee_unit === '일' && (!formData.targetRank || parseInt(formData.targetRank) < 1)) {
         setValidationError('목표 순위를 1 이상의 숫자로 입력해주세요.');
         setLoading(false);
         return;
@@ -162,10 +163,10 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         setLoading(false);
         return;
       }
-      
+
       // 실제 보장 횟수/일수는 캠페인에서 가져옴
       const guaranteeCount = campaign?.guarantee_count;
-      
+
       // 작업기간이 보장 횟수/일수보다 작으면 안 됨
       if (guaranteeCount && parseInt(guaranteePeriod) < parseInt(guaranteeCount.toString())) {
         setValidationError(`작업기간은 최소 ${guaranteeCount}${campaign?.guarantee_unit || '일'} 이상이어야 합니다.`);
@@ -183,7 +184,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
       // 첫 번째 키워드 정보 가져오기
       const firstKeyword = keywordDetails[0];
-      
+
       // input_data 구성 (키워드별 작업 정보)
       const inputData = {
         keywords: keywordDetails.map(kd => ({
@@ -204,19 +205,18 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           keyword3: keywordDetails[0].inputData.keyword3 || ''
         } : {})
       };
-      
-      console.log('보장형 견적 요청 데이터:', {
-        keywordDetails,
-        inputData
-      });
 
-      // 견적 요청 생성
+      // 견적 요청 생성 - inputAmount는 이미 위에서 선언됨
+      const dailyBudget = priceInputType === 'total'
+        ? Math.floor(inputAmount / parseInt(guaranteePeriod.toString()))
+        : inputAmount;
+
       const { data, error } = await guaranteeSlotRequestService.createRequest({
         campaign_id: campaign.id,
-        target_rank: parseInt(formData.targetRank),
+        target_rank: campaign?.guarantee_unit === '회' ? 1 : parseInt(formData.targetRank),
         guarantee_count: parseInt(guaranteeCount.toString()),
         guarantee_period: parseInt(guaranteePeriod.toString()), // 작업기간 추가
-        initial_budget: parseInt(formData.dailyBudget.replace(/,/g, '')), // 입력한 금액 그대로 전송
+        initial_budget: dailyBudget, // 일별 금액으로 저장
         budget_type: priceInputType, // 입력 방식 추가
         keyword_id: (firstKeyword?.id && firstKeyword.id > 0) ? firstKeyword.id : undefined, // 첫 번째 키워드 ID (수동 입력인 경우 undefined)
         input_data: inputData,
@@ -249,7 +249,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
           // negotiationService import가 필요
           const { negotiationService } = await import('@/services/guaranteeSlotService');
-          
+
           await negotiationService.createMessage(
             {
               request_id: data.id,
@@ -263,20 +263,20 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
           // 2. 가격 제안 메시지
           let priceMessage = '';
-          
+
           if (priceInputType === 'total') {
             // 총 단가로 입력한 경우
             const totalAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
-            const dailyAmount = Math.round(totalAmount / parseInt(guaranteePeriod));
+            const dailyAmount = Math.floor(totalAmount / parseInt(guaranteePeriod));
             priceMessage = `희망 예산: 총 ${totalAmount.toLocaleString()}원 (${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${dailyAmount.toLocaleString()}원 × ${guaranteePeriod}${campaign?.guarantee_unit || '일'})`;
-            
-            // 총액인 경우, proposed_daily_amount에 총액을 저장하고 메시지로 구분
+
+            // 총액인 경우에도 proposed_daily_amount에는 일별 금액을 저장
             await negotiationService.createMessage(
               {
                 request_id: data.id,
                 message: priceMessage,
                 message_type: 'price_proposal',
-                proposed_daily_amount: totalAmount, // 총액 그대로 저장
+                proposed_daily_amount: dailyAmount, // 계산된 일별 금액 저장
                 proposed_guarantee_count: parseInt(guaranteeCount),
                 isFromDistributorPage: false
               },
@@ -286,7 +286,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           } else {
             // 일별/회당 단가로 입력한 경우 (기본)
             priceMessage = `희망 예산: ${formData.dailyBudget}원/${campaign?.guarantee_unit || '일'} × ${guaranteePeriod}${campaign?.guarantee_unit || '일'} (총 ${(parseInt(formData.dailyBudget.replace(/,/g, '')) * parseInt(guaranteePeriod)).toLocaleString()}원)`;
-            
+
             await negotiationService.createMessage(
               {
                 request_id: data.id,
@@ -348,20 +348,20 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   <span className="text-gray-600 dark:text-gray-400">캠페인명:</span>
                   <span className="font-medium">{campaign?.campaign_name}</span>
                 </div>
-                
+
                 {/* 보장 요약 정보 */}
                 {campaign?.guarantee_period && campaign?.guarantee_count && (
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">보장 요약:</span>
                     <span className="font-medium text-purple-600">
-                      {campaign.guarantee_unit === '일' 
-                        ? `${campaign.guarantee_period}일 안에 ${campaign.target_rank || '__'}위 이내 ${campaign.guarantee_count}일 보장`
-                        : `${campaign.guarantee_period}일 안에 ${campaign.guarantee_count}회 보장`
+                      {campaign.guarantee_unit === '일'
+                        ? `작업 시작 후 ${campaign.guarantee_period}일 안에 순위 ${campaign.target_rank || '__'}위권을 ${campaign.guarantee_count}일 이상 유지하도록 보장합니다.`
+                        : `작업 시작 후 ${campaign.guarantee_period}일 안에 ${campaign.guarantee_count}회 이상 작업을 보장합니다.`
                       }
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">가격 범위:</span>
                   <span className="font-medium text-purple-600">
@@ -389,7 +389,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       : '협의 필요'}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">선택한 키워드:</span>
                   <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
@@ -400,7 +400,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     ))}
                   </div>
                 </div>
-                
+
                 {/* 사용자 입력 필드 정보 */}
                 {keywordDetails.some(kd => kd.inputData && Object.keys(kd.inputData).length > 0) && (
                   <div className="pt-2 mt-2 border-t border-purple-100 dark:border-purple-700">
@@ -408,25 +408,31 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     <div className="space-y-2">
                       {keywordDetails.map((keyword, index) => {
                         if (!keyword.inputData || Object.keys(keyword.inputData).length === 0) return null;
-                        
+
                         // 캠페인의 사용자 입력 필드 정의 가져오기
                         const userInputFields = campaign?.originalData?.add_info?.add_field || campaign?.userInputFields || [];
-                        
+
                         return (
                           <div key={index} className="text-xs bg-purple-50/50 dark:bg-purple-900/20 p-2 rounded">
                             <div className="font-medium text-purple-700 dark:text-purple-300 mb-1">
                               {keyword.mainKeyword}
                             </div>
-                            
+
                             {/* 정의된 순서대로 필드 표시 */}
                             {userInputFields.map((field: any) => {
                               const fieldName = field.fieldName;
                               const fieldDescription = field.description || fieldName;
                               const value = keyword.inputData[fieldName];
-                              
+
                               // 값이 없거나 제외할 필드면 표시하지 않음
                               if (!value || ['main_keyword', 'is_manual_input'].includes(fieldName)) return null;
-                              
+
+                              // URL이 포함된 필드는 제외 (파일명 형식으로 이미 다른 필드에 표시됨)
+                              if (String(value).includes('supabase.co/storage/') || String(value).startsWith('http')) return null;
+
+                              // _fileName으로 끝나는 필드도 제외 (실제 파일명은 다른 필드에 있음)
+                              if (fieldName.endsWith('_fileName')) return null;
+
                               return (
                                 <div key={fieldName} className="flex gap-2">
                                   <span className="text-gray-500">{fieldName}({fieldDescription}):</span>
@@ -434,7 +440,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                                 </div>
                               );
                             })}
-                            
+
                             {/* userInputFields에 정의되지 않은 필드들 (예: url, mid, keyword1,2,3) */}
                             {keyword.inputData.url && !userInputFields.some((f: any) => f.fieldName === 'url') && (
                               <div className="flex gap-2">
@@ -448,18 +454,18 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                                 <span className="text-gray-700 dark:text-gray-300">{keyword.inputData.mid}</span>
                               </div>
                             )}
-                            {(keyword.inputData.keyword1 || keyword.inputData.keyword2 || keyword.inputData.keyword3) && 
-                             !userInputFields.some((f: any) => ['keyword1', 'keyword2', 'keyword3'].includes(f.fieldName)) && (
-                              <div className="flex gap-2">
-                                <span className="text-gray-500">keywords(추가 키워드):</span>
-                                <span className="text-gray-700 dark:text-gray-300">
-                                  {[keyword.inputData.keyword1, keyword.inputData.keyword2, keyword.inputData.keyword3]
-                                    .filter(Boolean)
-                                    .join(', ')}
-                                </span>
-                              </div>
-                            )}
-                            
+                            {(keyword.inputData.keyword1 || keyword.inputData.keyword2 || keyword.inputData.keyword3) &&
+                              !userInputFields.some((f: any) => ['keyword1', 'keyword2', 'keyword3'].includes(f.fieldName)) && (
+                                <div className="flex gap-2">
+                                  <span className="text-gray-500">keywords(추가 키워드):</span>
+                                  <span className="text-gray-700 dark:text-gray-300">
+                                    {[keyword.inputData.keyword1, keyword.inputData.keyword2, keyword.inputData.keyword3]
+                                      .filter(Boolean)
+                                      .join(', ')}
+                                  </span>
+                                </div>
+                              )}
+
                             {/* 정의되지 않은 나머지 필드들 */}
                             {Object.entries(keyword.inputData).map(([key, value]) => {
                               // 이미 표시했거나 제외할 필드들
@@ -467,7 +473,13 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                               // userInputFields에 정의된 필드면 이미 표시했으므로 제외
                               if (userInputFields.some((f: any) => f.fieldName === key)) return null;
                               if (!value) return null;
-                              
+
+                              // URL이 포함된 필드는 제외 (파일명 형식으로 이미 다른 필드에 표시됨)
+                              if (String(value).includes('supabase.co/storage/') || String(value).startsWith('http')) return null;
+
+                              // _fileName으로 끝나는 필드도 제외 (실제 파일명은 다른 필드에 있음)
+                              if (key.endsWith('_fileName')) return null;
+
                               return (
                                 <div key={key} className="flex gap-2">
                                   <span className="text-gray-500">{key}:</span>
@@ -486,28 +498,30 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
             {/* 견적 요청 폼 */}
             <div className="space-y-4">
+              {campaign?.guarantee_unit === '일' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    목표 순위 <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={formData.targetRank}
+                    onChange={(e) => {
+                      setFormData({ ...formData, targetRank: e.target.value });
+                      setValidationError('');
+                    }}
+                    placeholder="목표 순위를 입력하세요"
+                    min="1"
+                    max="100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    * 캠페인 기본값: {campaign?.target_rank || '1'}위
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  목표 순위 <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="number"
-                  value={formData.targetRank}
-                  onChange={(e) => {
-                    setFormData({ ...formData, targetRank: e.target.value });
-                    setValidationError('');
-                  }}
-                  placeholder="목표 순위를 입력하세요"
-                  min="1"
-                  max="100"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  * 캠페인 기본값: {campaign?.target_rank || '1'}위
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  작업기간 ({campaign?.guarantee_unit === '회' ? '회' : '일'})
+                  {campaign?.guarantee_unit === '회' ? '작업횟수' : '작업기간'} ({campaign?.guarantee_unit === '회' ? '회' : '일'})
                 </label>
                 <Input
                   type="number"
@@ -520,7 +534,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   min={campaign?.guarantee_count?.toString() || "1"}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  * 캠페인 기본값: {campaign?.guarantee_period || '0'}{campaign?.guarantee_unit || '일'} 
+                  * 캠페인 기본값: {campaign?.guarantee_period || '0'}{campaign?.guarantee_unit || '일'}
                   (최소: {campaign?.guarantee_count || '0'}{campaign?.guarantee_unit || '일'})
                 </p>
               </div>
@@ -528,7 +542,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium">
-                    {priceInputType === 'daily' 
+                    {priceInputType === 'daily'
                       ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가`
                       : '총 단가'
                     } <span className="text-red-500">*</span>
@@ -537,22 +551,20 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     <button
                       type="button"
                       onClick={() => setPriceInputType('daily')}
-                      className={`px-3 py-1 text-xs rounded-l-md transition-colors ${
-                        priceInputType === 'daily' 
-                          ? 'bg-purple-500 text-white' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className={`px-3 py-1 text-xs rounded-l-md transition-colors ${priceInputType === 'daily'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       {campaign?.guarantee_unit === '회' ? '회당' : '일별'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setPriceInputType('total')}
-                      className={`px-3 py-1 text-xs rounded-r-md transition-colors ${
-                        priceInputType === 'total' 
-                          ? 'bg-purple-500 text-white' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className={`px-3 py-1 text-xs rounded-r-md transition-colors ${priceInputType === 'total'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       총액
                     </button>
@@ -566,7 +578,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                     setFormData({ ...formData, dailyBudget: formatCurrency(value) });
                     setValidationError('');
                   }}
-                  placeholder={priceInputType === 'daily' 
+                  placeholder={priceInputType === 'daily'
                     ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 금액을 입력하세요`
                     : '총 금액을 입력하세요'
                   }
@@ -582,7 +594,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   {/* 실시간 변환 표시 */}
                   {formData.dailyBudget && formData.guaranteeCount && (
                     <p className="text-purple-600 dark:text-purple-400 font-medium">
-                      {priceInputType === 'daily' 
+                      {priceInputType === 'daily'
                         ? `→ 총 ${calculateTotalAmount().toLocaleString()}원`
                         : `→ ${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${calculateDailyAmount().toLocaleString()}원`
                       }
@@ -601,7 +613,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {priceInputType === 'daily' 
+                        {priceInputType === 'daily'
                           ? `${campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가:`
                           : '총 단가:'
                         }
@@ -644,8 +656,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                           <div className="flex justify-between text-purple-600 dark:text-purple-400">
                             <span>VAT 포함:</span>
                             <span className="font-semibold">
-                              <span className="hidden md:inline">{formatAmountDesktop(Math.round(calculateTotalAmount() * 1.1))}</span>
-                              <span className="md:hidden">{formatAmountMobile(Math.round(calculateTotalAmount() * 1.1))}</span>
+                              <span className="hidden md:inline">{formatAmountDesktop(Math.round(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
+                              <span className="md:hidden">{formatAmountMobile(Math.round(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
                             </span>
                           </div>
                         </>
@@ -695,29 +707,29 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           </div>
           <div className="flex gap-2">
             <Button
-            onClick={handleSubmit}
-            disabled={loading || !formData.dailyBudget || !formData.targetRank}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {loading ? (
-              <>
-                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full me-2" />
-                요청 중...
-              </>
-            ) : (
-              <>
-                <KeenIcon icon="message-programming" className="size-4 me-2" />
-                견적 요청
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            취소
-          </Button>
+              onClick={handleSubmit}
+              disabled={loading || !formData.dailyBudget || !formData.targetRank}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {loading ? (
+                <>
+                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full me-2" />
+                  요청 중...
+                </>
+              ) : (
+                <>
+                  <KeenIcon icon="message-programming" className="size-4 me-2" />
+                  견적 요청
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+            >
+              취소
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>

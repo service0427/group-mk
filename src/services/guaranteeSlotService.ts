@@ -18,15 +18,21 @@ import type {
   GuaranteeSlotRequestStatus,
   GuaranteeSlotStatus,
 } from '@/types/guarantee-slot.types';
+import { inquiryService } from '@/services/inquiryService';
 import {
   createGuaranteeQuoteRequestNotification,
   createNegotiationMessageNotification,
   createGuaranteePurchaseNotification,
   createGuaranteeApprovalNotification,
   createNegotiationCompleteNotification,
-  createRenegotiationRequestNotification
+  createRenegotiationRequestNotification,
+  createRefundConfirmationRequestNotification,
+  createRefundRequestNotification,
+  createRefundRejectedByUserNotification
 } from '@/utils/notificationActions';
 import { SERVICE_TYPE_TO_CATEGORY } from '@/pages/advertise/campaigns/components/campaign-components/constants';
+import { createNotification } from '@/utils/notification';
+import { NotificationType, NotificationPriority } from '@/types/notification';
 
 // 서비스 타입을 한글명으로 변환하는 함수
 const getServiceTypeName = (serviceType: string): string => {
@@ -765,6 +771,37 @@ export const guaranteeSlotService = {
         );
       }
 
+      // 보장형 슬롯 승인 시 1:1 문의 자동 생성
+      try {
+        if (slotInfo?.user_id && slotInfo?.product_id && distributorId) {
+          // 기존 문의가 있는지 확인
+          const { data: existingInquiries } = await supabase
+            .from('inquiries')
+            .select('id')
+            .eq('guarantee_slot_id', slotId);
+
+          // 기존 문의가 없는 경우에만 새로 생성
+          if (!existingInquiries || existingInquiries.length === 0) {
+            // RPC 함수를 사용하여 권한 문제 해결
+            const { data: newInquiry, error: inquiryError } = await supabase.rpc('create_inquiry_on_approval', {
+              p_user_id: slotInfo.user_id,
+              p_distributor_id: distributorId,
+              p_campaign_id: slotInfo.product_id,
+              p_guarantee_slot_id: slotId,
+              p_title: `보장형 슬롯 1:1 문의 - ${slotInfo.campaigns?.campaign_name || '캠페인'}`,
+              p_category: '보장형슬롯'
+            });
+
+            if (inquiryError) {
+              console.error('1:1 문의 자동 생성 실패:', inquiryError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('1:1 문의 자동 생성 중 오류:', error);
+        // 문의 생성 실패는 승인 프로세스에 영향을 주지 않음
+      }
+
       return {
         data: {
           success: true,
@@ -838,7 +875,7 @@ export const guaranteeSlotService = {
   },
 
   // 보장형 슬롯 완료 처리
-  async completeSlot(slotId: string, distributorId: string, workMemo: string) {
+  async completeSlot(slotId: string, distributorId: string, workMemo: string, refundAmount?: number) {
     try {
       // 슬롯 정보 확인
       const { data: slot, error: slotError } = await supabase
@@ -858,9 +895,6 @@ export const guaranteeSlotService = {
         .from('guarantee_slots')
         .update({
           status: 'completed' as GuaranteeSlotStatus,
-          completed_at: new Date().toISOString(),
-          completed_by: distributorId,
-          work_memo: workMemo,
           completed_count: slot.guarantee_count // 전체 보장 횟수만큼 완료 처리
         })
         .eq('id', slotId)
@@ -872,42 +906,102 @@ export const guaranteeSlotService = {
         throw new Error(error.message || '완료 처리 중 오류가 발생했습니다.');
       }
 
-      // 홀딩 금액 정산 처리
-      const { data: holding } = await supabase
-        .from('guarantee_slot_holdings')
-        .select('*')
-        .eq('guarantee_slot_id', slotId)
+      // 환불 금액이 있는 경우 환불 처리
+      if (refundAmount && refundAmount > 0) {
+        // 사용자 ID 가져오기
+        const { data: slotRequest } = await supabase
+          .from('guarantee_slot_requests')
+          .select('user_id')
+          .eq('id', slot.request_id)
+          .single();
+
+        if (!slotRequest?.user_id) {
+          throw new Error('사용자 정보를 찾을 수 없습니다.');
+        }
+
+        // 현재 캐시 잔액 조회
+        const { data: balance } = await supabase
+          .from('user_cash_balances')
+          .select('*')
+          .eq('user_id', slotRequest.user_id)
+          .single();
+
+        const currentBalance = balance?.paid_balance || 0;
+        const newBalance = currentBalance + refundAmount;
+
+        // 캐시 잔액 업데이트
+        const { error: balanceError } = await supabase
+          .from('user_cash_balances')
+          .upsert({
+            user_id: slotRequest.user_id,
+            paid_balance: newBalance,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (balanceError) {
+          console.error('캐시 잔액 업데이트 실패:', balanceError);
+          throw new Error('캐시 잔액 업데이트 중 오류가 발생했습니다.');
+        }
+
+        // 캐시 히스토리 추가
+        const { error: historyError } = await supabase
+          .from('user_cash_history')
+          .insert({
+            user_id: slotRequest.user_id,
+            transaction_type: 'refund',
+            amount: refundAmount,
+            description: `보장형 슬롯 조기 완료 환불 - ${workMemo || '조기 완료'}`,
+            reference_id: slotId,
+            balance_type: 'paid',
+            transaction_at: new Date().toISOString()
+          });
+
+        if (historyError) {
+          console.error('캐시 히스토리 추가 실패:', historyError);
+          throw new Error('캐시 히스토리 추가 중 오류가 발생했습니다.');
+        }
+      }
+
+      // 사용자에게 완료 알림 전송
+      const { data: request } = await supabase
+        .from('guarantee_slot_requests')
+        .select('user_id, campaign_id')
+        .eq('id', slot.request_id)
         .single();
 
-      if (holding && holding.user_holding_amount > 0) {
-        // 남은 홀딩 금액을 모두 총판에게 이동
-        await supabase
-          .from('guarantee_slot_holdings')
-          .update({
-            user_holding_amount: 0,
-            distributor_holding_amount: holding.total_amount,
-            distributor_released_amount: holding.total_amount,
-            status: 'completed'
-          })
-          .eq('id', holding.id);
+      if (request?.user_id) {
+        // 캠페인 정보 조회
+        const { data: campaign } = await supabase
+          .from('campaigns')
+          .select('campaign_name')
+          .eq('id', request.campaign_id)
+          .single();
 
-        // 거래 내역 생성
-        await supabase
-          .from('guarantee_slot_transactions')
-          .insert({
-            guarantee_slot_id: slotId,
-            user_id: slot.user_id,
-            transaction_type: 'settlement',
-            amount: holding.user_holding_amount,
-            description: `보장형 슬롯 완료 정산 - ${workMemo}`
-          });
+        const campaignName = campaign?.campaign_name || '보장형 슬롯';
+        const message = refundAmount && refundAmount > 0
+          ? `[${campaignName}] 보장형 슬롯이 완료되었습니다. 조기 완료로 인해 ${refundAmount.toLocaleString()}원이 환불됩니다.`
+          : `[${campaignName}] 보장형 슬롯이 완료되었습니다.`;
+
+        await createNotification({
+          userId: request.user_id,
+          type: NotificationType.SLOT,
+          title: '보장형 슬롯 완료',
+          message,
+          link: '/my-services',
+          priority: NotificationPriority.HIGH
+        });
       }
 
       return {
         data: {
           success: true,
-          message: '보장형 슬롯이 완료 처리되었습니다.',
-          slot: data
+          message: refundAmount && refundAmount > 0
+            ? `보장형 슬롯이 완료 처리되었습니다. ${refundAmount.toLocaleString()}원이 환불됩니다.`
+            : '보장형 슬롯이 완료 처리되었습니다.',
+          slot: data,
+          refundAmount
         },
         error: null
       };
@@ -918,7 +1012,7 @@ export const guaranteeSlotService = {
   },
 
   // 보장형 슬롯 환불 처리
-  async refundSlot(slotId: string, distributorId: string, refundReason: string) {
+  async refundSlot(slotId: string, distributorId: string, refundReason: string, refundAmount?: number) {
     try {
       // 슬롯 정보 확인
       const { data: slot, error: slotError } = await supabase
@@ -944,21 +1038,33 @@ export const guaranteeSlotService = {
         throw new Error('홀딩 정보를 찾을 수 없습니다.');
       }
 
-      // 환불 금액 계산 (완료된 횟수만큼 차감)
-      const completedAmount = slot.daily_guarantee_amount * slot.completed_count * 1.1; // VAT 포함
-      const refundAmount = slot.total_amount - completedAmount;
+      // 환불 금액 계산 또는 전달받은 금액 사용
+      let actualRefundAmount: number;
+      if (refundAmount !== undefined && refundAmount > 0) {
+        // 전달받은 환불 금액 사용
+        actualRefundAmount = refundAmount;
 
-      if (refundAmount <= 0) {
-        throw new Error('환불 가능한 금액이 없습니다.');
+        // 총 금액 초과 검증
+        if (actualRefundAmount > slot.total_amount) {
+          throw new Error('환불 금액이 총 결제금액을 초과할 수 없습니다.');
+        }
+      } else {
+        // 기존 로직대로 계산
+        const completedAmount = Math.floor(slot.daily_guarantee_amount * slot.completed_count * 1.1); // VAT 포함
+        actualRefundAmount = slot.total_amount - completedAmount;
+
+        if (actualRefundAmount <= 0) {
+          throw new Error('환불 가능한 금액이 없습니다.');
+        }
       }
 
-      // 총판이 환불하는 경우도 환불 요청 시스템을 통해 처리
-      // 환불 요청을 생성하여 검토 상태로 만듦
+      // 총판이 환불을 시작하는 경우: 사용자에게 환불 요청 확인을 받음
       const { data, error } = await supabase.rpc('add_refund_request', {
         p_slot_id: slotId,
-        p_user_id: slot.user_id, // 실제 슬롯 사용자 ID
+        p_user_id: distributorId, // 총판이 요청자
         p_refund_reason: refundReason,
-        p_refund_amount: refundAmount
+        p_refund_amount: actualRefundAmount,
+        p_requested_by: 'distributor' // 총판이 요청했음을 표시
       });
 
       if (error) {
@@ -966,11 +1072,38 @@ export const guaranteeSlotService = {
         throw new Error(error.message || '환불 요청 처리 중 오류가 발생했습니다.');
       }
 
+      // 사용자에게 환불 확인 요청 알림 전송
+      const { data: slotInfo } = await supabase
+        .from('guarantee_slots')
+        .select(`
+          *,
+          campaigns:product_id (
+            campaign_name,
+            service_type,
+            slot_type
+          )
+        `)
+        .eq('id', slotId)
+        .single();
+
+      if (slotInfo?.user_id) {
+        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        await createRefundConfirmationRequestNotification(
+          slotInfo.user_id,
+          slotInfo.campaigns?.campaign_name || '캠페인',
+          actualRefundAmount,
+          refundReason,
+          data.request_id,
+          serviceName,
+          slotInfo.campaigns?.slot_type || 'standard'
+        );
+      }
+
       return {
         data: {
           success: true,
-          message: '환불 요청이 접수되었습니다. 검토 후 처리됩니다.',
-          refundAmount,
+          message: '환불 요청이 사용자에게 전송되었습니다. 사용자 확인 후 처리됩니다.',
+          refundAmount: actualRefundAmount,
           request_id: data.request_id
         },
         error: null
@@ -1020,8 +1153,8 @@ export const guaranteeSlotService = {
       const completedDays = slot.completed_count || 0;
 
       // 환불 금액 계산 (VAT 포함) - 작업기간 기준으로 계산
-      const totalAmount = finalDailyAmount * workPeriod * 1.1;
-      const completedAmount = finalDailyAmount * completedDays * 1.1;
+      const totalAmount = Math.floor(finalDailyAmount * workPeriod * 1.1);
+      const completedAmount = Math.floor(finalDailyAmount * completedDays * 1.1);
       const refundAmount = Math.max(0, totalAmount - completedAmount);
 
       if (refundAmount <= 0) {
@@ -1041,6 +1174,36 @@ export const guaranteeSlotService = {
         throw new Error(error.message || '환불 신청 중 오류가 발생했습니다.');
       }
 
+      // 4단계: 총판에게 환불 요청 알림 전송
+      // 이미 slot 정보가 있으므로 추가 정보만 가져오기
+      if (slot.distributor_id) {
+        // 캠페인 정보 가져오기
+        const { data: campaignInfo } = await supabase
+          .from('campaigns')
+          .select('campaign_name, service_type')
+          .eq('id', slot.product_id)
+          .single();
+
+        // 사용자 정보 가져오기
+        const { data: userInfo } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', userId)
+          .single();
+
+        const serviceName = getServiceTypeName(campaignInfo?.service_type || '');
+        await createRefundRequestNotification(
+          slot.distributor_id,
+          campaignInfo?.campaign_name || '캠페인',
+          refundAmount,
+          refundReason,
+          userInfo?.full_name || '사용자',
+          data?.request_id || 'unknown',
+          serviceName,
+          'guarantee'
+        );
+      }
+
       return {
         data: {
           success: true,
@@ -1055,13 +1218,110 @@ export const guaranteeSlotService = {
       return { data: null, error };
     }
   },
+
+  // 환불 요청 확인/거절 (사용자가 총판의 환불 요청을 처리)
+  async confirmRefundRequest(slotId: string, refundRequestId: string, userId: string, approve: boolean) {
+    try {
+
+      // 슬롯 정보와 refund_requests를 함께 조회
+      const { data: slots, error: slotError } = await supabase
+        .from('guarantee_slots')
+        .select(`
+          id, 
+          status, 
+          request_id, 
+          distributor_id, 
+          refund_requests,
+          guarantee_slot_requests!inner(user_id)
+        `)
+        .eq('id', slotId)
+        .eq('guarantee_slot_requests.user_id', userId);
+
+      if (slotError || !slots || slots.length === 0) {
+        throw new Error('슬롯을 찾을 수 없거나 권한이 없습니다.');
+      }
+
+      const slot = slots[0];
+
+      // refund_requests 배열에서 해당 요청 찾기
+      const refundRequests = slot.refund_requests || [];
+      const requestIndex = refundRequests.findIndex((req: any) => req.id === refundRequestId);
+
+      if (requestIndex === -1) {
+        throw new Error('환불 요청을 찾을 수 없습니다.');
+      }
+
+      const refundRequest = refundRequests[requestIndex];
+
+      // pending_user_confirmation 상태인지 확인
+      if (refundRequest.status !== 'pending_user_confirmation') {
+        throw new Error('확인 대기 중인 환불 요청이 아닙니다.');
+      }
+
+      if (approve) {
+        // 승인: 새로운 RPC 함수 호출
+        const { data, error } = await supabase.rpc('approve_distributor_refund_request', {
+          p_slot_id: slotId,
+          p_request_id: refundRequestId,
+          p_user_id: userId
+        });
+
+        if (error) throw error;
+
+        return {
+          data: data || {
+            success: true,
+            message: '환불이 승인되었습니다.'
+          },
+          error: null
+        };
+      } else {
+        // 거절: 환불 요청 상태를 rejected로 변경하고 슬롯을 active로 복구
+        refundRequest.status = 'rejected';
+        refundRequest.rejection_date = new Date().toISOString();
+        refundRequest.rejection_reason = '사용자가 환불을 거절했습니다.';
+
+        refundRequests[requestIndex] = refundRequest;
+
+        const { error: updateError } = await supabase
+          .from('guarantee_slots')
+          .update({
+            refund_requests: refundRequests,
+            status: 'active' // 슬롯 상태를 active로 복구
+          })
+          .eq('id', slotId);
+
+        if (updateError) throw updateError;
+
+        // 총판에게 환불 거절 알림 전송
+        if (slot.distributor_id) {
+          await createRefundRejectedByUserNotification(
+            slot.distributor_id,
+            slotId,
+            '사용자가 환불을 거절했습니다.'
+          );
+        }
+
+        return {
+          data: {
+            success: true,
+            message: '환불이 거절되었습니다.'
+          },
+          error: null
+        };
+      }
+    } catch (error: any) {
+      console.error('환불 요청 확인 실패:', error);
+      return { data: null, error };
+    }
+  },
 };
 
 // 통계 및 유틸리티
 export const guaranteeSlotUtils = {
   // 총 금액 계산 (부가세 포함)
   calculateTotalAmount(dailyAmount: number, guaranteeCount: number): number {
-    return dailyAmount * guaranteeCount * 1.1; // 부가세 10%
+    return Math.floor(dailyAmount * guaranteeCount * 1.1); // 부가세 10%
   },
 
   // 진행률 계산

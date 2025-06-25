@@ -351,16 +351,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
         // 캠페인 배너 이미지 가져오기 - fetchCampaignBanner 함수 사용
         fetchCampaignBanner(firstCampaign);
-        
+
         // 서비스 타입에 관계없이 기본값 설정
         const minQuantity = firstCampaign.min_quantity ? Number(firstCampaign.min_quantity) : 1;
-        
+
         setSlotData(prev => ({
           ...prev,
           minimum_purchase: minQuantity,
           work_days: prev.work_days || 1
         }));
-        
+
         // 내키워드 기능 제거 - 항상 직접 입력 모드 사용
         setKeywordSearchMode(false);
       } else {
@@ -425,7 +425,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       mainKeyword: '',
       keywords: []
     });
-    
+
     // 키워드 관련 초기화
     setSelectedKeywords([]);
     setKeywords(prev =>
@@ -436,16 +436,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         inputData: {}
       }))
     );
-    
+
     // 결제 금액 초기화
     setTotalPaymentAmount(0);
-    
+
     // 초기화 트리거 증가
     setResetTrigger(prev => prev + 1);
-    
+
     // 캐시 잔액 다시 가져오기
     fetchUserBalance();
-    
+
     // 키워드 목록 다시 가져오기
     if (selectedGroupId) {
       fetchKeywords(selectedGroupId);
@@ -504,7 +504,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       setErrors({});
       setSelectedKeywords([]);
       setKeywordSearchMode(false);
-      
+
       // campaign prop에서 초기 키워드 데이터 추출
       if (campaign?.initialKeywordData) {
         const initialData = campaign.initialKeywordData;
@@ -536,7 +536,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       // fetchKeywordGroups는 캠페인이 로드된 후에 호출됨
 
       // 선택된 그룹 ID 설정은 그룹 목록이 로드된 후에 처리됨 (fetchKeywordGroups 내부에서)
-      
+
       // 내키워드 미지원 서비스인 경우 키워드 모드만 false로 설정
       // minimum_purchase는 캠페인 로드 후 설정하도록 함
       if (!isKeywordSupported(finalServiceCode)) {
@@ -775,7 +775,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         setKeywordError("키워드 그룹을 불러오지 못했습니다");
         return;
       }
-      
+
 
       // 스네이크 케이스에서 카멜 케이스로 변환
       const transformedData = data.map(item => ({
@@ -1387,7 +1387,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 수동 입력 모드용 파일 업로드 함수
   const handleManualFileUpload = async (file: File, fieldName: string): Promise<{ url: string; fileName: string }> => {
     try {
-      
+
       const { data, error } = await fileUploadService.uploadFile({
         file: file,
         bucket: STORAGE_CONFIG.UPLOADS_BUCKET,
@@ -1433,7 +1433,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         showAlert('알림', '키워드를 한 개 이상 선택해주세요.', false);
         return false;
       }
-      
+
       // 키워드 지원 서비스의 추가 필드 검증
       if (selectedCampaign) {
         const additionalFields = getAdditionalFields(selectedCampaign);
@@ -1449,7 +1449,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 if (field.fieldName === '최소 구매수' || field.fieldName === '작업일') {
                   continue;
                 }
-                
+
                 const value = keyword.inputData?.[field.fieldName];
                 if (!value || value.trim() === '') {
                   showAlert('알림', `'${keyword.mainKeyword}' 키워드의 '${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
@@ -1483,17 +1483,17 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         showAlert('알림', '메인 키워드를 입력해주세요.', false);
         return false;
       }
-      
+
       if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
         showAlert('알림', '최소 구매수를 입력해주세요.', false);
         return false;
       }
-      
+
       if (!slotData.work_days || Number(slotData.work_days) < 1) {
         showAlert('알림', '작업일을 입력해주세요.', false);
         return false;
       }
-      
+
       // DB 기반 필드 검증 (input_data의 모든 필드 검증)
       if (slotData.input_data) {
         for (const [fieldName, value] of Object.entries(slotData.input_data)) {
@@ -1509,20 +1509,20 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           }
         }
       }
-      
+
       // 추가 필드 검증
       if (selectedCampaign) {
         const additionalFields = getAdditionalFields(selectedCampaign);
-        
+
         for (const field of additionalFields) {
           const value = slotData.input_data?.[field.fieldName];
-          
+
           // 필수 필드 검증
           if (field.isRequired && (!value || (typeof value === 'string' && value.trim() === ''))) {
             showAlert('알림', `'${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
             return false;
           }
-          
+
           // 값이 있을 때만 타입 검증
           if (value) {
             // INTEGER 타입 필드 검증
@@ -1532,7 +1532,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 return false;
               }
             }
-            
+
             // URL 필드 검증
             if (field.fieldName.toLowerCase().includes('url') || field.fieldName.toLowerCase().includes('link')) {
               if (!isValidUrl(String(value))) {
@@ -1540,7 +1540,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 return false;
               }
             }
-            
+
             // FILE 타입 필드 검증 (필수인 경우)
             if (field.fieldType === FieldType.FILE && field.isRequired) {
               const fileUrl = value;
@@ -1558,25 +1558,25 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         showAlert('알림', '최소 구매수를 입력해주세요.', false);
         return false;
       }
-      
+
       if (!slotData.work_days || Number(slotData.work_days) < 1) {
         showAlert('알림', '작업일을 입력해주세요.', false);
         return false;
       }
-      
+
       // 추가 필드 검증
       if (selectedCampaign) {
         const additionalFields = getAdditionalFields(selectedCampaign);
-        
+
         for (const field of additionalFields) {
           const value = slotData.input_data?.[field.fieldName];
-          
+
           // 필수 필드 검증
           if (field.isRequired && (!value || (typeof value === 'string' && value.trim() === ''))) {
             showAlert('알림', `'${field.fieldName}' 필드는 필수 입력항목입니다.`, false);
             return false;
           }
-          
+
           // 값이 있을 때만 타입 검증
           if (value) {
             // INTEGER 타입 필드 검증
@@ -1586,7 +1586,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 return false;
               }
             }
-            
+
             // URL 필드 검증
             if (field.fieldName.toLowerCase().includes('url') || field.fieldName.toLowerCase().includes('link')) {
               if (!isValidUrl(String(value))) {
@@ -1594,7 +1594,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                 return false;
               }
             }
-            
+
             // FILE 타입 필드 검증 (필수인 경우)
             if (field.fieldType === FieldType.FILE && field.isRequired) {
               const fileUrl = value;
@@ -2061,7 +2061,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           `${selectedCampaign?.campaign_name || ''} - ${result.slots.length}개의 키워드 구매 신청이 완료되었습니다.`,
           '/myinfo/services'
         );
-        
+
         // 총판에게 알림 전송 (mat_id가 있는 경우)
         if (selectedCampaign?.mat_id && selectedCampaign.mat_id !== currentUser?.id) {
           await createNotification(
@@ -2082,13 +2082,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       if (selectedCampaignId) {
         await fetchAlreadyRegisteredKeywords(selectedCampaignId);
       }
-      
+
       // 성공 알림 표시
       showAlert('구매 신청 완료', `${selectedCampaign?.campaign_name || '키워드'} 구매 신청이 성공적으로 완료되었습니다.`, true);
-      
+
       // 모달 초기화
       resetModal();
-      
+
       // onSave 콜백 호출
       if (onSave) {
         onSave(slotData);
@@ -2104,7 +2104,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
   // 수동 입력 서비스용 저장 함수
   const handleSaveForManualService = async () => {
     try {
-      
+
       // 폼 유효성 검사
       if (!validateForm(supportsKeyword)) { // 서비스 타입에 따라 검증
         return;
@@ -2116,11 +2116,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         throw new Error('필수 정보가 누락되었습니다.');
       }
 
-      console.log('선택된 캠페인 정보:', {
-        campaign: selectedCampaign,
-        slot_type: selectedCampaign.slot_type,
-        is_guarantee: selectedCampaign.is_guarantee
-      });
 
       // 보장형 캠페인인 경우 견적 요청 모달 열기
       if (selectedCampaign.slot_type === 'guarantee' || selectedCampaign.is_guarantee) {
@@ -2140,7 +2135,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             keyword3: slotData.input_data?.keyword3 || slotData.keyword3 || ''
           }
         };
-        
+
         // 수동 입력용 키워드 데이터 설정
         setSelectedKeywords([-1]); // 가상 ID 사용
         setKeywords([{
@@ -2154,7 +2149,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }]);
-        
+
         setSaving(false);
         setQuoteRequestModalOpen(true);
         return;
@@ -2162,15 +2157,15 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 스프레드시트 모드에서 여러 행을 처리하는지 확인
       const isSpreadsheetMode = slotData.keywordDetails && slotData.keywordDetails.length > 0;
-      
+
       // 잔액 계산
-      const unitPrice = typeof selectedCampaign.unit_price === 'string' 
-        ? parseFloat(selectedCampaign.unit_price) 
+      const unitPrice = typeof selectedCampaign.unit_price === 'string'
+        ? parseFloat(selectedCampaign.unit_price)
         : (selectedCampaign.unit_price || 0);
-      
+
       let totalAmount = 0;
       let slotsToSave = [];
-      
+
       if (isSpreadsheetMode) {
         // 스프레드시트 모드: 여러 행 처리
         for (const detail of slotData.keywordDetails || []) {
@@ -2178,7 +2173,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           const workDays = detail.dueDays || 1;
           const rowAmount = Math.round(quantity * workDays * unitPrice * 1.1);
           totalAmount += rowAmount;
-          
+
           // 각 행에 대한 슬롯 데이터 생성
           const slotData = {
             mat_id: selectedCampaign?.mat_id || currentUser.id,
@@ -2209,7 +2204,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         const quantity = slotData.minimum_purchase || (selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
         const workDays = slotData.work_days || 1;
         totalAmount = Math.round(quantity * workDays * unitPrice * 1.1);
-        
+
         const slotToSave = {
           mat_id: selectedCampaign?.mat_id || currentUser.id,
           product_id: selectedCampaign.id,
@@ -2248,7 +2243,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         totalAmount,
         slotData
       });
-      
+
 
       // 잔액 확인
       const { data: userBalance, error: balanceError } = await supabase
@@ -2276,16 +2271,16 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         console.error('Slot insert error:', slotError);
         throw new Error(`슬롯 저장에 실패했습니다: ${slotError.message}`);
       }
-      
+
       if (!savedSlots || savedSlots.length === 0) {
         throw new Error('슬롯 저장에 실패했습니다: 데이터가 반환되지 않았습니다.');
       }
-      
+
 
       // 잔액 차감 및 거래 내역 저장
       const freeBalance = parseFloat(String(userBalance.free_balance || 0));
       const paidBalance = parseFloat(String(userBalance.paid_balance || 0));
-      
+
       let freeBalanceToUse = Math.min(freeBalance, totalAmount);
       let paidBalanceToUse = totalAmount - freeBalanceToUse;
 
@@ -2314,8 +2309,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         amount: -totalAmount,
         description: `${selectedCampaign.campaign_name} 구매 (${savedSlots.length}개)`,
         reference_id: savedSlots[0].id, // 첫 번째 슬롯 ID를 참조
-        balance_type: freeBalanceToUse > 0 && paidBalanceToUse > 0 ? 'mixed' : 
-                      freeBalanceToUse > 0 ? 'free' : 'paid'
+        balance_type: freeBalanceToUse > 0 && paidBalanceToUse > 0 ? 'mixed' :
+          freeBalanceToUse > 0 ? 'free' : 'paid'
       };
 
       await supabase.from('user_cash_history').insert(transactionData);
@@ -2327,7 +2322,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         `${selectedCampaign.campaign_name} - ${savedSlots.length}개의 ${isSpreadsheetMode ? '키워드' : '슬롯'} 구매 신청이 완료되었습니다.`,
         '/myinfo/services'
       );
-      
+
       // 총판에게 알림 전송 (mat_id가 있는 경우)
       if (selectedCampaign?.mat_id && selectedCampaign.mat_id !== currentUser?.id) {
         await createNotification(
@@ -2340,10 +2335,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
       // 성공 알림 표시
       showAlert('구매 신청 완료', `${selectedCampaign.campaign_name} - ${savedSlots.length}개의 ${isSpreadsheetMode ? '키워드' : '슬롯'} 구매 신청이 성공적으로 완료되었습니다.`, true);
-      
+
       // 모달 초기화 (캐시 잔액 업데이트 및 상태 초기화 포함)
       resetModal();
-      
+
       // onSave 콜백 호출
       if (onSave) {
         onSave(slotData);
@@ -2359,19 +2354,19 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 현재 선택된 캠페인 찾기
   const selectedCampaign = campaigns.find(camp => camp.id === selectedCampaignId) || null;
-  
-  
+
+
   // 현재 서비스가 내키워드를 지원하는지 확인
   const supportsKeyword = isKeywordSupported(selectedServiceCode);
 
   // 캠페인 선택 시 내키워드 미지원 서비스 처리
   useEffect(() => {
-    
+
     if (selectedCampaign) {
       if (!isKeywordSupported(selectedCampaign.service_type)) {
         // 수동 입력 모드인 경우 최소 구매수와 작업일 기본값 설정
         const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-        
+
         setSlotData(prev => ({
           ...prev,
           minimum_purchase: minQuantity,
@@ -2382,13 +2377,13 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       } else {
         // 키워드 지원 서비스인 경우에도 기본값 설정
         const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-        
+
         setSlotData(prev => ({
           ...prev,
           minimum_purchase: minQuantity,
           work_days: prev.work_days || 1
         }));
-        
+
         // 내키워드 기능 제거 - 항상 직접 입력 모드 사용
         setKeywordSearchMode(false);
       }
@@ -2493,189 +2488,189 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                     />
 
 
-                  {/* 키워드 목록 - 테이블 구역 최적화 */}
-                  <div className="border rounded-md overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
-                    {keywordLoading ? (
-                      <div className="p-6 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
-                        <p className="mt-3 text-muted-foreground text-sm">키워드 목록을 불러오는 중...</p>
-                      </div>
-                    ) : keywordError ? (
-                      <div className="p-6 text-center text-red-500">
-                        <p>{keywordError}</p>
-                      </div>
-                    ) : keywords.length === 0 ? (
-                      <div className="p-6 text-center">
-                        <p className="text-muted-foreground">
-                          {searchKeyword ? '검색 결과가 없습니다.' : '등록된 키워드가 없습니다.'}
-                        </p>
-                        {!searchKeyword && (
-                          <p className="mt-2 text-sm">
-                            <Link to="/keyword" className="text-primary hover:underline">
-                              키워드 관리 페이지에서 키워드를 추가해주세요.
-                            </Link>
+                    {/* 키워드 목록 - 테이블 구역 최적화 */}
+                    <div className="border rounded-md overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
+                      {keywordLoading ? (
+                        <div className="p-6 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+                          <p className="mt-3 text-muted-foreground text-sm">키워드 목록을 불러오는 중...</p>
+                        </div>
+                      ) : keywordError ? (
+                        <div className="p-6 text-center text-red-500">
+                          <p>{keywordError}</p>
+                        </div>
+                      ) : keywords.length === 0 ? (
+                        <div className="p-6 text-center">
+                          <p className="text-muted-foreground">
+                            {searchKeyword ? '검색 결과가 없습니다.' : '등록된 키워드가 없습니다.'}
                           </p>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white py-1 px-3 sm:px-4 border-b flex justify-between items-center rounded-t-md">
-                          <div className="flex items-center gap-2">
-                            <KeenIcon icon="list" className="text-white size-3" />
-                            <div className="text-xs font-medium antialiased">
-                              총 {keywords.length}개의 키워드
+                          {!searchKeyword && (
+                            <p className="mt-2 text-sm">
+                              <Link to="/keyword" className="text-primary hover:underline">
+                                키워드 관리 페이지에서 키워드를 추가해주세요.
+                              </Link>
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white py-1 px-3 sm:px-4 border-b flex justify-between items-center rounded-t-md">
+                            <div className="flex items-center gap-2">
+                              <KeenIcon icon="list" className="text-white size-3" />
+                              <div className="text-xs font-medium antialiased">
+                                총 {keywords.length}개의 키워드
+                              </div>
+                            </div>
+                            <div className="inline-flex items-center gap-1 text-xs bg-green-500/30 py-0.5 px-2 rounded-full">
+                              <KeenIcon icon="check-circle" className="text-green-300 size-3" />
+                              <span className="font-medium text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
                             </div>
                           </div>
-                          <div className="inline-flex items-center gap-1 text-xs bg-green-500/30 py-0.5 px-2 rounded-full">
-                            <KeenIcon icon="check-circle" className="text-green-300 size-3" />
-                            <span className="font-medium text-green-100 antialiased">선택됨: {selectedKeywords.length} 개</span>
-                          </div>
-                        </div>
-                        <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900 min-h-0">
-                          <div className="h-full overflow-x-auto overflow-y-auto custom-scrollbar">
-                            <table className={`w-full border-separate border-spacing-0`} style={{ minWidth: `${1200 + (getAdditionalFields(selectedCampaign).length * 150)}px` }}>
-                              <thead className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white shadow-lg backdrop-blur-sm">
-                                <tr className="text-left">
-                                  <th className="min-w-[50px] w-[50px] px-2 py-3 text-xs font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
-                                    <div className="flex items-center justify-center relative group">
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedKeywords.length > 0 && selectedKeywords.length === keywords.length}
-                                        onChange={() => {
-                                          if (selectedKeywords.length === keywords.length) {
-                                            // 모든 키워드가 선택된 경우, 선택 초기화
-                                            setSelectedKeywords([]);
-                                          } else {
-                                            // 전체 선택
-                                            const allIds = keywords.map(k => k.id);
-                                            setSelectedKeywords(allIds);
+                          <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900 min-h-0">
+                            <div className="h-full overflow-x-auto overflow-y-auto custom-scrollbar">
+                              <table className={`w-full border-separate border-spacing-0`} style={{ minWidth: `${1200 + (getAdditionalFields(selectedCampaign).length * 150)}px` }}>
+                                <thead className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white shadow-lg backdrop-blur-sm">
+                                  <tr className="text-left">
+                                    <th className="min-w-[50px] w-[50px] px-2 py-3 text-xs font-medium border border-blue-400/30 dark:border-blue-400/20 rounded-tl-md">
+                                      <div className="flex items-center justify-center relative group">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedKeywords.length > 0 && selectedKeywords.length === keywords.length}
+                                          onChange={() => {
+                                            if (selectedKeywords.length === keywords.length) {
+                                              // 모든 키워드가 선택된 경우, 선택 초기화
+                                              setSelectedKeywords([]);
+                                            } else {
+                                              // 전체 선택
+                                              const allIds = keywords.map(k => k.id);
+                                              setSelectedKeywords(allIds);
 
-                                            // 선택된 캠페인의 min_quantity를 작업수로 자동 설정
-                                            if (selectedCampaign) {
-                                              const minQuantity = selectedCampaign.min_quantity ?
-                                                (typeof selectedCampaign.min_quantity === 'string' ?
-                                                  parseInt(selectedCampaign.min_quantity) : selectedCampaign.min_quantity) : 1;
+                                              // 선택된 캠페인의 min_quantity를 작업수로 자동 설정
+                                              if (selectedCampaign) {
+                                                const minQuantity = selectedCampaign.min_quantity ?
+                                                  (typeof selectedCampaign.min_quantity === 'string' ?
+                                                    parseInt(selectedCampaign.min_quantity) : selectedCampaign.min_quantity) : 1;
 
-                                              setKeywords(prev =>
-                                                prev.map(k => ({
-                                                  ...k,
-                                                  workCount: k.workCount || minQuantity,
-                                                  dueDays: k.dueDays || 1
-                                                }))
-                                              );
+                                                setKeywords(prev =>
+                                                  prev.map(k => ({
+                                                    ...k,
+                                                    workCount: k.workCount || minQuantity,
+                                                    dueDays: k.dueDays || 1
+                                                  }))
+                                                );
+                                              }
+
+                                              // 결제 금액 재계산
+                                              setTimeout(() => calculateTotalPayment(allIds), 0);
                                             }
-
-                                            // 결제 금액 재계산
-                                            setTimeout(() => calculateTotalPayment(allIds), 0);
-                                          }
-                                        }}
-                                        className="size-4 sm:size-4 cursor-pointer rounded"
-                                      />
-                                    </div>
-                                  </th>
-                                  <th className="min-w-[200px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
-                                  {(() => {
-                                    // 보이는 필드들을 체크하여 정보 헤더 표시 여부 결정
-                                    const hasVisibleInfoFields =
-                                      !isHidden('mid') ||
-                                      !isHidden('url') ||
-                                      !isHidden('description') ||
-                                      !isHidden('keyword1') ||
-                                      !isHidden('keyword2') ||
-                                      !isHidden('keyword3');
-
-                                    if (hasVisibleInfoFields) {
-                                      return (
-                                        <th className="min-w-[250px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
-                                  {/* 보장형이 아닌 경우에만 작업수 헤더 표시 */}
-                                  {selectedCampaign?.slot_type !== 'guarantee' && (
-                                    <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업수</th>
-                                  )}
-                                  {/* 보장형이 아닌 경우에만 작업기간 헤더 표시 */}
-                                  {selectedCampaign?.slot_type !== 'guarantee' && (
-                                    <>
-                                      <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
-                                      <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
-                                    </>
-                                  )}
-                                  {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
-                                    <th
-                                      key={index}
-                                      className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased relative group ${index === getAdditionalFields(selectedCampaign).length - 1 ? 'rounded-tr-md' : ''
-                                        }`}
-                                      style={{ minWidth: '150px' }}
-                                    >
-                                      <div className="flex items-center justify-center">
-                                        <span>{field.fieldName}</span>
-                                        {field.isRequired && (
-                                          <span className="ml-0.5 text-red-500 font-bold">*</span>
-                                        )}
-                                        {field.description && (
-                                          <span className="ml-1 inline-flex items-center justify-center">
-                                            <KeenIcon icon="information" className="size-4 text-blue-300" />
-                                            <div className="hidden group-hover:block absolute top-full left-1/2 transform -translate-x-1/2 z-50 mt-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap">
-                                              {field.description}
-                                            </div>
-                                          </span>
-                                        )}
+                                          }}
+                                          className="size-4 sm:size-4 cursor-pointer rounded"
+                                        />
                                       </div>
                                     </th>
-                                  ))}
-                                  {/* 마지막 컬럼의 오른쪽 모서리를 둥글게 하기 위한 클래스 적용 */}
-                                  {(!selectedCampaign || getAdditionalFields(selectedCampaign).length === 0) && (
-                                    <th className="px-0 py-0 w-0 border-none rounded-tr-md">
-                                    </th>
-                                  )}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {keywords.map(keyword => (
-                                  <KeywordTableRow
-                                    key={keyword.id}
-                                    keyword={keyword}
-                                    selectedKeywords={selectedKeywords}
-                                    selectedCampaign={selectedCampaign}
-                                    isHidden={isHidden}
-                                    getFieldLabel={getFieldLabel}
-                                    handleKeywordToggle={handleKeywordToggle}
-                                    handleWorkCountChange={handleWorkCountChange}
-                                    handleWorkCountBlur={handleWorkCountBlur}
-                                    handleDueDaysChange={handleDueDaysChange}
-                                    calculateExpectedDate={calculateExpectedDate}
-                                    getAdditionalFields={getAdditionalFields}
-                                    handleInputDataChange={handleInputDataChange}
-                                    handleNumberInputChange={handleNumberInputChange}
-                                    handleFileUpload={handleFileUpload}
-                                    handleFileRemove={handleFileRemove}
-                                    calculateTotalPayment={calculateTotalPayment}
-                                    setKeywords={setKeywords}
-                                  />
-                                ))}
-                                {keywords.length === 0 && (
-                                  <tr>
-                                    <td
-                                      colSpan={selectedCampaign && getAdditionalFields(selectedCampaign).length > 0
-                                        ? 5 + getAdditionalFields(selectedCampaign).length
-                                        : 5}
-                                      className="px-3 py-8 text-center text-gray-600 border border-gray-200 font-bold"
-                                    >
-                                      <p>키워드가 없습니다. 키워드를 추가하거나 다른 그룹을 선택해주세요.</p>
-                                    </td>
+                                    <th className="min-w-[200px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">{getFieldLabel('main_keyword', '키워드')}</th>
+                                    {(() => {
+                                      // 보이는 필드들을 체크하여 정보 헤더 표시 여부 결정
+                                      const hasVisibleInfoFields =
+                                        !isHidden('mid') ||
+                                        !isHidden('url') ||
+                                        !isHidden('description') ||
+                                        !isHidden('keyword1') ||
+                                        !isHidden('keyword2') ||
+                                        !isHidden('keyword3');
+
+                                      if (hasVisibleInfoFields) {
+                                        return (
+                                          <th className="min-w-[250px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">정보</th>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                    {/* 보장형이 아닌 경우에만 작업수 헤더 표시 */}
+                                    {selectedCampaign?.slot_type !== 'guarantee' && (
+                                      <th className="min-w-[80px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업수</th>
+                                    )}
+                                    {/* 보장형이 아닌 경우에만 작업기간 헤더 표시 */}
+                                    {selectedCampaign?.slot_type !== 'guarantee' && (
+                                      <>
+                                        <th className="min-w-[100px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">작업기간</th>
+                                        <th className="min-w-[150px] px-3 py-3 text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased">예상 작업기간</th>
+                                      </>
+                                    )}
+                                    {selectedCampaign && getAdditionalFields(selectedCampaign).map((field, index) => (
+                                      <th
+                                        key={index}
+                                        className={`px-1 py-2 md:px-3 md:py-3 text-[9px] md:text-xs font-semibold border border-blue-400/30 dark:border-blue-400/20 uppercase tracking-wider antialiased relative group ${index === getAdditionalFields(selectedCampaign).length - 1 ? 'rounded-tr-md' : ''
+                                          }`}
+                                        style={{ minWidth: '150px' }}
+                                      >
+                                        <div className="flex items-center justify-center">
+                                          <span>{field.fieldName}</span>
+                                          {field.isRequired && (
+                                            <span className="ml-0.5 text-red-500 font-bold">*</span>
+                                          )}
+                                          {field.description && (
+                                            <span className="ml-1 inline-flex items-center justify-center">
+                                              <KeenIcon icon="information" className="size-4 text-blue-300" />
+                                              <div className="hidden group-hover:block absolute top-full left-1/2 transform -translate-x-1/2 z-50 mt-1 px-2 py-1 text-xs text-white bg-gray-800 rounded-md shadow-lg whitespace-nowrap">
+                                                {field.description}
+                                              </div>
+                                            </span>
+                                          )}
+                                        </div>
+                                      </th>
+                                    ))}
+                                    {/* 마지막 컬럼의 오른쪽 모서리를 둥글게 하기 위한 클래스 적용 */}
+                                    {(!selectedCampaign || getAdditionalFields(selectedCampaign).length === 0) && (
+                                      <th className="px-0 py-0 w-0 border-none rounded-tr-md">
+                                      </th>
+                                    )}
                                   </tr>
-                                )}
-                              </tbody>
-                            </table>
+                                </thead>
+                                <tbody>
+                                  {keywords.map(keyword => (
+                                    <KeywordTableRow
+                                      key={keyword.id}
+                                      keyword={keyword}
+                                      selectedKeywords={selectedKeywords}
+                                      selectedCampaign={selectedCampaign}
+                                      isHidden={isHidden}
+                                      getFieldLabel={getFieldLabel}
+                                      handleKeywordToggle={handleKeywordToggle}
+                                      handleWorkCountChange={handleWorkCountChange}
+                                      handleWorkCountBlur={handleWorkCountBlur}
+                                      handleDueDaysChange={handleDueDaysChange}
+                                      calculateExpectedDate={calculateExpectedDate}
+                                      getAdditionalFields={getAdditionalFields}
+                                      handleInputDataChange={handleInputDataChange}
+                                      handleNumberInputChange={handleNumberInputChange}
+                                      handleFileUpload={handleFileUpload}
+                                      handleFileRemove={handleFileRemove}
+                                      calculateTotalPayment={calculateTotalPayment}
+                                      setKeywords={setKeywords}
+                                    />
+                                  ))}
+                                  {keywords.length === 0 && (
+                                    <tr>
+                                      <td
+                                        colSpan={selectedCampaign && getAdditionalFields(selectedCampaign).length > 0
+                                          ? 5 + getAdditionalFields(selectedCampaign).length
+                                          : 5}
+                                        className="px-3 py-8 text-center text-gray-600 border border-gray-200 font-bold"
+                                      >
+                                        <p>키워드가 없습니다. 키워드를 추가하거나 다른 그룹을 선택해주세요.</p>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
               ) : (
                 /* 직접 입력 모드 - 모든 서비스에서 스프레드시트 사용 가능 */
                 <div className="w-full space-y-4 flex-1 flex flex-col min-h-0">

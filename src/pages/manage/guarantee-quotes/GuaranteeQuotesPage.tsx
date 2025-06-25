@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { useAuthContext } from '@/auth';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useCustomToast } from '@/hooks/useCustomToast';
+import { useMediaQuery } from '@/hooks';
 import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { createRefundApprovedNotification } from '@/utils/notificationActions';
@@ -40,6 +41,8 @@ interface GuaranteeQuoteRequest {
   initial_budget?: number;
   status: 'requested' | 'negotiating' | 'accepted' | 'rejected' | 'expired' | 'purchased';
   final_daily_amount?: number;
+  final_budget_type?: 'daily' | 'total';
+  final_total_amount?: number;
   start_date?: string;
   end_date?: string;
   keyword_id?: number;
@@ -93,7 +96,7 @@ interface GuaranteeQuoteRequest {
     end_date?: string;
     refund_requests?: Array<{
       id: string;
-      status: 'pending' | 'approved' | 'rejected';
+      status: 'pending' | 'approved' | 'rejected' | 'pending_user_confirmation';
       refund_reason: string;
       approval_notes?: string;
       request_date: string;
@@ -106,7 +109,7 @@ interface GuaranteeQuoteRequest {
 const GuaranteeQuotesPage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
-  
+
   // 함수 참조를 안정화하기 위한 ref
   const showErrorRef = useRef(showError);
   showErrorRef.current = showError;
@@ -145,23 +148,42 @@ const GuaranteeQuotesPage: React.FC = () => {
     guaranteeUnit?: string;
     startDate?: string;
     endDate?: string;
+    targetRank?: number;
+    workPeriod?: number;
+    refundSettings?: any;
   } | null>(null);
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [completeSlotData, setCompleteSlotData] = useState<{
     slotId: string;
     campaignName?: string;
+    campaignLogo?: string;
+    serviceType?: string;
+    slotStatus?: string;
     guaranteeCount: number;
     guaranteeUnit?: string;
     completedDays?: number;
+    totalAmount?: number;
+    negotiatedAmount?: number;
+    startDate?: string;
+    endDate?: string;
+    actualCompletedCount?: number;
+    refundSettings?: any;
   } | null>(null);
   const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [refundSlotData, setRefundSlotData] = useState<{
     slotId: string;
     campaignName?: string;
+    campaignLogo?: string;
+    serviceType?: string;
+    slotStatus?: string;
     guaranteeCount: number;
     guaranteeUnit?: string;
     completedDays?: number;
     totalAmount?: number;
+    negotiatedAmount?: number;
+    startDate?: string;
+    endDate?: string;
+    actualCompletedCount?: number;
     refundSettings?: any;
   } | null>(null);
 
@@ -198,16 +220,19 @@ const GuaranteeQuotesPage: React.FC = () => {
     campaignName?: string;
   } | null>(null);
   const [requestProcessing, setRequestProcessing] = useState(false);
-  
+
   // 문의 모달 상태
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
-  
+
   // 환불 요청 승인/거절 모달 상태
   const [refundRequestModalOpen, setRefundRequestModalOpen] = useState(false);
   const [refundRequestData, setRefundRequestData] = useState<{
     slotId: string;
     requestId: string;
     campaignName?: string;
+    campaignLogo?: string;
+    serviceType?: string;
+    slotStatus?: string;
     refundAmount: number;
     refundReason: string;
     requesterName?: string;
@@ -217,7 +242,15 @@ const GuaranteeQuotesPage: React.FC = () => {
     completedDays?: number;
     totalAmount?: number;
     requestDate?: string;
+    startDate?: string;
+    endDate?: string;
+    refundSettings?: any;
   } | null>(null);
+
+  // 환불 정보 툴팁 상태
+  const [openRefundInfoId, setOpenRefundInfoId] = useState<string | null>(null);
+  const [refundTooltipPosition, setRefundTooltipPosition] = useState({ top: 0, left: 0 });
+
   const [inquiryData, setInquiryData] = useState<{
     slotId?: string;
     campaignId?: number;
@@ -225,36 +258,37 @@ const GuaranteeQuotesPage: React.FC = () => {
     title?: string;
   } | null>(null);
 
+  // 화면 크기 확인
+  const isMediumScreen = useMediaQuery('(min-width: 768px)');
+  const isLargeScreen = useMediaQuery('(min-width: 1024px)');
+  const isExtraLargeScreen = useMediaQuery('(min-width: 1280px)');
+
   // 캠페인 관련 상태
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<any[]>([]);
 
   // MonthlyStatistics 컴포넌트 ref
   const monthlyStatisticsRef = useRef<GuaranteeMonthlyStatisticsRef>(null);
-  
+
   // 키워드 툴팁 상태
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
-  
+
   // 입력정보 툴팁 상태
   const [openInputDataTooltipId, setOpenInputDataTooltipId] = useState<string | null>(null);
-  
-  // 환불 정보 툴팁 상태
-  const [openRefundInfoId, setOpenRefundInfoId] = useState<string | null>(null);
-  const [refundTooltipPosition, setRefundTooltipPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  
+
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
     if (!endDate) return null;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const end = new Date(endDate);
     end.setHours(0, 0, 0, 0);
-    
+
     const diffTime = end.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   };
 
@@ -339,7 +373,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 사용자 정보를 안정화
   const userId = currentUser?.id;
   const userRole = currentUser?.role;
-  
+
   // 견적 요청 목록 가져오기
   const fetchRequests = useCallback(async () => {
     if (!userId) return;
@@ -492,7 +526,7 @@ const GuaranteeQuotesPage: React.FC = () => {
 
     // 중복 제거하여 고유한 서비스 타입만 추출
     const uniqueServiceTypes = [...new Set(distributorCampaigns.map(c => c.service_type))];
-    
+
     // 메뉴 순서에 맞게 정렬
     return SERVICE_TYPE_ORDER.filter(type => uniqueServiceTypes.includes(type));
   }, [campaigns, currentUser, userRole]);
@@ -511,7 +545,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   useEffect(() => {
     // 이미 초기 로드가 완료되었으면 실행하지 않음
     if (initialLoadDone || authLoading || !userId) return;
-    
+
     setInitialLoadDone(true);
     fetchRequests();
     fetchCampaigns();
@@ -640,7 +674,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 요청 승인
   const handleApproveRequest = async () => {
     if (!requestApprovalData) return;
-    
+
     try {
       setRequestProcessing(true);
       const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestApprovalData.requestId, 'accepted');
@@ -670,7 +704,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 요청 거절
   const handleRejectRequest = async () => {
     if (!requestRejectData) return;
-    
+
     try {
       setRequestProcessing(true);
       const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestRejectData.requestId, 'rejected');
@@ -700,7 +734,7 @@ const GuaranteeQuotesPage: React.FC = () => {
   // 요청 거절 취소 처리
   const handleCancelRejectRequest = async () => {
     if (!requestCancelRejectData) return;
-    
+
     try {
       setRequestProcessing(true);
       const { error } = await guaranteeSlotRequestService.updateRequestStatus(requestCancelRejectData.requestId, 'negotiating');
@@ -763,7 +797,10 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       startDate,
-      endDate
+      endDate,
+      targetRank: request.target_rank,
+      workPeriod: request.guarantee_period || request.guarantee_count,
+      refundSettings: request.campaigns?.refund_settings
     });
     setApprovalModalOpen(true);
   };
@@ -851,29 +888,44 @@ const GuaranteeQuotesPage: React.FC = () => {
     setCompleteSlotData({
       slotId,
       campaignName: request.campaigns?.campaign_name,
+      campaignLogo: request.campaigns?.logo,
+      serviceType: request.campaigns?.service_type,
+      slotStatus: slot.status,
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
-      completedDays
+      completedDays,
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
+      negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
+      startDate: slot.start_date,
+      endDate: slot.end_date,
+      actualCompletedCount: 0, // TODO: 실제 완료 횟수를 가져와야 함
+      refundSettings: request.campaigns?.refund_settings
     });
     setCompleteModalOpen(true);
   };
 
   // 실제 슬롯 완료 처리
-  const handleCompleteConfirm = async (workMemo: string) => {
+  const handleCompleteConfirm = async (workMemo: string, refundAmount?: number) => {
     if (!currentUser || !completeSlotData) return;
 
     try {
       const { data, error } = await guaranteeSlotService.completeSlot(
         completeSlotData.slotId,
         currentUser.id!,
-        workMemo
+        workMemo,
+        refundAmount
       );
 
       if (error) {
         throw error;
       }
 
-      showSuccess('보장형 슬롯이 완료 처리되었습니다.');
+      if (refundAmount && refundAmount > 0) {
+        showSuccess(`보장형 슬롯이 완료 처리되었습니다. 조기완료로 인해 ${refundAmount.toLocaleString()}원이 환불됩니다.`);
+      } else {
+        showSuccess('보장형 슬롯이 완료 처리되었습니다.');
+      }
+
       setCompleteModalOpen(false);
       setCompleteSlotData(null);
       fetchRequests();
@@ -913,31 +965,39 @@ const GuaranteeQuotesPage: React.FC = () => {
     setRefundSlotData({
       slotId,
       campaignName: request.campaigns?.campaign_name,
+      campaignLogo: request.campaigns?.logo,
+      serviceType: request.campaigns?.service_type,
+      slotStatus: slot.status,
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? request.final_daily_amount * (request.guarantee_period || request.guarantee_count) : 0,
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
+      negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
+      startDate: slot.start_date,
+      endDate: slot.end_date,
+      actualCompletedCount: 0, // TODO: 실제 완료 횟수를 가져와야 함
       refundSettings: request.campaigns?.refund_settings
     });
     setRefundModalOpen(true);
   };
 
   // 실제 슬롯 환불 처리
-  const handleRefundConfirm = async (reason: string) => {
+  const handleRefundConfirm = async (reason: string, refundAmount: number) => {
     if (!currentUser || !refundSlotData) return;
 
     try {
       const { data, error } = await guaranteeSlotService.refundSlot(
         refundSlotData.slotId,
         currentUser.id!,
-        reason
+        reason,
+        refundAmount
       );
 
       if (error) {
         throw error;
       }
 
-      showSuccess(`보장형 슬롯이 환불 처리되었습니다. ${data?.refundAmount ? `(환불금액: ${data.refundAmount.toLocaleString()}원)` : ''}`);
+      showSuccess('환불 요청이 사용자에게 전송되었습니다. 사용자 확인 후 처리됩니다.');
       setRefundModalOpen(false);
       setRefundSlotData(null);
       fetchRequests();
@@ -954,19 +1014,35 @@ const GuaranteeQuotesPage: React.FC = () => {
 
   // 환불 요청 승인/거절 모달 열기
   const handleRefundRequestModal = (slotId: string, refundRequest: any, request: GuaranteeQuoteRequest) => {
+    const slot = request.guarantee_slots?.find(s => s.id === slotId);
+
+    // 완료된 일수 계산
+    let completedDays = 0;
+    if (slot?.start_date) {
+      const start = new Date(slot.start_date);
+      const today = new Date();
+      completedDays = Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
     setRefundRequestData({
       slotId,
       requestId: refundRequest.id,
       campaignName: request.campaigns?.campaign_name,
+      campaignLogo: request.campaigns?.logo,
+      serviceType: request.campaigns?.service_type,
+      slotStatus: slot?.status,
       refundAmount: refundRequest.refund_amount,
       refundReason: refundRequest.refund_reason,
       requesterName: request.users?.full_name,
       // 환불 계산용 추가 정보
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
-      completedDays: 0, // TODO: 실제 완료일수 계산 필요
-      totalAmount: request.final_daily_amount ? request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1 : 0,
-      requestDate: refundRequest.request_date
+      completedDays,
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0,
+      startDate: slot?.start_date,
+      endDate: slot?.end_date,
+      requestDate: refundRequest.request_date,
+      refundSettings: request.campaigns?.refund_settings
     });
     setRefundRequestModalOpen(true);
   };
@@ -1031,10 +1107,10 @@ const GuaranteeQuotesPage: React.FC = () => {
       }
 
       // 사용자에게 환불 거절 알림 전송
-      const request = requests.find(req => 
+      const request = requests.find(req =>
         req.guarantee_slots?.some(slot => slot.id === refundRequestData.slotId)
       );
-      
+
       if (request?.user_id) {
         const { createRefundRejectedNotification } = await import('@/utils/notificationActions');
         await createRefundRejectedNotification(
@@ -1220,7 +1296,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       />
 
       {/* 중요 안내사항 */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="flex items-start gap-3">
           <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -1240,11 +1316,11 @@ const GuaranteeQuotesPage: React.FC = () => {
       </div>
 
       {/* 검색 영역 */}
-      <div className="card shadow-sm mb-4" inert={negotiationModal.open ? '' : undefined}>
-        <div className="card-header px-4 py-3">
-          <h3 className="card-title text-sm">보장형 슬롯 검색</h3>
+      <div className="card shadow-sm mb-3 sm:mb-4" inert={negotiationModal.open ? '' : undefined}>
+        <div className="card-header px-3 sm:px-4 py-2.5 sm:py-3">
+          <h3 className="card-title text-xs sm:text-sm">보장형 슬롯 검색</h3>
         </div>
-        <div className="card-body px-4 py-3">
+        <div className="card-body px-3 sm:px-4 py-2.5 sm:py-3">
           {/* 데스크탑 검색 폼 */}
           <div className="hidden md:block space-y-3">
             {/* 첫 번째 줄 */}
@@ -1552,8 +1628,8 @@ const GuaranteeQuotesPage: React.FC = () => {
 
       {/* 보장형 슬롯 목록 */}
       <div className="card" inert={negotiationModal.open ? '' : undefined}>
-        <div className="card-header px-6 py-4">
-          <h3 className="card-title">보장형 슬롯 목록</h3>
+        <div className="card-header px-3 sm:px-6 py-3 sm:py-4">
+          <h3 className="card-title text-sm sm:text-base">보장형 슬롯 목록</h3>
           <div className="card-toolbar">
             <div className="flex flex-wrap justify-between items-center gap-2">
               <h3 className="card-title font-medium text-sm">
@@ -1562,7 +1638,7 @@ const GuaranteeQuotesPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="card-body p-0 lg:p-6">
+        <div className="card-body p-0 sm:p-2 md:p-3 lg:p-6">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-10">
               <KeenIcon icon="folder-open" className="text-6xl text-gray-300 mb-4" />
@@ -1573,430 +1649,1228 @@ const GuaranteeQuotesPage: React.FC = () => {
               {/* 데스크탑 테이블 뷰 */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="table table-sm w-full">
-                <thead>
-                  <tr className="text-gray-800 border-b border-gray-200">
-                    <th className="w-10">
-                      <input
-                        type="checkbox"
-                        className="checkbox checkbox-sm"
-                        checked={selectedRequests.length === filteredRequests.length && filteredRequests.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedRequests(filteredRequests.map(r => r.id));
-                          } else {
-                            setSelectedRequests([]);
-                          }
-                        }}
-                        disabled={negotiationModal.open}
-                      />
-                    </th>
-                    <th className="py-2 px-2 text-start font-medium">사용자</th>
-                    <th className="py-2 px-2 text-start font-medium">입력정보</th>
-                    <th className="py-2 px-2 text-center font-medium">키워드</th>
-                    <th className="py-2 px-2 text-center font-medium">보장</th>
-                    <th className="py-2 px-2 text-center font-medium">캠페인</th>
-                    <th className="py-2 px-2 text-center font-medium">상태</th>
-                    <th className="py-2 px-2 text-center font-medium">기간</th>
-                    <th className="py-2 px-2 text-center font-medium">남은일</th>
-                    <th className="py-2 px-2 text-center font-medium">상세</th>
-                    <th className="py-2 px-2 text-center font-medium">작업</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.map((request) => (
-                    <tr key={request.id} className="hover:bg-gray-50">
-                      <td className="py-2 px-2">
+                  <thead>
+                    <tr className="text-gray-800 border-b border-gray-200">
+                      <th className="w-10">
                         <input
                           type="checkbox"
                           className="checkbox checkbox-sm"
-                          checked={selectedRequests.includes(request.id)}
+                          checked={selectedRequests.length === filteredRequests.length && filteredRequests.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedRequests([...selectedRequests, request.id]);
+                              setSelectedRequests(filteredRequests.map(r => r.id));
                             } else {
-                              setSelectedRequests(selectedRequests.filter(id => id !== request.id));
+                              setSelectedRequests([]);
                             }
                           }}
                           disabled={negotiationModal.open}
                         />
-                      </td>
-                      {/* 사용자 */}
-                      <td className="py-2 px-2 max-w-[120px]">
-                        <div className="text-sm font-medium text-gray-900 truncate" title={request.users?.full_name || '사용자'}>
-                          {request.users?.full_name || '사용자'}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate" title={request.users?.email || request.user_id}>
-                          {request.users?.email || request.user_id}
-                        </div>
-                      </td>
-                      {/* 입력정보 */}
-                      <td className="py-2 px-2 max-w-[150px]">
-                        <div className="flex items-start gap-1 min-w-0">
-                          {(() => {
-                            // 중첩된 input_data 구조 확인
-                            let mid = request.keywords?.mid || request.input_data?.mid;
-                            let url = request.keywords?.url || request.input_data?.url;
-                            let hasAdditionalData = false;
-                            let additionalData: Record<string, any> = {};
+                      </th>
+                      {isExtraLargeScreen && <th className="py-2 px-2 text-start font-medium">사용자</th>}
+                      <th className="py-2 px-2 text-start font-medium">입력정보</th>
+                      {isLargeScreen && <th className="py-2 px-2 text-center font-medium"></th>}
+                      <th className="py-2 px-2 text-center font-medium">캠페인</th>
+                      <th className="py-2 px-1 md:px-2 text-center font-medium">상태</th>
+                      {isLargeScreen && <th className="py-2 px-2 text-center font-medium">기간</th>}
+                      <th className="py-2 px-2 text-center font-medium">상세</th>
+                      <th className="py-2 px-1 md:px-2 text-center font-medium">작업</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.map((request) => (
+                      <tr key={request.id} className="hover:bg-gray-50">
+                        <td className="py-2 px-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={selectedRequests.includes(request.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRequests([...selectedRequests, request.id]);
+                              } else {
+                                setSelectedRequests(selectedRequests.filter(id => id !== request.id));
+                              }
+                            }}
+                            disabled={negotiationModal.open}
+                          />
+                        </td>
+                        {/* 사용자 */}
+                        {isExtraLargeScreen && (
+                          <td className="py-2 px-2 max-w-[120px]">
+                            <div className="text-sm font-medium text-gray-900 truncate" title={request.users?.full_name || '사용자'}>
+                              {request.users?.full_name || '사용자'}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate" title={request.users?.email || request.user_id}>
+                              {request.users?.email || request.user_id}
+                            </div>
+                          </td>
+                        )}
+                        {/* 입력정보 */}
+                        <td className="py-2 px-1 md:px-2 max-w-[100px] md:max-w-[120px] lg:max-w-[150px]">
+                          <div className="flex items-start gap-1 min-w-0">
+                            {(() => {
+                              // 중첩된 input_data 구조 확인
+                              let mid = request.keywords?.mid || request.input_data?.mid;
+                              let url = request.keywords?.url || request.input_data?.url;
+                              let hasAdditionalData = false;
+                              let additionalData: Record<string, any> = {};
 
-                            // 중첩된 구조 확인 (keywords 배열 안의 input_data)
-                            if (request.input_data?.keywords?.[0]?.input_data) {
-                              const nestedData = request.input_data.keywords[0].input_data;
-                              mid = nestedData.mid || mid;
-                              url = nestedData.url || url;
-                              
-                              // 추가 필드 확인
-                              Object.entries(nestedData).forEach(([key, value]) => {
-                                if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
-                                  hasAdditionalData = true;
-                                  additionalData[key] = value;
-                                }
-                              });
-                            } else if (request.input_data) {
-                              // 일반 input_data 구조에서 추가 필드 확인
-                              Object.entries(request.input_data).forEach(([key, value]) => {
-                                if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
-                                  hasAdditionalData = true;
-                                  additionalData[key] = value;
-                                }
-                              });
-                            }
+                              // 중첩된 구조 확인 (keywords 배열 안의 input_data)
+                              if (request.input_data?.keywords?.[0]?.input_data) {
+                                const nestedData = request.input_data.keywords[0].input_data;
+                                mid = nestedData.mid || mid;
+                                url = nestedData.url || url;
 
-                            return (
-                              <>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={mid || '-'}>
-                                    {mid || '-'}
+                                // 추가 필드 확인
+                                Object.entries(nestedData).forEach(([key, value]) => {
+                                  if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
+                                    hasAdditionalData = true;
+                                    additionalData[key] = value;
+                                  }
+                                });
+                              } else if (request.input_data) {
+                                // 일반 input_data 구조에서 추가 필드 확인
+                                Object.entries(request.input_data).forEach(([key, value]) => {
+                                  if (!['mid', 'url', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'is_manual_input'].includes(key) && value) {
+                                    hasAdditionalData = true;
+                                    additionalData[key] = value;
+                                  }
+                                });
+                              }
+
+                              return (
+                                <>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate" title={mid || '-'}>
+                                      {mid || '-'}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      <a
+                                        href={url || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                        title={url || '-'}
+                                        onClick={(e) => {
+                                          if (!url) {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                      >
+                                        {url || '-'}
+                                      </a>
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    <a 
-                                      href={url || '#'}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="hover:underline"
-                                      title={url || '-'}
-                                      onClick={(e) => {
-                                        if (!url) {
-                                          e.preventDefault();
-                                        }
-                                      }}
-                                    >
-                                      {url || '-'}
-                                    </a>
-                                  </div>
-                                </div>
-                                <button
-                                  className="flex-shrink-0 text-primary hover:text-primary-dark transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setPopoverPosition({
-                                      top: rect.top - 10,
-                                      left: rect.left + rect.width / 2
-                                    });
-                                    setOpenInputDataTooltipId(openInputDataTooltipId === request.id ? null : request.id);
-                                  }}
-                                >
-                                  <KeenIcon icon="information-2" className="text-base" />
-                                </button>
-                                {/* 입력정보 팝오버 */}
-                                {openInputDataTooltipId === request.id && ReactDOM.createPortal(
+                                  <button
+                                    className="flex-shrink-0 text-primary hover:text-primary-dark transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setPopoverPosition({
+                                        top: rect.top - 10,
+                                        left: rect.left + rect.width / 2
+                                      });
+                                      setOpenInputDataTooltipId(openInputDataTooltipId === request.id ? null : request.id);
+                                    }}
+                                  >
+                                    <KeenIcon icon="information-2" className="text-base" />
+                                  </button>
+                                  {/* 입력정보 팝오버 */}
+                                  {openInputDataTooltipId === request.id && ReactDOM.createPortal(
+                                    <>
+                                      <div
+                                        className="fixed inset-0"
+                                        style={{ zIndex: 9998 }}
+                                        onClick={() => setOpenInputDataTooltipId(null)}
+                                      />
+                                      <div
+                                        className="fixed bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm rounded-lg p-4 w-80 shadow-xl border border-gray-200 dark:border-gray-600"
+                                        style={{
+                                          zIndex: 99999,
+                                          left: `${popoverPosition.left}px`,
+                                          top: `${popoverPosition.top}px`,
+                                          transform: 'translate(-50%, -100%)'
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-between mb-3">
+                                          <div className="font-medium">입력 정보</div>
+                                          <button
+                                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setOpenInputDataTooltipId(null);
+                                            }}
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {hasAdditionalData ? (
+                                            Object.entries(additionalData).map(([key, value]) => {
+                                              // 필드명 한글 변환 맵
+                                              const fieldNameMap: Record<string, string> = {
+                                                // 기본 필드
+                                                'work_days': '작업일',
+                                                'minimum_purchase': '최소 구매수',
+                                                'url': 'URL',
+                                                'mid': '상점 ID',
+                                                'productName': '상품명',
+                                                'mainKeyword': '메인 키워드',
+                                                'main_keyword': '메인 키워드',
+                                                'keywords': '서브 키워드',
+                                                'keyword1': '키워드1',
+                                                'keyword2': '키워드2',
+                                                'keyword3': '키워드3',
+                                                'quantity': '작업량',
+                                                'dueDays': '작업기간',
+                                                'due_days': '작업기간',
+                                                'workCount': '작업수',
+                                                'work_count': '작업수',
+                                                'start_date': '시작일',
+                                                'end_date': '종료일',
+
+                                                // 가격 관련
+                                                'price': '가격',
+                                                'total_price': '총 가격',
+                                                'unit_price': '단가',
+                                                'daily_price': '일별 가격',
+
+                                                // 보장 관련
+                                                'guarantee_days': '보장일수',
+                                                'guarantee_rank': '보장순위',
+                                                'target_rank': '목표순위',
+                                                'guarantee_info': '보장정보',
+
+                                                // 캐시/포인트 관련
+                                                'cash_amount': '캐시 지급액',
+                                                'cash_info': '캐시 지급 안내',
+                                                'point_amount': '포인트 금액',
+
+                                                // 기타 정보
+                                                'note': '비고',
+                                                'description': '설명',
+                                                'requirements': '요구사항',
+                                                'additional_info': '추가정보',
+                                                'work_period': '작업기간',
+                                                'company_name': '회사명',
+                                                'business_number': '사업자번호',
+                                                'contact': '연락처',
+                                                'email': '이메일',
+                                                'phone': '전화번호',
+                                                'mobile': '휴대폰번호',
+                                                'address': '주소',
+                                                'bank_name': '은행명',
+                                                'account_number': '계좌번호',
+                                                'account_holder': '예금주',
+
+                                                // 상태 관련
+                                                'status': '상태',
+                                                'is_active': '활성화',
+                                                'is_manual': '수동입력',
+                                                'is_manual_input': '수동입력',
+
+                                                // 날짜 관련
+                                                'created_at': '생성일',
+                                                'updated_at': '수정일',
+                                                'completed_at': '완료일',
+                                                'canceled_at': '취소일'
+                                              };
+
+                                              const displayKey = fieldNameMap[key] || key;
+
+                                              return (
+                                                <div key={key} className="flex gap-2">
+                                                  <span className="text-gray-500 dark:text-gray-400 min-w-[80px]">{displayKey}:</span>
+                                                  <span className="text-gray-900 dark:text-gray-100">
+                                                    {typeof value === 'string' && value.startsWith('http') ? (
+                                                      <a href={value} target="_blank" rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline break-all">
+                                                        {value}
+                                                      </a>
+                                                    ) : (
+                                                      <span className="break-all">{String(value)}</span>
+                                                    )}
+                                                  </span>
+                                                </div>
+                                              );
+                                            })
+                                          ) : (
+                                            <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                                              입력 필드 데이터가 없습니다.
+                                            </div>
+                                          )}
+                                        </div>
+                                        {/* Arrow */}
+                                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                          <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-gray-800"></div>
+                                        </div>
+                                      </div>
+                                    </>,
+                                    document.body
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                        {/* 키워드 */}
+                        {isLargeScreen && (
+                          <td className="py-2 px-2 text-center max-w-[100px]">
+                            <div className="flex items-center justify-center gap-1 relative">
+                              {(() => {
+                                // 직접입력 체크
+                                const isManualInput = request.keyword_id === 0 || request.input_data?.is_manual_input === true;
+
+                                if (isManualInput) {
+                                  return <span className="text-gray-400 text-sm">-</span>;
+                                }
+
+                                // 키워드 배열 생성
+                                const keywordArray = [];
+                                if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
+                                  keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
+                                }
+                                if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
+                                if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
+                                if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
+
+                                if (keywordArray.length === 0) {
+                                  return <span className="text-gray-400 text-sm">-</span>;
+                                }
+
+                                const mainKeyword = keywordArray[0];
+                                const additionalCount = keywordArray.length - 1;
+
+                                return (
                                   <>
-                                    <div
-                                      className="fixed inset-0"
-                                      style={{ zIndex: 9998 }}
-                                      onClick={() => setOpenInputDataTooltipId(null)}
-                                    />
-                                    <div
-                                      className="fixed bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm rounded-lg p-4 w-80 shadow-xl border border-gray-200 dark:border-gray-600"
-                                      style={{
-                                        zIndex: 99999,
-                                        left: `${popoverPosition.left}px`,
-                                        top: `${popoverPosition.top}px`,
-                                        transform: 'translate(-50%, -100%)'
-                                      }}
-                                    >
-                                      <div className="flex items-center justify-between mb-3">
-                                        <div className="font-medium">입력 정보</div>
+                                    <span className="text-gray-900 dark:text-gray-100 font-medium text-sm truncate" title={mainKeyword}>
+                                      {mainKeyword}
+                                    </span>
+                                    {additionalCount > 0 && (
+                                      <>
                                         <button
-                                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                                          className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setOpenInputDataTooltipId(null);
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            setPopoverPosition({
+                                              top: rect.top - 10,
+                                              left: rect.left + rect.width / 2
+                                            });
+                                            setOpenKeywordTooltipId(openKeywordTooltipId === request.id ? null : request.id);
                                           }}
                                         >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                          </svg>
+                                          +{additionalCount}
                                         </button>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {hasAdditionalData ? (
-                                          Object.entries(additionalData).map(([key, value]) => (
-                                            <div key={key} className="flex gap-2">
-                                              <span className="text-gray-500 dark:text-gray-400 min-w-[80px]">{key}:</span>
-                                              <span className="text-gray-900 dark:text-gray-100">
-                                                {typeof value === 'string' && value.startsWith('http') ? (
-                                                  <a href={value} target="_blank" rel="noopener noreferrer" 
-                                                     className="text-blue-600 hover:underline break-all">
-                                                    {value}
-                                                  </a>
-                                                ) : (
-                                                  <span className="break-all">{String(value)}</span>
-                                                )}
-                                              </span>
-                                            </div>
-                                          ))
-                                        ) : (
-                                          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                                            입력 필드 데이터가 없습니다.
-                                          </div>
-                                        )}
-                                      </div>
-                                      {/* Arrow */}
-                                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-gray-800"></div>
-                                      </div>
-                                    </div>
-                                  </>,
-                                  document.body
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </td>
-                      {/* 키워드 */}
-                      <td className="py-2 px-2 text-center max-w-[100px]">
-                        <div className="flex items-center justify-center gap-1 relative">
-                          {(() => {
-                            // 키워드 배열 생성
-                            const keywordArray = [];
-                            if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
-                              keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
-                            }
-                            if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
-                            if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
-                            if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
-
-                            if (keywordArray.length === 0) {
-                              return <span className="text-gray-400 text-sm">-</span>;
-                            }
-
-                            const mainKeyword = keywordArray[0];
-                            const additionalCount = keywordArray.length - 1;
-
-                            return (
-                              <>
-                                <span className="text-gray-900 dark:text-gray-100 font-medium text-sm truncate" title={mainKeyword}>
-                                  {mainKeyword}
-                                </span>
-                                {additionalCount > 0 && (
-                                  <>
-                                    <button
-                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        setPopoverPosition({
-                                          top: rect.top - 10,
-                                          left: rect.left + rect.width / 2
-                                        });
-                                        setOpenKeywordTooltipId(openKeywordTooltipId === request.id ? null : request.id);
-                                      }}
-                                    >
-                                      +{additionalCount}
-                                    </button>
-                                    {/* Tooltip */}
-                                    {openKeywordTooltipId === request.id && ReactDOM.createPortal(
-                                      <>
-                                        {/* 배경 클릭 시 닫기 */}
-                                        <div
-                                          className="fixed inset-0"
-                                          style={{ zIndex: 9998 }}
-                                          onClick={() => setOpenKeywordTooltipId(null)}
-                                        />
-                                        <div
-                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
-                                          style={{
-                                            zIndex: 99999,
-                                            left: `${popoverPosition.left}px`,
-                                            top: `${popoverPosition.top}px`,
-                                            transform: 'translate(-50%, -100%)'
-                                          }}
-                                        >
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="font-medium text-gray-100">전체 키워드</div>
-                                            <button
-                                              className="text-gray-400 hover:text-gray-200 transition-colors"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenKeywordTooltipId(null);
+                                        {/* Tooltip */}
+                                        {openKeywordTooltipId === request.id && ReactDOM.createPortal(
+                                          <>
+                                            {/* 배경 클릭 시 닫기 */}
+                                            <div
+                                              className="fixed inset-0"
+                                              style={{ zIndex: 9998 }}
+                                              onClick={() => setOpenKeywordTooltipId(null)}
+                                            />
+                                            <div
+                                              className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
+                                              style={{
+                                                zIndex: 99999,
+                                                left: `${popoverPosition.left}px`,
+                                                top: `${popoverPosition.top}px`,
+                                                transform: 'translate(-50%, -100%)'
                                               }}
                                             >
-                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                              </svg>
-                                            </button>
-                                          </div>
-                                          <div className="space-y-2">
-                                            {/* 메인 키워드 */}
-                                            <div>
-                                              <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
-                                              <div className="flex flex-wrap gap-1">
-                                                <span className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium">
-                                                  {mainKeyword}
-                                                </span>
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="font-medium text-gray-100">전체 키워드</div>
+                                                <button
+                                                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenKeywordTooltipId(null);
+                                                  }}
+                                                >
+                                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                  </svg>
+                                                </button>
                                               </div>
-                                            </div>
-
-                                            {/* 서브 키워드 */}
-                                            {additionalCount > 0 && (
-                                              <>
-                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                              <div className="space-y-2">
+                                                {/* 메인 키워드 */}
                                                 <div>
-                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                  <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
                                                   <div className="flex flex-wrap gap-1">
-                                                    {keywordArray.slice(1).map((keyword, index) => (
-                                                      <span
-                                                        key={index}
-                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${
-                                                          index % 4 === 0
-                                                            ? 'bg-green-500/20 text-green-200'
-                                                            : index % 4 === 1
-                                                              ? 'bg-purple-500/20 text-purple-200'
-                                                              : index % 4 === 2
-                                                                ? 'bg-orange-500/20 text-orange-200'
-                                                                : 'bg-pink-500/20 text-pink-200'
-                                                        }`}
-                                                      >
-                                                        {keyword}
-                                                      </span>
-                                                    ))}
+                                                    <span className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium">
+                                                      {mainKeyword}
+                                                    </span>
                                                   </div>
                                                 </div>
-                                              </>
-                                            )}
-                                          </div>
-                                          {/* Arrow */}
-                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                                          </div>
-                                        </div>
-                                      </>,
-                                      document.body
+
+                                                {/* 서브 키워드 */}
+                                                {additionalCount > 0 && (
+                                                  <>
+                                                    <div className="border-t border-gray-700 dark:border-gray-600"></div>
+                                                    <div>
+                                                      <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
+                                                      <div className="flex flex-wrap gap-1">
+                                                        {keywordArray.slice(1).map((keyword, index) => (
+                                                          <span
+                                                            key={index}
+                                                            className={`px-2 py-0.5 text-xs rounded-md inline-block ${index % 4 === 0
+                                                                ? 'bg-green-500/20 text-green-200'
+                                                                : index % 4 === 1
+                                                                  ? 'bg-purple-500/20 text-purple-200'
+                                                                  : index % 4 === 2
+                                                                    ? 'bg-orange-500/20 text-orange-200'
+                                                                    : 'bg-pink-500/20 text-pink-200'
+                                                              }`}
+                                                          >
+                                                            {keyword}
+                                                          </span>
+                                                        ))}
+                                                      </div>
+                                                    </div>
+                                                  </>
+                                                )}
+                                              </div>
+                                              {/* Arrow */}
+                                              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                                              </div>
+                                            </div>
+                                          </>,
+                                          document.body
+                                        )}
+                                      </>
                                     )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        )}
+                        {/* 캠페인 */}
+                        <td className="py-2 px-1 md:px-2 text-center max-w-[90px] md:max-w-[110px] lg:max-w-[120px]">
+                          <div className="flex items-center justify-center gap-1">
+                            {getCampaignLogo(request.campaigns?.logo) && (
+                              <img
+                                src={getCampaignLogo(request.campaigns?.logo)}
+                                alt="campaign logo"
+                                className="w-4 h-4 object-contain rounded flex-shrink-0"
+                              />
+                            )}
+                            <span className="text-xs text-gray-700 truncate" title={request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}>
+                              {request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}
+                            </span>
+                            {getCampaignStatusDot(request.campaigns)}
+                          </div>
+                        </td>
+                        {/* 상태 */}
+                        <td className="py-2 px-1 md:px-2 text-center">
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            {request.status === 'requested' &&
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
+                            {request.status === 'negotiating' &&
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
+                            {request.status === 'accepted' &&
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">구매결정</span>}
+                            {request.status === 'rejected' &&
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">거절</span>}
+                            {request.status === 'expired' &&
+                              <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
+                            {request.status === 'purchased' && (
+                              <>
+                                {/* 슬롯이 없거나 pending/rejected 상태일 때 구매 상태 표시 (환불 요청이 없는 경우만) */}
+                                {(!request.guarantee_slots?.[0] ||
+                                  (request.guarantee_slots[0].status === 'pending' && !request.guarantee_slots[0].refund_requests?.length) ||
+                                  request.guarantee_slots[0].status === 'rejected') && (
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
+                                  )}
+                                {request.guarantee_slots?.[0] && (
+                                  <>
+                                    {(() => {
+                                      // 환불 요청 상태 우선 확인
+                                      const slot = request.guarantee_slots[0];
+                                      const refundRequest = slot.refund_requests?.find(req => req.status === 'pending' || req.status === 'approved' || req.status === 'pending_user_confirmation' || (req.status === 'rejected' && slot.status !== 'active'));
+
+                                      if (refundRequest) {
+                                        // 환불 요청 상태가 있으면 환불 상태 표시
+                                        switch (refundRequest.status) {
+                                          case 'pending':
+                                            return (
+                                              <div className="flex items-center gap-1">
+                                                <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
+                                                  환불 검토중
+                                                </span>
+                                                <button
+                                                  className="text-danger hover:text-danger-dark transition-colors"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setRefundTooltipPosition({
+                                                      top: rect.top - 10,
+                                                      left: rect.left + rect.width / 2
+                                                    });
+                                                    setOpenRefundInfoId(openRefundInfoId === request.id ? null : request.id);
+                                                  }}
+                                                  title="환불 정보"
+                                                >
+                                                  <KeenIcon icon="information-2" className="text-sm" />
+                                                </button>
+                                              </div>
+                                            );
+                                          case 'pending_user_confirmation':
+                                            return (
+                                              <div className="flex items-center gap-1">
+                                                <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">
+                                                  사용자 확인중
+                                                </span>
+                                                <button
+                                                  className="text-warning hover:text-warning-dark transition-colors"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setRefundTooltipPosition({
+                                                      top: rect.top - 10,
+                                                      left: rect.left + rect.width / 2
+                                                    });
+                                                    setOpenRefundInfoId(openRefundInfoId === request.id ? null : request.id);
+                                                  }}
+                                                  title="환불 정보"
+                                                >
+                                                  <KeenIcon icon="information-2" className="text-sm" />
+                                                </button>
+                                              </div>
+                                            );
+                                          case 'approved':
+                                            return (
+                                              <div className="flex items-center gap-1">
+                                                <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
+                                                  환불승인
+                                                </span>
+                                                <button
+                                                  className="text-danger hover:text-danger-dark transition-colors"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setRefundTooltipPosition({
+                                                      top: rect.top - 10,
+                                                      left: rect.left + rect.width / 2
+                                                    });
+                                                    setOpenRefundInfoId(openRefundInfoId === request.id ? null : request.id);
+                                                  }}
+                                                  title="환불 정보"
+                                                >
+                                                  <KeenIcon icon="information-2" className="text-sm" />
+                                                </button>
+                                              </div>
+                                            );
+                                          case 'rejected':
+                                            return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
+                                              <KeenIcon icon="cross-circle" className="text-xs" />
+                                              환불 거절됨
+                                            </span>;
+                                          default:
+                                            return null;
+                                        }
+                                      }
+
+                                      // 환불 요청이 없으면 기존 슬롯 상태 표시
+                                      if (slot.status === 'pending') {
+                                        return <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>;
+                                      }
+                                      if (slot.status === 'active') {
+                                        return <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">진행중</span>;
+                                      }
+                                      if (slot.status === 'rejected') {
+                                        return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>;
+                                      }
+                                      if (slot.status === 'completed') {
+                                        return <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">완료</span>;
+                                      }
+                                      return null;
+                                    })()}
                                   </>
                                 )}
                               </>
-                            );
-                          })()}
+                            )}
+                          </div>
+                        </td>
+                        {/* 시작일/종료일 */}
+                        {isLargeScreen && (
+                          <td className="py-2 px-2 text-center">
+                            <div className="text-xs">
+                              {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date ? (
+                                <>
+                                  <div className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</div>
+                                  <div className="text-[10px] text-red-600">~{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</div>
+                                </>
+                              ) : (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {/* 상세 */}
+                        <td className="py-2 px-2 text-center">
+                          <div className="flex gap-1 justify-center">
+                            <button
+                              className="btn btn-icon btn-sm btn-ghost text-blue-600"
+                              onClick={() => {
+                                setDetailRequestId(request.id);
+                                setDetailModalOpen(true);
+                              }}
+                              title="상세보기"
+                              disabled={negotiationModal.open}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            </button>
+                            <button
+                              className="btn btn-icon btn-sm btn-ghost text-amber-600"
+                              onClick={() => handleOpenNegotiation(request)}
+                              title="협상하기"
+                              disabled={negotiationModal.open}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                              </svg>
+                            </button>
+                            {/* 1:1 문의 버튼 - 구매된 슬롯이 있을 때 표시 (환불승인 포함) */}
+                            {request.status === 'purchased' && request.guarantee_slots?.[0] && (
+                              <button
+                                className="btn btn-icon btn-sm btn-ghost text-purple-600"
+                                onClick={() => {
+                                  setInquiryData({
+                                    slotId: request.guarantee_slots![0].id,
+                                    campaignId: request.campaign_id,
+                                    distributorId: request.distributor_id,
+                                    title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+                                  });
+                                  setInquiryModalOpen(true);
+                                }}
+                                title="1:1 문의"
+                                disabled={negotiationModal.open}
+                              >
+                                <KeenIcon icon="messages" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {/* 작업 */}
+                        <td className="py-2 px-0.5 md:px-1 text-center">
+                          <div className="flex gap-0.5 justify-center flex-wrap">
+                            {/* 총판 이상 권한인 경우 상태별 액션 버튼 표시 */}
+                            {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
+                              <>
+                                {request.status === 'requested' && (
+                                  <button
+                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                                    onClick={() => handleOpenNegotiation(request)}
+                                    title="협상하기"
+                                    disabled={negotiationModal.open}
+                                  >
+                                    협상
+                                  </button>
+                                )}
+                                {request.status === 'negotiating' && (
+                                  <button
+                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                                    onClick={() => handleOpenNegotiation(request)}
+                                    title="협상하기"
+                                    disabled={negotiationModal.open}
+                                  >
+                                    협상
+                                  </button>
+                                )}
+                                {request.status === 'accepted' && (
+                                  <span className="text-xs text-gray-500">-</span>
+                                )}
+                                {request.status === 'rejected' && (
+                                  <button
+                                    className="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
+                                    onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
+                                    title="거절 취소"
+                                    disabled={negotiationModal.open}
+                                  >
+                                    거절 취소
+                                  </button>
+                                )}
+                                {request.status === 'purchased' && request.guarantee_slots && request.guarantee_slots.length > 0 && (
+                                  <>
+                                    {request.guarantee_slots[0].status === 'pending' ? (
+                                      <>
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                          onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
+                                          title="슬롯 승인"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          승인
+                                        </button>
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                          onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
+                                          title="슬롯 반려"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          반려
+                                        </button>
+                                      </>
+                                    ) : request.guarantee_slots[0].status === 'active' ? (
+                                      <>
+                                        {/* 작업 버튼들 */}
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                          onClick={() => {
+                                            setRankCheckSlotData({
+                                              slotId: request.guarantee_slots![0].id,
+                                              campaignName: request.campaigns?.campaign_name,
+                                              targetRank: request.target_rank,
+                                              keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                            });
+                                            setRankCheckModalOpen(true);
+                                          }}
+                                          title="순위 확인"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          순위
+                                        </button>
+                                        {/* 사용자 확인중 상태가 아닐 때만 완료 버튼 표시 */}
+                                        {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending_user_confirmation') && (
+                                          <button
+                                            className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                            onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
+                                            title="슬롯 완료"
+                                            disabled={negotiationModal.open}
+                                          >
+                                            완료
+                                          </button>
+                                        )}
+                                        {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
+                                        {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending' || req.status === 'pending_user_confirmation') && (
+                                          <button
+                                            className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                            onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
+                                            title="환불 처리"
+                                            disabled={negotiationModal.open}
+                                          >
+                                            환불
+                                          </button>
+                                        )}
+                                        {/* 환불 요청 처리 버튼 */}
+                                        {(() => {
+                                          const pendingRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
+                                          const userConfirmRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending_user_confirmation');
+
+                                          if (pendingRequest) {
+                                            return (
+                                              <button
+                                                className="px-1.5 py-0.5 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                                onClick={() => {
+                                                  handleRefundRequestModal(request.guarantee_slots![0].id, pendingRequest, request);
+                                                }}
+                                                title="환불 요청 처리"
+                                                disabled={negotiationModal.open}
+                                              >
+                                                환불처리
+                                              </button>
+                                            );
+                                          }
+
+                                          if (userConfirmRequest) {
+                                            return null;
+                                          }
+
+                                          return null;
+                                        })()}
+                                      </>
+                                    ) : request.guarantee_slots[0].status === 'rejected' ? (
+                                      <>
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-info hover:bg-info-dark text-white transition-colors"
+                                          onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
+                                          title="대기로 변경"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          대기
+                                        </button>
+                                        <button
+                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                          onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
+                                          title="반려"
+                                          disabled={negotiationModal.open}
+                                        >
+                                          반려
+                                        </button>
+                                      </>
+                                    ) : request.guarantee_slots[0].status === 'completed' ? (
+                                      <span className="text-xs text-gray-500">완료됨</span>
+                                    ) : null}
+                                  </>
+                                )}
+                                {request.status === 'purchased' && !request.guarantee_slots?.[0] && (
+                                  <span className="text-xs text-gray-500">대기중</span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 환불 정보 툴팁 */}
+              {openRefundInfoId && (() => {
+                const request = filteredRequests.find(r => r.id === openRefundInfoId);
+                const refundRequest = request?.guarantee_slots?.[0]?.refund_requests?.find(
+                  req => req.status === 'pending' || req.status === 'approved' || req.status === 'pending_user_confirmation'
+                );
+
+                if (!request || !refundRequest) return null;
+
+                return ReactDOM.createPortal(
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpenRefundInfoId(null)}
+                    />
+                    <div
+                      className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
+                      style={{
+                        left: `${refundTooltipPosition.left}px`,
+                        top: `${refundTooltipPosition.top}px`,
+                        transform: 'translate(-50%, -100%)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {refundRequest.status === 'pending' ? (
+                            <>
+                              <KeenIcon icon="clock" className="text-orange-400" />
+                              환불 검토 중
+                            </>
+                          ) : refundRequest.status === 'pending_user_confirmation' ? (
+                            <>
+                              <KeenIcon icon="notification-status" className="text-yellow-400" />
+                              사용자 확인 대기 중
+                            </>
+                          ) : (
+                            <>
+                              <KeenIcon icon="check-circle" className="text-green-400" />
+                              환불 승인됨
+                            </>
+                          )}
                         </div>
-                      </td>
-                      {/* 보장 */}
-                      <td className="py-2 px-2 text-center">
-                        <div className="text-xs font-medium">
-                          <span className={request.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}>
-                            {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
-                          </span>
-                        </div>
-                      </td>
-                      {/* 캠페인 */}
-                      <td className="py-2 px-2 text-center max-w-[120px]">
-                        <div className="flex items-center justify-center gap-1">
+                        <button
+                          className="text-gray-400 hover:text-gray-200 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenRefundInfoId(null);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {refundRequest.status === 'pending' ? (
+                          <>
+                            <div className="flex items-center gap-2 text-orange-400 mb-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span className="font-medium">환불 검토 중</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">환불 사유:</span>
+                              <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
+                            </div>
+                            {refundRequest.refund_amount && (
+                              <div>
+                                <span className="text-gray-400">요청 금액:</span>
+                                <div className="text-orange-400 font-medium mt-1">
+                                  {refundRequest.refund_amount.toLocaleString()}원
+                                </div>
+                              </div>
+                            )}
+                            <div className="text-gray-400 text-xs">
+                              신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                            </div>
+                            <div className="bg-orange-900/30 border border-orange-700/50 rounded-md p-2 mt-2">
+                              <div className="text-orange-300 text-xs">
+                                💡 사용자가 환불을 요청했습니다. 검토 후 처리해 주세요.
+                              </div>
+                            </div>
+                          </>
+                        ) : refundRequest.status === 'pending_user_confirmation' ? (
+                          <>
+                            <div className="flex items-center gap-2 text-yellow-400 mb-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                              </svg>
+                              <span className="font-medium">사용자 확인 대기 중</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">환불 사유:</span>
+                              <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '총판 요청'}</div>
+                            </div>
+                            {refundRequest.refund_amount && (
+                              <div>
+                                <span className="text-gray-400">환불 예정 금액:</span>
+                                <div className="text-yellow-400 font-medium mt-1">
+                                  {refundRequest.refund_amount.toLocaleString()}원
+                                </div>
+                              </div>
+                            )}
+                            <div className="text-gray-400 text-xs">
+                              요청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                            </div>
+                            <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-md p-2 mt-2">
+                              <div className="text-yellow-300 text-xs">
+                                ⚠️ 총판이 환불을 요청했습니다. 사용자의 확인을 기다리고 있습니다.
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 text-green-400 mb-1">
+                              <KeenIcon icon="wallet" className="text-base" />
+                              <span className="font-medium">환불 완료</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">환불 사유:</span>
+                              <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
+                            </div>
+                            {refundRequest.refund_amount && (
+                              <div>
+                                <span className="text-gray-400">환불 금액:</span>
+                                <div className="text-green-400 font-medium mt-1">
+                                  {refundRequest.refund_amount.toLocaleString()}원
+                                </div>
+                              </div>
+                            )}
+                            <div className="text-gray-400 text-xs">
+                              신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
+                            </div>
+                            {refundRequest.approval_date && (
+                              <div className="text-gray-400 text-xs">
+                                승인일: {new Date(refundRequest.approval_date).toLocaleDateString('ko-KR')}
+                              </div>
+                            )}
+                            {refundRequest.approval_notes && (
+                              <div className="mt-2">
+                                <span className="text-gray-400 text-xs">승인 메시지:</span>
+                                <div className="bg-green-900/30 border border-green-700/50 rounded-md p-2 mt-1">
+                                  <div className="text-green-300 text-xs">
+                                    {refundRequest.approval_notes}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
+                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
+                      </div>
+                    </div>
+                  </>,
+                  document.body
+                );
+              })()}
+
+              {/* 모바일 카드 뷰 */}
+              <div className="block md:hidden space-y-4 p-4">
+                {filteredRequests.map((request) => (
+                  <div key={request.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                    {/* 체크박스와 기본 정보 */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm mt-1"
+                        checked={selectedRequests.includes(request.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRequests([...selectedRequests, request.id]);
+                          } else {
+                            setSelectedRequests(selectedRequests.filter(id => id !== request.id));
+                          }
+                        }}
+                        disabled={negotiationModal.open}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
                           {getCampaignLogo(request.campaigns?.logo) && (
                             <img
                               src={getCampaignLogo(request.campaigns?.logo)}
                               alt="campaign logo"
-                              className="w-4 h-4 object-contain rounded flex-shrink-0"
+                              className="w-8 h-8 object-contain rounded"
                             />
                           )}
-                          <span className="text-xs text-gray-700 truncate" title={request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}>
-                            {request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}
-                          </span>
-                          {getCampaignStatusDot(request.campaigns)}
+                          <div>
+                            <div className="font-medium text-sm">{request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}</div>
+                            <div className="text-xs text-gray-500">{request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}</div>
+                          </div>
                         </div>
-                      </td>
-                      {/* 상태 */}
-                      <td className="py-2 px-2 text-center">
-                        <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {request.status === 'requested' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
-                          {request.status === 'negotiating' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
-                          {request.status === 'accepted' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">구매결정</span>}
-                          {request.status === 'rejected' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">거절</span>}
-                          {request.status === 'expired' &&
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">만료</span>}
-                          {request.status === 'purchased' && (
+
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-500">사용자:</span>
+                            <div className="font-medium">{request.users?.full_name || '사용자'}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">보장:</span>
+                            <div className={`font-medium ${request.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}`}>
+                              {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 입력정보 및 키워드 */}
+                        <div className="grid grid-cols-1 gap-2 text-xs mt-2">
+                          <div>
+                            <span className="text-gray-500">입력정보:</span>
+                            <div className="font-medium">
+                              <div>MID: {request.keywords?.mid || request.input_data?.mid || '-'}</div>
+                              <div className="text-blue-600 hover:underline">
+                                <a
+                                  href={request.keywords?.url || request.input_data?.url || '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    if (!request.keywords?.url && !request.input_data?.url) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                >
+                                  {request.keywords?.url || request.input_data?.url || '-'}
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 키워드 */}
+                          <div>
+                            <span className="text-gray-500">키워드:</span>
+                            <div className="font-medium">
+                              {(() => {
+                                const keywordArray = [];
+                                if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
+                                  keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
+                                }
+                                if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
+                                if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
+                                if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
+
+                                if (keywordArray.length === 0) {
+                                  return '-';
+                                }
+
+                                return keywordArray.join(', ');
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 기간 및 남은일 정보 */}
+                        {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date && (
+                          <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                            <div>
+                              <span className="text-gray-500">기간:</span>
+                              <div>
+                                <span className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                                <span className="text-gray-400 mx-1">~</span>
+                                <span className="text-red-600">{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">남은일:</span>
+                              <div className={getRemainingDaysColorClass(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}>
+                                {getRemainingDaysText(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 상태 레이블 */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {request.status === 'requested' &&
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
+                      {request.status === 'negotiating' &&
+                        <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
+                      {request.status === 'accepted' &&
+                        <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">승인</span>}
+                      {request.status === 'rejected' &&
+                        <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">거절</span>}
+                      {request.status === 'expired' &&
+                        <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">만료</span>}
+                      {request.status === 'purchased' && (
+                        <>
+                          <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">구매완료</span>
+                          {request.guarantee_slots?.[0] && (
                             <>
-                              {/* 슬롯이 없거나 pending/rejected 상태일 때 구매 상태 표시 (환불 요청이 없는 경우만) */}
-                              {(!request.guarantee_slots?.[0] || 
-                                (request.guarantee_slots[0].status === 'pending' && !request.guarantee_slots[0].refund_requests?.length) || 
-                                request.guarantee_slots[0].status === 'rejected') && (
-                                <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">구매</span>
-                              )}
-                              {request.guarantee_slots?.[0] && (
+                              {request.guarantee_slots[0].status === 'pending' &&
+                                <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>}
+                              {request.guarantee_slots[0].status === 'active' &&
+                                <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">활성</span>}
+                              {request.guarantee_slots[0].status === 'rejected' &&
+                                <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">반려</span>}
+                              {request.guarantee_slots[0].status === 'completed' &&
+                                <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">완료</span>}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* 액션 버튼 */}
+                    <div className="flex gap-2 justify-between">
+                      <div className="flex gap-1">
+                        <button
+                          className="btn btn-icon btn-sm btn-ghost text-blue-600"
+                          onClick={() => {
+                            setDetailRequestId(request.id);
+                            setDetailModalOpen(true);
+                          }}
+                          title="상세보기"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        </button>
+                        <button
+                          className="btn btn-icon btn-sm btn-ghost text-amber-600"
+                          onClick={() => handleOpenNegotiation(request)}
+                          title="협상하기"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </button>
+                        {/* 1:1 문의 버튼 - 활성 슬롯이 있을 때만 표시 */}
+                        {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && (
+                          <button
+                            className="btn btn-icon btn-sm btn-ghost text-purple-600"
+                            onClick={() => {
+                              setInquiryData({
+                                slotId: request.guarantee_slots![0].id,
+                                campaignId: request.campaign_id,
+                                distributorId: request.distributor_id,
+                                title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
+                              });
+                              setInquiryModalOpen(true);
+                            }}
+                            title="1:1 문의"
+                          >
+                            <KeenIcon icon="messages" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 작업 버튼 */}
+                      {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
+                        <div className="flex gap-1 flex-wrap justify-end">
+                          {request.status === 'requested' && (
+                            <button
+                              className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
+                              onClick={() => handleOpenNegotiation(request)}
+                            >
+                              협상
+                            </button>
+                          )}
+                          {request.status === 'negotiating' && (
+                            <button
+                              className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
+                              onClick={() => handleOpenNegotiation(request)}
+                            >
+                              협상
+                            </button>
+                          )}
+                          {request.status === 'rejected' && (
+                            <button
+                              className="px-2 py-1 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white"
+                              onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
+                            >
+                              거절 취소
+                            </button>
+                          )}
+                          {request.status === 'purchased' && request.guarantee_slots?.[0] && (
+                            <>
+                              {request.guarantee_slots[0].status === 'pending' && (
                                 <>
+                                  <button
+                                    className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                                    onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
+                                  >
+                                    승인
+                                  </button>
+                                  <button
+                                    className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
+                                    onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
+                                  >
+                                    반려
+                                  </button>
+                                </>
+                              )}
+                              {request.guarantee_slots[0].status === 'active' && (
+                                <>
+                                  <button
+                                    className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
+                                    onClick={() => {
+                                      setRankCheckSlotData({
+                                        slotId: request.guarantee_slots![0].id,
+                                        campaignName: request.campaigns?.campaign_name,
+                                        targetRank: request.target_rank,
+                                        keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                      });
+                                      setRankCheckModalOpen(true);
+                                    }}
+                                  >
+                                    순위
+                                  </button>
+                                  <button
+                                    className="px-2 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                    onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
+                                  >
+                                    완료
+                                  </button>
+                                  {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
+                                  {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending') && (
+                                    <button
+                                      className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
+                                      onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
+                                    >
+                                      환불
+                                    </button>
+                                  )}
+                                  {/* 환불 요청 처리 버튼 (pending 상태일 때만 추가) - 모바일 */}
                                   {(() => {
-                                    // 환불 요청 상태 우선 확인
-                                    const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending' || req.status === 'approved' || req.status === 'rejected');
-                                    
+                                    const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
                                     if (refundRequest) {
-                                      // 환불 요청 상태가 있으면 환불 상태 표시
-                                      switch (refundRequest.status) {
-                                        case 'pending':
-                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
-                                            <KeenIcon icon="clock" className="text-xs" />
-                                            환불 검토중
-                                          </span>;
-                                        case 'approved':
-                                          return (
-                                            <div className="flex items-center gap-1">
-                                              <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">
-                                                환불승인
-                                              </span>
-                                              <button
-                                                className="text-danger hover:text-danger-dark transition-colors"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  const rect = e.currentTarget.getBoundingClientRect();
-                                                  setRefundTooltipPosition({
-                                                    top: rect.top - 10,
-                                                    left: rect.left + rect.width / 2
-                                                  });
-                                                  setOpenRefundInfoId(openRefundInfoId === request.id ? null : request.id);
-                                                }}
-                                                title="환불 정보"
-                                              >
-                                                <KeenIcon icon="information-2" className="text-sm" />
-                                              </button>
-                                            </div>
-                                          );
-                                        case 'rejected':
-                                          return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700 flex items-center gap-1">
-                                            <KeenIcon icon="cross-circle" className="text-xs" />
-                                            환불 거절됨
-                                          </span>;
-                                        default:
-                                          return null;
-                                      }
-                                    }
-                                    
-                                    // 환불 요청이 없으면 기존 슬롯 상태 표시
-                                    if (request.guarantee_slots[0].status === 'pending') {
-                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>;
-                                    }
-                                    if (request.guarantee_slots[0].status === 'active') {
-                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-700">활성</span>;
-                                    }
-                                    if (request.guarantee_slots[0].status === 'rejected') {
-                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700">반려</span>;
-                                    }
-                                    if (request.guarantee_slots[0].status === 'completed') {
-                                      return <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600 text-white">완료</span>;
+                                      return (
+                                        <button
+                                          className="px-2 py-1 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white"
+                                          onClick={() => {
+                                            handleRefundRequestModal(request.guarantee_slots![0].id, refundRequest, request);
+                                          }}
+                                        >
+                                          환불처리
+                                        </button>
+                                      );
                                     }
                                     return null;
                                   })()}
@@ -2005,648 +2879,11 @@ const GuaranteeQuotesPage: React.FC = () => {
                             </>
                           )}
                         </div>
-                      </td>
-                      {/* 시작일/종료일 */}
-                      <td className="py-2 px-2 text-center">
-                        <div className="text-xs">
-                          {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date ? (
-                            <>
-                              <div className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</div>
-                              <div className="text-[10px] text-red-600">~{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</div>
-                            </>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </div>
-                      </td>
-                      {/* 남은일 */}
-                      <td className="py-2 px-2 text-center">
-                        {(() => {
-                          // 활성 슬롯의 경우 종료일 기준으로 계산
-                          if (request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].end_date) {
-                            const days = calculateRemainingDays(request.guarantee_slots[0].end_date);
-                            const colorClass = getRemainingDaysColorClass(days);
-                            const text = getRemainingDaysText(days);
-                            
-                            return (
-                              <span className={`text-xs ${colorClass}`}>
-                                {text}
-                              </span>
-                            );
-                          }
-                          return <span className="text-xs text-gray-500">-</span>;
-                        })()}
-                      </td>
-                      {/* 상세 */}
-                      <td className="py-2 px-2 text-center">
-                        <div className="flex gap-1 justify-center">
-                          <button
-                            className="btn btn-icon btn-sm btn-ghost text-blue-600"
-                            onClick={() => {
-                              setDetailRequestId(request.id);
-                              setDetailModalOpen(true);
-                            }}
-                            title="상세보기"
-                            disabled={negotiationModal.open}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                              <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                          </button>
-                          <button
-                            className="btn btn-icon btn-sm btn-ghost text-amber-600"
-                            onClick={() => handleOpenNegotiation(request)}
-                            title="협상하기"
-                            disabled={negotiationModal.open}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                          </button>
-                          {/* 1:1 문의 버튼 - 구매된 슬롯이 있을 때 표시 (환불승인 포함) */}
-                          {request.status === 'purchased' && request.guarantee_slots?.[0] && (
-                            <button
-                              className="btn btn-icon btn-sm btn-ghost text-purple-600"
-                              onClick={() => {
-                                setInquiryData({
-                                  slotId: request.guarantee_slots![0].id,
-                                  campaignId: request.campaign_id,
-                                  distributorId: request.distributor_id,
-                                  title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
-                                });
-                                setInquiryModalOpen(true);
-                              }}
-                              title="1:1 문의"
-                              disabled={negotiationModal.open}
-                            >
-                              <KeenIcon icon="messages" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      {/* 작업 */}
-                      <td className="py-2 px-1 text-center">
-                        <div className="flex gap-0.5 justify-center flex-wrap">
-                          {/* 총판 이상 권한인 경우 상태별 액션 버튼 표시 */}
-                          {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
-                            <>
-                              {request.status === 'requested' && (
-                                <button
-                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
-                                  onClick={() => handleOpenNegotiation(request)}
-                                  title="협상하기"
-                                  disabled={negotiationModal.open}
-                                >
-                                  협상
-                                </button>
-                              )}
-                              {request.status === 'negotiating' && (
-                                <button
-                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
-                                  onClick={() => handleOpenNegotiation(request)}
-                                  title="협상하기"
-                                  disabled={negotiationModal.open}
-                                >
-                                  협상
-                                </button>
-                              )}
-                              {request.status === 'accepted' && (
-                                <span className="text-xs text-gray-500">-</span>
-                              )}
-                              {request.status === 'rejected' && (
-                                <button
-                                  className="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white transition-colors"
-                                  onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
-                                  title="거절 취소"
-                                  disabled={negotiationModal.open}
-                                >
-                                  거절 취소
-                                </button>
-                              )}
-                              {request.status === 'purchased' && request.guarantee_slots && request.guarantee_slots.length > 0 && (
-                                <>
-                                  {request.guarantee_slots[0].status === 'pending' ? (
-                                    <>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
-                                        onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
-                                        title="슬롯 승인"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        승인
-                                      </button>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
-                                        onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
-                                        title="슬롯 반려"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        반려
-                                      </button>
-                                    </>
-                                  ) : request.guarantee_slots[0].status === 'active' ? (
-                                    <>
-                                      {/* 작업 버튼들 */}
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
-                                        onClick={() => {
-                                          setRankCheckSlotData({
-                                            slotId: request.guarantee_slots![0].id,
-                                            campaignName: request.campaigns?.campaign_name,
-                                            targetRank: request.target_rank,
-                                            keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
-                                          });
-                                          setRankCheckModalOpen(true);
-                                        }}
-                                        title="순위 확인"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        순위
-                                      </button>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                                        onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
-                                        title="슬롯 완료"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        완료
-                                      </button>
-                                      {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
-                                      {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending') && (
-                                        <button
-                                          className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
-                                          onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
-                                          title="환불 처리"
-                                          disabled={negotiationModal.open}
-                                        >
-                                          환불
-                                        </button>
-                                      )}
-                                      {/* 환불 요청 처리 버튼 (pending 상태일 때만 추가) */}
-                                      {(() => {
-                                        const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
-                                        if (refundRequest) {
-                                          return (
-                                            <button
-                                              className="px-1.5 py-0.5 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white transition-colors"
-                                              onClick={() => {
-                                                handleRefundRequestModal(request.guarantee_slots![0].id, refundRequest, request);
-                                              }}
-                                              title="환불 요청 처리"
-                                              disabled={negotiationModal.open}
-                                            >
-                                              환불처리
-                                            </button>
-                                          );
-                                        }
-                                        return null;
-                                      })()}
-                                    </>
-                                  ) : request.guarantee_slots[0].status === 'rejected' ? (
-                                    <>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-info hover:bg-info-dark text-white transition-colors"
-                                        onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
-                                        title="대기로 변경"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        대기
-                                      </button>
-                                      <button
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
-                                        onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
-                                        title="반려"
-                                        disabled={negotiationModal.open}
-                                      >
-                                        반려
-                                      </button>
-                                    </>
-                                  ) : request.guarantee_slots[0].status === 'completed' ? (
-                                    <span className="text-xs text-gray-500">완료됨</span>
-                                  ) : null}
-                                </>
-                              )}
-                              {request.status === 'purchased' && !request.guarantee_slots?.[0] && (
-                                <span className="text-xs text-gray-500">대기중</span>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* 환불 정보 툴팁 */}
-            {openRefundInfoId && (() => {
-              const request = filteredRequests.find(r => r.id === openRefundInfoId);
-              const refundRequest = request?.guarantee_slots?.[0]?.refund_requests?.find(
-                req => req.status === 'approved'
-              );
-              
-              if (!request || !refundRequest) return null;
-              
-              return ReactDOM.createPortal(
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setOpenRefundInfoId(null)} 
-                  />
-                  <div 
-                    className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
-                    style={{
-                      left: `${refundTooltipPosition.left}px`,
-                      top: `${refundTooltipPosition.top}px`,
-                      transform: 'translate(-50%, -100%)'
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="font-medium text-sm flex items-center gap-2">
-                        <KeenIcon icon="check-circle" className="text-green-400" />
-                        환불 승인됨
-                      </div>
-                      <button
-                        className="text-gray-400 hover:text-gray-200 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenRefundInfoId(null);
-                        }}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-green-400 mb-1">
-                        <KeenIcon icon="wallet" className="text-base" />
-                        <span className="font-medium">환불 완료</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">환불 사유:</span>
-                        <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
-                      </div>
-                      {refundRequest.refund_amount && (
-                        <div>
-                          <span className="text-gray-400">환불 금액:</span>
-                          <div className="text-green-400 font-medium mt-1">
-                            {refundRequest.refund_amount.toLocaleString()}원
-                          </div>
-                        </div>
-                      )}
-                      <div className="text-gray-400 text-xs">
-                        신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
-                      </div>
-                      {refundRequest.approval_date && (
-                        <div className="text-gray-400 text-xs">
-                          승인일: {new Date(refundRequest.approval_date).toLocaleDateString('ko-KR')}
-                        </div>
-                      )}
-                      {refundRequest.approval_notes && (
-                        <div className="mt-2">
-                          <span className="text-gray-400 text-xs">승인 메시지:</span>
-                          <div className="bg-green-900/30 border border-green-700/50 rounded-md p-2 mt-1">
-                            <div className="text-green-300 text-xs">
-                              {refundRequest.approval_notes}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {/* Arrow */}
-                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                    </div>
-                  </div>
-                </>,
-                document.body
-              );
-            })()}
-            
-            {/* 모바일 카드 뷰 */}
-            <div className="md:hidden space-y-4 p-4">
-              {filteredRequests.map((request) => (
-                <div key={request.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-                  {/* 체크박스와 기본 정보 */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm mt-1"
-                      checked={selectedRequests.includes(request.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedRequests([...selectedRequests, request.id]);
-                        } else {
-                          setSelectedRequests(selectedRequests.filter(id => id !== request.id));
-                        }
-                      }}
-                      disabled={negotiationModal.open}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {getCampaignLogo(request.campaigns?.logo) && (
-                          <img
-                            src={getCampaignLogo(request.campaigns?.logo)}
-                            alt="campaign logo"
-                            className="w-8 h-8 object-contain rounded"
-                          />
-                        )}
-                        <div>
-                          <div className="font-medium text-sm">{request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}</div>
-                          <div className="text-xs text-gray-500">{request.keywords?.main_keyword || request.input_data?.mainKeyword || '-'}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-gray-500">사용자:</span>
-                          <div className="font-medium">{request.users?.full_name || '사용자'}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">보장:</span>
-                          <div className={`font-medium ${request.campaigns?.guarantee_unit === '회' ? 'text-purple-600' : 'text-blue-600'}`}>
-                            {request.guarantee_count}{request.campaigns?.guarantee_unit || '일'}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 입력정보 및 키워드 */}
-                      <div className="grid grid-cols-1 gap-2 text-xs mt-2">
-                        <div>
-                          <span className="text-gray-500">입력정보:</span>
-                          <div className="font-medium">
-                            <div>MID: {request.keywords?.mid || request.input_data?.mid || '-'}</div>
-                            <div className="text-blue-600 hover:underline">
-                              <a 
-                                href={request.keywords?.url || request.input_data?.url || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  if (!request.keywords?.url && !request.input_data?.url) {
-                                    e.preventDefault();
-                                  }
-                                }}
-                              >
-                                {request.keywords?.url || request.input_data?.url || '-'}
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* 키워드 */}
-                        <div>
-                          <span className="text-gray-500">키워드:</span>
-                          <div className="font-medium">
-                            {(() => {
-                              const keywordArray = [];
-                              if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
-                                keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
-                              }
-                              if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
-                              if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
-                              if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
-
-                              if (keywordArray.length === 0) {
-                                return '-';
-                              }
-
-                              return keywordArray.join(', ');
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 기간 및 남은일 정보 */}
-                      {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && request.guarantee_slots[0].start_date && (
-                        <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-                          <div>
-                            <span className="text-gray-500">기간:</span>
-                            <div>
-                              <span className="text-green-600">{new Date(request.guarantee_slots[0].start_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
-                              <span className="text-gray-400 mx-1">~</span>
-                              <span className="text-red-600">{request.guarantee_slots[0].end_date ? new Date(request.guarantee_slots[0].end_date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-'}</span>
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">남은일:</span>
-                            <div className={getRemainingDaysColorClass(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}>
-                              {getRemainingDaysText(calculateRemainingDays(request.guarantee_slots[0].end_date || null))}
-                            </div>
-                          </div>
-                        </div>
                       )}
                     </div>
                   </div>
-                  
-                  {/* 상태 레이블 */}
-                  <div className="flex items-center gap-2 mb-3">
-                    {request.status === 'requested' &&
-                      <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">요청</span>}
-                    {request.status === 'negotiating' &&
-                      <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">협상중</span>}
-                    {request.status === 'accepted' &&
-                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">승인</span>}
-                    {request.status === 'rejected' &&
-                      <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">거절</span>}
-                    {request.status === 'expired' &&
-                      <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">만료</span>}
-                    {request.status === 'purchased' && (
-                      <>
-                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">구매완료</span>
-                        {request.guarantee_slots?.[0] && (
-                          <>
-                            {request.guarantee_slots[0].status === 'pending' &&
-                              <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">대기</span>}
-                            {request.guarantee_slots[0].status === 'active' &&
-                              <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">활성</span>}
-                            {request.guarantee_slots[0].status === 'rejected' &&
-                              <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">반려</span>}
-                            {request.guarantee_slots[0].status === 'completed' &&
-                              <span className="px-2 py-1 text-xs rounded bg-gray-600 text-white">완료</span>}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* 액션 버튼 */}
-                  <div className="flex gap-2 justify-between">
-                    <div className="flex gap-1">
-                      <button
-                        className="btn btn-icon btn-sm btn-ghost text-blue-600"
-                        onClick={() => {
-                          setDetailRequestId(request.id);
-                          setDetailModalOpen(true);
-                        }}
-                        title="상세보기"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                      </button>
-                      <button
-                        className="btn btn-icon btn-sm btn-ghost text-amber-600"
-                        onClick={() => handleOpenNegotiation(request)}
-                        title="협상하기"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                      </button>
-                      {/* 1:1 문의 버튼 - 활성 슬롯이 있을 때만 표시 */}
-                      {request.status === 'purchased' && request.guarantee_slots?.[0]?.status === 'active' && (
-                        <button
-                          className="btn btn-icon btn-sm btn-ghost text-purple-600"
-                          onClick={() => {
-                            setInquiryData({
-                              slotId: request.guarantee_slots![0].id,
-                              campaignId: request.campaign_id,
-                              distributorId: request.distributor_id,
-                              title: `보장형 슬롯 문의: ${request.campaigns?.campaign_name || '캠페인'}`
-                            });
-                            setInquiryModalOpen(true);
-                          }}
-                          title="1:1 문의"
-                        >
-                          <KeenIcon icon="messages" />
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* 작업 버튼 */}
-                    {hasPermission(currentUser?.role, PERMISSION_GROUPS.DISTRIBUTOR) && (
-                      <div className="flex gap-1 flex-wrap justify-end">
-                        {request.status === 'requested' && (
-                          <button
-                            className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
-                            onClick={() => handleOpenNegotiation(request)}
-                          >
-                            협상
-                          </button>
-                        )}
-                        {request.status === 'negotiating' && (
-                          <button
-                            className="px-2 py-1 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white"
-                            onClick={() => handleOpenNegotiation(request)}
-                          >
-                            협상
-                          </button>
-                        )}
-                        {request.status === 'rejected' && (
-                          <button
-                            className="px-2 py-1 text-xs font-medium rounded bg-gray-500 hover:bg-gray-600 text-white"
-                            onClick={() => handleOpenCancelRejectModal(request.id, request.campaigns?.campaign_name)}
-                          >
-                            거절 취소
-                          </button>
-                        )}
-                        {request.status === 'purchased' && request.guarantee_slots?.[0] && (
-                          <>
-                            {request.guarantee_slots[0].status === 'pending' && (
-                              <>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
-                                  onClick={() => handleApproveSlot(request.guarantee_slots![0].id)}
-                                >
-                                  승인
-                                </button>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
-                                  onClick={() => handleRejectSlot(request.guarantee_slots![0].id)}
-                                >
-                                  반려
-                                </button>
-                              </>
-                            )}
-                            {request.guarantee_slots[0].status === 'active' && (
-                              <>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
-                                  onClick={() => {
-                                    setRankCheckSlotData({
-                                      slotId: request.guarantee_slots![0].id,
-                                      campaignName: request.campaigns?.campaign_name,
-                                      targetRank: request.target_rank,
-                                      keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
-                                    });
-                                    setRankCheckModalOpen(true);
-                                  }}
-                                >
-                                  순위
-                                </button>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white"
-                                  onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
-                                >
-                                  완료
-                                </button>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
-                                  onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
-                                >
-                                  환불
-                                </button>
-                                {/* 작업 버튼들 - 모바일 */}
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white"
-                                  onClick={() => {
-                                    setRankCheckSlotData({
-                                      slotId: request.guarantee_slots![0].id,
-                                      campaignName: request.campaigns?.campaign_name,
-                                      targetRank: request.target_rank,
-                                      keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
-                                    });
-                                    setRankCheckModalOpen(true);
-                                  }}
-                                >
-                                  순위
-                                </button>
-                                <button
-                                  className="px-2 py-1 text-xs font-medium rounded bg-blue-500 hover:bg-blue-600 text-white"
-                                  onClick={() => handleCompleteSlot(request.guarantee_slots![0].id)}
-                                >
-                                  완료
-                                </button>
-                                {/* 환불 요청이 없을 때만 환불 버튼 표시 */}
-                                {!request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending') && (
-                                  <button
-                                    className="px-2 py-1 text-xs font-medium rounded bg-red-500 hover:bg-red-600 text-white"
-                                    onClick={() => handleRefundSlot(request.guarantee_slots![0].id)}
-                                  >
-                                    환불
-                                  </button>
-                                )}
-                                {/* 환불 요청 처리 버튼 (pending 상태일 때만 추가) - 모바일 */}
-                                {(() => {
-                                  const refundRequest = request.guarantee_slots[0].refund_requests?.find(req => req.status === 'pending');
-                                  if (refundRequest) {
-                                    return (
-                                      <button
-                                        className="px-2 py-1 text-xs font-medium rounded bg-orange-500 hover:bg-orange-600 text-white"
-                                        onClick={() => {
-                                          handleRefundRequestModal(request.guarantee_slots![0].id, refundRequest, request);
-                                        }}
-                                      >
-                                        환불처리
-                                      </button>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -2686,6 +2923,9 @@ const GuaranteeQuotesPage: React.FC = () => {
         guaranteeUnit={approvalSlotData?.guaranteeUnit}
         startDate={approvalSlotData?.startDate}
         endDate={approvalSlotData?.endDate}
+        targetRank={approvalSlotData?.targetRank}
+        workPeriod={approvalSlotData?.workPeriod}
+        refundSettings={approvalSlotData?.refundSettings}
       />
 
       {/* 완료 모달 */}
@@ -2697,9 +2937,18 @@ const GuaranteeQuotesPage: React.FC = () => {
         }}
         onConfirm={handleCompleteConfirm}
         campaignName={completeSlotData?.campaignName}
+        campaignLogo={completeSlotData?.campaignLogo}
+        serviceType={completeSlotData?.serviceType}
+        slotStatus={completeSlotData?.slotStatus}
         guaranteeCount={completeSlotData?.guaranteeCount || 0}
         guaranteeUnit={completeSlotData?.guaranteeUnit}
         completedDays={completeSlotData?.completedDays}
+        totalAmount={completeSlotData?.totalAmount}
+        startDate={completeSlotData?.startDate}
+        endDate={completeSlotData?.endDate}
+        actualCompletedCount={completeSlotData?.actualCompletedCount}
+        refundSettings={completeSlotData?.refundSettings}
+        currentUserRole="distributor"
       />
 
       {/* 환불 모달 */}
@@ -2715,7 +2964,15 @@ const GuaranteeQuotesPage: React.FC = () => {
         guaranteeUnit={refundSlotData?.guaranteeUnit}
         completedDays={refundSlotData?.completedDays}
         totalAmount={refundSlotData?.totalAmount}
+        negotiatedAmount={refundSlotData?.negotiatedAmount}
+        startDate={refundSlotData?.startDate}
+        endDate={refundSlotData?.endDate}
+        actualCompletedCount={refundSlotData?.actualCompletedCount}
         refundSettings={refundSlotData?.refundSettings}
+        campaignLogo={refundSlotData?.campaignLogo}
+        serviceType={refundSlotData?.serviceType}
+        slotStatus={refundSlotData?.slotStatus}
+        currentUserRole="distributor"
       />
 
       {/* 상세보기 모달 */}
@@ -2747,7 +3004,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         onClose={() => setExcelModalOpen(false)}
         onExport={handleExcelExportWithColumns}
       />
-      
+
       {/* 요청 승인 확인 모달 */}
       <GuaranteeRequestApprovalModal
         isOpen={requestApprovalModalOpen}
@@ -2759,7 +3016,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         campaignName={requestApprovalData?.campaignName}
         isLoading={requestProcessing}
       />
-      
+
       {/* 요청 반려 확인 모달 */}
       <GuaranteeRequestRejectModal
         isOpen={requestRejectModalOpen}
@@ -2771,7 +3028,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         campaignName={requestRejectData?.campaignName}
         isLoading={requestProcessing}
       />
-      
+
       {/* 요청 거절 취소 확인 모달 */}
       <GuaranteeRequestCancelRejectModal
         isOpen={requestCancelRejectModalOpen}
@@ -2783,7 +3040,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         campaignName={requestCancelRejectData?.campaignName}
         isLoading={requestProcessing}
       />
-      
+
       {/* 환불 요청 승인/거절 모달 */}
       <GuaranteeRefundRequestModal
         isOpen={refundRequestModalOpen}
@@ -2794,6 +3051,9 @@ const GuaranteeQuotesPage: React.FC = () => {
         onApprove={handleRefundRequestApprove}
         onReject={handleRefundRequestReject}
         campaignName={refundRequestData?.campaignName}
+        campaignLogo={refundRequestData?.campaignLogo}
+        serviceType={refundRequestData?.serviceType}
+        slotStatus={refundRequestData?.slotStatus}
         refundAmount={refundRequestData?.refundAmount || 0}
         refundReason={refundRequestData?.refundReason || ''}
         requesterName={refundRequestData?.requesterName}
@@ -2801,9 +3061,13 @@ const GuaranteeQuotesPage: React.FC = () => {
         guaranteeUnit={refundRequestData?.guaranteeUnit}
         completedDays={refundRequestData?.completedDays}
         totalAmount={refundRequestData?.totalAmount}
+        startDate={refundRequestData?.startDate}
+        endDate={refundRequestData?.endDate}
         requestDate={refundRequestData?.requestDate}
+        refundSettings={refundRequestData?.refundSettings}
+        currentUserRole="distributor"
       />
-      
+
       {/* 1:1 문의 모달 */}
       <InquiryChatModal
         open={inquiryModalOpen}

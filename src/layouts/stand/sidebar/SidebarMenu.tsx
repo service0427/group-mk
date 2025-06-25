@@ -29,7 +29,7 @@ interface SidebarMenuProps {
 
 const SidebarMenu = ({ onMenuStateChange }: SidebarMenuProps) => {
   const { openModal } = useServiceEffectModal();
-  const isMobile = !useResponsive('up', 'md');
+  const isMobile = !useResponsive('up', 'lg');
   const linkPl = isMobile ? 'ps-[6px]' : 'ps-[8px]';
   const linkPr = isMobile ? 'pe-[6px]' : 'pe-[8px]';
   const linkPy = isMobile ? 'py-[5px]' : 'py-[6px]';

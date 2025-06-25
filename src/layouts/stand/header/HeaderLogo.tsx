@@ -34,6 +34,7 @@ const HeaderLogo = () => {
           <KeenIcon icon="menu" />
         </button>
 
+        {/* burger-menu-2 아이콘 제거
         {megaMenuEnabled && (
           <button
             type="button"
@@ -42,7 +43,7 @@ const HeaderLogo = () => {
           >
             <KeenIcon icon="burger-menu-2" />
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );

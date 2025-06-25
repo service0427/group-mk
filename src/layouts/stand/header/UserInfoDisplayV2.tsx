@@ -448,7 +448,7 @@ const UserInfoDisplayV2 = () => {
           </div>
 
           {/* 사용자 정보 드롭다운 */}
-          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+          <div className="flex items-center h-9 px-2 flex-shrink-0">
             <Menu className="flex-1">
               <MenuItem
                 ref={userMenuRef}

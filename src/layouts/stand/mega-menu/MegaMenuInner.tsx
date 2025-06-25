@@ -36,9 +36,10 @@ const MegaMenuInner = () => {
     return () => clearTimeout(timer);
   }, [layout.options.sidebar.collapse]); // sidebarMouseLeave 의존성 제거
 
-  useEffect(() => {
-    setMegaMenuEnabled(true);
-  });
+  // megaMenu 비활성화 - burger-menu-2 아이콘 제거
+  // useEffect(() => {
+  //   setMegaMenuEnabled(true);
+  // });
 
   // 사용자 역할에 따라 메뉴 필터링 (재귀적으로 처리)
   const filterMenuByRole = (items: TMenuConfig): TMenuConfig => {

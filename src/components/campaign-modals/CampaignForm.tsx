@@ -767,8 +767,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         <KeenIcon icon="check" className="size-4 text-blue-500 flex-shrink-0" />
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                           {formData.guaranteeUnit === '일'
-                            ? `${formData.guaranteePeriod || '___'}일 안에 ${formData.targetRank || '__'}위 이내 ${formData.guaranteeCount || '___'}일 보장`
-                            : `${formData.guaranteePeriod || '___'}일 안에 ${formData.guaranteeCount || '___'}회 보장`
+                            ? `작업 시작 후 ${formData.guaranteePeriod || '___'}일 안에 순위 ${formData.targetRank || '__'}위권을 ${formData.guaranteeCount || '___'}일 이상 유지하도록 보장합니다.`
+                            : `작업 시작 후 ${formData.guaranteePeriod || '___'}일 안에 ${formData.guaranteeCount || '___'}회 이상 작업을 보장합니다.`
                           }
                         </p>
                       </div>
@@ -836,8 +836,8 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           <KeenIcon icon="check-circle" className="size-4 text-amber-600 dark:text-amber-400" />
                           캐시 지급 안내
                         </p>
-                        <p>• 목표 일수를 모두 채운 경우, +48시간 후 자동 지급됩니다. (고객이 완료 승인 시 즉시 지급)</p>
-                        <p>• 목표 일수를 채우지 못한 경우, 마감일 기준으로 달성한 일 수만큼 지급됩니다. (총 금액 ÷ 성공 일 수 기준)</p>
+                        <p>• 보장 일수를 모두 채운 경우, +48시간 후 자동 지급됩니다. (고객이 완료 승인 시 즉시 지급)</p>
+                        <p>• 보장 일수를 채우지 못한 경우, 마감일 기준으로 달성한 일 수만큼 지급됩니다. (총 금액 ÷ 성공 일 수 기준)</p>
                       </div>
                     </div>
                   </td>

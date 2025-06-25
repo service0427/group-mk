@@ -339,8 +339,8 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                       <KeenIcon icon="check" className="size-4 text-purple-500 flex-shrink-0" />
                       <p className="text-sm text-purple-700 dark:text-purple-300">
                         {selectedCampaign.guarantee_unit === '일' 
-                          ? `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.target_rank || '__'}위 이내 ${selectedCampaign.guarantee_count}일 보장`
-                          : `${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.guarantee_count}회 보장`
+                          ? `작업 시작 후 ${selectedCampaign.guarantee_period}일 안에 순위 ${selectedCampaign.target_rank || '__'}위권을 ${selectedCampaign.guarantee_count}일 이상 유지하도록 보장합니다.`
+                          : `작업 시작 후 ${selectedCampaign.guarantee_period}일 안에 ${selectedCampaign.guarantee_count}회 이상 작업을 보장합니다.`
                         }
                       </p>
                     </div>
@@ -350,9 +350,9 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
             </div>
             
             {/* 환불 정책 표시 - 오른쪽에 배치 */}
-            {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled && (
-              <div className="w-[350px] shrink-0">
-                <div className="bg-amber-50/50 p-2 rounded border border-amber-100/50">
+            <div className="w-[350px] shrink-0">
+              {selectedCampaign.refund_settings && selectedCampaign.refund_settings.enabled ? (
+                <div className="bg-amber-50/50 p-2 rounded border border-amber-100/50 h-full">
                   <div className="flex items-start gap-1.5">
                     <KeenIcon icon="shield-tick" className="text-amber-600 size-4 mt-0.5 shrink-0" />
                     <div className="text-sm text-gray-700 space-y-1">
@@ -373,8 +373,14 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="bg-gray-50/50 p-2 rounded border border-gray-100/50 h-full">
+                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                    환불 정책 없음
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (

@@ -1575,20 +1575,18 @@ const SlotList: React.FC<SlotListProps> = ({
                           <KeenIcon icon="messages" />
                         </button>
                       )}
-                      {/* 대기중 상태일 때만 삭제 버튼 표시 */}
-                      {item.status === 'pending' && (
-                        <button
-                          className="btn btn-sm btn-icon btn-clear btn-danger"
-                          onClick={() => {
-                            if (confirm('정말 삭제하시겠습니까?')) {
-                              onDeleteSlot(item.id);
-                            }
-                          }}
-                          title="삭제"
-                        >
-                          <KeenIcon icon="trash" />
-                        </button>
-                      )}
+                      {/* 삭제 버튼 - 모든 상태에서 표시 */}
+                      <button
+                        className="btn btn-sm btn-icon btn-clear btn-danger"
+                        onClick={() => {
+                          if (confirm('정말 삭제하시겠습니까?')) {
+                            onDeleteSlot(item.id);
+                          }
+                        }}
+                        title="삭제"
+                      >
+                        <KeenIcon icon="trash" />
+                      </button>
                     </>
                   )}
                 </div>

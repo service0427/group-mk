@@ -421,7 +421,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
 
   // 필터링 적용
   const filteredData = useMemo(() => {
-    
+
 
     return campaigns.filter(campaign => {
       // 검색어 필터링
@@ -685,7 +685,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                   <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[200px]">
                     캠페인명
                   </th>
-                  <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                  <th scope="col" className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     캠페인 설명
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -717,11 +717,10 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                       </span>
                     </td>
                     <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`badge ${
-                        campaign.originalData?.slot_type === 'guarantee' 
-                          ? 'badge-info' 
-                          : 'badge-primary'
-                      } badge-outline rounded-[30px] h-auto py-0.5 text-xs`}>
+                      <span className={`badge ${campaign.originalData?.slot_type === 'guarantee'
+                        ? 'badge-info'
+                        : 'badge-primary'
+                        } badge-outline rounded-[30px] h-auto py-0.5 text-xs`}>
                         {campaign.originalData?.slot_type === 'guarantee' ? '보장형' : '일반형'}
                       </span>
                     </td>
@@ -782,15 +781,15 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                         </button>
                       </div>
                     </td>
-                    <td className="px-3 lg:px-6 py-4 hidden xl:table-cell">
+                    <td className="px-3 lg:px-6 py-4 hidden md:table-cell">
                       <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
                         {campaign.description || '-'}
                       </div>
                     </td>
                     <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
-                      <div className="text-sm text-muted-foreground">
-                        <div className="font-medium">{campaign.matName || '알 수 없음'}</div>
-                        <div className="text-xs">{campaign.matEmail || ''}</div>
+                      <div className="text-xs lg:text-sm text-muted-foreground">
+                        <div className="font-medium text-xs lg:text-sm">{campaign.matName || '알 수 없음'}</div>
+                        <div className="text-[10px] lg:text-xs">{campaign.matEmail || ''}</div>
                       </div>
                     </td>
                     <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">

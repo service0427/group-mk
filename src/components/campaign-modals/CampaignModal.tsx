@@ -239,14 +239,31 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       const detailedDescValue = campaign.originalData?.detailed_description || campaign.detailedDescription || '';
 
       // add_info 객체 확인
-      const addInfo = campaign.originalData?.add_info || {};
+      let addInfo = campaign.originalData?.add_info || {};
+      
+      // add_info가 문자열인 경우 파싱
+      if (typeof addInfo === 'string') {
+        try {
+          addInfo = JSON.parse(addInfo);
+          console.log('Parsed add_info from string:', addInfo);
+        } catch (e) {
+          console.error('Failed to parse add_info string:', e);
+          addInfo = {};
+        }
+      }
+      
+      // 디버깅을 위해 add_info 내용 로그
+      console.log('Campaign originalData:', campaign.originalData);
+      console.log('Campaign originalData add_info:', addInfo);
+      console.log('Campaign originalData add_info type:', typeof addInfo);
 
       // 사용자 입력 필드 설정
       let userInputFieldsValue = [];
 
       // 기존 데이터는 add_info.add_field에 저장되어 있음
-      if (campaign.originalData?.add_info?.add_field && Array.isArray(campaign.originalData.add_info.add_field)) {
-        userInputFieldsValue = campaign.originalData.add_info.add_field.map((field: any) => ({
+      if (addInfo.add_field && Array.isArray(addInfo.add_field)) {
+        console.log('Found add_field:', addInfo.add_field);
+        userInputFieldsValue = addInfo.add_field.map((field: any) => ({
           fieldName: field.fieldName || field.name || '',
           description: field.description || field.desc || '',
           isRequired: field.isRequired || false,
@@ -257,6 +274,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       }
       // 이전 버전과의 호환성을 위한 처리 (userInputFields가 문자열 형태로 저장된 경우)
       else if (addInfo.userInputFields) {
+        console.log('Found userInputFields:', addInfo.userInputFields);
         try {
           if (typeof addInfo.userInputFields === 'string') {
             const parsed = JSON.parse(addInfo.userInputFields);
@@ -275,11 +293,17 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             userInputFieldsValue = addInfo.userInputFields;
           }
         } catch (e) {
+          console.error('Failed to parse userInputFields:', e);
           // 파싱 실패 시 빈 배열 사용
           userInputFieldsValue = [];
         }
+      } else {
+        console.log('No user input fields found in add_info');
       }
 
+      // 사용자 입력 필드 값 최종 확인
+      console.log('Final userInputFieldsValue:', userInputFieldsValue);
+      
       // 로고 이미지 설정 (add_info에서 로고 URL을 확인)
       if (addInfo.logo_url) {
         setPreviewUrl(addInfo.logo_url);
@@ -2055,7 +2079,12 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     const updateData = {
                       status: 'rejected',
                       rejectionReason: rejectionReason,
-                      rejected_reason: rejectionReason
+                      rejected_reason: rejectionReason,
+                      // 기존 데이터 유지를 위해 formData 정보 포함
+                      campaignName: formData.campaignName,
+                      description: formData.description,
+                      detailedDescription: formData.detailedDescription,
+                      add_field: formData.userInputFields
                     };
                     
                     try {

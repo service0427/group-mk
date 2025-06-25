@@ -350,7 +350,7 @@ const SlotList: React.FC<SlotListProps> = ({
       <div className="card shadow-sm">
         <div className="card-header px-6 py-4">
           <div className="flex items-center justify-between w-full">
-            <h3 className="card-title">일반형 슬롯 목록</h3>
+            <h3 className="card-title">일반형 슬롯 관리</h3>
             <div className="flex items-center gap-4">
               {/* 전체 건수 */}
               <div className="text-sm">
@@ -429,14 +429,11 @@ const SlotList: React.FC<SlotListProps> = ({
                 />
               </th>
               <th className="py-2 px-2 text-start font-medium">사용자</th>
-              {!isKeywordUnsupportedService && (
-                <th className="py-2 px-2 text-center font-medium">키워드</th>
-              )}
+              <th className="py-2 px-2 text-center font-medium">입력필드</th>
               <th className="py-2 px-2 text-center font-medium">작업수</th>
               <th className="py-2 px-2 text-center font-medium">작업기간</th>
               <th className="py-2 px-2 text-center font-medium">캠페인</th>
               <th className="py-2 px-2 text-center font-medium">상태</th>
-              <th className="py-2 px-2 text-center font-medium">추가정보</th>
               <th className="py-2 px-2 text-center font-medium">상세</th>
               <th className="py-2 px-2 text-center font-medium">작업</th>
             </tr>
@@ -465,54 +462,199 @@ const SlotList: React.FC<SlotListProps> = ({
                   </div>
                 </td>
                 
-                {/* 키워드 정보 */}
-                {!isKeywordUnsupportedService && (
-                  <td className="py-2 px-2">
-                    <div className="flex flex-col">
-                      {(() => {
-                        const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
-                        
-                        // 직접입력이든 내 키워드든 동일한 방식으로 표시
-                        return (
+                {/* 입력필드 */}
+                <td className="py-2 px-2 text-center">
+                  {slot.input_data && (() => {
+                    // passItem에 포함되지 않고, _fileName 또는 _file로 끝나지 않는 필드만 필터링
+                    const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
+                      !passItem.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
+                    );
+                    
+                    if (userInputFields.length === 0) 
+                      return <span className="text-xs text-gray-400">-</span>;
+                    
+                    return (
+                      <div className="relative inline-block">
+                        <button 
+                          className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopoverPosition({
+                              top: rect.top - 10,
+                              left: rect.left + rect.width / 2
+                            });
+                            setOpenPopoverId(openPopoverId === slot.id ? null : slot.id);
+                          }}
+                        >
+                          {userInputFields.length}개 필드
+                        </button>
+                        {/* 클릭 시 표시되는 팝오버 */}
+                        {openPopoverId === slot.id && ReactDOM.createPortal(
                           <>
-                            <div className="font-medium text-blue-600 dark:text-blue-400">
-                              {slot.input_data?.main_keyword || slot.input_data?.mainKeyword || slot.input_data?.keyword1 || '-'}
+                            {/* 배경 클릭 시 닫기 */}
+                            <div 
+                              className="fixed inset-0" 
+                              style={{zIndex: 9998}}
+                              onClick={() => setOpenPopoverId(null)}
+                            />
+                            <div 
+                              className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600" 
+                              style={{
+                                zIndex: 9999,
+                                left: `${popoverPosition.left}px`,
+                                top: `${popoverPosition.top}px`,
+                                transform: 'translate(-50%, -100%)'
+                              }}>
+                              <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
+                                <span className="font-medium text-gray-100 dark:text-gray-200">입력 필드</span>
+                                <button
+                                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenPopoverId(null);
+                                  }}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div 
+                                className="overflow-y-auto max-h-48 pr-2"
+                                style={{
+                                  scrollbarWidth: 'thin',
+                                  scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
+                                <div className="space-y-1">
+                                  {userInputFields.map(([key, value]) => {
+                                    // 파일 URL인지 확인
+                                    const isFileUrl = value && typeof value === 'string' && 
+                                      (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+                                    
+                                    // 이미지 파일인지 확인
+                                    const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+                                    
+                                    // 파일명 추출 - _fileName 필드가 있으면 그 값을 사용
+                                    const fileNameKey = `${key}_fileName`;
+                                    const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+                                    
+                                    // 필드명 한글 변환
+                                    const fieldNameMap: Record<string, string> = {
+                                      // 기본 필드
+                                      'work_days': '작업일',
+                                      'minimum_purchase': '최소 구매수',
+                                      'url': 'URL',
+                                      'mid': '상점 ID',
+                                      'productName': '상품명',
+                                      'mainKeyword': '메인 키워드',
+                                      'main_keyword': '메인 키워드',
+                                      'keywords': '서브 키워드',
+                                      'keyword1': '키워드1',
+                                      'keyword2': '키워드2', 
+                                      'keyword3': '키워드3',
+                                      'quantity': '작업량',
+                                      'dueDays': '작업기간',
+                                      'due_days': '작업기간',
+                                      'workCount': '작업수',
+                                      'work_count': '작업수',
+                                      'start_date': '시작일',
+                                      'end_date': '종료일',
+                                      
+                                      // 가격 관련
+                                      'price': '가격',
+                                      'total_price': '총 가격',
+                                      'unit_price': '단가',
+                                      'daily_price': '일별 가격',
+                                      
+                                      // 보장 관련
+                                      'guarantee_days': '보장일수',
+                                      'guarantee_rank': '보장순위',
+                                      'target_rank': '목표순위',
+                                      'guarantee_info': '보장정보',
+                                      
+                                      // 캐시/포인트 관련
+                                      'cash_amount': '캐시 지급액',
+                                      'cash_info': '캐시 지급 안내',
+                                      'point_amount': '포인트 금액',
+                                      
+                                      // 기타 정보
+                                      'note': '비고',
+                                      'description': '설명',
+                                      'requirements': '요구사항',
+                                      'additional_info': '추가정보',
+                                      'work_period': '작업기간',
+                                      'company_name': '회사명',
+                                      'business_number': '사업자번호',
+                                      'contact': '연락처',
+                                      'email': '이메일',
+                                      'phone': '전화번호',
+                                      'mobile': '휴대폰번호',
+                                      'address': '주소',
+                                      'bank_name': '은행명',
+                                      'account_number': '계좌번호',
+                                      'account_holder': '예금주',
+                                      
+                                      // 상태 관련
+                                      'status': '상태',
+                                      'is_active': '활성화',
+                                      'is_manual': '수동입력',
+                                      'is_manual_input': '수동입력',
+                                      
+                                      // 날짜 관련
+                                      'created_at': '생성일',
+                                      'updated_at': '수정일',
+                                      'completed_at': '완료일',
+                                      'canceled_at': '취소일'
+                                    };
+                                    const displayKey = fieldNameMap[key] || key;
+                                    
+                                    return (
+                                      <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
+                                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{displayKey}</span>
+                                        <span className="text-gray-400 dark:text-gray-500">:</span>
+                                        <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
+                                          {isFileUrl ? (
+                                            isImage ? (
+                                              <button
+                                                className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedImage({ url: value, title: key });
+                                                  setImageModalOpen(true);
+                                                }}
+                                              >
+                                                {fileName}
+                                              </button>
+                                            ) : (
+                                              <a
+                                                href={value}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-400 hover:text-blue-300 underline"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                {fileName}
+                                              </a>
+                                            )
+                                          ) : (
+                                            value ? String(value) : '-'
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             </div>
-                            
-                            {/* 추가 키워드 */}
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {slot.input_data?.keywords && Array.isArray(slot.input_data.keywords) && slot.input_data.keywords.length > 0 ? (
-                                slot.input_data.keywords.map((keyword: any, idx: number) => (
-                                  <span key={idx} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                                    {keyword}
-                                  </span>
-                                ))
-                              ) : (
-                                <>
-                                  {slot.input_data?.keyword1 && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                                      {slot.input_data.keyword1}
-                                    </span>
-                                  )}
-                                  {slot.input_data?.keyword2 && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                                      {slot.input_data.keyword2}
-                                    </span>
-                                  )}
-                                  {slot.input_data?.keyword3 && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                                      {slot.input_data.keyword3}
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </td>
-                )}
+                          </>,
+                          document.body
+                        )}
+                      </div>
+                    );
+                  })()}
+                </td>
                 
                 {/* 작업수 */}
                 <td className="py-2 px-2 text-center">
@@ -681,200 +823,6 @@ const SlotList: React.FC<SlotListProps> = ({
                   )}
                 </td>
                 
-                {/* 추가정보 */}
-                <td className="py-2 px-2 text-center">
-                  {slot.input_data && (() => {
-                    // passItem에 포함되지 않고, _fileName 또는 _file로 끝나지 않는 필드만 필터링
-                    const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
-                      !passItem.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
-                    );
-                    
-                    if (userInputFields.length === 0) 
-                      return <span className="text-xs text-gray-400">-</span>;
-                    
-                    return (
-                      <div className="relative inline-block">
-                        <button 
-                          className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setPopoverPosition({
-                              top: rect.top - 10,
-                              left: rect.left + rect.width / 2
-                            });
-                            setOpenPopoverId(openPopoverId === slot.id ? null : slot.id);
-                          }}
-                        >
-                          {userInputFields.length}개 필드
-                        </button>
-                        {/* 클릭 시 표시되는 팝오버 */}
-                        {openPopoverId === slot.id && ReactDOM.createPortal(
-                          <>
-                            {/* 배경 클릭 시 닫기 */}
-                            <div 
-                              className="fixed inset-0" 
-                              style={{zIndex: 9998}}
-                              onClick={() => setOpenPopoverId(null)}
-                            />
-                            <div 
-                              className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600" 
-                              style={{
-                                zIndex: 9999,
-                                left: `${popoverPosition.left}px`,
-                                top: `${popoverPosition.top}px`,
-                                transform: 'translate(-50%, -100%)'
-                              }}>
-                              <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
-                                <span className="font-medium text-gray-100 dark:text-gray-200">추가 정보</span>
-                                <button
-                                  className="text-gray-400 hover:text-gray-200 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenPopoverId(null);
-                                  }}
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                              <div 
-                                className="overflow-y-auto max-h-48 pr-2"
-                                style={{
-                                  scrollbarWidth: 'thin',
-                                  scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
-                                }}
-                              >
-                                <div className="space-y-1">
-                                  {userInputFields.map(([key, value]) => {
-                                    // 파일 URL인지 확인
-                                    const isFileUrl = value && typeof value === 'string' && 
-                                      (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
-                                    
-                                    // 이미지 파일인지 확인
-                                    const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
-                                    
-                                    // 파일명 추출 - _fileName 필드가 있으면 그 값을 사용
-                                    const fileNameKey = `${key}_fileName`;
-                                    const fileName = slot.input_data[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
-                                    
-                                    // 필드명 한글 변환
-                                    const fieldNameMap: Record<string, string> = {
-                                      // 기본 필드
-                                      'work_days': '작업일',
-                                      'minimum_purchase': '최소 구매수',
-                                      'url': 'URL',
-                                      'mid': '상점 ID',
-                                      'productName': '상품명',
-                                      'mainKeyword': '메인 키워드',
-                                      'main_keyword': '메인 키워드',
-                                      'keywords': '서브 키워드',
-                                      'keyword1': '키워드1',
-                                      'keyword2': '키워드2', 
-                                      'keyword3': '키워드3',
-                                      'quantity': '작업량',
-                                      'dueDays': '작업기간',
-                                      'due_days': '작업기간',
-                                      'workCount': '작업수',
-                                      'work_count': '작업수',
-                                      'start_date': '시작일',
-                                      'end_date': '종료일',
-                                      
-                                      // 가격 관련
-                                      'price': '가격',
-                                      'total_price': '총 가격',
-                                      'unit_price': '단가',
-                                      'daily_price': '일별 가격',
-                                      
-                                      // 보장 관련
-                                      'guarantee_days': '보장일수',
-                                      'guarantee_rank': '보장순위',
-                                      'target_rank': '목표순위',
-                                      'guarantee_info': '보장정보',
-                                      
-                                      // 캐시/포인트 관련
-                                      'cash_amount': '캐시 지급액',
-                                      'cash_info': '캐시 지급 안내',
-                                      'point_amount': '포인트 금액',
-                                      
-                                      // 기타 정보
-                                      'note': '비고',
-                                      'description': '설명',
-                                      'requirements': '요구사항',
-                                      'additional_info': '추가정보',
-                                      'work_period': '작업기간',
-                                      'company_name': '회사명',
-                                      'business_number': '사업자번호',
-                                      'contact': '연락처',
-                                      'email': '이메일',
-                                      'phone': '전화번호',
-                                      'mobile': '휴대폰번호',
-                                      'address': '주소',
-                                      'bank_name': '은행명',
-                                      'account_number': '계좌번호',
-                                      'account_holder': '예금주',
-                                      
-                                      // 상태 관련
-                                      'status': '상태',
-                                      'is_active': '활성화',
-                                      'is_manual': '수동입력',
-                                      'is_manual_input': '수동입력',
-                                      
-                                      // 날짜 관련
-                                      'created_at': '생성일',
-                                      'updated_at': '수정일',
-                                      'completed_at': '완료일',
-                                      'canceled_at': '취소일'
-                                    };
-                                    const displayKey = fieldNameMap[key] || key;
-                                    
-                                    return (
-                                      <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
-                                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{displayKey}</span>
-                                        <span className="text-gray-400 dark:text-gray-500">:</span>
-                                        <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
-                                          {isFileUrl ? (
-                                            isImage ? (
-                                              <button
-                                                className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setSelectedImage({ url: value, title: key });
-                                                  setImageModalOpen(true);
-                                                }}
-                                              >
-                                                {fileName}
-                                              </button>
-                                            ) : (
-                                              <a
-                                                href={value}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-400 hover:text-blue-300 underline"
-                                                onClick={(e) => e.stopPropagation()}
-                                              >
-                                                {fileName}
-                                              </a>
-                                            )
-                                          ) : (
-                                            value ? String(value) : '-'
-                                          )}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </>,
-                          document.body
-                        )}
-                      </div>
-                    );
-                  })()}
-                </td>
-                
                 {/* 상세/메모 버튼 */}
                 <td className="py-3 px-3 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -1039,70 +987,24 @@ const SlotList: React.FC<SlotListProps> = ({
             
             {/* 요약 정보 */}
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-gray-400 mb-2">
-              {!isKeywordUnsupportedService && (
-                <span>
-                  <span className="text-gray-500">키워드:</span> 
-                  {(() => {
-                    // 내키워드 미지원 서비스 체크 (keyword_id가 0이거나 is_manual_input이 true인 경우)
-                    const isManualInput = slot.keyword_id === 0 || slot.input_data?.is_manual_input === true;
-                    
-                    if (isManualInput) {
-                      return <span className="text-purple-600 dark:text-purple-400 font-medium ml-1">직접입력</span>;
-                    }
-                  
-                  // 모든 키워드 수집
-                  const allKeywords = [];
-                  if (slot.input_data?.mainKeyword) {
-                    allKeywords.push({ keyword: slot.input_data.mainKeyword, isMain: true });
-                  }
-                  if (slot.input_data?.keyword1) {
-                    allKeywords.push({ keyword: slot.input_data.keyword1, isMain: false });
-                  }
-                  if (slot.input_data?.keyword2) {
-                    allKeywords.push({ keyword: slot.input_data.keyword2, isMain: false });
-                  }
-                  if (slot.input_data?.keyword3) {
-                    allKeywords.push({ keyword: slot.input_data.keyword3, isMain: false });
-                  }
-                  if (slot.input_data?.keywords && Array.isArray(slot.input_data.keywords)) {
-                    slot.input_data.keywords.forEach((kw: string) => {
-                      allKeywords.push({ keyword: kw, isMain: false });
-                    });
-                  }
-
-                  if (allKeywords.length === 0) {
-                    return <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">-</span>;
-                  }
-
-                  const mainKeyword = allKeywords.find(k => k.isMain)?.keyword || allKeywords[0].keyword;
-                  const additionalCount = allKeywords.length - 1;
-
+              {/* 입력필드 정보 */}
+              {slot.input_data && (() => {
+                const userInputFields = Object.entries(slot.input_data).filter(([key]) => 
+                  !passItem.includes(key) && !key.endsWith('_fileName') && !key.endsWith('_file')
+                );
+                
+                if (userInputFields.length > 0) {
                   return (
-                    <>
-                      <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">
-                        {mainKeyword}
+                    <span>
+                      <span className="text-gray-500">입력필드:</span> 
+                      <span className="ml-1 font-medium text-gray-700 dark:text-gray-300">
+                        {userInputFields.length}개
                       </span>
-                      {additionalCount > 0 && (
-                        <button
-                          className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5 ml-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setPopoverPosition({
-                              top: rect.top - 10,
-                              left: rect.left + rect.width / 2
-                            });
-                            setOpenKeywordTooltipId(openKeywordTooltipId === `mobile-${slot.id}` ? null : `mobile-${slot.id}`);
-                          }}
-                        >
-                          +{additionalCount}
-                        </button>
-                      )}
-                    </>
+                    </span>
                   );
-                  })()}
-                </span>
-              )}
+                }
+                return null;
+              })()}
               <span>
                 <span className="text-gray-500">작업수:</span> 
                 <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">

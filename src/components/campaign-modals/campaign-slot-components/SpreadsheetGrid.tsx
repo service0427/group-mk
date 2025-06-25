@@ -76,31 +76,6 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     }
   }, [initialData]);
 
-  // 모달 닫힘 후 포커스 복구를 위한 상태
-  const [lastFocusedCell, setLastFocusedCell] = useState<{row: number, col: number} | null>(null);
-  
-  // 모달이 닫혔을 때 포커스 복구
-  useEffect(() => {
-    if (lastFocusedCell) {
-      const handleFocusRestore = () => {
-        const cell = gridRef.current?.querySelector(
-          `tr:nth-child(${lastFocusedCell.row + 1}) td:nth-child(${lastFocusedCell.col + 2})`
-        ) as HTMLElement;
-        if (cell && !cell.contains(document.activeElement)) {
-          cell.focus();
-        }
-      };
-
-      // 클릭 이벤트로 모달 닫힘 감지
-      document.addEventListener('click', handleFocusRestore);
-      document.addEventListener('keydown', handleFocusRestore);
-
-      return () => {
-        document.removeEventListener('click', handleFocusRestore);
-        document.removeEventListener('keydown', handleFocusRestore);
-      };
-    }
-  }, [lastFocusedCell]);
   
   // 컬럼 수가 변경될 때 데이터 배열 조정
   useEffect(() => {
@@ -229,8 +204,51 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         if (inputValue < minPurchaseQuantity) {
           finalValue = minPurchaseQuantity.toString();
           if (showAlert) {
+            // 알림 표시 전에 포커스 정보 저장
+            const currentRow = editingCell.row;
+            const currentCol = editingCell.col;
+            
+            // 알림 표시 전에 현재 포커스된 요소 저장
+            const activeElement = document.activeElement;
+            
+            // 포커스 복구 함수
+            const restoreFocus = () => {
+              const targetCell = gridRef.current?.querySelector(
+                `tr:nth-child(${currentRow + 1}) td:nth-child(${currentCol + 2})`
+              ) as HTMLElement;
+              if (targetCell) {
+                targetCell.focus();
+                // 탭 인덱스 설정으로 포커스 가능하게 만들기
+                targetCell.setAttribute('tabindex', '0');
+              }
+            };
+            
+            // 알림 표시
             showAlert('최소 구매수 제한', `최소 구매수는 ${minPurchaseQuantity}개 이상이어야 합니다.`, false);
             alertShown = true;
+            
+            // 여러 방법으로 포커스 복구 시도
+            // 1. 즉시 시도
+            requestAnimationFrame(restoreFocus);
+            
+            // 2. 짧은 지연 후 시도
+            setTimeout(restoreFocus, 100);
+            
+            // 3. 포커스 이벤트 감지
+            const handleFocus = (e: FocusEvent) => {
+              // 포커스가 body나 document로 이동하면 다시 복구
+              if (e.target === document.body || e.target === document.documentElement) {
+                restoreFocus();
+                window.removeEventListener('focus', handleFocus, true);
+              }
+            };
+            window.addEventListener('focus', handleFocus, true);
+            
+            // 4. 더 긴 지연으로 한 번 더 시도
+            setTimeout(() => {
+              restoreFocus();
+              window.removeEventListener('focus', handleFocus, true);
+            }, 300);
           }
         }
       }
@@ -247,70 +265,88 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       setIsComposing(false); // 편집 완료 시 isComposing 초기화
       
       // 편집 종료 후 해당 셀에 포커스 유지
-      if (shouldFocus) {
-        // 포커스 설정 함수
-        const focusCell = () => {
+      if (shouldFocus && !alertShown) {
+        // 알림이 표시되지 않은 경우에만 기본 포커스 로직 실행
+        requestAnimationFrame(() => {
           const cell = gridRef.current?.querySelector(
             `tr:nth-child(${prevRow + 1}) td:nth-child(${prevCol + 2})`
           ) as HTMLElement;
           if (cell) {
             cell.focus();
-            // 포커스가 제대로 설정되었는지 확인
-            if (document.activeElement !== cell) {
-              // 포커스가 실패하면 다시 시도
-              setTimeout(() => cell.focus(), 10);
-            }
           }
-        };
-        
-        if (alertShown) {
-          // 알림이 표시된 경우 포커스 정보 저장
-          setLastFocusedCell({ row: prevRow, col: prevCol });
-          // 알림 모달이 닫힌 후 포커스 복구
-          const checkAndFocus = () => {
-            // 알림 모달이 아직 열려있는지 확인
-            const modalElement = document.querySelector('[role="dialog"]');
-            if (!modalElement) {
-              // 모달이 닫혔으면 포커스 복구
-              focusCell();
-            } else {
-              // 아직 열려있으면 다시 시도
-              setTimeout(checkAndFocus, 100);
-            }
-          };
-          setTimeout(checkAndFocus, 100);
-        } else {
-          // 일반적인 경우
-          setLastFocusedCell(null);
-          requestAnimationFrame(focusCell);
-        }
+        });
       }
     }
-  }, [editingCell, editValue, data, onChange, normalizedColumns, minPurchaseQuantity, showAlert, setLastFocusedCell]);
+  }, [editingCell, editValue, data, onChange, normalizedColumns, minPurchaseQuantity, showAlert]);
 
   // 키보드 네비게이션
   const handleKeyDown = useCallback((e: React.KeyboardEvent, row: number, col: number) => {
     if (editingCell) {
       if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        finishEditing();
+        
+        // Tab 키인 경우 다음 셀로 이동할 위치 미리 계산
+        let nextRow = row;
+        let nextCol = col;
+        
         if (e.key === 'Tab') {
-          const nextCol = e.shiftKey ? col - 1 : col + 1;
-          if (nextCol >= 0 && nextCol < normalizedColumns.length) {
-            selectCell(row, nextCol);
-          } else if (!e.shiftKey && col === normalizedColumns.length - 1) {
+          nextCol = e.shiftKey ? col - 1 : col + 1;
+          
+          if (nextCol >= normalizedColumns.length) {
+            // 마지막 컬럼에서 다음 행으로
             if (row < data.length - 1) {
-              // 마지막 컬럼에서 탭을 누르면 다음 행의 첫 번째 셀로 이동
-              selectCell(row + 1, 0);
+              nextRow = row + 1;
+              nextCol = 0;
             } else {
-              // 마지막 행의 마지막 셀에서 탭을 누르면 새 행 추가
+              // 마지막 행이면 새 행 추가
               addRow();
-              setTimeout(() => selectCell(row + 1, 0), 50);
+              nextRow = row + 1;
+              nextCol = 0;
             }
-          } else if (e.shiftKey && col === 0 && row > 0) {
-            // 첫 번째 컬럼에서 Shift+Tab을 누르면 이전 행의 마지막 셀로 이동
-            selectCell(row - 1, normalizedColumns.length - 1);
+          } else if (nextCol < 0) {
+            // 첫 번째 컬럼에서 이전 행으로
+            if (row > 0) {
+              nextRow = row - 1;
+              nextCol = normalizedColumns.length - 1;
+            } else {
+              nextCol = 0; // 첫 셀에 머무르기
+            }
           }
+        }
+        
+        // 편집 종료
+        finishEditing(false); // 포커스는 수동으로 처리
+        
+        // Tab 키인 경우 다음 셀로 이동
+        if (e.key === 'Tab') {
+          // 최소 구매수 컬럼이고 값이 작은 경우 알림이 표시될 수 있음
+          const isMinPurchaseColumn = editingCell.col === 0 && normalizedColumns[0].name === '최소 구매수';
+          const willShowAlert = isMinPurchaseColumn && (parseInt(editValue) || 0) < minPurchaseQuantity;
+          
+          if (willShowAlert) {
+            // 알림이 표시될 경우 다음 셀 정보를 저장하고 포커스 복구 후 이동
+            const moveToNextCell = () => {
+              setTimeout(() => {
+                selectCell(nextRow, nextCol);
+              }, 400); // 알림이 닫히고 포커스가 복구된 후 이동
+            };
+            moveToNextCell();
+          } else {
+            // 알림이 없는 경우 바로 이동
+            setTimeout(() => {
+              selectCell(nextRow, nextCol);
+            }, 10);
+          }
+        } else {
+          // Enter 키인 경우 같은 셀에 포커스 유지
+          setTimeout(() => {
+            const cell = gridRef.current?.querySelector(
+              `tr:nth-child(${row + 1}) td:nth-child(${col + 2})`
+            ) as HTMLElement;
+            if (cell) {
+              cell.focus();
+            }
+          }, 10);
         }
       } else if (e.key === 'Escape') {
         setEditingCell(null);
@@ -391,13 +427,17 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       default:
         // 일반 문자 입력 시 편집 모드로 전환
         // 한글 조합 중이거나 한글 자음/모음인 경우 제외
+        // 드롭다운 타입도 제외
         const isKoreanChar = /^[ㄱ-ㅎㅏ-ㅣ가-힣]$/.test(e.key);
         
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !isComposing && !isKoreanChar && normalizedColumns[col].type !== 'file' && e.key !== 'Process') {
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !isComposing && !isKoreanChar && 
+            normalizedColumns[col].type !== 'file' && 
+            normalizedColumns[col].type !== 'dropdown' && 
+            e.key !== 'Process') {
           e.preventDefault();
           startEditing(row, col, e.key);
-        } else if (isKoreanChar && !editingCell) {
-          // 한글 입력 시작 시 바로 편집 모드로 전환 (초기값 없이)
+        } else if (isKoreanChar && !editingCell && normalizedColumns[col].type !== 'dropdown') {
+          // 한글 입력 시작 시 바로 편집 모드로 전환 (초기값 없이) - 드롭다운 제외
           startEditing(row, col);
         }
     }

@@ -217,6 +217,10 @@ const CampaignManagePage: React.FC = () => {
           loadCampaigns();
         }}
         serviceType={selectedService || ''}
+        onSave={() => {
+          setAddCampaignModalOpen(false);
+          loadCampaigns();
+        }}
       />
     </DashboardTemplate>
   );

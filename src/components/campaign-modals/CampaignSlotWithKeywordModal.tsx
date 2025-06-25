@@ -320,7 +320,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       const { data, error } = await query;
 
       if (error) {
-        console.error('캠페인 불러오기 실패:', error);
         setCampaigns([]);
         return;
       }
@@ -375,7 +374,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         setBannerUrl(null);
       }
     } catch (error) {
-      console.error('캠페인 불러오기 중 오류:', error);
+      // 캠페인 불러오기 중 오류
       setCampaigns([]);
       setSelectedCampaignId(null);
       setBannerUrl(null);
@@ -1226,7 +1225,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }));
 
     } catch (e) {
-      console.error('추가 입력 필드 파싱 오류:', e);
+      // 추가 입력 필드 파싱 오류
       return [];
     }
 
@@ -1361,7 +1360,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         });
 
       if (error) {
-        console.error('파일 업로드 오류:', error);
         showAlert('오류', '파일 업로드 중 오류가 발생했습니다.', false);
         return;
       }
@@ -1378,7 +1376,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         handleInputDataChange(keywordId, `${fieldName}_fileName`, file.name);
       }
     } catch (error) {
-      console.error('파일 업로드 오류:', error);
       showAlert('오류', '파일 업로드 중 오류가 발생했습니다.', false);
     }
   };
@@ -1400,7 +1397,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       });
 
       if (error) {
-        console.error('파일 업로드 에러:', error);
+        // 파일 업로드 에러
         throw new Error(error.message || '파일 업로드에 실패했습니다.');
       }
 
@@ -1414,7 +1411,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         fileName: data.name
       };
     } catch (error) {
-      console.error('handleManualFileUpload 에러:', error);
+      // handleManualFileUpload 에러
       throw error;
     }
   };
@@ -1503,19 +1500,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           showAlert('알림', '최소 하나 이상의 완전한 행을 입력해주세요.', false);
           return false;
         }
-        
-        // 스프레드시트 모드에서도 메인 키워드는 필수 (첫 번째 유효한 행에서 가져옴)
-        if (!slotData.mainKeyword || slotData.mainKeyword.trim() === '') {
-          showAlert('알림', '메인 키워드를 입력해주세요.', false);
-          return false;
-        }
       } else {
         // 기본 입력 모드 검증
-        if (!slotData.mainKeyword || slotData.mainKeyword.trim() === '') {
-          showAlert('알림', '메인 키워드를 입력해주세요.', false);
-          return false;
-        }
-        
         if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
           showAlert('알림', '최소 구매수를 입력해주세요.', false);
           return false;
@@ -1752,7 +1738,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           // deadline 필드는 DB에서 기본값이 null이므로 저장 항목에서 제외
           input_data: {
             ...keywordInputData,
-            mainKeyword: keyword.mainKeyword,
+            // mainKeyword 제거
             workCount: detail.workCount,
             dueDays: detail.dueDays,
             keywordId: detail.id,
@@ -1842,7 +1828,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           .insert(historyEntries);
 
         if (historyError) {
-          console.error('슬롯 히스토리 로그 저장 오류:', historyError);
+          // 슬롯 히스토리 로그 저장 오류
           // 히스토리 로그 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
         }
 
@@ -1874,7 +1860,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           .insert(pendingBalanceEntries);
 
         if (pendingBalanceError) {
-          console.error('슬롯 보류 잔액 저장 오류:', pendingBalanceError);
+          // 슬롯 보류 잔액 저장 오류
           // 보류 잔액 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
         }
       }
@@ -1888,7 +1874,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         slots: insertedSlots
       };
     } catch (error) {
-      console.error('슬롯 저장 중 오류:', error);
+      // 슬롯 저장 중 오류
       return {
         success: false,
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -1961,7 +1947,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           });
       }
     } catch (error) {
-      console.error('캐시 사용 히스토리 기록 오류:', error);
       // 히스토리 오류는 중요하지만 사용자 경험을 위해 실패로 처리하지 않음
     }
   };
@@ -1990,7 +1975,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           priority: 'medium' // 우선순위 추가
         });
     } catch (error) {
-      console.error('알림 생성 오류:', error);
+      // 알림 생성 오류
       // 알림 생성 실패는 전체 프로세스 실패로 처리하지 않음
     }
   };
@@ -2150,7 +2135,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         onSave(slotData);
       }
     } catch (error) {
-      console.error('키워드 구매 신청 중 오류:', error);
+      // 키워드 구매 신청 중 오류
       showAlert('구매 신청 실패', (error instanceof Error ? error.message : '키워드 구매 신청 중 오류가 발생했습니다. 다시 시도해주세요.'), false);
     } finally {
       setSaving(false);
@@ -2177,7 +2162,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         // 수동 입력 데이터를 견적 요청용 키워드 형식으로 변환 (DB 키워드 생성 없이)
         const manualKeywordDetail = {
           id: -1, // 가상의 ID 사용
-          mainKeyword: slotData.input_data?.mainKeyword || slotData.mainKeyword || '직접입력',
+          mainKeyword: '', // 메인 키워드 제거
           workCount: slotData.minimum_purchase || 1,
           dueDays: slotData.work_days || 1,
           inputData: {
@@ -2248,7 +2233,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
               workCount: quantity,
               price: rowAmount,
               is_manual_input: true,
-              mainKeyword: detail.mainKeyword || '직접입력',
+              // mainKeyword 제거
               ...detail.inputData // 행별 추가 필드 데이터
             }
           };
@@ -2278,7 +2263,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
             workCount: quantity,
             price: totalAmount,
             is_manual_input: true,
-            mainKeyword: slotData.mainKeyword || slotData.input_data?.main_keyword || '직접입력',
+            // mainKeyword 제거
             keyword1: slotData.input_data?.keyword1 || slotData.keywords?.[0] || '',
             keyword2: slotData.input_data?.keyword2 || slotData.keywords?.[1] || '',
             keyword3: slotData.input_data?.keyword3 || slotData.keywords?.[2] || '',
@@ -2292,12 +2277,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       // 디버그: 저장되는 데이터 확인
-      console.log('수동 입력 슬롯 저장 데이터:', {
-        isSpreadsheetMode,
-        slotsCount: slotsToSave.length,
-        totalAmount,
-        slotData
-      });
+      // 수동 입력 슬롯 저장 데이터
 
 
       // 잔액 확인
@@ -2323,7 +2303,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         .select();
 
       if (slotError) {
-        console.error('Slot insert error:', slotError);
+        // Slot insert error
         throw new Error(`슬롯 저장에 실패했습니다: ${slotError.message}`);
       }
 
@@ -2400,7 +2380,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
     } catch (error) {
-      console.error('구매 신청 중 오류:', error);
+      // 구매 신청 중 오류
       showAlert('구매 신청 실패', error instanceof Error ? error.message : '구매 신청 중 오류가 발생했습니다.', false);
     } finally {
       setSaving(false);
@@ -2812,7 +2792,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
           return {
             id: keyword.id,
-            mainKeyword: keyword.mainKeyword,
+            // mainKeyword 제거
             workCount: keyword.workCount,
             dueDays: keyword.dueDays,
             inputData: keyword.inputData || {}

@@ -301,7 +301,6 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
             );
           }
         } catch (messageError) {
-          console.error('초기 메시지 생성 실패:', messageError);
           // 메시지 생성 실패는 무시하고 진행 (견적 요청은 이미 성공)
         }
       }
@@ -312,7 +311,6 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
         onSuccess();
       }
     } catch (error) {
-      console.error('견적 요청 실패:', error);
       setValidationError('견적 요청 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

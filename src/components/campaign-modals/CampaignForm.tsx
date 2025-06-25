@@ -1131,7 +1131,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </div>
 
                 <div className="text-xs sm:text-sm text-muted-foreground mt-3">
-                  <p className="text-red-500 font-medium">※ 최소 1개 이상의 입력필드를 추가해야 합니다.</p>
+                  <p className="text-red-500 font-medium">※ 최소 1개 이상의 필수 입력필드를 추가해야 합니다.</p>
                   <p className="mt-1">사용자가 슬롯 구매 시 입력해야 하는 필드를 정의하세요. 필드명은 한글이나 영문으로, 설명은 사용자에게 안내되는 내용입니다.</p>
                   <p className="mt-1">예시: 방문URL(필드명), '방문할 URL을 입력하세요'(설명)</p>
                   <p className="mt-1">• 화살표 버튼으로 필드 순서를 변경할 수 있습니다.</p>

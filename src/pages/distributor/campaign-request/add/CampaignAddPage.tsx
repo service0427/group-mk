@@ -240,12 +240,12 @@ const CampaignAddPage: React.FC = () => {
       return false;
     }
 
-    // 입력필드 내용 검증
+    // 입력필드 내용 검증 - 필드명만 필수
     const invalidFields = formData.userInputFields.filter(field => 
-      !field.fieldName.trim() || !field.description.trim()
+      !field.fieldName.trim()
     );
     if (invalidFields.length > 0) {
-      setError('모든 입력필드의 필드명과 설명을 입력해주세요.');
+      setError('모든 입력필드의 필드명을 입력해주세요.');
       return false;
     }
 

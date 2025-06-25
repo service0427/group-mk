@@ -201,11 +201,11 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         let numValue = parseInt(cleanedValue) || 0;
         
         // 최소 구매수인 경우 0이면 캠페인 최소값으로 설정
-        if (editingCell.col === 1 && normalizedColumns[1].name === '최소 구매수' && numValue === 0) {
+        if (editingCell.col === 0 && normalizedColumns[0].name === '최소 구매수' && numValue === 0) {
           numValue = minPurchaseQuantity;
         }
         // 작업일인 경우 0이면 1로 설정
-        else if (editingCell.col === 2 && normalizedColumns[2].name === '작업일' && numValue === 0) {
+        else if (editingCell.col === 1 && normalizedColumns[1].name === '작업일' && numValue === 0) {
           numValue = 1;
         }
         
@@ -215,7 +215,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
           
           // 최소 구매수가 아닌 경우에는 알림 표시하지 않음
           // 최소 구매수는 아래에서 별도로 처리됨
-          if (editingCell.col !== 1 || normalizedColumns[1].name !== '최소 구매수') {
+          if (editingCell.col !== 0 || normalizedColumns[0].name !== '최소 구매수') {
             // 다른 숫자 필드는 조용히 정리만 수행
           }
         } else {
@@ -223,8 +223,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         }
       }
       
-      // 최소 구매수 컬럼(index 1)인 경우 최소값 체크
-      if (editingCell.col === 1 && normalizedColumns[1].name === '최소 구매수') {
+      // 최소 구매수 컬럼(index 0)인 경우 최소값 체크
+      if (editingCell.col === 0 && normalizedColumns[0].name === '최소 구매수') {
         const inputValue = parseInt(finalValue) || minPurchaseQuantity;
         if (inputValue < minPurchaseQuantity) {
           finalValue = minPurchaseQuantity.toString();

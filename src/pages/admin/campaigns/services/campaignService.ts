@@ -135,7 +135,7 @@ export const uploadImageToStorage = async (base64Data: string, bucket: string, f
 export const fetchCampaigns = async (serviceType: string, userId?: string): Promise<ICampaign[]> => {
   // 서비스 타입 검증
   if (!serviceType) {
-    console.warn('fetchCampaigns: 서비스 타입이 비어있습니다. 필터링이 적용되지 않을 수 있습니다.');
+    // 서비스 타입이 비어있을 경우 필터링 적용 안함
   }
 
   // 기본 쿼리 생성
@@ -155,7 +155,6 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
   const { data, error } = await query.order('id', { ascending: true });
 
   if (error) {
-    console.error('fetchCampaigns 오류:', error);
     return [];
   }
 
@@ -290,7 +289,7 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
       .single();
     
     if (fetchError) {
-      console.error('캠페인 정보 조회 오류:', fetchError);
+      // 캠페인 정보 조회 오류
       return false;
     }
 
@@ -305,7 +304,7 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
       .select();
 
     if (error) {
-      console.error('캠페인 상태 업데이트 오류:', error);
+      // 캠페인 상태 업데이트 오류
       return false;
     }
 
@@ -345,14 +344,14 @@ export const updateCampaignStatus = async (campaignId: number, newStatus: string
           );
         }
       } catch (notificationError) {
-        console.error('캠페인 상태 변경 알림 전송 오류:', notificationError);
+        // 캠페인 상태 변경 알림 전송 오류
         // 알림 실패해도 상태 업데이트는 성공으로 처리
       }
     }
 
     return true;
   } catch (err) {
-    console.error('캠페인 상태 업데이트 중 예외 발생:', err);
+    // 캠페인 상태 업데이트 중 예외 발생
     return false;
   }
 };
@@ -383,7 +382,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .single();
 
     if (fetchError) {
-      console.error("기존 캠페인 로드 실패:", fetchError);
+      // 기존 캠페인 로드 실패
     } else if (existingCampaign?.add_info) {
       // 기존 add_info 필드가 문자열로 저장되어 있으면 파싱
       if (typeof existingCampaign.add_info === 'string') {
@@ -395,7 +394,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
             add_field: data.add_field // 항상 새 add_field 사용
           };
         } catch (e) {
-          console.error('add_info 파싱 오류:', e);
+          // add_info 파싱 오류
           // additionalInfo의 add_field는 이미 설정되어 있음
         }
       } else {
@@ -485,7 +484,10 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       ...(data.guaranteeCount !== undefined ? { guarantee_count: parseInt(data.guaranteeCount) || null } : {}),
       ...(data.guaranteeUnit !== undefined ? { guarantee_unit: data.guaranteeUnit } : {}),
       ...(data.guaranteePeriod !== undefined ? { guarantee_period: parseInt(data.guaranteePeriod) || null } : {}),
-      ...(data.targetRank !== undefined ? { target_rank: parseInt(data.targetRank) || null } : {}),
+      // target_rank는 slot_type이 'guarantee'일 때만 값을 넣고, 'standard'일 때는 null
+      ...(data.targetRank !== undefined ? { 
+        target_rank: (existingCampaign?.slot_type === 'guarantee' && data.targetRank) ? parseInt(data.targetRank) : null 
+      } : {}),
       ...(data.minGuaranteePrice !== undefined ? { min_guarantee_price: parseFloat(data.minGuaranteePrice) || null } : {}),
       ...(data.maxGuaranteePrice !== undefined ? { max_guarantee_price: parseFloat(data.maxGuaranteePrice) || null } : {})
     };
@@ -524,7 +526,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
 
     // 상태는 rejected이지만 사유가 없는 경우 경고
     if (data.status === 'rejected' && !rejectionReason) {
-      console.warn('반려 상태로 변경되었지만 반려 사유가 지정되지 않았습니다.');
+      // 반려 상태로 변경되었지만 반려 사유가 지정되지 않았습니다.
     }
 
     // mat_id가 없을 경우에만 추가 (기존 mat_id 유지가 중요)
@@ -546,7 +548,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       .eq('id', campaignId);
 
     if (error) {
-      console.error('캠페인 업데이트 오류:', error);
+      // 캠페인 업데이트 오류
       return false;
     }
 
@@ -586,13 +588,13 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         );
       }
     } catch (notificationError) {
-      console.error('캠페인 업데이트 알림 전송 오류:', notificationError);
+      // 캠페인 업데이트 알림 전송 오류
       // 알림 실패해도 업데이트는 성공으로 처리
     }
 
     return true;
   } catch (err) {
-    console.error('캠페인 업데이트 중 예외 발생:', err);
+    // 캠페인 업데이트 중 예외 발생
     return false;
   }
 };
@@ -613,7 +615,7 @@ import { CampaignServiceType } from '@/components/campaign-modals/types';
 export const getServiceTypeCode = (uiCode: string): string => {
   // 빈 값 체크
   if (!uiCode || uiCode.trim() === '') {
-    console.warn('getServiceTypeCode: 빈 UI 코드가 전달되었습니다.');
+    // getServiceTypeCode: 빈 UI 코드가 전달되었습니다.
     return '';
   }
   
@@ -718,7 +720,7 @@ export const getServiceTypeCode = (uiCode: string): string => {
   }
 
   // 매핑되지 않은 코드 로깅 후 원래 코드 반환
-  console.warn(`getServiceTypeCode: 알 수 없는 서비스 타입 코드 '${uiCode}'`);
+  // getServiceTypeCode: 알 수 없는 서비스 타입 코드
   return normalizedCode; // 기본값은 원래 입력한 값 그대로 반환
 };
 
@@ -767,9 +769,23 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
     }
 
     // DB 컬럼명에 맞게 데이터 변환
-    // additionalInfo에 add_field 추가
+    // additionalInfo에 add_field 추가 - 검증 포함
     if (data.add_field && Array.isArray(data.add_field)) {
+      // 빈 배열 검증
+      if (data.add_field.length === 0) {
+        return { success: false, error: '최소 1개 이상의 사용자 입력 필드를 추가해주세요.' };
+      }
+      
+      // 필수 필드가 최소 1개 이상 있는지 확인
+      const hasRequiredField = data.add_field.some((field: any) => field.isRequired === true);
+      if (!hasRequiredField) {
+        return { success: false, error: '최소 1개 이상의 필수 입력 필드가 필요합니다.' };
+      }
+      
       additionalInfo.add_field = data.add_field;
+    } else {
+      // add_field가 없거나 배열이 아닌 경우
+      return { success: false, error: '사용자 입력 필드 정보가 올바르지 않습니다.' };
     }
     
     const insertData = {
@@ -822,7 +838,7 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       .single();
 
     if (error) {
-      console.error('캠페인 생성 오류:', error);
+      // 캠페인 생성 오류
       return { success: false, error: error.message };
     }
 
@@ -836,14 +852,14 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
           getServiceTypeCode(data.serviceType)
         );
       } catch (notificationError) {
-        console.error('캠페인 신청 알림 전송 실패:', notificationError);
+        // 캠페인 신청 알림 전송 실패
         // 알림 전송 실패해도 캠페인 생성은 성공으로 처리
       }
     }
 
     return { success: true, id: result?.id };
   } catch (err) {
-    console.error('캠페인 생성 중 예외 발생:', err);
+    // 캠페인 생성 중 예외 발생
     return { success: false, error: '캠페인 생성 중 오류가 발생했습니다.' };
   }
 };

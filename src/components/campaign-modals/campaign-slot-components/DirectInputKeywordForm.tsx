@@ -108,10 +108,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         }
       };
       
-      // main_keyword 필드는 별도로 처리
-      if (fieldName === 'main_keyword') {
-        newData.mainKeyword = value;
-      }
+      // main_keyword 필드 처리 제거
       
       // keyword1, keyword2, keyword3를 keywords 배열로 변환
       if (fieldName.startsWith('keyword')) {
@@ -143,7 +140,6 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         });
 
       if (error) {
-        console.error('파일 업로드 오류:', error);
         alert('파일 업로드 중 오류가 발생했습니다.');
         return;
       }
@@ -166,7 +162,6 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         }));
       }
     } catch (error) {
-      console.error('파일 업로드 오류:', error);
       alert('파일 업로드 중 오류가 발생했습니다.');
     }
   };
@@ -224,9 +219,8 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
               minPurchaseQuantity={parseInt(selectedCampaign?.min_quantity) || 1}
               showAlert={showAlert}
               columns={(() => {
-                // 기본 컬럼 - 기본 입력 폼과 동일하게
+                // 기본 컬럼
                 const baseColumns: any[] = [
-                  { name: '메인 키워드', required: true },
                   { name: '최소 구매수', type: 'number', required: true },
                   { name: '작업일', type: 'number', required: true }
                 ];
@@ -279,7 +273,6 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   : (slotData.minimum_purchase?.toString() || '1');
                 
                 const row = [
-                  slotData.mainKeyword || slotData.input_data?.main_keyword || '',
                   minPurchase,
                   slotData.work_days?.toString() || '1'
                 ];
@@ -302,12 +295,12 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                 const additionalFields = getAdditionalFields(selectedCampaign);
                 
                 // 필수 필드 인덱스 확인
-                const requiredFieldIndices: number[] = [0, 1, 2]; // 메인 키워드, 최소 구매수, 작업일
+                const requiredFieldIndices: number[] = [0, 1]; // 최소 구매수, 작업일
                 
                 // 추가 필드 중 필수 필드의 인덱스 추가
                 additionalFields.forEach((field, index) => {
                   if (field.isRequired) {
-                    requiredFieldIndices.push(3 + index);
+                    requiredFieldIndices.push(2 + index);
                   }
                 });
                 
@@ -349,7 +342,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   // 모든 행의 keywordDetails 생성
                   const keywordDetails = validRows.map((row, rowIndex) => {
                     const minQuantity = parseInt(selectedCampaign?.min_quantity) || 1;
-                    let purchaseCount = parseInt(row[1]) || minQuantity;
+                    let purchaseCount = parseInt(row[0]) || minQuantity;
                     
                     // 최소 구매수보다 작으면 최소 구매수로 설정
                     if (purchaseCount < minQuantity) {
@@ -357,14 +350,14 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                       // 데이터는 업데이트하지 않음 (SpreadsheetGrid에서 처리)
                     }
                     
-                    const workDays = parseInt(row[2]) || 1;
+                    const workDays = parseInt(row[1]) || 1;
                     
                     totalPurchase += purchaseCount;
                     totalWorkDays += purchaseCount * workDays; // 각 행의 구매수 * 작업일
                     
                     const rowAdditionalData: any = {};
                     additionalFields.forEach((field, fieldIndex) => {
-                      const colIndex = 3 + fieldIndex;
+                      const colIndex = 2 + fieldIndex;
                       if (row[colIndex] !== undefined) {
                         if (field.fieldType === FieldType.FILE) {
                           rowAdditionalData[`${field.fieldName}_fileName`] = row[colIndex];
@@ -376,7 +369,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                     
                     return {
                       id: rowIndex + 1,
-                      mainKeyword: row[0],
+                      mainKeyword: '', // 메인 키워드 제거
                       workCount: purchaseCount,
                       dueDays: workDays,
                       inputData: {
@@ -388,7 +381,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   // 첫 번째 행의 추가 필드 데이터
                   const additionalFieldsData: any = {};
                   additionalFields.forEach((field, index) => {
-                    const colIndex = 3 + index;
+                    const colIndex = 2 + index;
                     if (firstRow[colIndex] !== undefined) {
                       if (field.fieldType === FieldType.FILE) {
                         additionalFieldsData[`${field.fieldName}_fileName`] = firstRow[colIndex];
@@ -402,10 +395,9 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                     ...prev,
                     input_data: {
                       ...prev.input_data,
-                      main_keyword: firstRow[0],
                       ...additionalFieldsData
                     },
-                    mainKeyword: firstRow[0],
+                    mainKeyword: '', // 메인 키워드 제거
                     keywords: [],
                     // 총 구매수와 평균 작업일로 계산
                     minimum_purchase: totalPurchase,
@@ -465,21 +457,6 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         ) : (
           // 기본 입력 모드
           <>
-            {/* 메인 키워드 필드 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                메인 키워드 <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="text"
-                value={slotData.mainKeyword || slotData.input_data?.main_keyword || ''}
-                onChange={(e) => handleFieldChange('main_keyword', e.target.value)}
-                placeholder="메인 키워드를 입력하세요"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">작업의 핵심이 되는 메인 키워드를 입력해주세요.</p>
-            </div>
-
             {/* 기본 필드 (최소 구매수, 작업일) */}
             <div className="grid grid-cols-2 gap-4">
               <div>

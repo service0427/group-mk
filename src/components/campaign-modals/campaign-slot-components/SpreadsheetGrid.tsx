@@ -217,7 +217,6 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
           // 최소 구매수는 아래에서 별도로 처리됨
           if (editingCell.col !== 1 || normalizedColumns[1].name !== '최소 구매수') {
             // 다른 숫자 필드는 조용히 정리만 수행
-            console.log(`${normalizedColumns[editingCell.col].name}: 숫자만 입력 가능 (입력값: ${editValue} → ${finalValue})`);
           }
         } else {
           finalValue = numValue.toString();

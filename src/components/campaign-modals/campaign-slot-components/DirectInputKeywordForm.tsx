@@ -42,15 +42,23 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
   React.useEffect(() => {
     if (resetTrigger && resetTrigger > 0) {
       setUploadedFiles({});
+      // 스프레드시트 모드는 유지하고 값만 초기화
       // input_data의 모든 필드를 초기화
       setSlotData((prev: any) => ({
         ...prev,
         input_data: {},
         mainKeyword: '',
-        keywords: []
+        keywords: [],
+        minimum_purchase: selectedCampaign?.min_quantity || 1,
+        work_days: 1,
+        total_purchase: 0,
+        total_work_days: 0,
+        keywordDetails: [],
+        hasPartiallyFilledRows: false,
+        partiallyFilledRows: []
       }));
     }
-  }, [resetTrigger, setSlotData]);
+  }, [resetTrigger, setSlotData, selectedCampaign]);
   
   // 캠페인 변경 시 최소 구매수 업데이트 및 보장형 체크
   React.useEffect(() => {
@@ -216,6 +224,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
           // 스프레드시트 모드
           <div className="space-y-4">
             <SpreadsheetGrid
+              key={resetTrigger} // resetTrigger가 변경되면 컴포넌트를 재생성
               minPurchaseQuantity={parseInt(selectedCampaign?.min_quantity) || 1}
               showAlert={showAlert}
               columns={(() => {
@@ -267,6 +276,15 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                 return [...baseColumns, ...additionalFields, ...fileFields];
               })()}
               initialData={(() => {
+                // resetTrigger가 변경되었으면 빈 데이터로 초기화
+                if (resetTrigger && resetTrigger > 0) {
+                  const minPurchase = selectedCampaign?.min_quantity 
+                    ? selectedCampaign.min_quantity.toString() 
+                    : '1';
+                  
+                  return [[minPurchase, '1']]; // 최소값만 포함한 빈 행
+                }
+                
                 // 캠페인의 최소 구매수를 우선적으로 사용
                 const minPurchase = selectedCampaign?.min_quantity 
                   ? selectedCampaign.min_quantity.toString() 

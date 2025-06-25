@@ -1557,7 +1557,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <div className="font-medium">
                         {requestInfo.initial_budget ? (
                           requestInfo.budget_type === 'total'
-                            ? `총 ${requestInfo.initial_budget.toLocaleString()}원`
+                            ? `총 ${(requestInfo.initial_budget * (requestInfo.guarantee_period || requestInfo.guarantee_count || 1)).toLocaleString()}원`
                             : `${requestInfo.initial_budget.toLocaleString()}원/${getGuaranteeUnit()}`
                         ) : '미설정'}
                       </div>
@@ -1603,7 +1603,17 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <div>
                         <span className="text-gray-600 dark:text-gray-400">협상 완료 금액:</span>
                         <div className="font-medium text-green-600">
-                          {requestInfo.final_daily_amount.toLocaleString()}원/{getGuaranteeUnit()}
+                          {(() => {
+                            const period = requestInfo.guarantee_period || requestInfo.guarantee_count || 1;
+
+                            if (requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount) {
+                              const dailyAmount = Math.round(requestInfo.final_total_amount / period);
+                              return `총 ${requestInfo.final_total_amount.toLocaleString()}원 (${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()}, 총액협상)`;
+                            } else {
+                              const totalAmount = requestInfo.final_daily_amount * period;
+                              return `총 ${totalAmount.toLocaleString()}원 (${requestInfo.final_daily_amount.toLocaleString()}원/${getGuaranteeUnit()}, 일별협상)`;
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1732,8 +1742,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                             type="button"
                             onClick={() => setPriceInputType('daily')}
                             className={`px-3 py-1 text-xs rounded-l-md transition-colors ${priceInputType === 'daily'
-                                ? 'bg-purple-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              ? 'bg-purple-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                               }`}
                           >
                             {getGuaranteeUnit() === '회' ? '회당' : '일별'}
@@ -1742,8 +1752,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                             type="button"
                             onClick={() => setPriceInputType('total')}
                             className={`px-3 py-1 text-xs rounded-r-md transition-colors ${priceInputType === 'total'
-                                ? 'bg-purple-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              ? 'bg-purple-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                               }`}
                           >
                             총액
@@ -2113,27 +2123,15 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       }
 
                       return (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={handleAcceptNegotiationClick}
-                            disabled={loading || !canAccept}
-                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                          >
-                            <KeenIcon icon="check-circle" className="size-4 me-1" />
-                            {buttonText}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRejectNegotiationClick}
-                            disabled={loading || !canAccept}
-                            className="border-red-200 text-red-600 hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
-                          >
-                            <KeenIcon icon="cross-circle" className="size-4 me-1" />
-                            거절
-                          </Button>
-                        </>
+                        <Button
+                          size="sm"
+                          onClick={handleAcceptNegotiationClick}
+                          disabled={loading || !canAccept}
+                          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          <KeenIcon icon="check-circle" className="size-4 me-1" />
+                          {buttonText}
+                        </Button>
                       );
                     })()}
 
@@ -2185,10 +2183,14 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       </h4>
                       <div className="text-right">
                         <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                          {(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count)).toLocaleString()}원
+                          {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
+                            ? requestInfo.final_total_amount.toLocaleString()
+                            : (requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count)).toLocaleString()}원
                         </div>
                         <div className="text-xs text-blue-600 dark:text-blue-400">
-                          (VAT 포함: {Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()}원)
+                          (VAT 포함: {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
+                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()}원)
                         </div>
                       </div>
                     </div>
@@ -2255,8 +2257,10 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                     </div>
                     <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
                       <p>최종 조건: {requestInfo?.final_daily_amount?.toLocaleString() || 0}원/{getUnitText()} × {requestInfo?.guarantee_period || requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</p>
-                      <p>총 금액: {requestInfo?.final_daily_amount && requestInfo?.guarantee_period ?
-                        (requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count)).toLocaleString() : '0'}원 (VAT 별도)</p>
+                      <p>총 금액: {requestInfo?.final_budget_type === 'total' && requestInfo?.final_total_amount
+                        ? requestInfo.final_total_amount.toLocaleString()
+                        : requestInfo?.final_daily_amount && requestInfo?.guarantee_period ?
+                          (requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count)).toLocaleString() : '0'}원 (VAT 별도)</p>
                       <p className="text-xs text-green-600 dark:text-green-400 mt-2">
                         <KeenIcon icon="information-2" className="size-3 inline mr-1" />
                         사용자가 구매를 진행할 수 있도록 알림이 전송되었습니다.
@@ -2390,21 +2394,71 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
                       // 필드명 한글 변환
                       const fieldNameMap: Record<string, string> = {
+                        // 기본 필드
                         'work_days': '작업일',
                         'minimum_purchase': '최소 구매수',
                         'url': 'URL',
                         'mid': '상점 ID',
                         'productName': '상품명',
                         'mainKeyword': '메인 키워드',
+                        'main_keyword': '메인 키워드',
                         'keywords': '서브 키워드',
                         'keyword1': '키워드1',
                         'keyword2': '키워드2',
                         'keyword3': '키워드3',
                         'quantity': '작업량',
                         'dueDays': '작업기간',
+                        'due_days': '작업기간',
                         'workCount': '작업수',
+                        'work_count': '작업수',
                         'start_date': '시작일',
-                        'end_date': '종료일'
+                        'end_date': '종료일',
+
+                        // 가격 관련
+                        'price': '가격',
+                        'total_price': '총 가격',
+                        'unit_price': '단가',
+                        'daily_price': '일별 가격',
+
+                        // 보장 관련
+                        'guarantee_days': '보장일수',
+                        'guarantee_rank': '보장순위',
+                        'target_rank': '목표순위',
+                        'guarantee_info': '보장정보',
+
+                        // 캐시/포인트 관련
+                        'cash_amount': '캐시 지급액',
+                        'cash_info': '캐시 지급 안내',
+                        'point_amount': '포인트 금액',
+
+                        // 기타 정보
+                        'note': '비고',
+                        'description': '설명',
+                        'requirements': '요구사항',
+                        'additional_info': '추가정보',
+                        'work_period': '작업기간',
+                        'company_name': '회사명',
+                        'business_number': '사업자번호',
+                        'contact': '연락처',
+                        'email': '이메일',
+                        'phone': '전화번호',
+                        'mobile': '휴대폰번호',
+                        'address': '주소',
+                        'bank_name': '은행명',
+                        'account_number': '계좌번호',
+                        'account_holder': '예금주',
+
+                        // 상태 관련
+                        'status': '상태',
+                        'is_active': '활성화',
+                        'is_manual': '수동입력',
+                        'is_manual_input': '수동입력',
+
+                        // 날짜 관련
+                        'created_at': '생성일',
+                        'updated_at': '수정일',
+                        'completed_at': '완료일',
+                        'canceled_at': '취소일'
                       };
                       const displayKey = fieldNameMap[key] || key;
 
@@ -2476,10 +2530,81 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                   return Object.entries(inputData).map(([key, value]) => {
                     if (!value || (typeof value === 'string' && !value.trim())) return null;
 
+                    // 필드명 한글 변환
+                    const fieldNameMap: Record<string, string> = {
+                      // 기본 필드
+                      'work_days': '작업일',
+                      'minimum_purchase': '최소 구매수',
+                      'url': 'URL',
+                      'mid': '상점 ID',
+                      'productName': '상품명',
+                      'mainKeyword': '메인 키워드',
+                      'main_keyword': '메인 키워드',
+                      'keywords': '서브 키워드',
+                      'keyword1': '키워드1',
+                      'keyword2': '키워드2',
+                      'keyword3': '키워드3',
+                      'quantity': '작업량',
+                      'dueDays': '작업기간',
+                      'due_days': '작업기간',
+                      'workCount': '작업수',
+                      'work_count': '작업수',
+                      'start_date': '시작일',
+                      'end_date': '종료일',
+
+                      // 가격 관련
+                      'price': '가격',
+                      'total_price': '총 가격',
+                      'unit_price': '단가',
+                      'daily_price': '일별 가격',
+
+                      // 보장 관련
+                      'guarantee_days': '보장일수',
+                      'guarantee_rank': '보장순위',
+                      'target_rank': '목표순위',
+                      'guarantee_info': '보장정보',
+
+                      // 캐시/포인트 관련
+                      'cash_amount': '캐시 지급액',
+                      'cash_info': '캐시 지급 안내',
+                      'point_amount': '포인트 금액',
+
+                      // 기타 정보
+                      'note': '비고',
+                      'description': '설명',
+                      'requirements': '요구사항',
+                      'additional_info': '추가정보',
+                      'work_period': '작업기간',
+                      'company_name': '회사명',
+                      'business_number': '사업자번호',
+                      'contact': '연락처',
+                      'email': '이메일',
+                      'phone': '전화번호',
+                      'mobile': '휴대폰번호',
+                      'address': '주소',
+                      'bank_name': '은행명',
+                      'account_number': '계좌번호',
+                      'account_holder': '예금주',
+
+                      // 상태 관련
+                      'status': '상태',
+                      'is_active': '활성화',
+                      'is_manual': '수동입력',
+                      'is_manual_input': '수동입력',
+
+                      // 날짜 관련
+                      'created_at': '생성일',
+                      'updated_at': '수정일',
+                      'completed_at': '완료일',
+                      'canceled_at': '취소일'
+                    };
+
+                    const displayKey = fieldNameMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
                     return (
                       <div key={key} className="border rounded-lg p-3">
                         <div className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-1">
-                          {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                          {displayKey}
                         </div>
                         <div className="text-sm text-gray-900 dark:text-gray-100">
                           {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
@@ -2553,148 +2678,152 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         const lastPriceMessage = [...messages]
           .reverse()
           .find(m => m.message_type === 'price_proposal' || m.message_type === 'counter_offer');
-        
+
         const finalTargetRank = lastPriceMessage?.proposed_target_rank || requestInfo.target_rank;
         const finalWorkPeriod = lastPriceMessage?.proposed_work_period || requestInfo.guarantee_period || requestInfo.guarantee_count;
         const finalGuaranteeCount = lastPriceMessage?.proposed_guarantee_count || requestInfo.guarantee_count;
-        
+
         return ReactDOM.createPortal(
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/50 p-4"
-          style={{ zIndex: 1500000 }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !purchaseLoading) {
-              setShowPurchaseModal(false);
-            }
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-            style={{ pointerEvents: 'auto' }}
+            className="fixed inset-0 flex items-center justify-center bg-black/50 p-4"
+            style={{ zIndex: 1500000 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !purchaseLoading) {
+                setShowPurchaseModal(false);
+              }
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="relative p-6">
-              {/* X 버튼 추가 */}
-              <button
-                type="button"
-                onClick={() => setShowPurchaseModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <KeenIcon icon="cross" className="size-5" />
-              </button>
-              <div className="flex items-center gap-3 mb-4 pr-8">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 dark:text-blue-400">
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <line x1="2" x2="22" y1="10" y2="10" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">구매 확인</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">보장형 슬롯을 구매하시겠습니까?</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">캠페인:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {requestInfo.campaigns?.campaign_name || `캠페인 #${requestInfo.campaign_id}`}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">목표 순위:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{finalTargetRank}위</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">작업 기간:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{finalWorkPeriod}{getGuaranteeUnit()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">보장 횟수:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{finalGuaranteeCount}{getGuaranteeUnit()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">{getUnitText()} 금액:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {requestInfo.final_daily_amount.toLocaleString()}원
-                  </span>
-                </div>
-                <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">총 결제 금액:</span>
-                    <div className="text-right">
-                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {(requestInfo.final_daily_amount * finalWorkPeriod).toLocaleString()}원
-                      </span>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">(VAT 별도)</div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md">
-                    <span className="text-sm font-semibold text-orange-800 dark:text-orange-300">실제 결제 금액:</span>
-                    <div className="text-right">
-                      <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                        {Math.floor(requestInfo.final_daily_amount * finalWorkPeriod * 1.1).toLocaleString()}원
-                      </span>
-                      <div className="text-xs text-orange-700 dark:text-orange-300">(VAT 포함)</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-6">
-                <div className="flex gap-2">
-                  <KeenIcon icon="information-2" className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800 dark:text-yellow-300">
-                    <p className="font-medium mb-1">구매 안내</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• 구매 이후 총판(판매자) 승인 후 슬롯이 활성화됩니다</li>
-                      <li>• 승인 완료 시 알림을 받으실 수 있습니다</li>
-                      <li>• 목표 순위 달성 시 정산이 진행됩니다</li>
-                      <li>• 미달성 시 환불 정책에 따라 처리됩니다</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={handlePurchaseSlot}
-                  disabled={purchaseLoading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  style={{ pointerEvents: purchaseLoading ? 'none' : 'auto' }}
-                >
-                  {purchaseLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      구매 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
-                        <path d="m9 12 2 2 4-4" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                      구매 확정
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: 'auto' }}
+            >
+              <div className="relative p-6">
+                {/* X 버튼 추가 */}
+                <button
+                  type="button"
                   onClick={() => setShowPurchaseModal(false)}
-                  disabled={purchaseLoading}
-                  className="flex-1"
-                  style={{ pointerEvents: purchaseLoading ? 'none' : 'auto' }}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  취소
-                </Button>
+                  <KeenIcon icon="cross" className="size-5" />
+                </button>
+                <div className="flex items-center gap-3 mb-4 pr-8">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 dark:text-blue-400">
+                      <rect width="20" height="14" x="2" y="5" rx="2" />
+                      <line x1="2" x2="22" y1="10" y2="10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">구매 확인</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">보장형 슬롯을 구매하시겠습니까?</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">캠페인:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {requestInfo.campaigns?.campaign_name || `캠페인 #${requestInfo.campaign_id}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">목표 순위:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{finalTargetRank}위</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">작업 기간:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{finalWorkPeriod}{getGuaranteeUnit()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">보장 횟수:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{finalGuaranteeCount}{getGuaranteeUnit()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">{getUnitText()} 금액:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {requestInfo.final_daily_amount.toLocaleString()}원
+                    </span>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-900 dark:text-white">총 결제 금액:</span>
+                      <div className="text-right">
+                        <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                          {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
+                            ? requestInfo.final_total_amount.toLocaleString()
+                            : (requestInfo.final_daily_amount * finalWorkPeriod).toLocaleString()}원
+                        </span>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">(VAT 별도)</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md">
+                      <span className="text-sm font-semibold text-orange-800 dark:text-orange-300">실제 결제 금액:</span>
+                      <div className="text-right">
+                        <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                          {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
+                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.floor(requestInfo.final_daily_amount * finalWorkPeriod * 1.1).toLocaleString()}원
+                        </span>
+                        <div className="text-xs text-orange-700 dark:text-orange-300">(VAT 포함)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-6">
+                  <div className="flex gap-2">
+                    <KeenIcon icon="information-2" className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-yellow-800 dark:text-yellow-300">
+                      <p className="font-medium mb-1">구매 안내</p>
+                      <ul className="space-y-1 text-xs">
+                        <li>• 구매 이후 총판(판매자) 승인 후 슬롯이 활성화됩니다</li>
+                        <li>• 승인 완료 시 알림을 받으실 수 있습니다</li>
+                        <li>• 목표 순위 달성 시 정산이 진행됩니다</li>
+                        <li>• 미달성 시 환불 정책에 따라 처리됩니다</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handlePurchaseSlot}
+                    disabled={purchaseLoading}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    style={{ pointerEvents: purchaseLoading ? 'none' : 'auto' }}
+                  >
+                    {purchaseLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        구매 중...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
+                          <path d="m9 12 2 2 4-4" />
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        구매 확정
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPurchaseModal(false)}
+                    disabled={purchaseLoading}
+                    className="flex-1"
+                    style={{ pointerEvents: purchaseLoading ? 'none' : 'auto' }}
+                  >
+                    취소
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      );
+          </div>,
+          document.body
+        );
       })()}
 
       {/* 최종 구매 확인 모달 */}
@@ -2755,7 +2884,11 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                     <p className="font-medium mb-1">주의사항</p>
                     <ul className="space-y-1 text-xs">
                       <li>• 구매 확정 후에는 취소가 어려울 수 있습니다</li>
-                      <li>• 잔액에서 <span className="font-bold">{requestInfo && Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()}원</span> (VAT 포함)이 차감됩니다</li>
+                      <li>• 잔액에서 <span className="font-bold">{requestInfo && (
+                        requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
+                          ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
+                          : Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()
+                      )}원</span> (VAT 포함)이 차감됩니다</li>
                       <li>• 구매 이후 총판(판매자) 승인 후 슬롯이 활성화됩니다</li>
                       <li>• 승인 완료 후 서비스가 시작됩니다</li>
                     </ul>

@@ -11,7 +11,9 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
-  SheetTitle
+  SheetTitle,
+  SheetOverlay,
+  SheetPortal
 } from '@/components/ui/sheet';
 
 export const Sidebar = () => {
@@ -105,9 +107,14 @@ export const Sidebar = () => {
           !desktopMode && 'h-full' // 모바일에서 전체 높이
         )}
         style={{
-          width: layout.options.sidebar.collapse ? '80px' : '280px',
-          transition: 'width 0.3s ease',
-          ...(!desktopMode && { height: '100%' }) // 모바일에서 높이 100%
+          ...(desktopMode && {
+            width: layout.options.sidebar.collapse ? '80px' : '280px',
+            transition: 'width 0.3s ease'
+          }),
+          ...(!desktopMode && { 
+            width: '100%', // 모바일에서 전체 너비 사용
+            height: '100%' // 모바일에서 높이 100%
+          })
         }}
       >
         {desktopMode && <SidebarHeader ref={headerRef} />}
@@ -173,26 +180,29 @@ export const Sidebar = () => {
   } else {
     return (
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-        <SheetContent
-          className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px] h-full flex flex-col"
-          forceMount={true}
-          side="left"
-          close={false}
-          style={{
-            padding: '0',
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Mobile Menu</SheetTitle>
-            <SheetDescription></SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-hidden">
-            {renderContent()}
-          </div>
-        </SheetContent>
+        <SheetPortal>
+          <SheetOverlay className="!top-[100px]" />
+          <SheetContent
+            className="border-0 p-0 w-full max-w-[280px] sm:max-w-[280px] flex flex-col !top-[100px] !bottom-0 !h-auto"
+            forceMount={true}
+            side="left"
+            close={false}
+            overlay={false}
+            style={{
+              padding: '0',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Mobile Menu</SheetTitle>
+              <SheetDescription></SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden">
+              {renderContent()}
+            </div>
+          </SheetContent>
+        </SheetPortal>
       </Sheet>
     );
   }

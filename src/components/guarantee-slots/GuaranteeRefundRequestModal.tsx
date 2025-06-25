@@ -16,19 +16,30 @@ import RefundConfirmModal from './RefundConfirmModal';
 interface GuaranteeRefundRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (notes?: string) => void;
+  onApprove: (notes?: string, refundAmount?: number) => void;
   onReject: (notes: string) => void;
   campaignName?: string;
+  campaignLogo?: string;
+  serviceType?: string;
+  slotStatus?: string;
   refundAmount: number;
   refundReason: string;
   requesterName?: string;
   loading?: boolean;
-  // 환불 상세 정보
   guaranteeCount?: number;
   guaranteeUnit?: string;
   completedDays?: number;
+  actualCompletedCount?: number;
   totalAmount?: number;
+  startDate?: string;
+  endDate?: string;
   requestDate?: string;
+  refundSettings?: {
+    type: 'immediate' | 'delayed' | 'cutoff_based';
+    delay_days?: number;
+    cutoff_time?: string;
+  };
+  currentUserRole?: 'user' | 'distributor';
 }
 
 const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = ({
@@ -37,6 +48,9 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
   onApprove,
   onReject,
   campaignName,
+  campaignLogo,
+  serviceType,
+  slotStatus,
   refundAmount,
   refundReason,
   requesterName,
@@ -44,27 +58,95 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
   guaranteeCount = 0,
   guaranteeUnit = 'daily',
   completedDays = 0,
+  actualCompletedCount,
   totalAmount = 0,
+  startDate,
+  endDate,
   requestDate,
+  refundSettings,
+  currentUserRole = 'distributor',
 }) => {
   const [notes, setNotes] = useState('');
+  const [refundAmountInput, setRefundAmountInput] = useState<string>('');
+  const [finalRefundAmount, setFinalRefundAmount] = useState<number>(refundAmount);
   const [validationMessage, setValidationMessage] = useState('');
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
 
+  // 단위에 따른 텍스트
+  const isDaily = guaranteeUnit === 'daily' || guaranteeUnit === '일';
+  const unitText = isDaily ? '일' : '회';
+  const guaranteeLabel = isDaily ? '보장기간' : '보장횟수';
+  const completedLabel = isDaily ? '작업기간 소요일' : '완료횟수';
+  const remainingLabel = isDaily ? '잔여 작업기간' : '잔여 횟수';
+  
+  // 실제 완료 수
+  const actualCompleted = isDaily ? completedDays : (actualCompletedCount || 0);
+  
   // 환불 상세 정보 계산
-  const remainingDays = Math.max(0, guaranteeCount - completedDays);
-  const completionRate = guaranteeCount > 0 ? Math.round((completedDays / guaranteeCount) * 100) : 0;
-  const refundRate = guaranteeCount > 0 ? Math.round((remainingDays / guaranteeCount) * 100) : 100;
+  const remainingCount = Math.max(0, guaranteeCount - actualCompleted);
+  const completionRate = guaranteeCount > 0 ? Math.round((actualCompleted / guaranteeCount) * 100) : 0;
+  const refundRate = totalAmount > 0 ? Math.round((finalRefundAmount / totalAmount) * 100) : 0;
 
-  // 숫자를 천 단위 콤마로 포맷팅하는 함수
-  const formatNumber = (num: number): string => {
-    return num.toLocaleString('ko-KR');
+  // 캠페인 로고 처리
+  const getCampaignLogo = (): string | null => {
+    if (campaignLogo) {
+      if (!campaignLogo.startsWith('http') && !campaignLogo.startsWith('/')) {
+        return `/media/${campaignLogo}`;
+      }
+      return campaignLogo;
+    }
+
+    const service = serviceType || '';
+    if (service.includes('naver') || service.includes('Naver')) {
+      return '/media/ad-brand/naver.png';
+    } else if (service.includes('coupang') || service.includes('Coupang')) {
+      return '/media/ad-brand/coupang-app.png';
+    } else if (service.includes('ohouse')) {
+      return '/media/ad-brand/ohouse.png';
+    }
+    return null;
   };
+
+  // 슬롯 상태 배지
+  const getStatusBadge = () => {
+    if (!slotStatus) return null;
+    
+    const statusConfig = {
+      'active': { variant: 'default' as const, text: '진행중' },
+      'pending': { variant: 'secondary' as const, text: '승인대기' },
+      'completed': { variant: 'default' as const, text: '완료' },
+      'cancelled': { variant: 'secondary' as const, text: '취소' },
+      'rejected': { variant: 'destructive' as const, text: '거부' },
+      'refunded': { variant: 'outline' as const, text: '환불' }
+    };
+    
+    const config = statusConfig[slotStatus as keyof typeof statusConfig];
+    if (!config) return null;
+    
+    return (
+      <Badge variant={config.variant} className="text-xs">
+        {config.text}
+      </Badge>
+    );
+  };
+
+  // 역할에 따른 텍스트
+  const targetUserText = currentUserRole === 'distributor' ? '사용자' : '판매자';
+
+  // 초기 환불 금액 설정
+  React.useEffect(() => {
+    if (isOpen) {
+      setRefundAmountInput(refundAmount.toLocaleString());
+      setFinalRefundAmount(refundAmount);
+    }
+  }, [isOpen, refundAmount]);
 
 
   const handleClose = () => {
     setNotes('');
+    setRefundAmountInput('');
+    setFinalRefundAmount(refundAmount);
     setValidationMessage('');
     setShowApproveConfirm(false);
     setShowRejectConfirm(false);
@@ -73,6 +155,25 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
 
   const handleApproveClick = () => {
     setValidationMessage('');
+    
+    // 환불 금액 검증
+    if (!refundAmountInput.trim()) {
+      setValidationMessage('환불 금액을 입력해주세요.');
+      return;
+    }
+    
+    const inputAmount = parseInt(refundAmountInput.replace(/[^0-9]/g, ''));
+    if (isNaN(inputAmount) || inputAmount < 0) {
+      setValidationMessage('올바른 환불 금액을 입력해주세요.');
+      return;
+    }
+    
+    if (inputAmount > totalAmount) {
+      setValidationMessage('환불 금액이 총 결제금액을 초과할 수 없습니다.');
+      return;
+    }
+    
+    setFinalRefundAmount(inputAmount);
     setShowApproveConfirm(true);
   };
 
@@ -86,7 +187,7 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
   };
 
   const handleApproveConfirm = () => {
-    onApprove(notes || undefined);
+    onApprove(notes || undefined, finalRefundAmount !== refundAmount ? finalRefundAmount : undefined);
     setShowApproveConfirm(false);
   };
 
@@ -109,15 +210,30 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
         <DialogBody className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* 왼쪽 컬럼: 요청 정보 */}
+            {/* 왼쪽 컬럼 - 환불 요청 정보 */}
             <div className="space-y-4">
-              {/* 요청자 정보 카드 */}
+              {/* 슬롯 정보 카드 */}
               <div className="card">
                 <div className="card-body">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
+                    슬롯 정보
+                  </h3>
                   {campaignName && (
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
-                      {campaignName}
-                    </h3>
+                    <div className="flex items-center gap-3 mb-3">
+                      {getCampaignLogo() && (
+                        <img 
+                          src={getCampaignLogo()!} 
+                          alt="캠페인 로고" 
+                          className="w-8 h-8 rounded object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-slate-700 dark:text-gray-300 truncate">
+                          {campaignName}
+                        </h4>
+                      </div>
+                      {getStatusBadge()}
+                    </div>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -135,144 +251,226 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
                     {guaranteeCount > 0 && (
                       <>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-xs text-slate-500 dark:text-gray-500">보장기간</span>
+                          <span className="text-xs text-slate-500 dark:text-gray-500">{guaranteeLabel}</span>
                           <span className="font-medium">
-                            {guaranteeCount}{guaranteeUnit === 'daily' ? '일' : '회'}
+                            {guaranteeCount}{unitText}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-xs text-slate-500 dark:text-gray-500">완료 기간</span>
+                          <span className="text-xs text-slate-500 dark:text-gray-500">{completedLabel}</span>
                           <span className="font-medium">
-                            {completedDays}{guaranteeUnit === 'daily' ? '일' : '회'} ({completionRate}%)
+                            {actualCompleted}{unitText} ({completionRate}%)
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-xs text-slate-500 dark:text-gray-500">잔여 기간</span>
+                          <span className="text-xs text-slate-500 dark:text-gray-500">{remainingLabel}</span>
                           <Badge variant="destructive" className="text-xs">
-                            {remainingDays}{guaranteeUnit === 'daily' ? '일' : '회'} ({refundRate}%)
+                            {remainingCount}{unitText} ({refundRate}%)
                           </Badge>
                         </div>
                       </>
                     )}
-                    <div className="pt-2 border-t border-slate-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-xs text-slate-500 dark:text-gray-500">원래 결제금액</span>
-                        <span className="font-medium">
-                          {formatNumber(totalAmount)}원
-                          <span className="text-xs text-slate-400 ml-1">(VAT 포함)</span>
+                    {startDate && endDate && (
+                      <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 dark:border-gray-700">
+                        <span className="text-xs text-slate-500 dark:text-gray-500">슬롯 작업기간</span>
+                        <span className="font-medium text-xs">
+                          {new Date(startDate).toLocaleDateString('ko-KR')} ~ {new Date(endDate).toLocaleDateString('ko-KR')}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-xs text-slate-500 dark:text-gray-500">환불 신청액</span>
-                        <span className="font-semibold text-danger">
-                          {formatNumber(refundAmount)}원
-                          <span className="text-xs text-red-400 ml-1">(VAT 포함)</span>
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* 결제 정보 카드 */}
+              {totalAmount > 0 && (
+                <div className="card">
+                  <div className="card-body">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
+                      결제 정보
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-xs text-slate-500 dark:text-gray-500">협상금액</span>
+                        <span className="font-medium">
+                          {Math.round(totalAmount / 1.1).toLocaleString()}원
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-400 dark:text-gray-600">VAT(10%)</span>
+                        <span className="text-sm text-slate-400 dark:text-gray-600">
+                          {(totalAmount - Math.round(totalAmount / 1.1)).toLocaleString()}원
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm border-t border-slate-200 dark:border-gray-700 pt-2">
+                        <span className="text-xs text-slate-500 dark:text-gray-500">총 결제금액</span>
+                        <span className="font-medium">
+                          {totalAmount.toLocaleString()}원
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 dark:border-gray-700">
+                        <span className="text-xs text-slate-500 dark:text-gray-500">환불 신청액</span>
+                        <span className="font-semibold text-red-600">
+                          {refundAmount.toLocaleString()}원
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-gray-400 text-right">
+                        (VAT 포함)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 환불 신청 사유 카드 */}
               <div className="card">
                 <div className="card-body">
-                  <label className="form-label text-sm mb-2">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
                     환불 신청 사유
-                  </label>
+                  </h3>
                   <div className="bg-slate-50 dark:bg-gray-900 rounded border p-3 text-sm text-slate-800 dark:text-gray-200 min-h-[60px]">
                     {refundReason}
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 오른쪽 컬럼: 환불 계산 상세 */}
-            <div className="space-y-4">
-              {/* 환불 계산 상세 정보 카드 */}
-              {totalAmount > 0 && guaranteeCount > 0 ? (
-                <div className="card">
-                  <div className="card-body">
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                      <KeenIcon icon="calculator" className="text-blue-600" />
-                      환불 금액 계산
-                    </h3>
-                    <div className="space-y-3">
-                      {/* 간단한 계산 공식 */}
-                      <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-3">
-                        <div className="text-sm space-y-2">
-                          <div className="flex justify-between">
-                            <span>전체 결제금액:</span>
-                            <span className="font-medium">{formatNumber(totalAmount)}원 (VAT 포함)</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>작업 기간:</span>
-                            <span className="font-medium">{guaranteeCount}일</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>완료 일수:</span>
-                            <span className="font-medium">{completedDays}일</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>잔여 일수:</span>
-                            <span className="font-medium text-orange-600">{remainingDays}일</span>
-                          </div>
-                          <hr className="border-slate-200 dark:border-gray-700" />
-                          <div className="flex justify-between text-sm">
-                            <span>일일 단가:</span>
-                            <span className="font-mono text-xs">
-                              {formatNumber(Math.round(totalAmount / guaranteeCount))}원 (VAT 포함)
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span>완료 금액:</span>
-                            <span className="font-mono text-xs">
-                              {formatNumber(Math.round((totalAmount / guaranteeCount) * completedDays))}원
-                            </span>
-                          </div>
-                          <div className="flex justify-between font-semibold text-base">
-                            <span>환불 예상액:</span>
-                            <span className="text-red-600">
-                              {formatNumber(Math.round(totalAmount - ((totalAmount / guaranteeCount) * completedDays)))}원
-                            </span>
-                          </div>
-                          {refundAmount !== Math.round((totalAmount / guaranteeCount) * remainingDays) && (
-                            <div className="text-xs text-amber-600 dark:text-amber-400 mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
-                              ※ 실제 환불 신청액: {formatNumber(refundAmount)}원 (캠페인 정책 적용)
-                            </div>
-                          )}
-                        </div>
+              {/* 환불 정책 안내 */}
+              {refundSettings && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <KeenIcon icon="information-2" className="text-sm text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-1">
+                        환불 정책
+                      </h3>
+                      <div className="text-xs text-blue-700 dark:text-blue-300">
+                        {refundSettings.type === 'immediate' && (
+                          <p>이 캠페인은 <span className="font-semibold">즉시 환불</span> 정책이 적용됩니다.</p>
+                        )}
+                        {refundSettings.type === 'delayed' && (
+                          <p>이 캠페인은 승인일로부터 <span className="font-semibold">{refundSettings.delay_days}일 후</span> 환불이 처리됩니다.</p>
+                        )}
+                        {refundSettings.type === 'cutoff_based' && (
+                          <p>이 캠페인은 <span className="font-semibold">매일 {refundSettings.cutoff_time}</span> 이후 환불이 처리됩니다.</p>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                /* 환불 계산 정보가 없을 때 */
-                <div className="card">
-                  <div className="card-body text-center py-6">
-                    <KeenIcon icon="information-2" className="text-3xl text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">환불 계산 정보를 불러올 수 없습니다.</p>
-                  </div>
-                </div>
               )}
+            </div>
 
-              {/* 처리 메모 입력 */}
+            {/* 오른쪽 컬럼 - 환불 처리 폼 */}
+            <div className="space-y-4">
+              {/* 환불 처리 정보 카드 */}
               <div className="card">
                 <div className="card-body">
-                  <label className="form-label text-sm mb-2">
-                    처리 메모
-                  </label>
-                  <Textarea
-                    className="textarea textarea-sm resize-none"
-                    rows={3}
-                    placeholder="승인 또는 거절 시 사용자에게 전달할 메모를 입력하세요..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={loading}
-                  />
-                  <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
-                    ※ 거절 시 필수, 승인 시 선택사항
-                  </p>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
+                    환불 처리 정보
+                  </h3>
+                  
+                  {/* 환불 금액 입력 */}
+                  <div className="mb-4">
+                    <label htmlFor="refundAmountInput" className="form-label text-sm mb-2">
+                      환불 금액 <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="refundAmountInput"
+                        type="text"
+                        className={`input input-sm w-full pr-12 ${validationMessage && validationMessage.includes('환불 금액') ? 'border-red-500' : ''}`}
+                        placeholder="환불할 금액을 입력하세요"
+                        value={refundAmountInput}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          if (value) {
+                            const numValue = parseInt(value);
+                            // 총 결제금액 초과 검증
+                            if (numValue > totalAmount) {
+                              setRefundAmountInput(totalAmount.toLocaleString());
+                              setValidationMessage('환불 금액이 총 결제금액을 초과할 수 없습니다.');
+                            } else {
+                              setRefundAmountInput(numValue.toLocaleString());
+                              if (validationMessage && validationMessage.includes('환불 금액')) setValidationMessage('');
+                            }
+                          } else {
+                            setRefundAmountInput('');
+                          }
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">원</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-slate-500 dark:text-gray-500">
+                        ※ 신청 금액: {refundAmount.toLocaleString()}원 (VAT 포함)
+                      </p>
+                      {totalAmount > 0 && (
+                        <p className="text-xs text-slate-500 dark:text-gray-500">
+                          최대: {totalAmount.toLocaleString()}원
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 처리 메모 */}
+                  <div>
+                    <label htmlFor="processingNotes" className="form-label text-sm mb-2">
+                      처리 메모 {validationMessage && validationMessage.includes('거절 사유') && <span className="text-red-500">*</span>}
+                    </label>
+                    <Textarea
+                      id="processingNotes"
+                      className={`textarea textarea-sm resize-none ${validationMessage && validationMessage.includes('거절 사유') ? 'border-red-500' : ''}`}
+                      rows={4}
+                      placeholder={`승인 또는 거절 시 ${targetUserText}에게 전달할 메모를 입력하세요...`}
+                      value={notes}
+                      onChange={(e) => {
+                        setNotes(e.target.value);
+                        if (e.target.value.trim() && validationMessage && validationMessage.includes('거절 사유')) setValidationMessage('');
+                      }}
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+                      ※ 거절 시 필수, 승인 시 선택사항 ({targetUserText}에게 표시됩니다)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 안내 정보 카드 */}
+              <div className="card">
+                <div className="card-body">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
+                    안내 정보
+                  </h3>
+                  
+                  {/* 처리 안내 */}
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 mb-3">
+                    <div className="flex items-start gap-2">
+                      <KeenIcon icon="information-2" className="text-sm text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                          환불 요청 처리 안내
+                        </h4>
+                        <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                          <p>환불 요청 처리 시 다음 사항이 적용됩니다:</p>
+                          <ul className="list-disc list-inside ml-2 space-y-1">
+                            <li><span className="font-semibold">승인</span> 시 설정한 금액으로 환불이 진행됩니다</li>
+                            <li><span className="font-semibold">거절</span> 시 환불 요청이 취소됩니다</li>
+                            <li>{targetUserText}에게 처리 결과 알림이 발송됩니다</li>
+                            <li className="font-semibold">이 작업은 취소할 수 없습니다</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 확인 메시지 */}
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 border border-orange-200 dark:border-orange-700">
+                    <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">
+                      환불 요청을 승인하시겠습니까?
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -340,7 +538,7 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
       type="approve"
       loading={loading}
       campaignName={campaignName}
-      refundAmount={refundAmount}
+      refundAmount={finalRefundAmount}
       refundReason={refundReason}
       totalAmount={totalAmount}
       guaranteeCount={guaranteeCount}

@@ -60,6 +60,8 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ src: string; title: string } | null>(null);
+  const [showInputDataTooltip, setShowInputDataTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
 
   // 새 문의 생성 관련
   const [isNewInquiry, setIsNewInquiry] = useState(!inquiryId);
@@ -127,7 +129,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
       if (isInitialLoad) {
         setLoadingMessages(true);
       }
-      
+
       const { data, error } = await inquiryMessageService.getMessages(id);
 
       if (error) throw error;
@@ -160,8 +162,11 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
               id,
               target_rank,
               guarantee_count,
+              guarantee_period,
               initial_budget,
               final_daily_amount,
+              final_budget_type,
+              final_total_amount,
               input_data,
               campaigns(
                 id,
@@ -188,10 +193,10 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
         if (slotData && slotData.guarantee_slot_requests) {
           // guarantee_slot_requests가 배열인 경우 첫 번째 요소 사용
-          const requests = Array.isArray(slotData.guarantee_slot_requests) 
-            ? slotData.guarantee_slot_requests 
+          const requests = Array.isArray(slotData.guarantee_slot_requests)
+            ? slotData.guarantee_slot_requests
             : [slotData.guarantee_slot_requests];
-          
+
           if (requests.length > 0) {
             const request = requests[0];
             const campaigns = Array.isArray(request.campaigns) ? request.campaigns : [request.campaigns];
@@ -210,6 +215,9 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
               guarantee_count: request.guarantee_count,
               initial_budget: request.initial_budget,
               final_daily_amount: request.final_daily_amount,
+              final_budget_type: request.final_budget_type,
+              final_total_amount: request.final_total_amount,
+              guarantee_period: request.guarantee_period,
               input_data: request.input_data,
               keywords: keyword
             };
@@ -217,7 +225,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
             setSlotInfo(slotInfoData);
           }
         }
-      } 
+      }
       // 일반 슬롯인 경우
       else if (slotId) {
         const { data: slotData, error } = await supabase
@@ -269,47 +277,147 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
     }
   }, [slotId, guaranteeSlotId]);
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    if (!open) return;
+  // 기존 문의 확인
+  const checkExistingInquiry = useCallback(async () => {
+    if (!slotId && !guaranteeSlotId) return;
 
-    const loadData = async () => {
+    try {
+      let existingInquiryQuery = supabase
+        .from('inquiries')
+        .select('*');
+
+      if (slotId) {
+        existingInquiryQuery = existingInquiryQuery.eq('slot_id', slotId);
+      } else if (guaranteeSlotId) {
+        existingInquiryQuery = existingInquiryQuery.eq('guarantee_slot_id', guaranteeSlotId);
+      }
+
+      const { data: existingInquiries } = await existingInquiryQuery;
+
+      if (existingInquiries && existingInquiries.length > 0) {
+        // 기존 문의가 있으면 해당 문의 사용
+        const existingInquiry = existingInquiries[0];
+        setIsNewInquiry(false);
+        setInquiry(existingInquiry as Inquiry);
+        fetchMessages(existingInquiry.id, true);
+      } else {
+        // 기존 문의가 없으면 새 문의 모드
+        setIsNewInquiry(true);
+        setInquiry(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      // 오류 시 새 문의 모드
+      setIsNewInquiry(true);
+      setInquiry(null);
+      setMessages([]);
+    }
+  }, [slotId, guaranteeSlotId, fetchMessages]);
+
+  useEffect(() => {
+    if (open && (inquiryId || slotId || guaranteeSlotId)) {
       if (inquiryId) {
         fetchInquiry();
-        fetchMessages(inquiryId, true);
-      } else if (slotId || guaranteeSlotId) {
-        // 먼저 해당 슬롯에 대한 기존 문의가 있는지 확인
-        let existingInquiryQuery = supabase
-          .from('inquiries')
-          .select('*');
-
-        if (slotId) {
-          existingInquiryQuery = existingInquiryQuery.eq('slot_id', slotId);
-        } else if (guaranteeSlotId) {
-          existingInquiryQuery = existingInquiryQuery.eq('guarantee_slot_id', guaranteeSlotId);
-        }
-
-        const { data: existingInquiries } = await existingInquiryQuery;
-
-        if (existingInquiries && existingInquiries.length > 0) {
-          // 기존 문의가 있으면 해당 문의 사용
-          const existingInquiry = existingInquiries[0];
-          setIsNewInquiry(false);
-          setInquiry(existingInquiry as Inquiry);
-          await fetchMessages(existingInquiry.id, true);
-        } else {
-          // 기존 문의가 없으면 새 문의 준비
-          setIsNewInquiry(true);
-        }
-        // 슬롯 정보는 항상 가져오기
+        fetchMessages(inquiryId, true); // 초기 로드임을 표시
+      } else {
         fetchSlotInfo();
+        // 기존 문의가 있는지 확인
+        checkExistingInquiry();
+      }
+    } else if (!open) {
+      // 모달이 닫힐 때 툴팁도 닫기
+      setShowInputDataTooltip(false);
+    }
+  }, [open, inquiryId, slotId, guaranteeSlotId]);
+
+  // 메시지 실시간 업데이트 (폴링 방식)
+  useEffect(() => {
+    if (!open) return;
+    const currentInquiryId = inquiryId || inquiry?.id;
+    if (!currentInquiryId) return;
+
+    // 마지막으로 확인한 시간 추적
+    let lastCheckedTime = new Date().toISOString();
+
+    const checkNewMessages = async () => {
+      const currentInquiryId = inquiryId || inquiry?.id;
+      if (!currentInquiryId || document.hidden) return;
+
+      try {
+        // 마지막 확인 시간 이후의 메시지만 가져오기 (발신자 정보 별도 조회)
+        const { data: newMessages, error } = await supabase
+          .from('inquiry_messages')
+          .select('*')
+          .eq('inquiry_id', currentInquiryId)
+          .gt('created_at', lastCheckedTime)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (newMessages && newMessages.length > 0) {
+          // 발신자 정보 별도 조회
+          const senderIds = [...new Set(newMessages.map(msg => msg.sender_id))];
+          const { data: senders } = await supabase
+            .from('users')
+            .select('id, email, full_name')
+            .in('id', senderIds);
+
+          // 발신자 정보 맵 생성
+          const senderMap = new Map(
+            senders?.map(sender => [sender.id, sender]) || []
+          );
+
+          // 발신자 정보 매핑
+          const formattedNewMessages = newMessages.map((msg: any) => {
+            const sender = senderMap.get(msg.sender_id);
+            return {
+              ...msg,
+              sender: sender,
+              senderName: sender?.full_name || sender?.email || '알 수 없음',
+              senderEmail: sender?.email
+            };
+          });
+
+          // 새 메시지만 추가 (깜빡임 없음)
+          setMessages(prev => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNewMessages = formattedNewMessages.filter(m => !existingIds.has(m.id));
+            if (uniqueNewMessages.length === 0) return prev;
+            return [...prev, ...uniqueNewMessages];
+          });
+
+          // 자신이 보낸 메시지가 아닌 경우 읽음 처리
+          const unreadMessages = formattedNewMessages.filter(
+            msg => msg.sender_id !== currentUser?.id && !msg.is_read
+          );
+          if (unreadMessages.length > 0) {
+            await inquiryMessageService.markAsRead(currentInquiryId, currentUser?.id || '');
+          }
+
+          // 스크롤 위치 확인 후 자동 스크롤
+          const container = messagesEndRef.current?.parentElement;
+          if (container) {
+            const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+            if (isAtBottom) {
+              setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }, 50);
+            }
+          }
+
+          // 마지막 확인 시간 업데이트
+          lastCheckedTime = new Date().toISOString();
+        }
+      } catch (error) {
+        // 에러 처리 (로그만)
       }
     };
 
-    loadData();
-  }, [open, inquiryId, slotId, guaranteeSlotId, fetchInquiry, fetchMessages, fetchSlotInfo]);
+    // 2초마다 새 메시지 확인
+    const interval = setInterval(checkNewMessages, 2000);
 
-  // 메시지 실시간 구독 제거 - 사용자가 직접 새로고침 하거나 다시 열어야 함
+    return () => clearInterval(interval);
+  }, [open, inquiryId, inquiry?.id, currentUser?.id]);
 
   // 스크롤 자동 이동
   useEffect(() => {
@@ -320,7 +428,8 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
   // 새 문의 생성
   const handleCreateInquiry = async () => {
-    if (!inputValue.trim()) {
+    // 메시지 내용이나 첨부파일 중 하나는 있어야 함
+    if (!inputValue.trim() && attachments.length === 0) {
       return;
     }
 
@@ -346,11 +455,11 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
           const existingInquiry = existingInquiries[0];
           setIsNewInquiry(false);
           setInquiry(existingInquiry as Inquiry);
-          
+
           // 기존 문의에 메시지 추가
           const messageData = {
             inquiry_id: existingInquiry.id,
-            content: inputValue.trim(),
+            content: inputValue.trim() || '', // 빈 문자열이라도 허용 (첨부파일만 보내는 경우)
             sender_role: currentUserRole,
             attachments
           };
@@ -409,7 +518,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
       // 첫 메시지 전송
       const messageData = {
         inquiry_id: newInquiry.id,
-        content: inputValue.trim(),
+        content: inputValue.trim() || '', // 빈 문자열이라도 허용 (첨부파일만 보내는 경우)
         sender_role: currentUserRole,
         attachments
       };
@@ -422,7 +531,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
       setInquiry(newInquiry);
       setInputValue('');
       setAttachments([]);
-      
+
       // 메시지 다시 가져오기
       await fetchMessages(newInquiry.id, false);
     } catch (error) {
@@ -433,8 +542,9 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
   // 메시지 전송
   const handleSendMessage = async () => {
+    // 메시지 내용이나 첨부파일 중 하나는 있어야 함
     if (!inputValue.trim() && attachments.length === 0) return;
-    
+
     const currentInquiryId = inquiryId || inquiry?.id;
     if (!currentInquiryId) return;
 
@@ -469,7 +579,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
     try {
       const messageData = {
         inquiry_id: currentInquiryId,
-        content: messageContent,
+        content: messageContent || '', // 빈 문자열이라도 허용 (첨부파일만 보내는 경우)
         sender_role: currentUserRole,
         attachments: messageAttachments
       };
@@ -480,7 +590,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
       // 성공 시 임시 메시지를 실제 메시지로 교체
       if (sentMessage) {
-        setMessages(prev => prev.map(msg => 
+        setMessages(prev => prev.map(msg =>
           msg.id === tempId ? { ...sentMessage, sender: optimisticMessage.sender, senderName: optimisticMessage.senderName, senderEmail: optimisticMessage.senderEmail } : msg
         ));
       }
@@ -493,44 +603,50 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
   // 파일 업로드
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      return;
+    }
 
+    setUploadingFiles(true);
     try {
-      setUploadingFiles(true);
-      const uploadedFiles: InquiryAttachment[] = [];
+      const fileArray = Array.from(files);
 
-      for (const file of Array.from(files)) {
-        if (file.size > STORAGE_CONFIG.LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024) {
-          toast.error(`${file.name}: 파일 크기가 너무 큽니다.`);
-          continue;
+      // 파일 타입 및 크기 검증
+      const validFiles = fileArray.filter(file => {
+        if (!fileUploadService.isValidFileSize(file, STORAGE_CONFIG.LIMITS.MAX_FILE_SIZE_MB)) {
+          toast.error(`${file.name}은(는) 파일 크기가 ${STORAGE_CONFIG.LIMITS.MAX_FILE_SIZE_MB}MB를 초과합니다.`);
+          return false;
         }
+        return true;
+      });
 
-        const { data, error } = await fileUploadService.uploadFile({
-          file,
-          bucket: 'inquiry-attachments',
-          folder: 'attachments'
-        });
-
-        if (error || !data) {
-          toast.error(`${file.name}: 업로드에 실패했습니다.`);
-          continue;
-        }
-
-        uploadedFiles.push({
-          name: file.name,
-          url: data.url || '',
-          type: file.type,
-          size: file.size
-        });
+      if (validFiles.length === 0) {
+        return;
       }
 
-      setAttachments(prev => [...prev, ...uploadedFiles]);
-      toast.success(`${uploadedFiles.length}개 파일이 업로드되었습니다.`);
+      // 파일 업로드
+      const { data: uploadedFiles, errors } = await fileUploadService.uploadMultipleFiles(
+        validFiles,
+        STORAGE_CONFIG.UPLOADS_BUCKET,
+        getUploadPath.inquiryAttachments(inquiryId || inquiry?.id)
+      );
+
+      if (errors.length > 0) {
+        toast.error('일부 파일 업로드에 실패했습니다.');
+      }
+
+      if (uploadedFiles.length > 0) {
+        setAttachments(prev => [...prev, ...uploadedFiles]);
+        toast.success(`${uploadedFiles.length}개 파일이 첨부되었습니다.`);
+      }
     } catch (error) {
-      console.error('파일 업로드 실패:', error);
       toast.error('파일 업로드에 실패했습니다.');
     } finally {
       setUploadingFiles(false);
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -540,11 +656,11 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
   };
 
   // 첨부파일 제거
-  const removeAttachment = (index: number) => {
+  const handleRemoveAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 이미지 미리보기
+  // 이미지 클릭 처리 (모달 보기)
   const handleImageClick = (attachment: InquiryAttachment) => {
     setSelectedImage({
       src: attachment.url,
@@ -552,6 +668,28 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
     });
     setIsImageModalOpen(true);
   };
+
+  // 이미지 모달 닫기 함수
+  const closeImageModal = useCallback(() => {
+    setIsImageModalOpen(false);
+    setSelectedImage(null);
+  }, []);
+
+  // ESC 키로 모달 닫기 (우선순위: 이미지모달 > 메인모달)
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isImageModalOpen) {
+          closeImageModal();
+        }
+      }
+    };
+
+    if (isImageModalOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isImageModalOpen, closeImageModal]);
 
   // 상태 변경
   const handleStatusChange = async (status: string) => {
@@ -628,7 +766,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
         {/* 메시지 내용 */}
         <div className="chat-sticky-message-content">
-          {message.message}
+          {message.message || (message.attachments && message.attachments.length > 0 ? '' : '메시지 없음')}
 
           {/* 첨부파일 표시 */}
           {message.attachments && message.attachments.length > 0 && (
@@ -661,8 +799,12 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                     <div className="text-xs text-gray-600 dark:text-gray-400">
                       {fileUploadService.formatFileSize(attachment.size)}
                     </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {attachment.type}
+                    </div>
                   </div>
                   <div className="flex gap-1">
+                    {/* 이미지 파일인 경우 보기 버튼 */}
                     {fileUploadService.isImageFile({ type: attachment.type } as File) && (
                       <button
                         onClick={() => handleImageClick(attachment)}
@@ -676,6 +818,8 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                         보기
                       </button>
                     )}
+
+                    {/* 다운로드 버튼 (모든 파일) */}
                     <button
                       onClick={async () => {
                         if (downloadingFile) return;
@@ -727,17 +871,21 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          // 모달을 닫을 때 상태 초기화
-          setIsNewInquiry(!inquiryId);
-          setInquiry(null);
-          setMessages([]);
-          setInputValue('');
-          setAttachments([]);
-          onClose();
-        }
-      }}>
+      <Dialog 
+        open={open} 
+        onOpenChange={isImageModalOpen || showInputDataTooltip ? undefined : (isOpen) => {
+          if (!isOpen) {
+            // 모달을 닫을 때 상태 초기화
+            setIsNewInquiry(!inquiryId);
+            setInquiry(null);
+            setMessages([]);
+            setInputValue('');
+            setAttachments([]);
+            setShowInputDataTooltip(false); // 툴팁 닫기
+            onClose();
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl h-[80vh] flex flex-col" aria-describedby={undefined}>
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
@@ -849,9 +997,22 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                             if (userInputFields.length === 0) return <span className="text-gray-400 text-xs">없음</span>;
 
                             return (
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                              <button
+                                className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline cursor-pointer"
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setTooltipPosition({
+                                    top: rect.top - 10,
+                                    left: rect.left + rect.width / 2
+                                  });
+                                  setShowInputDataTooltip(!showInputDataTooltip);
+                                }}
+                              >
                                 {userInputFields.length}개 필드
-                              </span>
+                              </button>
                             );
                           })()}
                         </div>
@@ -876,7 +1037,19 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                         <div>
                           <span className="text-gray-600 dark:text-gray-400">협상 완료 금액:</span>
                           <div className="font-medium text-green-600">
-                            {info?.final_daily_amount?.toLocaleString()}원/일
+                            {(() => {
+                              const guaranteeUnit = info?.guarantee_unit || '일';
+                              const unitText = (guaranteeUnit === 'daily' || guaranteeUnit === '일') ? '일' : '회';
+                              const period = info?.guarantee_period || info?.guarantee_count || 1;
+
+                              if (info?.final_budget_type === 'total' && info?.final_total_amount) {
+                                const dailyAmount = Math.round(info.final_total_amount / period);
+                                return `총 ${info.final_total_amount.toLocaleString()}원 (${dailyAmount.toLocaleString()}원/${unitText}, 총액협상)`;
+                              } else {
+                                const totalAmount = info?.final_daily_amount * period;
+                                return `총 ${totalAmount.toLocaleString()}원 (${info?.final_daily_amount?.toLocaleString()}원/${unitText}, 일별협상)`;
+                              }
+                            })()}
                           </div>
                         </div>
                       )}
@@ -889,7 +1062,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
 
             {/* 메시지 영역 */}
             <div className="flex-1 chat-sticky-messages overflow-y-auto relative">
-              {loadingMessages && messages.length === 0 ? (
+              {loadingMessages ? (
                 <div className="chat-sticky-messages-loading">
                   메시지를 불러오는 중...
                 </div>
@@ -898,7 +1071,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                   <div className="chat-sticky-messages-empty-icon">
                     <KeenIcon icon="message-text" className="text-4xl text-gray-300" />
                   </div>
-                  {isNewInquiry ? '새 문의를 작성해주세요.' : '아직 메시지가 없습니다.'}<br />
+                  1:1 문의를 시작해주세요.<br />
                   문의사항을 입력해주세요.
                 </div>
               ) : (
@@ -915,17 +1088,62 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
               {attachments.length > 0 && (
                 <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 space-y-2">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">첨부 파일</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2">
                     {attachments.map((attachment, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-white dark:bg-gray-700 p-2 rounded border">
-                        <KeenIcon icon="document" className="size-4 text-gray-500" />
-                        <span className="text-sm">{attachment.name}</span>
-                        <button
-                          onClick={() => removeAttachment(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <KeenIcon icon="cross" className="size-3" />
-                        </button>
+                      <div key={index} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded">
+                        {fileUploadService.isImageFile({ type: attachment.type } as File) ? (
+                          <img
+                            src={attachment.url}
+                            alt={attachment.name}
+                            className="w-12 h-12 object-cover rounded cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => handleImageClick(attachment)}
+                            title="클릭하여 원본 보기"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 flex items-center justify-center bg-orange-100 dark:bg-orange-800 rounded">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600 dark:text-orange-400">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14,2 14,8 20,8" />
+                              <line x1="16" y1="13" x2="8" y2="13" />
+                              <line x1="16" y1="17" x2="8" y2="17" />
+                              <polyline points="10,9 9,9 8,9" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate text-gray-800 dark:text-gray-200" title={attachment.name}>
+                            {attachment.name}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {fileUploadService.formatFileSize(attachment.size)}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {fileUploadService.isImageFile({ type: attachment.type } as File) && (
+                            <button
+                              onClick={() => handleImageClick(attachment)}
+                              className="text-primary hover:text-primary-dark text-xs px-2 py-1 rounded border border-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
+                              title="미리보기"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                              보기
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleRemoveAttachment(index)}
+                            className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors flex items-center gap-1"
+                            title="파일 제거"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            제거
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -963,7 +1181,7 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                 />
                 <button
                   onClick={isNewInquiry ? handleCreateInquiry : handleSendMessage}
-                  disabled={loading || !inputValue.trim() || (!isNewInquiry && inquiry?.status === 'closed')}
+                  disabled={loading || (!inputValue.trim() && attachments.length === 0) || (!isNewInquiry && inquiry?.status === 'closed')}
                   className="w-8 h-8 bg-primary hover:bg-primary-dark rounded-full flex items-center justify-center text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1041,32 +1259,202 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* 추가 정보 툴팁 */}
+      {showInputDataTooltip && (inquiry?.slot_info?.input_data || slotInfo?.input_data) && ReactDOM.createPortal(
+        <>
+          {/* 배경 클릭 시 닫기 */}
+          <div
+            className="fixed inset-0"
+            style={{ zIndex: 9998 }}
+            onClick={() => setShowInputDataTooltip(false)}
+          />
+          <div
+            className="fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-2 w-80 max-h-64 shadow-xl border border-gray-700 dark:border-gray-600"
+            style={{
+              zIndex: 9999,
+              left: `${tooltipPosition.left}px`,
+              top: `${tooltipPosition.top}px`,
+              transform: 'translate(-50%, -100%)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-2 border-b border-gray-700 dark:border-gray-600 pb-1">
+              <span className="font-medium text-gray-100 dark:text-gray-200">추가 정보</span>
+              <button
+                className="text-gray-400 hover:text-gray-200 transition-colors"
+                onClick={() => setShowInputDataTooltip(false)}
+                style={{ pointerEvents: 'auto', zIndex: 10000 }}
+                type="button"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div
+              className="overflow-y-auto max-h-48 pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
+              }}
+            >
+              <div className="space-y-1">
+                {(() => {
+                  const inputData = inquiry?.slot_info?.input_data || slotInfo?.input_data;
+                  const passItem = ['keywords', 'mainKeyword', 'keyword1', 'keyword2', 'keyword3', 'due_date', 'dueDays', 'is_manual_input'];
+                  const userInputFields = Object.entries(inputData).filter(([key]) =>
+                    !passItem.includes(key) && !key.endsWith('_fileName')
+                  );
+
+                  return userInputFields.map(([key, value]) => {
+                    // 파일 URL인지 확인
+                    const isFileUrl = value && typeof value === 'string' &&
+                      (value.includes('supabase.co/storage/') || value.includes('/storage/v1/object/'));
+
+                    // 이미지 파일인지 확인
+                    const isImage = isFileUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value);
+
+                    // 파일명 추출
+                    const fileNameKey = `${key}_fileName`;
+                    const fileName = inputData[fileNameKey] || (isFileUrl ? value.split('/').pop() || '파일' : '');
+
+                    // 필드명 한글 변환
+                    const fieldNameMap: Record<string, string> = {
+                      // 기본 필드
+                      'work_days': '작업일',
+                      'minimum_purchase': '최소 구매수',
+                      'url': 'URL',
+                      'mid': '상점 ID',
+                      'productName': '상품명',
+                      'mainKeyword': '메인 키워드',
+                      'main_keyword': '메인 키워드',
+                      'keywords': '서브 키워드',
+                      'keyword1': '키워드1',
+                      'keyword2': '키워드2',
+                      'keyword3': '키워드3',
+                      'quantity': '작업량',
+                      'dueDays': '작업기간',
+                      'due_days': '작업기간',
+                      'workCount': '작업수',
+                      'work_count': '작업수',
+                      'start_date': '시작일',
+                      'end_date': '종료일',
+                      'deadline': '마감일',
+                      'price': '가격',
+                      'unit_price': '단가',
+                      'total_price': '총 가격',
+                      'budget': '예산',
+                      'daily_amount': '일일 금액',
+                      'monthly_amount': '월별 금액',
+                      'guarantee_days': '보장일수',
+                      'guarantee_count': '보장횟수',
+                      'target_rank': '목표순위',
+                      'current_rank': '현재순위',
+                      'work_period': '작업기간',
+                      'refund_policy': '환불정책',
+                      'guarantee_summary': '보장요약정보',
+                      'cash_amount': '캐시 지급액',
+                      'cash_info': '캐시 지급 안내',
+                      'point_amount': '포인트 금액',
+                      'note': '비고',
+                      'description': '설명',
+                      'requirements': '요구사항',
+                      'additional_info': '추가정보',
+                      'company_name': '회사명',
+                      'business_number': '사업자번호',
+                      'contact': '연락처',
+                      'email': '이메일',
+                      'phone': '전화번호'
+                    };
+                    const displayKey = fieldNameMap[key] || key;
+
+                    return (
+                      <div key={key} className="flex items-start gap-2 text-left py-1 border-b border-gray-800 dark:border-gray-700 last:border-0">
+                        <span className="font-medium text-gray-300 dark:text-gray-400 min-w-[80px] shrink-0">{displayKey}</span>
+                        <span className="text-gray-400 dark:text-gray-500">:</span>
+                        <span className="text-gray-100 dark:text-gray-200 flex-1 break-words">
+                          {isFileUrl ? (
+                            isImage ? (
+                              <button
+                                className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedImage({ src: value, title: fileName });
+                                  setIsImageModalOpen(true);
+                                  setShowInputDataTooltip(false);
+                                }}
+                              >
+                                {fileName}
+                              </button>
+                            ) : (
+                              <a
+                                href={value}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {fileName}
+                              </a>
+                            )
+                          ) : (
+                            value ? String(value) : '-'
+                          )}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
       {/* 이미지 미리보기 모달 */}
       {isImageModalOpen && selectedImage && ReactDOM.createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setIsImageModalOpen(false)}
+          className="fixed inset-0 flex items-center justify-center bg-black/80 p-4"
+          onMouseDown={closeImageModal}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1400000 }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="mb-4 flex items-center justify-between text-white">
-              <h3 className="text-lg font-semibold">{selectedImage.title}</h3>
-              <button
-                onClick={() => setIsImageModalOpen(false)}
-                className="text-white hover:text-gray-300 text-2xl"
-              >
-                ×
-              </button>
-            </div>
+          <div
+            className="relative max-w-4xl max-h-[90vh]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <img
               src={selectedImage.src}
               alt={selectedImage.title}
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl pointer-events-none"
             />
+            <button
+              className="absolute top-4 right-4 w-12 h-12 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-lg"
+              style={{
+                zIndex: 10000,
+                pointerEvents: 'auto'
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeImageModal();
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <KeenIcon icon="cross" className="text-xl text-gray-700" />
+            </button>
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-white bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg inline-block shadow-lg">
+                {selectedImage.title}
+              </p>
+            </div>
           </div>
         </div>,
         document.body
       )}
+
     </>
   );
 };

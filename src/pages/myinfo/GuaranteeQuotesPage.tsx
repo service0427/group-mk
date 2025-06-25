@@ -62,7 +62,7 @@ const MyGuaranteeQuotesPage: React.FC = () => {
     // 검색어 필터
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(req => 
+      filtered = filtered.filter(req =>
         req.campaign_id?.toString().includes(term) ||
         req.campaigns?.campaign_name?.toLowerCase().includes(term)
       );
@@ -346,9 +346,9 @@ const MyGuaranteeQuotesPage: React.FC = () => {
                       </td>
                       <td>
                         <div className="text-gray-700 text-sm">
-                          {formatDistanceToNow(new Date(request.created_at), { 
+                          {formatDistanceToNow(new Date(request.created_at), {
                             addSuffix: true,
-                            locale: ko 
+                            locale: ko
                           })}
                         </div>
                       </td>

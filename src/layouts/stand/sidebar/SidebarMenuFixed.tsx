@@ -21,7 +21,7 @@ import { useResponsive } from '@/hooks';
 import { useAuthContext } from '@/auth/useAuthContext';
 
 const SidebarMenu = () => {
-  const isMobile = !useResponsive('up', 'md');
+  const isMobile = !useResponsive('up', 'lg');
   const linkPl = isMobile ? 'ps-[6px]' : 'ps-[8px]';
   const linkPr = isMobile ? 'pe-[6px]' : 'pe-[8px]';
   const linkPy = isMobile ? 'py-[5px]' : 'py-[6px]';
@@ -69,7 +69,7 @@ const SidebarMenu = () => {
       // 자식 메뉴가 있는 경우 재귀적으로 필터링
       if (item.children && Array.isArray(item.children)) {
         const filteredChildren = filterMenuByRole(item.children);
-        
+
         // 자식 메뉴도 필터링한 후 메뉴 항목 추가
         if (filteredChildren.length > 0 || !item.children.length) {
           acc.push({

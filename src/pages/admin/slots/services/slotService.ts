@@ -42,6 +42,28 @@ async function getCampaignInfo(productId: number) {
   }
 }
 
+// 슬롯 삭제 함수
+export const deleteSlot = async (slotId: string | string[]): Promise<{ success: boolean; error?: any }> => {
+  try {
+    const slotIds = Array.isArray(slotId) ? slotId : [slotId];
+    
+    // 슬롯 삭제
+    const { error: deleteError } = await supabase
+      .from('slots')
+      .delete()
+      .in('id', slotIds);
+    
+    if (deleteError) {
+      throw deleteError;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('슬롯 삭제 실패:', error);
+    return { success: false, error };
+  }
+};
+
 // 슬롯 승인 처리 함수
 export const approveSlot = async (
   slotId: string | string[],

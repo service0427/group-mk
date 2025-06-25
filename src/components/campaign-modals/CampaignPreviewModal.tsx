@@ -282,8 +282,8 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                     <KeenIcon icon="check" className="size-5 text-purple-500 flex-shrink-0" />
                     <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
                       {campaign.originalData.guarantee_unit === '일' 
-                        ? `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.target_rank || '__'}위 이내 ${campaign.originalData.guarantee_count}일 보장`
-                        : `${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.guarantee_count}회 보장`
+                        ? `작업 시작 후 ${campaign.originalData.guarantee_period}일 안에 순위 ${campaign.originalData.target_rank || '__'}위권을 ${campaign.originalData.guarantee_count}일 이상 유지하도록 보장합니다.`
+                        : `작업 시작 후 ${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.guarantee_count}회 이상 작업을 보장합니다.`
                       }
                     </p>
                   </div>

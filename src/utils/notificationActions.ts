@@ -186,6 +186,97 @@ export const createRefundApprovedNotification = async (
 };
 
 /**
+ * 환불 거절 알림 생성 (사용자 → 총판)
+ * @param distributorId 총판 ID
+ * @param slotId 슬롯 ID
+ * @param reason 거절 사유
+ */
+export const createRefundRejectedByUserNotification = async (
+  distributorId: string,
+  slotId: string,
+  reason?: string
+) => {
+  const message = reason 
+    ? `보장형 슬롯(${slotId}) 환불 요청이 거절되었습니다. 사유: ${reason}`
+    : `보장형 슬롯(${slotId}) 환불 요청이 거절되었습니다.`;
+    
+  return await createNotification({
+    userId: distributorId,
+    type: NotificationType.SLOT,
+    title: '환불 요청 거절',
+    message,
+    link: '/manage/guarantee-quotes',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 총판의 환불 요청에 대한 사용자 확인 요청 알림
+ * @param userId 사용자 ID
+ * @param campaignName 캠페인명
+ * @param amount 환불 금액
+ * @param reason 환불 사유
+ * @param requestId 환불 요청 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ */
+export const createRefundConfirmationRequestNotification = async (
+  userId: string,
+  campaignName: string,
+  amount: number,
+  reason: string,
+  requestId: string,
+  serviceName: string,
+  slotType: string
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  const message = `[${serviceName}/${slotTypeName}] ${campaignName} 판매자가 ${amount.toLocaleString()}원의 환불을 요청했습니다. 사유: ${reason}`;
+  
+  return await createNotification({
+    userId,
+    type: NotificationType.TRANSACTION,
+    title: '환불 확인 요청',
+    message,
+    link: `/my-services?refundRequestId=${requestId}&openRefundConfirm=true`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 사용자의 환불 요청 알림 (총판에게)
+ * @param distributorId 총판 ID
+ * @param campaignName 캠페인명
+ * @param amount 환불 금액
+ * @param reason 환불 사유
+ * @param userName 사용자 이름
+ * @param requestId 환불 요청 ID
+ * @param serviceName 서비스명
+ * @param slotType 슬롯 타입
+ */
+export const createRefundRequestNotification = async (
+  distributorId: string,
+  campaignName: string,
+  amount: number,
+  reason: string,
+  userName: string,
+  requestId: string,
+  serviceName: string,
+  slotType: string
+) => {
+  const slotTypeName = slotType === 'guarantee' ? '보장형' : '일반형';
+  const message = `[${serviceName}/${slotTypeName}] ${campaignName} ${userName}님이 ${amount.toLocaleString()}원의 환불을 요청했습니다. 사유: ${reason}`;
+  
+  return await createNotification({
+    userId: distributorId,
+    type: NotificationType.TRANSACTION,
+    title: '환불 요청',
+    message,
+    link: `/manage/guarantee-quotes?refundRequestId=${requestId}&openRefundModal=true`,
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
  * 신규 출금 요청 알림 생성 (모든 운영자)
  * @param userId 사용자 ID
  * @param amount 출금 금액

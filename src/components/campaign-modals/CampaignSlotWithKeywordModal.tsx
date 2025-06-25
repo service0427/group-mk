@@ -110,6 +110,11 @@ interface CampaignSlotData {
   // 직접 입력 모드용 필드
   mainKeyword?: string;
   keywords?: string[];
+  // 스프레드시트 모드 검증용 필드
+  hasPartiallyFilledRows?: boolean;
+  partiallyFilledRows?: number[];
+  total_purchase?: number;
+  total_work_days?: number;
 }
 
 // supabase로부터 가져온 캠페인 데이터 인터페이스
@@ -1479,19 +1484,47 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
     } else if (isKeywordSupported && !keywordSearchMode) {
       // 내키워드 지원 서비스의 직접 입력 모드
-      if (!slotData.mainKeyword || slotData.mainKeyword.trim() === '') {
-        showAlert('알림', '메인 키워드를 입력해주세요.', false);
-        return false;
-      }
-
-      if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
-        showAlert('알림', '최소 구매수를 입력해주세요.', false);
-        return false;
-      }
-
-      if (!slotData.work_days || Number(slotData.work_days) < 1) {
-        showAlert('알림', '작업일을 입력해주세요.', false);
-        return false;
+      
+      // 스프레드시트 모드인지 확인 (keywordDetails 속성이 존재하면 스프레드시트 모드)
+      const isSpreadsheetMode = 'keywordDetails' in slotData;
+      
+      if (isSpreadsheetMode) {
+        // 스프레드시트 모드 검증
+        
+        // 부분적으로 입력된 행이 있는지 확인
+        if (slotData.hasPartiallyFilledRows) {
+          const rowNumbers = slotData.partiallyFilledRows?.join(', ') || '';
+          showAlert('알림', `${rowNumbers}번 행의 필수 항목을 모두 입력하거나 해당 행을 비워주세요.`, false);
+          return false;
+        }
+        
+        // 유효한 행이 하나도 없는 경우
+        if (!slotData.keywordDetails || slotData.keywordDetails.length === 0) {
+          showAlert('알림', '최소 하나 이상의 완전한 행을 입력해주세요.', false);
+          return false;
+        }
+        
+        // 스프레드시트 모드에서도 메인 키워드는 필수 (첫 번째 유효한 행에서 가져옴)
+        if (!slotData.mainKeyword || slotData.mainKeyword.trim() === '') {
+          showAlert('알림', '메인 키워드를 입력해주세요.', false);
+          return false;
+        }
+      } else {
+        // 기본 입력 모드 검증
+        if (!slotData.mainKeyword || slotData.mainKeyword.trim() === '') {
+          showAlert('알림', '메인 키워드를 입력해주세요.', false);
+          return false;
+        }
+        
+        if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
+          showAlert('알림', '최소 구매수를 입력해주세요.', false);
+          return false;
+        }
+        
+        if (!slotData.work_days || Number(slotData.work_days) < 1) {
+          showAlert('알림', '작업일을 입력해주세요.', false);
+          return false;
+        }
       }
 
       // DB 기반 필드 검증 (input_data의 모든 필드 검증)
@@ -1554,14 +1587,36 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
     } else {
       // 내키워드 미지원 서비스 (수동 입력 모드)
-      if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
-        showAlert('알림', '최소 구매수를 입력해주세요.', false);
-        return false;
-      }
-
-      if (!slotData.work_days || Number(slotData.work_days) < 1) {
-        showAlert('알림', '작업일을 입력해주세요.', false);
-        return false;
+      
+      // 스프레드시트 모드인지 확인 (keywordDetails가 있고 배열인 경우)
+      const isSpreadsheetMode = slotData.keywordDetails && Array.isArray(slotData.keywordDetails);
+      
+      
+      if (isSpreadsheetMode) {
+        // 스프레드시트 모드 검증
+        // 부분적으로 입력된 행이 있는지 확인
+        if (slotData.hasPartiallyFilledRows) {
+          const rowNumbers = slotData.partiallyFilledRows?.join(', ') || '';
+          showAlert('알림', `${rowNumbers}번 행의 필수 항목을 모두 입력하거나 해당 행을 비워주세요.`, false);
+          return false;
+        }
+        
+        // 유효한 행이 하나도 없는 경우
+        if (slotData.keywordDetails && slotData.keywordDetails.length === 0) {
+          showAlert('알림', '최소 하나 이상의 완전한 행을 입력해주세요.', false);
+          return false;
+        }
+      } else {
+        // 기본 입력 모드 검증
+        if (!slotData.minimum_purchase || Number(slotData.minimum_purchase) < 1) {
+          showAlert('알림', '최소 구매수를 입력해주세요.', false);
+          return false;
+        }
+        
+        if (!slotData.work_days || Number(slotData.work_days) < 1) {
+          showAlert('알림', '작업일을 입력해주세요.', false);
+          return false;
+        }
       }
 
       // 추가 필드 검증
@@ -1945,6 +2000,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     // 이미 저장 중이면 중복 실행 방지
     if (saving) return;
 
+
     // 폼 유효성 검사
     if (!validateForm(true)) return; // 키워드 모드이므로 true
 
@@ -2115,7 +2171,6 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       if (!selectedCampaign || !currentUser?.id) {
         throw new Error('필수 정보가 누락되었습니다.');
       }
-
 
       // 보장형 캠페인인 경우 견적 요청 모달 열기
       if (selectedCampaign.slot_type === 'guarantee' || selectedCampaign.is_guarantee) {

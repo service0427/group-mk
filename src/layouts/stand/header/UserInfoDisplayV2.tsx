@@ -425,7 +425,7 @@ const UserInfoDisplayV2 = () => {
         // 태블릿/데스크톱 버전 - 기존 레이아웃 개선
         <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12 min-w-0">
           {/* 알림 드롭다운 - 태블릿에서는 아이콘만 표시 */}
-          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800 flex-shrink-0">
+          <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800">
             <NotificationDropdown
               containerClassName="flex items-center h-full"
               hideTextOnMobile={isTablet}

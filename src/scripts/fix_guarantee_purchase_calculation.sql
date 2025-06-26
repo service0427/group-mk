@@ -1,8 +1,8 @@
--- 보장형 슬롯 구매 시 유료캐시만 사용하도록 수정
--- 작성일: 2025-06-24
--- 변경사항: 무료캐시 사용 제거, 유료캐시만 사용
+-- 보장형 슬롯 구매 금액 계산 수정
+-- 작성일: 2025-06-27
+-- 수정사항: 작업기간이 아닌 보장 일수로 계산하도록 변경
 
--- purchase_guarantee_slot 함수 수정
+-- purchase_guarantee_slot 함수 수정 (유료캐시만 사용 버전)
 CREATE OR REPLACE FUNCTION purchase_guarantee_slot(
   p_request_id UUID,
   p_user_id UUID,
@@ -106,13 +106,19 @@ BEGIN
     p_purchase_reason
   );
   
-  -- 7. 홀딩 금액 관리 테이블에 추가
+  -- 7. 요청 상태 업데이트
+  UPDATE guarantee_slot_requests
+  SET status = 'purchased'
+  WHERE id = p_request_id;
+  
+  -- 8. 홀딩 금액 생성 (사용자가 전액 홀딩)
   INSERT INTO guarantee_slot_holdings (
     guarantee_slot_id,
     user_id,
     total_amount,
     user_holding_amount,
     distributor_holding_amount,
+    distributor_released_amount,
     status
   ) VALUES (
     v_slot_id,
@@ -120,48 +126,30 @@ BEGIN
     v_total_amount,
     v_total_amount,
     0,
+    0,
     'holding'
   );
   
-  -- 8. 거래 내역 기록
-  INSERT INTO guarantee_slot_transactions (
-    guarantee_slot_id,
-    user_id,
-    transaction_type,
-    amount,
-    description
-  ) VALUES (
-    v_slot_id,
-    p_user_id,
-    'purchase',
-    v_total_amount,
-    '보장형 슬롯 구매'
-  );
-  
-  -- 9. 캐시 사용 내역 기록 (유료캐시만)
+  -- 9. 캐시 히스토리 기록
   INSERT INTO user_cash_history (
     user_id,
     transaction_type,
     amount,
     description,
     reference_id,
-    balance_type
+    balance_type,
+    transaction_at
   ) VALUES (
     p_user_id,
     'purchase',
-    v_total_amount,
-    '보장형 슬롯 구매',
+    -v_total_amount,
+    '보장형 슬롯 구매: ' || v_campaign.campaign_name,
     v_slot_id,
-    'paid'
+    'paid',
+    NOW()
   );
   
-  -- 10. 요청 상태를 구매완료로 변경
-  UPDATE guarantee_slot_requests
-  SET status = 'purchased'
-  WHERE id = p_request_id;
-  
-  -- 11. 알림은 별도 처리
-  
+  -- 10. 성공 응답 반환
   RETURN json_build_object(
     'success', true,
     'slot_id', v_slot_id,
@@ -171,9 +159,9 @@ BEGIN
   
 EXCEPTION
   WHEN OTHERS THEN
+    -- 오류 발생 시 롤백
     RAISE;
 END;
 $$;
 
--- 권한 설정
-GRANT EXECUTE ON FUNCTION purchase_guarantee_slot TO authenticated;
+COMMENT ON FUNCTION purchase_guarantee_slot IS '보장형 슬롯 구매 - 보장 일수 기준 계산';

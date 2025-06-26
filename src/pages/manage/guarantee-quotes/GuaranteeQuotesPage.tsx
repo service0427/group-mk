@@ -894,8 +894,8 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
-      negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
+      negotiatedAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0, // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
       actualCompletedCount: 0, // TODO: 실제 완료 횟수를 가져와야 함
@@ -971,8 +971,8 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
-      negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
+      negotiatedAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0, // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
       actualCompletedCount: 0, // TODO: 실제 완료 횟수를 가져와야 함
@@ -1038,7 +1038,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0,
+      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1) : 0,
       startDate: slot?.start_date,
       endDate: slot?.end_date,
       requestDate: refundRequest.request_date,
@@ -1066,6 +1066,7 @@ const GuaranteeQuotesPage: React.FC = () => {
 
       // 환불 승인 알림 발송
       if (data?.user_id && refundRequestData.campaignName && refundRequestData.refundAmount) {
+        const { createRefundApprovedNotification } = await import('@/utils/notificationActions');
         await createRefundApprovedNotification(
           data.user_id,
           refundRequestData.campaignName,
@@ -1194,7 +1195,7 @@ const GuaranteeQuotesPage: React.FC = () => {
           'guarantee_period': `${request.guarantee_count}${request.campaigns?.guarantee_unit || '일'}`,
           'initial_budget': request.initial_budget || 0,
           'final_amount': request.final_daily_amount || 0,
-          'total_amount': (request.final_daily_amount || 0) * (request.guarantee_period || request.guarantee_count),
+          'total_amount': (request.final_daily_amount || 0) * request.guarantee_count,
           'quote_status': getRequestStatusText(request.status),
           'slot_status': getSlotStatusText(slotStatus),
           'start_date': slot?.start_date ? format(new Date(slot.start_date), 'yyyy-MM-dd') : '',
@@ -2493,14 +2494,40 @@ const GuaranteeQuotesPage: React.FC = () => {
                               <span className="text-gray-400">환불 사유:</span>
                               <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
                             </div>
-                            {refundRequest.refund_amount && (
-                              <div>
-                                <span className="text-gray-400">요청 금액:</span>
-                                <div className="text-orange-400 font-medium mt-1">
-                                  {refundRequest.refund_amount.toLocaleString()}원
-                                </div>
+                            <div>
+                              <span className="text-gray-400">요청 금액:</span>
+                              <div className="text-orange-400 font-medium mt-1">
+                                {(() => {
+                                  // 환불 금액이 있으면 사용, 없으면 직접 계산
+                                  if (refundRequest.refund_amount && refundRequest.refund_amount > 0) {
+                                    return Math.floor(refundRequest.refund_amount).toLocaleString();
+                                  }
+                                  // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
+                                  const totalAmount = request.final_daily_amount && request.guarantee_count
+                                    ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    : 0;
+                                  
+                                  // 완료된 일수 계산
+                                  const slot = request.guarantee_slots?.[0];
+                                  const completedDays = (() => {
+                                    if (!slot?.start_date) return 0;
+                                    const start = new Date(slot.start_date);
+                                    const today = new Date();
+                                    const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                                    return Math.max(0, diffDays);
+                                  })();
+                                  
+                                  // 완료된 금액 계산
+                                  const completedAmount = request.final_daily_amount 
+                                    ? Math.floor(request.final_daily_amount * completedDays * 1.1)
+                                    : 0;
+                                  
+                                  // 환불 금액 = 총 금액 - 완료된 금액
+                                  const refundAmount = Math.max(0, totalAmount - completedAmount);
+                                  return refundAmount.toLocaleString();
+                                })()}원
                               </div>
-                            )}
+                            </div>
                             <div className="text-gray-400 text-xs">
                               신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
                             </div>
@@ -2524,14 +2551,40 @@ const GuaranteeQuotesPage: React.FC = () => {
                               <span className="text-gray-400">환불 사유:</span>
                               <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '총판 요청'}</div>
                             </div>
-                            {refundRequest.refund_amount && (
-                              <div>
-                                <span className="text-gray-400">환불 예정 금액:</span>
-                                <div className="text-yellow-400 font-medium mt-1">
-                                  {refundRequest.refund_amount.toLocaleString()}원
-                                </div>
+                            <div>
+                              <span className="text-gray-400">환불 예정 금액:</span>
+                              <div className="text-yellow-400 font-medium mt-1">
+                                {(() => {
+                                  // 환불 금액이 있으면 사용, 없으면 직접 계산
+                                  if (refundRequest.refund_amount && refundRequest.refund_amount > 0) {
+                                    return Math.floor(refundRequest.refund_amount).toLocaleString();
+                                  }
+                                  // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
+                                  const totalAmount = request.final_daily_amount && request.guarantee_count
+                                    ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    : 0;
+                                  
+                                  // 완료된 일수 계산
+                                  const slot = request.guarantee_slots?.[0];
+                                  const completedDays = (() => {
+                                    if (!slot?.start_date) return 0;
+                                    const start = new Date(slot.start_date);
+                                    const today = new Date();
+                                    const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                                    return Math.max(0, diffDays);
+                                  })();
+                                  
+                                  // 완료된 금액 계산
+                                  const completedAmount = request.final_daily_amount 
+                                    ? Math.floor(request.final_daily_amount * completedDays * 1.1)
+                                    : 0;
+                                  
+                                  // 환불 금액 = 총 금액 - 완료된 금액
+                                  const refundAmount = Math.max(0, totalAmount - completedAmount);
+                                  return refundAmount.toLocaleString();
+                                })()}원
                               </div>
-                            )}
+                            </div>
                             <div className="text-gray-400 text-xs">
                               요청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
                             </div>
@@ -2551,14 +2604,40 @@ const GuaranteeQuotesPage: React.FC = () => {
                               <span className="text-gray-400">환불 사유:</span>
                               <div className="text-gray-200 mt-1">{refundRequest.refund_reason || '사유 없음'}</div>
                             </div>
-                            {refundRequest.refund_amount && (
-                              <div>
-                                <span className="text-gray-400">환불 금액:</span>
-                                <div className="text-green-400 font-medium mt-1">
-                                  {refundRequest.refund_amount.toLocaleString()}원
-                                </div>
+                            <div>
+                              <span className="text-gray-400">환불 금액:</span>
+                              <div className="text-green-400 font-medium mt-1">
+                                {(() => {
+                                  // 환불 금액이 있으면 사용, 없으면 직접 계산
+                                  if (refundRequest.refund_amount && refundRequest.refund_amount > 0) {
+                                    return Math.floor(refundRequest.refund_amount).toLocaleString();
+                                  }
+                                  // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
+                                  const totalAmount = request.final_daily_amount && request.guarantee_count
+                                    ? Math.floor(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    : 0;
+                                  
+                                  // 완료된 일수 계산
+                                  const slot = request.guarantee_slots?.[0];
+                                  const completedDays = (() => {
+                                    if (!slot?.start_date) return 0;
+                                    const start = new Date(slot.start_date);
+                                    const today = new Date();
+                                    const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                                    return Math.max(0, diffDays);
+                                  })();
+                                  
+                                  // 완료된 금액 계산
+                                  const completedAmount = request.final_daily_amount 
+                                    ? Math.floor(request.final_daily_amount * completedDays * 1.1)
+                                    : 0;
+                                  
+                                  // 환불 금액 = 총 금액 - 완료된 금액
+                                  const refundAmount = Math.max(0, totalAmount - completedAmount);
+                                  return refundAmount.toLocaleString();
+                                })()}원
                               </div>
-                            )}
+                            </div>
                             <div className="text-gray-400 text-xs">
                               신청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}
                             </div>

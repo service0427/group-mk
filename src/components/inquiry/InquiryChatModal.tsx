@@ -1040,13 +1040,13 @@ export const InquiryChatModal: React.FC<InquiryChatModalProps> = ({
                             {(() => {
                               const guaranteeUnit = info?.guarantee_unit || '일';
                               const unitText = (guaranteeUnit === 'daily' || guaranteeUnit === '일') ? '일' : '회';
-                              const period = info?.guarantee_period || info?.guarantee_count || 1;
+                              const guaranteeCount = info?.guarantee_count || 1;
 
                               if (info?.final_budget_type === 'total' && info?.final_total_amount) {
-                                const dailyAmount = Math.round(info.final_total_amount / period);
+                                const dailyAmount = Math.round(info.final_total_amount / guaranteeCount);
                                 return `총 ${info.final_total_amount.toLocaleString()}원 (${dailyAmount.toLocaleString()}원/${unitText}, 총액협상)`;
                               } else {
-                                const totalAmount = info?.final_daily_amount * period;
+                                const totalAmount = info?.final_daily_amount * guaranteeCount;
                                 return `총 ${totalAmount.toLocaleString()}원 (${info?.final_daily_amount?.toLocaleString()}원/${unitText}, 일별협상)`;
                               }
                             })()}

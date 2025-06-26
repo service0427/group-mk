@@ -7,6 +7,7 @@ export interface ToastProps {
   onClose?: () => void;
   duration?: number;
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  offset?: number;
 }
 
 /**
@@ -19,6 +20,7 @@ export const CustomToast: React.FC<ToastProps> = ({
   onClose,
   duration = 5000,
   position = 'top-right',
+  offset = 0,
 }) => {
   const [isVisible, setIsVisible] = useState(show);
 
@@ -38,12 +40,41 @@ export const CustomToast: React.FC<ToastProps> = ({
 
   if (!isVisible) return null;
 
-  // Position classes
-  const positionClasses = {
-    'top-left': 'top-20 left-5',
-    'top-right': 'top-20 right-5',
-    'bottom-left': 'bottom-5 left-5',
-    'bottom-right': 'bottom-5 right-5',
+  // Calculate position with offset
+  const getPositionStyle = () => {
+    const headerHeight = 64; // 헤더 높이 (h-16 = 64px)
+    const noticeHeight = 32; // 공지사항 라인 높이 (h-8 = 32px)
+    const baseOffset = headerHeight + noticeHeight + 20; // 헤더 + 공지사항 + 여백
+    const toastHeight = 70; // Toast 높이 + 간격 (px)
+    const horizontalOffset = 20; // 좌우 여백 (px)
+    
+    switch (position) {
+      case 'top-left':
+        return {
+          top: `${baseOffset + (offset * toastHeight)}px`,
+          left: `${horizontalOffset}px`,
+        };
+      case 'top-right':
+        return {
+          top: `${baseOffset + (offset * toastHeight)}px`,
+          right: `${horizontalOffset}px`,
+        };
+      case 'bottom-left':
+        return {
+          bottom: `${20 + (offset * toastHeight)}px`,
+          left: `${horizontalOffset}px`,
+        };
+      case 'bottom-right':
+        return {
+          bottom: `${20 + (offset * toastHeight)}px`,
+          right: `${horizontalOffset}px`,
+        };
+      default:
+        return {
+          top: `${baseOffset + (offset * toastHeight)}px`,
+          right: `${horizontalOffset}px`,
+        };
+    }
   };
 
   // Type classes
@@ -104,8 +135,12 @@ export const CustomToast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed ${positionClasses[position]} p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${typeClasses[type]}`}
-      style={{ pointerEvents: 'auto' }}
+      className={`fixed p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${typeClasses[type]}`}
+      style={{ 
+        ...getPositionStyle(),
+        pointerEvents: 'auto',
+        transition: 'all 0.3s ease-out, opacity 0.3s ease-out',
+      }}
     >
       <div className="flex items-center">
         <div className="flex-shrink-0">

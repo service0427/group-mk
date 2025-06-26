@@ -1,33 +1,37 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { useLogoutContext } from '@/contexts/LogoutContext';
-import { 
-  INotification, 
-  NotificationType, 
-  NotificationPriority, 
-  NotificationStatus 
+import { useToast } from '@/providers';
+import {
+  INotification,
+  NotificationType,
+  NotificationPriority,
+  NotificationStatus
 } from '@/types/notification';
 
 export const useNotifications = () => {
   const { currentUser } = useAuthContext();
   const { isLoggingOut, safeApiCall } = useLogoutContext();
+  const toast = useToast();
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
   const subscriptionChannelRef = useRef<any>(null);
-  
+  const previousUnreadCountRef = useRef<number>(0);
+
   // 알림 데이터 가져오기
   const fetchNotifications = useCallback(async () => {
     if (!currentUser?.id || isLoggingOut) return;
-    
+
     try {
       setLoading(true);
-      
+
       // 최근 30일 이내의 알림만 가져오기
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
       // 로그아웃 중에는 요청하지 않도록 safeApiCall 사용
       await safeApiCall(
         async () => {
@@ -38,19 +42,19 @@ export const useNotifications = () => {
             .eq('user_id', currentUser.id)
             .gte('created_at', thirtyDaysAgo.toISOString())
             .order('created_at', { ascending: false });
-          
+
           if (error) {
             // 로그아웃 중이 아닐 때만 처리
             if (!isLoggingOut) {
               // 오류 발생 시 모킹 데이터 사용 (개발 중에만 활성화)
               const mockData = generateMockNotifications(currentUser.id || '');
               setNotifications(mockData);
-              
+
               // 읽지 않은 알림 카운트 계산
               const unread = mockData.filter(
                 (notification: INotification) => notification.status === NotificationStatus.UNREAD
               ).length;
-              
+
               setUnreadCount(unread);
             }
           } else if (data && !isLoggingOut) {
@@ -65,23 +69,23 @@ export const useNotifications = () => {
                 createdAt: item.created_at || new Date().toISOString(), // 없으면 현재 시간으로
                 expiresAt: item.expires_at
               };
-              
+
               return transformed;
             });
-            
+
             // 로그아웃 중이 아닐 때만 상태 업데이트
             if (!isLoggingOut) {
               setNotifications(typedData);
-              
+
               // 읽지 않은 알림 카운트 계산
               const unread = typedData.filter(
                 (notification: INotification) => notification.status === NotificationStatus.UNREAD
               ).length;
-              
+
               setUnreadCount(unread);
             }
           }
-          
+
           return data;
         },
         null // 오류 발생 시 기본값
@@ -100,42 +104,42 @@ export const useNotifications = () => {
       }
     }
   }, [currentUser?.id, isLoggingOut, safeApiCall]);
-  
+
   // 알림 읽음 표시
   const markAsRead = async (notificationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ status: NotificationStatus.READ })
         .eq('id', notificationId)
         .eq('user_id', currentUser.id);
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
-      setNotifications(prev => 
-        prev.map(notification => 
+      setNotifications(prev =>
+        prev.map(notification =>
           notification.id === notificationId
             ? { ...notification, status: NotificationStatus.READ }
             : notification
         )
       );
-      
+
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error: any) {
-      
+
     }
   };
-  
+
   // 모든 알림 읽음 표시 (선택적으로 특정 알림 ID 목록만 처리)
   const markAllAsRead = async (notificationIds?: string[]) => {
     if (!currentUser?.id) return;
-    
+
     try {
       // 업데이트할 쿼리 기본 설정
       let query = supabase
@@ -143,21 +147,21 @@ export const useNotifications = () => {
         .update({ status: NotificationStatus.READ })
         .eq('user_id', currentUser.id)
         .eq('status', NotificationStatus.UNREAD);
-      
+
       // 특정 알림 ID 목록이 전달된 경우, 해당 알림만 업데이트
       if (notificationIds && notificationIds.length > 0) {
         query = query.in('id', notificationIds);
       }
-      
+
       const { error } = await query;
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notification => {
           // 특정 ID 목록이 전달된 경우, 해당 알림만 업데이트
           if (notificationIds && notificationIds.length > 0) {
@@ -172,90 +176,90 @@ export const useNotifications = () => {
           }
         })
       );
-      
+
       // 읽지 않은 알림 카운트 업데이트
       if (notificationIds && notificationIds.length > 0) {
         // 영향 받은 알림 수만큼 감소
         const affectedCount = notifications.filter(
           n => notificationIds.includes(n.id) && n.status === NotificationStatus.UNREAD
         ).length;
-        
+
         setUnreadCount(prev => Math.max(0, prev - affectedCount));
       } else {
         // 모두 읽음 처리한 경우
         setUnreadCount(0);
       }
     } catch (error: any) {
-      
+
     }
   };
-  
+
   // 알림 보관 처리
   const archiveNotification = async (notificationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ status: NotificationStatus.ARCHIVED })
         .eq('id', notificationId)
         .eq('user_id', currentUser.id);
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
-      setNotifications(prev => 
-        prev.map(notification => 
+      setNotifications(prev =>
+        prev.map(notification =>
           notification.id === notificationId
             ? { ...notification, status: NotificationStatus.ARCHIVED }
             : notification
         )
       );
-      
+
       // 읽지 않은 알림이 보관된 경우 카운트 업데이트
       const targetNotification = notifications.find(n => n.id === notificationId);
       if (targetNotification?.status === NotificationStatus.UNREAD) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error: any) {
-      
+
     }
   };
-  
+
   // 알림 삭제
   const deleteNotification = async (notificationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
       const { error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId)
         .eq('user_id', currentUser.id);
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
       const deletedNotification = notifications.find(n => n.id === notificationId);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.filter(notification => notification.id !== notificationId)
       );
-      
+
       // 읽지 않은 알림 수 업데이트
       if (deletedNotification?.status === NotificationStatus.UNREAD) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error: any) {
-      
+
     }
   };
-  
+
   // 새 알림 생성 (주로 관리자나 서버에서 사용)
   const createNotification = async (notification: Omit<INotification, 'id' | 'userId' | 'createdAt'> & { userId: string }) => {
     try {
@@ -273,39 +277,39 @@ export const useNotifications = () => {
           expires_at: notification.expiresAt
         })
         .select();
-      
+
       if (error) {
-        
+
         return null;
       }
-      
+
       // 현재 사용자에게 보내는 알림인 경우, 로컬 상태 업데이트
       if (notification.userId === currentUser?.id) {
         const newNotification = data[0] as INotification;
         setNotifications(prev => [newNotification, ...prev]);
-        
+
         if (newNotification.status === NotificationStatus.UNREAD) {
           setUnreadCount(prev => prev + 1);
         }
-        
+
         return newNotification;
       }
-      
+
       return data[0] as INotification;
     } catch (error: any) {
-      
+
       return null;
     }
   };
-  
+
   // 실시간 구독 설정
   useEffect(() => {
     // 로그아웃 중이거나 사용자 ID가 없으면 구독하지 않음
     if (!currentUser?.id || isLoggingOut) return;
-    
+
     // 초기 알림 데이터 가져오기
     fetchNotifications();
-    
+
     // 이전 구독이 있으면 정리
     if (subscriptionChannelRef.current) {
       try {
@@ -315,7 +319,7 @@ export const useNotifications = () => {
       }
       subscriptionChannelRef.current = null;
     }
-    
+
     // 실시간 구독 설정
     try {
       const channel = supabase
@@ -331,18 +335,32 @@ export const useNotifications = () => {
           (payload) => {
             // 로그아웃 중이면 이벤트 무시
             if (isLoggingOut) return;
-            
+
             // 새 알림 추가
-            const newNotification = payload.new as INotification;
-            
+            const newNotification = {
+              ...payload.new,
+              userId: payload.new.user_id,
+              type: payload.new.type as NotificationType,
+              priority: payload.new.priority as NotificationPriority,
+              status: payload.new.status as NotificationStatus,
+              createdAt: payload.new.created_at || new Date().toISOString(),
+              expiresAt: payload.new.expires_at
+            } as INotification;
+
             // 로컬 상태 업데이트
             setNotifications(prev => [newNotification, ...prev]);
-            
+
             // 읽지 않은 알림 카운트 업데이트
             if (newNotification.status === NotificationStatus.UNREAD) {
               setUnreadCount(prev => prev + 1);
+              setHasNewNotification(true);
+
+              // Toast 알림 표시
+              toast.info(`새로운 알림이 있습니다: ${newNotification.title}`, {
+                duration: 5000
+              });
             }
-            
+
             // 브라우저 알림 표시 (선택사항)
             if (Notification.permission === 'granted' && !isLoggingOut) {
               try {
@@ -367,23 +385,23 @@ export const useNotifications = () => {
           (payload) => {
             // 로그아웃 중이면 이벤트 무시
             if (isLoggingOut) return;
-            
+
             // 업데이트된 알림 정보
             const updatedNotification = payload.new as INotification;
-            
+
             // 로컬 상태 업데이트
-            setNotifications(prev => 
-              prev.map(notification => 
+            setNotifications(prev =>
+              prev.map(notification =>
                 notification.id === updatedNotification.id ? updatedNotification : notification
               )
             );
-            
+
             // 상태 변경에 따른 읽지 않은 알림 카운트 업데이트
-            if (payload.old.status === NotificationStatus.UNREAD && 
-                updatedNotification.status !== NotificationStatus.UNREAD) {
+            if (payload.old.status === NotificationStatus.UNREAD &&
+              updatedNotification.status !== NotificationStatus.UNREAD) {
               setUnreadCount(prev => Math.max(0, prev - 1));
-            } else if (payload.old.status !== NotificationStatus.UNREAD && 
-                       updatedNotification.status === NotificationStatus.UNREAD) {
+            } else if (payload.old.status !== NotificationStatus.UNREAD &&
+              updatedNotification.status === NotificationStatus.UNREAD) {
               setUnreadCount(prev => prev + 1);
             }
           }
@@ -399,15 +417,15 @@ export const useNotifications = () => {
           (payload) => {
             // 로그아웃 중이면 이벤트 무시
             if (isLoggingOut) return;
-            
+
             // 삭제된 알림 정보
             const deletedNotification = payload.old as INotification;
-            
+
             // 로컬 상태 업데이트
-            setNotifications(prev => 
+            setNotifications(prev =>
               prev.filter(notification => notification.id !== deletedNotification.id)
             );
-            
+
             // 읽지 않은 알림 수 업데이트
             if (deletedNotification.status === NotificationStatus.UNREAD) {
               setUnreadCount(prev => Math.max(0, prev - 1));
@@ -417,7 +435,7 @@ export const useNotifications = () => {
         .subscribe((status) => {
           // 로그아웃 중이면 이벤트 무시
           if (isLoggingOut) return;
-          
+
           // 구독 상태에 따른 처리
           if (status === 'CHANNEL_ERROR') {
             // 오류 발생 시 5초 후 재연결 시도
@@ -428,14 +446,14 @@ export const useNotifications = () => {
             }, 5000);
           }
         });
-      
+
       // 채널 레퍼런스 저장
       subscriptionChannelRef.current = channel;
     } catch (error) {
       // 구독 설정 실패는 무시 (오류 로그만 출력)
       console.error("알림 구독 설정 중 오류:", error);
     }
-    
+
     // 컴포넌트 언마운트 시 또는 의존성 변경 시(로그아웃 등) 구독 해제
     return () => {
       if (subscriptionChannelRef.current) {
@@ -448,68 +466,68 @@ export const useNotifications = () => {
       }
     };
   }, [currentUser?.id, fetchNotifications, isLoggingOut]);
-  
+
   // 알림 읽지 않음 표시
   const markAsUnread = async (notificationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ status: NotificationStatus.UNREAD })
         .eq('id', notificationId)
         .eq('user_id', currentUser.id);
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
-      setNotifications(prev => 
-        prev.map(notification => 
+      setNotifications(prev =>
+        prev.map(notification =>
           notification.id === notificationId
             ? { ...notification, status: NotificationStatus.UNREAD }
             : notification
         )
       );
-      
+
       setUnreadCount(prev => prev + 1);
     } catch (error: any) {
-      
+
     }
   };
 
   // 여러 알림 읽지 않음 표시
   const markAllAsUnread = async (notificationIds?: string[]) => {
     if (!currentUser?.id) return;
-    
+
     try {
       // 업데이트할 쿼리 기본 설정
       let query = supabase
         .from('notifications')
         .update({ status: NotificationStatus.UNREAD })
         .eq('user_id', currentUser.id);
-      
+
       // 특정 알림 ID 목록이 전달된 경우, 해당 알림만 업데이트
       if (notificationIds && notificationIds.length > 0) {
         query = query.in('id', notificationIds);
       } else {
         // 전체 알림 읽지 않음 처리는 위험할 수 있으므로 
         // 반드시 ID 목록을 받도록 제한
-        
+
         return;
       }
-      
+
       const { error } = await query;
-      
+
       if (error) {
-        
+
         return;
       }
-      
+
       // 로컬 상태 업데이트
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notification => {
           // 특정 ID 목록이 전달된 경우, 해당 알림만 업데이트
           if (notificationIds && notificationIds.length > 0) {
@@ -520,18 +538,18 @@ export const useNotifications = () => {
           return notification;
         })
       );
-      
+
       // 읽지 않은 알림 카운트 업데이트
       if (notificationIds && notificationIds.length > 0) {
         // ID 목록에 포함된 알림 중 이미 읽지 않은 상태인 알림은 제외
         const affectedCount = notifications.filter(
           n => notificationIds.includes(n.id) && n.status !== NotificationStatus.UNREAD
         ).length;
-        
+
         setUnreadCount(prev => prev + affectedCount);
       }
     } catch (error: any) {
-      
+
     }
   };
 
@@ -539,6 +557,8 @@ export const useNotifications = () => {
     notifications,
     unreadCount,
     loading,
+    hasNewNotification,
+    setHasNewNotification,
     markAsRead,
     markAllAsRead,
     markAsUnread,

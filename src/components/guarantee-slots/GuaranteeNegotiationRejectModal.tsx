@@ -27,8 +27,8 @@ const GuaranteeNegotiationRejectModal: React.FC<GuaranteeNegotiationRejectModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-md" 
+      <DialogContent
+        className="max-w-md"
         aria-describedby={undefined}
         style={{ zIndex: 2147483647 }}
       >
@@ -38,7 +38,7 @@ const GuaranteeNegotiationRejectModal: React.FC<GuaranteeNegotiationRejectModalP
             협상 거절 확인
           </DialogTitle>
         </DialogHeader>
-        
+
         <DialogBody>
           <div className="mb-4">
             <p className="text-gray-700 dark:text-gray-300 mb-3">
@@ -50,7 +50,7 @@ const GuaranteeNegotiationRejectModal: React.FC<GuaranteeNegotiationRejectModalP
                 '이 견적 협상을 거절하시겠습니까?'
               )}
             </p>
-              
+
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
               <p className="text-sm text-red-600 dark:text-red-400">
                 협상을 거절하시겠습니까?
@@ -60,7 +60,7 @@ const GuaranteeNegotiationRejectModal: React.FC<GuaranteeNegotiationRejectModalP
               </p>
             </div>
           </div>
-          
+
           {/* 푸터 */}
           <div className="flex justify-end gap-3 mt-4">
             <button

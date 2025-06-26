@@ -482,9 +482,8 @@ export const guaranteeSlotService = {
         throw new Error('보장 횟수가 확정되지 않았습니다.');
       }
 
-      // 전체 작업기간으로 계산 (guarantee_period 사용)
-      const workDays = request.guarantee_period || request.guarantee_count;
-      const totalAmount = Math.floor(request.final_daily_amount * workDays * 1.1); // VAT 포함
+      // 보장 일수로 계산 (guarantee_count 사용)
+      const totalAmount = Math.floor(request.final_daily_amount * request.guarantee_count * 1.1); // VAT 포함
 
       // 사용자 잔액 확인 (유료캐시만 확인)
       const { data: userBalance, error: balanceError } = await supabase

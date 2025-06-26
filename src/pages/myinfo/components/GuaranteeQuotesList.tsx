@@ -977,7 +977,36 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                               </div>
                                               <div>
                                                 <span className="text-gray-400">환불 예정 금액:</span>
-                                                <div className="text-gray-200 font-medium">{Math.floor(refundRequest.refund_amount || 0).toLocaleString()}원</div>
+                                                <div className="text-gray-200 font-medium">
+                                                  {(() => {
+                                                    // 환불 금액이 있으면 사용, 없으면 직접 계산
+                                                    if (refundRequest.refund_amount && refundRequest.refund_amount > 0) {
+                                                      return Math.floor(refundRequest.refund_amount).toLocaleString();
+                                                    }
+                                                    // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
+                                                    const totalAmount = item.final_daily_amount && item.guarantee_count
+                                                      ? Math.floor(item.final_daily_amount * item.guarantee_count * 1.1)
+                                                      : 0;
+                                                    
+                                                    // 완료된 일수 계산
+                                                    const completedDays = (() => {
+                                                      if (!slot.start_date) return 0;
+                                                      const start = new Date(slot.start_date);
+                                                      const today = new Date();
+                                                      const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                                                      return Math.max(0, diffDays);
+                                                    })();
+                                                    
+                                                    // 완료된 금액 계산
+                                                    const completedAmount = item.final_daily_amount 
+                                                      ? Math.floor(item.final_daily_amount * completedDays * 1.1)
+                                                      : 0;
+                                                    
+                                                    // 환불 금액 = 총 금액 - 완료된 금액
+                                                    const refundAmount = Math.max(0, totalAmount - completedAmount);
+                                                    return refundAmount.toLocaleString();
+                                                  })()}원
+                                                </div>
                                               </div>
                                               <div className="text-gray-400 text-xs">
                                                 요청일: {new Date(refundRequest.request_date).toLocaleDateString('ko-KR')}

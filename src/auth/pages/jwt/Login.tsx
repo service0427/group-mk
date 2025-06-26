@@ -218,15 +218,6 @@ const Login = () => {
         >
           <div className="text-center mb-3">
             <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">로그인</h3>
-            <div className="flex items-center justify-center font-medium">
-              <span className="text-sm text-gray-700 me-1.5">계정이 필요하신가요?</span>
-              <Link
-                to={currentLayout?.name === 'auth-branded' ? '/auth/signup' : '/auth/classic/signup'}
-                className="text-sm link"
-              >
-                회원가입
-              </Link>
-            </div>
 
             {/* 개발 환경에서만 테스트 계정 정보 안내 표시 */}
             {import.meta.env.MODE === "development" && (
@@ -345,6 +336,16 @@ const Login = () => {
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
+
+          <div className="flex items-center justify-center font-medium">
+            <span className="text-sm text-gray-700 me-1.5">계정이 필요하신가요?</span>
+            <Link
+              to={currentLayout?.name === 'auth-branded' ? '/auth/signup' : '/auth/classic/signup'}
+              className="text-sm link"
+            >
+              회원가입
+            </Link>
+          </div>
 
           {/* 로그인 오류 해결 도움말 - 확장 가능한 텍스트 */}
           <div className="mt-3 text-center">

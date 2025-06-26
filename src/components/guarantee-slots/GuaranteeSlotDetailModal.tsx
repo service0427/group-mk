@@ -269,14 +269,20 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                           <KeenIcon icon="shield-check" className="text-sm text-primary" />
                           보장 조건
                         </h3>
-                        <div className="flex gap-3 pl-5">
-                          <div className="flex-1 text-center p-2.5 bg-slate-50 dark:bg-gray-800 rounded-lg">
-                            <div className="text-lg font-bold text-primary">{requestData.target_rank}위</div>
-                            <div className="text-xs text-slate-500 dark:text-gray-500">목표 순위</div>
+                        <div className="space-y-3 pl-5">
+                          <div className="flex gap-3">
+                            <div className="flex-1 text-center p-2.5 bg-slate-50 dark:bg-gray-800 rounded-lg">
+                              <div className="text-lg font-bold text-primary">{requestData.target_rank}위</div>
+                              <div className="text-xs text-slate-500 dark:text-gray-500">목표 순위</div>
+                            </div>
+                            <div className="flex-1 text-center p-2.5 bg-slate-50 dark:bg-gray-800 rounded-lg">
+                              <div className="text-lg font-bold text-primary">{requestData.guarantee_count}{requestData.campaigns?.guarantee_unit || '일'}</div>
+                              <div className="text-xs text-slate-500 dark:text-gray-500">보장 일수</div>
+                            </div>
                           </div>
-                          <div className="flex-1 text-center p-2.5 bg-slate-50 dark:bg-gray-800 rounded-lg">
-                            <div className="text-lg font-bold text-primary">{requestData.guarantee_period || requestData.guarantee_count}{requestData.campaigns?.guarantee_unit || '일'}</div>
-                            <div className="text-xs text-slate-500 dark:text-gray-500">보장 기간</div>
+                          <div className="text-center p-2.5 bg-slate-50 dark:bg-gray-800 rounded-lg">
+                            <div className="text-lg font-bold text-amber-600">{requestData.guarantee_period || requestData.guarantee_count}{requestData.campaigns?.guarantee_unit || '일'}</div>
+                            <div className="text-xs text-slate-500 dark:text-gray-500">작업 기간</div>
                           </div>
                         </div>
                       </div>
@@ -302,14 +308,14 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-slate-600 dark:text-gray-500">총 금액</span>
                               <span className="text-sm font-medium">
-                                {formatPrice(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count))}
+                                {formatPrice(requestData.final_daily_amount * requestData.guarantee_count)}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-medium">총 예상 금액</span>
                               <div className="text-right">
                                 <div className="text-base font-bold">
-                                  {formatPrice(Math.floor(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count) * 1.1))}
+                                  {formatPrice(Math.floor(requestData.final_daily_amount * requestData.guarantee_count * 1.1))}
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-gray-500">VAT 10% 포함</div>
                               </div>

@@ -190,7 +190,17 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
       options: { ...DEFAULT_TOAST_OPTIONS, ...options },
     };
 
-    setToasts((prevToasts) => [...prevToasts, newToast]);
+    setToasts((prevToasts) => {
+      // 최대 5개까지만 표시, 오래된 것부터 제거
+      const maxToasts = 5;
+      const updatedToasts = [...prevToasts, newToast];
+      
+      if (updatedToasts.length > maxToasts) {
+        return updatedToasts.slice(updatedToasts.length - maxToasts);
+      }
+      
+      return updatedToasts;
+    });
 
     const duration = options?.duration || DEFAULT_TOAST_OPTIONS.duration;
     if (duration) {
@@ -331,7 +341,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
               {/* Toast 컴포넌트들 */}
               <ToastPortal>
                 <ToastContainer>
-                  {toasts.map((toast) => (
+                  {toasts.map((toast, index) => (
                     <CustomToast
                       key={toast.id}
                       show={true}
@@ -340,6 +350,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                       position={toast.options?.position || DEFAULT_TOAST_OPTIONS.position}
                       duration={toast.options?.duration || DEFAULT_TOAST_OPTIONS.duration}
                       onClose={() => dismiss(toast.id)}
+                      offset={index}
                     />
                   ))}
                 </ToastContainer>

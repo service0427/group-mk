@@ -31,7 +31,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   hideTextOnMobile = false,
   inlineCounterOnly = false
 }) => {
-  const { notifications, markAsRead, markAllAsRead, loading, unreadCount, fetchNotifications } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, loading, unreadCount, fetchNotifications, hasNewNotification, setHasNewNotification } = useNotifications();
   const navigate = useNavigate();
   const [selectedNotification, setSelectedNotification] = useState<INotification | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,6 +87,18 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     setModalOpen(true);
     itemRef.current?.hide();
   };
+
+  // 드롭다운이 열릴 때 새 알림 표시 제거
+  useEffect(() => {
+    if (hasNewNotification) {
+      // 3초 후에 새 알림 표시 제거
+      const timer = setTimeout(() => {
+        setHasNewNotification(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasNewNotification, setHasNewNotification]);
 
   // 알림 모달 닫기 처리
   const handleModalClose = () => {
@@ -168,7 +180,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     return (
       <>
         {unreadCount > 0 && (
-          <span className="bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
+          <span className={`bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold ${hasNewNotification ? 'animate-bounce' : ''}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -181,7 +193,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   return (
     <>
-      <Menu className={`items-stretch ${containerClassName || ''}`}>
+      <Menu className={`${containerClassName || ''}`}>
         <MenuItem
           ref={itemRef}
           toggle="dropdown"
@@ -215,18 +227,26 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           }}
         >
           {hideTextOnMobile ? (
-            <MenuToggle className="btn btn-icon flex items-center justify-center transition-all hover:bg-blue-500 hover:text-white size-8 rounded-full relative h-9">
-              <KeenIcon icon="notification-status" className="text-base" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
+            <MenuToggle className="btn btn-icon flex items-center justify-center transition-all hover:bg-blue-500 hover:text-white size-8 rounded-full h-9">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <KeenIcon icon="notification-status" className={`text-base ${hasNewNotification ? 'text-blue-500' : ''}`} />
+                {hasNewNotification && (
+                  <span className="absolute inset-0 rounded-full animate-ping bg-blue-400 opacity-20 pointer-events-none"></span>
+                )}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
             </MenuToggle>
           ) : (
-            <MenuToggle className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors relative">
+            <MenuToggle className={`flex items-center gap-2 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors ${hasNewNotification ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
               <div className="relative flex items-center justify-center">
-                <KeenIcon icon="notification-status" className="text-base" />
+                <KeenIcon icon="notification-status" className={`text-lg flex-shrink-0 ${hasNewNotification ? 'text-blue-500' : ''}`} />
+                {hasNewNotification && (
+                  <span className="absolute inset-0 animate-ping bg-blue-400 opacity-20 rounded-full pointer-events-none"></span>
+                )}
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -313,8 +333,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               {/* 읽지 않은 알림 섹션 */}
               {!loading && unreadCount > 0 && (
                 <>
-                  <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/70 text-xs text-muted-foreground dark:text-gray-200 font-medium">
-                    읽지 않은 알림 ({unreadCount})
+                  <div className={`px-4 py-2 text-xs font-medium ${hasNewNotification ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-gray-50 dark:bg-gray-700/70 text-muted-foreground dark:text-gray-200'}`}>
+                    읽지 않은 알림 ({unreadCount}) {hasNewNotification && <span className="text-xs">(새 알림)</span>}
                   </div>
 
                   {notifications

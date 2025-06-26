@@ -19,7 +19,6 @@ DECLARE
   v_paid_amount NUMERIC(10,2);
   v_slot_id UUID;
   v_campaign campaigns;
-  v_work_period INTEGER;
   v_guarantee_unit VARCHAR(10);
 BEGIN
   -- 1. 견적 요청 정보 조회
@@ -46,9 +45,6 @@ BEGIN
     RAISE EXCEPTION '본인의 견적만 구매할 수 있습니다.';
   END IF;
 
-  -- 작업기간 결정 (guarantee_period가 있으면 사용, 없으면 guarantee_count 사용)
-  v_work_period := COALESCE(v_request.guarantee_period, v_request.guarantee_count);
-
   -- guarantee_unit 변환 (한글 -> 영문)
   v_guarantee_unit := CASE 
     WHEN v_campaign.guarantee_unit = '일' THEN 'daily'
@@ -56,8 +52,8 @@ BEGIN
     ELSE COALESCE(v_campaign.guarantee_unit, 'daily')
   END;
 
-  -- 2. 총 금액 계산 (단가 * 작업기간 * 1.1 VAT 포함)
-  v_total_amount := FLOOR(v_request.final_daily_amount * v_work_period * 1.1);
+  -- 2. 총 금액 계산 (단가 * 보장 일수 * 1.1 VAT 포함)
+  v_total_amount := FLOOR(v_request.final_daily_amount * v_request.guarantee_count * 1.1);
 
   -- 3. 사용자 잔액 조회 및 검증
   SELECT * INTO v_user_balance

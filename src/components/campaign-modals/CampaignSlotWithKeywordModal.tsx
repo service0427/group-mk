@@ -1483,8 +1483,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     } else if (isKeywordSupported && !keywordSearchMode) {
       // 내키워드 지원 서비스의 직접 입력 모드
       
-      // 스프레드시트 모드인지 확인 (keywordDetails 속성이 존재하면 스프레드시트 모드)
-      const isSpreadsheetMode = 'keywordDetails' in slotData;
+      // 스프레드시트 모드인지 확인 (keywordDetails가 존재하고 배열이며 길이가 0보다 크면 스프레드시트 모드)
+      const isSpreadsheetMode = Array.isArray(slotData.keywordDetails) && slotData.keywordDetails.length > 0;
       
       if (isSpreadsheetMode) {
         // 스프레드시트 모드 검증
@@ -1496,7 +1496,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           return false;
         }
         
-        // 유효한 행이 하나도 없는 경우
+        // 유효한 행이 하나도 없는 경우 (이미 위에서 length > 0 체크했으므로 이 조건은 실행되지 않음)
         if (!slotData.keywordDetails || slotData.keywordDetails.length === 0) {
           showAlert('알림', '최소 하나 이상의 완전한 행을 입력해주세요.', false);
           return false;
@@ -1575,8 +1575,8 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     } else {
       // 내키워드 미지원 서비스 (수동 입력 모드)
       
-      // 스프레드시트 모드인지 확인 (keywordDetails가 있고 배열인 경우)
-      const isSpreadsheetMode = slotData.keywordDetails && Array.isArray(slotData.keywordDetails);
+      // 스프레드시트 모드인지 확인 (keywordDetails가 존재하고 배열이며 길이가 0보다 크면 스프레드시트 모드)
+      const isSpreadsheetMode = Array.isArray(slotData.keywordDetails) && slotData.keywordDetails.length > 0;
       
       
       if (isSpreadsheetMode) {
@@ -1588,7 +1588,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           return false;
         }
         
-        // 유효한 행이 하나도 없는 경우
+        // 유효한 행이 하나도 없는 경우 (이미 위에서 length > 0 체크했으므로 이 조건은 실행되지 않음)
         if (slotData.keywordDetails && slotData.keywordDetails.length === 0) {
           showAlert('알림', '최소 하나 이상의 완전한 행을 입력해주세요.', false);
           return false;

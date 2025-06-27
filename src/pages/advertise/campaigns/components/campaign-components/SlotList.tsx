@@ -107,6 +107,37 @@ const SlotList: React.FC<SlotListProps> = ({
   customStatusLabels,
   onInquiry
 }) => {
+  // 환불 가능 여부 확인 함수
+  const isRefundable = (slot: any) => {
+    const campaign = slot?.campaign;
+    
+    // 여러 경로로 refund_settings 확인
+    const refundSettings = campaign?.refund_settings || 
+                          campaign?.originalData?.refund_settings || 
+                          campaign?.refundSettings;
+    
+    if (!refundSettings || !refundSettings.enabled) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // 환불 불가 사유 메시지 생성 함수
+  const getRefundDisabledMessage = (slot: any) => {
+    const campaign = slot?.campaign;
+    
+    // 여러 경로로 refund_settings 확인
+    const refundSettings = campaign?.refund_settings || 
+                          campaign?.originalData?.refund_settings || 
+                          campaign?.refundSettings;
+    
+    if (!refundSettings || !refundSettings.enabled) {
+      return "서비스가 완료될 때까지 환불 불가 상품입니다";
+    }
+    return "";
+  };
+
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
   const selectedSlots = externalSelectedSlots !== undefined ? externalSelectedSlots : internalSelectedSlots;
@@ -1207,16 +1238,33 @@ const SlotList: React.FC<SlotListProps> = ({
                           )}
                           {/* 진행 중인 슬롯일 때만 환불 버튼 표시 */}
                           {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
-                            <button
-                              className="btn btn-sm btn-icon btn-clear btn-info"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRefundSlot(item.id);
-                              }}
-                              title="환불"
-                            >
-                              <KeenIcon icon="wallet"/>
-                            </button>
+                            isRefundable(item) ? (
+                              <button
+                                className="btn btn-sm btn-icon btn-clear btn-info"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRefundSlot(item.id);
+                                }}
+                                title="환불"
+                              >
+                                <KeenIcon icon="wallet"/>
+                              </button>
+                            ) : (
+                              <div className="relative group">
+                                <button
+                                  className="btn btn-sm btn-icon btn-clear btn-secondary opacity-50 cursor-not-allowed"
+                                  disabled
+                                >
+                                  <KeenIcon icon="wallet"/>
+                                </button>
+                                {/* 커스텀 툴팁 */}
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                                  {getRefundDisabledMessage(item)}
+                                  {/* 툴팁 화살표 */}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            )
                           )}
                           {/* 활성 슬롯일 때만 1:1 문의 버튼 표시 */}
                           {onInquiry && item.status === 'active' && (
@@ -1557,13 +1605,30 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
                       {/* 진행 중인 슬롯일 때만 환불 버튼 표시 */}
                       {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
-                        <button
-                          className="btn btn-sm btn-icon btn-clear btn-danger"
-                          onClick={() => onRefundSlot(item.id)}
-                          title="환불"
-                        >
-                          <KeenIcon icon="dollar-circle" />
-                        </button>
+                        isRefundable(item) ? (
+                          <button
+                            className="btn btn-sm btn-icon btn-clear btn-danger"
+                            onClick={() => onRefundSlot(item.id)}
+                            title="환불"
+                          >
+                            <KeenIcon icon="dollar-circle" />
+                          </button>
+                        ) : (
+                          <div className="relative group">
+                            <button
+                              className="btn btn-sm btn-icon btn-clear btn-secondary opacity-50 cursor-not-allowed"
+                              disabled
+                            >
+                              <KeenIcon icon="dollar-circle" />
+                            </button>
+                            {/* 커스텀 툴팁 */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              {getRefundDisabledMessage(item)}
+                              {/* 툴팁 화살표 */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        )
                       )}
                       {/* 활성 슬롯일 때만 1:1 문의 버튼 표시 */}
                       {onInquiry && item.status === 'active' && (

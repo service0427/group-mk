@@ -5,7 +5,7 @@ import { formatDate } from './constants';
 import { supabase } from '@/supabase';
 import { useAlert } from '@/hooks/useAlert';
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
-import { KeenIcon } from '@/components';
+import { KeenIcon, LucideRefreshIcon } from '@/components';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -67,6 +67,8 @@ interface SlotListProps {
   onDetail: (slotId: string) => void; // 상세 보기 함수 추가
   selectedSlots?: string[]; // 부모로부터 전달받을 선택된 슬롯 ID 배열 (옵션)
   onSelectedSlotsChange?: (selectedSlots: string[]) => void; // 선택된 슬롯 상태가 변경될 때 호출될 콜백
+  onRefresh?: () => void; // 새로고침 콜백
+  isLoading?: boolean; // 로딩 상태
 }
 
 const SlotList: React.FC<SlotListProps> = ({ 
@@ -79,7 +81,9 @@ const SlotList: React.FC<SlotListProps> = ({
   onMemo,
   onDetail,
   selectedSlots: externalSelectedSlots,
-  onSelectedSlotsChange
+  onSelectedSlotsChange,
+  onRefresh,
+  isLoading = false
 }) => {
   const { showWarning } = useAlert();
   const [userMap, setUserMap] = useState<Record<string, User>>({});
@@ -350,7 +354,19 @@ const SlotList: React.FC<SlotListProps> = ({
       <div className="card shadow-sm">
         <div className="card-header px-6 py-4">
           <div className="flex items-center justify-between w-full">
-            <h3 className="card-title">일반형 슬롯 관리</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="card-title">일반형 슬롯 관리</h3>
+              {onRefresh && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={onRefresh}
+                  disabled={isLoading}
+                  title="새로고침"
+                >
+                  <LucideRefreshIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-4">
               {/* 전체 건수 */}
               <div className="text-sm">

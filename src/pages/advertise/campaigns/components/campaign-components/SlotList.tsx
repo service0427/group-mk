@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { SlotItem, Campaign } from './types';
-import { KeenIcon } from '@/components';
+import { KeenIcon, LucideRefreshIcon } from '@/components';
 import EditableCell from './EditableCell';
 import { formatDate, getStatusBadge } from './constants';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
@@ -32,6 +32,7 @@ interface SlotListProps {
   showBulkCancel?: boolean;
   customStatusLabels?: Record<string, string>; // 커스텀 상태 라벨
   onInquiry?: (slot: SlotItem) => void; // 1:1 문의 핸들러 추가
+  onRefresh?: () => void; // 새로고침 핸들러
 }
 
 // CSS for tooltip
@@ -105,7 +106,8 @@ const SlotList: React.FC<SlotListProps> = ({
   onSelectedSlotsChange,
   showBulkCancel = false,
   customStatusLabels,
-  onInquiry
+  onInquiry,
+  onRefresh
 }) => {
   // 환불 가능 여부 확인 함수
   const isRefundable = (slot: any) => {
@@ -777,6 +779,16 @@ const SlotList: React.FC<SlotListProps> = ({
           <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-3">
               <h3 className="card-title text-base">일반형 슬롯 목록</h3>
+              {onRefresh && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={onRefresh}
+                  disabled={isLoading}
+                  title="새로고침"
+                >
+                  <LucideRefreshIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+              )}
               {selectedSlots.length > 0 && (
                 <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                   {selectedSlots.length}개 선택됨

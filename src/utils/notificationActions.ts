@@ -238,7 +238,7 @@ export const createRefundConfirmationRequestNotification = async (
     type: NotificationType.TRANSACTION,
     title: '환불 확인 요청',
     message,
-    link: `/my-services?refundRequestId=${requestId}&openRefundConfirm=true`,
+    link: `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -272,7 +272,7 @@ export const createRefundRequestNotification = async (
     type: NotificationType.TRANSACTION,
     title: '환불 요청',
     message,
-    link: `/manage/guarantee-quotes?refundRequestId=${requestId}&openRefundModal=true`,
+    link: `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -347,7 +347,7 @@ export const createCampaignRequestNotification = async (
 import { CampaignServiceType, SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
 
 // 서비스 타입을 URL 경로 형식으로 변환하는 함수
-const getServiceTypeUrlPath = (serviceType?: string): string => {
+export const getServiceTypeUrlPath = (serviceType?: string): string => {
   if (!serviceType) return '';
 
   // serviceType이 이미 kebab-case 형식이면 그대로 반환
@@ -355,8 +355,29 @@ const getServiceTypeUrlPath = (serviceType?: string): string => {
     return serviceType;
   }
 
+  // 한글 서비스명을 kebab-case로 변환하는 매핑
+  const displayNameToUrlMap: Record<string, string> = {
+    'N 트래픽': 'naver-traffic',
+    'NS 트래픽': 'naver-shopping-traffic',
+    'NS 가구매': 'naver-shopping-fakesale',
+    'NS 순위확인': 'naver-shopping-rank',
+    'NP 저장하기': 'naver-place-save',
+    'NP 블로그공유': 'naver-place-share',
+    'NP 트래픽': 'naver-place-traffic',
+    'NP 순위확인': 'naver-place-rank',
+    'NB 포스팅': 'naver-blog-post',
+    'N 자동완성': 'naver-auto',
+    'CP 트래픽': 'coupang-traffic',
+    'CP 가구매': 'coupang-fakesale',
+    'OH 트래픽': 'ohouse-traffic'
+  };
+
+  // 한글 서비스명이면 kebab-case로 변환
+  if (displayNameToUrlMap[serviceType]) {
+    return displayNameToUrlMap[serviceType];
+  }
+
   // CampaignServiceType 열거형 타입을 사용하는 경우 매핑
-  // 타입에 따른 URL 경로 매핑
   const typeToPathMap: Record<string, string> = {
     [CampaignServiceType.NAVER_AUTO]: 'naver-auto',
     [CampaignServiceType.NAVER_SHOPPING_TRAFFIC]: 'naver-shopping-traffic',
@@ -387,9 +408,9 @@ export const createCampaignApprovedNotification = async (
   campaignName: string,
   serviceType?: string
 ) => {
-  // 총판이 접근 가능한 캠페인 관리 페이지로 변경
-  const campaignPath = '/manage/campaign';
-
+  // URL 파라미터를 포함한 캠페인 관리 페이지 경로
+  const servicePath = serviceType ? getServiceTypeUrlPath(serviceType) : '';
+  const campaignPath = servicePath ? `/manage/campaign?service=${servicePath}` : '/manage/campaign';
 
   return await createNotification({
     userId: matId,
@@ -415,9 +436,9 @@ export const createCampaignRejectedNotification = async (
   reason: string,
   serviceType?: string
 ) => {
-  // 총판이 접근 가능한 캠페인 관리 페이지로 변경
-  const campaignPath = '/manage/campaign';
-
+  // URL 파라미터를 포함한 캠페인 관리 페이지 경로
+  const servicePath = serviceType ? getServiceTypeUrlPath(serviceType) : '';
+  const campaignPath = servicePath ? `/manage/campaign?service=${servicePath}` : '/manage/campaign';
 
   return await createNotification({
     userId: matId,
@@ -495,7 +516,7 @@ export const createGuaranteeQuoteRequestNotification = async (
     type: NotificationType.SERVICE,
     title: '새로운 보장형 견적요청',
     message: `[${serviceName}/${slotTypeName}] ${campaignName} 캠페인에 대한 새로운 견적 요청이 있습니다.`,
-    link: `/manage/guarantee-quotes?quoteId=${quoteId}`,
+    link: `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -521,7 +542,7 @@ export const createGuaranteePurchaseNotification = async (
     type: NotificationType.SLOT,
     title: '보장형 슬롯 구매 알림',
     message: `[${serviceName}/${slotTypeName}] ${campaignName} 슬롯이 구매되었습니다. 승인이 필요합니다.`,
-    link: `/manage/guarantee-quotes?slotId=${slotId}`,
+    link: `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -556,7 +577,7 @@ export const createGuaranteeApprovalNotification = async (
     type: NotificationType.SLOT,
     title,
     message,
-    link: `/my-services?slotId=${slotId}`,
+    link: `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -614,7 +635,7 @@ export const createNegotiationCompleteNotification = async (
     type: NotificationType.SERVICE,
     title: '협상 완료 - 구매 가능',
     message,
-    link: `/my-services?quoteId=${quoteId}&openPurchase=true`,
+    link: `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`,
     priority: NotificationPriority.HIGH
   });
 };
@@ -663,8 +684,8 @@ export const createRenegotiationRequestNotification = async (
   // 보장형 슬롯 관리에서 보냈으면 → 수신자는 이용 중인 서비스로
   // 이용 중인 서비스에서 보냈으면 → 수신자는 보장형 슬롯 관리로
   const link = isFromDistributorPage 
-    ? `/my-services?quoteId=${quoteId}`              // 사용자: 이용 중인 서비스로
-    : `/manage/guarantee-quotes?quoteId=${quoteId}`;  // 총판: 보장형 슬롯 관리로
+    ? `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`              // 사용자: 이용 중인 서비스로
+    : `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`;  // 총판: 보장형 슬롯 관리로
   
   return await createNotification({
     userId: recipientId,
@@ -735,8 +756,8 @@ export const createNegotiationMessageNotification = async (
     
     // 발신 페이지에 따라 링크 설정
     const link = isFromDistributorPage 
-      ? `/my-services?negotiationId=${negotiationId}&openModal=true`
-      : `/manage/guarantee-quotes?negotiationId=${negotiationId}&openModal=true`;
+      ? `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`
+      : `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`;
     
     await createNotification({
       userId: recipientId,
@@ -792,8 +813,8 @@ export const createNegotiationMessageNotification = async (
     // 보장형 슬롯 관리에서 보냈으면 → 수신자는 이용 중인 서비스로
     // 이용 중인 서비스에서 보냈으면 → 수신자는 보장형 슬롯 관리로
     const link = isFromDistributorPage 
-      ? `/my-services?negotiationId=${negotiationId}&openModal=true`              // 사용자: 이용 중인 서비스로
-      : `/manage/guarantee-quotes?negotiationId=${negotiationId}&openModal=true`;  // 총판: 보장형 슬롯 관리로
+      ? `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`              // 사용자: 이용 중인 서비스로
+      : `/manage/guarantee-quotes?service=${getServiceTypeUrlPath(serviceName)}`;  // 총판: 보장형 슬롯 관리로
     
     await createNotification({
       userId: recipientId,
@@ -864,7 +885,7 @@ export const createInquiryMessageNotification = async (
       type: NotificationType.SERVICE,
       title: '1:1 문의 답변',
       message,
-      link: `/my-services?inquiryId=${inquiryId}&openModal=true`,
+      link: `/my-services?service=${getServiceTypeUrlPath(serviceName)}&type=${slotType}`,
       priority: NotificationPriority.MEDIUM
     });
     

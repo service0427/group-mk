@@ -89,6 +89,11 @@ const ApprovePage: React.FC = () => {
   // 엑셀 내보내기 모달 상태
   const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
 
+  // 페이지네이션 상태
+  const [limit, setLimit] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
+
 
   // 슬롯 상세 모달 상태 - 하나의 객체로 관리
   const [detailModalState, setDetailModalState] = useState<{
@@ -230,6 +235,49 @@ const ApprovePage: React.FC = () => {
       return false;
     });
   }, [slots, searchTerm]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > getTotalPages()) return;
+    setCurrentPage(page);
+  };
+
+  // 페이지당 표시 수 변경 핸들러
+  const handleChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLimit = parseInt(e.target.value);
+    setLimit(newLimit);
+    setCurrentPage(1); // 페이지당 표시 수 변경 시 첫 페이지로 이동
+  };
+
+  // 전체 페이지 수 계산
+  const getTotalPages = () => {
+    return Math.max(1, Math.ceil(totalItems / limit));
+  };
+
+  // 표시 범위 계산
+  const getDisplayRange = () => {
+    if (totalItems === 0) return "0-0 / 0";
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return `${start}-${end} / ${totalItems}`;
+  };
+
+  // 페이지네이션이 적용된 슬롯 목록
+  const paginatedSlots = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    return filteredSlots.slice(start, end);
+  }, [filteredSlots, currentPage, limit]);
+
+  // 필터링된 슬롯 개수가 변경될 때 totalItems 업데이트
+  useEffect(() => {
+    setTotalItems(filteredSlots.length);
+  }, [filteredSlots]);
+
+  // 검색 조건이 변경될 때 페이지를 1로 재설정
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedServiceType, selectedCampaign, searchStatus, searchDateFrom, searchDateTo]);
 
 
   // 승인 확인 모달 상태
@@ -1443,18 +1491,65 @@ const ApprovePage: React.FC = () => {
 
       {viewState === ViewState.DATA && (
         <>
-          <SlotList
-            slots={filteredSlots}
-            selectedServiceType={selectedServiceType}
-            campaigns={campaigns}
-            onApprove={handleApproveSlot}
-            onReject={handleRejectSlot}
-            onComplete={handleCompleteSlot}
-            onMemo={handleOpenMemoModal}
-            onDetail={handleOpenDetailModal}
-            selectedSlots={selectedSlots}
-            onSelectedSlotsChange={setSelectedSlots}
-          />
+          <div className="card shadow-sm">
+            <SlotList
+              slots={paginatedSlots}
+              selectedServiceType={selectedServiceType}
+              campaigns={campaigns}
+              onApprove={handleApproveSlot}
+              onReject={handleRejectSlot}
+              onComplete={handleCompleteSlot}
+              onMemo={handleOpenMemoModal}
+              onDetail={handleOpenDetailModal}
+              selectedSlots={selectedSlots}
+              onSelectedSlotsChange={setSelectedSlots}
+              onRefresh={fetchSlots}
+              isLoading={loading}
+            />
+            {/* 페이지네이션 컨트롤 */}
+            <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
+              <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+                <select 
+                  className="select select-sm select-bordered flex-grow min-w-[100px]" 
+                  name="perpage"
+                  value={limit}
+                  onChange={handleChangeLimit}
+                >
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+
+              {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
+              <div className="flex items-center gap-3 order-1 md:order-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+                <div className="flex">
+                  <button 
+                    className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="btn btn-icon btn-sm btn-light rounded-l-none"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= getTotalPages()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* 메모 모달 */}
           <SlotMemoModal

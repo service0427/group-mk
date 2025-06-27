@@ -135,11 +135,12 @@ export const CustomToast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto max-w-sm ${typeClasses[type]}`}
+      className={`fixed p-3 md:p-4 rounded-lg shadow-lg transition-all duration-300 transform w-[calc(100%-40px)] sm:w-auto sm:min-w-[300px] sm:max-w-sm ${typeClasses[type]}`}
       style={{ 
         ...getPositionStyle(),
         pointerEvents: 'auto',
         transition: 'all 0.3s ease-out, opacity 0.3s ease-out',
+        zIndex: 99999,
       }}
     >
       <div className="flex items-center">
@@ -147,7 +148,7 @@ export const CustomToast: React.FC<ToastProps> = ({
           {getIcon()}
         </div>
         <div className="ml-3 flex-grow">
-          <p className="text-sm font-medium truncate">{message}</p>
+          <p className="text-sm font-medium break-words">{message}</p>
         </div>
         <button
           type="button"

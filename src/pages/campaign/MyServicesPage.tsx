@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { DashboardTemplate } from '@/components/pageTemplate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { KeenIcon } from '@/components';
+import { KeenIcon, LucideRefreshIcon } from '@/components';
 import { CAMPAIGNS } from '@/config/campaign.config';
 import { useAuthContext } from '@/auth';
 import { CampaignSlotWithKeywordModal } from '@/components/campaign-modals';
@@ -40,6 +40,8 @@ import { InquiryChatModal } from '@/components/inquiry';
 
 const MyServicesPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'general' | 'guarantee'>('general'); // 뷰 모드 상태 추가
   const { currentUser, userRole } = useAuthContext();
@@ -71,6 +73,11 @@ const MyServicesPage: React.FC = () => {
     distributorId?: string;
     title?: string;
   } | null>(null);
+  
+  // 페이지네이션 상태
+  const [limit, setLimit] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
 
   // 서비스 카테고리 레이블 직접 계산
   const serviceCategoryLabel = SERVICE_TYPE_TO_CATEGORY[selectedService || ''] || selectedService?.replace(/-/g, ' ') || '';
@@ -112,6 +119,65 @@ const MyServicesPage: React.FC = () => {
     handleEditCancel
   } = useSlotEditing(campaignSlots, setSlots, filteredSlots, setFilteredSlots);
 
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > getTotalPages()) return;
+    setCurrentPage(page);
+  };
+
+  // 페이지당 표시 수 변경 핸들러
+  const handleChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLimit = parseInt(e.target.value);
+    setLimit(newLimit);
+    setCurrentPage(1); // 페이지당 표시 수 변경 시 첫 페이지로 이동
+  };
+
+  // 전체 페이지 수 계산
+  const getTotalPages = () => {
+    return Math.max(1, Math.ceil(totalItems / limit));
+  };
+
+  // 표시 범위 계산
+  const getDisplayRange = () => {
+    if (totalItems === 0) return "0-0 / 0";
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return `${start}-${end} / ${totalItems}`;
+  };
+
+  // 페이지네이션이 적용된 슬롯 목록
+  const paginatedSlots = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    return filteredSlots.slice(start, end);
+  }, [filteredSlots, currentPage, limit]);
+
+  // 필터링된 슬롯 개수가 변경될 때 totalItems 업데이트
+  useEffect(() => {
+    setTotalItems(filteredSlots.length);
+  }, [filteredSlots]);
+
+  // 검색 조건이 변경될 때 페이지를 1로 재설정
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, statusFilter, slotSearchDateFrom, slotSearchDateTo, selectedCampaignId, selectedService]);
+
+  // URL 파라미터 처리
+  useEffect(() => {
+    const serviceParam = searchParams.get('service');
+    const typeParam = searchParams.get('type');
+    
+    if (serviceParam && serviceParam !== selectedService) {
+      setSelectedService(serviceParam);
+      
+      // type 파라미터에 따라 뷰모드 설정
+      if (typeParam === 'guarantee') {
+        setViewMode('guarantee');
+      } else {
+        setViewMode('general');
+      }
+    }
+  }, [searchParams]);
 
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
@@ -121,6 +187,12 @@ const MyServicesPage: React.FC = () => {
     setStatusFilter('all');
     setSlotSearchDateFrom('');
     setSlotSearchDateTo('');
+    
+    // URL 파라미터 업데이트
+    const newParams = new URLSearchParams();
+    newParams.set('service', path);
+    newParams.set('type', 'general');
+    navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
   };
 
   // 선택된 서비스가 변경될 때 데이터 로드
@@ -560,6 +632,12 @@ const MyServicesPage: React.FC = () => {
               // 보장형 선택 시 서비스 설정 및 컴포넌트 모드 전환
               setSelectedService(service);
               setViewMode('guarantee');
+              
+              // URL 파라미터 업데이트
+              const newParams = new URLSearchParams();
+              newParams.set('service', service);
+              newParams.set('type', 'guarantee');
+              navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
             }}
             getTotalCount={(serviceType) => {
               const generalCount = serviceSlotCounts[serviceType] || 0;
@@ -753,42 +831,90 @@ const MyServicesPage: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <SlotList
-            filteredSlots={filteredSlots || []}
-            isLoading={isLoading}
-            error={slotsError}
-            serviceType={selectedService}
-            editingCell={editingCell}
-            editingValue={editingValue}
-            onEditStart={handleEditStart}
-            onEditChange={handleEditChange}
-            onEditSave={saveEdit}
-            onEditCancel={handleEditCancel}
-            onDeleteSlot={handleDeleteSlot}
-            onOpenMemoModal={handleOpenMemoModal}
-            onConfirmTransaction={handleConfirmTransaction}
-            userRole={userRole}
-            hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
-            isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
-            onCancelSlot={handleOpenCancelModal}
-            onRefundSlot={handleOpenRefundModal}
-            showBulkActions={true}
-            selectedSlots={selectedSlots}
-            onSelectedSlotsChange={setSelectedSlots}
-            showBulkCancel={true}
-            customStatusLabels={{
-              approved: '진행중'
-            }}
-            onInquiry={(slot) => {
-              setInquiryData({
-                slotId: slot.id,
-                campaignId: slot.campaign?.id,
-                distributorId: slot.campaign?.distributor_id,
-                title: `슬롯 문의: ${slot.campaign?.campaignName || '캠페인'}`
-              });
-              setInquiryModalOpen(true);
-            }}
-          />
+          <>
+            <SlotList
+              filteredSlots={paginatedSlots || []}
+              isLoading={isLoading}
+              error={slotsError}
+              serviceType={selectedService}
+              editingCell={editingCell}
+              editingValue={editingValue}
+              onEditStart={handleEditStart}
+              onEditChange={handleEditChange}
+              onEditSave={saveEdit}
+              onEditCancel={handleEditCancel}
+              onDeleteSlot={handleDeleteSlot}
+              onOpenMemoModal={handleOpenMemoModal}
+              onConfirmTransaction={handleConfirmTransaction}
+              userRole={userRole}
+              hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
+              isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
+              onCancelSlot={handleOpenCancelModal}
+              onRefundSlot={handleOpenRefundModal}
+              showBulkActions={true}
+              selectedSlots={selectedSlots}
+              onSelectedSlotsChange={setSelectedSlots}
+              showBulkCancel={true}
+              customStatusLabels={{
+                approved: '진행중'
+              }}
+              onInquiry={(slot) => {
+                setInquiryData({
+                  slotId: slot.id,
+                  campaignId: slot.campaign?.id,
+                  distributorId: slot.campaign?.distributor_id,
+                  title: `슬롯 문의: ${slot.campaign?.campaignName || '캠페인'}`
+                });
+                setInquiryModalOpen(true);
+              }}
+              onRefresh={loadCampaignSlots}
+            />
+            {/* 페이지네이션 컨트롤 */}
+            {totalItems > 0 && (
+              <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
+                <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+                  <select 
+                    className="select select-sm select-bordered flex-grow min-w-[100px]" 
+                    name="perpage"
+                    value={limit}
+                    onChange={handleChangeLimit}
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+
+                {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
+                <div className="flex items-center gap-3 order-1 md:order-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+                  <div className="flex">
+                    <button 
+                      className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button 
+                      className="btn btn-icon btn-sm btn-light rounded-l-none"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= getTotalPages()}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* 모달들 */}

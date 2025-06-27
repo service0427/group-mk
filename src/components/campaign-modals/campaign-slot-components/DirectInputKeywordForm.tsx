@@ -75,7 +75,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         mainKeyword: '',
         keywords: [],
         minimum_purchase: selectedCampaign?.min_quantity || 1,
-        work_days: 1,
+        work_days: selectedCampaign?.slot_type === 'guarantee' ? (selectedCampaign?.guarantee_period || 1) : 1,
         total_purchase: 0,
         total_work_days: 0,
         keywordDetails: [],
@@ -227,11 +227,11 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
               minPurchaseQuantity={parseInt(selectedCampaign?.min_quantity) || 1}
               showAlert={showAlert}
               columns={(() => {
-                // 기본 컬럼
-                const baseColumns: any[] = [
+                // 기본 컬럼 - 보장형이 아닌 경우에만 포함
+                const baseColumns: any[] = selectedCampaign?.slot_type !== 'guarantee' ? [
                   { name: '최소 구매수', type: 'number', required: true },
                   { name: '작업일', type: 'number', required: true }
-                ];
+                ] : [];
                 
                 // 추가 필드 중 텍스트, 숫자, 드롭다운 포함
                 const additionalFields = getAdditionalFields(selectedCampaign)
@@ -288,12 +288,19 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                 const additionalFields = getAdditionalFields(selectedCampaign);
                 
                 // 필수 필드 인덱스 확인
-                const requiredFieldIndices: number[] = [0, 1]; // 최소 구매수, 작업일
+                const requiredFieldIndices: number[] = [];
+                
+                // 보장형이 아닌 경우에만 최소 구매수, 작업일 필수
+                if (selectedCampaign?.slot_type !== 'guarantee') {
+                  requiredFieldIndices.push(0, 1); // 최소 구매수, 작업일
+                }
+                
+                const baseFieldCount = selectedCampaign?.slot_type !== 'guarantee' ? 2 : 0;
                 
                 // 추가 필드 중 필수 필드의 인덱스 추가
                 additionalFields.forEach((field, index) => {
                   if (field.isRequired) {
-                    requiredFieldIndices.push(2 + index);
+                    requiredFieldIndices.push(baseFieldCount + index);
                   }
                 });
                 
@@ -335,22 +342,27 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   // 모든 행의 keywordDetails 생성
                   const keywordDetails = validRows.map((row, rowIndex) => {
                     const minQuantity = parseInt(selectedCampaign?.min_quantity) || 1;
-                    let purchaseCount = parseInt(row[0]) || minQuantity;
+                    let purchaseCount = minQuantity;
+                    let workDays = 1;
                     
-                    // 최소 구매수보다 작으면 최소 구매수로 설정
-                    if (purchaseCount < minQuantity) {
-                      purchaseCount = minQuantity;
-                      // 데이터는 업데이트하지 않음 (SpreadsheetGrid에서 처리)
+                    if (selectedCampaign?.slot_type !== 'guarantee') {
+                      purchaseCount = parseInt(row[0]) || minQuantity;
+                      
+                      // 최소 구매수보다 작으면 최소 구매수로 설정
+                      if (purchaseCount < minQuantity) {
+                        purchaseCount = minQuantity;
+                        // 데이터는 업데이트하지 않음 (SpreadsheetGrid에서 처리)
+                      }
+                      
+                      workDays = parseInt(row[1]) || 1;
                     }
-                    
-                    const workDays = parseInt(row[1]) || 1;
                     
                     totalPurchase += purchaseCount;
                     totalWorkDays += purchaseCount * workDays; // 각 행의 구매수 * 작업일
                     
                     const rowAdditionalData: any = {};
                     additionalFields.forEach((field, fieldIndex) => {
-                      const colIndex = 2 + fieldIndex;
+                      const colIndex = baseFieldCount + fieldIndex;
                       if (row[colIndex] !== undefined) {
                         if (field.fieldType === FieldType.FILE) {
                           rowAdditionalData[`${field.fieldName}_fileName`] = row[colIndex];
@@ -374,7 +386,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                   // 첫 번째 행의 추가 필드 데이터
                   const additionalFieldsData: any = {};
                   additionalFields.forEach((field, index) => {
-                    const colIndex = 2 + index;
+                    const colIndex = baseFieldCount + index;
                     if (firstRow[colIndex] !== undefined) {
                       if (field.fieldType === FieldType.FILE) {
                         additionalFieldsData[`${field.fieldName}_fileName`] = firstRow[colIndex];
@@ -450,73 +462,75 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         ) : (
           // 기본 입력 모드
           <>
-            {/* 기본 필드 (최소 구매수, 작업일) */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  최소 구매수 <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="number"
-                  value={slotData.minimum_purchase || selectedCampaign?.min_quantity || ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-                    // 최소값보다 작은 값은 입력 불가
-                    const finalValue = value < minQuantity ? minQuantity : value;
-                    
-                    setSlotData((prev: any) => ({
-                      ...prev,
-                      minimum_purchase: finalValue
-                    }));
-                    // 데이터 변경 콜백 호출
-                    if (onDataChange) {
-                      onDataChange();
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // 포커스를 잃을 때 최소값 체크
-                    const value = parseInt(e.target.value) || 0;
-                    const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-                    if (value < minQuantity) {
+            {/* 기본 필드 (최소 구매수, 작업일) - 보장형이 아닌 경우에만 표시 */}
+            {selectedCampaign?.slot_type !== 'guarantee' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    최소 구매수 <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={slotData.minimum_purchase || selectedCampaign?.min_quantity || ''}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+                      // 최소값보다 작은 값은 입력 불가
+                      const finalValue = value < minQuantity ? minQuantity : value;
+                      
                       setSlotData((prev: any) => ({
                         ...prev,
-                        minimum_purchase: minQuantity
+                        minimum_purchase: finalValue
                       }));
-                      if (showAlert) {
-                        showAlert('최소 구매수 제한', `최소 구매수는 ${minQuantity}개 이상이어야 합니다.`, false);
+                      // 데이터 변경 콜백 호출
+                      if (onDataChange) {
+                        onDataChange();
                       }
-                    }
-                  }}
-                  placeholder="최소 구매수"
-                  min={selectedCampaign?.min_quantity || 1}
-                  className="w-full"
-                />
+                    }}
+                    onBlur={(e) => {
+                      // 포커스를 잃을 때 최소값 체크
+                      const value = parseInt(e.target.value) || 0;
+                      const minQuantity = selectedCampaign?.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
+                      if (value < minQuantity) {
+                        setSlotData((prev: any) => ({
+                          ...prev,
+                          minimum_purchase: minQuantity
+                        }));
+                        if (showAlert) {
+                          showAlert('최소 구매수 제한', `최소 구매수는 ${minQuantity}개 이상이어야 합니다.`, false);
+                        }
+                      }
+                    }}
+                    placeholder="최소 구매수"
+                    min={selectedCampaign?.min_quantity || 1}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    작업일 <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={slotData.work_days || ''}
+                    onChange={(e) => {
+                      setSlotData((prev: any) => ({
+                        ...prev,
+                        work_days: parseInt(e.target.value) || 0
+                      }));
+                      // 데이터 변경 콜백 호출
+                      if (onDataChange) {
+                        onDataChange();
+                      }
+                    }}
+                    placeholder="작업일"
+                    min={1}
+                    className="w-full"
+                  />
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  작업일 <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="number"
-                  value={slotData.work_days || ''}
-                  onChange={(e) => {
-                    setSlotData((prev: any) => ({
-                      ...prev,
-                      work_days: parseInt(e.target.value) || 0
-                    }));
-                    // 데이터 변경 콜백 호출
-                    if (onDataChange) {
-                      onDataChange();
-                    }
-                  }}
-                  placeholder="작업일"
-                  min={1}
-                  className="w-full"
-                />
-              </div>
-            </div>
+            )}
           </>
         )}
 

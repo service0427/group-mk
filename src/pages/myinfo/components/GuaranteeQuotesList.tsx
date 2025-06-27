@@ -308,7 +308,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
       <div className="flex justify-center items-center py-12">
         <div className="flex items-center gap-3 text-gray-500">
           <KeenIcon icon="loading" className="animate-spin" />
-          <span>견적 내역을 불러오는 중...</span>
+          <span>슬롯 목록을 불러오는 중...</span>
         </div>
       </div>
     );

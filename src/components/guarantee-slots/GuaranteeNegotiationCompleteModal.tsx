@@ -45,9 +45,9 @@ const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteMo
   // 작업기간 (workPeriod가 있으면 사용, 없으면 guaranteeCount 사용)
   const actualWorkPeriod = workPeriod || guaranteeCount;
   
-  // 일별 금액과 총액 계산
+  // 일별 금액과 총액 계산 - 보장일수 기준으로 계산
   const dailyAmount = proposedDailyAmount || proposedAmount;
-  const totalAmount = proposedTotalAmount || smartCeil(dailyAmount * actualWorkPeriod);
+  const totalAmount = proposedTotalAmount || smartCeil(dailyAmount * guaranteeCount);
   const totalAmountWithVAT = smartCeil(totalAmount * 1.1);
 
   return (

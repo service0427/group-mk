@@ -1,4 +1,5 @@
 export * from './keenicons';
+export * from './icons';
 export * from './container';
 export * from './loaders';
 export * from './menu';

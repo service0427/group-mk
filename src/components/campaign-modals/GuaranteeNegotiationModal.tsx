@@ -22,7 +22,7 @@ import type {
   GuaranteeSlotRequestStatus,
   AttachmentFile
 } from '@/types/guarantee-slot.types';
-import { toast } from 'sonner';
+import { useToast } from '@/providers';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CAMPAIGNS } from '@/config/campaign.config';
@@ -97,6 +97,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef<boolean>(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Toast hook
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 캠페인 로고 가져오기 (보장형 목록과 정확히 동일)
@@ -391,36 +394,16 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
   // 가격 제안 전송
   const handleSendPriceProposal = async () => {
-    if (!proposedAmount.trim() || !proposedGuaranteeCount.trim() || !currentUser?.id || loading) return;
+    if (!proposedAmount.trim() || !currentUser?.id || loading) return;
 
     const amount = parseInt(proposedAmount.replace(/,/g, ''));
-    const guaranteeCount = parseInt(proposedGuaranteeCount);
-    const targetRank = proposedTargetRank ? parseInt(proposedTargetRank) : requestInfo?.target_rank;
-    const workPeriod = proposedWorkPeriod ? parseInt(proposedWorkPeriod) : (requestInfo?.guarantee_period || 1);
+    // 캠페인 설정값 사용
+    const guaranteeCount = requestInfo?.guarantee_count || 1;
+    const targetRank = requestInfo?.target_rank || 1;
+    const workPeriod = requestInfo?.guarantee_period || guaranteeCount;
 
     if (isNaN(amount) || amount <= 0) {
       toast.error('올바른 금액을 입력해주세요.');
-      return;
-    }
-
-    if (isNaN(guaranteeCount) || guaranteeCount <= 0) {
-      toast.error(`올바른 보장 ${getGuaranteeUnit()}수를 입력해주세요.`);
-      return;
-    }
-
-    if (proposedTargetRank && (isNaN(targetRank) || targetRank <= 0)) {
-      toast.error('올바른 목표 순위를 입력해주세요.');
-      return;
-    }
-
-    if (proposedWorkPeriod && (isNaN(workPeriod) || workPeriod <= 0)) {
-      toast.error('올바른 작업 기간을 입력해주세요.');
-      return;
-    }
-
-    // 작업기간이 보장횟수보다 적으면 안됨
-    if (workPeriod < guaranteeCount) {
-      toast.error(`작업 기간은 보장 ${getGuaranteeUnit()}수 이상이어야 합니다.`);
       return;
     }
 
@@ -434,33 +417,15 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       let message = '';
       let dailyAmount = amount;
 
-      // 목표 순위와 작업 기간이 변경되었는지 확인
-      const isTargetRankChanged = targetRank !== requestInfo?.target_rank;
-      const isWorkPeriodChanged = workPeriod !== (requestInfo?.guarantee_period || requestInfo?.guarantee_count);
-
       if (priceInputType === 'total') {
         // 총액으로 입력한 경우
         message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원 (총액)`;
-        dailyAmount = amount; // 총액 그대로 저장 (budget_type으로 구분)
+        dailyAmount = Math.floor(amount / guaranteeCount); // 일별 금액 계산
       } else {
         // 일별/회당으로 입력한 경우
-        const totalAmount = amount * guaranteeCount; // 작업기간이 아닌 보장 일수로 계산
-        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원/${getGuaranteeUnit()} × ${guaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원)`;
+        const totalAmount = amount * guaranteeCount;
+        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원/${getGuaranteeUnit()}`;
         dailyAmount = amount;
-      }
-
-      // 목표 순위와 작업 기간 변경 사항 추가
-      if (isTargetRankChanged || isWorkPeriodChanged) {
-        message += '\n\n[변경 사항]';
-        if (isTargetRankChanged) {
-          message += `\n• 목표 순위: ${requestInfo?.target_rank}위 → ${targetRank}위`;
-        }
-        if (isWorkPeriodChanged) {
-          message += `\n• 작업 기간: ${requestInfo?.guarantee_period || requestInfo?.guarantee_count}${getGuaranteeUnit()} → ${workPeriod}${getGuaranteeUnit()}`;
-        }
-        if (guaranteeCount !== requestInfo?.guarantee_count) {
-          message += `\n• 보장 횟수: ${requestInfo?.guarantee_count}${getGuaranteeUnit()} → ${guaranteeCount}${getGuaranteeUnit()}`;
-        }
       }
 
       // 메시지 조합: 가격 정보는 항상 포함하고, 추가 메시지가 있으면 아래에 추가
@@ -491,9 +456,6 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
       if (isMountedRef.current) {
         setInputValue('');
         setProposedAmount('');
-        setProposedGuaranteeCount('');
-        setProposedTargetRank('');
-        setProposedWorkPeriod('');
         setAttachments([]);
         setShowPriceForm(false);
         setPriceInputType('daily');
@@ -559,12 +521,11 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     if (lastPriceMessage.budget_type === 'total') {
       // 총액으로 제안된 경우
       finalTotalAmount = lastPriceMessage.proposed_total_amount || lastPriceMessage.proposed_daily_amount;
-      finalDailyAmount = Math.round(finalTotalAmount / workPeriod);
+      finalDailyAmount = Math.round(finalTotalAmount / finalGuaranteeCount); // 보장 일수로 나누기
     } else {
       // 일별로 제안된 경우
       finalDailyAmount = lastPriceMessage.proposed_daily_amount;
-      const guaranteeCount = lastPriceMessage.proposed_guarantee_count || requestInfo?.guarantee_count || 1;
-      finalTotalAmount = lastPriceMessage.proposed_total_amount || (finalDailyAmount * guaranteeCount); // 보장 일수로 계산
+      finalTotalAmount = lastPriceMessage.proposed_total_amount || (finalDailyAmount * finalGuaranteeCount); // 보장 일수로 계산
     }
 
     // 가장 최근 가격 제안 이후의 수락 메시지만 확인
@@ -634,15 +595,15 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         } : prev);
 
         // 최종 완료 메시지
+        const guaranteeCount = negotiationCompleteData.guaranteeCount;
         const dailyAmount = negotiationCompleteData.proposedDailyAmount || negotiationCompleteData.proposedAmount;
-        const totalAmount = negotiationCompleteData.proposedTotalAmount || (dailyAmount * negotiationCompleteData.guaranteeCount);
-        const workPeriod = negotiationCompleteData.workPeriod || negotiationCompleteData.guaranteeCount;
+        const totalAmount = negotiationCompleteData.proposedTotalAmount || (dailyAmount * guaranteeCount);
 
         let completionMessage = '';
         if (negotiationCompleteData.budgetType === 'total') {
-          completionMessage = `협상이 완료되었습니다. 최종 조건: 총 ${negotiationCompleteData.proposedTotalAmount?.toLocaleString()}원 (VAT 별도, ${getUnitText()} ${dailyAmount.toLocaleString()}원 × ${workPeriod}${getGuaranteeUnit()})`;
+          completionMessage = `협상이 완료되었습니다. 최종 조건: 총 ${negotiationCompleteData.proposedTotalAmount?.toLocaleString()}원 (VAT 별도, ${getUnitText()} ${dailyAmount.toLocaleString()}원 × ${guaranteeCount}${getGuaranteeUnit()})`;
         } else {
-          completionMessage = `협상이 완료되었습니다. 최종 조건: ${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${workPeriod}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`;
+          completionMessage = `협상이 완료되었습니다. 최종 조건: ${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()} × ${guaranteeCount}${getGuaranteeUnit()} (총 ${totalAmount.toLocaleString()}원, VAT 별도)`;
         }
 
         await negotiationService.createMessage(
@@ -1030,42 +991,25 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                 </span>
               </div>
               <div className="text-sm font-medium text-primary space-y-1">
-                {/* budget_type과 proposed_total_amount 사용 */}
                 {(() => {
+                  const guaranteeCount = message.proposed_guarantee_count || requestInfo?.guarantee_count || 1;
                   const workPeriod = message.proposed_work_period || requestInfo?.guarantee_period || 1;
+                  const dailyAmount = message.budget_type === 'total' 
+                    ? Math.round((message.proposed_total_amount || message.proposed_daily_amount) / guaranteeCount)
+                    : message.proposed_daily_amount;
+                  const totalAmount = message.proposed_total_amount || (dailyAmount * guaranteeCount);
 
-                  if (message.budget_type === 'total') {
-                    // 총액으로 수락한 경우
-                    const totalAmount = message.proposed_total_amount || message.proposed_daily_amount;
-                    const dailyAmount = Math.round(totalAmount / workPeriod);
-                    return (
-                      <>
-                        <div>수락한 금액: 총 {totalAmount.toLocaleString()}원</div>
-                        <div>일별 단가: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
-                        <div>작업기간: {workPeriod}{getGuaranteeUnit()}</div>
-                        <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>
-                        <div>보장 {getGuaranteeUnit()}수: {message.proposed_guarantee_count || requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</div>
-                        <div className="text-green-600 font-semibold">
-                          총 금액: {totalAmount.toLocaleString()}원 (VAT 별도)
-                        </div>
-                      </>
-                    );
-                  } else {
-                    // 일별로 수락한 경우
-                    const guaranteeCount = message.proposed_guarantee_count || requestInfo?.guarantee_count || 1;
-                    const totalAmount = message.proposed_total_amount || (message.proposed_daily_amount * guaranteeCount); // 보장 일수로 계산
-                    return (
-                      <>
-                        <div>수락한 금액: {message.proposed_daily_amount.toLocaleString()}원/{getGuaranteeUnit()}</div>
-                        <div>작업기간: {workPeriod}{getGuaranteeUnit()}</div>
-                        <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>
-                        <div>보장 {getGuaranteeUnit()}수: {message.proposed_guarantee_count || requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</div>
-                        <div className="text-green-600 font-semibold">
-                          총 금액: {totalAmount.toLocaleString()}원 (VAT 별도)
-                        </div>
-                      </>
-                    );
-                  }
+                  return (
+                    <>
+                      <div>제안 금액: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
+                      <div>보장 {getGuaranteeUnit() === '회' ? '횟수' : '일수'}: {guaranteeCount}{getGuaranteeUnit()}</div>
+                      {getGuaranteeUnit() === '일' && <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>}
+                      <div>작업기간: {workPeriod}일</div>
+                      <div className="text-green-600 font-semibold">
+                        총 금액: {totalAmount.toLocaleString()}원 (VAT 10% 별도)
+                      </div>
+                    </>
+                  );
                 })()}
               </div>
             </div>
@@ -1074,39 +1018,25 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
           {isPriceMessage && message.proposed_daily_amount && (
             <div className="mt-2 p-2 bg-white dark:bg-gray-700 rounded border">
               <div className="text-sm font-medium text-primary space-y-1">
-                {/* budget_type과 proposed_total_amount 사용 */}
                 {(() => {
+                  const guaranteeCount = message.proposed_guarantee_count || requestInfo?.guarantee_count || 1;
                   const workPeriod = message.proposed_work_period || requestInfo?.guarantee_period || 1;
+                  const dailyAmount = message.budget_type === 'total' 
+                    ? Math.round((message.proposed_total_amount || message.proposed_daily_amount) / guaranteeCount)
+                    : message.proposed_daily_amount;
+                  const totalAmount = message.proposed_total_amount || (dailyAmount * guaranteeCount);
 
-                  if (message.budget_type === 'total') {
-                    // 총액으로 제안한 경우
-                    const totalAmount = message.proposed_total_amount || message.proposed_daily_amount;
-                    const dailyAmount = Math.round(totalAmount / workPeriod);
-                    return (
-                      <>
-                        <div>제안 금액: 총 {totalAmount.toLocaleString()}원</div>
-                        <div>일별 단가: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
-                        <div>작업기간: {workPeriod}{getGuaranteeUnit()}</div>
-                        <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>
-                        <div>보장 {getGuaranteeUnit()}수: {message.proposed_guarantee_count || requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</div>
-                      </>
-                    );
-                  } else {
-                    // 일별로 제안한 경우
-                    const guaranteeCount = message.proposed_guarantee_count || requestInfo?.guarantee_count || 1;
-                    const totalAmount = message.proposed_total_amount || (message.proposed_daily_amount * guaranteeCount); // 보장 일수로 계산
-                    return (
-                      <>
-                        <div>제안 금액: {message.proposed_daily_amount.toLocaleString()}원/{getGuaranteeUnit()}</div>
-                        <div>작업기간: {workPeriod}{getGuaranteeUnit()}</div>
-                        <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>
-                        <div>보장 {getGuaranteeUnit()}수: {message.proposed_guarantee_count || requestInfo?.guarantee_count || 0}{getGuaranteeUnit()}</div>
-                        <div className="text-blue-600 font-semibold">
-                          총 금액: {totalAmount.toLocaleString()}원 (VAT 별도)
-                        </div>
-                      </>
-                    );
-                  }
+                  return (
+                    <>
+                      <div>제안 금액: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
+                      <div>보장 {getGuaranteeUnit() === '회' ? '횟수' : '일수'}: {guaranteeCount}{getGuaranteeUnit()}</div>
+                      {getGuaranteeUnit() === '일' && <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>}
+                      <div>작업기간: {workPeriod}일</div>
+                      <div className="text-blue-600 font-semibold">
+                        총 금액: {totalAmount.toLocaleString()}원 (VAT 10% 별도)
+                      </div>
+                    </>
+                  );
                 })()}
               </div>
             </div>
@@ -1368,9 +1298,12 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
         onStatusChange?.('purchased');
         await fetchRequestInfo(); // 상태 새로고침
       }
-    } catch (error) {
+    } catch (error: any) {
       if (isMountedRef.current) {
-        toast.error('구매 처리 중 오류가 발생했습니다.');
+        // 에러 메시지 추출 및 표시
+        const errorMessage = error?.message || '구매 처리 중 오류가 발생했습니다.';
+        toast.error(errorMessage);
+        console.error('구매 처리 실패:', error);
       }
     } finally {
       if (isMountedRef.current) {
@@ -1766,89 +1699,38 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                         </div>
                       </div>
 
-                      {/* 가격과 보장횟수 입력 */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {priceInputType === 'daily' ? `${getUnitText()} 단가` : '총 금액'}
-                          </label>
-                          <Input
-                            type="text"
-                            value={proposedAmount}
-                            onChange={(e) => setProposedAmount(formatCurrency(e.target.value))}
-                            placeholder={priceInputType === 'daily'
-                              ? `${getUnitText()} 단가 (원/${getGuaranteeUnit()})`
-                              : '총 금액 (원)'
-                            }
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            보장 {getGuaranteeUnit()}수
-                          </label>
-                          <Input
-                            type="text"
-                            value={proposedGuaranteeCount}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9]/g, '');
-                              setProposedGuaranteeCount(value);
-                            }}
-                            placeholder={`보장 ${getGuaranteeUnit()}수`}
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 목표 순위와 작업 기간 입력 */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            목표 순위
-                          </label>
-                          <Input
-                            type="text"
-                            value={proposedTargetRank}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9]/g, '');
-                              setProposedTargetRank(value);
-                            }}
-                            placeholder="목표 순위 (위)"
-                            className="w-full"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            작업 기간
-                          </label>
-                          <Input
-                            type="text"
-                            value={proposedWorkPeriod}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9]/g, '');
-                              setProposedWorkPeriod(value);
-                            }}
-                            placeholder={`작업 기간 (${getGuaranteeUnit()})`}
-                            className="w-full"
-                          />
-                        </div>
+                      {/* 가격 입력 - 전체 너비 사용 */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {priceInputType === 'daily' ? `${getUnitText()} 단가` : '총 금액'}
+                        </label>
+                        <Input
+                          type="text"
+                          value={proposedAmount}
+                          onChange={(e) => setProposedAmount(formatCurrency(e.target.value))}
+                          placeholder={priceInputType === 'daily'
+                            ? `${getUnitText()} 단가 (원/${getGuaranteeUnit()})`
+                            : '총 금액 (원)'
+                          }
+                          className="w-full"
+                        />
                       </div>
                       <div className="text-xs text-gray-500">
                         {priceInputType === 'daily' ? (
                           <>
-                            * {getUnitText()} 단가와 보장 {getGuaranteeUnit()}수를 입력해주세요
-                            {proposedGuaranteeCount && proposedAmount && (
+                            * {getUnitText()} 단가를 입력해주세요
+                            {proposedAmount && requestInfo?.guarantee_count && (
                               <span className="font-medium text-blue-600 ml-2">
-                                (총 금액: {(parseInt(proposedAmount.replace(/[^0-9]/g, '')) * parseInt(proposedGuaranteeCount)).toLocaleString()}원, VAT 별도)
+                                (총 금액: {(parseInt(proposedAmount.replace(/[^0-9]/g, '')) * requestInfo.guarantee_count).toLocaleString()}원, VAT 별도)
                               </span>
                             )}
                           </>
                         ) : (
                           <>
-                            * 총 금액과 보장 {getGuaranteeUnit()}수를 입력해주세요
-                            {proposedGuaranteeCount && proposedAmount && (
+                            * 총 금액을 입력해주세요
+                            {proposedAmount && requestInfo?.guarantee_count && (
                               <span className="font-medium text-blue-600 ml-2">
-                                ({getUnitText()}: {Math.round(parseInt(proposedAmount.replace(/[^0-9]/g, '')) / (proposedWorkPeriod ? parseInt(proposedWorkPeriod) : (requestInfo?.guarantee_period || 1))).toLocaleString()}원, VAT 별도)
+                                ({getUnitText()}: {Math.round(parseInt(proposedAmount.replace(/[^0-9]/g, '')) / requestInfo.guarantee_count).toLocaleString()}원, VAT 별도)
                               </span>
                             )}
                           </>
@@ -1887,7 +1769,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <div className="flex gap-2 justify-end">
                         <Button
                           onClick={handleSendPriceProposal}
-                          disabled={!proposedAmount.trim() || !proposedGuaranteeCount.trim() || loading}
+                          disabled={!proposedAmount.trim() || loading}
                           size="sm"
                         >
                           제안
@@ -1897,9 +1779,6 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                           onClick={() => {
                             setShowPriceForm(false);
                             setProposedAmount('');
-                            setProposedGuaranteeCount('');
-                            setProposedTargetRank('');
-                            setProposedWorkPeriod('');
                             setPriceInputType('daily');
                           }}
                           size="sm"

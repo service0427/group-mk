@@ -150,7 +150,7 @@ BEGIN
     p_user_id,
     'purchase',
     v_total_amount,
-    '보장형 슬롯 구매',
+    CONCAT('[보장형] ', v_campaign.campaign_name),
     v_slot_id,
     'paid'
   );

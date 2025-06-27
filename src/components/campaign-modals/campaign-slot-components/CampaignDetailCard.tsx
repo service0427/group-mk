@@ -118,6 +118,14 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                   <span className="text-purple-600 dark:text-purple-400">효율:</span>
                   <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
                 </span>
+                <span className="flex items-center gap-1">
+                  <KeenIcon icon="time" className="text-amber-500 size-3" />
+                  <span className="text-purple-600 dark:text-purple-400">마감:</span>
+                  <span className="font-semibold">
+                    {selectedCampaign.deadline || '18:00'}
+                    {selectedCampaign.deadline === '00:00' && <span className="text-amber-600">(자정)</span>}
+                  </span>
+                </span>
                 {/* 보장 요약 정보 - 효율 오른쪽에 표시 */}
                 {selectedCampaign.guarantee_period && selectedCampaign.guarantee_count && (
                   <span className="flex items-center gap-1">
@@ -147,6 +155,14 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                   <KeenIcon icon="rocket" className="text-green-500 size-3" />
                   <span className="text-blue-600 dark:text-blue-400">효율:</span>
                   <span className="font-semibold text-green-600">{selectedCampaign.efficiency || '-%'}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <KeenIcon icon="time" className="text-amber-500 size-3" />
+                  <span className="text-blue-600 dark:text-blue-400">마감:</span>
+                  <span className="font-semibold">
+                    {selectedCampaign.deadline || '18:00'}
+                    {selectedCampaign.deadline === '00:00' && <span className="text-amber-600">(자정)</span>}
+                  </span>
                 </span>
               </>
             )}
@@ -291,6 +307,17 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                       {selectedCampaign.efficiency || '-%'}
                     </span>
                   </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <KeenIcon icon="time" className="text-amber-500 size-4" />
+                    <span className="text-muted-foreground">마감:</span>
+                    <span className="font-bold">
+                      {selectedCampaign.deadline || '18:00'}
+                      {selectedCampaign.deadline === '00:00' && (
+                        <span className="text-xs text-amber-600 ml-1">(자정마감)</span>
+                      )}
+                    </span>
+                  </div>
                 </>
               ) : (
                 <>
@@ -319,6 +346,17 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                     <span className="text-muted-foreground">효율:</span>
                     <span className="font-bold text-green-600">
                       {selectedCampaign.efficiency || '-%'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <KeenIcon icon="time" className="text-amber-500 size-4" />
+                    <span className="text-muted-foreground">마감:</span>
+                    <span className="font-bold">
+                      {selectedCampaign.deadline || '18:00'}
+                      {selectedCampaign.deadline === '00:00' && (
+                        <span className="text-xs text-amber-600 ml-1">(자정마감)</span>
+                      )}
                     </span>
                   </div>
                 </>

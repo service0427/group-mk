@@ -76,6 +76,7 @@ interface CampaignFormInputData {
   minGuaranteePrice?: string;
   maxGuaranteePrice?: string;
   refundSettings?: RefundSettings;
+  deadline?: string;
 }
 
 // 서비스 타입별 필드 정보
@@ -645,6 +646,36 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </td>
               </tr>
             )}
+
+            {/* 마감시간 */}
+            <tr>
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                마감시간 <span className="text-red-500">*</span>
+              </th>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={formData.deadline?.split(':')[0] || '18'}
+                    onValueChange={(value) => handleChange('deadline', `${value}:00`)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <SelectItem key={i} value={String(i).padStart(2, '0')}>
+                          {String(i).padStart(2, '0')}시
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.deadline === '00:00' && (
+                    <span className="text-xs text-muted-foreground">당일 자정 접수를 마감으로 처리합니다</span>
+                  )}
+                </div>
+              </td>
+            </tr>
 
             {/* 보장성 슬롯 관련 필드들 - 보장성 슬롯 선택 시에만 표시 */}
             {formData.slotType === 'guarantee' && (

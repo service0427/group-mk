@@ -512,6 +512,16 @@ const GuaranteeQuotesPage: React.FC = () => {
     }
   }, [userId, userRole]);
 
+  // 전체 새로고침 함수 (통계와 리스트 모두 새로고침)
+  const handleRefreshAll = useCallback(() => {
+    // 통계 새로고침
+    if (monthlyStatisticsRef.current) {
+      monthlyStatisticsRef.current.refresh();
+    }
+    // 리스트 새로고침
+    fetchRequests();
+  }, [fetchRequests]);
+
   // 총판 사용자가 가진 서비스 타입들을 계산
   const availableServiceTypes = useMemo(() => {
     // 총판이 아닌 경우 전체 서비스 타입 반환 (메뉴 순서대로)
@@ -1294,6 +1304,7 @@ const GuaranteeQuotesPage: React.FC = () => {
         ref={monthlyStatisticsRef}
         selectedServiceType={searchServiceType}
         selectedCampaign={selectedCampaign}
+        onRefresh={handleRefreshAll}
       />
 
       {/* 중요 안내사항 */}

@@ -130,7 +130,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         max_refund_days: 7,
         partial_refund: true
       }
-    }
+    },
+    deadline: '18:00'
   });
 
   // 초기 폼 데이터 저장 (변경 감지용)
@@ -159,7 +160,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         max_refund_days: 7,
         partial_refund: true
       }
-    }
+    },
+    deadline: '18:00'
   });
 
   // newCampaign과 formData 동기화
@@ -189,7 +191,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           max_refund_days: 7,
           partial_refund: true
         }
-      }
+      },
+      deadline: newCampaign.deadline || '18:00'
     });
   }, [newCampaign]);
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);

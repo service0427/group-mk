@@ -375,6 +375,10 @@ export const formatCampaignData = (campaign: CampaignData, index: number = 0, se
     {
       total: addUnit(campaign.min_quantity, '개'),
       description: '📦최소수량'
+    },
+    {
+      total: campaign.deadline || '18:00',
+      description: '⏰접수마감'
     }
   ];
 

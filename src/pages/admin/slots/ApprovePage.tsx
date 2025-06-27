@@ -102,6 +102,16 @@ const ApprovePage: React.FC = () => {
   // MonthlyStatistics 컴포넌트 ref
   const monthlyStatisticsRef = useRef<MonthlyStatisticsRef>(null);
 
+  // 전체 새로고침 함수 (통계와 리스트 모두 새로고침)
+  const handleRefreshAll = useCallback(() => {
+    // 통계 새로고침
+    if (monthlyStatisticsRef.current) {
+      monthlyStatisticsRef.current.refresh();
+    }
+    // 리스트 새로고침
+    setSearchRefreshCounter(prev => prev + 1);
+  }, []);
+
   // 총판 사용자가 가진 서비스 타입들을 계산
   const availableServiceTypes = useMemo(() => {
     // 총판이 아닌 경우 전체 서비스 타입 반환 (메뉴 순서대로)
@@ -384,233 +394,234 @@ const ApprovePage: React.FC = () => {
     setSlots([]);
   }, [selectedServiceType, campaigns]);
 
+  // 슬롯 데이터 가져오기 함수
+  const fetchSlots = useCallback(async () => {
+    try {
+      // 사용자 정보가 있는지 확인
+      if (!currentUser) {
+        return;
+      }
+
+      // 서비스 타입이 선택되지 않았으면 모든 서비스 타입 조회
+      // (전체 서비스 옵션)
+
+      // 캠페인 데이터가 아직 로드되지 않았으면 대기
+      // 초기 로드 시 campaigns가 비어있을 때 -999 검색을 방지
+      if (!initialized || (campaigns.length === 0 && loading)) {
+        return;
+      }
+
+      setLoading(true);
+      // 이전 에러 초기화 
+      setError(null);
+
+
+
+      // slots 테이블에서 필요한 필드만 선택 + users 테이블과 campaigns 테이블을 조인하여 정보를 한번에 가져옴
+      let query = supabase
+        .from('slots')
+        .select(`
+          *,
+          users!user_id (
+            id,
+            full_name,
+            email
+          ),
+          campaigns!product_id (
+            id,
+            campaign_name,
+            service_type,
+            unit_price,
+            min_quantity,
+            deadline,
+            logo,
+            add_info
+          )
+        `);
+
+
+
+      // 사용자 역할 확인
+      const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
+
+      // 1. 서비스 타입으로 필터링
+      let relevantCampaigns = campaigns;
+      
+      if (selectedServiceType) {
+        // 특정 서비스 타입이 선택된 경우
+        relevantCampaigns = campaigns.filter(campaign =>
+          campaign.service_type === selectedServiceType
+        );
+        
+        // 서비스 타입에 해당하는 캠페인이 없으면 빈 결과 반환
+        if (relevantCampaigns.length === 0) {
+          const { data: emptyData, error } = await query
+            .eq('product_id', -999)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            setError('슬롯 정보를 가져오는데 실패했습니다.');
+          } else {
+            setSlots([]);
+          }
+          return;
+        }
+      }
+
+      // 2. 사용자 역할에 따른 필터링
+      if (!isAdmin) {
+        // 일반 사용자: 자신의 mat_id에 해당하는 캠페인만 필터링
+        const myCampaigns = relevantCampaigns.filter(campaign =>
+          campaign.mat_id === currentUser.id
+        );
+
+        if (myCampaigns.length > 0) {
+          // 내 캠페인의 ID들로 필터링
+          const myCampaignIds = myCampaigns.map(campaign => campaign.id);
+          query = query.eq('mat_id', currentUser.id).in('product_id', myCampaignIds);
+        } else {
+          // 내 캠페인이 없으면 빈 결과
+          query = query.eq('product_id', -999);
+        }
+      } else {
+        // ADMIN: 전체 또는 서비스 타입의 모든 캠페인 ID로 필터링
+        if (relevantCampaigns.length > 0) {
+          const campaignIds = relevantCampaigns.map(campaign => campaign.id);
+          query = query.in('product_id', campaignIds);
+        }
+
+        // 3. 특정 캠페인이 선택된 경우 추가 필터링
+        if (selectedCampaign && selectedCampaign !== 'all') {
+          const campaignId = parseInt(selectedCampaign);
+
+          if (!isNaN(campaignId)) {
+            // 숫자 ID인 경우 product_id로 필터링
+            query = query.eq('product_id', campaignId);
+          } else {
+            // 문자열 ID인 경우 mat_id로 필터링 (일반 사용자용)
+            if (!isAdmin) {
+              query = query.eq('mat_id', selectedCampaign);
+            }
+          }
+        }
+      }
+
+      // 취소된 슬롯 및 환불 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
+      query = query.neq('status', 'cancelled')
+        .neq('status', 'refund_pending')
+        .neq('status', 'refund_approved')
+        .neq('status', 'refunded');
+
+      // 상태 필터 적용
+      if (searchStatus) {
+        query = query.eq('status', searchStatus);
+      }
+
+      // 날짜 필터 적용
+      if (searchDateFrom && searchDateTo) {
+        // 둘 다 선택: start_date >= 시작일 AND end_date <= 종료일
+        query = query
+          .gte('start_date', searchDateFrom)
+          .lte('end_date', searchDateTo);
+      } else if (searchDateFrom) {
+        // 시작일만 선택: start_date >= 검색시작일
+        query = query.gte('start_date', searchDateFrom);
+      } else if (searchDateTo) {
+        // 종료일만 선택: end_date <= 검색종료일
+        query = query.lte('end_date', searchDateTo);
+      }
+
+      // 문자열 검색 - 조인된 사용자 정보에서 필터링
+      // 서버 측 필터링은 제거하고 클라이언트 측에서만 처리
+      // (한글 검색어로 인한 오류 방지)
+
+      // 정렬 적용
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('슬롯 조회 에러:', error);
+        setError('슬롯 정보를 가져오는데 실패했습니다.');
+        return;
+      }
+
+
+
+      if (data) {
+        // 모든 데이터에 대해 조인된 데이터 형식 변환 (빈 배열이어도 처리)
+        const enrichedSlots = data.map(slot => {
+          // users 처리 - 배열 또는 단일 객체일 수 있음
+          let user;
+          if (Array.isArray(slot.users)) {
+            const usersArray = slot.users;
+            user = usersArray.length > 0 ? {
+              id: usersArray[0].id,
+              full_name: usersArray[0].full_name,
+              email: usersArray[0].email
+            } : undefined;
+          } else if (slot.users && typeof slot.users === 'object') {
+            // 단일 객체인 경우
+            user = {
+              id: slot.users.id,
+              full_name: slot.users.full_name,
+              email: slot.users.email
+            };
+          }
+
+          // campaigns 처리 - 배열 또는 단일 객체일 수 있음
+          let campaign;
+          if (Array.isArray(slot.campaigns)) {
+            const campaignsArray = slot.campaigns;
+            campaign = campaignsArray.length > 0 ? campaignsArray[0] : null;
+          } else if (slot.campaigns && typeof slot.campaigns === 'object') {
+            // 단일 객체인 경우
+            campaign = slot.campaigns;
+          }
+
+          // 기존 users, campaigns 필드 제거하고 정리된 필드 추가
+          const { users, campaigns, ...slotWithoutJoins } = slot;
+
+          // 캠페인 정보 설정
+          let campaignName = campaign?.campaign_name;
+          let campaignLogo;
+
+          if (campaign) {
+            // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
+            if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
+              campaignLogo = campaign.add_info.logo_url;
+            } else {
+              // 업로드된 로고가 없으면 동물 아이콘 사용
+              campaignLogo = campaign.logo;
+            }
+          }
+
+          const enrichedSlot = {
+            ...slotWithoutJoins,
+            user,
+            campaign_name: campaignName,
+            campaign_logo: campaignLogo,
+            campaign // 전체 캠페인 정보도 포함
+          };
+
+          return enrichedSlot;
+        });
+
+        setSlots(enrichedSlots as Slot[]);
+      } else {
+        setSlots([]);
+      }
+      // 데이터가 없는 경우에도 error는 null 상태로 유지
+      setError(null);
+    } catch (err: any) {
+      setError('슬롯 데이터 조회 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, selectedCampaign, selectedServiceType, searchStatus, searchDateFrom, searchDateTo, searchRefreshCounter, campaigns, initialized]);
+
   // 슬롯 데이터 가져오기
   useEffect(() => {
-    const fetchSlots = async () => {
-      try {
-        // 사용자 정보가 있는지 확인
-        if (!currentUser) {
-          return;
-        }
-
-        // 서비스 타입이 선택되지 않았으면 모든 서비스 타입 조회
-        // (전체 서비스 옵션)
-
-        // 캠페인 데이터가 아직 로드되지 않았으면 대기
-        // 초기 로드 시 campaigns가 비어있을 때 -999 검색을 방지
-        if (!initialized || (campaigns.length === 0 && loading)) {
-          return;
-        }
-
-        setLoading(true);
-        // 이전 에러 초기화 
-        setError(null);
-
-
-
-        // slots 테이블에서 필요한 필드만 선택 + users 테이블과 campaigns 테이블을 조인하여 정보를 한번에 가져옴
-        let query = supabase
-          .from('slots')
-          .select(`
-            *,
-            users!user_id (
-              id,
-              full_name,
-              email
-            ),
-            campaigns!product_id (
-              id,
-              campaign_name,
-              service_type,
-              unit_price,
-              min_quantity,
-              deadline,
-              logo,
-              add_info
-            )
-          `);
-
-
-
-        // 사용자 역할 확인
-        const isAdmin = hasPermission(currentUser.role, PERMISSION_GROUPS.ADMIN);
-
-        // 1. 서비스 타입으로 필터링
-        let relevantCampaigns = campaigns;
-        
-        if (selectedServiceType) {
-          // 특정 서비스 타입이 선택된 경우
-          relevantCampaigns = campaigns.filter(campaign =>
-            campaign.service_type === selectedServiceType
-          );
-          
-          // 서비스 타입에 해당하는 캠페인이 없으면 빈 결과 반환
-          if (relevantCampaigns.length === 0) {
-            const { data: emptyData, error } = await query
-              .eq('product_id', -999)
-              .order('created_at', { ascending: false });
-
-            if (error) {
-              setError('슬롯 정보를 가져오는데 실패했습니다.');
-            } else {
-              setSlots([]);
-            }
-            return;
-          }
-        }
-
-        // 2. 사용자 역할에 따른 필터링
-        if (!isAdmin) {
-          // 일반 사용자: 자신의 mat_id에 해당하는 캠페인만 필터링
-          const myCampaigns = relevantCampaigns.filter(campaign =>
-            campaign.mat_id === currentUser.id
-          );
-
-          if (myCampaigns.length > 0) {
-            // 내 캠페인의 ID들로 필터링
-            const myCampaignIds = myCampaigns.map(campaign => campaign.id);
-            query = query.eq('mat_id', currentUser.id).in('product_id', myCampaignIds);
-          } else {
-            // 내 캠페인이 없으면 빈 결과
-            query = query.eq('product_id', -999);
-          }
-        } else {
-          // ADMIN: 전체 또는 서비스 타입의 모든 캠페인 ID로 필터링
-          if (relevantCampaigns.length > 0) {
-            const campaignIds = relevantCampaigns.map(campaign => campaign.id);
-            query = query.in('product_id', campaignIds);
-          }
-
-          // 3. 특정 캠페인이 선택된 경우 추가 필터링
-          if (selectedCampaign && selectedCampaign !== 'all') {
-            const campaignId = parseInt(selectedCampaign);
-
-            if (!isNaN(campaignId)) {
-              // 숫자 ID인 경우 product_id로 필터링
-              query = query.eq('product_id', campaignId);
-            } else {
-              // 문자열 ID인 경우 mat_id로 필터링 (일반 사용자용)
-              if (!isAdmin) {
-                query = query.eq('mat_id', selectedCampaign);
-              }
-            }
-          }
-        }
-
-        // 취소된 슬롯 및 환불 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
-        query = query.neq('status', 'cancelled')
-          .neq('status', 'refund_pending')
-          .neq('status', 'refund_approved')
-          .neq('status', 'refunded');
-
-        // 상태 필터 적용
-        if (searchStatus) {
-          query = query.eq('status', searchStatus);
-        }
-
-        // 날짜 필터 적용
-        if (searchDateFrom && searchDateTo) {
-          // 둘 다 선택: start_date >= 시작일 AND end_date <= 종료일
-          query = query
-            .gte('start_date', searchDateFrom)
-            .lte('end_date', searchDateTo);
-        } else if (searchDateFrom) {
-          // 시작일만 선택: start_date >= 검색시작일
-          query = query.gte('start_date', searchDateFrom);
-        } else if (searchDateTo) {
-          // 종료일만 선택: end_date <= 검색종료일
-          query = query.lte('end_date', searchDateTo);
-        }
-
-        // 문자열 검색 - 조인된 사용자 정보에서 필터링
-        // 서버 측 필터링은 제거하고 클라이언트 측에서만 처리
-        // (한글 검색어로 인한 오류 방지)
-
-        // 정렬 적용
-        const { data, error } = await query.order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('슬롯 조회 에러:', error);
-          setError('슬롯 정보를 가져오는데 실패했습니다.');
-          return;
-        }
-
-
-
-        if (data) {
-          // 모든 데이터에 대해 조인된 데이터 형식 변환 (빈 배열이어도 처리)
-          const enrichedSlots = data.map(slot => {
-            // users 처리 - 배열 또는 단일 객체일 수 있음
-            let user;
-            if (Array.isArray(slot.users)) {
-              const usersArray = slot.users;
-              user = usersArray.length > 0 ? {
-                id: usersArray[0].id,
-                full_name: usersArray[0].full_name,
-                email: usersArray[0].email
-              } : undefined;
-            } else if (slot.users && typeof slot.users === 'object') {
-              // 단일 객체인 경우
-              user = {
-                id: slot.users.id,
-                full_name: slot.users.full_name,
-                email: slot.users.email
-              };
-            }
-
-            // campaigns 처리 - 배열 또는 단일 객체일 수 있음
-            let campaign;
-            if (Array.isArray(slot.campaigns)) {
-              const campaignsArray = slot.campaigns;
-              campaign = campaignsArray.length > 0 ? campaignsArray[0] : null;
-            } else if (slot.campaigns && typeof slot.campaigns === 'object') {
-              // 단일 객체인 경우
-              campaign = slot.campaigns;
-            }
-
-            // 기존 users, campaigns 필드 제거하고 정리된 필드 추가
-            const { users, campaigns, ...slotWithoutJoins } = slot;
-
-            // 캠페인 정보 설정
-            let campaignName = campaign?.campaign_name;
-            let campaignLogo;
-
-            if (campaign) {
-              // 실제 업로드된 로고 URL 확인 (add_info.logo_url)
-              if (campaign.add_info && typeof campaign.add_info === 'object' && campaign.add_info.logo_url) {
-                campaignLogo = campaign.add_info.logo_url;
-              } else {
-                // 업로드된 로고가 없으면 동물 아이콘 사용
-                campaignLogo = campaign.logo;
-              }
-            }
-
-            const enrichedSlot = {
-              ...slotWithoutJoins,
-              user,
-              campaign_name: campaignName,
-              campaign_logo: campaignLogo,
-              campaign // 전체 캠페인 정보도 포함
-            };
-
-            return enrichedSlot;
-          });
-
-          setSlots(enrichedSlots as Slot[]);
-        } else {
-          setSlots([]);
-        }
-        // 데이터가 없는 경우에도 error는 null 상태로 유지
-        setError(null);
-      } catch (err: any) {
-        setError('슬롯 데이터 조회 중 오류가 발생했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchSlots();
-  }, [currentUser, selectedCampaign, selectedServiceType, searchStatus, searchDateFrom, searchDateTo, searchRefreshCounter, campaigns]);
+  }, [fetchSlots]);
 
 
 
@@ -1378,6 +1389,7 @@ const ApprovePage: React.FC = () => {
         ref={monthlyStatisticsRef}
         selectedServiceType={selectedServiceType}
         selectedCampaign={selectedCampaign}
+        onRefresh={handleRefreshAll}
       />
 
       {/* 작업 시작일 안내 */}

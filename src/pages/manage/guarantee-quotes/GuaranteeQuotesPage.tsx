@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useAuthContext } from '@/auth';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { CommonTemplate } from '@/components/pageTemplate';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useMediaQuery } from '@/hooks';
@@ -9,7 +10,8 @@ import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/gu
 import { createRefundApprovedNotification } from '@/utils/notificationActions';
 import { supabase } from '@/supabase';
 import { smartCeil } from '@/utils/mathUtils';
-import { KeenIcon } from '@/components';
+import { KeenIcon, LucideRefreshIcon } from '@/components';
+import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { GuaranteeNegotiationModal } from '@/components/campaign-modals/GuaranteeNegotiationModal';
@@ -110,6 +112,8 @@ interface GuaranteeQuoteRequest {
 const GuaranteeQuotesPage: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // 함수 참조를 안정화하기 위한 ref
   const showErrorRef = useRef(showError);
@@ -121,11 +125,31 @@ const GuaranteeQuotesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchStatus, setSearchStatus] = useState<string>('');
   const [searchServiceType, setSearchServiceType] = useState<string>('');
+  
+  // URL 파라미터 처리
+  useEffect(() => {
+    const serviceParam = searchParams.get('service');
+    
+    if (serviceParam && serviceParam !== searchServiceType) {
+      // service 파라미터가 있으면 서비스 타입 필터 설정
+      // kebab-case를 CampaignServiceType enum 형식으로 변환
+      const serviceType = serviceParam
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('');
+      setSearchServiceType(serviceType);
+    }
+  }, [searchParams]);
   const [selectedCampaign, setSelectedCampaign] = useState<string>('');
   const [searchDateFrom, setSearchDateFrom] = useState<string>('');
   const [searchDateTo, setSearchDateTo] = useState<string>('');
   const [searchSlotStatus, setSearchSlotStatus] = useState<string>('');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  
+  // 페이지네이션 상태
+  const [limit, setLimit] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
   const [negotiationModal, setNegotiationModal] = useState<{
     open: boolean;
     requestId: string;
@@ -371,6 +395,49 @@ const GuaranteeQuotesPage: React.FC = () => {
     return filtered;
   }, [requests, searchServiceType, searchStatus, searchSlotStatus, searchDateFrom, searchDateTo, searchTerm, selectedCampaign]);
 
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > getTotalPages()) return;
+    setCurrentPage(page);
+  };
+
+  // 페이지당 표시 수 변경 핸들러
+  const handleChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLimit = parseInt(e.target.value);
+    setLimit(newLimit);
+    setCurrentPage(1); // 페이지당 표시 수 변경 시 첫 페이지로 이동
+  };
+
+  // 전체 페이지 수 계산
+  const getTotalPages = () => {
+    return Math.max(1, Math.ceil(totalItems / limit));
+  };
+
+  // 표시 범위 계산
+  const getDisplayRange = () => {
+    if (totalItems === 0) return "0-0 / 0";
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return `${start}-${end} / ${totalItems}`;
+  };
+
+  // 페이지네이션이 적용된 요청 목록
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    return filteredRequests.slice(start, end);
+  }, [filteredRequests, currentPage, limit]);
+
+  // 필터링된 요청 개수가 변경될 때 totalItems 업데이트
+  useEffect(() => {
+    setTotalItems(filteredRequests.length);
+  }, [filteredRequests]);
+
+  // 검색 조건이 변경될 때 페이지를 1로 재설정
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, searchServiceType, searchStatus, searchSlotStatus, searchDateFrom, searchDateTo, selectedCampaign]);
+
   // 사용자 정보를 안정화
   const userId = currentUser?.id;
   const userRole = currentUser?.role;
@@ -381,6 +448,8 @@ const GuaranteeQuotesPage: React.FC = () => {
 
     try {
       setLoading(true);
+      // 일시적으로 요청 목록을 비워 트랜지션 효과 적용
+      setRequests([]);
 
       let allRequests: GuaranteeQuoteRequest[] = [];
 
@@ -1642,12 +1711,23 @@ const GuaranteeQuotesPage: React.FC = () => {
       {/* 보장형 슬롯 목록 */}
       <div className="card" inert={negotiationModal.open ? '' : undefined}>
         <div className="card-header px-3 sm:px-6 py-3 sm:py-4">
-          <h3 className="card-title text-sm sm:text-base">보장형 슬롯 목록</h3>
-          <div className="card-toolbar">
-            <div className="flex flex-wrap justify-between items-center gap-2">
-              <h3 className="card-title font-medium text-sm">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <h3 className="card-title text-sm sm:text-base">보장형 슬롯 목록</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchRequests}
+                disabled={loading}
+                className="gap-2"
+              >
+                <LucideRefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 전체 <span className="text-primary font-medium">{filteredRequests.length}</span> 건
-              </h3>
+              </span>
             </div>
           </div>
         </div>
@@ -1668,10 +1748,10 @@ const GuaranteeQuotesPage: React.FC = () => {
                         <input
                           type="checkbox"
                           className="checkbox checkbox-sm"
-                          checked={selectedRequests.length === filteredRequests.length && filteredRequests.length > 0}
+                          checked={selectedRequests.length === paginatedRequests.length && paginatedRequests.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedRequests(filteredRequests.map(r => r.id));
+                              setSelectedRequests(paginatedRequests.map(r => r.id));
                             } else {
                               setSelectedRequests([]);
                             }
@@ -1690,7 +1770,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRequests.map((request) => (
+                    {paginatedRequests.map((request) => (
                       <tr key={request.id} className="hover:bg-gray-50">
                         <td className="py-2 px-2">
                           <input
@@ -2683,7 +2763,7 @@ const GuaranteeQuotesPage: React.FC = () => {
 
               {/* 모바일 카드 뷰 */}
               <div className="block md:hidden space-y-4 p-4">
-                {filteredRequests.map((request) => (
+                {paginatedRequests.map((request) => (
                   <div key={request.id} className="border border-gray-200 rounded-lg p-4 bg-white">
                     {/* 체크박스와 기본 정보 */}
                     <div className="flex items-start gap-3 mb-3">
@@ -2978,6 +3058,51 @@ const GuaranteeQuotesPage: React.FC = () => {
             </>
           )}
         </div>
+        {/* 페이지네이션 컨트롤 */}
+        {filteredRequests.length > 0 && (
+          <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
+            <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+              <select 
+                className="select select-sm select-bordered flex-grow min-w-[100px]" 
+                name="perpage"
+                value={limit}
+                onChange={handleChangeLimit}
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+
+            {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
+            <div className="flex items-center gap-3 order-1 md:order-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+              <div className="flex">
+                <button 
+                  className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button 
+                  className="btn btn-icon btn-sm btn-light rounded-l-none"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= getTotalPages()}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 협상 모달 */}

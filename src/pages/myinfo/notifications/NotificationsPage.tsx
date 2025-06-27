@@ -736,13 +736,6 @@ const NotificationsPage = () => {
           notification={selectedNotification}
           onClose={() => setSelectedNotification(null)}
           onMarkAsRead={async (id: string) => await markAsRead(id)}
-          onArchive={archiveNotification}
-          onDelete={async (id) => {
-            setNotificationToDelete(id);
-            setDeleteMultiple(false);
-            setShowDeleteConfirm(true);
-            setSelectedNotification(null);
-          }}
         />
       )}
 

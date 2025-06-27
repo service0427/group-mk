@@ -24,7 +24,7 @@ export const ToastPortal: React.FC<ToastPortalProps> = ({ children }) => {
       position: 'fixed', 
       inset: 0, 
       pointerEvents: 'none',
-      zIndex: 99999 // 가장 높은 z-index 값 설정
+      zIndex: 2000000 // 구매 확인 모달(1500000)보다 높게 설정
     }}>
       {children}
     </div>,

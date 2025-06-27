@@ -754,7 +754,7 @@ const HistoryPage = () => {
           </DialogHeader>
 
           {selectedTransaction && (
-            <div className="overflow-y-auto flex-1 px-6 pb-6">
+            <div className="overflow-y-auto flex-1 p-6">
               <div className="space-y-4">
                 {/* 기본 정보 */}
                 <div className="grid grid-cols-3 gap-4">

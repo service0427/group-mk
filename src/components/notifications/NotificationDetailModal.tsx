@@ -15,7 +15,6 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { useToast } from '@/providers';
-import { useDialog } from '@/components/dialog';
 
 // 모달용 스타일을 추가합니다
 const modalStyles = `
@@ -40,21 +39,16 @@ interface NotificationDetailModalProps {
   open?: boolean;
   onClose: () => void;
   onMarkAsRead?: (id: string) => Promise<void>;
-  onArchive?: (id: string) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
 }
 
 const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
   notification,
   open = true,
   onClose,
-  onMarkAsRead,
-  onArchive,
-  onDelete
+  onMarkAsRead
 }) => {
   const navigate = useNavigate(); // React Router 네비게이션 훅
   const toast = useToast(); // 토스트 메시지 훅
-  const { showConfirm } = useDialog(); // 다이얼로그 훅
   // 날짜 포맷팅
   const formatDate = (dateString: string | Date) => {
     try {
@@ -118,44 +112,6 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
     }
   };
 
-  // 보관 처리 함수 - showConfirm 사용
-  const handleArchive = () => {
-    showConfirm(
-      '알림 보관',
-      '이 알림을 보관하시겠습니까?',
-      async (confirmed) => {
-        if (confirmed && onArchive) {
-          await onArchive(notification.id);
-          toast.info('알림을 보관함으로 이동했습니다');
-          onClose();
-        }
-      },
-      {
-        confirmText: '보관',
-        cancelText: '취소'
-      }
-    );
-  };
-
-  // 삭제 처리 함수 - showConfirm 사용
-  const handleDelete = () => {
-    showConfirm(
-      '알림 삭제',
-      '이 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
-      async (confirmed) => {
-        if (confirmed && onDelete) {
-          await onDelete(notification.id);
-          toast.success('알림을 삭제했습니다');
-          onClose();
-        }
-      },
-      {
-        confirmText: '삭제',
-        cancelText: '취소',
-        confirmButtonClass: 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-      }
-    );
-  };
 
   if (!notification) return null;
 
@@ -189,28 +145,28 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${notification.type === NotificationType.SYSTEM
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
-                      : notification.type === NotificationType.TRANSACTION
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
-                        : notification.type === NotificationType.SERVICE
-                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
-                          : notification.type === NotificationType.SLOT
-                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
-                            : notification.type === NotificationType.MARKETING
-                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300'
+                    : notification.type === NotificationType.TRANSACTION
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/70 dark:text-green-300'
+                      : notification.type === NotificationType.SERVICE
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300'
+                        : notification.type === NotificationType.SLOT
+                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/70 dark:text-orange-300'
+                          : notification.type === NotificationType.MARKETING
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/70 dark:text-yellow-300'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
                     }`}>
                     <span className={`inline-block w-2 h-2 rounded-full ${notification.type === NotificationType.SYSTEM
-                        ? 'bg-blue-500 dark:bg-blue-400'
-                        : notification.type === NotificationType.TRANSACTION
-                          ? 'bg-green-500 dark:bg-green-400'
-                          : notification.type === NotificationType.SERVICE
-                            ? 'bg-purple-500 dark:bg-purple-400'
-                            : notification.type === NotificationType.SLOT
-                              ? 'bg-orange-500 dark:bg-orange-400'
-                              : notification.type === NotificationType.MARKETING
-                                ? 'bg-yellow-500 dark:bg-yellow-400'
-                                : 'bg-gray-500 dark:bg-gray-400'
+                      ? 'bg-blue-500 dark:bg-blue-400'
+                      : notification.type === NotificationType.TRANSACTION
+                        ? 'bg-green-500 dark:bg-green-400'
+                        : notification.type === NotificationType.SERVICE
+                          ? 'bg-purple-500 dark:bg-purple-400'
+                          : notification.type === NotificationType.SLOT
+                            ? 'bg-orange-500 dark:bg-orange-400'
+                            : notification.type === NotificationType.MARKETING
+                              ? 'bg-yellow-500 dark:bg-yellow-400'
+                              : 'bg-gray-500 dark:bg-gray-400'
                       }`}></span>
                     {getNotificationTypeText(notification.type)}
                   </span>
@@ -280,21 +236,7 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
             )}
           </DialogBody>
 
-          <DialogFooter className="flex flex-row justify-between gap-2 items-center px-4 py-3">
-            <div className="flex gap-2">
-              <button
-                className="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white px-6"
-                onClick={handleArchive}
-              >
-                보관
-              </button>
-              <button
-                className="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-6"
-                onClick={handleDelete}
-              >
-                삭제
-              </button>
-            </div>
+          <DialogFooter className="flex justify-end px-4 py-3">
             <button
               className="btn btn-sm bg-gray-500 hover:bg-gray-600 text-white px-6"
               onClick={onClose}

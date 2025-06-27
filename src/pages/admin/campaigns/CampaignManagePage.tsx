@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { DashboardTemplate } from '@/components/pageTemplate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { supabase } from '@/supabase';
 
 const CampaignManagePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const { currentUser, userRole } = useAuthContext();
@@ -40,8 +42,22 @@ const CampaignManagePage: React.FC = () => {
   const isOperator = hasPermission(userRole, PERMISSION_GROUPS.ADMIN);
 
 
+  // URL 파라미터 처리
+  useEffect(() => {
+    const serviceParam = searchParams.get('service');
+    
+    if (serviceParam && serviceParam !== selectedService) {
+      setSelectedService(serviceParam);
+    }
+  }, [searchParams]);
+
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
+    
+    // URL 파라미터 업데이트
+    const newParams = new URLSearchParams();
+    newParams.set('service', path);
+    navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
   };
 
   // 서비스별 캠페인 개수를 가져오는 함수

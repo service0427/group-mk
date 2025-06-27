@@ -3,7 +3,7 @@ import { useAuthContext } from '@/auth';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { supabase } from '@/supabase';
-import { KeenIcon } from '@/components';
+import { KeenIcon, LucideRefreshIcon } from '@/components';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GuaranteeNegotiationModal } from '@/components/campaign-modals/GuaranteeNegotiationModal';
@@ -115,6 +115,11 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
   // 선택 관련 상태
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  
+  // 페이지네이션 상태
+  const [limit, setLimit] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
 
   // 견적 요청 목록 조회
   const fetchRequests = useCallback(async () => {
@@ -122,6 +127,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
     try {
       setLoading(true);
+      // 일시적으로 요청 목록을 비워 트랜지션 효과 적용
+      setRequests([]);
 
       let query = supabase
         .from('guarantee_slot_requests')
@@ -265,6 +272,49 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         matchesDateFrom && matchesDateTo;
     });
   }, [guaranteeItems, searchTerm, searchStatus, selectedCampaignId, searchDateFrom, searchDateTo]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > getTotalPages()) return;
+    setCurrentPage(page);
+  };
+
+  // 페이지당 표시 수 변경 핸들러
+  const handleChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLimit = parseInt(e.target.value);
+    setLimit(newLimit);
+    setCurrentPage(1); // 페이지당 표시 수 변경 시 첫 페이지로 이동
+  };
+
+  // 전체 페이지 수 계산
+  const getTotalPages = () => {
+    return Math.max(1, Math.ceil(totalItems / limit));
+  };
+
+  // 표시 범위 계산
+  const getDisplayRange = () => {
+    if (totalItems === 0) return "0-0 / 0";
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return `${start}-${end} / ${totalItems}`;
+  };
+
+  // 페이지네이션이 적용된 아이템 목록
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, currentPage, limit]);
+
+  // 필터링된 아이템 개수가 변경될 때 totalItems 업데이트
+  useEffect(() => {
+    setTotalItems(filteredItems.length);
+  }, [filteredItems]);
+
+  // 검색 조건이 변경될 때 페이지를 1로 재설정
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, searchStatus, selectedCampaignId, searchDateFrom, searchDateTo, selectedService]);
 
   // 검색 핸들러
   const handleSearch = useCallback(() => {
@@ -438,7 +488,9 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
       {/* 검색 카드 */}
       <Card inert={negotiationModal.open ? '' : undefined}>
         <CardContent className="p-4 sm:p-6">
-          <h3 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">보장형 슬롯 검색</h3>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="text-sm sm:text-base font-medium">보장형 슬롯 검색</h3>
+          </div>
 
           {/* 데스크톱 검색 폼 */}
           <div className="hidden md:block space-y-4">
@@ -629,6 +681,15 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-2 sm:gap-3">
               <h3 className="card-title text-sm sm:text-base">보장형 슬롯 목록</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchRequests}
+                disabled={loading}
+                className="gap-2"
+              >
+                <LucideRefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
             <div className="card-toolbar">
               <div className="flex items-center gap-2">
@@ -643,7 +704,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
 
         <div className="card-body px-4 sm:px-6 py-3 sm:py-4">
           <GuaranteeQuotesList
-            filteredRequests={filteredItems}
+            filteredRequests={paginatedItems}
             isLoading={loading}
             error={null}
             onOpenNegotiationModal={openNegotiationModal}
@@ -678,6 +739,51 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             }}
             onRefundConfirm={handleRefundConfirmRequest}
           />
+          {/* 페이지네이션 컨트롤 */}
+          {totalItems > 0 && (
+            <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
+              <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+                <select 
+                  className="select select-sm select-bordered flex-grow min-w-[100px]" 
+                  name="perpage"
+                  value={limit}
+                  onChange={handleChangeLimit}
+                >
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+
+              {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
+              <div className="flex items-center gap-3 order-1 md:order-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+                <div className="flex">
+                  <button 
+                    className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="btn btn-icon btn-sm btn-light rounded-l-none"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= getTotalPages()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

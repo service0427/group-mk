@@ -55,35 +55,22 @@ BEGIN
     RAISE EXCEPTION '사용자 잔액 정보를 찾을 수 없습니다.';
   END IF;
 
-  IF v_user_balance.total_balance < v_total_amount THEN
-    RAISE EXCEPTION '잔액이 부족합니다. 필요 금액: %, 현재 잔액: %', 
+  -- 유료캐시만 확인
+  IF v_user_balance.paid_balance < v_total_amount THEN
+    RAISE EXCEPTION '유료캐시가 부족합니다. 필요 금액: %, 유료캐시 잔액: %', 
       v_total_amount, 
-      v_user_balance.total_balance;
+      v_user_balance.paid_balance;
   END IF;
 
-  -- 4. 무료 캐시 우선 사용하여 금액 차감
-  IF v_user_balance.free_balance >= v_total_amount THEN
-    -- 무료 캐시로 전액 결제
-    v_free_amount := v_total_amount;
-    v_paid_amount := 0;
-    
-    UPDATE user_balances
-    SET 
-      free_balance = free_balance - v_total_amount,
-      total_balance = total_balance - v_total_amount
-    WHERE user_id = p_user_id;
-  ELSE
-    -- 무료 캐시 전액 사용 + 유료 캐시에서 부족분 차감
-    v_free_amount := v_user_balance.free_balance;
-    v_paid_amount := v_total_amount - v_free_amount;
-    
-    UPDATE user_balances
-    SET 
-      free_balance = 0,
-      paid_balance = paid_balance - v_paid_amount,
-      total_balance = total_balance - v_total_amount
-    WHERE user_id = p_user_id;
-  END IF;
+  -- 4. 유료캐시에서만 금액 차감
+  v_free_amount := 0;
+  v_paid_amount := v_total_amount;
+  
+  UPDATE user_balances
+  SET 
+    paid_balance = paid_balance - v_total_amount,
+    total_balance = total_balance - v_total_amount
+  WHERE user_id = p_user_id;
 
   -- 5. 보장형 슬롯 생성 (pending 상태로)
   INSERT INTO guarantee_slots (
@@ -153,7 +140,7 @@ BEGIN
     v_total_amount,
     v_user_balance.total_balance,
     v_user_balance.total_balance - v_total_amount,
-    '보장형 슬롯 구매 (VAT 포함) - 무료캐시: ' || v_free_amount || '원, 유료캐시: ' || v_paid_amount || '원'
+    '보장형 슬롯 구매 (VAT 포함) - 유료캐시: ' || v_paid_amount || '원'
   ) RETURNING id INTO v_transaction_id;
 
   -- 8. 견적 요청 상태 업데이트
@@ -164,43 +151,22 @@ BEGIN
   WHERE id = p_request_id;
 
   -- 9. user_cash_history에 거래 내역 추가
-  -- 무료 캐시 사용 내역
-  IF v_free_amount > 0 THEN
-    INSERT INTO user_cash_history (
-      user_id,
-      transaction_type,
-      amount,
-      description,
-      reference_id,
-      balance_type
-    ) VALUES (
-      p_user_id,
-      'purchase',
-      -v_free_amount,
-      '보장형 슬롯 구매 (무료캐시)',
-      v_slot_id,
-      'free'
-    );
-  END IF;
-
-  -- 유료 캐시 사용 내역
-  IF v_paid_amount > 0 THEN
-    INSERT INTO user_cash_history (
-      user_id,
-      transaction_type,
-      amount,
-      description,
-      reference_id,
-      balance_type
-    ) VALUES (
-      p_user_id,
-      'purchase',
-      -v_paid_amount,
-      '보장형 슬롯 구매 (유료캐시)',
-      v_slot_id,
-      'paid'
-    );
-  END IF;
+  -- 유료 캐시 사용 내역만 기록
+  INSERT INTO user_cash_history (
+    user_id,
+    transaction_type,
+    amount,
+    description,
+    reference_id,
+    balance_type
+  ) VALUES (
+    p_user_id,
+    'purchase',
+    -v_paid_amount,
+    '보장형 슬롯 구매',
+    v_slot_id,
+    'paid'
+  );
 
   -- 10. 성공 응답 반환
   RETURN json_build_object(
@@ -343,7 +309,29 @@ BEGIN
   SET status = 'refunded'
   WHERE guarantee_slot_id = p_slot_id;
 
-  -- 사용자에게 환불 처리 (실제 환불 로직은 별도 구현 필요)
+  -- 사용자에게 환불 처리 (유료캐시로)
+  UPDATE user_balances
+  SET 
+    paid_balance = paid_balance + v_holding.total_amount,
+    total_balance = total_balance + v_holding.total_amount
+  WHERE user_id = v_slot.user_id;
+  
+  -- 환불 내역 기록
+  INSERT INTO user_cash_history (
+    user_id,
+    transaction_type,
+    amount,
+    description,
+    reference_id,
+    balance_type
+  ) VALUES (
+    v_slot.user_id,
+    'refund',
+    v_holding.total_amount,
+    '보장형 슬롯 반려로 인한 환불',
+    p_slot_id,
+    'paid'
+  );
   
   -- 견적 요청 상태도 다시 accepted로 변경 (재구매 가능하도록)
   UPDATE guarantee_slot_requests
@@ -544,10 +532,10 @@ BEGIN
     distributor_released_amount = total_amount - v_refund_amount
   WHERE guarantee_slot_id = p_slot_id;
 
-  -- 실제 환불 처리 (사용자 잔액에 추가)
+  -- 실제 환불 처리 (사용자 잔액에 추가 - 유료캐시로)
   UPDATE user_balances
   SET 
-    free_balance = free_balance + v_refund_amount,
+    paid_balance = paid_balance + v_refund_amount,
     total_balance = total_balance + v_refund_amount
   WHERE user_id = v_slot.user_id;
 
@@ -582,7 +570,7 @@ BEGIN
     v_refund_amount,
     '보장형 슬롯 환불',
     p_slot_id,
-    'free'
+    'paid'
   );
 
   RETURN json_build_object(

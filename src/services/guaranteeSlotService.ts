@@ -29,16 +29,13 @@ import {
   createRenegotiationRequestNotification,
   createRefundConfirmationRequestNotification,
   createRefundRequestNotification,
-  createRefundRejectedByUserNotification
+  createRefundRejectedByUserNotification,
+  getServiceTypeUrlPath
 } from '@/utils/notificationActions';
 import { SERVICE_TYPE_TO_CATEGORY } from '@/pages/advertise/campaigns/components/campaign-components/constants';
 import { createNotification } from '@/utils/notification';
 import { NotificationType, NotificationPriority } from '@/types/notification';
 
-// 서비스 타입을 한글명으로 변환하는 함수
-const getServiceTypeName = (serviceType: string): string => {
-  return SERVICE_TYPE_TO_CATEGORY[serviceType] || serviceType;
-};
 
 // 보장성 슬롯 견적 요청 관련
 export const guaranteeSlotRequestService = {
@@ -102,12 +99,11 @@ export const guaranteeSlotRequestService = {
       }
 
       // 총판에게 알림 전송
-      const serviceName = getServiceTypeName(campaign.service_type);
       await createGuaranteeQuoteRequestNotification(
         campaign.mat_id,
         campaign.campaign_name,
         data.id,
-        serviceName,
+        campaign.service_type, // 서비스 타입 코드를 그대로 전달
         campaign.slot_type
       );
 
@@ -226,7 +222,7 @@ export const guaranteeSlotRequestService = {
           .single();
 
         if (requestInfo) {
-          const serviceName = getServiceTypeName(requestInfo.campaigns?.service_type || '');
+          const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[requestInfo.campaigns?.service_type || ''] || requestInfo.campaigns?.service_type || '';
 
           // 키워드 정보 가져오기
           let keyword = '';
@@ -240,7 +236,7 @@ export const guaranteeSlotRequestService = {
             requestInfo.user_id,
             requestInfo.campaigns?.campaign_name || '캠페인',
             requestId,
-            serviceName,
+            serviceDisplayName,
             requestInfo.campaigns?.slot_type || 'standard',
             finalDailyAmount,
             {
@@ -358,7 +354,8 @@ export const negotiationService = {
           ? requestInfo.distributor_id
           : requestInfo.user_id;
 
-        const serviceName = getServiceTypeName(requestInfo.campaign?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[requestInfo.campaign?.service_type || ''] || requestInfo.campaign?.service_type || '';
+        const serviceUrlPath = getServiceTypeUrlPath(requestInfo.campaign?.service_type || '');
 
         // 재협상 요청인 경우 특별한 알림 전송
         if (params.message_type === 'renegotiation_request') {
@@ -386,7 +383,7 @@ export const negotiationService = {
             recipientId,
             requestInfo.campaign?.campaign_name || '캠페인',
             params.request_id,
-            serviceName,
+            serviceDisplayName,
             requestInfo.campaign?.slot_type || 'standard',
             {
               keyword,
@@ -419,7 +416,7 @@ export const negotiationService = {
             recipientId,
             requestInfo.campaign?.campaign_name || '캠페인',
             params.request_id,
-            serviceName,
+            serviceDisplayName,
             requestInfo.campaign?.slot_type || 'standard',
             {
               keyword,
@@ -516,12 +513,12 @@ export const guaranteeSlotService = {
 
       if (data?.slot_id) {
         // 총판에게 구매 알림 전송
-        const serviceName = getServiceTypeName(request.campaigns?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[request.campaigns?.service_type || ''] || request.campaigns?.service_type || '';
         await createGuaranteePurchaseNotification(
           request.distributor_id,
           request.campaigns?.campaign_name || '캠페인',
           data.slot_id,
-          serviceName,
+          serviceDisplayName,
           request.campaigns?.slot_type || 'standard'
         );
       }
@@ -760,13 +757,13 @@ export const guaranteeSlotService = {
 
       // 사용자에게 승인 알림 전송 (정상 승인일 때만)
       if (slotInfo?.user_id) {
-        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[slotInfo.campaigns?.service_type || ''] || slotInfo.campaigns?.service_type || '';
         await createGuaranteeApprovalNotification(
           slotInfo.user_id,
           slotInfo.campaigns?.campaign_name || '캠페인',
           slotId,
           true,
-          serviceName,
+          serviceDisplayName,
           slotInfo.campaigns?.slot_type || 'standard'
         );
       }
@@ -848,13 +845,13 @@ export const guaranteeSlotService = {
 
       // 사용자에게 반려 알림 전송
       if (slotInfo?.user_id) {
-        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[slotInfo.campaigns?.service_type || ''] || slotInfo.campaigns?.service_type || '';
         await createGuaranteeApprovalNotification(
           slotInfo.user_id,
           slotInfo.campaigns?.campaign_name || '캠페인',
           slotId,
           false,
-          serviceName,
+          serviceDisplayName,
           slotInfo.campaigns?.slot_type || 'standard',
           rejectionReason
         );
@@ -1087,14 +1084,14 @@ export const guaranteeSlotService = {
         .single();
 
       if (slotInfo?.user_id) {
-        const serviceName = getServiceTypeName(slotInfo.campaigns?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[slotInfo.campaigns?.service_type || ''] || slotInfo.campaigns?.service_type || '';
         await createRefundConfirmationRequestNotification(
           slotInfo.user_id,
           slotInfo.campaigns?.campaign_name || '캠페인',
           actualRefundAmount,
           refundReason,
           data.request_id,
-          serviceName,
+          serviceDisplayName,
           slotInfo.campaigns?.slot_type || 'standard'
         );
       }
@@ -1191,7 +1188,7 @@ export const guaranteeSlotService = {
           .eq('id', userId)
           .single();
 
-        const serviceName = getServiceTypeName(campaignInfo?.service_type || '');
+        const serviceDisplayName = SERVICE_TYPE_TO_CATEGORY[campaignInfo?.service_type || ''] || campaignInfo?.service_type || '';
         await createRefundRequestNotification(
           slot.distributor_id,
           campaignInfo?.campaign_name || '캠페인',
@@ -1199,7 +1196,7 @@ export const guaranteeSlotService = {
           refundReason,
           userInfo?.full_name || '사용자',
           data?.request_id || 'unknown',
-          serviceName,
+          serviceDisplayName,
           'guarantee'
         );
       }

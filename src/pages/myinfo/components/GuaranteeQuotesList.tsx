@@ -985,7 +985,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                                     }
                                                     // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
                                                     const totalAmount = item.final_daily_amount && item.guarantee_count
-                                                      ? Math.floor(item.final_daily_amount * item.guarantee_count * 1.1)
+                                                      ? Math.ceil(item.final_daily_amount * item.guarantee_count * 1.1)
                                                       : 0;
                                                     
                                                     // 완료된 일수 계산
@@ -999,7 +999,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                                                     
                                                     // 완료된 금액 계산
                                                     const completedAmount = item.final_daily_amount 
-                                                      ? Math.floor(item.final_daily_amount * completedDays * 1.1)
+                                                      ? Math.ceil(item.final_daily_amount * completedDays * 1.1)
                                                       : 0;
                                                     
                                                     // 환불 금액 = 총 금액 - 완료된 금액

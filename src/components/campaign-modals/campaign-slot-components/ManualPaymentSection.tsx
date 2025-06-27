@@ -37,8 +37,8 @@ export const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         ? parseFloat(selectedCampaign.unit_price) 
         : selectedCampaign.unit_price)
       : 0;
-    const price = workCount * workDays * unitPrice * 1.1; // 부가세 포함
-    return Math.round(price);
+    const price = Math.ceil(workCount * workDays * unitPrice * 1.1); // 부가세 포함
+    return price;
   }, [slotData.minimum_purchase, slotData.work_days, selectedCampaign?.unit_price]);
 
   return (

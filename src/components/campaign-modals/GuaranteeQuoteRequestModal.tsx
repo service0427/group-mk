@@ -679,8 +679,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       <div className="flex justify-between text-purple-600 dark:text-purple-400">
                         <span>총 금액 (VAT 포함):</span>
                         <span className="font-semibold">
-                          <span className="hidden md:inline">{formatAmountDesktop(Math.round(calculateTotalAmount() * 1.1))}</span>
-                          <span className="md:hidden">{formatAmountMobile(Math.round(calculateTotalAmount() * 1.1))}</span>
+                          <span className="hidden md:inline">{formatAmountDesktop(Math.ceil(calculateTotalAmount() * 1.1))}</span>
+                          <span className="md:hidden">{formatAmountMobile(Math.ceil(calculateTotalAmount() * 1.1))}</span>
                         </span>
                       </div>
                     </>
@@ -696,8 +696,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       <div className="flex justify-between text-purple-600 dark:text-purple-400">
                         <span>VAT 포함:</span>
                         <span className="font-semibold">
-                          <span className="hidden md:inline">{formatAmountDesktop(Math.round(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
-                          <span className="md:hidden">{formatAmountMobile(Math.round(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
+                          <span className="hidden md:inline">{formatAmountDesktop(Math.ceil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
+                          <span className="md:hidden">{formatAmountMobile(Math.ceil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
                         </span>
                       </div>
                     </>

@@ -2193,8 +2193,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                         </div>
                         <div className="text-xs text-blue-600 dark:text-blue-400">
                           (VAT 포함: {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                            : Math.floor(requestInfo.final_daily_amount * requestInfo.guarantee_count * 1.1).toLocaleString()}원)
+                            ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.ceil(requestInfo.final_daily_amount * requestInfo.guarantee_count * 1.1).toLocaleString()}원)
                         </div>
                       </div>
                     </div>
@@ -2767,8 +2767,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <div className="text-right">
                         <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
                           {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                            : Math.floor(requestInfo.final_daily_amount * finalGuaranteeCount * 1.1).toLocaleString()}원
+                            ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.ceil(requestInfo.final_daily_amount * finalGuaranteeCount * 1.1).toLocaleString()}원
                         </span>
                         <div className="text-xs text-orange-700 dark:text-orange-300">(VAT 포함)</div>
                       </div>
@@ -2890,8 +2890,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <li>• 구매 확정 후에는 취소가 어려울 수 있습니다</li>
                       <li>• 잔액에서 <span className="font-bold">{requestInfo && (
                         requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                          ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                          : Math.floor(requestInfo.final_daily_amount * requestInfo.guarantee_count * 1.1).toLocaleString()
+                          ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                          : Math.ceil(requestInfo.final_daily_amount * requestInfo.guarantee_count * 1.1).toLocaleString()
                       )}원</span> (VAT 포함)이 차감됩니다</li>
                       <li>• 구매 이후 총판(판매자) 승인 후 슬롯이 활성화됩니다</li>
                       <li>• 승인 완료 후 서비스가 시작됩니다</li>

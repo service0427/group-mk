@@ -309,7 +309,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                               <span className="text-sm font-medium">총 예상 금액</span>
                               <div className="text-right">
                                 <div className="text-base font-bold">
-                                  {formatPrice(Math.floor(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count) * 1.1))}
+                                  {formatPrice(Math.ceil(requestData.final_daily_amount * (requestData.guarantee_period || requestData.guarantee_count) * 1.1))}
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-gray-500">VAT 10% 포함</div>
                               </div>

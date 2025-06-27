@@ -293,13 +293,13 @@ const GuaranteeRefundRequestModal: React.FC<GuaranteeRefundRequestModalProps> = 
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-xs text-slate-500 dark:text-gray-500">협상금액</span>
                         <span className="font-medium">
-                          {Math.round(totalAmount / 1.1).toLocaleString()}원
+                          {Math.ceil(totalAmount / 1.1).toLocaleString()}원
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-400 dark:text-gray-600">VAT(10%)</span>
                         <span className="text-sm text-slate-400 dark:text-gray-600">
-                          {(totalAmount - Math.round(totalAmount / 1.1)).toLocaleString()}원
+                          {(totalAmount - Math.ceil(totalAmount / 1.1)).toLocaleString()}원
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm border-t border-slate-200 dark:border-gray-700 pt-2">

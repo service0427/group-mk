@@ -69,12 +69,12 @@ const GuaranteeCompleteModal: React.FC<GuaranteeCompleteModalProps> = ({
   const actualCompleted = isDaily ? completedDays : (actualCompletedCount || 0);
 
   const isEarlyCompletion = actualCompleted < guaranteeCount;
-  const completionRate = guaranteeCount > 0 ? Math.round((actualCompleted / guaranteeCount) * 100) : 0;
+  const completionRate = guaranteeCount > 0 ? Math.ceil((actualCompleted / guaranteeCount) * 100) : 0;
 
   // 환불 금액 계산 (조기완료 시)
   const unitAmountWithVat = totalAmount > 0 && guaranteeCount > 0 ? totalAmount / guaranteeCount : 0;
   const remainingCount = Math.max(0, guaranteeCount - actualCompleted);
-  const calculatedRefundAmount = isEarlyCompletion ? Math.round(unitAmountWithVat * remainingCount) : 0;
+  const calculatedRefundAmount = isEarlyCompletion ? Math.ceil(unitAmountWithVat * remainingCount) : 0;
 
   // 캠페인 로고 처리
   const getCampaignLogo = (): string | null => {
@@ -269,13 +269,13 @@ const GuaranteeCompleteModal: React.FC<GuaranteeCompleteModalProps> = ({
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-xs text-slate-500 dark:text-gray-500">협상금액</span>
                           <span className="font-medium">
-                            {Math.round(totalAmount / 1.1).toLocaleString()}원
+                            {Math.ceil(totalAmount / 1.1).toLocaleString()}원
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-400 dark:text-gray-600">VAT(10%)</span>
                           <span className="text-sm text-slate-400 dark:text-gray-600">
-                            {(totalAmount - Math.round(totalAmount / 1.1)).toLocaleString()}원
+                            {(totalAmount - Math.ceil(totalAmount / 1.1)).toLocaleString()}원
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm border-t border-slate-200 dark:border-gray-700 pt-2">

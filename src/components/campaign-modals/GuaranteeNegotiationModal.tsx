@@ -558,7 +558,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
     if (lastPriceMessage.budget_type === 'total') {
       // 총액으로 제안된 경우
       finalTotalAmount = lastPriceMessage.proposed_total_amount || lastPriceMessage.proposed_daily_amount;
-      finalDailyAmount = Math.round(finalTotalAmount / workPeriod);
+      finalDailyAmount = Math.ceil(finalTotalAmount / workPeriod);
     } else {
       // 일별로 제안된 경우
       finalDailyAmount = lastPriceMessage.proposed_daily_amount;
@@ -1035,7 +1035,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                   if (message.budget_type === 'total') {
                     // 총액으로 수락한 경우
                     const totalAmount = message.proposed_total_amount || message.proposed_daily_amount;
-                    const dailyAmount = Math.round(totalAmount / workPeriod);
+                    const dailyAmount = Math.ceil(totalAmount / workPeriod);
                     return (
                       <>
                         <div>수락한 금액: 총 {totalAmount.toLocaleString()}원</div>
@@ -1078,7 +1078,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                   if (message.budget_type === 'total') {
                     // 총액으로 제안한 경우
                     const totalAmount = message.proposed_total_amount || message.proposed_daily_amount;
-                    const dailyAmount = Math.round(totalAmount / workPeriod);
+                    const dailyAmount = Math.ceil(totalAmount / workPeriod);
                     return (
                       <>
                         <div>제안 금액: 총 {totalAmount.toLocaleString()}원</div>
@@ -1607,7 +1607,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                             const period = requestInfo.guarantee_period || requestInfo.guarantee_count || 1;
 
                             if (requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount) {
-                              const dailyAmount = Math.round(requestInfo.final_total_amount / period);
+                              const dailyAmount = Math.ceil(requestInfo.final_total_amount / period);
                               return `총 ${requestInfo.final_total_amount.toLocaleString()}원 (${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()}, 총액협상)`;
                             } else {
                               const totalAmount = requestInfo.final_daily_amount * period;
@@ -1843,7 +1843,7 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                             * 총 금액과 보장 {getGuaranteeUnit()}수를 입력해주세요
                             {proposedGuaranteeCount && proposedAmount && (
                               <span className="font-medium text-blue-600 ml-2">
-                                ({getUnitText()}: {Math.round(parseInt(proposedAmount.replace(/[^0-9]/g, '')) / (proposedWorkPeriod ? parseInt(proposedWorkPeriod) : (requestInfo?.guarantee_period || 1))).toLocaleString()}원, VAT 별도)
+                                ({getUnitText()}: {Math.ceil(parseInt(proposedAmount.replace(/[^0-9]/g, '')) / (proposedWorkPeriod ? parseInt(proposedWorkPeriod) : (requestInfo?.guarantee_period || 1))).toLocaleString()}원, VAT 별도)
                               </span>
                             )}
                           </>
@@ -2189,8 +2189,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                         </div>
                         <div className="text-xs text-blue-600 dark:text-blue-400">
                           (VAT 포함: {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                            : Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()}원)
+                            ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.ceil(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()}원)
                         </div>
                       </div>
                     </div>
@@ -2763,8 +2763,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <div className="text-right">
                         <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
                           {requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                            ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                            : Math.floor(requestInfo.final_daily_amount * finalWorkPeriod * 1.1).toLocaleString()}원
+                            ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                            : Math.ceil(requestInfo.final_daily_amount * finalWorkPeriod * 1.1).toLocaleString()}원
                         </span>
                         <div className="text-xs text-orange-700 dark:text-orange-300">(VAT 포함)</div>
                       </div>
@@ -2886,8 +2886,8 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                       <li>• 구매 확정 후에는 취소가 어려울 수 있습니다</li>
                       <li>• 잔액에서 <span className="font-bold">{requestInfo && (
                         requestInfo.final_budget_type === 'total' && requestInfo.final_total_amount
-                          ? Math.floor(requestInfo.final_total_amount * 1.1).toLocaleString()
-                          : Math.floor(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()
+                          ? Math.ceil(requestInfo.final_total_amount * 1.1).toLocaleString()
+                          : Math.ceil(requestInfo.final_daily_amount * (requestInfo.guarantee_period || requestInfo.guarantee_count) * 1.1).toLocaleString()
                       )}원</span> (VAT 포함)이 차감됩니다</li>
                       <li>• 구매 이후 총판(판매자) 승인 후 슬롯이 활성화됩니다</li>
                       <li>• 승인 완료 후 서비스가 시작됩니다</li>

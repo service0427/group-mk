@@ -47,7 +47,7 @@ const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteMo
   // 일별 금액과 총액 계산
   const dailyAmount = proposedDailyAmount || proposedAmount;
   const totalAmount = proposedTotalAmount || (dailyAmount * actualWorkPeriod);
-  const totalAmountWithVAT = Math.floor(totalAmount * 1.1);
+  const totalAmountWithVAT = Math.ceil(totalAmount * 1.1);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

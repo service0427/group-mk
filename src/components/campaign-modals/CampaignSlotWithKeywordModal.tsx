@@ -1126,7 +1126,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     });
 
     // 부가세 10% 추가
-    const totalWithTax = Math.round(total * 1.1);
+    const totalWithTax = Math.ceil(total * 1.1);
 
     setTotalPaymentAmount(totalWithTax);
   };

@@ -894,7 +894,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
+      totalAmount: request.final_daily_amount ? Math.ceil(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
       negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
@@ -971,7 +971,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
+      totalAmount: request.final_daily_amount ? Math.ceil(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0, // VAT 포함
       negotiatedAmount: request.final_total_amount || (request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0), // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
@@ -1038,7 +1038,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.floor(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0,
+      totalAmount: request.final_daily_amount ? Math.ceil(request.final_daily_amount * (request.guarantee_period || request.guarantee_count) * 1.1) : 0,
       startDate: slot?.start_date,
       endDate: slot?.end_date,
       requestDate: refundRequest.request_date,

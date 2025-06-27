@@ -233,7 +233,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           if (feePercentage !== undefined) {
 
             // 수수료 계산 (퍼센트 기준만 적용)
-            const fee = Math.floor((amount * feePercentage) / 100);
+            const fee = Math.ceil((amount * feePercentage) / 100);
 
 
             // 최소/최대 수수료 제한 없음
@@ -243,7 +243,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           } else {
 
             // 백업 계산 - 기본 설정값 사용 (퍼센트만 적용)
-            const fee = Math.floor((amount * 3) / 100); // 기본 3%
+            const fee = Math.ceil((amount * 3) / 100); // 기본 3%
 
             setFeeAmount(fee);
           }
@@ -251,7 +251,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
 
           // 백업 계산 - 기본 설정값 사용 (퍼센트만 적용)
           const amount = parseInt(customAmount) || 0;
-          const fee = Math.floor((amount * 3) / 100); // 기본 3%
+          const fee = Math.ceil((amount * 3) / 100); // 기본 3%
 
           setFeeAmount(fee);
         }

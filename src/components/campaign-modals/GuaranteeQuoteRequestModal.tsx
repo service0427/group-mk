@@ -208,7 +208,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
 
       // 견적 요청 생성 - inputAmount는 이미 위에서 선언됨
       const dailyBudget = priceInputType === 'total'
-        ? Math.floor(inputAmount / parseInt(guaranteePeriod.toString()))
+        ? Math.ceil(inputAmount / parseInt(guaranteePeriod.toString()))
         : inputAmount;
 
       const { data, error } = await guaranteeSlotRequestService.createRequest({
@@ -267,7 +267,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           if (priceInputType === 'total') {
             // 총 단가로 입력한 경우
             const totalAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
-            const dailyAmount = Math.floor(totalAmount / parseInt(guaranteePeriod));
+            const dailyAmount = Math.ceil(totalAmount / parseInt(guaranteePeriod));
             priceMessage = `희망 예산: 총 ${totalAmount.toLocaleString()}원 (${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${dailyAmount.toLocaleString()}원 × ${guaranteePeriod}${campaign?.guarantee_unit || '일'})`;
 
             // 총액인 경우에도 proposed_daily_amount에는 일별 금액을 저장

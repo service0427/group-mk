@@ -27,6 +27,7 @@ interface DailyStats {
 interface MonthlyStatisticsProps {
   selectedServiceType: string;
   selectedCampaign: string;
+  onRefresh?: () => void;
 }
 
 export interface MonthlyStatisticsRef {
@@ -35,7 +36,8 @@ export interface MonthlyStatisticsRef {
 
 const MonthlyStatistics = forwardRef<MonthlyStatisticsRef, MonthlyStatisticsProps>(({
   selectedServiceType,
-  selectedCampaign
+  selectedCampaign,
+  onRefresh
 }, ref) => {
   const { currentUser } = useAuthContext();
   const [stats, setStats] = useState<DailyStats[]>([]);
@@ -219,7 +221,11 @@ const MonthlyStatistics = forwardRef<MonthlyStatisticsRef, MonthlyStatisticsProp
         <button
           onClick={(e) => {
             e.stopPropagation(); // 헤더 클릭 이벤트와 충돌 방지
-            fetchMonthlyStats();
+            if (onRefresh) {
+              onRefresh(); // 전체 새로고침 (통계 + 리스트)
+            } else {
+              fetchMonthlyStats(); // 통계만 새로고침
+            }
           }}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title="새로고침"

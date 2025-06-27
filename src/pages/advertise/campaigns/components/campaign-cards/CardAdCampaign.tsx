@@ -282,6 +282,23 @@ const CardAdCampaign = ({
                 );
               }
 
+              // 접수마감 시간 처리 - 자정인 경우 특별 표시
+              if (statistic.description.includes('접수마감')) {
+                const deadlineTime = statistic.total;
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
+                  >
+                    <span className="text-gray-900 text-sm leading-none font-medium">
+                      {deadlineTime}
+                      {deadlineTime === '00:00' && <span className="text-xs text-amber-600 ml-1">(자정)</span>}
+                    </span>
+                    <span className="text-gray-700 text-xs">{statistic.description}</span>
+                  </div>
+                );
+              }
+
               return renderItem(statistic, index);
             })}
           </div>

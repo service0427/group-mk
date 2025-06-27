@@ -28,6 +28,7 @@ interface GuaranteeStats {
 interface GuaranteeMonthlyStatisticsProps {
   selectedServiceType: string;
   selectedCampaign: string;
+  onRefresh?: () => void;
 }
 
 export interface GuaranteeMonthlyStatisticsRef {
@@ -36,7 +37,8 @@ export interface GuaranteeMonthlyStatisticsRef {
 
 const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, GuaranteeMonthlyStatisticsProps>(({
   selectedServiceType,
-  selectedCampaign
+  selectedCampaign,
+  onRefresh
 }, ref) => {
   const { currentUser } = useAuthContext();
   const [stats, setStats] = useState<GuaranteeStats[]>([]);
@@ -306,7 +308,11 @@ const GuaranteeMonthlyStatistics = forwardRef<GuaranteeMonthlyStatisticsRef, Gua
         <button
           onClick={(e) => {
             e.stopPropagation();
-            fetchMonthlyStats();
+            if (onRefresh) {
+              onRefresh(); // 전체 새로고침 (통계 + 리스트)
+            } else {
+              fetchMonthlyStats(); // 통계만 새로고침
+            }
           }}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title="새로고침"

@@ -255,17 +255,11 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         }
       }
       
-      // 디버깅을 위해 add_info 내용 로그
-      console.log('Campaign originalData:', campaign.originalData);
-      console.log('Campaign originalData add_info:', addInfo);
-      console.log('Campaign originalData add_info type:', typeof addInfo);
-
       // 사용자 입력 필드 설정
       let userInputFieldsValue = [];
 
       // 기존 데이터는 add_info.add_field에 저장되어 있음
       if (addInfo.add_field && Array.isArray(addInfo.add_field)) {
-        console.log('Found add_field:', addInfo.add_field);
         userInputFieldsValue = addInfo.add_field.map((field: any) => ({
           fieldName: field.fieldName || field.name || '',
           description: field.description || field.desc || '',
@@ -300,12 +294,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           // 파싱 실패 시 빈 배열 사용
           userInputFieldsValue = [];
         }
-      } else {
-        console.log('No user input fields found in add_info');
       }
-
-      // 사용자 입력 필드 값 최종 확인
-      console.log('Final userInputFieldsValue:', userInputFieldsValue);
       
       // 로고 이미지 설정 (add_info에서 로고 URL을 확인)
       if (addInfo.logo_url) {
@@ -742,20 +731,27 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   };
 
   // 실제 저장 처리 함수
-  const performSave = async (skipConfirm = false) => {
-    if (!campaign || !updateCampaign) return;
+  const performSave = async (skipConfirm = false, overrideStatus?: string) => {
+    if (!campaign || !updateCampaign) {
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
       let statusValue;
-      if (typeof newCampaign.status === 'string') {
-        statusValue = newCampaign.status;
-      } else if (typeof newCampaign.status === 'object' && newCampaign.status !== null) {
-        statusValue = newCampaign.status.status || 'pending';
+      // overrideStatus가 있으면 그것을 우선 사용
+      if (overrideStatus) {
+        statusValue = overrideStatus;
       } else {
-        statusValue = newCampaign.originalData?.status || 'pending';
+        if (typeof newCampaign.status === 'string') {
+          statusValue = newCampaign.status;
+        } else if (typeof newCampaign.status === 'object' && newCampaign.status !== null) {
+          statusValue = newCampaign.status.status || 'pending';
+        } else {
+          statusValue = newCampaign.originalData?.status || 'pending';
+        }
       }
 
       // 반려 상태에서 반려 사유가 비어있는지 확인
@@ -2002,15 +1998,10 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 className="bg-success hover:bg-success/90 text-white"
                 onClick={() => {
                   setApprovalModalOpen(false);
-                  // 상태를 active로 설정
-                  setNewCampaign(prev => ({ 
-                    ...prev, 
-                    status: 'active'
-                  }));
-                  // performSave를 직접 호출하여 운영자 모드 논리 회피
+                  // performSave에 직접 'active' 상태 전달
                   setTimeout(async () => {
                     if (campaign && updateCampaign) {
-                      await performSave(false);
+                      await performSave(false, 'active');
                     }
                   }, 100);
                 }}
@@ -2065,55 +2056,18 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                     return;
                   }
                   setRejectionModalOpen(false);
-                  // 상태를 rejected로 설정하고 반려 사유 저장
-                  const updatedCampaign = { 
-                    ...newCampaign, 
-                    status: 'rejected',
+                  // 반려 사유를 newCampaign에 설정
+                  setNewCampaign(prev => ({ 
+                    ...prev, 
                     rejectionReason: rejectionReason
-                  };
-                  setNewCampaign(updatedCampaign);
+                  }));
                   
-                  // 직접 업데이트 수행
-                  if (campaign && updateCampaign) {
-                    setLoading(true);
-                    setError(null);
-                    
-                    const campaignId = typeof campaign.id === 'string' ? parseInt(campaign.id) : campaign.id;
-                    const updateData = {
-                      status: 'rejected',
-                      rejectionReason: rejectionReason,
-                      rejected_reason: rejectionReason,
-                      // 기존 데이터 유지를 위해 formData 정보 포함
-                      campaignName: formData.campaignName,
-                      description: formData.description,
-                      detailedDescription: formData.detailedDescription,
-                      add_field: formData.userInputFields
-                    };
-                    
-                    try {
-                      const success = await updateCampaign(campaignId, updateData);
-                      if (!success) {
-                        throw new Error('캠페인 반려 처리에 실패했습니다.');
-                      }
-                      
-                      // 성공 시 모달 닫기
-                      if (onSave) {
-                        onSave({
-                          ...updatedCampaign,
-                          status: {
-                            label: '반려됨',
-                            color: 'danger',
-                            status: 'rejected'
-                          }
-                        });
-                      }
-                      onClose();
-                    } catch (err) {
-                      setError('캠페인 반려 처리 중 오류가 발생했습니다.');
-                    } finally {
-                      setLoading(false);
+                  // performSave에 직접 'rejected' 상태 전달
+                  setTimeout(async () => {
+                    if (campaign && updateCampaign) {
+                      await performSave(false, 'rejected');
                     }
-                  }
+                  }, 100);
                 }}
               >
                 반려

@@ -290,7 +290,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaigns')
-        .select('id, campaign_name, logo, status, service_type, add_info')
+        .select('id, campaign_name, logo, status, service_type, add_info, refund_settings')
         .eq('service_type', dbServiceType)
         .order('id', { ascending: true });
 
@@ -434,7 +434,8 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
               campaignName: matchingCampaign.campaign_name,
               logo: campaignLogo,
               status: matchingCampaign.status,
-              serviceType: matchingCampaign.service_type
+              serviceType: matchingCampaign.service_type,
+              refund_settings: matchingCampaign.refund_settings
             } : undefined,
             user: slot.user,
             refund_requests: slot.refund_requests

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { KeenIcon } from '@/components';
 import { cn } from '@/lib/utils';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface ManualPaymentSectionProps {
   selectedCampaign: any;
@@ -37,7 +38,7 @@ export const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         ? parseFloat(selectedCampaign.unit_price) 
         : selectedCampaign.unit_price)
       : 0;
-    const price = Math.ceil(workCount * workDays * unitPrice * 1.1); // 부가세 포함
+    const price = smartCeil(workCount * workDays * unitPrice * 1.1); // 부가세 포함
     return price;
   }, [slotData.minimum_purchase, slotData.work_days, selectedCampaign?.unit_price]);
 

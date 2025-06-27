@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { guaranteeSlotRequestService } from '@/services/guaranteeSlotService';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/auth';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface GuaranteeQuoteRequestModalProps {
   open: boolean;
@@ -71,7 +72,7 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
     if (campaign?.min_guarantee_price && formData.guaranteeCount) {
       const guaranteeCount = parseInt(formData.guaranteeCount);
       if (guaranteeCount > 0) {
-        return Math.ceil(parseInt(campaign.min_guarantee_price) / guaranteeCount);
+        return smartCeil(parseInt(campaign.min_guarantee_price) / guaranteeCount);
       }
     }
     return null;
@@ -679,8 +680,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       <div className="flex justify-between text-purple-600 dark:text-purple-400">
                         <span>총 금액 (VAT 포함):</span>
                         <span className="font-semibold">
-                          <span className="hidden md:inline">{formatAmountDesktop(Math.ceil(calculateTotalAmount() * 1.1))}</span>
-                          <span className="md:hidden">{formatAmountMobile(Math.ceil(calculateTotalAmount() * 1.1))}</span>
+                          <span className="hidden md:inline">{formatAmountDesktop(smartCeil(calculateTotalAmount() * 1.1))}</span>
+                          <span className="md:hidden">{formatAmountMobile(smartCeil(calculateTotalAmount() * 1.1))}</span>
                         </span>
                       </div>
                     </>
@@ -696,8 +697,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                       <div className="flex justify-between text-purple-600 dark:text-purple-400">
                         <span>VAT 포함:</span>
                         <span className="font-semibold">
-                          <span className="hidden md:inline">{formatAmountDesktop(Math.ceil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
-                          <span className="md:hidden">{formatAmountMobile(Math.ceil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
+                          <span className="hidden md:inline">{formatAmountDesktop(smartCeil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
+                          <span className="md:hidden">{formatAmountMobile(smartCeil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
                         </span>
                       </div>
                     </>

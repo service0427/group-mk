@@ -194,21 +194,12 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       services = services.filter(service => !service.disabled);
     }
 
-    // servicesWithSlots가 제공된 경우, 슬롯이 있는 서비스를 앞쪽으로 정렬
+    // servicesWithSlots가 제공된 경우, 슬롯이 있는 서비스만 표시
     if (servicesWithSlots && servicesWithSlots.size > 0) {
-      const servicesWithSlotsArray: typeof services = [];
-      const servicesWithoutSlotsArray: typeof services = [];
-      
-      services.forEach(service => {
+      services = services.filter(service => {
         const hasSlots = servicesWithSlots.has(service.code);
-        if (hasSlots && !service.disabled) {
-          servicesWithSlotsArray.push(service);
-        } else {
-          servicesWithoutSlotsArray.push(service);
-        }
+        return hasSlots;
       });
-      
-      services = [...servicesWithSlotsArray, ...servicesWithoutSlotsArray];
     }
 
     return services;
@@ -228,9 +219,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     <div className={`${className} overflow-x-auto`}>
       <div className="flex flex-wrap gap-1.5 lg:gap-2 min-w-0">
         {displayedServices.map((service) => {
-          // servicesWithSlots가 제공되면, 슬롯이 없는 서비스는 비활성화
-          const hasSlots = !servicesWithSlots || servicesWithSlots.has(service.code);
-          const isDisabled = service.disabled || (!hasSlots && servicesWithSlots !== undefined);
+          // 서비스 비활성화 여부 (disabled 속성만 확인)
+          const isDisabled = service.disabled;
           
           if (expandableServices) {
             // 확장 모드: DropdownMenu 사용

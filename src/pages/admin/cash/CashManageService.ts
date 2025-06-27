@@ -1,5 +1,6 @@
 import { supabase } from '@/supabase';
 import { createCashChargeNotification } from '@/utils/notificationActions';
+import { smartCeil } from '@/utils/mathUtils';
 
 /**
  * 캐시 관리 서비스
@@ -96,7 +97,7 @@ export class CashManageService {
 
         // 설정된 금액 이상인지 다시 한번 확인 (승인 시점의 최소 금액 기준)
         if (setting && parseFloat(requestData.amount) >= setting.min_request_amount) {
-          freeAmount = Math.ceil((parseFloat(requestData.amount) * freeCashPercentage) / 100);
+          freeAmount = smartCeil((parseFloat(requestData.amount) * freeCashPercentage) / 100);
 
           // 만료일 계산
           if (setting.expiry_months > 0) {
@@ -440,7 +441,7 @@ export class CashManageService {
 
         // 무료캐시 금액 계산
         const freeCashAmount = isEligibleForFreeCash
-          ? Math.ceil((parseFloat(request.amount) * setting.free_cash_percentage) / 100)
+          ? smartCeil((parseFloat(request.amount) * setting.free_cash_percentage) / 100)
           : 0;
 
         return {

@@ -7,6 +7,7 @@ import {
   DialogBody,
 } from '@/components/ui/dialog';
 import { KeenIcon } from '@/components';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface GuaranteeNegotiationCompleteModalProps {
   isOpen: boolean;
@@ -46,8 +47,8 @@ const GuaranteeNegotiationCompleteModal: React.FC<GuaranteeNegotiationCompleteMo
   
   // 일별 금액과 총액 계산
   const dailyAmount = proposedDailyAmount || proposedAmount;
-  const totalAmount = proposedTotalAmount || Math.ceil(dailyAmount * actualWorkPeriod);
-  const totalAmountWithVAT = Math.ceil(totalAmount * 1.1);
+  const totalAmount = proposedTotalAmount || smartCeil(dailyAmount * actualWorkPeriod);
+  const totalAmountWithVAT = smartCeil(totalAmount * 1.1);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

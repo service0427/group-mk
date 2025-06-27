@@ -8,6 +8,7 @@ import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.con
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { createRefundApprovedNotification } from '@/utils/notificationActions';
 import { supabase } from '@/supabase';
+import { smartCeil } from '@/utils/mathUtils';
 import { KeenIcon } from '@/components';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -904,7 +905,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
+      totalAmount: request.final_daily_amount ? smartCeil(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
       negotiatedAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0, // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
@@ -981,7 +982,7 @@ const GuaranteeQuotesPage: React.FC = () => {
       guaranteeCount: request.guarantee_count,
       guaranteeUnit: request.campaigns?.guarantee_unit,
       completedDays,
-      totalAmount: request.final_daily_amount ? Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
+      totalAmount: request.final_daily_amount ? smartCeil(request.final_daily_amount * request.guarantee_count * 1.1) : 0, // VAT 포함
       negotiatedAmount: request.final_daily_amount ? request.final_daily_amount * request.guarantee_count : 0, // VAT 제외 최종 협상금액
       startDate: slot.start_date,
       endDate: slot.end_date,
@@ -2515,7 +2516,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   }
                                   // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
                                   const totalAmount = request.final_daily_amount && request.guarantee_count
-                                    ? Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    ? smartCeil(request.final_daily_amount * request.guarantee_count * 1.1)
                                     : 0;
                                   
                                   // 완료된 일수 계산
@@ -2530,7 +2531,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   
                                   // 완료된 금액 계산
                                   const completedAmount = request.final_daily_amount 
-                                    ? Math.ceil(request.final_daily_amount * completedDays * 1.1)
+                                    ? smartCeil(request.final_daily_amount * completedDays * 1.1)
                                     : 0;
                                   
                                   // 환불 금액 = 총 금액 - 완료된 금액
@@ -2572,7 +2573,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   }
                                   // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
                                   const totalAmount = request.final_daily_amount && request.guarantee_count
-                                    ? Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    ? smartCeil(request.final_daily_amount * request.guarantee_count * 1.1)
                                     : 0;
                                   
                                   // 완료된 일수 계산
@@ -2587,7 +2588,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   
                                   // 완료된 금액 계산
                                   const completedAmount = request.final_daily_amount 
-                                    ? Math.ceil(request.final_daily_amount * completedDays * 1.1)
+                                    ? smartCeil(request.final_daily_amount * completedDays * 1.1)
                                     : 0;
                                   
                                   // 환불 금액 = 총 금액 - 완료된 금액
@@ -2625,7 +2626,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   }
                                   // 직접 계산: 일별 단가 * 보장 일수 * 1.1 (VAT)
                                   const totalAmount = request.final_daily_amount && request.guarantee_count
-                                    ? Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1)
+                                    ? smartCeil(request.final_daily_amount * request.guarantee_count * 1.1)
                                     : 0;
                                   
                                   // 완료된 일수 계산
@@ -2640,7 +2641,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                                   
                                   // 완료된 금액 계산
                                   const completedAmount = request.final_daily_amount 
-                                    ? Math.ceil(request.final_daily_amount * completedDays * 1.1)
+                                    ? smartCeil(request.final_daily_amount * completedDays * 1.1)
                                     : 0;
                                   
                                   // 환불 금액 = 총 금액 - 완료된 금액

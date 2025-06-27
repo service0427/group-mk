@@ -1,4 +1,5 @@
 import { RefundSettings, RefundCalculation } from '@/types/refund.types';
+import { smartCeil } from '@/utils/mathUtils';
 
 /**
  * 환불 가능 여부 및 금액 계산
@@ -102,7 +103,7 @@ export const calculateRefund = (
   if (refundSettings.refund_rules.partial_refund && totalDays > 0) {
     // 부분 환불: 남은 일수 비율로 계산
     refundRate = (remainingDays / totalDays) * 100;
-    refundAmount = Math.ceil(originalAmount * (refundRate / 100));
+    refundAmount = smartCeil(originalAmount * (refundRate / 100));
   } else {
     // 전액 환불 (사용하지 않은 기간 전체)
     refundAmount = originalAmount;

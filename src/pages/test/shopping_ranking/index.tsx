@@ -108,12 +108,7 @@ const ShoppingRankingPage: React.FC = () => {
     }
   };
 
-  // 뷰 모드 변경시 데이터 로드
-  useEffect(() => {
-    if (selectedKeywordId) {
-      loadDbRankingData();
-    }
-  }, [viewMode, selectedKeywordId]);
+  // 뷰 모드 변경시 자동 데이터 로드 제거 (사용자가 수동으로 조회)
 
   // 키워드 선택 핸들러
   const handleKeywordSelect = (keyword: string) => {
@@ -216,10 +211,13 @@ const ShoppingRankingPage: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={checkCurrentRanking} disabled={loading}>
-              <KeenIcon icon="refresh" className="size-4 mr-2" />
-              {loading ? '조회 중...' : '현재 순위 확인'}
-            </Button>
+            {/* API 호출 버튼 숨김 처리 */}
+            {false && (
+              <Button onClick={checkCurrentRanking} disabled={loading}>
+                <KeenIcon icon="refresh" className="size-4 mr-2" />
+                {loading ? '조회 중...' : '현재 순위 확인'}
+              </Button>
+            )}
           </div>
 
           {/* 선택된 키워드 정보 */}
@@ -266,7 +264,7 @@ const ShoppingRankingPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center flex-wrap">
               <Button
                 size="sm"
                 variant={viewMode === 'current' ? 'default' : 'outline'}
@@ -288,6 +286,17 @@ const ShoppingRankingPage: React.FC = () => {
               >
                 일자별
               </Button>
+              <div className="flex gap-2 ml-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={loadDbRankingData}
+                  disabled={!selectedKeywordId}
+                >
+                  <KeenIcon icon="database" className="size-4 mr-2" />
+                  기존 데이터 조회
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

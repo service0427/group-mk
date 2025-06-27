@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { notifyOperators, createNewWithdrawRequestNotification } from '@/utils/notificationActions';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface WithdrawFormProps {
   userId: string;
@@ -233,7 +234,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           if (feePercentage !== undefined) {
 
             // 수수료 계산 (퍼센트 기준만 적용)
-            const fee = Math.ceil((amount * feePercentage) / 100);
+            const fee = smartCeil((amount * feePercentage) / 100);
 
 
             // 최소/최대 수수료 제한 없음
@@ -243,7 +244,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
           } else {
 
             // 백업 계산 - 기본 설정값 사용 (퍼센트만 적용)
-            const fee = Math.ceil((amount * 3) / 100); // 기본 3%
+            const fee = smartCeil((amount * 3) / 100); // 기본 3%
 
             setFeeAmount(fee);
           }

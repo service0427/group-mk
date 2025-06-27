@@ -60,7 +60,7 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
     }
   }, [resetTrigger, setSlotData, selectedCampaign]);
   
-  // 캠페인 변경 시 최소 구매수 업데이트 및 보장형 체크
+  // useSpreadsheet 상태가 변경될 때 데이터 초기화
   React.useEffect(() => {
     if (selectedCampaign) {
       // 보장형 캠페인인 경우 스프레드시트 모드 비활성화
@@ -68,25 +68,20 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
         setUseSpreadsheet(false);
       }
       
-      // 스프레드시트 모드에서 최소 구매수 업데이트
-      if (useSpreadsheet) {
-        const minQuantity = selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1;
-        // 기존 데이터가 없거나 최소값보다 작은 경우에만 업데이트
-        if (!slotData.minimum_purchase || slotData.minimum_purchase < minQuantity) {
-          setSlotData((prev: any) => ({
-            ...prev,
-            minimum_purchase: minQuantity
-          }));
-        }
-      } else {
-        // 기본 입력 모드로 전환 시 keywordDetails 제거
-        if (slotData.keywordDetails) {
-          setSlotData((prev: any) => {
-            const { keywordDetails, hasPartiallyFilledRows, partiallyFilledRows, ...rest } = prev;
-            return rest;
-          });
-        }
-      }
+      // 모드 전환 시 데이터 초기화
+      setSlotData((prev: any) => ({
+        ...prev,
+        input_data: {},
+        mainKeyword: '',
+        keywords: [],
+        minimum_purchase: selectedCampaign?.min_quantity || 1,
+        work_days: 1,
+        total_purchase: 0,
+        total_work_days: 0,
+        keywordDetails: [],
+        hasPartiallyFilledRows: false,
+        partiallyFilledRows: []
+      }));
     }
   }, [selectedCampaign?.id, selectedCampaign?.slot_type, useSpreadsheet]);
   
@@ -209,12 +204,16 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
             </label>
             <Button
               type="button"
-              size="sm"
-              variant="outline"
+              size="default"
+              variant={useSpreadsheet ? "default" : "outline"}
               onClick={() => setUseSpreadsheet(!useSpreadsheet)}
-              className="flex items-center gap-1"
+              className={`flex items-center gap-2 px-4 py-2 font-medium shadow-sm transition-all duration-200 ${
+                useSpreadsheet 
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                  : "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700"
+              }`}
             >
-              <KeenIcon icon={useSpreadsheet ? "document" : "grid"} className="size-3" />
+              <KeenIcon icon={useSpreadsheet ? "document" : "grid"} className="size-4" />
               {useSpreadsheet ? "기본 입력으로 전환" : "엑셀 시트로 전환"}
             </Button>
           </div>
@@ -276,37 +275,13 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
                 return [...baseColumns, ...additionalFields, ...fileFields];
               })()}
               initialData={(() => {
-                // resetTrigger가 변경되었으면 빈 데이터로 초기화
-                if (resetTrigger && resetTrigger > 0) {
-                  const minPurchase = selectedCampaign?.min_quantity 
-                    ? selectedCampaign.min_quantity.toString() 
-                    : '1';
-                  
-                  return [[minPurchase, '1']]; // 최소값만 포함한 빈 행
-                }
-                
-                // 캠페인의 최소 구매수를 우선적으로 사용
+                // 항상 빈 데이터로 시작 (최소 구매수만 설정)
                 const minPurchase = selectedCampaign?.min_quantity 
                   ? selectedCampaign.min_quantity.toString() 
-                  : (slotData.minimum_purchase?.toString() || '1');
+                  : '1';
                 
-                const row = [
-                  minPurchase,
-                  slotData.work_days?.toString() || '1'
-                ];
-                
-                // 추가 필드 데이터 추가
-                const additionalFields = getAdditionalFields(selectedCampaign);
-                
-                additionalFields.forEach(field => {
-                  if (field.fieldType === FieldType.FILE) {
-                    row.push(slotData.input_data?.[`${field.fieldName}_fileName`] || '');
-                  } else {
-                    row.push(slotData.input_data?.[field.fieldName] || '');
-                  }
-                });
-                
-                return [row]; // 배열 안에 행 배열을 넣어야 함
+                // 빈 행 하나만 반환
+                return [[]]; // 완전히 빈 행
               })()}
               onChange={(data) => {
                 // 여러 행의 데이터 처리

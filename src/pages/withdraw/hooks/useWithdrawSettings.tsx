@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WithdrawSetting, getWithdrawSettings } from '../services/withdrawService';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface UseWithdrawSettingsReturn {
   withdrawSetting: WithdrawSetting | null;
@@ -77,7 +78,7 @@ export const useWithdrawSettings = (userId?: string): UseWithdrawSettingsReturn 
       : (withdrawSetting.fee_percentage || 0);
       
     
-    const fee = Math.ceil((amount * feePercentage) / 100);
+    const fee = smartCeil((amount * feePercentage) / 100);
     
     
     // 최소/최대 수수료 제한 없음

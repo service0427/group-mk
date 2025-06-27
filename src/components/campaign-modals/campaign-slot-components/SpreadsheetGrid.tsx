@@ -453,29 +453,61 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       const newData = [...data];
       const startRow = selectedCell.row;
       const startCol = selectedCell.col;
+      let hasMinPurchaseViolation = false;
+      const violatedCells: {row: number, col: number}[] = [];
       
       rows.forEach((row, rowIndex) => {
         row.forEach((value, colIndex) => {
           const targetRow = startRow + rowIndex;
           const targetCol = startCol + colIndex;
+          let finalValue = value;
+          let skipCell = false;
           
-          // 범위를 벗어나지 않는 경우에만 붙여넣기
-          if (targetRow < newData.length && targetCol < normalizedColumns.length) {
-            newData[targetRow][targetCol] = value;
-          } else if (targetRow >= newData.length && targetCol < normalizedColumns.length) {
-            // 행이 부족하면 새로 추가
-            while (newData.length <= targetRow) {
-              newData.push(Array(normalizedColumns.length).fill(''));
+          // 최소 구매수 컬럼(index 0)인 경우 검증
+          if (targetCol === 0 && normalizedColumns[0]?.name === '최소 구매수') {
+            const numValue = parseInt(value) || 0;
+            if (numValue > 0 && numValue < minPurchaseQuantity) {
+              hasMinPurchaseViolation = true;
+              violatedCells.push({row: targetRow, col: targetCol});
+              skipCell = true; // 이 셀은 붙여넣기 건너뛰기
             }
-            newData[targetRow][targetCol] = value;
+          }
+          
+          // 숫자 컬럼인 경우 숫자만 허용
+          if (normalizedColumns[targetCol]?.type === 'number' && !skipCell) {
+            const cleanedValue = value.replace(/[^0-9]/g, '');
+            finalValue = cleanedValue;
+          }
+          
+          // 최소값 미만이 아닌 경우에만 붙여넣기
+          if (!skipCell) {
+            // 범위를 벗어나지 않는 경우에만 붙여넣기
+            if (targetRow < newData.length && targetCol < normalizedColumns.length) {
+              newData[targetRow][targetCol] = finalValue;
+            } else if (targetRow >= newData.length && targetCol < normalizedColumns.length) {
+              // 행이 부족하면 새로 추가
+              while (newData.length <= targetRow) {
+                newData.push(Array(normalizedColumns.length).fill(''));
+              }
+              newData[targetRow][targetCol] = finalValue;
+            }
           }
         });
       });
       
       setData(newData);
       onChange?.(newData);
+      
+      // 최소 구매수 위반이 있는 경우 알림 표시
+      if (hasMinPurchaseViolation && showAlert) {
+        showAlert(
+          '최소 구매수 제한', 
+          `최소 구매수는 ${minPurchaseQuantity}개 이상이어야 합니다. 해당 셀은 입력되지 않았습니다.`, 
+          false
+        );
+      }
     }
-  }, [selectedCell, data, normalizedColumns.length, onChange]);
+  }, [selectedCell, data, normalizedColumns, minPurchaseQuantity, showAlert, onChange]);
 
   // 복사 처리
   const handleCopy = useCallback((e: React.ClipboardEvent) => {

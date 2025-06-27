@@ -14,6 +14,7 @@ import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankC
 import type { GuaranteeSlotRequestStatus } from '@/types/guarantee-slot.types';
 import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { InquiryChatModal } from '@/components/inquiry';
+import { smartCeil } from '@/utils/mathUtils';
 
 // 타입 정의
 interface MyGuaranteeQuoteRequest {
@@ -709,7 +710,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           return Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
         })()}
         totalAmount={refundModal.requestData?.final_daily_amount ?
-          Math.ceil(refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_count || 0) * 1.1) : 0}
+          smartCeil(refundModal.requestData.final_daily_amount * (refundModal.requestData.guarantee_count || 0) * 1.1) : 0}
         negotiatedAmount={refundModal.requestData?.final_total_amount || (refundModal.requestData?.final_daily_amount ? 
           refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count : 0)}
         startDate={refundModal.requestData?.guarantee_slots?.[0]?.start_date}
@@ -769,7 +770,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
           guaranteeCount={refundModal.requestData.guarantee_count}
           guaranteeUnit={refundModal.requestData.campaigns?.guarantee_unit}
           completedDays={0} // TODO: 실제 완료일수 계산 필요
-          totalAmount={refundModal.requestData.final_daily_amount ? Math.ceil(refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count * 1.1) : 0}
+          totalAmount={refundModal.requestData.final_daily_amount ? smartCeil(refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count * 1.1) : 0}
           negotiatedAmount={refundModal.requestData.final_total_amount || (refundModal.requestData.final_daily_amount ? refundModal.requestData.final_daily_amount * refundModal.requestData.guarantee_count : 0)}
           startDate={refundModal.requestData.guarantee_slots[0].start_date}
           endDate={refundModal.requestData.guarantee_slots[0].end_date}

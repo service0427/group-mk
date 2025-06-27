@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { createNotificationForRole } from '@/utils/notification';
 import { NotificationType, NotificationPriority } from '@/types/notification';
 import '@/styles/charge-modal-overlay.css';
+import { smartCeil } from '@/utils/mathUtils';
 
 // 충전 요청 타입 정의
 interface ChargeRequest {
@@ -159,7 +160,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
 
     // 최소 충전 금액 이상인지 확인
     if (amount >= cashSetting.min_request_amount) {
-      const bonus = Math.ceil((amount * cashSetting.free_cash_percentage) / 100);
+      const bonus = smartCeil((amount * cashSetting.free_cash_percentage) / 100);
       setBonusAmount(bonus);
       setIsEligibleForBonus(true);
     } else {

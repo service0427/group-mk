@@ -14,6 +14,7 @@ import { ko } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SERVICE_TYPE_LABELS } from '@/components/campaign-modals/types';
+import { smartCeil } from '@/utils/mathUtils';
 
 interface GuaranteeSlotDetailModalProps {
   isOpen: boolean;
@@ -315,7 +316,7 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
                               <span className="text-sm font-medium">총 예상 금액</span>
                               <div className="text-right">
                                 <div className="text-base font-bold">
-                                  {formatPrice(Math.ceil(requestData.final_daily_amount * requestData.guarantee_count * 1.1))}
+                                  {formatPrice(smartCeil(requestData.final_daily_amount * requestData.guarantee_count * 1.1))}
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-gray-500">VAT 10% 포함</div>
                               </div>

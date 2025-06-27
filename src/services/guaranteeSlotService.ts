@@ -483,7 +483,7 @@ export const guaranteeSlotService = {
       }
 
       // 보장 일수로 계산 (guarantee_count 사용)
-      const totalAmount = Math.floor(request.final_daily_amount * request.guarantee_count * 1.1); // VAT 포함
+      const totalAmount = Math.ceil(request.final_daily_amount * request.guarantee_count * 1.1); // VAT 포함
 
       // 사용자 잔액 확인 (유료캐시만 확인)
       const { data: userBalance, error: balanceError } = await supabase
@@ -1049,7 +1049,7 @@ export const guaranteeSlotService = {
         }
       } else {
         // 기존 로직대로 계산
-        const completedAmount = Math.floor(slot.daily_guarantee_amount * slot.completed_count * 1.1); // VAT 포함
+        const completedAmount = Math.ceil(slot.daily_guarantee_amount * slot.completed_count * 1.1); // VAT 포함
         actualRefundAmount = slot.total_amount - completedAmount;
 
         if (actualRefundAmount <= 0) {
@@ -1152,8 +1152,8 @@ export const guaranteeSlotService = {
       const completedDays = slot.completed_count || 0;
 
       // 환불 금액 계산 (VAT 포함) - 작업기간 기준으로 계산
-      const totalAmount = Math.floor(finalDailyAmount * workPeriod * 1.1);
-      const completedAmount = Math.floor(finalDailyAmount * completedDays * 1.1);
+      const totalAmount = Math.ceil(finalDailyAmount * workPeriod * 1.1);
+      const completedAmount = Math.ceil(finalDailyAmount * completedDays * 1.1);
       const refundAmount = Math.max(0, totalAmount - completedAmount);
 
       if (refundAmount <= 0) {
@@ -1320,7 +1320,7 @@ export const guaranteeSlotService = {
 export const guaranteeSlotUtils = {
   // 총 금액 계산 (부가세 포함)
   calculateTotalAmount(dailyAmount: number, guaranteeCount: number): number {
-    return Math.floor(dailyAmount * guaranteeCount * 1.1); // 부가세 10%
+    return Math.ceil(dailyAmount * guaranteeCount * 1.1); // 부가세 10%
   },
 
   // 진행률 계산

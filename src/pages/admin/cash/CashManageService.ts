@@ -96,7 +96,7 @@ export class CashManageService {
 
         // 설정된 금액 이상인지 다시 한번 확인 (승인 시점의 최소 금액 기준)
         if (setting && parseFloat(requestData.amount) >= setting.min_request_amount) {
-          freeAmount = Math.floor((parseFloat(requestData.amount) * freeCashPercentage) / 100);
+          freeAmount = Math.ceil((parseFloat(requestData.amount) * freeCashPercentage) / 100);
 
           // 만료일 계산
           if (setting.expiry_months > 0) {
@@ -440,7 +440,7 @@ export class CashManageService {
 
         // 무료캐시 금액 계산
         const freeCashAmount = isEligibleForFreeCash
-          ? Math.floor((parseFloat(request.amount) * setting.free_cash_percentage) / 100)
+          ? Math.ceil((parseFloat(request.amount) * setting.free_cash_percentage) / 100)
           : 0;
 
         return {

@@ -94,8 +94,8 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
   const actualCompleted = isDaily ? completedDays : (actualCompletedCount || 0);
 
   // 환불 금액 계산
-  const unitAmountWithVat = totalAmount > 0 && guaranteeCount > 0 ? Math.floor(totalAmount / guaranteeCount) : 0;
-  const completedAmount = Math.floor(unitAmountWithVat * actualCompleted);
+  const unitAmountWithVat = totalAmount > 0 && guaranteeCount > 0 ? Math.ceil(totalAmount / guaranteeCount) : 0;
+  const completedAmount = Math.ceil(unitAmountWithVat * actualCompleted);
   const suggestedRefundAmount = Math.max(0, totalAmount - completedAmount);
 
   const remainingCount = Math.max(0, guaranteeCount - actualCompleted);
@@ -301,13 +301,13 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-xs text-slate-500 dark:text-gray-500">협상금액</span>
                           <span className="font-medium">
-                            {(negotiatedAmount !== undefined && negotiatedAmount !== null ? negotiatedAmount : Math.floor(totalAmount / 1.1)).toLocaleString()}원
+                            {(negotiatedAmount !== undefined && negotiatedAmount !== null ? negotiatedAmount : Math.ceil(totalAmount / 1.1)).toLocaleString()}원
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-400 dark:text-gray-600">VAT(10%)</span>
                           <span className="text-sm text-slate-400 dark:text-gray-600">
-                            {(totalAmount - (negotiatedAmount !== undefined && negotiatedAmount !== null ? negotiatedAmount : Math.floor(totalAmount / 1.1))).toLocaleString()}원
+                            {(totalAmount - (negotiatedAmount !== undefined && negotiatedAmount !== null ? negotiatedAmount : Math.ceil(totalAmount / 1.1))).toLocaleString()}원
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm border-t border-slate-200 dark:border-gray-700 pt-2">

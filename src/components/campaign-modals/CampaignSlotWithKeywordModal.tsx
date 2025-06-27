@@ -1126,7 +1126,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
     });
 
     // 부가세 10% 추가
-    const totalWithTax = Math.round(total * 1.1);
+    const totalWithTax = Math.ceil(total * 1.1);
 
     setTotalPaymentAmount(totalWithTax);
   };
@@ -1684,7 +1684,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
       }
 
       // 부가세 10% 추가
-      totalAmount = Math.round(totalAmount * 1.1);
+      totalAmount = Math.ceil(totalAmount * 1.1);
 
       // 3. 사용자 잔액 확인
       const { data: userBalance, error: balanceError } = await supabase
@@ -1719,7 +1719,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         if (!keyword) continue;
 
         // 개별 키워드 가격 계산 (단가 * 작업수 * 진행일수)
-        const keywordPrice = Math.round(unitPrice * detail.workCount * detail.dueDays * 1.1); // 부가세 포함
+        const keywordPrice = Math.ceil(unitPrice * detail.workCount * detail.dueDays * 1.1); // 부가세 포함
 
         // 키워드 ID에 대한 상세 입력 데이터 가져오기
         const keywordInputData = slotData.input_data[`keyword_${detail.id}`] || {};
@@ -2211,7 +2211,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         for (const detail of slotData.keywordDetails || []) {
           const quantity = detail.workCount || 1;
           const workDays = detail.dueDays || 1;
-          const rowAmount = Math.round(quantity * workDays * unitPrice * 1.1);
+          const rowAmount = Math.ceil(quantity * workDays * unitPrice * 1.1);
           totalAmount += rowAmount;
 
           // 각 행에 대한 슬롯 데이터 생성
@@ -2243,7 +2243,7 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
         // 기본 모드: 단일 슬롯 처리
         const quantity = slotData.minimum_purchase || (selectedCampaign.min_quantity ? Number(selectedCampaign.min_quantity) : 1);
         const workDays = slotData.work_days || 1;
-        totalAmount = Math.round(quantity * workDays * unitPrice * 1.1);
+        totalAmount = Math.ceil(quantity * workDays * unitPrice * 1.1);
 
         const slotToSave = {
           mat_id: selectedCampaign?.mat_id || currentUser.id,

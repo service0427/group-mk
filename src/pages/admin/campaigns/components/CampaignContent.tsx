@@ -447,7 +447,7 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
       <div className="card bg-card overflow-hidden">
         <div className="card-header flex-col sm:flex-row flex-wrap gap-3 border-b-0 px-4 md:px-5 sticky top-0 bg-card z-10 shadow-sm">
           <h3 className="card-title font-medium text-xs lg:text-sm text-card-foreground w-full sm:w-auto mb-2 sm:mb-0">
-            전체 {campaigns.length}개 {serviceTitle} 캠페인
+            전체 {campaigns.length}개 캠페인
           </h3>
 
           <div className="flex flex-col sm:flex-row w-full sm:w-auto sm:ml-auto gap-2 lg:gap-3">
@@ -689,9 +689,6 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     캠페인 설명
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    총판
-                  </th>
-                  <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     상승효율
                   </th>
                   <th scope="col" className="px-3 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
@@ -784,12 +781,6 @@ const CampaignContent: React.FC<CampaignContentProps> = ({
                     <td className="px-3 lg:px-6 py-4 hidden md:table-cell">
                       <div className="text-sm text-foreground max-w-[400px] line-clamp-2">
                         {campaign.description || '-'}
-                      </div>
-                    </td>
-                    <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
-                      <div className="text-xs lg:text-sm text-muted-foreground">
-                        <div className="font-medium text-xs lg:text-sm">{campaign.matName || '알 수 없음'}</div>
-                        <div className="text-[10px] lg:text-xs">{campaign.matEmail || ''}</div>
                       </div>
                     </td>
                     <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">

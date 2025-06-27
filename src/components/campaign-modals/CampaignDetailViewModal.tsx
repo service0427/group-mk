@@ -716,7 +716,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
           <div className="flex-grow overflow-y-auto p-6">
             <div className="space-y-6">
               {/* 상단: 주요 정보 요약 카드 */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-border">
                   <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="rocket" className="text-green-500 size-5" />
@@ -786,6 +786,25 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                         return `${formatPriceWithCommas(minQty)}개`;
                       })()
                     )}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <KeenIcon icon="time" className="text-amber-500 size-5" />
+                    <div className="text-sm text-muted-foreground">접수마감</div>
+                  </div>
+                  <div className="text-xl font-bold text-foreground">
+                    {(() => {
+                      const deadline = campaignDetail?.deadline || campaign?.originalData?.deadline || campaign?.deadline || '18:00';
+                      return (
+                        <span className="flex items-center gap-1">
+                          {deadline}
+                          {deadline === '00:00' && (
+                            <span className="text-xs text-amber-600 ml-1">(자정)</span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

@@ -131,8 +131,8 @@ class ShoppingRankService {
         // 최초와 최근 데이터 시간 확인
         const sortedUniqueHours = Array.from(uniqueHours).sort();
         if (sortedUniqueHours.length > 0) {
-          console.log('가장 오래된 데이터:', new Date(sortedUniqueHours[0]).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
-          console.log('가장 최근 데이터:', new Date(sortedUniqueHours[sortedUniqueHours.length - 1]).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
+          console.log('가장 오래된 데이터:', new Date(sortedUniqueHours[0] as string).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
+          console.log('가장 최근 데이터:', new Date(sortedUniqueHours[sortedUniqueHours.length - 1] as string).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
         }
       }
       

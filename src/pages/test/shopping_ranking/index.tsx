@@ -440,7 +440,7 @@ const ShoppingRankingPage: React.FC = () => {
                 <span>순위 하락</span>
               </div>
               <div className="flex items-center gap-1">
-                <Badge variant="success" className="text-xs">신규</Badge>
+                <Badge variant="secondary" className="text-xs">신규</Badge>
                 <span>신규 진입</span>
               </div>
               <div className="flex items-center gap-1">
@@ -492,8 +492,8 @@ const ShoppingRankingPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant={
-                              item.prev_rank && item.prev_rank > item.rank ? "success" : 
-                              item.prev_rank && item.prev_rank < item.rank ? "danger" : 
+                              item.prev_rank && item.prev_rank > item.rank ? "secondary" : 
+                              item.prev_rank && item.prev_rank < item.rank ? "destructive" : 
                               "outline"
                             }
                           >
@@ -567,7 +567,7 @@ const ShoppingRankingPage: React.FC = () => {
                             )}
                           </div>
                         ) : (
-                          <Badge variant="success" className="text-xs">신규</Badge>
+                          <Badge variant="secondary" className="text-xs">신규</Badge>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm">
@@ -601,7 +601,7 @@ const ShoppingRankingPage: React.FC = () => {
                         hours.add(new Date(item.hour).getHours());
                       }
                     });
-                    const sortedHours = Array.from(hours).sort((a, b) => a - b);
+                    const sortedHours = Array.from(hours).sort((a: any, b: any) => a - b);
                     return `${sortedHours[0]}시 ~ ${sortedHours[sortedHours.length - 1]}시`;
                   })()}
                 </div>
@@ -623,7 +623,7 @@ const ShoppingRankingPage: React.FC = () => {
                 if (!hourGroups.has(hourKey)) {
                   hourGroups.set(hourKey, []);
                 }
-                hourGroups.get(hourKey).push(item);
+                hourGroups.get(hourKey)!.push(item);
               });
               
               // 시간 목록을 최신순으로 정렬
@@ -758,8 +758,8 @@ const ShoppingRankingPage: React.FC = () => {
                                   <div className="flex items-center justify-center gap-1">
                                     <Badge 
                                       variant={
-                                        prevRank && prevRank > rank ? 'success' : 
-                                        prevRank && prevRank < rank ? 'danger' : 
+                                        prevRank && prevRank > rank ? 'secondary' : 
+                                        prevRank && prevRank < rank ? 'destructive' : 
                                         rank <= 10 ? 'default' : 'outline'
                                       } 
                                       className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}
@@ -816,7 +816,7 @@ const ShoppingRankingPage: React.FC = () => {
                 if (!dateGroups.has(dateKey)) {
                   dateGroups.set(dateKey, []);
                 }
-                dateGroups.get(dateKey).push(item);
+                dateGroups.get(dateKey)!.push(item);
               });
               
               // 날짜 목록을 최신순으로 정렬
@@ -909,8 +909,8 @@ const ShoppingRankingPage: React.FC = () => {
                                   <div className="flex flex-col items-center gap-0.5">
                                     <Badge 
                                       variant={
-                                        prevRank && prevRank > rank ? 'success' : 
-                                        prevRank && prevRank < rank ? 'danger' : 
+                                        prevRank && prevRank > rank ? 'secondary' : 
+                                        prevRank && prevRank < rank ? 'destructive' : 
                                         rank <= 10 ? 'default' : 'outline'
                                       } 
                                       className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}

@@ -59,6 +59,7 @@ const ShoppingRankingPage: React.FC = () => {
   const [selectedKeywordId, setSelectedKeywordId] = useState<string>('');
   const [rankingData, setRankingData] = useState<RankingData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dbLoading, setDbLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'current' | 'hourly' | 'daily'>('current');
   const [dbRankingData, setDbRankingData] = useState<any[]>([]);
 
@@ -89,6 +90,7 @@ const ShoppingRankingPage: React.FC = () => {
   const loadDbRankingData = async () => {
     if (!selectedKeywordId) return;
     
+    setDbLoading(true);
     try {
       let data = [];
       switch (viewMode) {
@@ -97,14 +99,25 @@ const ShoppingRankingPage: React.FC = () => {
           break;
         case 'hourly':
           data = await shoppingRankService.getHourlyRankings(selectedKeywordId);
+          // 시간별 데이터를 최신순으로 정렬
+          data = data.sort((a, b) => new Date(b.hour).getTime() - new Date(a.hour).getTime());
           break;
         case 'daily':
           data = await shoppingRankService.getDailyRankings(selectedKeywordId);
+          // 일별 데이터를 최신순으로 정렬
+          data = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           break;
       }
       setDbRankingData(data);
+      
+      if (data.length === 0) {
+        console.warn(`${viewMode} 데이터가 없습니다. keyword_id: ${selectedKeywordId}`);
+      }
     } catch (error) {
       console.error('DB 데이터 조회 실패:', error);
+      alert('데이터 조회에 실패했습니다.');
+    } finally {
+      setDbLoading(false);
     }
   };
 
@@ -291,10 +304,10 @@ const ShoppingRankingPage: React.FC = () => {
                   size="sm"
                   variant="outline"
                   onClick={loadDbRankingData}
-                  disabled={!selectedKeywordId}
+                  disabled={!selectedKeywordId || dbLoading}
                 >
-                  <KeenIcon icon="database" className="size-4 mr-2" />
-                  기존 데이터 조회
+                  <KeenIcon icon={dbLoading ? "loading" : "database"} className={`size-4 mr-2 ${dbLoading ? "animate-spin" : ""}`} />
+                  {dbLoading ? '조회 중...' : '기존 데이터 조회'}
                 </Button>
               </div>
             </div>
@@ -406,88 +419,366 @@ const ShoppingRankingPage: React.FC = () => {
         </Card>
       )}
 
-      {/* 시간별 순위 데이터 */}
-      {viewMode === 'hourly' && (
+      {/* DB에서 조회한 현재 순위 데이터 */}
+      {viewMode === 'current' && dbRankingData.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <KeenIcon icon="time" className="size-5" />
-              시간별 순위 변화 (최근 24시간)
+              <KeenIcon icon="database" className="size-5" />
+              현재 순위 (DB 저장 데이터)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* 순위 변동 범례 */}
+            <div className="mb-4 flex items-center gap-4 text-xs text-gray-600">
+              <div className="flex items-center gap-1">
+                <span className="text-green-600 font-bold">▲</span>
+                <span>순위 상승</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-red-600 font-bold">▼</span>
+                <span>순위 하락</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Badge variant="success" className="text-xs">신규</Badge>
+                <span>신규 진입</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="bg-green-100 text-green-600 px-1 py-0.5 rounded text-xs font-bold">10↑</span>
+                <span>10계단 이상 변동</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="inline-block w-4 h-4 bg-blue-50 rounded"></span>
+                <span>상위 10위</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      순위
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      상품명
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      쇼핑몰
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      가격
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      브랜드
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      이전 순위
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      수집일시
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  {dbRankingData.map((item, idx) => {
+                    // 순위 변동 계산
+                    const rankChange = item.prev_rank ? item.prev_rank - item.rank : 0;
+                    const isTop10 = item.rank <= 10;
+                    const isBigJump = Math.abs(rankChange) >= 10;
+                    
+                    return (
+                      <tr key={idx} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${isTop10 ? 'bg-blue-50/30' : ''}`}>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              item.prev_rank && item.prev_rank > item.rank ? "success" : 
+                              item.prev_rank && item.prev_rank < item.rank ? "danger" : 
+                              "outline"
+                            }
+                          >
+                            {item.rank}위
+                          </Badge>
+                          {/* 순위 변동 인디케이터 */}
+                          {item.prev_rank && item.prev_rank !== item.rank && (
+                            <div className={`text-xs font-bold ${
+                              item.prev_rank > item.rank ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {item.prev_rank > item.rank ? '↑' : '↓'}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {item.image && (
+                            <img 
+                              src={item.image} 
+                              alt={item.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div className="max-w-md">
+                            <a 
+                              href={item.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline line-clamp-2"
+                              dangerouslySetInnerHTML={{ __html: item.title }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        {item.mall_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        {item.lprice ? parseInt(item.lprice).toLocaleString() + '원' : '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        {item.brand || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        {item.prev_rank ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-600">{item.prev_rank}위</span>
+                            {item.prev_rank > item.rank && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-green-600 font-bold">▲</span>
+                                <span className={`text-xs font-medium ${
+                                  isBigJump ? 'text-green-600 bg-green-100 px-1 py-0.5 rounded font-bold' : 'text-green-600'
+                                }`}>
+                                  {item.prev_rank - item.rank}
+                                </span>
+                              </div>
+                            )}
+                            {item.prev_rank < item.rank && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-red-600 font-bold">▼</span>
+                                <span className={`text-xs font-medium ${
+                                  isBigJump ? 'text-red-600 bg-red-100 px-1 py-0.5 rounded font-bold' : 'text-red-600'
+                                }`}>
+                                  {item.rank - item.prev_rank}
+                                </span>
+                              </div>
+                            )}
+                            {item.prev_rank === item.rank && (
+                              <span className="text-gray-400 text-xs">유지</span>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="success" className="text-xs">신규</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {item.collected_at ? format(new Date(item.collected_at), 'MM/dd HH:mm', { locale: ko }) : '-'}
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 시간별 순위 데이터 */}
+      {viewMode === 'hourly' && dbRankingData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeenIcon icon="time" className="size-5" />
+                시간별 순위 변화 (최근 24시간)
+              </div>
+              {dbRankingData.length > 0 && (
+                <div className="text-sm font-normal text-gray-600">
+                  데이터 수집 시간대: {(() => {
+                    const hours = new Set();
+                    dbRankingData.forEach(item => {
+                      if (item.hour) {
+                        hours.add(new Date(item.hour).getHours());
+                      }
+                    });
+                    const sortedHours = Array.from(hours).sort((a, b) => a - b);
+                    return `${sortedHours[0]}시 ~ ${sortedHours[sortedHours.length - 1]}시`;
+                  })()}
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {(() => {
+              
               // 시간별 데이터를 상품별로 그룹화
               const productMap = new Map<string, any>();
-              const hourSet = new Set<number>();
+              const hourList = []; // 실제 데이터가 있는 시간 목록
               
-              // 현재 시간부터 24시간 전까지의 시간 생성
-              const now = new Date();
-              const hours = Array.from({ length: 24 }, (_, i) => {
-                const hour = new Date(now);
-                hour.setHours(now.getHours() - (23 - i));
-                hour.setMinutes(0, 0, 0);
-                return hour.getHours();
+              // 시간별로 그룹화하여 실제 존재하는 시간 찾기
+              const hourGroups = new Map<string, any[]>();
+              dbRankingData.forEach(item => {
+                if (!item.hour) return;
+                const hourKey = item.hour;
+                if (!hourGroups.has(hourKey)) {
+                  hourGroups.set(hourKey, []);
+                }
+                hourGroups.get(hourKey).push(item);
               });
               
+              // 시간 목록을 최신순으로 정렬
+              const sortedHours = Array.from(hourGroups.keys()).sort((a, b) => 
+                new Date(b).getTime() - new Date(a).getTime()
+              );
+              
+              
+              // 실제 데이터가 있는 시간대만 표시
+              let displayHours;
+              
+              if (sortedHours.length > 0) {
+                // 데이터가 있는 시간대만 사용
+                displayHours = sortedHours.map(h => new Date(h).toISOString());
+                console.log('실제 데이터가 있는 시간대 개수:', displayHours.length);
+                console.log('실제 데이터가 있는 시간대:', displayHours.slice(0, 10).map(h => {
+                  const d = new Date(h);
+                  return format(d, 'MM/dd HH시', { locale: ko });
+                }));
+              } else {
+                // 데이터가 없으면 현재 시간 기준 24시간
+                const now = new Date();
+                now.setMinutes(0);
+                now.setSeconds(0);
+                now.setMilliseconds(0);
+                
+                const fullHours = [];
+                for (let i = 0; i < 24; i++) {
+                  const hourDate = new Date(now);
+                  hourDate.setHours(hourDate.getHours() - i);
+                  fullHours.push(hourDate.toISOString());
+                }
+                displayHours = fullHours;
+              }
+              
+              // 실제 데이터가 있는 시간을 표시하기 위해 Set 생성
+              const dataHourSet = new Set(displayHours);
+              
+              // 상품별로 데이터 구성
+              let processedCount = 0;
               dbRankingData.forEach(item => {
                 if (!item.hour) return;
                 
-                const hour = new Date(item.hour).getHours();
-                hourSet.add(hour);
+                processedCount++;
                 
                 if (!productMap.has(item.product_id)) {
                   productMap.set(item.product_id, {
                     product_id: item.product_id,
                     title: item.title,
                     mall_name: item.mall_name,
-                    ranks: {}
+                    ranks: {},
+                    prevRanks: {} // 이전 순위 저장
                   });
                 }
                 
-                productMap.get(item.product_id).ranks[hour] = item.rank;
+                const product = productMap.get(item.product_id);
+                // hour를 Date 객체로 변환한 후 다시 ISO 문자열로 통일
+                const normalizedHour = new Date(item.hour).toISOString();
+                product.ranks[normalizedHour] = item.rank;
+                
+                // 이전 시간의 순위 찾기
+                const currentHourIndex = sortedHours.indexOf(item.hour);
+                if (currentHourIndex < sortedHours.length - 1) {
+                  const prevHour = sortedHours[currentHourIndex + 1];
+                  const prevData = hourGroups.get(prevHour)?.find(d => d.product_id === item.product_id);
+                  if (prevData) {
+                    product.prevRanks[normalizedHour] = prevData.rank;
+                  }
+                }
               });
               
               const products = Array.from(productMap.values());
               
               if (products.length === 0) {
-                return <p className="text-center text-gray-500 py-8">시간별 데이터가 없습니다.</p>;
+                return (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-2">시간별 데이터가 없습니다.</p>
+                    <p className="text-sm text-gray-400">"기존 데이터 조회" 버튼을 클릭하여 데이터를 불러오세요.</p>
+                  </div>
+                );
               }
+              
+              // 표시할 시간 개수에 따른 상품명 칸 너비 계산
+              const hourCount = displayHours.length;
+              const productNameWidth = hourCount > 12 ? 'min-w-[120px] max-w-[150px]' : 
+                                     hourCount > 8 ? 'min-w-[150px] max-w-[200px]' : 
+                                     'min-w-[180px] max-w-[250px]';
               
               return (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-800">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 dark:bg-gray-800 z-10">
+                        <th className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 dark:bg-gray-800 z-10 ${productNameWidth}`}>
                           상품명
                         </th>
-                        {hours.map(hour => (
-                          <th key={hour} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                            {hour}시
-                          </th>
-                        ))}
+                        {displayHours.map((hour, index) => {
+                          const isCurrentHour = index === 0;
+                          const hourDate = new Date(hour);
+                          return (
+                            <th key={hour} className={`px-2 py-3 text-center text-xs font-medium uppercase min-w-[80px] ${
+                              isCurrentHour ? 'text-blue-600 bg-blue-50' : 
+                              dataHourSet.has(hour) ? 'text-gray-700' : 'text-gray-400'
+                            }`}>
+                              <div className="text-[10px]">{format(hourDate, 'MM/dd', { locale: ko })}</div>
+                              <div>{hourDate.getHours()}시</div>
+                              {isCurrentHour && <div className="text-[10px] text-blue-500">최신</div>}
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                       {products.slice(0, 100).map((product, idx) => (
                         <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <td className="px-4 py-3 text-sm sticky left-0 bg-white dark:bg-gray-900 z-10">
-                            <span dangerouslySetInnerHTML={{ __html: product.title }} className="line-clamp-2" />
+                          <td className={`px-4 py-3 text-sm sticky left-0 bg-white dark:bg-gray-900 z-10 ${productNameWidth}`}>
+                            <div className="truncate" title={product.title.replace(/<[^>]*>/g, '')}>
+                              <span dangerouslySetInnerHTML={{ __html: product.title }} />
+                            </div>
                           </td>
-                          {hours.map(hour => {
+                          {displayHours.map(hour => {
                             const rank = product.ranks[hour];
+                            const prevRank = product.prevRanks[hour];
+                            const rankChange = prevRank ? prevRank - rank : 0;
+                            const hasData = dataHourSet.has(hour);
+                            
                             return (
-                              <td key={hour} className="px-3 py-3 text-center">
+                              <td key={hour} className={`px-1 py-2 text-center min-w-[80px] ${
+                                !hasData ? 'bg-gray-50 dark:bg-gray-800' : ''
+                              }`}>
                                 {rank ? (
-                                  <Badge 
-                                    variant={rank <= 10 ? 'default' : 'outline'} 
-                                    className={`text-xs ${rank <= 10 ? 'bg-blue-500' : ''}`}
-                                  >
-                                    {rank}
-                                  </Badge>
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Badge 
+                                      variant={
+                                        prevRank && prevRank > rank ? 'success' : 
+                                        prevRank && prevRank < rank ? 'danger' : 
+                                        rank <= 10 ? 'default' : 'outline'
+                                      } 
+                                      className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}
+                                    >
+                                      {rank}
+                                    </Badge>
+                                    {prevRank && rankChange !== 0 && (
+                                      <span className={`text-[10px] font-bold ${
+                                        rankChange > 0 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
+                                      </span>
+                                    )}
+                                    {!prevRank && rank && (
+                                      <span className="text-[10px] text-blue-600 font-medium whitespace-nowrap">신규</span>
+                                    )}
+                                  </div>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-gray-300">-</span>
                                 )}
                               </td>
                             );
@@ -516,78 +807,127 @@ const ShoppingRankingPage: React.FC = () => {
             {(() => {
               // 일별 데이터를 상품별로 그룹화
               const productMap = new Map<string, any>();
-              const dateSet = new Set<string>();
+              const dateGroups = new Map<string, any[]>();
               
-              // 최근 30일 날짜 생성
-              const dates = Array.from({ length: 30 }, (_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - (29 - i));
-                return format(date, 'yyyy-MM-dd');
-              });
-              
+              // 날짜별로 그룹화
               dbRankingData.forEach(item => {
                 if (!item.date) return;
-                
-                const dateStr = format(new Date(item.date), 'yyyy-MM-dd');
-                dateSet.add(dateStr);
+                const dateKey = item.date;
+                if (!dateGroups.has(dateKey)) {
+                  dateGroups.set(dateKey, []);
+                }
+                dateGroups.get(dateKey).push(item);
+              });
+              
+              // 날짜 목록을 최신순으로 정렬
+              const sortedDates = Array.from(dateGroups.keys()).sort((a, b) => 
+                new Date(b).getTime() - new Date(a).getTime()
+              );
+              
+              // 상품별로 데이터 구성
+              dbRankingData.forEach(item => {
+                if (!item.date) return;
                 
                 if (!productMap.has(item.product_id)) {
                   productMap.set(item.product_id, {
                     product_id: item.product_id,
                     title: item.title,
                     mall_name: item.mall_name,
-                    ranks: {}
+                    ranks: {},
+                    prevRanks: {} // 이전 순위 저장
                   });
                 }
                 
-                productMap.get(item.product_id).ranks[dateStr] = item.rank;
+                const product = productMap.get(item.product_id);
+                product.ranks[item.date] = item.rank;
+                
+                // 이전 날짜의 순위 찾기
+                const currentDateIndex = sortedDates.indexOf(item.date);
+                if (currentDateIndex < sortedDates.length - 1) {
+                  const prevDate = sortedDates[currentDateIndex + 1];
+                  const prevData = dateGroups.get(prevDate)?.find(d => d.product_id === item.product_id);
+                  if (prevData) {
+                    product.prevRanks[item.date] = prevData.rank;
+                  }
+                }
               });
               
               const products = Array.from(productMap.values());
-              const validDates = dates.filter(date => dateSet.has(date));
               
               if (products.length === 0) {
                 return <p className="text-center text-gray-500 py-8">일별 데이터가 없습니다.</p>;
               }
+              
+              // 표시할 날짜 개수에 따른 상품명 칸 너비 계산
+              const dateCount = Math.min(sortedDates.length, 30);
+              const productNameWidth = dateCount > 15 ? 'min-w-[150px] max-w-[200px]' : 
+                                     dateCount > 10 ? 'min-w-[200px] max-w-[250px]' : 
+                                     'min-w-[250px] max-w-[350px]';
               
               return (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-800">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 dark:bg-gray-800 z-10">
+                        <th className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 dark:bg-gray-800 z-10 ${productNameWidth}`}>
                           상품명
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">
                           쇼핑몰
                         </th>
-                        {validDates.map(date => (
-                          <th key={date} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                            {format(new Date(date), 'MM/dd')}
-                          </th>
-                        ))}
+                        {sortedDates.slice(0, 30).map((date, index) => {
+                          // 최신 날짜인지 확인
+                          const isToday = index === 0;
+                          return (
+                            <th key={date} className={`px-2 py-3 text-center text-xs font-medium uppercase min-w-[50px] ${isToday ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}>
+                              <div>{format(new Date(date), 'MM/dd')}</div>
+                              {isToday && <div className="text-[10px] text-blue-500">최신</div>}
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                       {products.slice(0, 100).map((product, idx) => (
                         <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <td className="px-4 py-3 text-sm sticky left-0 bg-white dark:bg-gray-900 z-10">
-                            <span dangerouslySetInnerHTML={{ __html: product.title }} className="line-clamp-2" />
+                          <td className={`px-4 py-3 text-sm sticky left-0 bg-white dark:bg-gray-900 z-10 ${productNameWidth}`}>
+                            <div className="truncate" title={product.title.replace(/<[^>]*>/g, '')}>
+                              <span dangerouslySetInnerHTML={{ __html: product.title }} />
+                            </div>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm min-w-[100px]">
                             {product.mall_name || '-'}
                           </td>
-                          {validDates.map(date => {
+                          {sortedDates.slice(0, 30).map(date => {
                             const rank = product.ranks[date];
+                            const prevRank = product.prevRanks[date];
+                            const rankChange = prevRank ? prevRank - rank : 0;
+                            
                             return (
-                              <td key={date} className="px-3 py-3 text-center">
+                              <td key={date} className="px-1 py-2 text-center min-w-[50px]">
                                 {rank ? (
-                                  <Badge 
-                                    variant={rank <= 10 ? 'default' : 'outline'} 
-                                    className={`text-xs ${rank <= 10 ? 'bg-blue-500' : ''}`}
-                                  >
-                                    {rank}
-                                  </Badge>
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <Badge 
+                                      variant={
+                                        prevRank && prevRank > rank ? 'success' : 
+                                        prevRank && prevRank < rank ? 'danger' : 
+                                        rank <= 10 ? 'default' : 'outline'
+                                      } 
+                                      className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}
+                                    >
+                                      {rank}
+                                    </Badge>
+                                    {prevRank && rankChange !== 0 && (
+                                      <div className={`text-xs font-bold ${
+                                        rankChange > 0 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {rankChange > 0 ? `↑${rankChange}` : `↓${Math.abs(rankChange)}`}
+                                      </div>
+                                    )}
+                                    {!prevRank && rank && (
+                                      <div className="text-xs text-blue-600">신규</div>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-gray-400">-</span>
                                 )}
@@ -606,7 +946,7 @@ const ShoppingRankingPage: React.FC = () => {
       )}
 
       {/* 데이터 없음 표시 */}
-      {((viewMode === 'current' && rankingData.length === 0) || 
+      {((viewMode === 'current' && rankingData.length === 0 && dbRankingData.length === 0) || 
         ((viewMode === 'hourly' || viewMode === 'daily') && dbRankingData.length === 0)) && (
         <Card>
           <CardContent className="py-12">

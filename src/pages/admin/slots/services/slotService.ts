@@ -1,5 +1,6 @@
 import { supabase } from '@/supabase';
 import { Slot } from '../components/types';
+import { checkSingleKeywordRanking, checkKeywordsInBatches, extractKeywordsFromSlot } from '@/services/rankingCheckService';
 
 /**
  * 슬롯 승인 서비스
@@ -82,6 +83,51 @@ export const approveSlot = async (
       };
     }
     
+    // 다중 승인 시 NS 서비스 키워드 수집 (일반 승인인 경우만)
+    if (!actionType || actionType === 'approve') {
+      console.log(`[순위체크API] 다중 슬롯 승인: ${slotId.length}개 슬롯 처리 시작`);
+      const allKeywords: string[] = [];
+      
+      // 먼저 모든 슬롯의 정보를 조회하여 NS 서비스의 키워드 수집
+      for (const id of slotId) {
+        try {
+          console.log(`[순위체크API] 슬롯 ${id} 정보 조회 중...`);
+          const { data: slotData } = await supabase
+            .from('slots')
+            .select('input_data, campaigns!product_id(service_type, ranking_field_mapping)')
+            .eq('id', id)
+            .single();
+            
+          if (slotData?.campaigns) {
+            const campaign = Array.isArray(slotData.campaigns) ? slotData.campaigns[0] : slotData.campaigns;
+            console.log(`[순위체크API] 슬롯 ${id} - 캠페인 서비스 타입: ${campaign?.service_type}`);
+            
+            if (campaign && campaign.service_type && campaign.service_type.startsWith('NaverShopping')) {
+              console.log(`[순위체크API] 슬롯 ${id} - NS 서비스 확인! 키워드 추출...`);
+              console.log(`[순위체크API] 슬롯 ${id} - 필드 매핑:`, campaign.ranking_field_mapping);
+              const keywords = extractKeywordsFromSlot(slotData.input_data, campaign.ranking_field_mapping);
+              console.log(`[순위체크API] 슬롯 ${id} - 추출된 키워드: ${keywords.length}개`);
+              allKeywords.push(...keywords);
+            }
+          }
+        } catch (err) {
+          console.error(`[순위체크API] 슬롯 ${id} 정보 조회 실패 (무시):`, err);
+        }
+      }
+      
+      console.log(`[순위체크API] 전체 수집된 키워드: ${allKeywords.length}개`);
+      
+      // 수집된 키워드가 있으면 배치로 체크
+      if (allKeywords.length > 0) {
+        console.log('[순위체크API] 배치 API 호출 시작...');
+        checkKeywordsInBatches(allKeywords).catch(err => 
+          console.error('[순위체크API] 배치 순위 체크 API 호출 실패 (무시):', err)
+        );
+      } else {
+        console.log('[순위체크API] 수집된 키워드가 없어 API 호출 스킵');
+      }
+    }
+    
     // 다중 승인 처리 결과
     const results = [];
     const errors = [];
@@ -89,7 +135,7 @@ export const approveSlot = async (
     // 슬롯 ID별로 순차적으로 승인 처리
     for (const id of slotId) {
       try {
-        const result = await approveSingleSlot(id, adminUserId, actionType, start_date, end_date);
+        const result = await approveSingleSlot(id, adminUserId, actionType, start_date, end_date, true); // 다중 승인 시에는 개별 체크 스킵
         results.push({
           id,
           success: result.success,
@@ -124,7 +170,8 @@ const approveSingleSlot = async (
   adminUserId: string,
   actionType?: string,
   start_date?: string,
-  end_date?: string
+  end_date?: string,
+  skipRankingCheck?: boolean // 다중 승인에서 이미 체크한 경우 스킵
 ): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
     // 1. 슬롯 정보 조회
@@ -176,6 +223,44 @@ const approveSingleSlot = async (
 
     // 관리자/총판 계정에 금액 이체는 더 이상 여기서 하지 않음
     // 이 작업은 사용자가 거래 완료를 눌렀을 때 수행됨
+    
+    // NS 서비스 타입인 경우 순위 체크 API 호출 (승인 시에만, 스킵 플래그가 없을 때만)
+    console.log('[순위체크API] 슬롯 승인 처리 중...');
+    console.log(`[순위체크API] - actionType: ${actionType}`);
+    console.log(`[순위체크API] - skipRankingCheck: ${skipRankingCheck}`);
+    console.log(`[순위체크API] - campaignData.service_type: ${campaignData.service_type}`);
+    console.log(`[순위체크API] - slotId: ${slotId}`);
+    
+    if ((!actionType || actionType === 'approve') && !skipRankingCheck && campaignData.service_type && campaignData.service_type.startsWith('NaverShopping')) {
+      console.log('[순위체크API] NaverShopping 서비스 타입 확인! 키워드 추출 시작...');
+      console.log('[순위체크API] campaignData:', campaignData);
+      
+      // 캠페인의 필드 매핑 정보 가져오기
+      const fieldMapping = campaignData.ranking_field_mapping;
+      console.log('[순위체크API] 캠페인 필드 매핑:', fieldMapping);
+      
+      const keywords = extractKeywordsFromSlot(slotData.input_data, fieldMapping);
+      console.log(`[순위체크API] 추출된 키워드 개수: ${keywords.length}`);
+      
+      if (keywords.length > 0) {
+        // 비동기로 호출하고 결과는 무시 (실패해도 승인 프로세스는 계속)
+        if (keywords.length === 1) {
+          console.log('[순위체크API] 단일 키워드 API 호출...');
+          checkSingleKeywordRanking(keywords[0]).catch(err => 
+            console.error('[순위체크API] 단일 키워드 API 호출 실패 (무시):', err)
+          );
+        } else {
+          console.log('[순위체크API] 다중 키워드 API 호출...');
+          checkKeywordsInBatches(keywords).catch(err => 
+            console.error('[순위체크API] 다중 키워드 API 호출 실패 (무시):', err)
+          );
+        }
+      } else {
+        console.log('[순위체크API] 추출된 키워드가 없습니다.');
+      }
+    } else {
+      console.log('[순위체크API] 순위 체크 스킵 (NS 서비스가 아니거나 다른 조건)');
+    }
     
     // 현재 시간 가져오기
     const now = new Date().toISOString();

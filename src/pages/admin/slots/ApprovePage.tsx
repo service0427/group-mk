@@ -1449,7 +1449,7 @@ const ApprovePage: React.FC = () => {
           <div className="flex-1">
             <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">중요 안내사항</h4>
             <p className="text-sm text-amber-700 dark:text-amber-400">
-              승인 이후 <strong>다음날부터</strong> 작업을 시작해야 합니다.
+              승인 이후 <strong>다음날부터</strong> 작업을 시작해야 하며 새로고침을 해야 순위 정보가 나옵니다.
             </p>
             <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
               예시: 오늘 승인 시, 내일부터 작업이 시작됩니다. 작업자에게 이 사항을 반드시 안내해주세요.

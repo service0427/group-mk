@@ -392,7 +392,7 @@ export class CashManageService {
 
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, email, full_name')
+        .select('id, email, full_name, business')
         .in('id', requestUserIds);
 
       if (usersError) throw new Error(`사용자 정보 조회 실패: ${usersError.message}`);
@@ -457,6 +457,10 @@ export class CashManageService {
           user_id: request.user_id,
           email: user?.email || '정보 없음',
           full_name: user?.full_name || '정보 없음',
+          // 사업자 정보 추가
+          business_name: user?.business?.business_name || '',
+          business_number: user?.business?.business_number || '',
+          business_email: user?.business?.business_email || user?.email || '',
           // 무료캐시 관련 정보 추가
           isEligibleForFreeCash,
           freeCashAmount,

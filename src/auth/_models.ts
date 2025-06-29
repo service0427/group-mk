@@ -44,6 +44,12 @@ export interface CustomUser {
     business_image_url?: string;
     business_image_storage_type?: string;
     business_image_bucket?: string;
+    bank_account?: {
+      bank_name: string;
+      account_number: string;
+      account_holder: string;
+      is_editable: boolean;
+    };
   };
   //auth?: AuthModel;
 }

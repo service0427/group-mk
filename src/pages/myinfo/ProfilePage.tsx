@@ -4,9 +4,10 @@ import { useAuthContext } from '@/auth';
 import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { CommonTemplate } from '@/components/pageTemplate';
-import { BusinessUpgradeModal } from '@/components/business';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog';
 import { useDialog } from '@/providers';
 import { useToast } from '@/providers';
+import { useResponsive } from '@/hooks';
 import { USER_ROLES, USER_ROLE_THEME_COLORS, getRoleDisplayName, getRoleBadgeColor, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 
 const ProfilePage = () => {
@@ -14,12 +15,19 @@ const ProfilePage = () => {
   const { showDialog } = useDialog();
   const { success, error: showError } = useToast();
 
+  // 은행 목록
+  const bankList = [
+    '신한은행', '국민은행', '우리은행', '하나은행', 'NH농협은행',
+    '기업은행', 'SC제일은행', '카카오뱅크', '토스뱅크', '케이뱅크',
+    '부산은행', '대구은행', '광주은행', '경남은행', '전북은행',
+    '제주은행', '산업은행', '수협은행', '새마을금고', '신협', '우체국'
+  ];
+
   const [password, setPassword] = useState<string>('');
   const [change_password, setChangePassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState<boolean>(false);
   const [hasBusinessInfo, setHasBusinessInfo] = useState<boolean>(false);
   const [hasPendingRequest, setHasPendingRequest] = useState<boolean>(false);
   const [hasRejectedRequest, setHasRejectedRequest] = useState<boolean>(false);
@@ -27,6 +35,25 @@ const ProfilePage = () => {
   const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+
+  // 사업자 정보 상태
+  const [businessNumber, setBusinessNumber] = useState<string>('');
+  const [businessName, setBusinessName] = useState<string>('');
+  const [representativeName, setRepresentativeName] = useState<string>('');
+  const [businessEmail, setBusinessEmail] = useState<string>('');
+  const [businessImageUrl, setBusinessImageUrl] = useState<string>('');
+  const [businessImageFile, setBusinessImageFile] = useState<File | null>(null);
+  const [isBusinessInfoEditable, setIsBusinessInfoEditable] = useState<boolean>(true);
+
+  // 출금 계좌 정보 상태
+  const [bankName, setBankName] = useState<string>('');
+  const [accountNumber, setAccountNumber] = useState<string>('');
+  const [accountHolder, setAccountHolder] = useState<string>('');
+  const [isBankAccountEditable, setIsBankAccountEditable] = useState<boolean>(true);
+
+  // 등업 신청 관련
+  const [showLevelUpModal, setShowLevelUpModal] = useState<boolean>(false);
+  const [selectedRole, setSelectedRole] = useState<string>('');
 
   // ESC 키 핸들러
   useEffect(() => {
@@ -36,11 +63,11 @@ const ProfilePage = () => {
         setSelectedImage('');
       }
     };
-    
+
     if (imageModalOpen) {
       document.addEventListener('keydown', handleEsc);
     }
-    
+
     return () => {
       document.removeEventListener('keydown', handleEsc);
     };
@@ -100,8 +127,34 @@ const ProfilePage = () => {
 
         if (business) {
           setHasBusinessInfo(true);
+          // 사업자 정보 상태 설정
+          setBusinessNumber(business.business_number || '');
+          setBusinessName(business.business_name || '');
+          setRepresentativeName(business.representative_name || '');
+          setBusinessEmail(business.business_email || '');
+          setBusinessImageUrl(business.business_image_url || '');
+          
+          // 사업자 정보가 하나라도 있으면 수정 불가
+          const hasBusinessData = business.business_number || 
+            business.business_name || 
+            business.representative_name || 
+            business.business_email;
+          setIsBusinessInfoEditable(!hasBusinessData);
+
+          // 출금 계좌 정보 설정
+          if (business.bank_account) {
+            setBankName(business.bank_account.bank_name || '');
+            setAccountNumber(business.bank_account.account_number || '');
+            setAccountHolder(business.bank_account.account_holder || '');
+            // 계좌 정보가 하나라도 있으면 수정 불가
+            const hasAccountInfo = business.bank_account.bank_name ||
+              business.bank_account.account_number ||
+              business.bank_account.account_holder;
+            setIsBankAccountEditable(!hasAccountInfo);
+          }
         } else {
           setHasBusinessInfo(false);
+          setIsBusinessInfoEditable(true);
         }
 
         // 대기 중인 등업 신청이 있는지 체크
@@ -157,7 +210,7 @@ const ProfilePage = () => {
   // 렌더링 확인을 위한 useEffect
   useEffect(() => {
 
-  }, [hasBusinessInfo, hasPendingRequest, hasRejectedRequest, isUpgradeModalOpen]);
+  }, [hasBusinessInfo, hasPendingRequest, hasRejectedRequest]);
 
   const roleClass = currentUser?.role ? `bg-${getRoleBadgeColor(currentUser.role)}/10 text-${getRoleBadgeColor(currentUser.role)}` : '';
   const roleText = currentUser?.role ? getRoleDisplayName(currentUser.role) : '';
@@ -175,14 +228,6 @@ const ProfilePage = () => {
       currentUser?.status === 'pending' ? '대기중' :
         currentUser?.status === 'suspended' ? '정지됨' : '';
 
-  // 등업 신청 모달 관리
-  const handleOpenUpgradeModal = () => {
-    setIsUpgradeModalOpen(true);
-  };
-
-  const handleCloseUpgradeModal = () => {
-    setIsUpgradeModalOpen(false);
-  };
 
   // 이미지 확대 모달 열기
   // 이미지 모달 열기 함수 - null/undefined 체크 추가
@@ -192,6 +237,67 @@ const ProfilePage = () => {
     }
     setSelectedImage(imageUrl);
     setImageModalOpen(true);
+  };
+
+  // 사업자등록증 이미지 업로드 핸들러
+  const handleBusinessImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 체크 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showError('이미지 파일 크기는 5MB를 초과할 수 없습니다.');
+      return;
+    }
+
+    // 파일 타입 체크
+    if (!file.type.startsWith('image/')) {
+      showError('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    setBusinessImageFile(file);
+
+    // 미리보기 생성
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBusinessImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 등업 신청 처리
+  const handleLevelUpRequest = async () => {
+    if (!selectedRole) {
+      showError('신청할 역할을 선택해주세요.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // levelup_apply 테이블에 신청 정보 저장
+      const { error } = await supabase
+        .from('levelup_apply')
+        .insert({
+          user_id: currentUser?.id,
+          current_role: currentUser?.role || 'beginner', // 현재 역할 저장
+          target_role: selectedRole,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      success('등업 신청이 완료되었습니다. 관리자 승인을 기다려주세요.');
+      setShowLevelUpModal(false);
+      setHasPendingRequest(true);
+
+    } catch (error: any) {
+      showError('등업 신청 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpgradeSuccess = async () => {
@@ -420,22 +526,127 @@ const ProfilePage = () => {
         }
       }
 
-      // 3. 사업자 정보 업데이트 (승인 대기 중에도 가능하게 수정)
-      if (currentUser && currentUser.business) {
+      // 3. 사업자 정보 업데이트
+      // 항상 사업자 정보를 저장 (입력된 것만)
+      const businessData: any = {};
+
+      // 사업자등록증 이미지 업로드
+      let uploadedImageUrl = businessImageUrl;
+      if (businessImageFile) {
+        try {
+          const userId = currentUser?.id || 'unknown';
+          const fileName = `business_license_${Date.now()}`;
+          const fileExt = businessImageFile.name.split('.').pop();
+          const filePath = `${userId}/${fileName}.${fileExt}`;
+
+          // 이미지 업로드 시도
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from('business-images')
+            .upload(filePath, businessImageFile, {
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error('스토리지 업로드 실패:', uploadError);
+
+            // 실패 시 Base64로 대체 (폴백)
+            const reader = new FileReader();
+            const readFileAsDataURL = (file: File): Promise<string> => {
+              return new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+            };
+
+            // 이미지를 Base64로 변환
+            uploadedImageUrl = await readFileAsDataURL(businessImageFile);
+          } else {
+            // 업로드 성공 시 URL 생성
+            const { data: { publicUrl } } = supabase.storage
+              .from('business-images')
+              .getPublicUrl(filePath);
+
+            uploadedImageUrl = publicUrl;
+          }
+        } catch (uploadError: any) {
+          console.error('이미지 처리 오류:', uploadError);
+
+          // 모든 방법이 실패하면 Base64로 폴백
+          try {
+            const reader = new FileReader();
+            const readFileAsDataURL = (file: File): Promise<string> => {
+              return new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+            };
+
+            uploadedImageUrl = await readFileAsDataURL(businessImageFile);
+          } catch (base64Error) {
+            showError('사업자등록증 이미지 처리 중 오류가 발생했습니다.');
+            return;
+          }
+        }
+      }
+
+      // 입력된 정보만 저장 (계좌 정보 포함)
+      const hasBusinessInfo = businessNumber || businessName || representativeName || businessEmail || uploadedImageUrl;
+      const hasBankInfo = isBankAccountEditable && (bankName || accountNumber || accountHolder);
+
+      // 기존 사업자 정보와 비교
+      const existingBusiness = currentUser?.business || {};
+      const businessChanged = hasBusinessInfo && (
+        businessNumber !== (existingBusiness.business_number || '') ||
+        businessName !== (existingBusiness.business_name || '') ||
+        representativeName !== (existingBusiness.representative_name || '') ||
+        businessEmail !== (existingBusiness.business_email || '') ||
+        uploadedImageUrl !== (existingBusiness.business_image_url || '')
+      );
+
+      const bankAccountChanged = hasBankInfo && isBankAccountEditable;
+
+      if (businessChanged || bankAccountChanged) {
+        businessData.business_number = businessNumber;
+        businessData.business_name = businessName;
+        businessData.representative_name = representativeName;
+        businessData.business_email = businessEmail;
+        businessData.business_image_url = uploadedImageUrl;
+
+        // Base64 이미지인 경우 타입 저장
+        if (uploadedImageUrl && uploadedImageUrl.startsWith('data:image')) {
+          businessData.business_image_storage_type = 'base64';
+        } else if (uploadedImageUrl) {
+          businessData.business_image_storage_type = 'supabase_storage';
+          businessData.business_image_bucket = 'business-images';
+        }
+
+        // 기존 정보 유지
+        if (currentUser?.business) {
+          businessData.verified = currentUser.business.verified;
+          businessData.verification_date = currentUser.business.verification_date;
+        }
+
+        // 은행 계좌 정보 (수정 가능한 경우에만)
+        if (isBankAccountEditable && (bankName || accountNumber || accountHolder)) {
+          businessData.bank_account = {
+            bank_name: bankName,
+            account_number: accountNumber,
+            account_holder: accountHolder,
+            is_editable: false  // 한번 저장하면 수정 불가
+          };
+        } else if (!isBankAccountEditable && currentUser?.business?.bank_account) {
+          // 수정 불가능한 경우 기존 정보 유지
+          businessData.bank_account = currentUser.business.bank_account;
+        }
+      }
+
+      // 사업자 정보가 있으면 업데이트
+      if (Object.keys(businessData).length > 0) {
 
         try {
-          // 데이터 복사하고 비교하기 위한 원본 저장
-          const originalBusiness = JSON.stringify(currentUser.business);
-
-          // 승인 대기 중인 경우 업데이트 대상 필드 제한 (verified 필드는 유지)
-          const businessData = { ...currentUser.business };
-          if (hasPendingRequest) {
-            // 이미지는 Base64인 경우 처리
-            if (businessData && businessData.business_image_url && businessData.business_image_url.startsWith('data:image')) {
-              // 이미지가 이미 Base64면 그대로 사용
-            }
-          }
-
           // users 테이블 업데이트
           const { error: updateBusinessError } = await supabase
             .from('users')
@@ -445,25 +656,26 @@ const ProfilePage = () => {
             .eq('id', currentUser?.id);
 
           if (updateBusinessError) {
-
             throw new Error(updateBusinessError.message);
           }
 
-          // 세션 스토리지에 업데이트된 사용자 정보 저장 (새로고침 시 활용)
-          try {
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-          } catch (e) {
-
+          // currentUser 업데이트
+          if (setCurrentUser) {
+            setCurrentUser({
+              ...currentUser,
+              business: businessData
+            });
           }
 
-          // 변경 감지
-          if (currentUser && currentUser.business && originalBusiness !== JSON.stringify(currentUser.business)) {
-            businessInfoUpdated = true;
+          businessInfoUpdated = true;
 
+          // 이미지 파일 초기화
+          if (businessImageFile) {
+            setBusinessImageFile(null);
+            setBusinessImageUrl(uploadedImageUrl);
           }
+
         } catch (businessError: any) {
-
           showDialog({
             title: '오류',
             message: '사업자 정보 업데이트 중 오류가 발생했습니다: ' + businessError.message,
@@ -542,6 +754,93 @@ const ProfilePage = () => {
     }
   }
 
+  // 사이드바 메뉴 아이템
+  const sidebarItems = [
+    {
+      id: 'user_info',
+      title: '사용자 정보',
+      icon: 'profile-circle'
+    },
+    {
+      id: 'business_info',
+      title: '사업자 정보',
+      icon: 'shop'
+    },
+    {
+      id: 'bank_info',
+      title: '출금 계좌 정보',
+      icon: 'bank'
+    },
+    ...(currentUser?.role !== USER_ROLES.DISTRIBUTOR ? [{
+      id: 'levelup_apply',
+      title: '등업 신청',
+      icon: 'crown'
+    }] : [])
+  ];
+
+  const [activeSection, setActiveSection] = useState('user_info');
+  const desktopMode = useResponsive('up', 'lg');
+
+  // 스크롤 이벤트 처리
+  useEffect(() => {
+    const scrollContainer = document.querySelector('main[role="content"]') as HTMLElement;
+
+    if (!scrollContainer) {
+      return;
+    }
+
+    const handleScroll = () => {
+      const sections = sidebarItems.map(item => ({
+        id: item.id,
+        element: document.getElementById(item.id)
+      }));
+
+      const viewportHeight = window.innerHeight;
+      const triggerPoint = viewportHeight * 0.3;
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i];
+        if (section.element) {
+          const rect = section.element.getBoundingClientRect();
+          if (rect.top <= triggerPoint) {
+            setActiveSection(section.id);
+            break;
+          }
+        }
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, [sidebarItems]);
+
+  // 섹션 클릭 핸들러
+  const handleSectionClick = (targetId: string) => {
+    const scrollContainer = document.querySelector('main[role="content"]') as HTMLElement;
+    const element = document.getElementById(targetId);
+
+    if (element && scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+
+      const offset = 80;
+      const scrollPosition = scrollContainer.scrollTop + elementRect.top - containerRect.top - offset;
+
+      scrollContainer.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+
+      setTimeout(() => {
+        setActiveSection(targetId);
+      }, 100);
+    }
+  };
+
   return (
     <CommonTemplate
       title="내정보 관리"
@@ -549,481 +848,603 @@ const ProfilePage = () => {
       showPageMenu={false}
     >
       <div className="flex flex-col">
-        {/* 전체 알림 메시지 - 상단에 더 눈에 띄게 배치 */}
+        {/* 전체 알림 메시지 */}
         {message && (
-          <div id="alertMessage" className="alert bg-success/20 border border-success/30 text-success shadow-lg mb-4 p-4 rounded-md animate-fadeIn transition-all duration-300">
+          <div id="alertMessage" className="alert bg-success/20 border border-success/30 text-success shadow-sm mb-6 p-4 rounded-lg animate-fadeIn transition-all duration-300 lg:col-span-3">
             <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-success fill-success/10 shrink-0 h-6 w-6 mr-3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="font-medium text-success-active">{message}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-success fill-success/10 shrink-0 h-5 w-5 mr-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-sm font-medium text-success-active">{message}</span>
             </div>
           </div>
         )}
 
-        {/* 고정 메시지 테스트 (문제 해결 후 제거) */}
-        <div className="alert bg-info/20 border border-info/30 text-info shadow-lg mb-4 p-4 rounded-md">
-          <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-info fill-info/10 shrink-0 h-6 w-6 mr-3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span className="font-medium">프로필 수정 후에는 변경사항이 즉시 표시됩니다.</span>
-          </div>
-        </div>
-
-        <div className="card rounded-lg shadow-sm p-5 space-y-4">
-          {/* 프로필 헤더 */}
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-2xl text-gray-600">
-                {currentUser?.full_name?.charAt(0) || '?'}
-              </span>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">
-                {currentUser?.full_name || '사용자'}
-              </h3>
-              <span className={`badge ${roleClass} px-2 py-1 rounded text-xs`}
-                style={roleThemeColors ? {
-                  backgroundColor: `${roleThemeColors.baseHex}15`, /* 10% 투명도 */
-                  color: roleThemeColors.baseHex
-                } : undefined}>
-                {roleText || '사용자'}
-              </span>
-            </div>
-          </div>
-
-          {/* 사용자 정보 테이블 */}
-          <div className="card-table scrollable-x-auto pb-3">
-            <table className="table align-middle text-sm text-gray-500">
-              <tbody>
-                <tr>
-                  <td className="py-2 text-gray-600 font-normal">이름</td>
-                  <td className="py-2 text-gray-800 font-normal">
-                    <input
-                      type="text"
-                      className="input form-control"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="이름을 입력하세요"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3 text-gray-600 font-normal">상태</td>
-                  <td className="py-3 text-gray-800 font-normal">
-                    <span className={`badge badge-sm badge-outline ${statusClass}`}>{statusText || '권한 없음'}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3 text-gray-600 font-normal">이메일</td>
-                  <td className="py-3 text-gray-700 text-sm font-normal">{currentUser?.email || '이메일 없음'}</td>
-                </tr>
-                <tr>
-                  <td className="py-3 text-gray-600 font-normal">비밀번호</td>
-                  <td className="py-3 text-gray-700 text-sm font-normal">
-                    <input
-                      type="password"
-                      className="input form-control"
-                      placeholder="비밀번호"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3 text-gray-600 font-normal">새 비밀번호</td>
-                  <td className="py-3 text-gray-700 text-sm font-normal">
-                    <div>
-                      <input
-                        type="password"
-                        className="input form-control"
-                        placeholder="새 비밀번호 (최소 6자리 이상)"
-                        value={change_password}
-                        onChange={(e) => setChangePassword(e.target.value)}
-                      />
-                      {change_password && change_password.length < 6 && (
-                        <p className="text-danger text-xs mt-1">최소 6자리 이상 입력해주세요</p>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-          </div>
-
-          {/* 알림 메시지는 상단으로 이동됨 */}
-
-          {/* 사업자 정보 섹션 */}
-          <div className="mt-8 border-t pt-6">
-            <h4 className="text-lg font-semibold mb-4">사업자 정보</h4>
-
-            {hasBusinessInfo && (
-              <div className="card-table scrollable-x-auto pb-3">
-                <table className="table align-middle text-sm text-gray-500">
-                  <tbody>
-                    <tr>
-                      <td className="py-2 text-gray-600 font-normal">사업자 등록번호</td>
-                      <td className="py-2 text-gray-800 font-normal">
-                        <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && (currentUser.business || currentUser["business"]) ?
-                            (currentUser.business || currentUser["business"]).business_number || '-' :
-                            '-'}
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">상호명</td>
-                      <td className="py-3 text-gray-800 font-normal">
-                        <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && (currentUser.business || currentUser["business"]) ?
-                            (currentUser.business || currentUser["business"]).business_name || '-' :
-                            '-'}
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">대표자명</td>
-                      <td className="py-3 text-gray-700 text-sm font-normal">
-                        <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && (currentUser.business || currentUser["business"]) ?
-                            (currentUser.business || currentUser["business"]).representative_name || '-' :
-                            '-'}
-                        </div>
-                      </td>
-                    </tr>
-                    {/* 사업자용 이메일 추가 */}
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">사업자용 이메일</td>
-                      <td className="py-3 text-gray-700 text-sm font-normal">
-                        <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                          {currentUser && (currentUser.business || currentUser["business"]) ?
-                            ((currentUser.business || currentUser["business"]) as any).business_email || '-' :
-                            '-'}
-                        </div>
-                      </td>
-                    </tr>
-                    {/* 사업자등록증 이미지 표시 - 항상 표시 */}
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">사업자등록증</td>
-                      <td className="py-3 text-gray-700 text-sm font-normal">
-                        {(() => {
-                          // currentUser와 business 객체가 존재하는지 확인
-                          if (!currentUser || !(currentUser.business || currentUser["business"])) {
-                            return (
-                              <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
-                                <span className="text-gray-500">등록된 이미지가 없습니다</span>
-                              </div>
-                            );
-                          }
-
-                          // business 객체를 안전하게 처리
-                          const business = (currentUser.business || currentUser["business"]) as any;
-                          const imageUrl = business.business_image_url;
-
-                          if (!imageUrl) {
-                            return (
-                              <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
-                                <span className="text-gray-500">등록된 이미지가 없습니다</span>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div className="border rounded p-3 bg-white">
-                              <div className="flex flex-col items-center">
-                                <div className="relative cursor-pointer" onClick={() => openImageModal(imageUrl)}>
-                                  <img
-                                    src={imageUrl}
-                                    alt="사업자등록증"
-                                    className="max-h-48 object-contain mb-2 hover:opacity-90 transition-opacity"
-                                    onError={(e) => {
-
-
-                                      // URL 상세 정보 로깅
-                                      try {
-                                        if (imageUrl && !imageUrl.startsWith('data:')) {
-                                          const url = new URL(imageUrl);
-
-
-
-
-
-                                        }
-                                      } catch (urlError) {
-
-                                      }
-
-                                      // 대체 이미지 표시
-                                      (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSI0MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiPuyVhOuvuOyekOujjOymnSDsnbTrr7jsp4A8L3RleHQ+PC9zdmc+";
-
-                                      // URL이 Supabase Storage URL이고 만료되었을 가능성이 있는 경우
-                                      if (business.business_image_storage_type === 'supabase_storage') {
-
-                                      }
-                                    }}
-                                    onLoad={() => {
-
-                                    }}
-                                  />
-                                  <div className="absolute top-0 right-0 bg-primary/80 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                  </div>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1 text-center">클릭하면 크게 볼 수 있습니다</p>
-                                <div className="mt-1 text-xs text-gray-500">
-                                  {business.business_image_storage_type === 'base64' ?
-                                    '(Base64 저장)' :
-                                    '(Storage 저장)'}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })() || (
-                            <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
-                              <span className="text-gray-500">등록된 이미지가 없습니다</span>
-                            </div>
-                          )}
-                      </td>
-                    </tr>
-
-                    {/* 은행 정보 표시 */}
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">입금 계좌 정보</td>
-                      <td className="py-3 text-gray-700 text-sm font-normal">
-                        {currentUser && (currentUser.business || currentUser["business"]) && ((currentUser.business || currentUser["business"]) as any).bank_account ? (
-                          <div className="border border-gray-200 rounded p-3 bg-gray-50">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="text-sm">
-                                <span className="font-medium text-gray-600">은행명:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.bank_name || '-'}
-                              </div>
-                              <div className="text-sm">
-                                <span className="font-medium text-gray-600">예금주:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.account_holder || '-'}
-                              </div>
-                              <div className="text-sm col-span-2">
-                                <span className="font-medium text-gray-600">계좌번호:</span> {((currentUser.business || currentUser["business"]) as any).bank_account.account_number || '-'}
-                              </div>
-                            </div>
-                            <div className="mt-2 text-xs text-info bg-info/10 p-2 rounded">
-                              입금 계좌 정보는 최초 등록 후 수정이 불가능합니다.
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="border border-gray-200 rounded p-2 bg-gray-50 text-center py-4">
-                            <span className="text-gray-500">등록된 계좌 정보가 없습니다</span>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td className="py-3 text-gray-600 font-normal">인증 상태</td>
-                      <td className="py-3 text-gray-700 text-sm font-normal">
-                        {loading ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-gray-500">확인 중...</span>
-                          </div>
-                        ) : hasPendingRequest ? (
-                          <div className="flex items-center">
-                            <span className="badge badge-sm badge-warning mr-2">승인 대기중</span>
-                            <span className="text-xs text-gray-500">관리자 승인 대기 중입니다</span>
-                          </div>
-                        ) : (currentUser && (currentUser.business || currentUser["business"]) && (currentUser.business || currentUser["business"]).verified) ? (
-                          <div className="flex items-center">
-                            <span className="badge badge-sm badge-success mr-2">인증됨</span>
-                            <span className="text-xs text-gray-500">사업자 인증이 완료되었습니다</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <span className="badge badge-sm badge-error mr-2">미인증</span>
-                            <span className="text-xs text-gray-500">등업 신청이 필요합니다</span>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="ml-3 text-gray-500">정보를 불러오는 중입니다...</p>
-              </div>
-            ) : (
-              <>
-                {hasPendingRequest && (
-                  <div className="bg-warning/10 p-4 rounded-lg mb-4 border border-warning/20">
-                    <h5 className="text-warning font-semibold mb-2 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      등업 신청이 대기 중입니다
-                    </h5>
-                    <p className="text-gray-600">
-                      관리자 승인 후 총판 권한으로 변경됩니다. 승인까지 일정 시간이 소요될 수 있습니다.
-                    </p>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* 메인 콘텐츠 */}
+          <div className="flex-1">
+            <div className="grid gap-6">
+              {/* 프로필 카드 */}
+              <div id="user_info" className="card rounded-xl shadow-sm">
+                <div className="card-header border-b border-gray-200 p-6">
+                  <div className="flex items-center gap-2">
+                    <KeenIcon icon="profile-circle" className="size-5 text-primary" />
+                    <h4 className="text-base font-semibold text-gray-900">사용자 정보</h4>
                   </div>
-                )}
-
-                {!hasPendingRequest && !hasBusinessInfo && (
-                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <div className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <p className="text-gray-600 mb-2">
-                          사업자 등록 정보가 없습니다. 등업 신청을 위해 사업자 정보를 등록해주세요.
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          아래 '사업자 등록 및 등업 신청' 버튼을 클릭하여 등록을 진행해주세요.
-                        </p>
+                </div>
+                <div className="card-body p-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-xl font-semibold text-primary">
+                        {currentUser?.full_name?.charAt(0) || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {currentUser?.full_name || '사용자'}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`badge ${roleClass} px-2.5 py-0.5 rounded-full text-xs font-medium`}
+                          style={roleThemeColors ? {
+                            backgroundColor: `${roleThemeColors.baseHex}15`,
+                            color: roleThemeColors.baseHex
+                          } : undefined}>
+                          {roleText || '사용자'}
+                        </span>
+                        <span className={`badge badge-sm ${statusClass}`}>{statusText || '권한 없음'}</span>
                       </div>
                     </div>
                   </div>
-                )}
-
-                {!hasPendingRequest && hasRejectedRequest && (
-                  <div className="bg-danger/10 p-4 rounded-lg mb-4 border border-danger/20">
-                    <h5 className="text-danger font-semibold mb-2 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      이전 등업 신청이 거부되었습니다
-                    </h5>
-                    <div className="mb-3">
-                      <p className="text-gray-700 font-medium">거부 사유:</p>
-                      <p className="text-gray-600 mt-1 p-3 bg-white rounded border border-gray-200">
-                        {rejectionReason || '관리자가 등업 신청을 거부했습니다.'}
-                      </p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">이름</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="이름을 입력하세요"
+                      />
                     </div>
-                    <p className="text-sm text-gray-500">
-                      아래 정보를 수정하여 다시 신청해 주세요.
-                    </p>
+
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">이메일</label>
+                      <input
+                        type="email"
+                        className="input bg-gray-50"
+                        value={currentUser?.email || ''}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="form-label text-sm font-medium text-gray-700">현재 비밀번호</label>
+                        <input
+                          type="password"
+                          className="input"
+                          placeholder="현재 비밀번호"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label text-sm font-medium text-gray-700">새 비밀번호</label>
+                        <input
+                          type="password"
+                          className="input"
+                          placeholder="새 비밀번호 (최소 6자리)"
+                          value={change_password}
+                          onChange={(e) => setChangePassword(e.target.value)}
+                        />
+                        {change_password && change_password.length < 6 && (
+                          <p className="text-danger text-xs mt-1">최소 6자리 이상 입력해주세요</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
+                </div>
+              </div>
+
+              {/* 알림 메시지는 상단으로 이동됨 */}
+
+              {/* 사업자 정보 카드 */}
+              <div id="business_info" className="card rounded-xl shadow-sm">
+                <div className="card-header border-b border-gray-200 p-6">
+                  <div className="flex items-center gap-2">
+                    <KeenIcon icon="shop" className="size-5 text-primary" />
+                    <h4 className="text-base font-semibold text-gray-900">사업자 정보</h4>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">캐시 충전 및 등업 신청을 위해 사업자 정보를 입력해주세요 (선택사항)</p>
+                </div>
+                <div className="card-body p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">사업자 등록번호</label>
+                      <input
+                        type="text"
+                        className={`input ${!isBusinessInfoEditable ? 'bg-gray-50' : ''}`}
+                        value={businessNumber}
+                        onChange={(e) => setBusinessNumber(e.target.value)}
+                        placeholder="000-00-00000"
+                        disabled={!isBusinessInfoEditable}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">상호명</label>
+                      <input
+                        type="text"
+                        className={`input ${!isBusinessInfoEditable ? 'bg-gray-50' : ''}`}
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        placeholder="상호명을 입력하세요"
+                        disabled={!isBusinessInfoEditable}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">대표자명</label>
+                      <input
+                        type="text"
+                        className={`input ${!isBusinessInfoEditable ? 'bg-gray-50' : ''}`}
+                        value={representativeName}
+                        onChange={(e) => setRepresentativeName(e.target.value)}
+                        placeholder="대표자명을 입력하세요"
+                        disabled={!isBusinessInfoEditable}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-sm font-medium text-gray-700">사업자용 이메일</label>
+                      <input
+                        type="email"
+                        className={`input ${!isBusinessInfoEditable ? 'bg-gray-50' : ''}`}
+                        value={businessEmail}
+                        onChange={(e) => setBusinessEmail(e.target.value)}
+                        placeholder="business@example.com"
+                        disabled={!isBusinessInfoEditable}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 사업자등록증 이미지 */}
+                  <div className="mt-6 md:col-span-2">
+                    <label className="form-label text-sm font-medium text-gray-700 mb-3">사업자등록증</label>
+                    <div className="space-y-3">
+                      {businessImageUrl ? (
+                        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex items-start gap-4">
+                            <div
+                              className="relative cursor-pointer flex-shrink-0"
+                              onClick={() => openImageModal(businessImageUrl)}
+                            >
+                              <img
+                                src={businessImageUrl}
+                                alt="사업자등록증"
+                                className="h-48 w-48 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                              />
+                              <div className="absolute inset-0 bg-black/0 hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                                <KeenIcon icon="eye" className="size-6 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-700 mb-2">사업자등록증이 등록되었습니다</p>
+                              <p className="text-xs text-gray-500 mb-3">이미지를 클릭하면 크게 볼 수 있습니다</p>
+                              {isBusinessInfoEditable ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-light"
+                                  onClick={() => {
+                                    setBusinessImageUrl('');
+                                    setBusinessImageFile(null);
+                                  }}
+                                >
+                                  <KeenIcon icon="trash" className="mr-1" />
+                                  삭제
+                                </button>
+                              ) : (
+                                <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded inline-flex items-center">
+                                  <KeenIcon icon="lock" className="mr-1" />
+                                  삭제 불가
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center">
+                          <div className="flex items-center justify-center mb-4">
+                            <KeenIcon icon="picture" className="text-gray-400" />
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">등록된 사업자등록증이 없습니다</p>
+                          {isBusinessInfoEditable ? (
+                            <>
+                              <input
+                                type="file"
+                                id="business-image-upload"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleBusinessImageUpload}
+                              />
+                              <label
+                                htmlFor="business-image-upload"
+                                className="btn btn-sm btn-primary cursor-pointer"
+                              >
+                                <KeenIcon icon="upload" className="mr-1" />
+                                사업자등록증 업로드
+                              </label>
+                              <p className="text-xs text-gray-500 mt-2">이미지 파일만 업로드 가능합니다 (최대 5MB)</p>
+                            </>
+                          ) : (
+                            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded inline-flex items-center">
+                              <KeenIcon icon="lock" className="mr-1" />
+                              업로드 불가
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* 사업자 정보 수정 불가 안내 */}
+                  {!isBusinessInfoEditable && (
+                    <div className="mt-6 bg-warning/10 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <KeenIcon icon="information-2" className="size-5 text-warning flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-warning">사업자 정보 수정 불가</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            사업자 정보는 한 번 저장 후 수정할 수 없습니다. 
+                            변경이 필요한 경우 관리자에게 문의해주세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 출금 계좌 정보 카드 */}
+              <div id="bank_info" className="card rounded-xl shadow-sm">
+                <div className="card-header border-b border-gray-200 p-6">
+                  <div className="flex items-center gap-2">
+                    <KeenIcon icon="bank" className="size-5 text-primary" />
+                    <h4 className="text-base font-semibold text-gray-900">출금 계좌 정보</h4>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">출금을 위한 계좌 정보를 입력해주세요 (최초 1회만 입력 가능)</p>
+                </div>
+                <div className="card-body p-6">
+                  {isBankAccountEditable ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label text-sm font-medium text-gray-700">은행명</label>
+                          <select
+                            className="select w-full"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                          >
+                            <option value="">은행을 선택하세요</option>
+                            {bankList.map((bank) => (
+                              <option key={bank} value={bank}>{bank}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="form-label text-sm font-medium text-gray-700">계좌번호</label>
+                          <input
+                            type="text"
+                            className="input"
+                            value={accountNumber}
+                            onChange={(e) => setAccountNumber(e.target.value)}
+                            placeholder="계좌번호를 입력하세요"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-sm font-medium text-gray-700">예금주</label>
+                          <input
+                            type="text"
+                            className="input"
+                            value={accountHolder}
+                            onChange={(e) => setAccountHolder(e.target.value)}
+                            placeholder="예금주명을 입력하세요"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4 bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                          <KeenIcon icon="information" className="size-4 inline mr-1" />
+                          계좌 정보는 한 번 저장하면 수정할 수 없으니 신중하게 입력해주세요.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">은행명</p>
+                          <p className="font-medium">{bankName || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">계좌번호</p>
+                          <p className="font-medium">{accountNumber || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">예금주</p>
+                          <p className="font-medium">{accountHolder || '-'}</p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-danger bg-white p-3 rounded border border-gray-200">
+                        <KeenIcon icon="lock" className="size-4 inline mr-1" />
+                        계좌 정보는 보안을 위해 수정할 수 없습니다. 변경이 필요한 경우 관리자에게 문의해주세요.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 등업 신청 카드 - 총판이 아닌 경우에만 표시 */}
+              {currentUser?.role !== USER_ROLES.DISTRIBUTOR && (
+                <div id="levelup_apply" className="card rounded-xl shadow-sm">
+                  <div className="card-header border-b border-gray-200 p-6">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <KeenIcon icon="crown" className="size-5 text-primary" />
+                        <h4 className="text-base font-semibold text-gray-900">등업 신청</h4>
+                      </div>
+                      {!loading && !hasPendingRequest && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => {
+                            // 사업자 정보 체크
+                            const hasCompleteBusinessInfo = businessNumber && businessName && representativeName;
+                            // 출금 계좌 정보 체크
+                            const hasCompleteBankInfo = bankName && accountNumber && accountHolder;
+
+                            if (!hasCompleteBusinessInfo || !hasCompleteBankInfo) {
+                              showDialog({
+                                title: '등업 신청 불가',
+                                message: '사업자 정보와 출금 계좌 정보가 모두 입력되어야 신청 가능합니다.',
+                                variant: 'warning',
+                                confirmText: '확인'
+                              });
+                              return;
+                            }
+
+                            setShowLevelUpModal(true);
+                          }}
+                          disabled={loading}
+                        >
+                          <KeenIcon icon="crown" className="mr-1" />
+                          신청하기
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {(loading || hasPendingRequest || hasRejectedRequest) && (
+                    <div className="card-body p-6">
+                      {loading ? (
+                        <div className="flex items-center">
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <p className="ml-3 text-gray-500 text-sm">정보를 불러오는 중입니다...</p>
+                        </div>
+                      ) : (
+                        <>
+                          {hasPendingRequest && (
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <KeenIcon icon="time" className="size-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <h5 className="text-amber-800 font-semibold mb-1">등업 신청이 대기 중입니다</h5>
+                                  <p className="text-amber-700 text-sm">
+                                    관리자 승인 후 역할이 변경됩니다. 승인까지 일정 시간이 소요될 수 있습니다.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {!hasPendingRequest && hasRejectedRequest && (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <KeenIcon icon="cross-circle" className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                  <h5 className="text-red-800 font-semibold mb-2">이전 등업 신청이 거부되었습니다</h5>
+                                  <div className="bg-white p-3 rounded border border-red-200 mb-3">
+                                    <p className="text-sm text-gray-600 font-medium mb-1">거부 사유:</p>
+                                    <p className="text-sm text-gray-700">
+                                      {rejectionReason || '관리자가 등업 신청을 거부했습니다.'}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-red-700">
+                                    거부 사유를 확인하고 다시 신청해 주세요.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* 하단 버튼 */}
-          <div className="flex justify-between gap-3 mt-6">
-            {loading ? (
-              <button
-                className="btn btn-success"
-                disabled
-              >
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  로딩 중...
-                </span>
-              </button>
-            ) : hasPendingRequest ? (
-              <button
-                className="btn btn-success"
-                onClick={handleOpenUpgradeModal}
-              >
-                사업자 정보 수정
-              </button>
-            ) : (
-              <button
-                className="btn btn-success"
-                onClick={handleOpenUpgradeModal}
-              >
-                {hasBusinessInfo ? '등업 신청' : '사업자 등록 및 등업 신청'}
-              </button>
-            )}
-
-            <button
-              className="btn btn-primary"
-              onClick={handleSaveProfile}
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  저장 중...
-                </span>
-              ) : '저장하기'}
-            </button>
-          </div>
+          {/* 우측 스크롤 메뉴 - 데스크톱만 */}
+          {desktopMode && (
+            <div className="w-64 shrink-0">
+              <div className="sticky top-24">
+                <div className="card rounded-xl shadow-sm p-6">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-4">내정보 관리 메뉴</h5>
+                  <div className="flex flex-col grow relative before:absolute before:start-[11px] before:top-0 before:bottom-0 before:border-s before:border-gray-200">
+                    {sidebarItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSectionClick(item.id)}
+                        className={`cursor-pointer flex items-center gap-1.5 rounded-lg pl-2.5 pr-2.5 py-2.5 border border-transparent text-gray-800 hover:rounded-lg hover:text-primary text-2sm ${activeSection === item.id ? 'bg-secondary-active text-primary font-medium' : ''
+                          }`}
+                      >
+                        <span className={`flex w-1.5 relative before:absolute before:left-0 before:top-1/2 before:size-1.5 before:rounded-full before:-translate-x-1/2 before:-translate-y-1/2 ${activeSection === item.id ? 'before:bg-primary' : ''
+                          }`}></span>
+                        {item.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+      </div>
+
+      {/* 하단 버튼 - 데스크톱에서는 메인 콘텐츠 영역에만, 모바일에서는 전체 너비 */}
+      <div className={`flex justify-end mt-6 ${desktopMode ? 'lg:pr-[280px]' : ''}`}>
+        <button
+          className="btn btn-primary btn-lg px-8"
+          onClick={handleSaveProfile}
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              저장 중...
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <KeenIcon icon="check" className="mr-2" />
+              정보 저장
+            </span>
+          )}
+        </button>
       </div>
 
       {/* 등업 신청 모달 */}
-      <BusinessUpgradeModal
-        isOpen={isUpgradeModalOpen}
-        onClose={handleCloseUpgradeModal}
-        onSuccess={handleUpgradeSuccess}
-        initialData={getPreviousBusinessInfo()}
-        isEditMode={hasPendingRequest}
-        setCurrentUser={setCurrentUser}
-      />
+      {
+        showLevelUpModal && (
+          <Dialog open={showLevelUpModal} onOpenChange={setShowLevelUpModal}>
+            <DialogContent className="max-w-md" aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <KeenIcon icon="crown" className="size-5" />
+                  등업 신청
+                </DialogTitle>
+              </DialogHeader>
+              <DialogBody>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label mb-2">신청할 역할을 선택해주세요</label>
+                    <select
+                      className="select"
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                    >
+                      <option value="">역할 선택</option>
+                      {/* 현재 역할에 따라 선택 가능한 옵션 표시 */}
+                      {currentUser?.role === USER_ROLES.AGENCY ? (
+                        // 대행사는 총판으로만 등업 가능
+                        <option value={USER_ROLES.DISTRIBUTOR}>총판</option>
+                      ) : (
+                        // 그 외(비기너, 광고주 등)는 대행사, 총판 순으로 표시
+                        <>
+                          <option value={USER_ROLES.AGENCY}>대행사</option>
+                          <option value={USER_ROLES.DISTRIBUTOR}>총판</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                  <div className="bg-info/10 p-4 rounded-lg">
+                    <p className="text-sm text-info">
+                      관리자 승인 후 역할이 변경됩니다.
+                    </p>
+                    <p className="text-xs text-gray-600 mt-2">
+                      승인까지 일정 시간이 소요될 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+              </DialogBody>
+              <DialogFooter>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleLevelUpRequest}
+                  disabled={loading || !selectedRole}
+                >
+                  {loading ? '신청 중...' : '신청하기'}
+                </button>
+                <button
+                  className="btn btn-light"
+                  onClick={() => {
+                    setShowLevelUpModal(false);
+                    setSelectedRole('');
+                  }}
+                >
+                  취소
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )
+      }
 
       {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
-      {imageModalOpen && selectedImage && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
-          onClick={() => {
-            setImageModalOpen(false);
-            setSelectedImage('');
-          }}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <img
-              src={selectedImage}
-              alt="사업자등록증"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
-              }}
-            />
-            <button
-              className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
-              onClick={() => {
-                setImageModalOpen(false);
-                setSelectedImage('');
-              }}
-            >
-              <KeenIcon icon="cross" className="text-lg" />
-            </button>
-            <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-3">
-              <a
-                href={selectedImage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-sm btn-primary shadow-lg"
+      {
+        imageModalOpen && selectedImage && createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
+            onClick={() => {
+              setImageModalOpen(false);
+              setSelectedImage('');
+            }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          >
+            <div className="relative max-w-4xl max-h-[90vh]">
+              <img
+                src={selectedImage}
+                alt="사업자등록증"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
-              >
-                <KeenIcon icon="external-link" className="me-1" />
-                새 탭에서 열기
-              </a>
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
+                }}
+              />
               <button
-                className="btn btn-sm btn-light shadow-lg"
+                className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
                 onClick={() => {
                   setImageModalOpen(false);
                   setSelectedImage('');
                 }}
               >
-                <KeenIcon icon="cross" className="me-1" />
-                닫기
+                <KeenIcon icon="cross" className="text-lg" />
               </button>
+              <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-3">
+                <a
+                  href={selectedImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-primary shadow-lg"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <KeenIcon icon="external-link" className="me-1" />
+                  새 탭에서 열기
+                </a>
+                <button
+                  className="btn btn-sm btn-light shadow-lg"
+                  onClick={() => {
+                    setImageModalOpen(false);
+                    setSelectedImage('');
+                  }}
+                >
+                  <KeenIcon icon="cross" className="me-1" />
+                  닫기
+                </button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
-    </CommonTemplate>
+          </div>,
+          document.body
+        )
+      }
+    </CommonTemplate >
   );
 };
 

@@ -9,9 +9,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { exportCashRequestsToExcel } from './services/cashExcelExportService';
 
 const ManageCashPage = () => {
   const [cashRequests, setCashRequests] = useState<any[]>([]);
@@ -315,9 +315,29 @@ const ManageCashPage = () => {
     });
   }
 
+  // 엑셀 다운로드 핸들러
+  const handleExcelDownload = () => {
+    if (cashRequests.length === 0) {
+      openResultModal("알림", "내보낼 데이터가 없습니다.", false);
+      return;
+    }
+
+    const result = exportCashRequestsToExcel(cashRequests);
+    if (result.success) {
+      openResultModal("엑셀 다운로드 완료", "엑셀 파일이 다운로드되었습니다.", true);
+    } else {
+      openResultModal("다운로드 실패", result.error || "엑셀 다운로드 중 오류가 발생했습니다.", false);
+    }
+  };
+
   // 툴바 액션 버튼
   const toolbarActions = (
-    <Button variant="outline" size="sm" className="bg-primary-600 text-white hover:bg-primary-700">
+    <Button
+      variant="outline"
+      size="sm"
+      className="bg-primary-600 text-white hover:bg-primary-700"
+      onClick={handleExcelDownload}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
@@ -340,23 +360,27 @@ const ManageCashPage = () => {
           <DialogContent className="max-w-md" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>캐시 충전 승인</DialogTitle>
-              <DialogDescription>
+            </DialogHeader>
+
+            <div className="p-6">
+              <p className="text-gray-700">
                 {modalData?.isBulk
                   ? `선택된 ${modalData.requestIds.length}건의 요청을 승인하시겠습니까?`
                   : '이 요청을 승인하시겠습니까?'
                 }
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={closeModal}>
-                취소
-              </Button>
+              </p>
+            </div>
+
+            <DialogFooter className="flex gap-2">
               <Button
                 className="bg-success hover:bg-success/90 text-white"
                 onClick={handleConfirmApprove}
                 disabled={loading}
               >
                 승인
+              </Button>
+              <Button variant="outline" onClick={closeModal}>
+                취소
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -369,13 +393,14 @@ const ManageCashPage = () => {
           <DialogContent className="max-w-md" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>거부 사유 입력</DialogTitle>
-              {modalData?.isBulk && (
-                <DialogDescription>
-                  선택된 {modalData.requestIds.length}건의 요청을 거부합니다
-                </DialogDescription>
-              )}
             </DialogHeader>
-            <DialogBody className="py-4">
+
+            <div className="p-6">
+              {modalData?.isBulk && (
+                <p className="text-gray-700 mb-4">
+                  선택된 {modalData.requestIds.length}건의 요청을 거부합니다
+                </p>
+              )}
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 거부 사유
               </label>
@@ -386,17 +411,18 @@ const ManageCashPage = () => {
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
               />
-            </DialogBody>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={closeModal}>
-                취소
-              </Button>
+            </div>
+
+            <DialogFooter className="flex gap-2">
               <Button
                 className="bg-danger hover:bg-danger/90 text-white"
                 onClick={handleConfirmReject}
                 disabled={!rejectReason.trim() || loading}
               >
                 거부 확인
+              </Button>
+              <Button variant="outline" onClick={closeModal}>
+                취소
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -406,19 +432,41 @@ const ManageCashPage = () => {
       {/* 결과 알림 모달 */}
       {modalType === 'result' && (
         <Dialog open={true} onOpenChange={closeModal}>
-          <DialogContent className="max-w-md text-center" aria-describedby={undefined}>
-            <DialogHeader className="text-center">
-              <DialogTitle className={`text-center ${modalData?.isSuccess ? "text-green-600" : "text-red-600"}`}>
-                {modalData?.title}
+          <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle className="text-center text-xl font-semibold pb-2">
+                {modalData?.isSuccess ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    {modalData?.title}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-2">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    {modalData?.title}
+                  </div>
+                )}
               </DialogTitle>
-              <DialogDescription className="text-center">
-                {modalData?.message}
-              </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="justify-center">
+
+            <div className="p-6 text-center">
+              <p className="text-gray-700">{modalData?.message}</p>
+            </div>
+
+            <DialogFooter className="flex justify-center">
               <Button
                 onClick={closeModal}
-                className={modalData?.isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}
+                className={modalData?.isSuccess
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-red-600 hover:bg-red-700 text-white"}
               >
                 확인
               </Button>
@@ -578,6 +626,8 @@ const ManageCashPage = () => {
                           </th>
                           <th className="py-3 px-3 text-start font-medium min-w-[120px]">회원명</th>
                           <th className="py-3 px-3 text-start font-medium min-w-[180px]">이메일</th>
+                          <th className="py-3 px-3 text-start font-medium min-w-[150px]">상호명</th>
+                          <th className="py-3 px-3 text-start font-medium min-w-[140px]">사업자번호</th>
                           <th className="py-3 px-3 text-start font-medium min-w-[120px]">충전 금액</th>
                           <th className="py-3 px-3 text-start font-medium min-w-[120px]">입금자명</th>
                           <th className="py-3 px-3 text-start font-medium min-w-[140px]">무료캐시</th>
@@ -611,6 +661,12 @@ const ManageCashPage = () => {
                               <td className="py-3 px-3 text-gray-700 dark:text-gray-400">
                                 {request.email}
                               </td>
+                              <td className="py-3 px-3 text-gray-700 dark:text-gray-400">
+                                {request.business_name || '-'}
+                              </td>
+                              <td className="py-3 px-3 text-gray-700 dark:text-gray-400">
+                                {request.business_number || '-'}
+                              </td>
                               <td className="py-3 px-3">
                                 <span className="text-gray-900 dark:text-white font-medium">₩{request.amount.toLocaleString()}</span>
                               </td>
@@ -639,10 +695,10 @@ const ManageCashPage = () => {
                               </td>
                               <td className="py-3 px-3 text-center">
                                 <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${request.status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                    : request.status === 'approved'
-                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                  : request.status === 'approved'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                                   }`}>
                                   {request.status === 'pending' ? '대기중' : request.status === 'approved' ? '승인' : '반려'}
                                 </span>
@@ -704,10 +760,10 @@ const ManageCashPage = () => {
                               <span className="text-gray-900 dark:text-white font-medium">{request.full_name}</span>
                             </div>
                             <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${request.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                : request.status === 'approved'
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                              : request.status === 'approved'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                               }`}>
                               {request.status === 'pending' ? '대기중' : request.status === 'approved' ? '승인' : '거부'}
                             </span>
@@ -738,6 +794,14 @@ const ManageCashPage = () => {
                             <div className="col-span-2">
                               <p className="text-gray-500 dark:text-gray-400">이메일</p>
                               <p className="text-gray-700 dark:text-gray-300">{request.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">상호명</p>
+                              <p className="text-gray-700 dark:text-gray-300">{request.business_name || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">사업자번호</p>
+                              <p className="text-gray-700 dark:text-gray-300">{request.business_number || '-'}</p>
                             </div>
                             <div className="col-span-2">
                               <p className="text-gray-500 dark:text-gray-400">신청일시</p>

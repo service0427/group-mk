@@ -460,6 +460,7 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       status?: string;
       rejected_reason?: string;
       refund_settings?: any; // 환불 설정 추가
+      ranking_field_mapping?: any; // 필드 매핑 추가
       // 보장형 슬롯 관련 필드
       guarantee_count?: number | null;
       guarantee_unit?: string | null;
@@ -495,7 +496,9 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
         target_rank: (existingCampaign?.slot_type === 'guarantee' && data.targetRank) ? parseInt(data.targetRank) : null 
       } : {}),
       ...(data.minGuaranteePrice !== undefined ? { min_guarantee_price: parseFloat(data.minGuaranteePrice) || null } : {}),
-      ...(data.maxGuaranteePrice !== undefined ? { max_guarantee_price: parseFloat(data.maxGuaranteePrice) || null } : {})
+      ...(data.maxGuaranteePrice !== undefined ? { max_guarantee_price: parseFloat(data.maxGuaranteePrice) || null } : {}),
+      // 필드 매핑 정보 추가
+      ...(data.rankingFieldMapping !== undefined ? { ranking_field_mapping: data.rankingFieldMapping } : {})
     };
 
     // 상태 변경 플래그와 이전 상태 저장

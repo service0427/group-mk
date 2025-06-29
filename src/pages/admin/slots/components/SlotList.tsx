@@ -6,6 +6,7 @@ import { supabase } from '@/supabase';
 import { useAlert } from '@/hooks/useAlert';
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
+import { getBulkSlotRankingData } from '@/services/rankingService';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -56,6 +57,21 @@ const campaignStatusStyles = `
   </style>
 `;
 
+interface RankingData {
+  keyword_id: string;
+  product_id: string;
+  title: string;
+  link: string;
+  rank: number;
+  prev_rank?: number;
+  yesterday_rank?: number;
+  lprice?: number;
+  mall_name?: string;
+  brand?: string;
+  image?: string;
+  [key: string]: any;
+}
+
 interface SlotListProps {
   slots: Slot[];
   selectedServiceType: string;
@@ -97,6 +113,8 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openRejectionId, setOpenRejectionId] = useState<string | null>(null);
   // 키워드 툴팁 상태 관리
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
+  // 순위 데이터 상태 관리
+  const [rankingDataMap, setRankingDataMap] = useState<Map<string, RankingData>>(new Map());
   
   // 내키워드 지원 여부 확인 - 모든 슬롯이 내키워드 미지원인지 체크
   const isKeywordUnsupportedService = useMemo(() => {
@@ -223,6 +241,26 @@ const SlotList: React.FC<SlotListProps> = ({
     }
   };
   
+  // 순위 데이터 로드
+  useEffect(() => {
+    const loadRankingData = async () => {
+      if (!slots || slots.length === 0 || !campaigns) return;
+      
+      // 캠페인별로 슬롯 그룹화
+      const slotsByMatProductId = slots.map(slot => ({
+        id: slot.id,
+        campaignId: slot.product_id || 0,
+        inputData: slot.input_data,
+        keywordId: slot.keyword_id?.toString()
+      }));
+      
+      const rankingMap = await getBulkSlotRankingData(slotsByMatProductId);
+      setRankingDataMap(rankingMap);
+    };
+    
+    loadRankingData();
+  }, [slots, campaigns]);
+
   // 슬롯들의 사용자 정보를 한 번에 로드하는 함수
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -446,6 +484,7 @@ const SlotList: React.FC<SlotListProps> = ({
               </th>
               <th className="py-2 px-2 text-start font-medium">사용자</th>
               <th className="py-2 px-2 text-center font-medium">입력필드</th>
+              <th className="py-2 px-2 text-center font-medium">순위</th>
               <th className="py-2 px-2 text-center font-medium">작업수</th>
               <th className="py-2 px-2 text-center font-medium">작업기간</th>
               <th className="py-2 px-2 text-center font-medium">캠페인</th>
@@ -473,8 +512,22 @@ const SlotList: React.FC<SlotListProps> = ({
                   <div className="text-sm font-medium text-gray-900 truncate" title={userMap[slot.user_id]?.full_name || slot.user?.full_name || '사용자'}>
                     {userMap[slot.user_id]?.full_name || slot.user?.full_name || '사용자'}
                   </div>
-                  <div className="text-xs text-gray-500 truncate" title={userMap[slot.user_id]?.email || slot.user?.email || ''}>
-                    {userMap[slot.user_id]?.email || slot.user?.email || ''}
+                  <div className="text-xs text-gray-500 truncate">
+                    {(() => {
+                      const email = userMap[slot.user_id]?.email || slot.user?.email || '';
+                      if (!email) return '';
+                      
+                      // @ 기준으로 분리
+                      const [localPart] = email.split('@');
+                      if (!localPart) return '';
+                      
+                      // 3자리만 보이고 나머지는 * 처리
+                      if (localPart.length <= 3) {
+                        return localPart + '***';
+                      } else {
+                        return localPart.substring(0, 3) + '*'.repeat(localPart.length - 3);
+                      }
+                    })()}
                   </div>
                 </td>
                 
@@ -670,6 +723,51 @@ const SlotList: React.FC<SlotListProps> = ({
                       </div>
                     );
                   })()}
+                </td>
+                
+                {/* 순위 */}
+                <td className="py-2 px-2 text-center">
+                  <div className="flex items-center justify-center">
+                    {(() => {
+                      // approved, pending_user_confirm 상태일 때만 표시
+                      if (slot.status === 'approved' || slot.status === 'pending_user_confirm') {
+                        // 순위 데이터 체크
+                      } else {
+                        return <span className="text-gray-400 text-sm">-</span>;
+                      }
+                      
+                      const rankingData = rankingDataMap.get(slot.id);
+                      if (!rankingData) {
+                        return <span className="text-gray-400 text-sm">-</span>;
+                      }
+                      
+                      const dailyChange = rankingData.yesterday_rank ? rankingData.yesterday_rank - rankingData.rank : null;
+                      
+                      return (
+                        <div className="flex items-center justify-center gap-1">
+                          <span className={`font-semibold text-sm ${
+                            rankingData.rank <= 10 ? 'text-blue-600' : 'text-gray-700'
+                          }`}>
+                            {rankingData.rank}위
+                          </span>
+                          
+                          {rankingData.yesterday_rank ? (
+                            dailyChange !== null && dailyChange !== 0 ? (
+                              <span className={`text-xs font-medium ${
+                                dailyChange > 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {dailyChange > 0 ? '▲' : '▼'}{Math.abs(dailyChange)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )
+                          ) : (
+                            <span className="text-xs text-blue-500 font-medium">NEW</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </td>
                 
                 {/* 작업수 */}

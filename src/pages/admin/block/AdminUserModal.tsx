@@ -4,7 +4,7 @@ import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { KeenIcon } from "@/components";
-import { USER_ROLES, getRoleDisplayName, getRoleThemeColors } from "@/config/roles.config";
+import { USER_ROLES, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from "@/config/roles.config";
 import { createRoleChangeNotification } from "@/utils/notificationActions";
 import { useDialog, useToast } from "@/providers";
 import { useAuthContext } from "@/auth";
@@ -30,6 +30,9 @@ interface UserData {
         representative_name: string;
         business_email: string;
         business_image_url?: string;
+        bank_account?: any;
+        verified?: boolean;
+        verification_date?: string;
     };
 }
 
@@ -52,7 +55,7 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
         account_holder: '',
         is_editable: true
     });
-    const [businessData, setBusinessData] = useState({
+    const [businessData, setBusinessData] = useState<any>({
         business_number: '',
         business_name: '',
         representative_name: '',
@@ -207,18 +210,17 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
 
     // 비밀번호 초기화 핸들러
     const handleResetPassword = async () => {
-        const confirmReset = await showDialog({
-            title: '비밀번호 초기화',
-            message: `${userData?.email}로 비밀번호 재설정 이메일을 발송하시겠습니까?`,
-            confirmText: '발송',
-            cancelText: '취소',
-            variant: 'warning'
-        });
-
-        if (!confirmReset) return;
-
         try {
             setSaving(true);
+            
+            // 확인 다이얼로그 표시
+            await showDialog({
+                title: '비밀번호 초기화',
+                message: `${userData?.email}로 비밀번호 재설정 이메일을 발송하시겠습니까?`,
+                confirmText: '발송',
+                cancelText: '취소',
+                variant: 'warning'
+            });
 
             // Supabase의 비밀번호 재설정 이메일 발송
             const { error } = await supabase.auth.resetPasswordForEmail(userData?.email || '', {
@@ -231,8 +233,11 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
 
             success('비밀번호 재설정 이메일이 발송되었습니다.');
         } catch (error: any) {
-            console.error('비밀번호 재설정 이메일 발송 오류:', error);
-            showError('비밀번호 재설정 이메일 발송에 실패했습니다: ' + error.message);
+            // 사용자가 취소한 경우는 에러 메시지를 표시하지 않음
+            if (error.message !== 'User cancelled the dialog') {
+                console.error('비밀번호 재설정 이메일 발송 오류:', error);
+                showError('비밀번호 재설정 이메일 발송에 실패했습니다: ' + error.message);
+            }
         } finally {
             setSaving(false);
         }
@@ -358,13 +363,25 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
                                                     {userData.full_name || '사용자'}
                                                 </h3>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <span className="badge px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                                        style={{
-                                                            backgroundColor: `${getRoleThemeColors(userData.role)?.baseHex || '#6b7280'}15`,
-                                                            color: getRoleThemeColors(userData.role)?.baseHex || '#6b7280'
-                                                        }}>
-                                                        {getRoleDisplayName(userData.role)}
-                                                    </span>
+                                                    {(() => {
+                                                        const roleTheme = getRoleThemeColors(userData.role) as any;
+                                                        const bgColor = roleTheme?.baseHex 
+                                                            ? `${roleTheme.baseHex}15` 
+                                                            : '#6b728015';
+                                                        const textColor = roleTheme?.baseHex 
+                                                            ? roleTheme.baseHex 
+                                                            : '#6b7280';
+                                                        
+                                                        return (
+                                                            <span className="badge px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                style={{
+                                                                    backgroundColor: bgColor,
+                                                                    color: textColor
+                                                                }}>
+                                                                {getRoleDisplayName(userData.role)}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                     {renderStatusBadge(userData.status)}
                                                 </div>
                                             </div>

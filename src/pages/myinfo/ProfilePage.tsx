@@ -597,7 +597,7 @@ const ProfilePage = () => {
       const hasBankInfo = isBankAccountEditable && (bankName || accountNumber || accountHolder);
 
       // 기존 사업자 정보와 비교
-      const existingBusiness = currentUser?.business || {};
+      const existingBusiness = currentUser?.business || {} as any;
       const businessChanged = hasBusinessInfo && (
         businessNumber !== (existingBusiness.business_number || '') ||
         businessName !== (existingBusiness.business_name || '') ||

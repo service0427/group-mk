@@ -128,7 +128,7 @@ export const WithdrawRequestList: React.FC<WithdrawRequestListProps> = ({
 
     try {
       setProcessing(true)
-      const result = await approveWithdrawRequest(String(approveConfirm.id), currentUser.id) // 관리자 ID 전달
+      const result = await approveWithdrawRequest(String(approveConfirm.id), currentUser?.id || '') // 관리자 ID 전달
 
       // 모달 닫기
       setApproveConfirm({

@@ -367,8 +367,11 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
   const [rankCheckSlotData, setRankCheckSlotData] = useState<{
     slotId: string;
     campaignName?: string;
+    campaignId?: number;
     targetRank?: number;
     keyword?: string;
+    startDate?: string;
+    endDate?: string;
   } | null>(null);
 
   // 환불 요청 핸들러
@@ -728,12 +731,17 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             }}
             onRankCheck={(request) => {
               if (request.guarantee_slots?.[0]?.status === 'active') {
-                setRankCheckSlotData({
-                  slotId: request.guarantee_slots[0].id,
+                const slot = request.guarantee_slots[0];
+                const slotData = {
+                  slotId: slot.id,
                   campaignName: request.campaigns?.campaign_name,
+                  campaignId: request.campaigns?.id || request.campaign_id,  // campaigns 테이블의 id 사용
                   targetRank: request.target_rank,
-                  keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
-                });
+                  keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword || (request.input_data as any)?.keyword || (request.input_data as any)?.['검색어'],
+                  startDate: slot.start_date,
+                  endDate: slot.end_date
+                };
+                setRankCheckSlotData(slotData);
                 setRankCheckModalOpen(true);
               }
             }}
@@ -859,8 +867,11 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         }}
         slotId={rankCheckSlotData?.slotId || ''}
         campaignName={rankCheckSlotData?.campaignName}
+        campaignId={rankCheckSlotData?.campaignId}
         targetRank={rankCheckSlotData?.targetRank || 1}
         keyword={rankCheckSlotData?.keyword}
+        startDate={rankCheckSlotData?.startDate}
+        endDate={rankCheckSlotData?.endDate}
       />
 
       {/* 환불 모달 */}

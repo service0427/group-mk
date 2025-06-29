@@ -7,6 +7,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { useMediaQuery } from '@/hooks';
 import { hasPermission, PERMISSION_GROUPS, USER_ROLES } from '@/config/roles.config';
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
+import { getBulkGuaranteeSlotRankingData } from '@/services/rankingService';
 import { createRefundApprovedNotification } from '@/utils/notificationActions';
 import { supabase } from '@/supabase';
 import { smartCeil } from '@/utils/mathUtils';
@@ -221,8 +222,11 @@ const GuaranteeQuotesPage: React.FC = () => {
   const [rankCheckSlotData, setRankCheckSlotData] = useState<{
     slotId: string;
     campaignName?: string;
+    campaignId?: number;
     targetRank: number;
     keyword?: string;
+    startDate?: string;
+    endDate?: string;
   } | null>(null);
 
   // 엑셀 내보내기 모달 상태
@@ -282,6 +286,9 @@ const GuaranteeQuotesPage: React.FC = () => {
     distributorId?: string;
     title?: string;
   } | null>(null);
+  
+  // 순위 데이터 상태
+  const [rankingDataMap, setRankingDataMap] = useState<Map<string, any>>(new Map());
 
   // 화면 크기 확인
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
@@ -437,6 +444,31 @@ const GuaranteeQuotesPage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, searchServiceType, searchStatus, searchSlotStatus, searchDateFrom, searchDateTo, selectedCampaign]);
+  
+  // 순위 데이터 로드
+  useEffect(() => {
+    const loadRankingData = async () => {
+      if (!paginatedRequests || paginatedRequests.length === 0) return;
+      
+      // active 상태인 보장형 슬롯만 필터링
+      const activeSlots = paginatedRequests
+        .filter(req => req.guarantee_slots?.[0]?.status === 'active')
+        .map(req => ({
+          id: req.guarantee_slots![0].id,
+          campaignId: req.campaign_id,
+          inputData: req.input_data, // guarantee_slot_requests의 input_data 사용
+          keywordId: req.keyword_id
+        }));
+      
+      if (activeSlots.length === 0) return;
+      
+      // 순위 데이터 일괄 조회
+      const rankingData = await getBulkGuaranteeSlotRankingData(activeSlots);
+      setRankingDataMap(rankingData);
+    };
+    
+    loadRankingData();
+  }, [paginatedRequests]);
 
   // 사용자 정보를 안정화
   const userId = currentUser?.id;
@@ -1265,7 +1297,21 @@ const GuaranteeQuotesPage: React.FC = () => {
         const allData: Record<string, any> = {
           'campaign_name': request.campaigns?.campaign_name || '',
           'user_name': request.users?.full_name || '',
-          'user_email': request.users?.email || request.user_id,
+          'user_email': (() => {
+            const email = request.users?.email || '';
+            if (!email) return request.user_id;
+            
+            // @ 기준으로 분리
+            const [localPart] = email.split('@');
+            if (!localPart) return '';
+            
+            // 3자리만 보이고 나머지는 * 처리
+            if (localPart.length <= 3) {
+              return localPart + '***';
+            } else {
+              return localPart.substring(0, 3) + '*'.repeat(localPart.length - 3);
+            }
+          })(),
           'main_keyword': request.keywords?.main_keyword || request.input_data?.mainKeyword || '',
           'keyword1': request.keywords?.keyword1 || request.input_data?.keyword1 || '',
           'keyword2': request.keywords?.keyword2 || request.input_data?.keyword2 || '',
@@ -1761,7 +1807,7 @@ const GuaranteeQuotesPage: React.FC = () => {
                       </th>
                       {isExtraLargeScreen && <th className="py-2 px-2 text-start font-medium">사용자</th>}
                       <th className="py-2 px-2 text-start font-medium">입력정보</th>
-                      {isLargeScreen && <th className="py-2 px-2 text-center font-medium"></th>}
+                      {isLargeScreen && <th className="py-2 px-2 text-center font-medium">순위</th>}
                       <th className="py-2 px-2 text-center font-medium">캠페인</th>
                       <th className="py-2 px-1 md:px-2 text-center font-medium">상태</th>
                       {isLargeScreen && <th className="py-2 px-2 text-center font-medium">기간</th>}
@@ -1793,8 +1839,22 @@ const GuaranteeQuotesPage: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900 truncate" title={request.users?.full_name || '사용자'}>
                               {request.users?.full_name || '사용자'}
                             </div>
-                            <div className="text-xs text-gray-500 truncate" title={request.users?.email || request.user_id}>
-                              {request.users?.email || request.user_id}
+                            <div className="text-xs text-gray-500 truncate">
+                              {(() => {
+                                const email = request.users?.email || '';
+                                if (!email) return request.user_id;
+                                
+                                // @ 기준으로 분리
+                                const [localPart] = email.split('@');
+                                if (!localPart) return '';
+                                
+                                // 3자리만 보이고 나머지는 * 처리
+                                if (localPart.length <= 3) {
+                                  return localPart + '***';
+                                } else {
+                                  return localPart.substring(0, 3) + '*'.repeat(localPart.length - 3);
+                                }
+                              })()}
                             </div>
                           </td>
                         )}
@@ -2008,139 +2068,48 @@ const GuaranteeQuotesPage: React.FC = () => {
                             })()}
                           </div>
                         </td>
-                        {/* 키워드 */}
+                        {/* 순위 */}
                         {isLargeScreen && (
-                          <td className="py-2 px-2 text-center max-w-[100px]">
-                            <div className="flex items-center justify-center gap-1 relative">
-                              {(() => {
-                                // 직접입력 체크
-                                const isManualInput = request.keyword_id === 0 || request.input_data?.is_manual_input === true;
-
-                                if (isManualInput) {
-                                  return <span className="text-gray-400 text-sm">-</span>;
-                                }
-
-                                // 키워드 배열 생성
-                                const keywordArray = [];
-                                if (request.keywords?.main_keyword || request.input_data?.mainKeyword) {
-                                  keywordArray.push(request.keywords?.main_keyword || request.input_data?.mainKeyword);
-                                }
-                                if (request.keywords?.keyword1 || request.input_data?.keyword1) keywordArray.push(request.keywords?.keyword1 || request.input_data?.keyword1);
-                                if (request.keywords?.keyword2 || request.input_data?.keyword2) keywordArray.push(request.keywords?.keyword2 || request.input_data?.keyword2);
-                                if (request.keywords?.keyword3 || request.input_data?.keyword3) keywordArray.push(request.keywords?.keyword3 || request.input_data?.keyword3);
-
-                                if (keywordArray.length === 0) {
-                                  return <span className="text-gray-400 text-sm">-</span>;
-                                }
-
-                                const mainKeyword = keywordArray[0];
-                                const additionalCount = keywordArray.length - 1;
-
+                          <td className="py-2 px-2 text-center">
+                            {request.guarantee_slots?.[0]?.status === 'active' && (() => {
+                              const slotId = request.guarantee_slots[0].id;
+                              const rankingData = rankingDataMap.get(slotId);
+                              
+                              if (rankingData) {
+                                const currentRank = rankingData.rank;
+                                const yesterdayRank = rankingData.yesterday_rank;
+                                const dailyChange = yesterdayRank ? yesterdayRank - currentRank : null;
+                                
                                 return (
-                                  <>
-                                    <span className="text-gray-900 dark:text-gray-100 font-medium text-sm truncate" title={mainKeyword}>
-                                      {mainKeyword}
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span className={`font-semibold text-sm ${
+                                      currentRank <= 10 ? 'text-blue-600' : 'text-gray-700'
+                                    }`}>
+                                      {currentRank}위
                                     </span>
-                                    {additionalCount > 0 && (
-                                      <>
-                                        <button
-                                          className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            setPopoverPosition({
-                                              top: rect.top - 10,
-                                              left: rect.left + rect.width / 2
-                                            });
-                                            setOpenKeywordTooltipId(openKeywordTooltipId === request.id ? null : request.id);
-                                          }}
-                                        >
-                                          +{additionalCount}
-                                        </button>
-                                        {/* Tooltip */}
-                                        {openKeywordTooltipId === request.id && ReactDOM.createPortal(
-                                          <>
-                                            {/* 배경 클릭 시 닫기 */}
-                                            <div
-                                              className="fixed inset-0"
-                                              style={{ zIndex: 9998 }}
-                                              onClick={() => setOpenKeywordTooltipId(null)}
-                                            />
-                                            <div
-                                              className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
-                                              style={{
-                                                zIndex: 99999,
-                                                left: `${popoverPosition.left}px`,
-                                                top: `${popoverPosition.top}px`,
-                                                transform: 'translate(-50%, -100%)'
-                                              }}
-                                            >
-                                              <div className="flex items-center justify-between mb-2">
-                                                <div className="font-medium text-gray-100">전체 키워드</div>
-                                                <button
-                                                  className="text-gray-400 hover:text-gray-200 transition-colors"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenKeywordTooltipId(null);
-                                                  }}
-                                                >
-                                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                                  </svg>
-                                                </button>
-                                              </div>
-                                              <div className="space-y-2">
-                                                {/* 메인 키워드 */}
-                                                <div>
-                                                  <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    <span className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium">
-                                                      {mainKeyword}
-                                                    </span>
-                                                  </div>
-                                                </div>
-
-                                                {/* 서브 키워드 */}
-                                                {additionalCount > 0 && (
-                                                  <>
-                                                    <div className="border-t border-gray-700 dark:border-gray-600"></div>
-                                                    <div>
-                                                      <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
-                                                      <div className="flex flex-wrap gap-1">
-                                                        {keywordArray.slice(1).map((keyword, index) => (
-                                                          <span
-                                                            key={index}
-                                                            className={`px-2 py-0.5 text-xs rounded-md inline-block ${index % 4 === 0
-                                                                ? 'bg-green-500/20 text-green-200'
-                                                                : index % 4 === 1
-                                                                  ? 'bg-purple-500/20 text-purple-200'
-                                                                  : index % 4 === 2
-                                                                    ? 'bg-orange-500/20 text-orange-200'
-                                                                    : 'bg-pink-500/20 text-pink-200'
-                                                              }`}
-                                                          >
-                                                            {keyword}
-                                                          </span>
-                                                        ))}
-                                                      </div>
-                                                    </div>
-                                                  </>
-                                                )}
-                                              </div>
-                                              {/* Arrow */}
-                                              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                                              </div>
-                                            </div>
-                                          </>,
-                                          document.body
-                                        )}
-                                      </>
+                                    
+                                    {yesterdayRank ? (
+                                      dailyChange !== null && dailyChange !== 0 ? (
+                                        <span className={`text-xs font-medium ${
+                                          dailyChange > 0 ? 'text-green-600' : 'text-red-600'
+                                        }`}>
+                                          {dailyChange > 0 ? '▲' : '▼'}{Math.abs(dailyChange)}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-gray-400">-</span>
+                                      )
+                                    ) : (
+                                      <span className="text-xs text-blue-500 font-medium">NEW</span>
                                     )}
-                                  </>
+                                  </div>
                                 );
-                              })()}
-                            </div>
+                              }
+                              
+                              return <span className="text-gray-400 text-sm">-</span>;
+                            })()}
+                            {request.guarantee_slots?.[0]?.status !== 'active' && (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
                           </td>
                         )}
                         {/* 캠페인 */}
@@ -2419,11 +2388,15 @@ const GuaranteeQuotesPage: React.FC = () => {
                                         <button
                                           className="px-1.5 py-0.5 text-xs font-medium rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
                                           onClick={() => {
+                                            const slot = request.guarantee_slots![0];
                                             setRankCheckSlotData({
-                                              slotId: request.guarantee_slots![0].id,
+                                              slotId: slot.id,
                                               campaignName: request.campaigns?.campaign_name,
+                                              campaignId: request.campaigns?.id || request.campaign_id,
                                               targetRank: request.target_rank,
-                                              keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword
+                                              keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword,
+                                              startDate: slot.start_date,
+                                              endDate: slot.end_date
                                             });
                                             setRankCheckModalOpen(true);
                                           }}
@@ -3210,8 +3183,11 @@ const GuaranteeQuotesPage: React.FC = () => {
         }}
         slotId={rankCheckSlotData?.slotId || ''}
         campaignName={rankCheckSlotData?.campaignName}
+        campaignId={rankCheckSlotData?.campaignId}
         targetRank={rankCheckSlotData?.targetRank || 1}
         keyword={rankCheckSlotData?.keyword}
+        startDate={rankCheckSlotData?.startDate}
+        endDate={rankCheckSlotData?.endDate}
       />
 
       {/* 엑셀 내보내기 모달 */}

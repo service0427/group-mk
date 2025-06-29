@@ -35,6 +35,7 @@ import {
 import { SERVICE_TYPE_TO_CATEGORY } from '@/pages/advertise/campaigns/components/campaign-components/constants';
 import { createNotification } from '@/utils/notification';
 import { NotificationType, NotificationPriority } from '@/types/notification';
+import { checkSingleKeywordRanking, checkKeywordsInBatches, extractKeywordsFromSlot } from '@/services/rankingCheckService';
 
 
 // 보장성 슬롯 견적 요청 관련
@@ -753,6 +754,62 @@ export const guaranteeSlotService = {
       if (error) {
         console.error('보장형 슬롯 승인 실패:', error);
         throw new Error(error.message || '승인 처리 중 오류가 발생했습니다.');
+      }
+
+      // NaverShopping 서비스 타입인 경우 순위 체크 API 호출
+      console.log('[보장형 순위체크API] 슬롯 승인 처리 완료, 순위 체크 시작...');
+      console.log(`[보장형 순위체크API] - 서비스 타입: ${slotInfo.campaigns?.service_type}`);
+      console.log(`[보장형 순위체크API] - 슬롯 ID: ${slotId}`);
+      
+      if (slotInfo.campaigns?.service_type && slotInfo.campaigns.service_type.startsWith('NaverShopping')) {
+        console.log('[보장형 순위체크API] NaverShopping 서비스 확인! 캠페인 및 슬롯 정보 조회...');
+        
+        try {
+          // 캠페인의 필드 매핑 정보와 슬롯의 입력 데이터 조회
+          const { data: campaignData, error: campaignError } = await supabase
+            .from('campaigns')
+            .select('ranking_field_mapping')
+            .eq('id', slotInfo.product_id)
+            .single();
+            
+          const { data: slotData, error: slotDataError } = await supabase
+            .from('guarantee_slots')
+            .select('input_data')
+            .eq('id', slotId)
+            .single();
+            
+          if (!campaignError && !slotDataError && campaignData && slotData) {
+            console.log('[보장형 순위체크API] 캠페인 필드 매핑:', campaignData.ranking_field_mapping);
+            console.log('[보장형 순위체크API] 슬롯 입력 데이터:', slotData.input_data);
+            
+            const fieldMapping = campaignData.ranking_field_mapping;
+            const keywords = extractKeywordsFromSlot(slotData.input_data, fieldMapping);
+            console.log(`[보장형 순위체크API] 추출된 키워드 개수: ${keywords.length}`);
+            
+            if (keywords.length > 0) {
+              // 비동기로 호출하고 결과는 무시 (실패해도 승인 프로세스는 계속)
+              if (keywords.length === 1) {
+                console.log('[보장형 순위체크API] 단일 키워드 API 호출...');
+                checkSingleKeywordRanking(keywords[0]).catch(err => 
+                  console.error('[보장형 순위체크API] 단일 키워드 API 호출 실패 (무시):', err)
+                );
+              } else {
+                console.log('[보장형 순위체크API] 다중 키워드 API 호출...');
+                checkKeywordsInBatches(keywords).catch(err => 
+                  console.error('[보장형 순위체크API] 다중 키워드 API 호출 실패 (무시):', err)
+                );
+              }
+            } else {
+              console.log('[보장형 순위체크API] 추출된 키워드가 없습니다.');
+            }
+          } else {
+            console.log('[보장형 순위체크API] 캠페인 또는 슬롯 데이터 조회 실패');
+          }
+        } catch (err) {
+          console.error('[보장형 순위체크API] 순위 체크 처리 중 오류 (무시):', err);
+        }
+      } else {
+        console.log('[보장형 순위체크API] NaverShopping 서비스가 아님, 순위 체크 스킵');
       }
 
       // 사용자에게 승인 알림 전송 (정상 승인일 때만)

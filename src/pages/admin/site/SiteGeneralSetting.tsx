@@ -10,7 +10,7 @@ import { SearchLimitsSection } from './sections/SearchLimitsSection';
 const SiteGeneralSetting: React.FC = () => {
   const desktopMode = useResponsive('up', 'lg');
   const [activeSection, setActiveSection] = useState('withdraw_settings');
-  
+
   // 사이드바 메뉴 아이템
   const sidebarItems = [
     {
@@ -34,7 +34,7 @@ const SiteGeneralSetting: React.FC = () => {
   useEffect(() => {
     // main[role="content"] 요소를 찾아서 스크롤 컨테이너로 사용
     const scrollContainer = document.querySelector('main[role="content"]') as HTMLElement;
-    
+
     if (!scrollContainer) {
       console.error('스크롤 컨테이너를 찾을 수 없습니다.');
       return;
@@ -67,7 +67,7 @@ const SiteGeneralSetting: React.FC = () => {
     // 스크롤 이벤트 리스너 추가
     scrollContainer.addEventListener('scroll', handleScroll);
     handleScroll(); // 초기 실행
-    
+
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
     };
@@ -77,23 +77,23 @@ const SiteGeneralSetting: React.FC = () => {
   const handleSectionClick = (targetId: string) => {
     const scrollContainer = document.querySelector('main[role="content"]') as HTMLElement;
     const element = document.getElementById(targetId);
-    
+
     if (element && scrollContainer) {
       // 요소의 절대 위치 계산
       const containerRect = scrollContainer.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
-      
+
       // 스크롤 위치 계산 - 섹션을 화면 상단 근처로 이동
       // 오프셋을 줄여서 섹션이 더 위로 오도록 함
       const offset = 80; // 헤더 높이 정도만 여유 공간
       const scrollPosition = scrollContainer.scrollTop + elementRect.top - containerRect.top - offset;
-      
+
       // 부드러운 스크롤
       scrollContainer.scrollTo({
         top: scrollPosition,
         behavior: 'smooth'
       });
-      
+
       // 스크롤 완료 후 활성 섹션 업데이트를 위해 약간의 지연
       setTimeout(() => {
         setActiveSection(targetId);
@@ -112,8 +112,8 @@ const SiteGeneralSetting: React.FC = () => {
               onClick={() => handleSectionClick(item.id)}
               className={clsx(
                 "flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                activeSection === item.id 
-                  ? "bg-primary text-primary-foreground" 
+                activeSection === item.id
+                  ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               )}
             >
@@ -156,7 +156,7 @@ const SiteGeneralSetting: React.FC = () => {
   return (
     <CommonTemplate
       title="일반 설정"
-      description="관리자 메뉴 > 사이트 관리 > 일반 설정"
+      description="마케팅의 정석 사이트에 사용되는 설정에 대해 관리합니다."
       showPageMenu={false}
     >
       <div className="container mx-auto">

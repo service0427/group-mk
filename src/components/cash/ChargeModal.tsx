@@ -57,6 +57,7 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
   const [selectedAmount, setSelectedAmount] = useState<string>('');
   const [koreanAmount, setKoreanAmount] = useState<string>('0');
   const [depositorName, setDepositorName] = useState<string>('');
+  const [isDepositorNameFromProfile, setIsDepositorNameFromProfile] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [recentRequests, setRecentRequests] = useState<ChargeRequest[]>([]);
@@ -238,6 +239,14 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
         setShowPointInfo(false); // 명시적으로 초기값 설정
         await fetchCashSetting(); // 설정 먼저 로드
         await fetchRecentRequests(); // 설정 로드 후 충전 내역 가져오기
+        
+        // 사용자의 예금주명 자동 설정
+        if (currentUser.business?.bank_account?.account_holder) {
+          setDepositorName(currentUser.business.bank_account.account_holder);
+          setIsDepositorNameFromProfile(true);
+        } else {
+          setIsDepositorNameFromProfile(false);
+        }
       };
 
       loadData();
@@ -291,6 +300,15 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
     // 유효성 검사
     if (!currentUser) {
       setError('로그인이 필요합니다.');
+      return;
+    }
+
+    // 사업자 정보 확인
+    if (!currentUser.business || 
+        !currentUser.business.business_name || 
+        !currentUser.business.business_number || 
+        !currentUser.business.representative_name) {
+      setError('사업자 정보를 등록하신 후 충전 요청이 가능합니다.');
       return;
     }
 
@@ -410,6 +428,20 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
                 {error}
+                {error.includes('사업자 정보') && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="text-sm text-blue-600 hover:underline"
+                      onClick={() => {
+                        handleModalClose();
+                        navigate('/myinfo/profile');
+                      }}
+                    >
+                      프로필 페이지에서 사업자 정보 등록하기 →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -557,10 +589,15 @@ const ChargeModal: React.FC<ChargeModalProps> = ({ open, onClose }) => {
                     value={depositorName}
                     onChange={(e) => setDepositorName(e.target.value)}
                     placeholder="입금자명을 입력해주세요"
-                    className="w-full p-2 border border-blue-200 dark:border-blue-700 bg-white dark:bg-blue-900/30 text-blue-900 dark:text-blue-50 rounded-md focus:ring-primary focus:border-primary text-sm"
+                    className={`w-full p-2 border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-50 rounded-md focus:ring-primary focus:border-primary text-sm ${
+                      isDepositorNameFromProfile ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-blue-900/30'
+                    }`}
+                    disabled={isDepositorNameFromProfile}
                   />
                   <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                    실제 입금 시 사용할 입금자명을 정확히 입력해주세요.
+                    {isDepositorNameFromProfile 
+                      ? '내정보에서 등록한 예금주명이 자동으로 입력되었습니다.' 
+                      : '실제 입금 시 사용할 입금자명을 정확히 입력해주세요.'}
                   </p>
                 </div>
               </div>

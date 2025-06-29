@@ -1,9 +1,10 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/supabase";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { KeenIcon } from "@/components";
-import { USER_ROLES, getRoleDisplayName } from "@/config/roles.config";
+import { USER_ROLES, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from "@/config/roles.config";
 import { createRoleChangeNotification } from "@/utils/notificationActions";
 import { useDialog, useToast } from "@/providers";
 import { useAuthContext } from "@/auth";
@@ -23,20 +24,73 @@ interface UserData {
     role: string;
     status: string;
     created_at?: string;
+    business?: {
+        business_number: string;
+        business_name: string;
+        representative_name: string;
+        business_email: string;
+        business_image_url?: string;
+        bank_account?: any;
+        verified?: boolean;
+        verification_date?: string;
+    };
+}
+
+interface BankAccountData {
+    bank_name: string;
+    account_number: string;
+    account_holder: string;
+    is_editable?: boolean;
 }
 
 const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModalProps) => {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [saving, setSaving] = useState<boolean>(false);
     const [selectedRole, setSelectedRole] = useState<string>('');
     const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [bankAccountData, setBankAccountData] = useState<BankAccountData>({
+        bank_name: '',
+        account_number: '',
+        account_holder: '',
+        is_editable: true
+    });
+    const [businessData, setBusinessData] = useState<any>({
+        business_number: '',
+        business_name: '',
+        representative_name: '',
+        business_email: '',
+        business_image_url: ''
+    });
+    const [imageModalOpen, setImageModalOpen] = useState<boolean>(false);
+    const [selectedImage, setSelectedImage] = useState<string>('');
     const { showDialog } = useDialog();
     const { success, error: showError } = useToast();
     const { userRole } = useAuthContext();
 
+    // ESC 키 핸들러 - 이미지 모달에만 적용
+    useEffect(() => {
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && imageModalOpen) {
+                event.stopPropagation();
+                event.preventDefault();
+                setImageModalOpen(false);
+                setSelectedImage('');
+            }
+        };
+
+        if (imageModalOpen) {
+            document.addEventListener('keydown', handleEsc, true); // capture phase에서 처리
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEsc, true);
+        };
+    }, [imageModalOpen]);
+
     // 현재 사용자가 개발자인지 확인
     const isDeveloper = userRole === USER_ROLES.DEVELOPER;
-    
+
     // 사용 가능한 역할과 상태 옵션
     const roles_array = [
         { "code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR) },
@@ -62,9 +116,10 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
     const getUserData = async (user_id: string) => {
         setLoading(true);
         try {
+            // 사용자 정보와 사업자 정보 가져오기
             const response = await supabase
                 .from('users')
-                .select('*')
+                .select('*, business')
                 .eq('id', user_id)
                 .single();
 
@@ -75,14 +130,43 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
             setUserData(response.data);
             setSelectedRole(response.data.role);
             setSelectedStatus(response.data.status);
-        } catch (error: any) {
 
+            // 사업자 정보 설정
+            if (response.data.business) {
+                setBusinessData({
+                    business_number: response.data.business.business_number || '',
+                    business_name: response.data.business.business_name || '',
+                    representative_name: response.data.business.representative_name || '',
+                    business_email: response.data.business.business_email || '',
+                    business_image_url: response.data.business.business_image_url || ''
+                });
+
+                // 은행 계좌 정보는 business 객체 안에 있음
+                if (response.data.business.bank_account) {
+                    setBankAccountData({
+                        bank_name: response.data.business.bank_account.bank_name || '',
+                        account_number: response.data.business.bank_account.account_number || '',
+                        account_holder: response.data.business.bank_account.account_holder || '',
+                        is_editable: response.data.business.bank_account.is_editable !== false
+                    });
+                }
+            }
+        } catch (error: any) {
+            console.error('회원 정보 조회 오류:', error);
         } finally {
             setLoading(false);
         }
     }
 
     // 기존 getRoleDisplayName 함수는 roles.config.ts에서 불러오는 버전으로 대체
+
+    // 은행 목록
+    const bankList = [
+        '신한은행', '국민은행', '우리은행', '하나은행', 'NH농협은행',
+        '기업은행', 'SC제일은행', '카카오뱅크', '토스뱅크', '케이뱅크',
+        '부산은행', '대구은행', '광주은행', '경남은행', '전북은행',
+        '제주은행', '산업은행', '수협은행', '새마을금고', '신협', '우체국'
+    ];
 
     // 상태 배지 렌더링 함수
     const renderStatusBadge = (status: string) => {
@@ -124,25 +208,86 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
         setSelectedStatus(e.target.value);
     };
 
+    // 비밀번호 초기화 핸들러
+    const handleResetPassword = async () => {
+        try {
+            setSaving(true);
+            
+            // 확인 다이얼로그 표시
+            await showDialog({
+                title: '비밀번호 초기화',
+                message: `${userData?.email}로 비밀번호 재설정 이메일을 발송하시겠습니까?`,
+                confirmText: '발송',
+                cancelText: '취소',
+                variant: 'warning'
+            });
+
+            // Supabase의 비밀번호 재설정 이메일 발송
+            const { error } = await supabase.auth.resetPasswordForEmail(userData?.email || '', {
+                redirectTo: `${window.location.origin}/#/auth/reset-password/change`,
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            success('비밀번호 재설정 이메일이 발송되었습니다.');
+        } catch (error: any) {
+            // 사용자가 취소한 경우는 에러 메시지를 표시하지 않음
+            if (error.message !== 'User cancelled the dialog') {
+                console.error('비밀번호 재설정 이메일 발송 오류:', error);
+                showError('비밀번호 재설정 이메일 발송에 실패했습니다: ' + error.message);
+            }
+        } finally {
+            setSaving(false);
+        }
+    };
+
     // 회원정보 수정 핸들러
     const handleUpdateUser = async () => {
+        setSaving(true);
         try {
             // 역할이 변경되었는지 확인
             const isRoleChanged = userData && userData.role !== selectedRole;
             const oldRole = userData?.role || '';
 
-            // 회원 정보 업데이트
+            // 회원 정보 업데이트 (사업자 정보 포함)
+            const updateData: any = {
+                'status': selectedStatus,
+                'role': selectedRole
+            };
+
+            // 사업자 정보와 은행 계좌 정보를 함께 업데이트
+            const businessUpdateData = { ...businessData };
+
+            // 은행 계좌 정보를 business 객체 안에 포함
+            if (bankAccountData.bank_name || bankAccountData.account_number || bankAccountData.account_holder) {
+                businessUpdateData.bank_account = {
+                    bank_name: bankAccountData.bank_name,
+                    account_number: bankAccountData.account_number,
+                    account_holder: bankAccountData.account_holder,
+                    is_editable: bankAccountData.is_editable
+                };
+            }
+
+            // 기존 business 정보 유지
+            if (userData?.business) {
+                businessUpdateData.verified = userData.business.verified;
+                businessUpdateData.verification_date = userData.business.verification_date;
+            }
+
+            updateData.business = businessUpdateData;
+
             const { error: updateDBError } = await supabase
                 .from('users')
-                .update({
-                    'status': selectedStatus,
-                    'role': selectedRole
-                })
+                .update(updateData)
                 .eq('id', user_id);
 
             if (updateDBError) {
                 throw new Error(updateDBError.message);
             }
+
+            // business 정보와 함께 업데이트되므로 별도 처리 불필요
 
             // 역할이 변경되었다면 알림 전송
             // auth.users 테이블은 데이터베이스 트리거가 자동으로 업데이트함
@@ -170,150 +315,392 @@ const AdminUserModal = ({ open, user_id, onClose, onUpdate }: ChargeHistoryModal
         } catch (error: any) {
             console.error('회원 정보 수정 중 오류 발생:', error.message);
             showError('회원 정보 수정 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            setSaving(false);
         }
     }
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden" aria-describedby={undefined}>
-                <DialogHeader className="bg-background py-4 px-6">
-                    <DialogTitle className="text-xl font-bold text-foreground">회원 정보</DialogTitle>
-                </DialogHeader>
-                <div className="p-6 bg-background">
-                    {loading ? (
-                        <div className="flex justify-center items-center py-8">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                        </div>
-                    ) : userData ? (
-                        <div className="overflow-hidden">
-                            <table className="min-w-full divide-y divide-border">
-                                <tbody className="divide-y divide-border">
-                                    {/* 이름 */}
-                                    <tr>
-                                        <td className="px-6 py-4 w-1/3">
-                                            <div className="flex items-center">
-                                                <span className="text-sm font-medium text-foreground">이름</span>
+        <>
+            <Dialog open={open} onOpenChange={(newOpen) => {
+                // 이미지 모달이 열려있을 때는 Dialog 닫기 방지
+                if (!imageModalOpen && !newOpen) {
+                    onClose();
+                }
+            }}>
+                <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col" aria-describedby={undefined}>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <KeenIcon icon="user-square" className="size-5 text-primary" />
+                            회원 정보 관리
+                        </DialogTitle>
+                    </DialogHeader>
+                    <DialogBody className="flex-1 overflow-y-auto">
+                        {loading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            </div>
+                        ) : userData ? (
+                            <div className="space-y-6">
+                                {/* 기본 정보 카드 */}
+                                <div className="card rounded-xl shadow-sm">
+                                    <div className="card-header border-b border-gray-200 p-6">
+                                        <div className="flex items-center gap-2">
+                                            <KeenIcon icon="profile-circle" className="size-5 text-primary" />
+                                            <h4 className="text-base font-semibold text-gray-900">기본 정보</h4>
+                                        </div>
+                                    </div>
+                                    <div className="card-body p-6">
+                                        {/* 프로필 헤더 */}
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <span className="text-xl font-semibold text-primary">
+                                                    {userData.full_name?.charAt(0) || '?'}
+                                                </span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 w-2/3">
-                                            <div className="flex items-center">
-                                                <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                                                    {userData.full_name ? userData.full_name.charAt(0) : '?'}
-                                                </div>
-                                                <span className="text-foreground font-medium">{userData.full_name}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                    {/* 상태 - 현재 상태와 셀렉트 박스 함께 표시 */}
-                                    <tr>
-                                        <td className="px-6 py-4 w-1/3">
-                                            <div className="flex items-center">
-                                                <span className="text-sm font-medium text-foreground">상태</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 w-2/3">
-                                            <div className="flex items-center gap-4">
-                                                <div className="min-w-24">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-gray-900">
+                                                    {userData.full_name || '사용자'}
+                                                </h3>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {(() => {
+                                                        const roleTheme = getRoleThemeColors(userData.role) as any;
+                                                        const bgColor = roleTheme?.baseHex 
+                                                            ? `${roleTheme.baseHex}15` 
+                                                            : '#6b728015';
+                                                        const textColor = roleTheme?.baseHex 
+                                                            ? roleTheme.baseHex 
+                                                            : '#6b7280';
+                                                        
+                                                        return (
+                                                            <span className="badge px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                style={{
+                                                                    backgroundColor: bgColor,
+                                                                    color: textColor
+                                                                }}>
+                                                                {getRoleDisplayName(userData.role)}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                     {renderStatusBadge(userData.status)}
                                                 </div>
-                                                <select
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                                    value={selectedStatus}
-                                                    onChange={handleStatusChange}
-                                                >
-                                                    {status_array.map((option) => (
-                                                        <option key={option.code} value={option.code}>
-                                                            {option.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
                                             </div>
-                                        </td>
-                                    </tr>
+                                        </div>
 
-                                    {/* 이메일 */}
-                                    <tr>
-                                        <td className="px-6 py-4 w-1/3">
-                                            <div className="flex items-center">
-                                                <span className="text-sm font-medium text-foreground">이메일</span>
+                                        {/* 입력 필드들 */}
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">이메일</label>
+                                                <input
+                                                    type="email"
+                                                    className="input bg-gray-50"
+                                                    value={userData.email}
+                                                    disabled
+                                                />
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 w-2/3">
-                                            <span className="text-foreground font-medium">{userData.email}</span>
-                                        </td>
-                                    </tr>
 
-                                    {/* 비밀번호 */}
-                                    <tr>
-                                        <td className="px-6 py-4 w-1/3">
-                                            <div className="flex items-center">
-                                                <span className="text-sm font-medium text-foreground">비밀번호</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 w-2/3">
-                                            <div className="flex items-center">
-                                                <Button variant="destructive" size="sm">
-                                                    비밀번호 초기화
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="form-label text-sm font-medium text-gray-700">상태</label>
+                                                    <select
+                                                        className="select"
+                                                        value={selectedStatus}
+                                                        onChange={handleStatusChange}
+                                                    >
+                                                        {status_array.map((option) => (
+                                                            <option key={option.code} value={option.code}>
+                                                                {option.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
 
-                                    {/* 권한 - 현재 권한과 셀렉트 박스 함께 표시 */}
-                                    <tr>
-                                        <td className="px-6 py-4 w-1/3">
-                                            <div className="flex items-center">
-                                                <span className="text-sm font-medium text-foreground">권한</span>
+                                                <div>
+                                                    <label className="form-label text-sm font-medium text-gray-700">권한</label>
+                                                    <select
+                                                        className="select"
+                                                        value={selectedRole}
+                                                        onChange={handleRoleChange}
+                                                    >
+                                                        {roles_array.map((option) => (
+                                                            <option key={option.code} value={option.code}>
+                                                                {option.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 w-2/3">
-                                            <div className="flex items-center gap-4">
-                                                <div className="min-w-24">
-                                                    <span className="text-foreground font-medium">
-                                                        {getRoleDisplayName(userData.role)}
+
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">비밀번호 관리</label>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleResetPassword}
+                                                        disabled={saving}
+                                                    >
+                                                        <KeenIcon icon="sms" className="mr-2" />
+                                                        비밀번호 재설정 이메일 발송
+                                                    </Button>
+                                                    <span className="text-xs text-gray-500">
+                                                        사용자에게 비밀번호 재설정 링크가 발송됩니다
                                                     </span>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 사업자 정보 카드 */}
+                                <div className="card rounded-xl shadow-sm">
+                                    <div className="card-header border-b border-gray-200 p-6">
+                                        <div className="flex items-center gap-2">
+                                            <KeenIcon icon="shop" className="size-5 text-primary" />
+                                            <h4 className="text-base font-semibold text-gray-900">사업자 정보</h4>
+                                        </div>
+                                        <p className="text-sm text-gray-500 mt-1">캐시 충전 및 등급 신청을 위한 사업자 정보를 관리합니다</p>
+                                    </div>
+                                    <div className="card-body p-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">사업자 등록번호</label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={businessData.business_number}
+                                                    onChange={(e) => setBusinessData({ ...businessData, business_number: e.target.value })}
+                                                    placeholder="000-00-00000"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">상호명</label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={businessData.business_name}
+                                                    onChange={(e) => setBusinessData({ ...businessData, business_name: e.target.value })}
+                                                    placeholder="상호명을 입력하세요"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">대표자명</label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={businessData.representative_name}
+                                                    onChange={(e) => setBusinessData({ ...businessData, representative_name: e.target.value })}
+                                                    placeholder="대표자명을 입력하세요"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">사업자용 이메일</label>
+                                                <input
+                                                    type="email"
+                                                    className="input"
+                                                    value={businessData.business_email}
+                                                    onChange={(e) => setBusinessData({ ...businessData, business_email: e.target.value })}
+                                                    placeholder="business@example.com"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 사업자등록증 이미지 */}
+                                        {businessData.business_image_url && (
+                                            <div className="mt-6">
+                                                <label className="form-label text-sm font-medium text-gray-700 mb-3">사업자등록증</label>
+                                                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="flex-shrink-0">
+                                                            <div className="relative group cursor-pointer"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedImage(businessData.business_image_url);
+                                                                    setImageModalOpen(true);
+                                                                }}>
+                                                                <img
+                                                                    src={businessData.business_image_url}
+                                                                    alt="사업자등록증"
+                                                                    className="w-24 h-24 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PVwiMTUwXCIgeT1cIjI1MFwiIGZvbnQtZmFtaWx5PVwiQXJpYWxcIiBmb250LXNpemU9XCIyNFwiIGZpbGw9XCIjNjY2NjY2XCI+7J2066+47KeA66W8IOu2iOufrOyYpCDsiJgg7JeG7Iq164uI64ukPC90ZXh0Pjwvc3ZnPg==";
+                                                                    }}
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <KeenIcon icon="eye" className="text-white size-6" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm text-gray-600 mb-2">
+                                                                클릭하여 크게 볼 수 있습니다
+                                                            </p>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedImage(businessData.business_image_url);
+                                                                    setImageModalOpen(true);
+                                                                }}
+                                                            >
+                                                                <KeenIcon icon="eye" className="mr-2" />
+                                                                이미지 확대보기
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 출금 계좌 정보 카드 */}
+                                <div className="card rounded-xl shadow-sm">
+                                    <div className="card-header border-b border-gray-200 p-6">
+                                        <div className="flex items-center gap-2">
+                                            <KeenIcon icon="dollar" className="size-5 text-primary" />
+                                            <h4 className="text-base font-semibold text-gray-900">출금 계좌 정보</h4>
+                                        </div>
+                                        <p className="text-sm text-gray-500 mt-1">출금을 위한 계좌 정보를 관리합니다</p>
+                                    </div>
+                                    <div className="card-body p-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="md:col-span-2">
+                                                <label className="form-label text-sm font-medium text-gray-700">은행명</label>
                                                 <select
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                                    value={selectedRole}
-                                                    onChange={handleRoleChange}
+                                                    className="select"
+                                                    value={bankAccountData.bank_name}
+                                                    onChange={(e) => setBankAccountData({ ...bankAccountData, bank_name: e.target.value })}
                                                 >
-                                                    {roles_array.map((option) => (
-                                                        <option key={option.code} value={option.code}>
-                                                            {option.name}
-                                                        </option>
+                                                    <option value="">은행을 선택하세요</option>
+                                                    {bankList.map((bank) => (
+                                                        <option key={bank} value={bank}>{bank}</option>
                                                     ))}
                                                 </select>
                                             </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">계좌번호</label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={bankAccountData.account_number}
+                                                    onChange={(e) => setBankAccountData({ ...bankAccountData, account_number: e.target.value })}
+                                                    placeholder="계좌번호를 입력하세요 ('-' 없이)"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label text-sm font-medium text-gray-700">예금주</label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={bankAccountData.account_holder}
+                                                    onChange={(e) => setBankAccountData({ ...bankAccountData, account_holder: e.target.value })}
+                                                    placeholder="예금주명을 입력하세요"
+                                                />
+                                            </div>
+                                        </div>
+                                        {!bankAccountData.is_editable && (
+                                            <div className="mt-4 bg-warning/10 p-3 rounded-lg">
+                                                <p className="text-sm text-warning">
+                                                    <KeenIcon icon="information-2" className="inline mr-1" />
+                                                    출금 계좌 정보는 한 번 저장 후 본인만 수정할 수 있습니다.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                            <div className="mt-6 flex justify-end space-x-3 pt-2 border-t">
-                                <Button
-                                    onClick={handleUpdateUser}
-                                >
-                                    회원정보 수정
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={onClose}
-                                >
-                                    닫기
-                                </Button>
                             </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <KeenIcon icon="information-2" className="size-12 text-gray-300 mb-4" />
+                                <p className="text-gray-500 text-lg">회원 정보를 불러올 수 없습니다.</p>
+                                <p className="text-gray-400 text-sm mt-2">잠시 후 다시 시도해주세요.</p>
+                            </div>
+                        )}
+                    </DialogBody>
+                    <DialogFooter>
+                        <Button
+                            onClick={handleUpdateUser}
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <span className="flex items-center">
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    수정 중...
+                                </span>
+                            ) : (
+                                <span className="flex items-center">
+                                    <KeenIcon icon="check" className="mr-2" />
+                                    회원정보 수정
+                                </span>
+                            )}
+                        </Button>
+                        <Button
+                            variant="light"
+                            onClick={onClose}
+                        >
+                            닫기
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 이미지 확대 모달 - Portal로 body에 직접 렌더링 */}
+            {imageModalOpen && selectedImage && createPortal(
+                <>
+                    {/* 오버레이 */}
+                    <div
+                        className="fixed inset-0 bg-black/80"
+                        style={{ zIndex: 99999 }}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setImageModalOpen(false);
+                            setSelectedImage('');
+                        }}
+                    />
+                    {/* 모달 내용 */}
+                    <div
+                        className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
+                        style={{ zIndex: 100000 }}
+                    >
+                        <div className="relative max-w-4xl max-h-[90vh] pointer-events-auto">
+                            <img
+                                src={selectedImage}
+                                alt="사업자등록증"
+                                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PVwiMTUwXCIgeT1cIjI1MFwiIGZvbnQtZmFtaWx5PVwiQXJpYWxcIiBmb250LXNpemU9XCIyNFwiIGZpbGw9XCIjNjY2NjY2XCI+7J2066+47KeA66W8IOu2iOufrOyYpCDsiJgg7JeG7Iq164uI64ukPC90ZXh0Pjwvc3ZnPg==";
+                                }}
+                            />
+                            <button
+                                className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setImageModalOpen(false);
+                                    setSelectedImage('');
+                                }}
+                                type="button"
+                            >
+                                <KeenIcon icon="cross" className="text-lg" />
+                            </button>
                         </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            회원 정보를 불러올 수 없습니다.
-                        </div>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
+                    </div>
+                </>,
+                document.body
+            )}
+        </>
+    );
 }
 
 export { AdminUserModal };

@@ -7,7 +7,7 @@ import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 import { useAuthContext } from '@/auth';
 
-const MakeUserRow = ({ user, getUserList, currentPage }: { user: any, getUserList: (page: number) => Promise<void>, currentPage: number }) => {
+const MakeUserRow = ({ user, getUserList, currentPage, isSelected, onSelect }: { user: any, getUserList: (page: number) => Promise<void>, currentPage: number, isSelected: boolean, onSelect: () => void }) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
     const [insertModalOpen, setInsertModalOpen] = useState<boolean>(false);
 
@@ -81,7 +81,12 @@ const MakeUserRow = ({ user, getUserList, currentPage }: { user: any, getUserLis
             <tr className="border-b border-border hover:bg-muted/40 hidden md:table-row">
                 <td className="py-4 px-5">
                     <div className="flex items-center">
-                        <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
+                        <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
                     </div>
                 </td>
                 <td className="py-4 px-5">
@@ -146,6 +151,7 @@ const UsersPage = () => {
     const [searchEmail, setSearchEmail] = useState<string>('');
     const [searchName, setSearchName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
     const getUserList = async (page: number) => {
         setLoading(true);
@@ -168,7 +174,7 @@ const UsersPage = () => {
             if (searchName) {
                 countQuery.ilike('full_name', `%${searchName}%`);
             }
-            
+
             // 개발자가 아닌 경우에만 개발자 역할 제외
             if (!isDeveloper) {
                 countQuery.neq('role', USER_ROLES.DEVELOPER);
@@ -210,7 +216,7 @@ const UsersPage = () => {
             if (searchName) {
                 dataQuery.ilike('full_name', `%${searchName}%`);
             }
-            
+
             // 개발자가 아닌 경우에만 개발자 역할 제외
             if (!isDeveloper) {
                 dataQuery.neq('role', USER_ROLES.DEVELOPER);
@@ -235,7 +241,7 @@ const UsersPage = () => {
             setUsers(processedUsers || []);
 
         } catch (error: any) {
-            
+
         } finally {
             setLoading(false);
         }
@@ -269,8 +275,31 @@ const UsersPage = () => {
         return `${start}-${end} / ${totalItems}`;
     }
 
+    // 전체 선택/해제 핸들러
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            const allUserIds = new Set(users.map(user => user.id));
+            setSelectedUsers(allUserIds);
+        } else {
+            setSelectedUsers(new Set());
+        }
+    }
+
+    // 개별 선택/해제 핸들러
+    const handleSelectUser = (userId: string) => {
+        const newSelected = new Set(selectedUsers);
+        if (newSelected.has(userId)) {
+            newSelected.delete(userId);
+        } else {
+            newSelected.add(userId);
+        }
+        setSelectedUsers(newSelected);
+    }
+
     useEffect(() => {
         getUserList(currentPage);
+        // 페이지 변경 시 선택 초기화
+        setSelectedUsers(new Set());
     }, [limit, currentPage]);
 
     // 검색 조건이 변경되면 페이지를 1로 리셋
@@ -280,7 +309,7 @@ const UsersPage = () => {
 
     // 현재 사용자가 개발자인지 확인
     const isDeveloper = userRole === USER_ROLES.DEVELOPER;
-    
+
     const roles_array = [
         { "code": "", "name": "All" },
         { "code": USER_ROLES.OPERATOR, "name": getRoleDisplayName(USER_ROLES.OPERATOR) },
@@ -321,325 +350,343 @@ const UsersPage = () => {
 
     return (
         <CommonTemplate
-            title="회원 관리"
-            description="시스템을 이용하는 회원을 관리합니다"
+            title="사용자 관리"
+            description="시스템을 이용하는 사용자를 관리합니다"
             toolbarActions={toolbarActions}
             showPageMenu={false}
-            // 그리드 레이아웃 영향을 확인하기 위해 childrenClassName 커스텀 설정
-            childrenClassName="flex flex-col space-y-4"
         >
-            {/* 검색 영역 */}
-            <div className="card p-6 mb-5 shadow-sm bg-card">
-                <h3 className="text-lg font-semibold mb-3">회원 검색</h3>
-
-                <div className="flex flex-wrap md:flex-nowrap items-end gap-3">
-                    <div className="w-full md:w-auto">
-                        <label className="block text-sm font-medium text-foreground mb-1">권한</label>
-                        <select className="select select-bordered w-full h-10"
-                            value={searchRole}
-                            onChange={(e) => setSearchRole(e.target.value)}>
-                            {roles_array.map((option) => (
-                                <option key={option.code} value={option.code}>
-                                    {option.name}
-                                </option>
-                            ))}
-                        </select>
+            <div className="grid gap-5 lg:gap-7.5">
+                {/* 검색 영역 */}
+                <div className="card shadow-sm">
+                    <div className="card-header border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="card-title">회원 검색</h3>
                     </div>
+                    <div className="card-body">
 
-                    <div className="w-full md:w-auto">
-                        <label className="block text-sm font-medium text-foreground mb-1">상태</label>
-                        <select className="select select-bordered w-full h-10"
-                            value={searchStatus}
-                            onChange={(e) => setSearchStatus(e.target.value)}>
-                            {status_array.map((option) => (
-                                <option key={option.code} value={option.code}>
-                                    {option.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="w-full md:w-auto flex-grow">
-                        <label className="block text-sm font-medium text-foreground mb-1">이메일</label>
-                        <input
-                            type="text"
-                            placeholder="이메일을 입력하세요"
-                            className="input input-bordered w-full h-10"
-                            value={searchEmail}
-                            onChange={(e) => setSearchEmail(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="w-full md:w-auto flex-grow">
-                        <label className="block text-sm font-medium text-foreground mb-1">이름</label>
-                        <input
-                            type="text"
-                            placeholder="이름을 입력하세요"
-                            className="input input-bordered w-full h-10"
-                            value={searchName}
-                            onChange={(e) => setSearchName(e.target.value)}
-                        />
-                    </div>
-
-                    <button className="btn btn-primary h-10 px-6 md:mt-0 w-full md:w-auto" onClick={() => getUserList(1)}>
-                        <KeenIcon icon="magnifier" className="md:me-2 flex-none" />
-                        <span className="hidden md:inline">검색</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* 회원 리스트 영역 */}
-            <div className="card mb-5 shadow-sm bg-card">
-                <div className="card-header p-6 pb-5 flex justify-between items-center">
-                    <h3 className="card-title text-lg font-semibold">회원 리스트</h3>
-                </div>
-
-                <div className="card-body p-0">
-                    {loading ? (
-                        <div className="flex justify-center items-center py-10">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                        </div>
-                    ) : (
-                        <>
-                            {/* 데스크톱용 테이블 (md 이상 화면에서만 표시) */}
-                            <div className="hidden md:block overflow-x-auto">
-                                {users.length > 0 ? (
-                                    <table className="table align-middle text-gray-700 text-sm w-full">
-                                        <thead>
-                                            <tr className="border-b border-border bg-muted">
-                                                <th className="py-4 px-5 text-start">
-                                                    <div className="flex items-center">
-                                                        <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" />
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-start min-w-[120px]">
-                                                    <div className="flex items-center">
-                                                        <span className="font-medium text-foreground">이메일</span>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
-                                                            <path d="m7 15 5 5 5-5"></path>
-                                                            <path d="m7 9 5-5 5 5"></path>
-                                                        </svg>
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-start min-w-[120px]">
-                                                    <div className="flex items-center">
-                                                        <span className="font-medium text-foreground">이름</span>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
-                                                            <path d="m7 15 5 5 5-5"></path>
-                                                            <path d="m7 9 5-5 5 5"></path>
-                                                        </svg>
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-start min-w-[150px]">
-                                                    <div className="flex items-center">
-                                                        <span className="font-medium text-foreground">권한</span>
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-start min-w-[150px]">
-                                                    <div className="flex items-center">
-                                                        <span className="font-medium text-gray-700">서비스 이용현황</span>
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-start min-w-[150px]">
-                                                    <div className="flex items-center">
-                                                        <span className="font-medium text-gray-700">보유캐시</span>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
-                                                            <path d="m7 15 5 5 5-5"></path>
-                                                            <path d="m7 9 5-5 5 5"></path>
-                                                        </svg>
-                                                    </div>
-                                                </th>
-                                                <th className="py-4 px-5 text-end min-w-[100px]">
-                                                    <span className="font-medium text-gray-700">작업</span>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {
-                                                users.map((user, index) => (
-                                                    <MakeUserRow key={index} user={user} getUserList={getUserList} currentPage={currentPage} />
-                                                ))
-                                            }
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <div className="text-center py-10 text-gray-500">
-                                        데이터가 없습니다.
-                                    </div>
-                                )}
+                        <div className="flex flex-wrap md:flex-nowrap items-end gap-3">
+                            <div className="w-full md:w-auto">
+                                <label className="block text-sm font-medium text-foreground mb-1">권한</label>
+                                <select className="select select-bordered w-full h-10"
+                                    value={searchRole}
+                                    onChange={(e) => setSearchRole(e.target.value)}>
+                                    {roles_array.map((option) => (
+                                        <option key={option.code} value={option.code}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
-                            {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
-                            <div className="block md:hidden">
-                                {users.length > 0 ? (
-                                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {users.map((user, index) => (
-                                            <div key={index} className="p-4 hover:bg-muted/40">
-                                                <div className="flex gap-3">
-                                                    {/* 왼쪽 번호와 체크박스 */}
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="checkbox checkbox-sm checkbox-primary"
+                            <div className="w-full md:w-auto">
+                                <label className="block text-sm font-medium text-foreground mb-1">상태</label>
+                                <select className="select select-bordered w-full h-10"
+                                    value={searchStatus}
+                                    onChange={(e) => setSearchStatus(e.target.value)}>
+                                    {status_array.map((option) => (
+                                        <option key={option.code} value={option.code}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="w-full md:w-auto flex-grow">
+                                <label className="block text-sm font-medium text-foreground mb-1">이메일</label>
+                                <input
+                                    type="text"
+                                    placeholder="이메일을 입력하세요"
+                                    className="input input-bordered w-full h-10"
+                                    value={searchEmail}
+                                    onChange={(e) => setSearchEmail(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="w-full md:w-auto flex-grow">
+                                <label className="block text-sm font-medium text-foreground mb-1">이름</label>
+                                <input
+                                    type="text"
+                                    placeholder="이름을 입력하세요"
+                                    className="input input-bordered w-full h-10"
+                                    value={searchName}
+                                    onChange={(e) => setSearchName(e.target.value)}
+                                />
+                            </div>
+
+                            <button className="btn btn-primary h-10 px-6 md:mt-0 w-full md:w-auto" onClick={() => getUserList(1)}>
+                                <KeenIcon icon="magnifier" className="md:me-2 flex-none" />
+                                <span className="hidden md:inline">검색</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 회원 리스트 영역 */}
+                <div className="card shadow-sm">
+                    <div className="card-header p-6 pb-5 flex justify-between items-center">
+                        <h3 className="card-title text-lg font-semibold">회원 리스트</h3>
+                    </div>
+
+                    <div className="card-body p-0">
+                        {loading ? (
+                            <div className="flex justify-center items-center py-10">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* 데스크톱용 테이블 (md 이상 화면에서만 표시) */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    {users.length > 0 ? (
+                                        <table className="table align-middle text-gray-700 text-sm w-full">
+                                            <thead>
+                                                <tr className="border-b border-border bg-muted">
+                                                    <th className="py-4 px-5 text-start">
+                                                        <div className="flex items-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="checkbox checkbox-sm checkbox-primary"
+                                                                checked={users.length > 0 && selectedUsers.size === users.length}
+                                                                onChange={handleSelectAll}
+                                                            />
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-start min-w-[120px]">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium text-foreground">이메일</span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
+                                                                <path d="m7 15 5 5 5-5"></path>
+                                                                <path d="m7 9 5-5 5 5"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-start min-w-[120px]">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium text-foreground">이름</span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
+                                                                <path d="m7 15 5 5 5-5"></path>
+                                                                <path d="m7 9 5-5 5 5"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-start min-w-[150px]">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium text-foreground">권한</span>
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-start min-w-[150px]">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium text-gray-700">서비스 이용현황</span>
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-start min-w-[150px]">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium text-gray-700">보유캐시</span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-gray-500">
+                                                                <path d="m7 15 5 5 5-5"></path>
+                                                                <path d="m7 9 5-5 5 5"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </th>
+                                                    <th className="py-4 px-5 text-end min-w-[100px]">
+                                                        <span className="font-medium text-gray-700">작업</span>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {
+                                                    users.map((user, index) => (
+                                                        <MakeUserRow
+                                                            key={index}
+                                                            user={user}
+                                                            getUserList={getUserList}
+                                                            currentPage={currentPage}
+                                                            isSelected={selectedUsers.has(user.id)}
+                                                            onSelect={() => handleSelectUser(user.id)}
                                                         />
-                                                        <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
-                                                            {index + 1}
-                                                        </div>
-                                                    </div>
-                                                    {/* 오른쪽 내용 영역 */}
-                                                    <div className="flex-1 min-w-0">
-                                                        {/* 헤더: 이름, 아바타와 상태 */}
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <div className="flex items-center mr-2">
-                                                                <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
-                                                                    {user.full_name ? user.full_name.charAt(0) : '?'}
-                                                                </div>
-                                                                <h3 className="font-medium text-foreground truncate">
-                                                                    {user.full_name}
-                                                                </h3>
+                                                    ))
+                                                }
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div className="text-center py-10 text-gray-500">
+                                            데이터가 없습니다.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 모바일용 카드 리스트 (md 미만 화면에서만 표시) */}
+                                <div className="block md:hidden">
+                                    {users.length > 0 ? (
+                                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                                            {users.map((user, index) => (
+                                                <div key={index} className="p-4 hover:bg-muted/40">
+                                                    <div className="flex gap-3">
+                                                        {/* 왼쪽 번호와 체크박스 */}
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="checkbox checkbox-sm checkbox-primary"
+                                                                checked={selectedUsers.has(user.id)}
+                                                                onChange={() => handleSelectUser(user.id)}
+                                                            />
+                                                            <div className="flex-none w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground/60 font-medium text-sm">
+                                                                {index + 1}
                                                             </div>
-                                                            {(() => {
-                                                                let badgeClass = '';
-                                                                let statusText = '';
-
-                                                                switch (user.status) {
-                                                                    case 'active':
-                                                                        badgeClass = 'bg-success/10 text-success';
-                                                                        statusText = '활성';
-                                                                        break;
-                                                                    case 'inactive':
-                                                                        badgeClass = 'bg-danger/10 text-danger';
-                                                                        statusText = '비활성';
-                                                                        break;
-                                                                    case 'pending':
-                                                                        badgeClass = 'bg-warning/10 text-warning';
-                                                                        statusText = '대기중';
-                                                                        break;
-                                                                    default:
-                                                                        badgeClass = 'bg-gray-100 text-gray-700';
-                                                                        statusText = user.status;
-                                                                }
-                                                                return (
-                                                                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${badgeClass}`}>{statusText}</span>
-                                                                );
-                                                            })()}
                                                         </div>
-
-                                                        {/* 이메일 */}
-                                                        <div className="text-sm mb-3">
-                                                            <div className="flex items-center text-xs text-muted-foreground mb-1">
-                                                                <KeenIcon icon="sms" className="h-3 w-3 mr-1" />
-                                                                <span>이메일:</span>
-                                                            </div>
-                                                            <p className="font-medium text-foreground truncate">{user.email}</p>
-                                                        </div>
-
-                                                        {/* 권한과 캐시 정보 */}
-                                                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-3">
-                                                            <div>
-                                                                <div className="flex items-center text-muted-foreground mb-1">
-                                                                    <KeenIcon icon="shield" className="h-3 w-3 mr-1" />
-                                                                    <span>권한:</span>
+                                                        {/* 오른쪽 내용 영역 */}
+                                                        <div className="flex-1 min-w-0">
+                                                            {/* 헤더: 이름, 아바타와 상태 */}
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <div className="flex items-center mr-2">
+                                                                    <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-2">
+                                                                        {user.full_name ? user.full_name.charAt(0) : '?'}
+                                                                    </div>
+                                                                    <h3 className="font-medium text-foreground truncate">
+                                                                        {user.full_name}
+                                                                    </h3>
                                                                 </div>
                                                                 {(() => {
+                                                                    let badgeClass = '';
+                                                                    let statusText = '';
+
+                                                                    switch (user.status) {
+                                                                        case 'active':
+                                                                            badgeClass = 'bg-success/10 text-success';
+                                                                            statusText = '활성';
+                                                                            break;
+                                                                        case 'inactive':
+                                                                            badgeClass = 'bg-danger/10 text-danger';
+                                                                            statusText = '비활성';
+                                                                            break;
+                                                                        case 'pending':
+                                                                            badgeClass = 'bg-warning/10 text-warning';
+                                                                            statusText = '대기중';
+                                                                            break;
+                                                                        default:
+                                                                            badgeClass = 'bg-gray-100 text-gray-700';
+                                                                            statusText = user.status;
+                                                                    }
                                                                     return (
-                                                                        <p className="font-medium" style={{
-                                                                    color: USER_ROLE_THEME_COLORS[user.role]?.baseHex || '#6b7280'
-                                                                }}>{getRoleDisplayName(user.role)}</p>
+                                                                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${badgeClass}`}>{statusText}</span>
                                                                     );
                                                                 })()}
                                                             </div>
-                                                            <div>
-                                                                <div className="flex items-center text-muted-foreground mb-1">
-                                                                    <KeenIcon icon="dollar" className="h-3 w-3 mr-1" />
-                                                                    <span>보유캐시:</span>
-                                                                </div>
-                                                                <p className="font-medium">
-                                                                    ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
-                                                                    {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
-                                                                </p>
-                                                            </div>
-                                                        </div>
 
-                                                        {/* 액션 버튼 */}
-                                                        <div className="flex justify-end gap-2 mt-3">
-                                                            <button
-                                                                className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    // 모달 열기 위한 함수 호출
-                                                                    const userData = users.find(u => u.id === user.id);
-                                                                    if (userData) {
-                                                                        const modalOpener = document.querySelector(`button[data-user-id="${user.id}"]`);
-                                                                        if (modalOpener) {
-                                                                            (modalOpener as HTMLElement).click();
+                                                            {/* 이메일 */}
+                                                            <div className="text-sm mb-3">
+                                                                <div className="flex items-center text-xs text-muted-foreground mb-1">
+                                                                    <KeenIcon icon="sms" className="h-3 w-3 mr-1" />
+                                                                    <span>이메일:</span>
+                                                                </div>
+                                                                <p className="font-medium text-foreground truncate">{user.email}</p>
+                                                            </div>
+
+                                                            {/* 권한과 캐시 정보 */}
+                                                            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-3">
+                                                                <div>
+                                                                    <div className="flex items-center text-muted-foreground mb-1">
+                                                                        <KeenIcon icon="shield" className="h-3 w-3 mr-1" />
+                                                                        <span>권한:</span>
+                                                                    </div>
+                                                                    {(() => {
+                                                                        return (
+                                                                            <p className="font-medium" style={{
+                                                                                color: USER_ROLE_THEME_COLORS[user.role]?.baseHex || '#6b7280'
+                                                                            }}>{getRoleDisplayName(user.role)}</p>
+                                                                        );
+                                                                    })()}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center text-muted-foreground mb-1">
+                                                                        <KeenIcon icon="dollar" className="h-3 w-3 mr-1" />
+                                                                        <span>보유캐시:</span>
+                                                                    </div>
+                                                                    <p className="font-medium">
+                                                                        ₩{user.paid_balance ? user.paid_balance.toLocaleString() : '0'}
+                                                                        {user.free_balance > 0 ? ` (+${user.free_balance.toLocaleString()})` : ''}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* 액션 버튼 */}
+                                                            <div className="flex justify-end gap-2 mt-3">
+                                                                <button
+                                                                    className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        // 모달 열기 위한 함수 호출
+                                                                        const userData = users.find(u => u.id === user.id);
+                                                                        if (userData) {
+                                                                            const modalOpener = document.querySelector(`button[data-user-id="${user.id}"]`);
+                                                                            if (modalOpener) {
+                                                                                (modalOpener as HTMLElement).click();
+                                                                            }
                                                                         }
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <KeenIcon icon="setting-2" className="h-5 w-5" />
-                                                                <span>설정</span>
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-sm btn-soft-danger flex items-center gap-1 px-3 py-1 h-9"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <KeenIcon icon="trash" className="h-5 w-5" />
-                                                                <span>삭제</span>
-                                                            </button>
+                                                                    }}
+                                                                >
+                                                                    <KeenIcon icon="setting-2" className="h-5 w-5" />
+                                                                    <span>설정</span>
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-sm btn-soft-danger flex items-center gap-1 px-3 py-1 h-9"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <KeenIcon icon="trash" className="h-5 w-5" />
+                                                                    <span>삭제</span>
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-10 text-gray-500">
-                                        데이터가 없습니다.
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
-                        <select
-                            className="select select-sm select-bordered flex-grow min-w-[100px]"
-                            name="perpage"
-                            value={limit}
-                            onChange={handleChangeLimit}
-                        >
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-10 text-gray-500">
+                                            데이터가 없습니다.
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-3 order-1 md:order-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
-                        <div className="flex">
-                            <button
-                                className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage <= 1}
+                    <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+                            <select
+                                className="select select-sm select-bordered flex-grow min-w-[100px]"
+                                name="perpage"
+                                value={limit}
+                                onChange={handleChangeLimit}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="m15 18-6-6 6-6"></path>
-                                </svg>
-                            </button>
-                            <button
-                                className="btn btn-icon btn-sm btn-light rounded-l-none"
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage >= getTotalPages()}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="m9 18 6-6-6-6"></path>
-                                </svg>
-                            </button>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-3 order-1 md:order-2">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+                            <div className="flex">
+                                <button
+                                    className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage <= 1}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="m15 18-6-6 6-6"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    className="btn btn-icon btn-sm btn-light rounded-l-none"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage >= getTotalPages()}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="m9 18 6-6-6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

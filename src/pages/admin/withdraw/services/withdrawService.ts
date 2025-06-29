@@ -124,7 +124,8 @@ export async function getWithdrawApproveList() {
             users!withdraw_requests_user_id_fkey (
                 id,
                 email,
-                full_name
+                full_name,
+                business
             )
         `);
         

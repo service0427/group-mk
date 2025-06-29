@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { SlotItem, Campaign } from './types';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
@@ -6,6 +6,7 @@ import EditableCell from './EditableCell';
 import { formatDate, getStatusBadge } from './constants';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import TransactionConfirmModal from './TransactionConfirmModal';
+import { getBulkSlotRankingData } from '@/services/rankingService';
 
 interface SlotListProps {
   filteredSlots: SlotItem[];
@@ -82,6 +83,21 @@ const tooltipStyles = `
   }
 `;
 
+interface RankingData {
+  keyword_id: string;
+  product_id: string;
+  title: string;
+  link: string;
+  rank: number;
+  prev_rank?: number;
+  yesterday_rank?: number; // 전일 순위 추가
+  lprice?: number;
+  mall_name?: string;
+  brand?: string;
+  image?: string;
+  [key: string]: any;
+}
+
 const SlotList: React.FC<SlotListProps> = ({
   filteredSlots,
   isLoading,
@@ -156,12 +172,56 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  
+  // 순위 데이터 상태
+  const [rankingDataMap, setRankingDataMap] = useState<Map<string, RankingData>>(new Map());
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
   const [openRefundRejectionId, setOpenRefundRejectionId] = useState<string | null>(null);
   
   // 추가 정보 팝오버 상태 (수동 입력 서비스용)
   const [openInfoPopoverId, setOpenInfoPopoverId] = useState<string | null>(null);
   const [infoPopoverPosition, setInfoPopoverPosition] = useState({ top: 0, left: 0 });
+
+  // 순위 데이터 가져오기
+  useEffect(() => {
+    const fetchRankingData = async () => {
+      // active, approved, pending_user_confirm 상태의 슬롯만 대상으로 함
+      const activeSlots = filteredSlots.filter(slot => 
+        slot.status === 'active' || slot.status === 'approved' || 
+        slot.status === 'pending_user_confirm'
+      );
+      
+      if (activeSlots.length === 0) {
+        setRankingDataMap(new Map());
+        return;
+      }
+
+      setIsLoadingRanking(true);
+      try {
+        const slotsForRanking = activeSlots.map(slot => ({
+          id: slot.id,
+          campaignId: slot.campaign?.id || 0,
+          inputData: slot.inputData,
+          keywordId: slot.keyword_id?.toString()
+        })).filter(s => s.campaignId > 0);
+
+        const rankingMap = await getBulkSlotRankingData(slotsForRanking);
+        console.log('SlotList - 받은 순위 데이터:', {
+          슬롯수: slotsForRanking.length,
+          순위데이터수: rankingMap.size,
+          데이터: Array.from(rankingMap.entries())
+        });
+        setRankingDataMap(rankingMap);
+      } catch (error) {
+        console.error('순위 데이터 조회 오류:', error);
+      } finally {
+        setIsLoadingRanking(false);
+      }
+    };
+
+    fetchRankingData();
+  }, [filteredSlots]);
 
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
@@ -852,13 +912,11 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">
+                    <th className="py-2 px-3 text-start font-medium text-xs w-[12%]">
                       {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '입력 정보' : '상품명'}
                     </th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">
-                      {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '' : '키워드'}
-                    </th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">순위</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
@@ -899,7 +957,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
 
                       {/* 상품명 / 입력 정보 */}
-                      <td className="py-2 px-3 w-[20%]">
+                      <td className="py-2 px-3 w-[12%]">
                         {item.inputData?.is_manual_input ? (
                           // 수동 입력 서비스인 경우 - 입력된 정보들을 나열
                           <div 
@@ -984,142 +1042,62 @@ const SlotList: React.FC<SlotListProps> = ({
                         )}
                       </td>
 
-                      {/* 키워드 */}
-                      <td className="py-2 px-3 w-[15%]">
-                        {item.inputData?.is_manual_input ? (
-                          // 수동 입력 서비스인 경우 빈 칸
-                          <div></div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-1 relative">
-                            {(() => {
-                            // 키워드 배열 생성 (메인키워드 + 서브키워드)
-                            const keywordArray = [];
-                            if (item.inputData.mainKeyword) {
-                              keywordArray.push(item.inputData.mainKeyword);
-                            }
-                            if (Array.isArray(item.inputData.keywords)) {
-                              keywordArray.push(...item.inputData.keywords);
-                            }
-
-                            if (keywordArray.length === 0) {
+                      {/* 순위 */}
+                      <td className="py-2 px-3 text-center w-[8%]">
+                        <div className="flex items-center justify-center">
+                          {(() => {
+                            // approved, pending_user_confirm 상태일 때만 표시
+                            if (item.status === 'approved' || item.status === 'pending_user_confirm') {
+                              // 순위 데이터 체크
+                            } else {
                               return <span className="text-gray-400 text-sm">-</span>;
                             }
-
-                            const mainKeyword = keywordArray[0];
-                            const additionalCount = keywordArray.length - 1;
-
+                            
+                            const rankingData = rankingDataMap.get(item.id);
+                            console.log('순위 표시:', {
+                              slotId: item.id,
+                              campaignId: item.campaign?.id,
+                              rankingData: rankingData,
+                              inputData: item.inputData,
+                              status: item.status
+                            });
+                            if (!rankingData) {
+                              return <span className="text-gray-400 text-sm">-</span>;
+                            }
+                            
+                            const dailyChange = rankingData.yesterday_rank ? rankingData.yesterday_rank - rankingData.rank : null;
+                            
                             return (
-                              <>
-                                <span className="text-gray-900 dark:text-gray-100 font-medium">
-                                  {mainKeyword}
+                              <div className="flex items-center justify-center gap-1">
+                                {/* 현재 순위 */}
+                                <span className={`font-semibold text-sm ${
+                                  rankingData.rank <= 10 ? 'text-blue-600' : 'text-gray-700'
+                                }`}>
+                                  {rankingData.rank}위
                                 </span>
-                                {additionalCount > 0 && (
-                                  <>
-                                    <button
-                                      className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full hover:bg-primary-dark transition-colors cursor-pointer min-w-[20px] h-5"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        setPopoverPosition({
-                                          top: rect.top - 10,
-                                          left: rect.left + rect.width / 2
-                                        });
-                                        setOpenKeywordTooltipId(openKeywordTooltipId === item.id ? null : item.id);
-                                      }}
-                                    >
-                                      +{additionalCount}
-                                    </button>
-                                    {/* Tooltip */}
-                                    {openKeywordTooltipId === item.id && ReactDOM.createPortal(
-                                      <>
-                                        {/* 배경 클릭 시 닫기 */}
-                                        <div
-                                          className="fixed inset-0"
-                                          style={{ zIndex: 9998 }}
-                                          onClick={() => setOpenKeywordTooltipId(null)}
-                                        />
-                                        <div
-                                          className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg p-3 w-64 shadow-xl border border-gray-700 dark:border-gray-600"
-                                          style={{
-                                            zIndex: 99999,
-                                            left: `${popoverPosition.left}px`,
-                                            top: `${popoverPosition.top}px`,
-                                            transform: 'translate(-50%, -100%)'
-                                          }}
-                                        >
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="font-medium text-gray-100">전체 키워드</div>
-                                            <button
-                                              className="text-gray-400 hover:text-gray-200 transition-colors"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenKeywordTooltipId(null);
-                                              }}
-                                            >
-                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                              </svg>
-                                            </button>
-                                          </div>
-                                          <div className="space-y-2">
-                                            {/* 메인 키워드 */}
-                                            <div>
-                                              <div className="text-xs text-gray-400 mb-1">메인 키워드</div>
-                                              <div className="flex flex-wrap gap-1">
-                                                <span
-                                                  className="px-2 py-0.5 text-xs rounded-md inline-block bg-blue-500/20 text-blue-200 font-medium"
-                                                >
-                                                  {item.inputData.mainKeyword}
-                                                </span>
-                                              </div>
-                                            </div>
-
-                                            {/* 서브 키워드 */}
-                                            {additionalCount > 0 && (
-                                              <>
-                                                <div className="border-t border-gray-700 dark:border-gray-600"></div>
-                                                <div>
-                                                  <div className="text-xs text-gray-400 mb-1">서브 키워드</div>
-                                                  <div className="flex flex-wrap gap-1">
-                                                    {keywordArray.slice(1).map((keyword, index) => (
-                                                      <span
-                                                        key={index}
-                                                        className={`px-2 py-0.5 text-xs rounded-md inline-block ${index % 4 === 0
-                                                            ? 'bg-green-500/20 text-green-200'
-                                                            : index % 4 === 1
-                                                              ? 'bg-purple-500/20 text-purple-200'
-                                                              : index % 4 === 2
-                                                                ? 'bg-orange-500/20 text-orange-200'
-                                                                : 'bg-pink-500/20 text-pink-200'
-                                                          }`}
-                                                      >
-                                                        {keyword}
-                                                      </span>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              </>
-                                            )}
-                                          </div>
-                                          {/* Arrow */}
-                                          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-full">
-                                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-gray-800"></div>
-                                          </div>
-                                        </div>
-                                      </>,
-                                      document.body
-                                    )}
-                                  </>
+                                
+                                {/* 일간 변동만 표시 */}
+                                {rankingData.yesterday_rank ? (
+                                  dailyChange !== null && dailyChange !== 0 ? (
+                                    <span className={`text-xs font-medium ${
+                                      dailyChange > 0 ? 'text-green-600' : 'text-red-600'
+                                    }`}>
+                                      {dailyChange > 0 ? '▲' : '▼'}{Math.abs(dailyChange)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">-</span>
+                                  )
+                                ) : (
+                                  <span className="text-xs text-blue-500 font-medium">NEW</span>
                                 )}
-                              </>
+                              </div>
                             );
                           })()}
-                          </div>
-                        )}
+                        </div>
                       </td>
 
                       {/* 캠페인 */}
-                      <td className="py-2 px-3 text-center w-[10%]">
+                      <td className="py-2 px-3 text-center w-[12%]">
                         <div className="flex items-center justify-center gap-1 min-w-0">
                           <img
                             src={getCampaignLogo(item)}
@@ -1577,6 +1555,65 @@ const SlotList: React.FC<SlotListProps> = ({
                     </div>
                   </div>
                 </div>
+                
+                {/* 날짜 및 순위 정보 */}
+                <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                  <div>
+                    <span className="text-gray-600">시작일:</span>
+                    <div className="font-medium">{item.startDate ? formatDate(item.startDate) : '-'}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">마감일:</span>
+                    <div className="font-medium">
+                      {item.endDate ? formatDate(item.endDate) : '-'}
+                      {(() => {
+                        const days = calculateRemainingDays(item.endDate);
+                        const colorClass = getRemainingDaysColorClass(days, item);
+                        const text = getRemainingDaysText(days, item);
+                        return text !== '-' ? (
+                          <span className={`ml-1 text-xs ${colorClass}`}>({text})</span>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 순위 정보 */}
+                {(item.status === 'active' || item.status === 'approved') && (
+                  <div className="mt-2">
+                    <span className="text-gray-600">순위:</span>
+                    <div className="mt-1">
+                      {(() => {
+                        const rankingData = rankingDataMap.get(item.id);
+                        if (!rankingData) {
+                          return <span className="text-gray-400">데이터 없음</span>;
+                        }
+                        
+                        const rankChange = rankingData.prev_rank ? rankingData.prev_rank - rankingData.rank : null;
+                        
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span className={`font-medium ${
+                              rankingData.rank <= 10 ? 'text-blue-600' : 'text-gray-700'
+                            }`}>
+                              {rankingData.rank}위
+                            </span>
+                            {rankChange !== null && rankChange !== 0 && (
+                              <span className={`text-xs font-bold ${
+                                rankChange > 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {rankChange > 0 ? '↑' : '↓'}{Math.abs(rankChange)}
+                              </span>
+                            )}
+                            {!rankingData.prev_rank && rankingData.rank && (
+                              <span className="text-xs text-gray-500">신규</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-end items-center gap-2 mt-4 pt-3 border-t">
                   {item.userReason && (

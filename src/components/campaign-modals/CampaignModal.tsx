@@ -18,6 +18,7 @@ import { CampaignForm } from './CampaignForm';
 import { CampaignPreviewModal } from './CampaignPreviewModal';
 import type { CampaignFormData } from './CampaignForm';
 import { RefundSettings } from '@/types/refund.types';
+import { RankingFieldMappingSection } from './RankingFieldMappingSection';
 
 interface CampaignModalProps {
   open: boolean;
@@ -103,6 +104,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
   // 변경사항 저장 확인 모달 상태
   const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState<boolean>(false);
+
+  // 필드 매핑 상태
+  const [rankingFieldMapping, setRankingFieldMapping] = useState<any>({});
 
   // CampaignForm 데이터 상태
   const [formData, setFormData] = useState<CampaignFormData>({
@@ -363,6 +367,11 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       if (campaign.originalData?.refund_settings) {
         refundSettingsValue = campaign.originalData.refund_settings;
+      }
+
+      // 필드 매핑 정보 가져오기
+      if (campaign.originalData?.ranking_field_mapping) {
+        setRankingFieldMapping(campaign.originalData.ranking_field_mapping);
       }
 
       // 캠페인 데이터로 newCampaign 상태 업데이트
@@ -837,6 +846,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         minGuaranteePrice: formData.minGuaranteePrice,
         maxGuaranteePrice: formData.maxGuaranteePrice,
         refundSettings: formData.refundSettings, // 환불 설정 추가
+        rankingFieldMapping: isOperatorMode ? rankingFieldMapping : undefined, // 운영자 모드일 때만 필드 매핑 저장
       };
 
       // 반려 사유가 있으면 항상 전달
@@ -912,6 +922,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             ...addInfo,
             add_field: formData.userInputFields,
           },
+          ranking_field_mapping: isOperatorMode ? rankingFieldMapping : newCampaign.originalData?.ranking_field_mapping,
           ...(finalStatus === 'rejected' ? { rejected_reason: newCampaign.rejectionReason } : {})
         }
       };
@@ -1144,6 +1155,19 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 isModal={true}
                 isEditMode={!!campaign} // 캠페인이 있으면 편집 모드
               />
+              
+              {/* 필드 매핑 섹션 - 운영자 모드에서만 표시 */}
+              {isOperatorMode && formData.userInputFields.length > 0 && (
+                <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <RankingFieldMappingSection
+                    campaignFields={formData.userInputFields}
+                    serviceType={campaign?.serviceType || serviceType || CampaignServiceType.NAVER_SHOPPING_RANK}
+                    value={rankingFieldMapping}
+                    onChange={setRankingFieldMapping}
+                    isReadOnly={false}
+                  />
+                </div>
+              )}
             </div>
           </DialogBody>
 

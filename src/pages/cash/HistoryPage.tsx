@@ -748,7 +748,7 @@ const HistoryPage = () => {
 
       {/* 상세보기 모달 */}
       <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>거래 상세 정보</DialogTitle>
           </DialogHeader>

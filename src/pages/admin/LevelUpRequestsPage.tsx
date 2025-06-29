@@ -282,10 +282,10 @@ const LevelUpRequestsPage = () => {
         // 사용자에게 역할 변경 알림 전송
         await createRoleChangeNotification(
           request.user_id,
-          request.users?.role || 'beginner', // 이전 역할(일반적으로 beginner에서 업그레이드)
+          request.current_role || request.users?.role || 'beginner', // 현재 역할 (levelup_apply 테이블의 current_role 사용)
           selectedRole, // 선택된 역할로 알림
           {
-            'beginner': '일반 회원',
+            'beginner': '비기너',
             'advertiser': '광고주',
             'distributor': '총판',
             'agency': '대행사',
@@ -311,7 +311,7 @@ const LevelUpRequestsPage = () => {
 
       // 성공 모달 표시
       const roleDisplayNames: Record<string, string> = {
-        'beginner': '일반 회원',
+        'beginner': '비기너',
         'advertiser': '광고주',
         'distributor': '총판',
         'agency': '대행사',
@@ -402,7 +402,7 @@ const LevelUpRequestsPage = () => {
   return (
     <CommonTemplate
       title="등업 신청 관리"
-      description="관리자 메뉴 > 등업 신청 관리"
+      description="전체 사용자의 등업 신청을 관리합니다."
       showPageMenu={false}
     >
       <Card className="shadow-sm overflow-hidden">

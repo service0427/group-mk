@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { useWithdrawSettings } from '../hooks/useWithdrawSettings';
 import { createWithdrawRequest, getLastWithdrawAccount, LastWithdrawAccount } from '../services/withdrawService';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { notifyOperators, createNewWithdrawRequestNotification } from '@/utils/notificationActions';
 import { smartCeil } from '@/utils/mathUtils';
@@ -12,9 +12,10 @@ interface WithdrawFormProps {
   userId: string;
   onSuccess: (amount: string) => void;
   userCashBalance: number;
+  currentUser?: any; // 현재 사용자 정보 추가
 }
 
-const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCashBalance }) => {
+const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCashBalance, currentUser }) => {
   // 상태 관리
   const [customAmount, setCustomAmount] = useState<string>('');
   const [selectedAmount, setSelectedAmount] = useState<string>('');
@@ -24,6 +25,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
   const [koreanAmount, setKoreanAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAccountFromProfile, setIsAccountFromProfile] = useState<boolean>(false);
   const [feeAmount, setFeeAmount] = useState<number>(0);
 
   // 추가된 상태
@@ -104,6 +106,19 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
   // 컴포넌트 마운트 시 마지막 출금 신청 정보 불러오기
   useEffect(() => {
     if (userId) {
+      // 사용자의 계좌 정보가 있으면 우선 사용
+      if (currentUser?.business?.bank_account) {
+        const { bank_name, account_number, account_holder } = currentUser.business.bank_account;
+        if (bank_name && account_number && account_holder) {
+          setBankName(bank_name);
+          setAccountNumber(account_number);
+          setAccountHolder(account_holder);
+          setLastAccountLoaded(true);
+          setIsAccountFromProfile(true);
+          return;
+        }
+      }
+      // 없으면 마지막 출금 신청 정보 불러오기
       fetchLastWithdrawAccount();
     }
 
@@ -114,7 +129,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
         toastTimerRef.current = null;
       }
     };
-  }, [userId]);
+  }, [userId, currentUser]);
 
   // withdrawSetting 변경 시 로그
   useEffect(() => {
@@ -505,9 +520,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             </div>
           )}
 
-          {!loadingLastAccount && lastAccountInfo && (
+          {!loadingLastAccount && (isAccountFromProfile || lastAccountInfo) && (
             <div className="text-xs text-gray-500">
-              마지막 신청 계좌 정보 자동 입력됨
+              {isAccountFromProfile ? '내정보에서 등록한 계좌 정보가 자동으로 입력되었습니다.' : '마지막 신청 계좌 정보 자동 입력됨'}
             </div>
           )}
         </div>
@@ -519,7 +534,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             id="bankSelect"
             value={bankName}
             onChange={(e) => setBankName(e.target.value)}
-            className="select w-full h-10 px-3 py-2 bg-light-light rounded-md border border-input text-sm hover:border-gray-400 focus:border-primary"
+            className={`select w-full h-10 px-3 py-2 rounded-md border border-input text-sm ${
+              isAccountFromProfile 
+                ? 'bg-gray-100 cursor-not-allowed' 
+                : 'bg-light-light hover:border-gray-400 focus:border-primary'
+            }`}
+            disabled={isAccountFromProfile}
           >
             <option value="">은행을 선택하세요</option>
             {bankList.map((bank) => (
@@ -537,7 +557,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             placeholder="숫자와 하이픈(-)만 입력 (예: 110-123-456789)"
             value={accountNumber}
             onChange={handleAccountNumberChange}
-            className="w-full"
+            className={`w-full ${
+              isAccountFromProfile ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+            disabled={isAccountFromProfile}
           />
         </div>
 
@@ -550,7 +573,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
             placeholder="예금주명을 입력하세요"
             value={accountHolder}
             onChange={(e) => setAccountHolder(e.target.value)}
-            className="w-full"
+            className={`w-full ${
+              isAccountFromProfile ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+            disabled={isAccountFromProfile}
           />
         </div>
 
@@ -591,11 +617,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
         <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>출금 신청 확인</DialogTitle>
-            <DialogDescription>
-              아래 정보로 출금을 신청하시겠습니까?
-            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="p-6 space-y-4">
+            <p className="text-gray-700">아래 정보로 출금을 신청하시겠습니까?</p>
             <div className="bg-muted/40 p-3 rounded-md space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-foreground">출금 금액:</span>
@@ -624,28 +648,28 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ userId, onSuccess, userCash
               </div>
             </div>
           </div>
-          <DialogFooter className="flex space-x-2 sm:space-x-2">
+          <DialogFooter className="flex gap-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted/60 focus:outline-none"
-              onClick={() => setConfirmModalOpen(false)}
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-9 items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600 focus:outline-none"
+              className="flex-1 py-2.5 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
               onClick={handleWithdraw}
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="flex items-center">
+                <div className="flex items-center justify-center">
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   처리 중...
                 </div>
               ) : (
                 "신청하기"
               )}
+            </button>
+            <button
+              type="button"
+              className="flex-1 py-2.5 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              onClick={() => setConfirmModalOpen(false)}
+            >
+              취소
             </button>
           </DialogFooter>
         </DialogContent>

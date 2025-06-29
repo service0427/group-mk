@@ -88,6 +88,7 @@ const WithdrawRequestPage: React.FC = () => {
                 userId={currentUser?.id || ''}
                 onSuccess={handleWithdrawSuccess}
                 userCashBalance={userCashBalance}
+                currentUser={currentUser}
               />
             )}
 

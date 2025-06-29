@@ -312,6 +312,15 @@ const ChargePage: React.FC = () => {
       return;
     }
 
+    // 사업자 정보 확인
+    if (!currentUser.business || 
+        !currentUser.business.business_name || 
+        !currentUser.business.business_number || 
+        !currentUser.business.representative_name) {
+      setError('사업자 정보를 등록하신 후 충전 요청이 가능합니다.');
+      return;
+    }
+
     if (!customAmount || Number(customAmount) <= 0) {
       setError('충전할 금액을 입력해주세요.');
       return;
@@ -374,6 +383,7 @@ const ChargePage: React.FC = () => {
         <DialogContent
           className="max-w-md mx-auto text-center"
           onPointerDownOutside={() => setDialogOpen(false)} // 모달 외부 클릭 시 닫기
+          aria-describedby={undefined}
         >
           <DialogHeader className="text-center">
             <DialogTitle className={`text-center mb-2 ${isSuccess ? "text-green-600" : "text-red-600"}`}>
@@ -408,6 +418,16 @@ const ChargePage: React.FC = () => {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
                 {error}
+                {error.includes('사업자 정보') && (
+                  <div className="mt-2">
+                    <a
+                      href="/profile"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      프로필 페이지에서 사업자 정보 등록하기 →
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

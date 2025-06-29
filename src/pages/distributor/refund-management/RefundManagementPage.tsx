@@ -552,7 +552,7 @@ const RefundManagementPage: React.FC = () => {
         setApprovalReason('');
         setIsImmediateRefund(false);
       }}>
-        <DialogContent className="max-w-md p-6">
+        <DialogContent className="max-w-md p-6" aria-describedby={undefined}>
           <DialogHeader className="pb-4 border-b mb-4">
             <DialogTitle className="text-xl font-bold flex items-center gap-3">
               <div className="size-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg flex items-center justify-center">
@@ -669,7 +669,7 @@ const RefundManagementPage: React.FC = () => {
 
       {/* 거절 모달 */}
       <Dialog open={actionType === 'reject'} onOpenChange={() => setActionType(null)}>
-        <DialogContent className="max-w-md p-6">
+        <DialogContent className="max-w-md p-6" aria-describedby={undefined}>
           <DialogHeader className="pb-4 border-b mb-4">
             <DialogTitle className="text-xl font-bold flex items-center gap-3">
               <div className="size-10 rounded-full bg-gradient-to-br from-red-400 to-pink-500 shadow-lg flex items-center justify-center">

@@ -368,12 +368,12 @@ const RefundTestPage: React.FC = () => {
               changes: {
                 ...item.changes,
                 change_amount: amount,
-                new_balance: (item.changes.current_balance || 0) + amount
-              },
-              description: item.description.replace(/\+[0-9,]+원/, `+${amount.toLocaleString()}원`)
+                paid_balance: `+${amount}`,
+                total_balance: `+${amount}`
+              }
             };
           }
-          if (item.table_name === 'cash_histories' && item.changes?.amount) {
+          if (item.table_name === 'user_cash_history' && item.changes?.amount) {
             return {
               ...item,
               changes: {
@@ -432,15 +432,15 @@ const RefundTestPage: React.FC = () => {
               
               // 총판 캐시 히스토리 추가 시뮬레이션
               modifiedResult.push({
-                table_name: 'cash_histories',
+                table_name: 'user_cash_history',
                 action: 'INSERT',
                 record_id: 'NEW',
                 changes: {
                   user_id: slotData.mat_id,
                   amount: refundDifference,
-                  type: 'refund_difference',
+                  transaction_type: 'refund',
                   description: '환불 차액 지급',
-                  balance_after: newDistributorBalance
+                  balance_type: 'paid'
                 },
                 description: `총판에게 환불 차액 ${refundDifference.toLocaleString()}원 지급 기록 추가`
               });
@@ -913,10 +913,14 @@ const RefundTestPage: React.FC = () => {
                   <>
                     {/* 슬롯별 변경사항 */}
                     {Object.entries(slotGroups).map(([slotId, items]) => {
+                      // slot_refund_approvals 정보 찾기
+                      const refundApproval = items.find(item => item.table_name === 'slot_refund_approvals');
+                      const refundInfo = refundApproval?.changes;
+                      
                       // 슬롯 정보 찾기
-                      const slot = slots.find(s => s.id === slotId);
+                      const slot = slots.find(s => s.id === (refundInfo?.slot_id || slotId));
                       const slotInfo = slot ? {
-                        campaign: slot.campaign?.campaign_name || '캠페인 정보 없음',
+                        campaign: refundInfo?.campaign_name || slot.campaign?.campaign_name || '캠페인 정보 없음',
                         user: slot.user?.full_name || '사용자 정보 없음',
                         mid: (() => {
                           let inputData = slot.input_data;
@@ -931,7 +935,10 @@ const RefundTestPage: React.FC = () => {
                             try { inputData = JSON.parse(inputData); } catch (e) { inputData = {}; }
                           }
                           return inputData?.keyword || inputData?.searchKeyword || inputData?.keywords || inputData?.mainKeyword || '키워드 없음';
-                        })()
+                        })(),
+                        amount: refundInfo?.amount,
+                        delay_days: refundInfo?.delay_days,
+                        scheduled_date: refundInfo?.scheduled_date
                       } : null;
                       
                       return (
@@ -942,11 +949,12 @@ const RefundTestPage: React.FC = () => {
                               {slotInfo?.campaign || `슬롯 ${slotId.substring(0, 8)}...`}
                             </h4>
                             {slotInfo && (
-                              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                  <KeenIcon icon="shop" className="size-3" />
-                                  <span className="font-medium">MID:</span> {slotInfo.mid}
-                                </span>
+                              <div className="mt-2 space-y-2">
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                                  <span className="flex items-center gap-1">
+                                    <KeenIcon icon="shop" className="size-3" />
+                                    <span className="font-medium">MID:</span> {slotInfo.mid}
+                                  </span>
                                 <span className="text-gray-400">|</span>
                                 <span className="flex items-center gap-1">
                                   <KeenIcon icon="tag" className="size-3" />
@@ -957,6 +965,32 @@ const RefundTestPage: React.FC = () => {
                                   <KeenIcon icon="user" className="size-3" />
                                   {slotInfo.user}
                                 </span>
+                              </div>
+                                {slotInfo.amount && (
+                                  <div className="bg-amber-50 rounded-lg p-2 mt-2">
+                                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                                      <span className="flex items-center gap-1">
+                                        <KeenIcon icon="wallet" className="size-4 text-amber-600" />
+                                        <span className="font-medium">환불 금액:</span>
+                                        <span className="font-bold text-amber-700">{slotInfo.amount.toLocaleString()}원</span>
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <KeenIcon icon="calendar-tick" className="size-4 text-amber-600" />
+                                        <span className="font-medium">처리 일정:</span>
+                                        <span className="font-bold text-amber-700">+{slotInfo.delay_days}일</span>
+                                      </span>
+                                      {slotInfo.scheduled_date && (
+                                        <span className="flex items-center gap-1">
+                                          <KeenIcon icon="time" className="size-4 text-amber-600" />
+                                          <span className="font-medium">예정일:</span>
+                                          <span className="font-bold text-amber-700">
+                                            {format(new Date(slotInfo.scheduled_date), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                                          </span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

@@ -125,12 +125,12 @@ export const getStatusBadge = (status: string): JSX.Element => {
       return <span className="badge badge-info whitespace-nowrap">거래확인대기</span>;
     case 'cancelled':
       return <span className="badge badge-secondary whitespace-nowrap">취소</span>;
+    case 'refund':
+      return <span className="badge badge-info whitespace-nowrap">환불완료</span>;
     case 'refund_pending':
       return <span className="badge badge-warning whitespace-nowrap">환불대기</span>;
     case 'refund_approved':
       return <span className="badge badge-primary whitespace-nowrap">환불승인</span>;
-    case 'refunded':
-      return <span className="badge badge-info whitespace-nowrap">환불완료</span>;
     default:
       return <span className="badge badge-light whitespace-nowrap">대기중</span>;
   }

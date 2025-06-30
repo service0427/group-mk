@@ -876,8 +876,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                                   return '즉시 환불 가능';
                                 case 'delayed':
                                   return `작업 시작 ${refundSettings.delay_days || 0}일 후 환불 가능`;
-                                case 'cutoff_based':
-                                  return `마감시간(${refundSettings.cutoff_time || '18:00'}) 이후 환불 가능`;
                                 default:
                                   return '즉시 환불 가능';
                               }
@@ -887,15 +885,6 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                       </div>
 
                       {/* 환불 승인 필요 여부 */}
-                      <div className="flex items-start gap-2">
-                        <KeenIcon icon="user-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
-                        <div className="text-sm">
-                          <span className="font-medium text-amber-700 dark:text-amber-300">환불 승인: </span>
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {(campaign?.originalData?.refund_settings || campaign?.refundSettings)?.requires_approval ? '총판 승인 필요' : '자동 승인'}
-                          </span>
-                        </div>
-                      </div>
 
                       {/* 환불 규정 */}
                       {(campaign?.originalData?.refund_settings || campaign?.refundSettings)?.refund_rules && (

@@ -554,7 +554,8 @@ const ApprovePage: React.FC = () => {
         }
       }
 
-      // 취소된 슬롯 및 환불 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
+      // 취소된 슬롯 및 환불 요청 관련 상태 제외 (환불 요청 관리 페이지에서만 표시)
+      // 'refund' 상태는 표시 (환불 완료된 상태)
       query = query.neq('status', 'cancelled')
         .neq('status', 'refund_pending')
         .neq('status', 'refund_approved')
@@ -908,8 +909,16 @@ const ApprovePage: React.FC = () => {
 
         // 종료일 계산: 시작일 + (dueDays - 1)
         let dueDays = 0;
+        
+        // 다양한 필드명 체크
         if (slot.input_data?.dueDays) {
           dueDays = parseInt(String(slot.input_data.dueDays));
+        } else if (slot.input_data?.work_days) {
+          dueDays = parseInt(String(slot.input_data.work_days));
+        } else if (slot.input_data?.workDays) {
+          dueDays = parseInt(String(slot.input_data.workDays));
+        } else if (slot.input_data?.workCount) {
+          dueDays = parseInt(String(slot.input_data.workCount));
         }
 
         // dueDays가 없거나 유효하지 않은 경우 1로 설정
@@ -917,12 +926,11 @@ const ApprovePage: React.FC = () => {
           dueDays = 1;
         }
 
-        const endDateObj = new Date(today);
-        endDateObj.setDate(today.getDate() + dueDays);
+        const endDateObj = new Date(startDateObj);
+        endDateObj.setDate(startDateObj.getDate() + dueDays - 1);
         const endDate = endDateObj.toISOString().split('T')[0];
 
         // API 호출 처리
-
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
         results.push(result);
 

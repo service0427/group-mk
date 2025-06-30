@@ -43,7 +43,7 @@ const MyServicesPage: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'general' | 'guarantee'>('general'); // 뷰 모드 상태 추가
+  const [viewMode, setViewMode] = useState<'standard' | 'guarantee'>('standard'); // 뷰 모드 상태 추가
   const { currentUser, userRole } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
 
@@ -174,14 +174,14 @@ const MyServicesPage: React.FC = () => {
       if (typeParam === 'guarantee') {
         setViewMode('guarantee');
       } else {
-        setViewMode('general');
+        setViewMode('standard');
       }
     }
   }, [searchParams]);
 
   const handleServiceClick = (path: string) => {
     setSelectedService(path);
-    setViewMode('general'); // 일반형 선택 시 뷰모드 설정
+    setViewMode('standard'); // 일반형 선택 시 뷰모드 설정
     // 검색 초기화
     setSearchInput('');
     setStatusFilter('all');
@@ -191,7 +191,7 @@ const MyServicesPage: React.FC = () => {
     // URL 파라미터 업데이트
     const newParams = new URLSearchParams();
     newParams.set('service', path);
-    newParams.set('type', 'general');
+    newParams.set('type', 'standard');
     navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
   };
 
@@ -590,7 +590,7 @@ const MyServicesPage: React.FC = () => {
   const toolbarActions = (
     <div className="flex items-center gap-2">
       {/* 새 슬롯 추가 버튼 - 일반형일 때만 표시 */}
-      {viewMode === 'general' && (
+      {viewMode === 'standard' && (
         <Button
           variant="outline"
           size="sm"

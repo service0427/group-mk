@@ -53,6 +53,7 @@ interface GuaranteeItem {
     guarantee_unit?: string;
     logo?: string;
     status?: string;
+    add_info?: any;
     refund_settings?: {
       type: 'immediate' | 'delayed' | 'cutoff_based';
       delay_days?: number;
@@ -183,25 +184,31 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
 
   // 캠페인 로고 가져오기
   const getCampaignLogo = (item: GuaranteeItem): string => {
-    // 캠페인 로고가 있으면 우선 사용
-    if (item.campaigns?.logo) {
-      if (!item.campaigns.logo.startsWith('http') && !item.campaigns.logo.startsWith('/')) {
-        return `/media/${item.campaigns.logo}`;
+    // add_info에 저장된 실제 업로드 URL 확인
+    if (item.campaigns?.add_info) {
+      try {
+        const addInfo = typeof item.campaigns.add_info === 'string' 
+          ? JSON.parse(item.campaigns.add_info) 
+          : item.campaigns.add_info;
+        
+        if (addInfo?.logo_url) {
+          return addInfo.logo_url;
+        }
+      } catch (e) {
+        // JSON 파싱 오류 무시
       }
-      return item.campaigns.logo;
     }
-
-    // 없으면 서비스 타입에 따른 기본 로고 사용
-    const service = item.service_type || '';
-    if (service.includes('naver') || service.includes('Naver')) {
-      return '/media/ad-brand/naver.png';
-    } else if (service.includes('coupang') || service.includes('Coupang')) {
-      return '/media/ad-brand/coupang-app.png';
-    } else if (service.includes('ohouse')) {
-      return '/media/ad-brand/ohouse.png';
+    
+    // 기본 제공 로고 확인
+    if (item.campaigns?.logo) {
+      // /media/로 시작하는 기본 로고
+      if (item.campaigns.logo.startsWith('/media/')) {
+        return item.campaigns.logo;
+      }
     }
-
-    return '/media/app/mini-logo-circle-gray.svg';
+    
+    // 로고가 없으면 빈 문자열 반환
+    return '';
   };
 
   // 캠페인 상태에 따른 닷 색상과 메시지
@@ -818,14 +825,16 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                     {/* 캠페인 */}
                     <td className="py-2 px-1 md:px-2 text-center max-w-[90px] md:max-w-[110px] lg:max-w-[120px]">
                       <div className="flex items-center justify-center gap-1">
-                        <img
-                          src={getCampaignLogo(item)}
-                          alt="campaign logo"
-                          className="w-4 h-4 object-contain rounded flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
-                          }}
-                        />
+                        {getCampaignLogo(item) && (
+                          <img
+                            src={getCampaignLogo(item)}
+                            alt="campaign logo"
+                            className="w-4 h-4 object-contain rounded flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <span className="text-xs text-gray-700 truncate" title={item.campaigns?.campaign_name || '-'}>
                           {item.campaigns?.campaign_name || '-'}
                         </span>
@@ -1319,14 +1328,16 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                     {item.keywords?.mid || '-'}
                   </h4>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                    <img
-                      src={getCampaignLogo(item)}
-                      alt="캠페인 로고"
-                      className="w-4 h-4 rounded object-contain bg-gray-50"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
-                      }}
-                    />
+                    {getCampaignLogo(item) && (
+                      <img
+                        src={getCampaignLogo(item)}
+                        alt="캠페인 로고"
+                        className="w-4 h-4 rounded object-contain bg-gray-50"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
                     <span>{item.campaigns?.campaign_name || '-'}</span>
                     {getCampaignStatusDot(item.campaigns)}
                   </div>

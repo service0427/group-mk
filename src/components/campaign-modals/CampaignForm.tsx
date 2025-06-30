@@ -694,6 +694,17 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^0-9]/g, '');
                             handleChange('guaranteePeriod', value);
+                            
+                            // 작업기간이 변경되면 보장일수도 조정
+                            if (value !== '' && formData.guaranteeCount && formData.guaranteeUnit === '일') {
+                              const workPeriod = parseInt(value);
+                              const currentGuaranteeCount = parseInt(formData.guaranteeCount);
+                              const maxDays = Math.min(workPeriod, 90);
+                              
+                              if (currentGuaranteeCount > maxDays) {
+                                handleChange('guaranteeCount', maxDays.toString());
+                              }
+                            }
                           }}
                           className="w-24 sm:w-32"
                           placeholder="30"
@@ -701,7 +712,12 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         />
                         <span className="text-xs sm:text-sm text-muted-foreground">일</span>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">목표를 달성하기 위한 전체 작업 기간을 입력하세요.</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        목표를 달성하기 위한 전체 작업 기간을 입력하세요.
+                        {formData.guaranteeUnit === '일' && (
+                          <span className="text-orange-500 block">※ 보장일수는 작업기간을 초과할 수 없습니다.</span>
+                        )}
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -719,9 +735,26 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           value={formData.guaranteeCount || ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^0-9]/g, '');
-                            // 일 단위일 때만 90일 제한 적용
-                            if (formData.guaranteeUnit === '일' && value !== '' && parseInt(value) > 90) {
-                              handleChange('guaranteeCount', '90');
+                            const numValue = parseInt(value);
+                            
+                            if (value !== '') {
+                              if (formData.guaranteeUnit === '일') {
+                                // 일 단위: 작업기간과 90일 중 작은 값으로 제한
+                                const workPeriod = parseInt(formData.guaranteePeriod || '0');
+                                const maxDays = workPeriod > 0 ? Math.min(workPeriod, 90) : 90;
+                                if (numValue > maxDays) {
+                                  handleChange('guaranteeCount', maxDays.toString());
+                                } else {
+                                  handleChange('guaranteeCount', value);
+                                }
+                              } else {
+                                // 회 단위: 90회로 제한 (작업기간 제한 없음)
+                                if (numValue > 90) {
+                                  handleChange('guaranteeCount', '90');
+                                } else {
+                                  handleChange('guaranteeCount', value);
+                                }
+                              }
                             } else {
                               handleChange('guaranteeCount', value);
                             }
@@ -746,7 +779,14 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                       </div>
                       <p className="text-[10px] sm:text-xs text-muted-foreground">
                         작업 기간 내에 실제로 보장할 일수 또는 횟수를 입력하세요.
-                        {formData.guaranteeUnit === '일' && <span className="text-red-500"> (최대 90일)</span>}
+                        {formData.guaranteeUnit === '일' && (
+                          <span className="text-red-500">
+                            {formData.guaranteePeriod && parseInt(formData.guaranteePeriod) > 0
+                              ? ` (최대 ${Math.min(parseInt(formData.guaranteePeriod), 90)}일)`
+                              : ' (최대 90일)'}
+                          </span>
+                        )}
+                        {formData.guaranteeUnit === '회' && <span className="text-red-500"> (최대 90회)</span>}
                       </p>
                     </div>
                   </td>

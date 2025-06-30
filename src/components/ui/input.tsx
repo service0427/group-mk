@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 // Define input size variants
 const inputVariants = cva(
-  'flex w-full bg-light-light rounded-md border border-input text-sm ring-offset-0 ring-offset-background hover:border-gray-400 focus:ring-offset-0 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50',
+  'flex w-full bg-light-light rounded-md border border-input text-sm text-foreground ring-offset-0 ring-offset-background hover:border-gray-400 focus:ring-offset-0 focus:border-primary placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       size: {

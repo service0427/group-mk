@@ -178,6 +178,7 @@ const SlotList: React.FC<SlotListProps> = ({
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [selectedTransactionSlot, setSelectedTransactionSlot] = useState<SlotItem | null>(null);
   const [openRefundRejectionId, setOpenRefundRejectionId] = useState<string | null>(null);
+  const [openRefundCompleteId, setOpenRefundCompleteId] = useState<string | null>(null);
   
   // 추가 정보 팝오버 상태 (수동 입력 서비스용)
   const [openInfoPopoverId, setOpenInfoPopoverId] = useState<string | null>(null);
@@ -364,8 +365,14 @@ const SlotList: React.FC<SlotListProps> = ({
                             <span className="text-gray-400">환불 사유:</span>
                             <div className="text-gray-200 mt-1">{request.refund_reason || '사유 없음'}</div>
                           </div>
+                          {request.approval_notes && (
+                            <div className="mt-2">
+                              <span className="text-gray-400">총판 승인 메모:</span>
+                              <div className="text-gray-200 mt-1">{request.approval_notes}</div>
+                            </div>
+                          )}
                           {request.approval_date && (
-                            <div className="text-gray-400 text-xs">
+                            <div className="text-gray-400 text-xs mt-2">
                               승인일: {formatDate(request.approval_date)}
                             </div>
                           )}
@@ -550,8 +557,14 @@ const SlotList: React.FC<SlotListProps> = ({
                                 <span className="text-gray-400">환불 사유:</span>
                                 <div className="text-gray-200 mt-1">{request.refund_reason || '사유 없음'}</div>
                               </div>
+                              {request.approval_notes && (
+                                <div className="mt-2">
+                                  <span className="text-gray-400">총판 승인 메모:</span>
+                                  <div className="text-gray-200 mt-1">{request.approval_notes}</div>
+                                </div>
+                              )}
                               {request.approval_date && (
-                                <div className="text-gray-400 text-xs">
+                                <div className="text-gray-400 text-xs mt-2">
                                   승인일: {formatDate(request.approval_date)}
                                 </div>
                               )}
@@ -672,6 +685,96 @@ const SlotList: React.FC<SlotListProps> = ({
         );
       }
     }
+    
+    // refund (환불 완료) 상태 처리
+    if (status === 'refund') {
+      const approvedRefund = slot?.refund_requests?.find(req => req.status === 'approved');
+      
+      return (
+        <div className="inline-flex items-center justify-center gap-1 ml-4" style={{ minWidth: '100px' }}>
+          <span className="badge badge-success whitespace-nowrap">환불완료</span>
+          <div className="w-4 flex items-center justify-center">
+            {approvedRefund && approvedRefund.approval_notes && (
+              <div className="relative flex items-center justify-center">
+                <button
+                  className="text-blue-500 hover:text-blue-600 cursor-pointer flex items-center justify-center"
+                  data-refund-complete-id={slot?.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenRefundCompleteId(openRefundCompleteId === slot?.id ? null : slot?.id || null);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </button>
+              {openRefundCompleteId === slot?.id && ReactDOM.createPortal(
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setOpenRefundCompleteId(null)} />
+                  <div 
+                    className="fixed z-50 bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 text-xs rounded p-3 w-72 max-w-xs shadow-xl border border-gray-700 dark:border-gray-600"
+                    style={{
+                      left: (() => {
+                        const button = document.querySelector(`[data-refund-complete-id="${slot.id}"]`);
+                        if (!button) return '0px';
+                        const rect = button.getBoundingClientRect();
+                        const tooltipWidth = 288;
+                        let left = rect.right - tooltipWidth;
+                        if (left < 10) left = 10;
+                        if (left + tooltipWidth > window.innerWidth - 10) {
+                          left = window.innerWidth - tooltipWidth - 10;
+                        }
+                        return `${left}px`;
+                      })(),
+                      top: (() => {
+                        const button = document.querySelector(`[data-refund-complete-id="${slot.id}"]`);
+                        if (!button) return '0px';
+                        const rect = button.getBoundingClientRect();
+                        const tooltipHeight = 120;
+                        
+                        if (rect.top - tooltipHeight - 8 < 10) {
+                          return `${rect.bottom + 8}px`;
+                        } else {
+                          return `${rect.top - tooltipHeight - 8}px`;
+                        }
+                      })()
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-sm">총판 승인 메모</div>
+                      <button
+                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenRefundCompleteId(null);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="text-gray-200">
+                      {approvedRefund.approval_notes}
+                    </div>
+                    {approvedRefund.approval_date && (
+                      <div className="text-gray-400 text-xs mt-2">
+                        승인일: {formatDate(approvedRefund.approval_date)}
+                      </div>
+                    )}
+                  </div>
+                </>,
+                document.body
+              )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
     // 기본 getStatusBadge 사용
     return getStatusBadge(status);
   };
@@ -917,7 +1020,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     </th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">순위</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">캠페인</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">상태</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
@@ -1115,11 +1218,11 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 상태 */}
-                      <td className="py-2 px-3 text-center w-[8%]">
+                      <td className="py-2 px-3 text-center w-[10%]">
                         <div className="flex items-center justify-center">
                           {item.status === 'rejected' ? (
                             <div className="inline-flex items-center gap-1">
-                              {getCustomStatusBadge(item.status)}
+                              {getCustomStatusBadge(item.status, item)}
                               {item.rejectionReason && (
                                 <div className="relative inline-block">
                                   <button
@@ -1334,7 +1437,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     )}
                   </div>
                   <div className="ml-2">
-                    {item.status !== 'pending_user_confirm' && getCustomStatusBadge(item.status)}
+                    {item.status !== 'pending_user_confirm' && getCustomStatusBadge(item.status, item)}
                   </div>
                 </div>
 

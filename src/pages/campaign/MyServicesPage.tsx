@@ -220,7 +220,7 @@ const MyServicesPage: React.FC = () => {
             service_type
           )
         `)
-        .in('status', ['active', 'approved', 'pending', 'submitted']);
+        .in('status', ['active', 'approved', 'pending', 'submitted', 'refund', 'refund_pending']);
 
       // 개발자가 아닌 경우에만 사용자 필터 적용
       if (userRole !== USER_ROLES.DEVELOPER) {
@@ -298,11 +298,12 @@ const MyServicesPage: React.FC = () => {
         console.error('전체 보장형 요청 조회 오류:', allGuaranteeError);
       }
 
-      // 일반형 active 슬롯 카운트 계산
+      // 일반형 active 슬롯 카운트 계산 (환불 상태 제외)
       const generalCounts: Record<string, number> = {};
       if (activeData) {
         activeData.forEach((slot: any) => {
-          if (slot.campaigns?.service_type) {
+          // 환불 관련 상태는 카운트에서 제외
+          if (slot.campaigns?.service_type && !['refund', 'refund_pending'].includes(slot.status)) {
             generalCounts[slot.campaigns.service_type] = (generalCounts[slot.campaigns.service_type] || 0) + 1;
           }
         });

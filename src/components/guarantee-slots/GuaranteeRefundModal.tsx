@@ -30,9 +30,8 @@ interface GuaranteeRefundModalProps {
   endDate?: string;
   actualCompletedCount?: number; // 실제 완료 횟수
   refundSettings?: {
-    type: 'immediate' | 'delayed' | 'cutoff_based';
+    type: 'immediate' | 'delayed';
     delay_days?: number;
-    cutoff_time?: string;
   };
   currentUserRole?: 'user' | 'distributor'; // 현재 사용자 역할
 }
@@ -346,9 +345,6 @@ const GuaranteeRefundModal: React.FC<GuaranteeRefundModalProps> = ({
                           )}
                           {refundSettings.type === 'delayed' && (
                             <p>이 캠페인은 승인일로부터 <span className="font-semibold">{refundSettings.delay_days}일 후</span> 환불이 처리됩니다.</p>
-                          )}
-                          {refundSettings.type === 'cutoff_based' && (
-                            <p>이 캠페인은 <span className="font-semibold">매일 {refundSettings.cutoff_time}</span> 이후 환불이 처리됩니다.</p>
                           )}
                         </div>
                       </div>

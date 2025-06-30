@@ -156,10 +156,8 @@ interface SupabaseCampaign {
   } | string; // 배너 URL 등의 추가 정보
   refund_settings?: {
     enabled: boolean;
-    type: 'immediate' | 'delayed' | 'cutoff_based';
+    type: 'immediate' | 'delayed';
     delay_days?: number;
-    cutoff_time?: string;
-    requires_approval: boolean;
     refund_rules?: {
       min_usage_days: number;
       max_refund_days: number;
@@ -1736,6 +1734,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           submitted_at: now,
           keyword_id: detail.id, // 키워드 ID
           quantity: detail.workCount, // 작업수 (quantity 사용)
+          // 시작일과 종료일은 null로 설정 (승인 시 설정됨)
+          start_date: null,
+          end_date: null,
           // deadline 필드는 DB에서 기본값이 null이므로 저장 항목에서 제외
           input_data: {
             ...keywordInputData,

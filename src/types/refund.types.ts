@@ -1,11 +1,8 @@
 // 환불 설정 타입 정의
 export interface RefundSettings {
   enabled: boolean;
-  type: 'immediate' | 'delayed' | 'cutoff_based';
+  type: 'immediate' | 'delayed';
   delay_days?: number; // type이 delayed일 때 사용
-  cutoff_time?: string; // HH:mm 형식 (예: "22:00")
-  requires_approval: boolean;
-  approval_roles?: string[]; // 승인 필요한 역할들
   refund_rules: {
     min_usage_days: number; // 최소 사용 일수
     max_refund_days: number; // 환불 가능 최대 일수
@@ -55,8 +52,8 @@ export interface RefundCalculation {
   remainingDays: number;
   refundRate?: number; // deprecated - 실제 환불 금액은 상황에 따라 결정
   message?: string;
-  requiresApproval: boolean;
   expectedRefundDate?: string; // 지연 환불의 경우
+  requiresApproval?: boolean; // 승인 필요 여부
 }
 
 // 환불 요청 입력 타입
@@ -71,9 +68,6 @@ export const DEFAULT_REFUND_SETTINGS: RefundSettings = {
   enabled: true,
   type: 'immediate',
   delay_days: 0,
-  cutoff_time: '00:00',
-  requires_approval: false,
-  approval_roles: ['distributor', 'advertiser'],
   refund_rules: {
     min_usage_days: 0,
     max_refund_days: 7,

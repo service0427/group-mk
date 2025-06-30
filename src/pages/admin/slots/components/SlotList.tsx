@@ -896,6 +896,8 @@ const SlotList: React.FC<SlotListProps> = ({
                       <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-700">완료</span>}
                     {slot.status === 'pending_user_confirm' && 
                       <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700">사용자확인대기</span>}
+                    {slot.status === 'refund' && 
+                      <span className="px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-700">환불</span>}
                     {!slot.status && 
                       <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500">-</span>}
                   </div>
@@ -1076,6 +1078,8 @@ const SlotList: React.FC<SlotListProps> = ({
                   <span className="px-1.5 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">완료</span>}
                 {slot.status === 'pending_user_confirm' && 
                   <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">사용자확인대기</span>}
+                {slot.status === 'refund' && 
+                  <span className="px-1.5 py-0.5 text-xs rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">환불</span>}
                 
                 {/* 메모 표시 */}
                 {(slot.mat_reason || slot.user_reason) && (

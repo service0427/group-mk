@@ -65,7 +65,6 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
         const refundSettings = slot.campaign?.refund_settings || {
           enabled: true,
           type: 'immediate',
-          requires_approval: false,
           refund_rules: {
             min_usage_days: 0,
             max_refund_days: 7,
@@ -88,7 +87,7 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
               Math.ceil((new Date(slot.endDate).getTime() - new Date(slot.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0,
             refundRate: 100,
             message: '작업 시작 전 - 전액 환불 가능',
-            requiresApproval: refundSettings.requires_approval || false,
+            requiresApproval: false,
             expectedRefundDate: refundSettings.type === 'delayed' && refundSettings.delay_days
               ? new Date(Date.now() + refundSettings.delay_days * 24 * 60 * 60 * 1000).toISOString()
               : undefined
@@ -214,22 +213,35 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
 
       // 2. 즉시 환불 가능한 슬롯 처리
       if (immediateRefundSlots.length > 0) {
-        // 여기서는 기존 환불 로직 사용 (MyServicesPage의 handleConfirmCancel 참고)
-        // TODO: 환불 시점에 따른 처리 추가 (delayed, cutoff_based)
-        
-        // 슬롯 상태를 cancelled로 변경
+        // 현재 버건대대로는 단순히 환불 요청만 생성하고 실제 환불은 총판이 처리
+        // 즉시 환불이라도 총판의 확인이 필요
+        for (const slotId of immediateRefundSlots) {
+          const calc = refundCalculations.get(slotId)!;
+          
+          // 환불 요청 생성 (즉시 환불이라도 기록을 위해)
+          const { error: insertError } = await supabase
+            .from('slot_refund_approvals')
+            .insert({
+              slot_id: slotId,
+              requester_id: currentUserId,
+              refund_amount: calc.refundAmount,
+              refund_reason: refundReason,
+              status: 'pending'
+            });
+            
+          if (insertError) throw insertError;
+        }
+
+        // 슬롯 상태를 refund_pending으로 변경
         const { error: slotError } = await supabase
           .from('slots')
           .update({
-            status: 'cancelled',
+            status: 'refund_pending',
             updated_at: new Date().toISOString()
           })
           .in('id', immediateRefundSlots);
 
         if (slotError) throw slotError;
-
-        // 환불 처리 로직...
-        // (기존 MyServicesPage의 환불 로직 재사용)
       }
 
       const message = [];
@@ -324,12 +336,6 @@ export const SlotRefundModal: React.FC<SlotRefundModalProps> = ({
                             return (
                               <p className="text-amber-700 dark:text-amber-300">
                                 • 환불 승인 후 {refundSettings.delay_days || 0}일 뒤에 환불됩니다.
-                              </p>
-                            );
-                          case 'cutoff_based':
-                            return (
-                              <p className="text-amber-700 dark:text-amber-300">
-                                • 마감시간({refundSettings.cutoff_time || '18:00'}) 이후 환불 처리됩니다.
                               </p>
                             );
                           default:

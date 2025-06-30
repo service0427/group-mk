@@ -33,24 +33,13 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
     // 타입별 기본값 설정
     if (type === 'delayed') {
       newSettings.delay_days = settings.delay_days || 1;
-      delete newSettings.cutoff_time;
-    } else if (type === 'cutoff_based') {
-      newSettings.cutoff_time = settings.cutoff_time || '14:00';
-      delete newSettings.delay_days;
     } else {
       delete newSettings.delay_days;
-      delete newSettings.cutoff_time;
     }
 
     onChange(newSettings);
   };
 
-  const handleRequiresApprovalChange = (checked: boolean) => {
-    onChange({
-      ...settings,
-      requires_approval: checked
-    });
-  };
 
   const handleRulesChange = (field: keyof RefundSettings['refund_rules'], value: number | boolean) => {
     onChange({
@@ -70,12 +59,6 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
     });
   };
 
-  const handleCutoffTimeChange = (value: string) => {
-    onChange({
-      ...settings,
-      cutoff_time: value
-    });
-  };
 
   return (
     <table className="min-w-full divide-y divide-border">
@@ -118,7 +101,6 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     >
                       <option value="immediate">즉시 환불</option>
                       <option value="delayed">지연 환불</option>
-                      <option value="cutoff_based">마감시간 기준 환불</option>
                     </select>
                   ) : (
                     <select
@@ -129,7 +111,6 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     >
                       <option value="immediate">즉시 환불</option>
                       <option value="delayed">지연 환불</option>
-                      <option value="cutoff_based">마감시간 기준 환불</option>
                     </select>
                   )}
 
@@ -149,43 +130,10 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     </div>
                   )}
 
-                  {/* 마감시간 기준 환불 옵션 */}
-                  {settings.type === 'cutoff_based' && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">마감시간:</span>
-                      <Input
-                        type="time"
-                        value={settings.cutoff_time || '14:00'}
-                        onChange={(e) => handleCutoffTimeChange(e.target.value)}
-                        className="w-32"
-                        disabled={disabled}
-                      />
-                      <span className="text-sm text-muted-foreground">이후 요청은 다음날 처리</span>
-                    </div>
-                  )}
                 </div>
               </td>
             </tr>
 
-            {/* 총판 승인 필요 */}
-            <tr>
-              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
-                총판 승인 필요
-              </th>
-              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    id="requires-approval"
-                    checked={settings.requires_approval}
-                    onCheckedChange={handleRequiresApprovalChange}
-                    disabled={disabled}
-                  />
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    환불 시 총판의 승인이 필요한지 설정합니다
-                  </p>
-                </div>
-              </td>
-            </tr>
 
             {/* 최소 사용 일수 */}
             <tr>
@@ -266,9 +214,7 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                     <li className="flex items-start gap-2">
                       <KeenIcon icon="check" className="size-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <span>
-                        환불 시점: {settings.type === 'immediate' ? '즉시' :
-                          settings.type === 'delayed' ? `${settings.delay_days}일 후` :
-                            `마감시간(${settings.cutoff_time}) 기준`}
+                        환불 시점: {settings.type === 'immediate' ? '즉시' : `${settings.delay_days}일 후`}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -283,12 +229,6 @@ export const RefundSettingsForm: React.FC<RefundSettingsFormProps> = ({
                         {settings.refund_rules.partial_refund ? '일할 계산 환불' : '전체 기간 환불'}
                       </span>
                     </li>
-                    {settings.requires_approval && (
-                      <li className="flex items-start gap-2">
-                        <KeenIcon icon="information-2" className="size-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-orange-600 dark:text-orange-400">총판 승인 필요</span>
-                      </li>
-                    )}
                   </ul>
                 </div>
               </td>

@@ -128,7 +128,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     refundSettings: {
       enabled: true,
       type: 'immediate',
-      requires_approval: false,
       refund_rules: {
         min_usage_days: 0,
         max_refund_days: 7,
@@ -158,7 +157,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
     refundSettings: {
       enabled: true,
       type: 'immediate',
-      requires_approval: false,
       refund_rules: {
         min_usage_days: 0,
         max_refund_days: 7,
@@ -189,7 +187,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       refundSettings: newCampaign.refundSettings || {
         enabled: true,
         type: 'immediate',
-        requires_approval: false,
         refund_rules: {
           min_usage_days: 0,
           max_refund_days: 7,
@@ -252,7 +249,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       if (typeof addInfo === 'string') {
         try {
           addInfo = JSON.parse(addInfo);
-          console.log('Parsed add_info from string:', addInfo);
         } catch (e) {
           console.error('Failed to parse add_info string:', e);
           addInfo = {};
@@ -264,18 +260,20 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
 
       // 기존 데이터는 add_info.add_field에 저장되어 있음
       if (addInfo.add_field && Array.isArray(addInfo.add_field)) {
-        userInputFieldsValue = addInfo.add_field.map((field: any) => ({
-          fieldName: field.fieldName || field.name || '',
-          description: field.description || field.desc || '',
-          isRequired: field.isRequired || false,
-          fieldType: field.fieldType || 'text', // fieldType 추가
-          enumOptions: field.enumOptions || undefined, // enumOptions 추가
-          order: field.order
-        }));
+        userInputFieldsValue = addInfo.add_field.map((field: any, index: number) => {
+          const mappedField = {
+            fieldName: field.fieldName || field.name || field.field_name || field.field || field.label || '',
+            description: field.description || field.desc || '',
+            isRequired: field.isRequired || field.is_required || false,
+            fieldType: field.fieldType || field.field_type || 'text', // fieldType 추가
+            enumOptions: field.enumOptions || field.enum_options || undefined, // enumOptions 추가
+            order: field.order
+          };
+          return mappedField;
+        });
       }
       // 이전 버전과의 호환성을 위한 처리 (userInputFields가 문자열 형태로 저장된 경우)
       else if (addInfo.userInputFields) {
-        console.log('Found userInputFields:', addInfo.userInputFields);
         try {
           if (typeof addInfo.userInputFields === 'string') {
             const parsed = JSON.parse(addInfo.userInputFields);
@@ -357,7 +355,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       let refundSettingsValue: RefundSettings = {
         enabled: true,
         type: 'immediate',
-        requires_approval: false,
         refund_rules: {
           min_usage_days: 0,
           max_refund_days: 7,
@@ -473,7 +470,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         refundSettings: {
           enabled: true,
           type: 'immediate' as const,
-          requires_approval: false,
           refund_rules: {
             min_usage_days: 0,
             max_refund_days: 7,
@@ -1112,7 +1108,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
               refundSettings: {
                 enabled: true,
                 type: 'immediate' as const,
-                requires_approval: false,
                 refund_rules: {
                   min_usage_days: 0,
                   max_refund_days: 7,
@@ -1909,8 +1904,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                                     return '즉시 환불 가능';
                                   case 'delayed':
                                     return `작업 시작 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
-                                  case 'cutoff_based':
-                                    return `마감시간(${formData.refundSettings?.cutoff_time || '18:00'}) 이후 환불 가능`;
                                   default:
                                     return '즉시 환불 가능';
                                 }
@@ -1919,16 +1912,6 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                           </div>
                         </div>
 
-                        {/* 환불 승인 필요 여부 */}
-                        <div className="flex items-start gap-2">
-                          <KeenIcon icon="user-tick" className="text-amber-600 dark:text-amber-400 size-4 mt-0.5 shrink-0" />
-                          <div className="text-xs sm:text-sm">
-                            <span className="font-medium text-amber-700 dark:text-amber-300">환불 승인: </span>
-                            <span className="text-gray-700 dark:text-gray-300">
-                              {formData.refundSettings?.requires_approval ? '총판 승인 필요' : '자동 승인'}
-                            </span>
-                          </div>
-                        </div>
 
                         {/* 환불 규정 */}
                         {formData.refundSettings?.refund_rules && (

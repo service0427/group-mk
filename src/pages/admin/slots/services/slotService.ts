@@ -85,13 +85,11 @@ export const approveSlot = async (
     
     // 다중 승인 시 NS 서비스 키워드 수집 (일반 승인인 경우만)
     if (!actionType || actionType === 'approve') {
-      console.log(`[순위체크API] 다중 슬롯 승인: ${slotId.length}개 슬롯 처리 시작`);
       const allKeywords: string[] = [];
       
       // 먼저 모든 슬롯의 정보를 조회하여 NS 서비스의 키워드 수집
       for (const id of slotId) {
         try {
-          console.log(`[순위체크API] 슬롯 ${id} 정보 조회 중...`);
           const { data: slotData } = await supabase
             .from('slots')
             .select('input_data, campaigns!product_id(service_type, ranking_field_mapping)')
@@ -100,13 +98,9 @@ export const approveSlot = async (
             
           if (slotData?.campaigns) {
             const campaign = Array.isArray(slotData.campaigns) ? slotData.campaigns[0] : slotData.campaigns;
-            console.log(`[순위체크API] 슬롯 ${id} - 캠페인 서비스 타입: ${campaign?.service_type}`);
             
             if (campaign && campaign.service_type && campaign.service_type.startsWith('NaverShopping')) {
-              console.log(`[순위체크API] 슬롯 ${id} - NS 서비스 확인! 키워드 추출...`);
-              console.log(`[순위체크API] 슬롯 ${id} - 필드 매핑:`, campaign.ranking_field_mapping);
               const keywords = extractKeywordsFromSlot(slotData.input_data, campaign.ranking_field_mapping);
-              console.log(`[순위체크API] 슬롯 ${id} - 추출된 키워드: ${keywords.length}개`);
               allKeywords.push(...keywords);
             }
           }
@@ -115,16 +109,12 @@ export const approveSlot = async (
         }
       }
       
-      console.log(`[순위체크API] 전체 수집된 키워드: ${allKeywords.length}개`);
       
       // 수집된 키워드가 있으면 배치로 체크
       if (allKeywords.length > 0) {
-        console.log('[순위체크API] 배치 API 호출 시작...');
         checkKeywordsInBatches(allKeywords).catch(err => 
           console.error('[순위체크API] 배치 순위 체크 API 호출 실패 (무시):', err)
         );
-      } else {
-        console.log('[순위체크API] 수집된 키워드가 없어 API 호출 스킵');
       }
     }
     
@@ -225,74 +215,71 @@ const approveSingleSlot = async (
     // 이 작업은 사용자가 거래 완료를 눌렀을 때 수행됨
     
     // NS 서비스 타입인 경우 순위 체크 API 호출 (승인 시에만, 스킵 플래그가 없을 때만)
-    console.log('[순위체크API] 슬롯 승인 처리 중...');
-    console.log(`[순위체크API] - actionType: ${actionType}`);
-    console.log(`[순위체크API] - skipRankingCheck: ${skipRankingCheck}`);
-    console.log(`[순위체크API] - campaignData.service_type: ${campaignData.service_type}`);
-    console.log(`[순위체크API] - slotId: ${slotId}`);
-    
     if ((!actionType || actionType === 'approve') && !skipRankingCheck && campaignData.service_type && campaignData.service_type.startsWith('NaverShopping')) {
-      console.log('[순위체크API] NaverShopping 서비스 타입 확인! 키워드 추출 시작...');
-      console.log('[순위체크API] campaignData:', campaignData);
-      
       // 캠페인의 필드 매핑 정보 가져오기
       const fieldMapping = campaignData.ranking_field_mapping;
-      console.log('[순위체크API] 캠페인 필드 매핑:', fieldMapping);
       
       const keywords = extractKeywordsFromSlot(slotData.input_data, fieldMapping);
-      console.log(`[순위체크API] 추출된 키워드 개수: ${keywords.length}`);
       
       if (keywords.length > 0) {
         // 비동기로 호출하고 결과는 무시 (실패해도 승인 프로세스는 계속)
         if (keywords.length === 1) {
-          console.log('[순위체크API] 단일 키워드 API 호출...');
           checkSingleKeywordRanking(keywords[0]).catch(err => 
             console.error('[순위체크API] 단일 키워드 API 호출 실패 (무시):', err)
           );
         } else {
-          console.log('[순위체크API] 다중 키워드 API 호출...');
           checkKeywordsInBatches(keywords).catch(err => 
             console.error('[순위체크API] 다중 키워드 API 호출 실패 (무시):', err)
           );
         }
-      } else {
-        console.log('[순위체크API] 추출된 키워드가 없습니다.');
       }
-    } else {
-      console.log('[순위체크API] 순위 체크 스킵 (NS 서비스가 아니거나 다른 조건)');
     }
     
     // 현재 시간 가져오기
     const now = new Date().toISOString();
 
     // 시작일과 종료일 설정
-    let finalStartDate = start_date;
-    let finalEndDate = end_date;
+    // 슬롯에 저장된 날짜를 가져옴 (하지만 잘못된 경우가 많음)
+    let slotStartDate = slotData.start_date;
+    let slotEndDate = slotData.end_date;
     
-    if (!finalStartDate) {
-      // 날짜가 제공되지 않았으면 승인일 다음날을 시작일로 설정
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      finalStartDate = tomorrow.toISOString().split('T')[0];
-      
-      // dueDays 가져오기
-      let dueDays = 0;
-      if (slotData.input_data?.dueDays) {
+    // 함수 파라미터로 날짜가 전달되면 우선 사용
+    let finalStartDate = start_date || slotStartDate;
+    let finalEndDate = end_date || slotEndDate;
+    
+    
+    // work_days 값 확인하고 날짜 재계산
+    let dueDays = 1; // 기본값
+    
+    // work_days 또는 유사 필드 찾기
+    if (slotData.input_data) {
+      if (slotData.input_data.work_days) {
+        dueDays = parseInt(String(slotData.input_data.work_days));
+      } else if (slotData.input_data.dueDays) {
         dueDays = parseInt(String(slotData.input_data.dueDays));
+      } else if (slotData.input_data.workDays) {
+        dueDays = parseInt(String(slotData.input_data.workDays));
+      } else if (slotData.input_data.workCount) {
+        dueDays = parseInt(String(slotData.input_data.workCount));
       }
-      
-      // dueDays가 없거나 유효하지 않은 경우 1로 설정
-      if (isNaN(dueDays) || dueDays <= 0) {
-        dueDays = 1;
-      }
-      
-      // 종료일 계산: 시작일 + (dueDays - 1)
-      // 예: 21일 시작, 10일간 작업 = 21일부터 30일까지
-      const endDateObj = new Date(tomorrow);
-      endDateObj.setDate(tomorrow.getDate() + dueDays - 1);
-      finalEndDate = endDateObj.toISOString().split('T')[0];
     }
+    
+    // dueDays 유효성 검사
+    if (isNaN(dueDays) || dueDays <= 0) {
+      dueDays = 1;
+    }
+    
+    // 무조건 날짜 재계산 (승인일 다음날부터 시작)
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    finalStartDate = tomorrow.toISOString().split('T')[0];
+    
+    // 종료일 계산: 시작일 + (dueDays - 1)
+    const endDateObj = new Date(tomorrow);
+    endDateObj.setDate(tomorrow.getDate() + dueDays - 1);
+    finalEndDate = endDateObj.toISOString().split('T')[0];
 
     // 3. 슬롯 상태 업데이트 (actionType에 따라 다른 상태로 업데이트)
     let newStatus = 'approved';
@@ -337,25 +324,18 @@ const approveSingleSlot = async (
           .eq('slot_id', slotId)
           .maybeSingle();
 
-        let freeBalanceUsed = 0;
-        let paidBalanceUsed = 0;
+        // slot_pending_balances의 amount는 VAT 포함 금액
+        const refundAmount = pendingBalance?.amount ? parseFloat(String(pendingBalance.amount)) : 0;
         
-        if (pendingBalance && pendingBalance.notes) {
-          try {
-            const notesObj = JSON.parse(pendingBalance.notes);
-            if (notesObj?.payment_details) {
-              freeBalanceUsed = parseFloat(String(notesObj.payment_details.free_balance_used || 0));
-              paidBalanceUsed = parseFloat(String(notesObj.payment_details.paid_balance_used || 0));
-            }
-          } catch (e) {
-            console.warn('결제 정보 파싱 실패, 기본값 사용');
-          }
+        // 환불 금액이 0인 경우 처리
+        if (refundAmount === 0) {
+          throw new Error('환불 금액이 0원입니다. slot_pending_balances를 확인해주세요.');
         }
         
-        // 결제 정보가 없으면 유료 캐시로 환불
-        if (freeBalanceUsed + paidBalanceUsed === 0) {
-          paidBalanceUsed = unitPrice;
-        }
+        // 무조건 유료 캐시로 환불
+        const paidBalanceUsed = refundAmount;
+        const freeBalanceUsed = 0;
+        unitPrice = refundAmount; // 환불 시 VAT 포함 금액 사용
 
         // 사용자의 잔액 조회
         const { data: userBalance, error: balanceError } = await supabase
@@ -388,13 +368,12 @@ const approveSingleSlot = async (
           .from('user_cash_history')
           .insert({
             user_id: slotData.user_id,
-            amount: unitPrice, // 양수로 표시하여 환불 표시
+            amount: refundAmount, // VAT 포함 금액으로 환불
             transaction_type: 'refund', // refund 타입으로 사용자에게 환불
             reference_id: slotId,
             description: `슬롯 환불: [${slotData.input_data?.productName || '상품'}]`,
             transaction_at: now,
-            balance_type: paidBalanceUsed > 0 && freeBalanceUsed > 0 ? 'mixed' : 
-                         paidBalanceUsed > 0 ? 'paid' : 'free'
+            balance_type: 'paid' // 무조건 유료 캐시로 환불
           });
       } catch (refundError) {
         console.error('환불 처리 중 오류:', refundError);
@@ -529,7 +508,6 @@ const approveSingleSlot = async (
             user_id: slotData.user_id,
             product_id: slotData.product_id,
             product_name: slotData.input_data?.productName || '상품',
-            payment_details: paymentDetails || 'Unknown'
           },
           created_at: now
         });
@@ -740,36 +718,19 @@ const rejectSingleSlot = async (
       // 치명적 오류로 처리하지 않음
     }
     
-    // 결제 시 저장된 세부 정보 가져오기
-    let paymentDetails = null;
-    let freeBalanceUsed = 0;
-    let paidBalanceUsed = 0;
-
-    try {
-      if (pendingBalance && pendingBalance.notes) {
-        try {
-          const notesObj = JSON.parse(pendingBalance.notes);
-          if (notesObj && notesObj.payment_details) {
-            paymentDetails = notesObj.payment_details;
-            freeBalanceUsed = parseFloat(String(paymentDetails.free_balance_used || 0)) || 0;
-            paidBalanceUsed = parseFloat(String(paymentDetails.paid_balance_used || 0)) || 0;
-          }
-        } catch (parseError) {
-          
-        }
-      } else {
-        
-      }
-    } catch (e) {
-      
+    // slot_pending_balances의 amount는 VAT 포함 금액
+    const refundAmount = pendingBalance?.amount ? parseFloat(String(pendingBalance.amount)) : 0;
+    
+    // 환불 금액이 0인 경우 campaign 단가에 VAT를 포함하여 계산
+    let finalRefundAmount = refundAmount;
+    if (finalRefundAmount === 0) {
+      // campaign 단가에 VAT 10% 추가
+      finalRefundAmount = Math.ceil(unitPrice * 1.1);
     }
-
-    // 결제 정보가 유효하지 않은 경우 기본값 사용
-    if (freeBalanceUsed + paidBalanceUsed <= 0) {
-      
-      freeBalanceUsed = unitPrice;
-      paidBalanceUsed = 0;
-    }
+    
+    // 무조건 유료 캐시로 환불
+    const paidBalanceUsed = finalRefundAmount;
+    const freeBalanceUsed = 0;
 
     // 2. 사용자에게 캐시 환불 처리
     // 사용자 잔액 정보 조회
@@ -792,20 +753,9 @@ const rejectSingleSlot = async (
     const currentPaidBalance = parseFloat(String(userBalanceData.paid_balance || 0));
     const currentFreeBalance = parseFloat(String(userBalanceData.free_balance || 0));
     
-    // 원래 차감된 잔액 종류에 맞게 환불 진행
-    let updatedPaidBalance = currentPaidBalance;
-    let updatedFreeBalance = currentFreeBalance;
-    
-    // 결제 정보가 있으면 원래 차감된 대로 환불, 없으면 무료 캐시로 환불
-    if (paymentDetails) {
-      updatedPaidBalance += paidBalanceUsed;
-      updatedFreeBalance += freeBalanceUsed;
-      
-    } else {
-      // 기존 로직 유지 (무료 캐시로 환불)
-      updatedFreeBalance += unitPrice;
-      
-    }
+    // 무조건 유료 캐시로 환불
+    let updatedPaidBalance = currentPaidBalance + paidBalanceUsed;
+    let updatedFreeBalance = currentFreeBalance + freeBalanceUsed;
 
     // 사용자 잔액 업데이트
     const { error: updateBalanceError } = await supabase
@@ -828,13 +778,13 @@ const rejectSingleSlot = async (
       .from('user_cash_history')
       .insert({
         user_id: slotData.user_id,
-        amount: unitPrice, // 양수로 표시하여 환불 표시
+        amount: finalRefundAmount, // VAT 포함 금액으로 환불
         transaction_type: 'refund', // refund 타입으로 사용자에게 환불
         reference_id: slotId,
         description: `슬롯 반려 환불: [${slotData.input_data?.productName || '상품'}]`,
         transaction_at: now,
         user_agent: `Rejection reason: ${rejectionReason}`, // user_agent 필드에 추가 정보 저장
-        balance_type: null // 환불이지만 타입 구분이 필요 없는 경우 null
+        balance_type: 'paid' // 무조건 유료 캐시로 환불
       });
 
     if (refundError) {
@@ -925,7 +875,6 @@ const rejectSingleSlot = async (
               paid_balance_before: currentPaidBalance,
               paid_balance_after: updatedPaidBalance
             },
-            payment_details: paymentDetails || 'Unknown'
           },
           created_at: now
         });

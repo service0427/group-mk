@@ -187,9 +187,6 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                         • 사용 {selectedCampaign.refund_settings.refund_rules.min_usage_days || 0}일 이상, {selectedCampaign.refund_settings.refund_rules.max_refund_days || 7}일 이내 환불 가능
                       </div>
                     )}
-                    {selectedCampaign.refund_settings.requires_approval && (
-                      <div className="text-orange-600">• 총판 승인 필요</div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -404,9 +401,6 @@ export const CampaignDetailCard: React.FC<CampaignDetailCardProps> = ({
                         <div>
                           • 사용 {selectedCampaign.refund_settings.refund_rules.min_usage_days || 0}일 이상, {selectedCampaign.refund_settings.refund_rules.max_refund_days || 7}일 이내 환불 가능
                         </div>
-                      )}
-                      {selectedCampaign.refund_settings.requires_approval && (
-                        <div className="text-orange-600">• 총판 승인 필요</div>
                       )}
                     </div>
                   </div>

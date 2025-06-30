@@ -115,17 +115,6 @@ export const calculateRefund = (
     const refundDate = new Date(currentDate);
     refundDate.setDate(refundDate.getDate() + refundSettings.delay_days);
     expectedRefundDate = refundDate.toISOString().split('T')[0];
-  } else if (refundSettings.type === 'cutoff_based' && refundSettings.cutoff_time) {
-    const [hours, minutes] = refundSettings.cutoff_time.split(':').map(Number);
-    const cutoffToday = new Date(currentDate);
-    cutoffToday.setHours(hours, minutes, 0, 0);
-    
-    const refundDate = new Date(currentDate);
-    if (currentDate > cutoffToday) {
-      // 마감 시간이 지났으면 다음날부터 환불
-      refundDate.setDate(refundDate.getDate() + 1);
-    }
-    expectedRefundDate = refundDate.toISOString().split('T')[0];
   }
 
   return {
@@ -135,7 +124,7 @@ export const calculateRefund = (
     usedDays,
     remainingDays,
     refundRate,
-    requiresApproval: refundSettings.requires_approval,
+    requiresApproval: false,
     expectedRefundDate
   };
 };
@@ -149,8 +138,6 @@ export const getRefundTypeText = (refundSettings: RefundSettings): string => {
       return '즉시 환불';
     case 'delayed':
       return `${refundSettings.delay_days}일 후 환불`;
-    case 'cutoff_based':
-      return `마감시간(${refundSettings.cutoff_time}) 기준 환불`;
     default:
       return '즉시 환불';
   }
@@ -187,10 +174,6 @@ export const getRefundRulesSummary = (refundSettings: RefundSettings): string[] 
     rules.push('전액 환불');
   }
 
-  // 승인 필요 여부
-  if (refundSettings.requires_approval) {
-    rules.push('승인 후 환불');
-  }
 
   return rules;
 };

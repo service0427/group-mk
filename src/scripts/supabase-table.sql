@@ -463,7 +463,7 @@ ccreate table public.campaigns (
   min_guarantee_price numeric(10, 2) null,
   max_guarantee_price numeric(10, 2) null,
   guarantee_unit character varying(10) null default '일'::character varying,
-  refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "cutoff_time": "00:00", "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}, "approval_roles": ["distributor", "advertiser"], "requires_approval": false}'::jsonb,
+  refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}}'::jsonb,
   guarantee_period integer null,
   constraint campaigns_pkey_new primary key (id),
   constraint guarantee_count_check check (
@@ -742,3 +742,36 @@ LEFT JOIN shopping_rankings_daily d6 ON r.keyword_id = d6.keyword_id
     AND r.product_id = d6.product_id AND d6.date = CURRENT_DATE - 6
 LEFT JOIN shopping_rankings_daily d7 ON r.keyword_id = d7.keyword_id 
     AND r.product_id = d7.product_id AND d7.date = CURRENT_DATE - 7;
+
+    create table public.refund_process_logs (
+  id uuid not null default gen_random_uuid (),
+  refund_request_id uuid null,
+  slot_id uuid null,
+  user_id uuid null,
+  amount numeric(10, 2) not null,
+  scheduled_date timestamp with time zone not null,
+  processed_date timestamp with time zone null default now(),
+  status character varying(20) null,
+  error_message text null,
+  created_at timestamp with time zone null default now(),
+  constraint refund_process_logs_pkey primary key (id),
+  constraint refund_process_logs_refund_request_id_fkey foreign KEY (refund_request_id) references slot_refund_approvals (id),
+  constraint refund_process_logs_slot_id_fkey foreign KEY (slot_id) references slots (id),
+  constraint refund_process_logs_user_id_fkey foreign KEY (user_id) references users (id),
+  constraint refund_process_logs_status_check check (
+    (
+      (status)::text = any (
+        (
+          array[
+            'success'::character varying,
+            'failed'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_refund_process_logs_processed_date on public.refund_process_logs using btree (processed_date) TABLESPACE pg_default;
+
+create index IF not exists idx_refund_process_logs_slot_id on public.refund_process_logs using btree (slot_id) TABLESPACE pg_default;

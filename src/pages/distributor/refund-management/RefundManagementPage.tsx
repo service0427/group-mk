@@ -152,11 +152,14 @@ const RefundManagementPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // 즉시 환불인 경우 처리
-      if (isImmediateRefund) {
-        // 환불 정책 확인
-        const refundSettings = selectedRequest.slot?.campaign?.refund_settings;
-        if (refundSettings?.type === 'delayed' && refundSettings.delay_days) {
+      // 캐페인 설정이 즉시 환불이거나 체크박스를 체크한 경우 즉시 처리
+      const refundSettings = selectedRequest.slot?.campaign?.refund_settings;
+      const shouldProcessImmediately = isImmediateRefund || 
+                                      refundSettings?.type === 'immediate';
+      
+      if (shouldProcessImmediately) {
+        // delayed 타입인데 강제로 즉시 처리하는 경우 경고
+        if (refundSettings?.type === 'delayed' && refundSettings.delay_days && isImmediateRefund) {
           // 모달로 확인
           const shouldProceed = await new Promise<boolean>((resolve) => {
             showDialog({
@@ -238,18 +241,12 @@ const RefundManagementPage: React.FC = () => {
       if (slotError) throw slotError;
 
       // 환불 스케줄 생성 (환불 정책에 따라)
-      const refundSettings = selectedRequest.slot?.campaign?.refund_settings;
+      // refundSettings는 이미 위에서 선언됨
       if (refundSettings) {
         let scheduledDate = new Date();
         
         if (refundSettings.type === 'delayed' && refundSettings.delay_days) {
           scheduledDate.setDate(scheduledDate.getDate() + refundSettings.delay_days);
-        } else if (refundSettings.type === 'cutoff_based' && refundSettings.cutoff_time) {
-          const [hours, minutes] = refundSettings.cutoff_time.split(':').map(Number);
-          scheduledDate.setHours(hours, minutes, 0, 0);
-          if (scheduledDate <= new Date()) {
-            scheduledDate.setDate(scheduledDate.getDate() + 1);
-          }
         }
 
         const { error: scheduleError } = await supabase
@@ -641,8 +638,6 @@ const RefundManagementPage: React.FC = () => {
                   {selectedRequest.slot.campaign.refund_settings.type === 'immediate' && '즉시 환불 처리됩니다.'}
                   {selectedRequest.slot.campaign.refund_settings.type === 'delayed' && 
                     `승인 후 ${selectedRequest.slot.campaign.refund_settings.delay_days}일 뒤에 환불됩니다.`}
-                  {selectedRequest.slot.campaign.refund_settings.type === 'cutoff_based' && 
-                    `마감시간(${selectedRequest.slot.campaign.refund_settings.cutoff_time}) 이후 환불됩니다.`}
                 </p>
               </div>
             )}

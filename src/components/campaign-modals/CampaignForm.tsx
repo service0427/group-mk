@@ -1273,7 +1273,6 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
           settings={formData.refundSettings || {
             enabled: true,
             type: 'immediate',
-            requires_approval: false,
             refund_rules: {
               min_usage_days: 0,
               max_refund_days: 7,

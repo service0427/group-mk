@@ -540,6 +540,13 @@ const approveSingleSlot = async (
 
     // 5. 알림 생성
     try {
+      // getServiceTypeUrlPath 함수 가져오기
+      const { getServiceTypeUrlPath } = await import('@/utils/notificationActions');
+      
+      // 서비스 타입과 슬롯 타입 결정
+      const serviceType = campaignData.service_type || '';
+      const slotType = campaignData.slot_type || 'standard';
+      
       // actionType에 따라 다른 알림 내용 사용
       let notificationType = 'slot_approved';
       let notificationTitle = '슬롯 승인 완료';
@@ -562,7 +569,7 @@ const approveSingleSlot = async (
           type: notificationType,
           title: notificationTitle,
           message: notificationMessage,
-          link: `/myinfo/services`,
+          link: `/my-services?service=${getServiceTypeUrlPath(serviceType)}&type=${slotType}`,
           status: 'unread',
           priority: 'medium', // 필수 필드 추가
           created_at: now

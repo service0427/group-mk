@@ -1036,7 +1036,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           bannerImage: bannerImagePreviewUrl ? 'banner-image.png' : null, // 실제 구현에서는 업로드된 파일 경로로 변경
           uploadedBannerImage: bannerImagePreviewUrl, // base64 데이터를 서버로 전달 (실제 구현 시)
           unitPrice: formData.unitPrice,
-          deadline: newCampaign.deadline,
+          deadline: formData.deadline,
           status: 'waiting_approval', // 캠페인 신청 시 항상 '승인 대기중' 상태로 제출
           serviceType: serviceType,
           // 사용자 입력 필드 정보를 add_field로 전달

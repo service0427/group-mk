@@ -186,7 +186,6 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
     if (typeof parsedItem.add_info === 'string' && parsedItem.add_info) {
       try {
         parsedItem.add_info = JSON.parse(parsedItem.add_info);
-        console.log(`Campaign ${parsedItem.id} - Parsed add_info from string:`, parsedItem.add_info);
       } catch (error) {
         console.error(`Campaign ${parsedItem.id} - Failed to parse add_info:`, error);
         // 파싱에 실패했지만 logo_url이 문자열 안에 있는 경우
@@ -198,7 +197,7 @@ export const fetchCampaigns = async (serviceType: string, userId?: string): Prom
         parsedItem.add_info = {};
       }
     } else if (parsedItem.add_info && typeof parsedItem.add_info === 'object') {
-      console.log(`Campaign ${parsedItem.id} - add_info is already an object:`, parsedItem.add_info);
+      // add_info is already an object
     }
 
     // 총판 정보 추출
@@ -372,8 +371,6 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       // 사용자 입력 필드가 있으면 add_field로 저장
       add_field: data.add_field
     };
-    
-    console.log('Updating campaign with add_field:', data.add_field);
 
     // 현재 사용자 ID 가져오기
     const { data: authData } = await supabase.auth.getSession();
@@ -471,8 +468,6 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
     }
 
     // 이제 additionalInfo에 이미 add_field가 포함되어 있음
-    console.log('Final additionalInfo to save:', additionalInfo);
-    
     // DB 컬럼명에 맞게 데이터 변환
     let updateData: IUpdateData = {
       campaign_name: data.campaignName,

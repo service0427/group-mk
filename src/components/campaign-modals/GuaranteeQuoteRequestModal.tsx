@@ -244,35 +244,27 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
           const keywords = keywordDetails.map(kd => kd.mainKeyword).join(', ');
           let combinedMessage = '견적을 요청합니다.\n\n';
           
-          // 희망 예산 정보
+          // 희망 예산 정보만 표시
           let budgetInfo = '';
           let dailyAmount = 0;
+          let totalAmountForMessage = 0;
           
           if (priceInputType === 'total') {
             // 총 단가로 입력한 경우
             const totalAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
+            totalAmountForMessage = totalAmount;
             dailyAmount = Math.floor(totalAmount / guaranteeCount);
-            budgetInfo = `희망 예산: 총 ${totalAmount.toLocaleString()}원 (${campaign?.guarantee_unit === '회' ? '회당' : '일별'} ${dailyAmount.toLocaleString()}원 × ${guaranteeCount}${campaign?.guarantee_unit || '일'})`;
+            budgetInfo = `희망 예산: 총 ${totalAmount.toLocaleString()}원`;
           } else {
             // 일별/회당 단가로 입력한 경우
             dailyAmount = parseInt(formData.dailyBudget.replace(/,/g, ''));
-            const totalAmount = dailyAmount * guaranteeCount;
-            budgetInfo = `희망 예산: ${formData.dailyBudget}원/${campaign?.guarantee_unit || '일'} × ${guaranteeCount}${campaign?.guarantee_unit || '일'} (총 ${totalAmount.toLocaleString()}원)`;
+            totalAmountForMessage = dailyAmount * guaranteeCount;
+            budgetInfo = `희망 예산: ${formData.dailyBudget}원/${campaign?.guarantee_unit || '일'} × ${guaranteeCount}${campaign?.guarantee_unit || '일'} (총 ${totalAmountForMessage.toLocaleString()}원)`;
           }
           
-          combinedMessage += budgetInfo + '\n';
-          
-          // 제안 내용
-          combinedMessage += `제안 금액: ${dailyAmount.toLocaleString()}원/${campaign?.guarantee_unit || '일'}\n`;
-          combinedMessage += `작업기간: ${guaranteePeriod}${campaign?.guarantee_unit === '회' ? '일' : '일'}\n`;
-          
-          if (campaign?.guarantee_unit === '일') {
-            combinedMessage += `보장 순위: ${campaign?.target_rank || 1}위\n`;
-          }
-          
-          combinedMessage += `보장 ${campaign?.guarantee_unit === '회' ? '횟수' : '일수'}: ${guaranteeCount}${campaign?.guarantee_unit || '일'}\n`;
-          combinedMessage += `총 금액: ${(dailyAmount * guaranteeCount).toLocaleString()}원 (VAT 별도)`;
-          
+          combinedMessage += budgetInfo;
+          combinedMessage += `\n제안구분: ${priceInputType === 'total' ? '총액' : '일별'}`;
+
           // 키워드 정보 추가
           if (keywords) {
             combinedMessage += `\n\n키워드: ${keywords}`;
@@ -291,6 +283,8 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
               message_type: 'price_proposal',
               proposed_daily_amount: dailyAmount,
               proposed_guarantee_count: guaranteeCount,
+              budget_type: priceInputType,
+              proposed_total_amount: priceInputType === 'total' ? totalAmountForMessage : (dailyAmount * guaranteeCount),
               isFromDistributorPage: false
             },
             userId,
@@ -604,14 +598,14 @@ export const GuaranteeQuoteRequestModal: React.FC<GuaranteeQuoteRequestModalProp
                   ) : (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">{campaign?.guarantee_unit === '회' ? '회당' : '일별'} 단가:</span>
+                        <span className="text-gray-600 dark:text-gray-400">총 금액 (VAT 제외):</span>
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          <span className="hidden md:inline">{formatAmountDesktop(calculateDailyAmount())}</span>
-                          <span className="md:hidden">{formatAmountMobile(calculateDailyAmount())}</span>
+                          <span className="hidden md:inline">{formatAmountDesktop(parseInt(formData.dailyBudget.replace(/,/g, '') || '0'))}</span>
+                          <span className="md:hidden">{formatAmountMobile(parseInt(formData.dailyBudget.replace(/,/g, '') || '0'))}</span>
                         </span>
                       </div>
                       <div className="flex justify-between text-purple-600 dark:text-purple-400">
-                        <span>VAT 포함:</span>
+                        <span>총 금액 (VAT 포함):</span>
                         <span className="font-semibold">
                           <span className="hidden md:inline">{formatAmountDesktop(smartCeil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>
                           <span className="md:hidden">{formatAmountMobile(smartCeil(parseInt(formData.dailyBudget.replace(/,/g, '') || '0') * 1.1))}</span>

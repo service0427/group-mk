@@ -142,6 +142,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             guarantee_unit,
             logo,
             status,
+            add_info,
             refund_settings
           ),
           keywords:keyword_id(

@@ -759,22 +759,33 @@ const GuaranteeQuotesPage: React.FC = () => {
   };
 
   // 캠페인 로고 가져오기
-  const getCampaignLogo = (logo?: string): string | undefined => {
-    if (!logo) return undefined;
+  const getCampaignLogo = (campaign?: any): string | undefined => {
+    if (!campaign) return undefined;
 
-    // animal/svg/ 형태의 경로면 /media/ 추가
-    if (logo.includes('animal/svg/') && !logo.startsWith('/media/')) {
-      return `/media/${logo}`;
+    // add_info에 저장된 실제 업로드 URL 확인
+    if (campaign.add_info) {
+      try {
+        const addInfo = typeof campaign.add_info === 'string' 
+          ? JSON.parse(campaign.add_info) 
+          : campaign.add_info;
+        
+        if (addInfo?.logo_url) {
+          return addInfo.logo_url;
+        }
+      } catch (e) {
+        // JSON 파싱 오류 무시
+      }
     }
-    // http로 시작하거나 /로 시작하면 그대로 사용
-    if (logo.startsWith('http') || logo.startsWith('/')) {
-      return logo;
+    
+    // 기본 제공 로고 확인
+    if (campaign.logo) {
+      // /media/로 시작하는 기본 로고만 반환
+      if (campaign.logo.startsWith('/media/')) {
+        return campaign.logo;
+      }
     }
-    // 단순 동물 이름이면 경로 구성
-    if (!logo.includes('/')) {
-      return `/media/animal/svg/${logo}.svg`;
-    }
-    return logo;
+    
+    return undefined;
   };
 
   // 요청 승인 모달 열기
@@ -2115,11 +2126,14 @@ const GuaranteeQuotesPage: React.FC = () => {
                         {/* 캠페인 */}
                         <td className="py-2 px-1 md:px-2 text-center max-w-[90px] md:max-w-[110px] lg:max-w-[120px]">
                           <div className="flex items-center justify-center gap-1">
-                            {getCampaignLogo(request.campaigns?.logo) && (
+                            {getCampaignLogo(request.campaigns) && (
                               <img
-                                src={getCampaignLogo(request.campaigns?.logo)}
+                                src={getCampaignLogo(request.campaigns)}
                                 alt="campaign logo"
                                 className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
                               />
                             )}
                             <span className="text-xs text-gray-700 truncate" title={request.campaigns?.campaign_name || `캠페인 #${request.campaign_id}`}>
@@ -2755,11 +2769,14 @@ const GuaranteeQuotesPage: React.FC = () => {
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          {getCampaignLogo(request.campaigns?.logo) && (
+                          {getCampaignLogo(request.campaigns) && (
                             <img
-                              src={getCampaignLogo(request.campaigns?.logo)}
+                              src={getCampaignLogo(request.campaigns)}
                               alt="campaign logo"
                               className="w-8 h-8 object-contain rounded"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                           )}
                           <div>

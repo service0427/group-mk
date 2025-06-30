@@ -104,25 +104,31 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
   // 캠페인 로고 가져오기 (보장형 목록과 정확히 동일)
   const getCampaignLogo = (item: any): string => {
-    // 캠페인 로고가 있으면 우선 사용
-    if (item?.campaigns?.logo) {
-      if (!item.campaigns.logo.startsWith('http') && !item.campaigns.logo.startsWith('/')) {
-        return `/media/${item.campaigns.logo}`;
+    // add_info에 저장된 실제 업로드 URL 확인
+    if (item?.campaigns?.add_info) {
+      try {
+        const addInfo = typeof item.campaigns.add_info === 'string' 
+          ? JSON.parse(item.campaigns.add_info) 
+          : item.campaigns.add_info;
+        
+        if (addInfo?.logo_url) {
+          return addInfo.logo_url;
+        }
+      } catch (e) {
+        // JSON 파싱 오류 무시
       }
-      return item.campaigns.logo;
     }
-
-    // 없으면 서비스 타입에 따른 기본 로고 사용
-    const service = item?.campaigns?.service_type || item?.service_type || '';
-    if (service.includes('naver') || service.includes('Naver')) {
-      return '/media/ad-brand/naver.png';
-    } else if (service.includes('coupang') || service.includes('Coupang')) {
-      return '/media/ad-brand/coupang-app.png';
-    } else if (service.includes('ohouse')) {
-      return '/media/ad-brand/ohouse.png';
+    
+    // 기본 제공 로고 확인
+    if (item?.campaigns?.logo) {
+      // /media/로 시작하는 기본 로고
+      if (item.campaigns.logo.startsWith('/media/')) {
+        return item.campaigns.logo;
+      }
     }
-
-    return '/media/app/mini-logo-circle-gray.svg';
+    
+    // 로고가 없으면 빈 문자열 반환
+    return '';
   };
 
   // 서비스 로고와 라벨 가져오기
@@ -419,12 +425,12 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
       if (priceInputType === 'total') {
         // 총액으로 입력한 경우
-        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원 (총액)`;
+        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원 (총액)\n제안구분: 총액`;
         dailyAmount = Math.floor(amount / guaranteeCount); // 일별 금액 계산
       } else {
         // 일별/회당으로 입력한 경우
         const totalAmount = amount * guaranteeCount;
-        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원/${getGuaranteeUnit()}`;
+        message = `${currentUserRole === 'distributor' ? '제안 금액' : '희망 예산'}: ${amount.toLocaleString()}원/${getGuaranteeUnit()}\n제안구분: 일별`;
         dailyAmount = amount;
       }
 
@@ -1001,7 +1007,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
                   return (
                     <>
-                      <div>제안 금액: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
+                      <div>제안 금액: {message.budget_type === 'total' 
+                        ? `총 ${totalAmount.toLocaleString()}원`
+                        : `${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()}`}</div>
                       <div>보장 {getGuaranteeUnit() === '회' ? '횟수' : '일수'}: {guaranteeCount}{getGuaranteeUnit()}</div>
                       {getGuaranteeUnit() === '일' && <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>}
                       <div>작업기간: {workPeriod}일</div>
@@ -1028,7 +1036,9 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
 
                   return (
                     <>
-                      <div>제안 금액: {dailyAmount.toLocaleString()}원/{getGuaranteeUnit()}</div>
+                      <div>제안 금액: {message.budget_type === 'total' 
+                        ? `총 ${totalAmount.toLocaleString()}원`
+                        : `${dailyAmount.toLocaleString()}원/${getGuaranteeUnit()}`}</div>
                       <div>보장 {getGuaranteeUnit() === '회' ? '횟수' : '일수'}: {guaranteeCount}{getGuaranteeUnit()}</div>
                       {getGuaranteeUnit() === '일' && <div>보장 순위: {message.proposed_target_rank || requestInfo?.target_rank || 0}위</div>}
                       <div>작업기간: {workPeriod}일</div>
@@ -1431,14 +1441,16 @@ export const GuaranteeNegotiationModal: React.FC<GuaranteeNegotiationModalProps>
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">캠페인:</span>
                       <div className="flex items-center gap-2 mt-1">
-                        <img
-                          src={getCampaignLogo(requestInfo)}
-                          alt="캠페인 로고"
-                          className="w-4 h-4 object-contain rounded flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/media/app/mini-logo-circle-gray.svg';
-                          }}
-                        />
+                        {getCampaignLogo(requestInfo) && (
+                          <img
+                            src={getCampaignLogo(requestInfo)}
+                            alt="캠페인 로고"
+                            className="w-4 h-4 object-contain rounded flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <span className="font-medium text-sm truncate">
                           {requestInfo.campaigns?.campaign_name || `캠페인 #${requestInfo.campaign_id}`}
                         </span>

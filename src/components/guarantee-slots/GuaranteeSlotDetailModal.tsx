@@ -88,23 +88,34 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
     }).replace(/\. /g, '-').replace('.', '');
   };
 
-  // 캠페인 로고 가져오기 (관리 페이지와 동일)
-  const getCampaignLogo = (logo?: string): string | undefined => {
-    if (!logo) return undefined;
+  // 캠페인 로고 가져오기
+  const getCampaignLogo = (campaign?: any): string | undefined => {
+    if (!campaign) return undefined;
 
-    // animal/svg/ 형태의 경로면 /media/ 추가
-    if (logo.includes('animal/svg/') && !logo.startsWith('/media/')) {
-      return `/media/${logo}`;
+    // add_info에 저장된 실제 업로드 URL 확인
+    if (campaign.add_info) {
+      try {
+        const addInfo = typeof campaign.add_info === 'string' 
+          ? JSON.parse(campaign.add_info) 
+          : campaign.add_info;
+        
+        if (addInfo?.logo_url) {
+          return addInfo.logo_url;
+        }
+      } catch (e) {
+        // JSON 파싱 오류 무시
+      }
     }
-    // http로 시작하거나 /로 시작하면 그대로 사용
-    if (logo.startsWith('http') || logo.startsWith('/')) {
-      return logo;
+    
+    // 기본 제공 로고 확인
+    if (campaign.logo) {
+      // /media/로 시작하는 기본 로고만 반환
+      if (campaign.logo.startsWith('/media/')) {
+        return campaign.logo;
+      }
     }
-    // 단순 동물 이름이면 경로 구성
-    if (!logo.includes('/')) {
-      return `/media/animal/svg/${logo}.svg`;
-    }
-    return logo;
+    
+    return undefined;
   };
 
   // 캠페인 상태 점 표시
@@ -159,11 +170,14 @@ const GuaranteeSlotDetailModal: React.FC<GuaranteeSlotDetailModalProps> = ({
               <div className="px-1 pb-3 border-b border-slate-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {getCampaignLogo(requestData.campaigns?.logo) && (
+                    {getCampaignLogo(requestData.campaigns) && (
                       <img
-                        src={getCampaignLogo(requestData.campaigns?.logo)}
+                        src={getCampaignLogo(requestData.campaigns)}
                         alt="campaign logo"
                         className="w-5 h-5 object-contain rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     )}
                     <span className="font-semibold">

@@ -132,6 +132,7 @@ export const guaranteeSlotRequestService = {
             max_guarantee_price,
             guarantee_unit,
             logo,
+            add_info,
             status
           ),
           keywords (
@@ -272,6 +273,7 @@ export const guaranteeSlotRequestService = {
             min_guarantee_price,
             max_guarantee_price,
             logo,
+            add_info,
             guarantee_unit,
             status
           ),

@@ -4,6 +4,18 @@ import { CAMPAIGNS, getCampaignByName } from '../../../config/campaign.config';
 // Supabase 클라이언트 가져오기
 import { supabase } from '../../../supabase';
 
+// 캠페인 타입 정의
+interface CampaignAddInfo {
+  add_field?: Array<{
+    fieldName: string;
+    description: string;
+    isRequired?: boolean;
+    fieldType?: 'TEXT' | 'INTEGER' | 'ENUM' | 'FILE';
+    enumOptions?: string[];
+    fileOptions?: { maxSizeMB?: number; acceptedTypes?: string[] };
+  }>;
+}
+
 // 키워드 그룹 관련 서비스
 export const keywordGroupService = {
   // 사용자의 모든 키워드 그룹 가져오기
@@ -1075,7 +1087,8 @@ export const keywordService = {
         keyword2: kw.keyword2 || null,
         keyword3: kw.keyword3 || null,
         description: kw.description || null,
-        is_active: kw.isActive !== undefined ? kw.isActive : true
+        is_active: kw.isActive !== undefined ? kw.isActive : true,
+        additional_fields: kw.additionalInfo || null  // 추가 필드 저장
       }));
 
       const { data, error } = await supabase
@@ -1248,6 +1261,33 @@ export const keywordService = {
       return {
         success: false,
         message: '키워드를 복사하는 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 서비스 타입으로 활성 캠페인 조회
+  async getCampaignByServiceType(serviceType: string): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('service_type', serviceType)
+        .eq('status', 'active')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116은 결과가 없을 때 발생
+        throw error;
+      }
+
+      return { 
+        success: true, 
+        data: data 
+      };
+    } catch (error) {
+      console.error('getCampaignByServiceType error:', error);
+      return {
+        success: false,
+        message: '캠페인 정보를 가져오는 중 오류가 발생했습니다.'
       };
     }
   }

@@ -32,6 +32,8 @@ interface SpreadsheetGridProps {
   onFileUpload?: (file: File, fieldName: string, rowIndex: number) => void;
   minPurchaseQuantity?: number; // 최소 구매수 추가
   showAlert?: (title: string, description: string, success?: boolean) => void; // alert 함수 추가
+  onExcelUpload?: (data: string[][]) => void; // 엑셀 업로드 콜백 추가
+  onEscapePress?: () => void; // ESC 키 눌렀을 때 콜백 추가
 }
 
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
@@ -42,7 +44,9 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   placeholder = '',
   onFileUpload,
   minPurchaseQuantity = 1,
-  showAlert
+  showAlert,
+  onExcelUpload,
+  onEscapePress
 }) => {
   // 컬럼 설정 정규화
   const normalizedColumns: ColumnConfig[] = columns.map(col => 
@@ -107,6 +111,51 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   const gridRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isComposing, setIsComposing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ESC 키 전역 이벤트 리스너
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // ESC 키가 눌렸고 스프레드시트가 포커스되어 있는지 확인
+      if (e.key === 'Escape') {
+        const spreadsheetGrid = document.querySelector('.spreadsheet-grid');
+        const activeElement = document.activeElement;
+        
+        // 스프레드시트 내부에 포커스가 있거나 스프레드시트 자체가 활성화된 경우
+        if (spreadsheetGrid && (spreadsheetGrid.contains(activeElement) || gridRef.current?.contains(e.target as Node))) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation(); // 다른 이벤트 핸들러도 막기
+          
+          // 편집 중이면 편집 취소
+          if (editingCell) {
+            setEditingCell(null);
+            setEditValue('');
+          } else if (onEscapePress) {
+            // 편집 중이 아니면 onEscapePress 콜백 호출
+            onEscapePress();
+          }
+          
+          return false; // 이벤트 전파 완전 차단
+        }
+      }
+    };
+
+    // capture phase에서 이벤트 처리 (다른 핸들러보다 먼저 실행)
+    document.addEventListener('keydown', handleGlobalKeyDown, true);
+    // keyup 이벤트도 차단
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'Escape' && document.querySelector('.spreadsheet-grid')?.contains(document.activeElement)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown, true);
+    };
+  }, [editingCell, onEscapePress]);
 
   // 셀 선택
   const selectCell = useCallback((row: number, col: number) => {
@@ -351,11 +400,20 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       } else if (e.key === 'Escape') {
         setEditingCell(null);
         setEditValue('');
+        return; // 편집 중일 때는 ESC 처리 후 종료
       }
       return;
     }
 
     switch (e.key) {
+      case 'Escape':
+        // 편집 중이 아닐 때 ESC 키를 누르면 onEscapePress 콜백 호출
+        e.preventDefault();
+        e.stopPropagation();
+        if (onEscapePress) {
+          onEscapePress();
+        }
+        break;
       case 'Enter':
         if (normalizedColumns[col].type !== 'file') {
           startEditing(row, col);
@@ -552,6 +610,168 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     }
   }, [data, onChange]);
 
+  // 샘플 엑셀 다운로드
+  const handleDownloadSample = useCallback(async () => {
+    try {
+      // XLSX 동적 import
+      const XLSX = await import('xlsx');
+      
+      // 파일 타입이 아닌 컬럼만 필터링
+      const downloadColumns = normalizedColumns.filter(col => col.type !== 'file');
+      
+      // 샘플 데이터 생성
+      const sampleData: any[] = [];
+      
+      // 헤더 행 생성
+      const headers = downloadColumns.map(col => col.name);
+      
+      // 샘플 데이터 행 생성 (2개)
+      const sampleRow1: any = {};
+      const sampleRow2: any = {};
+      
+      downloadColumns.forEach((col, index) => {
+        if (col.type === 'number') {
+          sampleRow1[col.name] = col.name === '최소 구매수' ? minPurchaseQuantity : 1;
+          sampleRow2[col.name] = col.name === '최소 구매수' ? minPurchaseQuantity : 3;
+        } else if (col.type === 'dropdown' && col.options) {
+          sampleRow1[col.name] = col.options[0] || '';
+          sampleRow2[col.name] = col.options[Math.min(1, col.options.length - 1)] || '';
+        } else {
+          sampleRow1[col.name] = `${col.name} 예시 1`;
+          sampleRow2[col.name] = `${col.name} 예시 2`;
+        }
+      });
+      
+      sampleData.push(sampleRow1);
+      sampleData.push(sampleRow2);
+      
+      // 워크북 생성
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(sampleData, { header: headers });
+      
+      // 컬럼 너비 설정
+      const colWidths = headers.map(header => ({
+        wch: Math.max(header.length + 5, 15)
+      }));
+      ws['!cols'] = colWidths;
+      
+      XLSX.utils.book_append_sheet(wb, ws, '샘플데이터');
+      
+      // 파일 다운로드
+      XLSX.writeFile(wb, '스프레드시트_샘플.xlsx');
+      
+    } catch (error) {
+      console.error('샘플 다운로드 오류:', error);
+      showAlert?.('샘플 다운로드 실패', '샘플 파일 생성 중 오류가 발생했습니다.', false);
+    }
+  }, [normalizedColumns, minPurchaseQuantity, showAlert]);
+
+  // 엑셀 파일 업로드 처리
+  const handleExcelUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // XLSX 동적 import
+      const XLSX = await import('xlsx');
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          if (jsonData.length === 0) {
+            showAlert?.('엑셀 업로드 실패', '엑셀 파일에 데이터가 없습니다.', false);
+            return;
+          }
+
+          // 헤더 행 제거
+          const dataRows = jsonData.slice(1);
+          
+          // 컬럼 매핑
+          const headers = jsonData[0] as string[];
+          const mappedData: string[][] = [];
+          
+          dataRows.forEach((row: any[]) => {
+            const mappedRow: string[] = [];
+            
+            normalizedColumns.forEach((col, colIndex) => {
+              // 헤더에서 매칭되는 컬럼 찾기
+              const headerIndex = headers.findIndex(h => 
+                h === col.name || 
+                h.replace(/\s*\(필수\)\s*$/, '') === col.name
+              );
+              
+              if (headerIndex !== -1 && row[headerIndex] !== undefined) {
+                let value = String(row[headerIndex] || '');
+                
+                // 필수 표시 제거
+                value = value.replace(/\s*\(필수\)\s*$/, '');
+                
+                // 타입별 검증
+                if (col.type === 'number') {
+                  const numValue = parseInt(value);
+                  value = isNaN(numValue) ? '' : String(numValue);
+                } else if (col.type === 'dropdown' && col.options) {
+                  // 드롭다운 옵션 검증
+                  if (!col.options.includes(value)) {
+                    value = '';
+                  }
+                }
+                
+                mappedRow.push(value);
+              } else {
+                mappedRow.push('');
+              }
+            });
+            
+            // 빈 행이 아닌 경우만 추가
+            if (mappedRow.some(cell => cell !== '')) {
+              mappedData.push(mappedRow);
+            }
+          });
+          
+          if (mappedData.length === 0) {
+            showAlert?.('엑셀 업로드 실패', '유효한 데이터가 없습니다.', false);
+            return;
+          }
+          
+          // 기존 데이터와 병합 또는 교체
+          const newData = [...mappedData];
+          
+          // 최소 행 수 보장
+          while (newData.length < minRows) {
+            newData.push(Array(normalizedColumns.length).fill(''));
+          }
+          
+          setData(newData);
+          onChange?.(newData);
+          onExcelUpload?.(newData);
+          
+          showAlert?.('엑셀 업로드 성공', `${mappedData.length}개의 행이 업로드되었습니다.`, true);
+          
+        } catch (error) {
+          console.error('엑셀 파싱 오류:', error);
+          showAlert?.('엑셀 업로드 실패', '엑셀 파일을 읽는 중 오류가 발생했습니다.', false);
+        }
+      };
+      
+      reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error('엑셀 업로드 오류:', error);
+      showAlert?.('엑셀 업로드 실패', '엑셀 파일 처리 중 오류가 발생했습니다.', false);
+    }
+    
+    // 파일 입력 초기화
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [normalizedColumns, minRows, onChange, onExcelUpload, showAlert]);
+
   // 클릭 이벤트로 편집 모드 종료
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -565,10 +785,38 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   }, [editingCell, finishEditing]);
 
   return (
-    <div className="w-full overflow-auto border border-gray-300 rounded-lg bg-white dark:bg-gray-900">
+    <div className="spreadsheet-grid w-full border border-gray-300 rounded-lg bg-white dark:bg-gray-900">
+      {/* 상단 툴바 추가 */}
+      <div className="p-3 border-b border-gray-300 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-1.5 text-sm bg-green-600 text-white hover:bg-green-700 rounded transition-colors"
+          >
+            엑셀 업로드
+          </button>
+          <button
+            onClick={handleDownloadSample}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors"
+          >
+            샘플 다운로드
+          </button>
+        </div>
+        <div className="text-xs text-gray-500">
+          * 파일 타입 필드는 엑셀 업로드를 지원하지 않습니다
+        </div>
+      </div>
+      
       <div 
         ref={gridRef}
-        className="inline-block min-w-full"
+        className="inline-block min-w-full overflow-auto"
         onPaste={handlePaste}
         onCopy={handleCopy}
       >
@@ -779,9 +1027,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       <div className="p-2 border-t border-gray-300 bg-gray-50 dark:bg-gray-800">
         <button
           onClick={addRow}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
         >
-          <KeenIcon icon="plus" className="size-4" />
           행 추가
         </button>
       </div>

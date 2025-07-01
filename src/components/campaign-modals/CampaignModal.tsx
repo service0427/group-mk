@@ -1122,7 +1122,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           onClose();
         }
       }}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] max-h-[90vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col" aria-describedby={undefined}>
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[1100px] max-h-[90vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col" aria-describedby={undefined}>
           <DialogHeader className="bg-background py-3 sm:py-4 px-4 sm:px-5 border-b flex-shrink-0">
             <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
               {campaign ? (isOperatorMode ? "캠페인 수정 (운영자 모드)" : "캠페인 수정") : "캠페인 추가"}
@@ -1702,7 +1702,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       {/* 기존 인라인 미리보기 제거 - 주석 처리 */}
       {false && (
       <Dialog open={campaignPreviewModalOpen} onOpenChange={setCampaignPreviewModalOpen}>
-        <DialogContent className="w-[95vw] max-w-full sm:max-w-[900px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary" aria-describedby={undefined}>
+        <DialogContent className="w-[95vw] max-w-full sm:max-w-[1100px] p-0 overflow-hidden max-h-[90vh] flex flex-col border-2 sm:border-4 border-primary" aria-describedby={undefined}>
           <DialogHeader className="bg-gray-100 dark:bg-gray-800 py-3 px-4 sm:py-4 sm:px-6 border-b sticky top-0 z-10 shadow-sm">
             <DialogTitle className="text-base sm:text-lg font-medium text-foreground flex items-center">
               <KeenIcon icon="eye" className="mr-2 text-primary size-4 sm:size-5" />

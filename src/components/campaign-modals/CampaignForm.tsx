@@ -600,7 +600,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
             {formData.slotType !== 'guarantee' && (
               <tr>
-                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                   건당 단가 <span className="text-red-500">*</span>
                 </th>
                 <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -624,7 +624,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             {/* 최소수량 - 일반 서비스일 때만 표시 */}
             {formData.slotType !== 'guarantee' && (
               <tr>
-                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                   최소수량 <span className="text-red-500">*</span>
                 </th>
                 <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -682,7 +682,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
               <>
                 {/* 작업 기간 */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     작업 기간 <span className="text-red-500">*</span>
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -724,7 +724,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                 {/* 보장 일수(횟수) */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     보장 일수(횟수) <span className="text-red-500">*</span>
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -795,7 +795,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                 {/* 보장 순위 */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     보장 순위 {formData.guaranteeUnit === '일' && <span className="text-red-500">*</span>}
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -829,7 +829,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                 {/* 보장 요약 정보 */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     보장 요약 정보
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -849,7 +849,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                 {/* 최소/최대 보장 가격 */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     가격 <span className="text-red-500">*</span>
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -897,7 +897,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
 
                 {/* 캐시 지급 안내 - 보장형 서비스일 때만 표시 */}
                 <tr>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     캐시 지급 안내
                   </th>
                   <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -949,7 +949,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             </tr>
 
             <tr>
-              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px] align-top">
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px] align-top">
                 사용자 입력 필드 <span className="text-red-500">*</span>
               </th>
               <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
@@ -1047,7 +1047,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                           </div>
 
                           {/* 필드명 입력 */}
-                          <div className="w-full sm:w-1/5">
+                          <div className="w-full sm:w-1/3">
                             <label className="block text-xs text-gray-600 mb-1 sm:hidden">필드명</label>
                             <div className="relative">
                               <Input
@@ -1216,7 +1216,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             {serviceType && serviceTypeInfoMap[serviceType] &&
               Object.entries(serviceTypeInfoMap[serviceType].additionalFields).map(([fieldKey, fieldInfo]) => (
                 <tr key={fieldKey}>
-                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                  <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
                     {fieldInfo.label}
                     {fieldInfo.required && <span className="text-red-500 ml-1">*</span>}
                   </th>

@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { CampaignServiceType } from './types';
 
 interface RankingFieldMapping {
@@ -29,10 +28,7 @@ interface RankingFieldMappingSectionProps {
 // 순위 데이터 필드 정의
 const RANKING_DATA_FIELDS = [
   { value: 'keyword', label: '키워드', description: '검색 키워드' },
-  { value: 'product_id', label: '상품코드', description: '상품 고유 ID' },
-  { value: 'title', label: '상품명', description: '상품 제목' },
-  { value: 'link', label: 'URL', description: '상품 링크' },
-  { value: 'rank', label: '순위', description: '검색 순위' }
+  { value: 'product_id', label: '상품코드', description: '상품 고유 ID' }
 ];
 
 // 서비스별 기본 매핑 템플릿
@@ -146,11 +142,6 @@ export const RankingFieldMappingSection: React.FC<RankingFieldMappingSectionProp
         <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
           순위 데이터 필드 매핑
         </h4>
-        {Object.keys(autoMappingResults).length > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            자동 매핑 완료
-          </Badge>
-        )}
       </div>
 
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
@@ -167,7 +158,7 @@ export const RankingFieldMappingSection: React.FC<RankingFieldMappingSectionProp
           
           return (
             <div key={fieldValue} className="grid grid-cols-12 gap-3 items-center">
-              <div className="col-span-4 text-sm">
+              <div className="col-span-5 text-sm">
                 <div className="font-medium text-gray-700 dark:text-gray-300">{label}</div>
                 <div className="text-xs text-gray-500">{description}</div>
               </div>
@@ -176,7 +167,7 @@ export const RankingFieldMappingSection: React.FC<RankingFieldMappingSectionProp
                 <KeenIcon icon="arrow-right" className="size-4" />
               </div>
               
-              <div className="col-span-5">
+              <div className="col-span-6">
                 <Select
                   value={currentValue || 'none'}
                   onValueChange={(value) => handleFieldChange(fieldValue as keyof RankingFieldMapping, value === 'none' ? '' : value)}
@@ -194,17 +185,6 @@ export const RankingFieldMappingSection: React.FC<RankingFieldMappingSectionProp
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="col-span-2 text-right">
-                {autoMapping && autoMapping.field === currentValue && (
-                  <Badge 
-                    variant={autoMapping.confidence >= 90 ? "secondary" : "outline"} 
-                    className="text-xs"
-                  >
-                    {autoMapping.confidence}%
-                  </Badge>
-                )}
               </div>
             </div>
           );

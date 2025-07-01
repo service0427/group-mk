@@ -208,11 +208,6 @@ const SlotList: React.FC<SlotListProps> = ({
         })).filter(s => s.campaignId > 0);
 
         const rankingMap = await getBulkSlotRankingData(slotsForRanking);
-        console.log('SlotList - 받은 순위 데이터:', {
-          슬롯수: slotsForRanking.length,
-          순위데이터수: rankingMap.size,
-          데이터: Array.from(rankingMap.entries())
-        });
         setRankingDataMap(rankingMap);
       } catch (error) {
         console.error('순위 데이터 조회 오류:', error);
@@ -1017,11 +1012,13 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-start font-medium text-xs w-[12%]">
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">메인키워드</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">MID</th>
+                    <th className="py-2 px-3 text-start font-medium text-xs w-[10%]">
                       {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '입력 정보' : '상품명'}
                     </th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">순위</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[12%]">캠페인</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">순위</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
@@ -1061,6 +1058,30 @@ const SlotList: React.FC<SlotListProps> = ({
                         </td>
                       )}
 
+                      {/* 메인키워드 */}
+                      <td className="py-2 px-3 text-center w-[8%]">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                          {(() => {
+                            const mapping = item.campaign?.ranking_field_mapping || {};
+                            const keywordField = mapping.keyword; // keyword_field가 아니라 keyword
+                            const mainKeyword = keywordField && item.inputData?.[keywordField] || '';
+                            return mainKeyword || '-';
+                          })()}
+                        </span>
+                      </td>
+
+                      {/* MID */}
+                      <td className="py-2 px-3 text-center w-[8%]">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                          {(() => {
+                            const mapping = item.campaign?.ranking_field_mapping || {};
+                            const productIdField = mapping.product_id; // product_id_field가 아니라 product_id
+                            const productId = productIdField && item.inputData?.[productIdField] || '';
+                            return productId || '-';
+                          })()}
+                        </span>
+                      </td>
+
                       {/* 상품명 / 입력 정보 */}
                       <td className="py-2 px-3 w-[12%]">
                         {item.inputData?.is_manual_input ? (
@@ -1094,7 +1115,7 @@ const SlotList: React.FC<SlotListProps> = ({
                                 
                                 // input_data에서 표시할 필드들 추출
                                 const displayFields: string[] = [];
-                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days'];
+                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days', 'keywords'];
                                 
                                 Object.entries(item.inputData || {}).forEach(([key, value]) => {
                                   if (!excludeFields.includes(key) && value && value !== '') {
@@ -1159,13 +1180,6 @@ const SlotList: React.FC<SlotListProps> = ({
                             }
                             
                             const rankingData = rankingDataMap.get(item.id);
-                            console.log('순위 표시:', {
-                              slotId: item.id,
-                              campaignId: item.campaign?.id,
-                              rankingData: rankingData,
-                              inputData: item.inputData,
-                              status: item.status
-                            });
                             if (!rankingData) {
                               return <span className="text-gray-400 text-sm">-</span>;
                             }
@@ -1873,10 +1887,19 @@ const SlotList: React.FC<SlotListProps> = ({
                   'end_date': '종료일'
                 };
                 
-                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'minimum_purchase', 'work_days'];
+                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'keywords', 'minimum_purchase', 'work_days'];
                 
                 return Object.entries(slot.inputData || {}).map(([key, value]) => {
-                  if (excludeFields.includes(key) || !value || value === '') return null;
+                  // excludeFields에 포함된 필드는 제외
+                  if (excludeFields.includes(key)) return null;
+                  
+                  // 캠페인의 사용자 입력필드 확인
+                  const campaign = slot.campaign;
+                  const isUserField = campaign?.userInputFields?.some((field: any) => field.fieldName === key) || 
+                                     campaign?.add_info?.add_field?.some((field: any) => field.fieldName === key);
+                  
+                  // 사용자 입력필드가 아니고 값이 비어있으면 제외
+                  if (!isUserField && (!value || value === '')) return null;
                   
                   const displayKey = fieldNameMap[key] || key;
                   

@@ -242,8 +242,9 @@ const SlotList: React.FC<SlotListProps> = ({
 
   // 남은 일수에 따른 색상 클래스 반환
   const getRemainingDaysColorClass = (days: number | null, slot?: SlotItem): string => {
-    // 환불 승인 상태거나 환불 요청이 승인된 경우 일반 색상
-    if (slot?.status === 'refund_approved' || 
+    // 환불 완료, 환불 승인 상태거나 환불 요청이 승인된 경우 일반 색상
+    if (slot?.status === 'refund' ||
+        slot?.status === 'refund_approved' || 
         slot?.refund_requests?.some(req => req.status === 'approved')) {
       return 'text-gray-700 dark:text-gray-300';
     }
@@ -258,8 +259,9 @@ const SlotList: React.FC<SlotListProps> = ({
 
   // 남은 일수 표시 텍스트
   const getRemainingDaysText = (days: number | null, slot?: SlotItem): string => {
-    // 환불 승인 상태거나 환불 요청이 승인된 경우 '-' 표시
-    if (slot?.status === 'refund_approved' || 
+    // 환불 완료, 환불 승인 상태거나 환불 요청이 승인된 경우 '-' 표시
+    if (slot?.status === 'refund' ||
+        slot?.status === 'refund_approved' || 
         slot?.refund_requests?.some(req => req.status === 'approved')) {
       return '-';
     }

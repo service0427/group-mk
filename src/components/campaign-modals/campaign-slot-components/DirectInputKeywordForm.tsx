@@ -23,6 +23,7 @@ interface DirectInputKeywordFormProps {
   resetTrigger?: number; // 초기화 트리거
   onDataChange?: () => void; // 데이터 변경 콜백 추가
   showAlert?: (title: string, description: string, success?: boolean) => void; // alert 함수 추가
+  onClose?: () => void; // 모달 닫기 콜백 추가
 }
 
 export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
@@ -32,7 +33,8 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
   getAdditionalFields,
   resetTrigger,
   onDataChange,
-  showAlert
+  showAlert,
+  onClose
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
   const [useSpreadsheet, setUseSpreadsheet] = useState(false); // 기본값을 false로 변경
@@ -226,6 +228,12 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
               key={resetTrigger} // resetTrigger가 변경되면 컴포넌트를 재생성
               minPurchaseQuantity={parseInt(selectedCampaign?.min_quantity) || 1}
               showAlert={showAlert}
+              onEscapePress={() => {
+                // ESC 키가 눌렸을 때 상위 컴포넌트로 전달
+                if (onClose) {
+                  onClose();
+                }
+              }}
               columns={(() => {
                 // 기본 컬럼 - 보장형이 아닌 경우에만 포함
                 const baseColumns: any[] = selectedCampaign?.slot_type !== 'guarantee' ? [
@@ -452,11 +460,12 @@ export const DirectInputKeywordForm: React.FC<DirectInputKeywordFormProps> = ({
               }}
             />
             
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>💡 팁: 엑셀에서 데이터를 복사(Ctrl+C)한 후, 셀을 선택하고 붙여넣기(Ctrl+V)하세요.</p>
-              <p>• 더블클릭 또는 Enter로 셀 편집</p>
-              <p>• Tab 키로 다음 셀로 이동</p>
-              <p>• 화살표 키로 셀 간 이동</p>
+            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+              <div className="space-y-0.5">
+                <p className="font-medium">사용 방법</p>
+                <p>• 엑셀 복사/붙여넣기 지원 (Ctrl+C / Ctrl+V)</p>
+                <p>• 더블클릭 또는 Enter: 셀 편집 | Tab: 다음 셀 | 화살표: 이동</p>
+              </div>
             </div>
           </div>
         ) : (

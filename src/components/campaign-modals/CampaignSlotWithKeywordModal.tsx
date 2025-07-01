@@ -245,6 +245,9 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   // 선택된 서비스 코드 상태
   const [selectedServiceCode, setSelectedServiceCode] = useState<CampaignServiceType | string>(serviceCode);
+  
+  // 종료 확인 모달 상태
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // 선택된 키워드 그룹
   const selectedGroup = useMemo(() => {
@@ -2431,7 +2434,22 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={open} onOpenChange={(open) => {
+        // 모달을 닫으려고 할 때
+        if (!open) {
+          // 스프레드시트가 포커스되어 있는지 확인
+          const spreadsheetGrid = document.querySelector('.spreadsheet-grid');
+          const activeElement = document.activeElement;
+          
+          if (spreadsheetGrid && spreadsheetGrid.contains(activeElement)) {
+            // 스프레드시트가 포커스되어 있으면 확인 대화상자 표시
+            setShowExitConfirm(true);
+          } else {
+            // 스프레드시트가 포커스되어 있지 않으면 바로 닫기
+            onClose();
+          }
+        }
+      }}>
         <DialogContent className={cn(
           "w-[100vw] sm:w-[95vw] p-0 overflow-hidden flex flex-col",
           isCompactMode
@@ -2723,6 +2741,10 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
                         // 가격 계산 트리거
                         // ManualPaymentSection이 자체적으로 계산하므로 여기서는 별도 작업 불필요
                       }}
+                      onClose={() => {
+                        // 스프레드시트에서 ESC 키로 닫기 요청이 왔을 때
+                        setShowExitConfirm(true);
+                      }}
                     />
                   </div>
                 </div>
@@ -2818,6 +2840,42 @@ const CampaignSlotWithKeywordModal: React.FC<CampaignSlotWithKeywordModalProps> 
           setTotalPaymentAmount(0);
         }}
       />
+
+      {/* 종료 확인 모달 */}
+      <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden" aria-describedby={undefined}>
+          <DialogHeader className="bg-background py-3 px-6 border-b">
+            <DialogTitle className="text-lg font-medium">창을 닫으시겠습니까?</DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-5 bg-background">
+            <div className="mb-4 text-center">
+              <p className="text-muted-foreground">
+                입력한 내용이 저장되지 않습니다. 정말로 닫으시겠습니까?
+              </p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowExitConfirm(false)}
+              >
+                취소
+              </Button>
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  onClose();
+                }}
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

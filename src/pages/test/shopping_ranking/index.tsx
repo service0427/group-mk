@@ -432,7 +432,7 @@ const ShoppingRankingPage: React.FC = () => {
             {/* 순위 변동 범례 */}
             <div className="mb-4 flex items-center gap-4 text-xs text-gray-600">
               <div className="flex items-center gap-1">
-                <span className="text-green-600 font-bold">▲</span>
+                <span className="text-green-500 font-bold">▲</span>
                 <span>순위 상승</span>
               </div>
               <div className="flex items-center gap-1">
@@ -440,7 +440,7 @@ const ShoppingRankingPage: React.FC = () => {
                 <span>순위 하락</span>
               </div>
               <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">신규</Badge>
+                <Badge className="text-xs bg-blue-500 text-white hover:bg-blue-600">신규</Badge>
                 <span>신규 진입</span>
               </div>
               <div className="flex items-center gap-1">
@@ -492,9 +492,11 @@ const ShoppingRankingPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant={
-                              item.prev_rank && item.prev_rank > item.rank ? "secondary" : 
                               item.prev_rank && item.prev_rank < item.rank ? "destructive" : 
                               "outline"
+                            }
+                            className={
+                              item.prev_rank && item.prev_rank > item.rank ? "bg-green-500 text-white hover:bg-green-600" : ""
                             }
                           >
                             {item.rank}위
@@ -544,7 +546,7 @@ const ShoppingRankingPage: React.FC = () => {
                             <span className="text-gray-600">{item.prev_rank}위</span>
                             {item.prev_rank > item.rank && (
                               <div className="flex items-center gap-1">
-                                <span className="text-green-600 font-bold">▲</span>
+                                <span className="text-green-500 font-bold">▲</span>
                                 <span className={`text-xs font-medium ${
                                   isBigJump ? 'text-green-600 bg-green-100 px-1 py-0.5 rounded font-bold' : 'text-green-600'
                                 }`}>
@@ -567,7 +569,7 @@ const ShoppingRankingPage: React.FC = () => {
                             )}
                           </div>
                         ) : (
-                          <Badge variant="secondary" className="text-xs">신규</Badge>
+                          <Badge className="text-xs bg-blue-500 text-white hover:bg-blue-600">신규</Badge>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm">
@@ -758,11 +760,13 @@ const ShoppingRankingPage: React.FC = () => {
                                   <div className="flex items-center justify-center gap-1">
                                     <Badge 
                                       variant={
-                                        prevRank && prevRank > rank ? 'secondary' : 
                                         prevRank && prevRank < rank ? 'destructive' : 
                                         rank <= 10 ? 'default' : 'outline'
                                       } 
-                                      className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}
+                                      className={`text-xs ${
+                                        prevRank && prevRank > rank ? 'bg-green-500 text-white hover:bg-green-600' : 
+                                        rank <= 10 && !prevRank ? 'bg-blue-500 text-white' : ''
+                                      }`}
                                     >
                                       {rank}
                                     </Badge>
@@ -909,11 +913,13 @@ const ShoppingRankingPage: React.FC = () => {
                                   <div className="flex flex-col items-center gap-0.5">
                                     <Badge 
                                       variant={
-                                        prevRank && prevRank > rank ? 'secondary' : 
                                         prevRank && prevRank < rank ? 'destructive' : 
                                         rank <= 10 ? 'default' : 'outline'
                                       } 
-                                      className={`text-xs ${rank <= 10 && !prevRank ? 'bg-blue-500' : ''}`}
+                                      className={`text-xs ${
+                                        prevRank && prevRank > rank ? 'bg-green-500 text-white hover:bg-green-600' : 
+                                        rank <= 10 && !prevRank ? 'bg-blue-500 text-white' : ''
+                                      }`}
                                     >
                                       {rank}
                                     </Badge>

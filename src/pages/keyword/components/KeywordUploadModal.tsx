@@ -277,6 +277,15 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
             return convertExcelToKeywordDefault(data);
         }
 
+        // 캠페인 정보 조회
+        let campaignInfo = null;
+        if (selectedGroup.campaignType !== 'default') {
+            const result = await keywordService.getCampaignByServiceType(selectedGroup.campaignType);
+            if (result.success && result.data) {
+                campaignInfo = result.data;
+            }
+        }
+
         // 서비스 타입별 필드 매핑 가져오기
         let fieldMapping = await fieldMappingService.getFieldMapping(selectedGroup.campaignType);
 
@@ -338,6 +347,59 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                 }
             });
 
+            // 캠페인 추가 필드 파싱
+            if (campaignInfo?.add_info?.add_field) {
+                const additionalFields: any = {};
+                const errors: string[] = [];
+                
+                campaignInfo.add_info.add_field.forEach((addField: any) => {
+                    // 파일 타입은 제외
+                    if (addField.fieldType !== 'FILE') {
+                        const label = addField.description || addField.fieldName;
+                        const value = row[label];
+                        
+                        if (value !== undefined && value !== null && value !== '') {
+                            // 필수 표시 제거
+                            let cleanValue = String(value).replace(/\s*\(필수\)\s*$/, '');
+                            
+                            // 타입별 변환 및 검증
+                            if (addField.fieldType === 'INTEGER') {
+                                const numValue = parseInt(cleanValue);
+                                if (!isNaN(numValue)) {
+                                    additionalFields[addField.fieldName] = numValue;
+                                } else {
+                                    errors.push(`"${label}" 필드는 숫자만 입력 가능합니다.`);
+                                }
+                            } else if (addField.fieldType === 'ENUM') {
+                                // ENUM 값 검증
+                                if (addField.enumOptions?.includes(cleanValue)) {
+                                    additionalFields[addField.fieldName] = cleanValue;
+                                } else {
+                                    errors.push(`"${label}" 필드는 다음 중 하나여야 합니다: ${addField.enumOptions?.join(', ')}`);
+                                }
+                            } else {
+                                // TEXT 타입
+                                additionalFields[addField.fieldName] = cleanValue;
+                            }
+                        } else if (addField.isRequired) {
+                            // 필수 필드가 비어있는 경우
+                            errors.push(`필수 필드 "${label}"가 비어있습니다.`);
+                        }
+                    }
+                });
+                
+                // 에러가 있으면 처리
+                if (errors.length > 0) {
+                    const mainKeyword = keywordData.mainKeyword || '(메인 키워드 없음)';
+                    console.error(`키워드 "${mainKeyword}"의 추가 필드 검증 오류:`, errors);
+                    // 에러가 있어도 기본 필드는 저장되도록 처리
+                }
+                
+                if (Object.keys(additionalFields).length > 0) {
+                    keywordData.additionalInfo = additionalFields;
+                }
+            }
+
             return keywordData;
         });
     };
@@ -397,6 +459,15 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
 
             // 우선순위: 선택된 그룹의 campaignType > 전달받은 selectedServiceType > 기본값
             const serviceType = selectedGroup?.campaignType || selectedServiceType || 'default';
+            
+            // 캠페인 정보 조회
+            let campaignInfo = null;
+            if (serviceType !== 'default') {
+                const result = await keywordService.getCampaignByServiceType(serviceType);
+                if (result.success && result.data) {
+                    campaignInfo = result.data;
+                }
+            }
 
             // 서비스 타입별 필드 매핑 가져오기
             let fieldMapping = null;
@@ -450,6 +521,37 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                     wcols.push({ wch: getColumnWidth(field.fieldName) });
                 });
 
+                // 캠페인 추가 필드 처리
+                if (campaignInfo?.add_info?.add_field) {
+                    campaignInfo.add_info.add_field.forEach((addField: any) => {
+                        // 파일 타입 필드는 제외
+                        if (addField.fieldType !== 'FILE') {
+                            const label = addField.description || addField.fieldName;
+                            
+                            // 샘플 데이터 추가
+                            if (addField.fieldType === 'ENUM' && addField.enumOptions?.length > 0) {
+                                sampleRow1[label] = addField.enumOptions[0];
+                                sampleRow2[label] = addField.enumOptions[Math.min(1, addField.enumOptions.length - 1)];
+                            } else if (addField.fieldType === 'INTEGER') {
+                                sampleRow1[label] = '100';
+                                sampleRow2[label] = '200';
+                            } else {
+                                sampleRow1[label] = `샘플 ${label} 1`;
+                                sampleRow2[label] = `샘플 ${label} 2`;
+                            }
+                            
+                            // 필수 표시 추가
+                            if (addField.isRequired) {
+                                sampleRow1[label] += ' (필수)';
+                                sampleRow2[label] += ' (필수)';
+                            }
+                            
+                            // 열 너비 설정
+                            wcols.push({ wch: Math.max(20, label.length + 5) });
+                        }
+                    });
+                }
+
                 sampleData = [sampleRow1, sampleRow2];
             }
 
@@ -468,6 +570,11 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
             // 엑셀 파일로 내보내기
             const fileName = `${serviceLabel}_샘플.xlsx`;
             XLSX.writeFile(wb, fileName);
+
+            // 파일 타입 필드가 있는 경우 안내 메시지
+            if (campaignInfo?.add_info?.add_field?.some((f: any) => f.fieldType === 'FILE')) {
+                alert('참고: 파일 업로드가 필요한 필드는 엑셀 업로드를 지원하지 않습니다. 해당 필드는 별도로 입력하셔야 합니다.');
+            }
 
         } catch (error) {
             console.error('샘플 다운로드 중 오류 발생:', error);
@@ -584,6 +691,18 @@ const KeywordUploadModal: React.FC<KeywordUploadModalProps> = ({
                                     선택한 서비스 타입에 그룹이 없습니다. 먼저 그룹을 생성해주세요.
                                 </div>
                             )}
+                        </div>
+
+                        {/* 업로드 가이드 */}
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">엑셀 업로드 가이드</h4>
+                            <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
+                                <li>샘플 파일을 다운로드하여 양식을 확인하세요</li>
+                                <li>캠페인별로 입력 필드가 다를 수 있습니다</li>
+                                <li>(필수) 표시가 있는 필드는 반드시 입력해야 합니다</li>
+                                <li>파일 업로드가 필요한 필드는 엑셀로 처리할 수 없습니다</li>
+                                <li>숫자 필드는 숫자만, 선택 필드는 지정된 옵션만 입력 가능합니다</li>
+                            </ul>
                         </div>
 
                         {/* 샘플 파일 다운로드 버튼 */}

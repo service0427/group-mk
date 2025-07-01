@@ -6,6 +6,30 @@ export interface Campaign {
   serviceType: string;
   refund_settings?: any;
   distributor_id?: string;
+  ranking_field_mapping?: {
+    keyword_field?: string;
+    product_id_field?: string;
+    title_field?: string;
+    link_field?: string;
+    rank_field?: string;
+    keyword?: string;  // 새로운 필드 추가
+    product_id?: string;  // 새로운 필드 추가
+  };
+  userInputFields?: Array<{
+    fieldName: string;
+    description?: string;
+    fieldType?: string;
+    isRequired?: boolean;
+  }>;
+  add_info?: {
+    add_field?: Array<{
+      fieldName: string;
+      description?: string;
+      fieldType?: string;
+      isRequired?: boolean;
+    }>;
+    [key: string]: any;
+  };
 }
 
 export interface SlotItem {

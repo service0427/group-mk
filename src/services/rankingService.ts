@@ -88,14 +88,6 @@ export async function getSlotRankingData(
       console.log('키워드 UUID 찾기 실패:', { keyword, error: keywordError?.code });
       return null;
     }
-
-    // 5. shopping_rankings_current 테이블에서 순위 데이터 검색
-    console.log('순위 조회 파라미터:', {
-      keyword_uuid: keywordData.id,
-      keyword_text: keyword,
-      product_id: productId,
-      slotId
-    });
     
     const { data: rankingData, error: rankingError } = await supabase
       .from('shopping_rankings_current')
@@ -144,7 +136,6 @@ export async function getBulkSlotRankingData(
 
     // 2. 캠페인 매핑 정보 가져오기
     const campaignIds = [...new Set(slots.map(s => s.campaignId))];
-    console.log('getBulkSlotRankingData - 캠페인 ID들:', campaignIds);
     
     const { data: campaigns, error: campaignError } = await supabase
       .from('campaigns')
@@ -155,12 +146,6 @@ export async function getBulkSlotRankingData(
       console.error('캠페인 조회 오류:', campaignError);
       return rankingMap;
     }
-    
-    console.log('getBulkSlotRankingData - 캠페인 매핑 정보:', campaigns.map(c => ({
-      id: c.id,
-      has_mapping: !!c.ranking_field_mapping,
-      mapping: c.ranking_field_mapping
-    })));
 
     // 캠페인 매핑 정보를 Map으로 변환
     const campaignMap = new Map(campaigns.map(c => [c.id, c]));
@@ -184,36 +169,14 @@ export async function getBulkSlotRankingData(
       const keywordField = mapping.keyword;
       const productIdField = mapping.product_id;
 
-      console.log('필드 매핑 확인:', {
-        slotId: slot.id,
-        mapping,
-        keywordField,
-        productIdField
-      });
-
       if (!keywordField || !productIdField) {
         console.log('필드 매핑 누락:', { slotId: slot.id });
         continue;
       }
 
       const inputData = slotInfo.input_data || slot.inputData;
-      console.log('입력 데이터:', {
-        slotId: slot.id,
-        inputData,
-        필드명들: Object.keys(inputData || {})
-      });
-      
       const keyword = inputData?.[keywordField] || inputData?.mainKeyword;
       const productId = inputData?.[productIdField] || inputData?.mid;
-      
-      console.log('추출된 값:', {
-        slotId: slot.id,
-        keyword,
-        productId,
-        keywordField,
-        productIdField,
-        allInputData: inputData
-      });
 
       if (keyword && productId) {
         searchConditions.push({
@@ -244,9 +207,6 @@ export async function getBulkSlotRankingData(
         });
       }
     }
-
-    // 5. shopping_rankings_current 테이블에서 순위 데이터 일괄 조회
-    console.log('일괄 순위 조회 조건:', searchConditions);
     
     for (const condition of searchConditions) {
       const keywordUuid = keywordMap.get(condition.keyword);
@@ -279,16 +239,7 @@ export async function getBulkSlotRankingData(
         if (!yesterdayError && yesterdayData) {
           rankingData.yesterday_rank = yesterdayData.rank;
         }
-        
-        console.log('순위 데이터 찾음:', { 
-          slot_id: condition.slot_id, 
-          keyword: condition.keyword,
-          rank: rankingData.rank,
-          prev_rank: rankingData.prev_rank,
-          yesterday_rank: rankingData.yesterday_rank,
-          collected_at: rankingData.collected_at,
-          updated_at: rankingData.updated_at
-        });
+
         rankingMap.set(condition.slot_id, rankingData);
       } else if (rankingError) {
         console.log('순위 데이터 조회 실패:', { 

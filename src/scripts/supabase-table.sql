@@ -435,7 +435,7 @@ create index IF not exists idx_system_logs_created_at on public.system_logs usin
 
 create index IF not exists idx_system_logs_log_type on public.system_logs using btree (log_type) TABLESPACE pg_default;
 
-ccreate table public.campaigns (
+create table public.campaigns (
   id serial not null,
   group_id character varying(30) null,
   service_type character varying(30) not null,
@@ -463,8 +463,9 @@ ccreate table public.campaigns (
   min_guarantee_price numeric(10, 2) null,
   max_guarantee_price numeric(10, 2) null,
   guarantee_unit character varying(10) null default '일'::character varying,
-  refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}}'::jsonb,
+  refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "cutoff_time": "00:00", "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}, "approval_roles": ["distributor", "advertiser"], "requires_approval": false}'::jsonb,
   guarantee_period integer null,
+  ranking_field_mapping jsonb null,
   constraint campaigns_pkey_new primary key (id),
   constraint guarantee_count_check check (
     (
@@ -553,6 +554,8 @@ where
 create index IF not exists idx_campaigns_guarantee_period on public.campaigns using btree (guarantee_period) TABLESPACE pg_default
 where
   ((slot_type)::text = 'guarantee'::text);
+
+create index IF not exists idx_campaigns_ranking_field_mapping on public.campaigns using gin (ranking_field_mapping) TABLESPACE pg_default;
 
 create trigger update_campaigns_is_guarantee BEFORE INSERT
 or

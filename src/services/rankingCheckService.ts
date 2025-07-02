@@ -14,7 +14,7 @@ interface MultipleKeywordsRequest {
   keywords: string[];
 }
 
-const API_BASE_URL = 'http://mkt.techb.kr:3001';
+const API_BASE_URL = 'https://mkt.techb.kr:3443';
 
 /**
  * 단일 키워드 순위 체크

@@ -77,10 +77,15 @@ class SearchKeywordService {
    */
   async getUserKeywords(userId: string): Promise<SearchKeyword[]> {
     try {
+      console.log('getUserKeywords 호출됨:', { userId });
+      
       const { data, error } = await supabase
         .from('search_keywords')
         .select('*')
+        // user_id 필터 제거 - 모든 키워드 조회
         .order('searched_at', { ascending: false });
+
+      console.log('키워드 조회 결과:', { count: data?.length, error });
 
       if (error) {
         console.error('키워드 조회 오류:', error);
@@ -142,15 +147,23 @@ class SearchKeywordService {
    */
   async deleteKeywordByText(userId: string, keyword: string): Promise<void> {
     try {
-      const { error } = await supabase
+      console.log('deleteKeywordByText 호출됨:', { userId, keyword });
+      
+      const { data, error } = await supabase
         .from('search_keywords')
         .delete()
-        .eq('user_id', userId)
-        .eq('keyword', keyword);
+        .eq('keyword', keyword)  // user_id 필터 제거
+        .select(); // 삭제된 행 반환을 위해 select() 추가
+
+      console.log('삭제 쿼리 결과:', { data, error });
 
       if (error) {
         console.error('키워드 삭제 오류:', error);
         throw new Error(`키워드 삭제에 실패했습니다: ${error.message}`);
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn('삭제된 키워드가 없습니다. 이미 삭제되었거나 존재하지 않을 수 있습니다.');
       }
     } catch (error) {
       console.error('키워드 삭제 중 오류:', error);

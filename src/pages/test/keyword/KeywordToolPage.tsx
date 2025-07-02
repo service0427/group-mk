@@ -326,13 +326,18 @@ const KeywordToolPage: React.FC = () => {
   
   // 저장된 키워드 삭제
   const handleDeleteSaved = async (keywordToDelete: string) => {
+    console.log('키워드 삭제 시도:', keywordToDelete);
+    console.log('현재 사용자 ID:', currentUser?.id);
+    
     if (!currentUser?.id) {
       showError('로그인이 필요합니다.');
       return;
     }
 
     try {
+      console.log('deleteKeywordByText 호출 중...');
       await searchKeywordService.deleteKeywordByText(currentUser.id, keywordToDelete);
+      console.log('키워드 삭제 성공');
       await loadSavedKeywords();
       showSuccess('키워드가 삭제되었습니다.');
     } catch (error) {

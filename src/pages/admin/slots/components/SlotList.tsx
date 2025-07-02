@@ -69,6 +69,7 @@ interface RankingData {
   mall_name?: string;
   brand?: string;
   image?: string;
+  status?: 'checked' | 'no-rank' | 'not-target' | 'not-checked';
   [key: string]: any;
 }
 
@@ -741,6 +742,20 @@ const SlotList: React.FC<SlotListProps> = ({
                         return <span className="text-gray-400 text-sm">-</span>;
                       }
                       
+                      // 상태에 따른 표시
+                      if (rankingData.status === 'not-target') {
+                        return <span className="text-yellow-400 text-sm">매칭안됨</span>;
+                      }
+                      
+                      if (rankingData.status === 'no-rank') {
+                        return <span className="text-gray-500 text-sm">순위없음</span>;
+                      }
+                      
+                      if (!rankingData.status || rankingData.status === 'not-checked') {
+                        return <span className="text-gray-400 text-sm">-</span>;
+                      }
+                      
+                      // 순위가 있는 경우
                       const dailyChange = rankingData.yesterday_rank ? rankingData.yesterday_rank - rankingData.rank : null;
                       
                       return (

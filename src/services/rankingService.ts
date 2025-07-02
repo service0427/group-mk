@@ -12,6 +12,7 @@ interface RankingData {
   mall_name?: string;
   brand?: string;
   image?: string;
+  status?: 'checked' | 'no-rank' | 'not-target' | 'not-checked'; // 순위 체크 상태
   [key: string]: any;
 }
 
@@ -152,6 +153,7 @@ export async function getBulkSlotRankingData(
 
     // 3. 각 슬롯에 대해 순위 데이터 검색을 위한 조건 준비
     const searchConditions: Array<{ keyword: string; product_id: string; slot_id: string }> = [];
+    const notTargetSlots = new Set<string>(); // 순위 체크 대상이 아닌 슬롯
 
     for (const slot of slots) {
       const slotInfo = slotMap.get(slot.id);
@@ -159,6 +161,12 @@ export async function getBulkSlotRankingData(
 
       const campaign = campaignMap.get(slot.campaignId);
       if (!campaign) continue;
+      
+      // NaverShopping으로 시작하지 않는 서비스는 순위 체크 대상이 아님
+      if (!campaign.service_type || !campaign.service_type.startsWith('NaverShopping')) {
+        // notTargetSlots.add(slot.id); // 제거 - 그냥 건너뛰기
+        continue;
+      }
 
       // 매핑이 없으면 기본 매핑 사용
       const mapping = campaign.ranking_field_mapping || {
@@ -184,9 +192,31 @@ export async function getBulkSlotRankingData(
           product_id: productId,
           slot_id: slot.id
         });
+      } else {
+        // 키워드나 상품ID를 찾지 못한 경우 (매핑 문제)
+        rankingMap.set(slot.id, {
+          keyword_id: '',
+          product_id: '',
+          title: '',
+          link: '',
+          rank: 0,
+          status: 'not-target'  // 미확인으로 표시
+        } as RankingData);
       }
     }
 
+    // 순위 체크 대상이 아닌 슬롯들 표시 - 제거
+    // notTargetSlots.forEach(slotId => {
+    //   rankingMap.set(slotId, {
+    //     keyword_id: '',
+    //     product_id: '',
+    //     title: '',
+    //     link: '',
+    //     rank: 0,
+    //     status: 'not-target'
+    //   } as RankingData);
+    // });
+    
     if (searchConditions.length === 0) {
       return rankingMap;
     }
@@ -239,9 +269,22 @@ export async function getBulkSlotRankingData(
         if (!yesterdayError && yesterdayData) {
           rankingData.yesterday_rank = yesterdayData.rank;
         }
-
+        
+        // 순위가 있음을 표시
+        rankingData.status = 'checked';
         rankingMap.set(condition.slot_id, rankingData);
       } else if (rankingError) {
+        // 순위 체크는 했지만 순위가 없음
+        if (rankingError.code === 'PGRST116') { // 데이터가 없는 경우
+          rankingMap.set(condition.slot_id, {
+            keyword_id: keywordUuid,
+            product_id: condition.product_id,
+            title: '',
+            link: '',
+            rank: 0,
+            status: 'no-rank'
+          } as RankingData);
+        }
         console.log('순위 데이터 조회 실패:', { 
           slot_id: condition.slot_id, 
           keyword: condition.keyword,

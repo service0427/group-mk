@@ -26,46 +26,6 @@ const CampaignRequestPage: React.FC = () => {
       disabled: false
     },
     {
-      id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
-      icon: '/media/ad-brand/naver-shopping.png',
-      iconAbbr: 'NS',
-      description: '네이버 쇼핑 가구매 증가',
-      disabled: false
-    },
-    {
-      id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
-      icon: '/media/ad-brand/naver-place.png',
-      iconAbbr: 'NP',
-      description: '네이버 플레이스 트래픽 증가',
-      disabled: false
-    },
-    {
-      id: CampaignServiceType.NAVER_PLACE_SAVE,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
-      icon: '/media/ad-brand/naver-place.png',
-      iconAbbr: 'NP',
-      description: '네이버 플레이스 저장하기 증가',
-      disabled: false
-    },
-    {
-      id: CampaignServiceType.NAVER_PLACE_SHARE,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
-      icon: '/media/ad-brand/naver-place.png',
-      iconAbbr: 'NP',
-      description: '네이버 플레이스 블로그 공유 증가',
-      disabled: false
-    },
-    {
-      id: CampaignServiceType.NAVER_BLOG_POST,
-      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_BLOG_POST],
-      icon: '/media/ad-brand/naver-blog.png',
-      iconAbbr: 'NB',
-      description: '네이버 블로그 포스팅 마케팅',
-      disabled: false
-    },
-    {
       id: CampaignServiceType.COUPANG_TRAFFIC,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.COUPANG_TRAFFIC],
       icon: '/media/ad-brand/coupang-app.png',
@@ -74,6 +34,46 @@ const CampaignRequestPage: React.FC = () => {
       disabled: false
     },
     // 비활성화된 서비스들 (SOON 표시)
+    {
+      id: CampaignServiceType.NAVER_SHOPPING_FAKESALE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_SHOPPING_FAKESALE],
+      icon: '/media/ad-brand/naver-shopping.png',
+      iconAbbr: 'NS',
+      description: '네이버 쇼핑 가구매 증가',
+      disabled: true
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_TRAFFIC,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_TRAFFIC],
+      icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
+      description: '네이버 플레이스 트래픽 증가',
+      disabled: true
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_SAVE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SAVE],
+      icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
+      description: '네이버 플레이스 저장하기 증가',
+      disabled: true
+    },
+    {
+      id: CampaignServiceType.NAVER_PLACE_SHARE,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_PLACE_SHARE],
+      icon: '/media/ad-brand/naver-place.png',
+      iconAbbr: 'NP',
+      description: '네이버 플레이스 블로그 공유 증가',
+      disabled: true
+    },
+    {
+      id: CampaignServiceType.NAVER_BLOG_POST,
+      name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_BLOG_POST],
+      icon: '/media/ad-brand/naver-blog.png',
+      iconAbbr: 'NB',
+      description: '네이버 블로그 포스팅 마케팅',
+      disabled: true
+    },
     {
       id: CampaignServiceType.NAVER_AUTO,
       name: SERVICE_TYPE_LABELS[CampaignServiceType.NAVER_AUTO],

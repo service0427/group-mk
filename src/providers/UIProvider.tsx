@@ -202,8 +202,9 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
       return updatedToasts;
     });
 
-    const duration = options?.duration || DEFAULT_TOAST_OPTIONS.duration;
-    if (duration) {
+    const duration = options?.duration ?? DEFAULT_TOAST_OPTIONS.duration;
+    // duration이 0이거나 null이면 자동 해제 비활성화
+    if (duration && duration > 0) {
       setTimeout(() => {
         dismiss(id);
       }, duration);
@@ -348,7 +349,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
                       message={toast.message}
                       type={toast.type}
                       position={toast.options?.position || DEFAULT_TOAST_OPTIONS.position}
-                      duration={toast.options?.duration || DEFAULT_TOAST_OPTIONS.duration}
+                      duration={toast.options?.duration ?? DEFAULT_TOAST_OPTIONS.duration}
                       onClose={() => dismiss(toast.id)}
                       offset={index}
                     />

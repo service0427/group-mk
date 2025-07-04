@@ -28,7 +28,7 @@ export const CustomToast: React.FC<ToastProps> = ({
   useEffect(() => {
     setIsVisible(show);
     
-    if (show) {
+    if (show && duration && duration > 0) {
       const timer = setTimeout(() => {
         setIsVisible(false);
         onClose?.();

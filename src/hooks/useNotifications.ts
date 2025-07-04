@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/auth';
 import { supabase } from '@/supabase';
 import { useLogoutContext } from '@/contexts/LogoutContext';
@@ -14,15 +15,18 @@ export const useNotifications = () => {
   const { currentUser } = useAuthContext();
   const { isLoggingOut, safeApiCall } = useLogoutContext();
   const toast = useToast();
+  const location = useLocation();
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const subscriptionChannelRef = useRef<any>(null);
   const previousUnreadCountRef = useRef<number>(0);
+  const hasShownToastRef = useRef<boolean>(false);
+  const lastToastTimeRef = useRef<number>(0);
 
   // 알림 데이터 가져오기
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (showUnreadToast: boolean = false) => {
     if (!currentUser?.id || isLoggingOut) return;
 
     try {
@@ -56,6 +60,16 @@ export const useNotifications = () => {
               ).length;
 
               setUnreadCount(unread);
+              
+              // 안읽은 알림이 있고 showUnreadToast가 true면 toast 표시
+              // 5초 이내에 이미 표시했다면 중복 표시 방지
+              const now = Date.now();
+              if (showUnreadToast && unread > 0 && (now - lastToastTimeRef.current > 5000)) {
+                toast.info(`읽지 않은 알림이 ${unread}개 있습니다.`, {
+                  duration: 0
+                });
+                lastToastTimeRef.current = now;
+              }
             }
           } else if (data && !isLoggingOut) {
             // 데이터 타입 변환
@@ -83,6 +97,16 @@ export const useNotifications = () => {
               ).length;
 
               setUnreadCount(unread);
+              
+              // 안읽은 알림이 있고 showUnreadToast가 true면 toast 표시
+              // 5초 이내에 이미 표시했다면 중복 표시 방지
+              const now = Date.now();
+              if (showUnreadToast && unread > 0 && (now - lastToastTimeRef.current > 5000)) {
+                toast.info(`읽지 않은 알림이 ${unread}개 있습니다.`, {
+                  duration: 0
+                });
+                lastToastTimeRef.current = now;
+              }
             }
           }
 
@@ -103,7 +127,7 @@ export const useNotifications = () => {
         setLoading(false);
       }
     }
-  }, [currentUser?.id, isLoggingOut, safeApiCall]);
+  }, [currentUser?.id, isLoggingOut, safeApiCall, toast]);
 
   // 알림 읽음 표시
   const markAsRead = async (notificationId: string) => {
@@ -302,13 +326,24 @@ export const useNotifications = () => {
     }
   };
 
+  // 페이지 변경 시 안읽은 알림 다시 체크
+  useEffect(() => {
+    if (!currentUser?.id || isLoggingOut) return;
+    
+    // 페이지 변경 시 알림 데이터 다시 가져오기 (toast 표시 안함)
+    if (hasShownToastRef.current) {
+      fetchNotifications(false);
+    }
+  }, [location.pathname]);
+
   // 실시간 구독 설정
   useEffect(() => {
     // 로그아웃 중이거나 사용자 ID가 없으면 구독하지 않음
     if (!currentUser?.id || isLoggingOut) return;
 
-    // 초기 알림 데이터 가져오기
-    fetchNotifications();
+    // 초기 알림 데이터 가져오기 - 첫 로드 시에만 toast 표시
+    fetchNotifications(!hasShownToastRef.current);
+    hasShownToastRef.current = true;
 
     // 이전 구독이 있으면 정리
     if (subscriptionChannelRef.current) {
@@ -355,9 +390,9 @@ export const useNotifications = () => {
               setUnreadCount(prev => prev + 1);
               setHasNewNotification(true);
 
-              // Toast 알림 표시
+              // Toast 알림 표시 - 수동 닫기 (duration: 0)
               toast.info(`새로운 알림이 있습니다: ${newNotification.title}`, {
-                duration: 5000
+                duration: 0
               });
             }
 

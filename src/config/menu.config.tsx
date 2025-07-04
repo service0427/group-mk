@@ -50,7 +50,6 @@ export const MENU_SIDEBAR: TMenuConfig = [
     path: '/advertise/ntraffic/desc',
     authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.BEGINNER),
     children: [
-
       {
         title: '네이버 쇼핑',
         iconImage: '/media/ad-brand/naver-shopping.png',
@@ -61,13 +60,13 @@ export const MENU_SIDEBAR: TMenuConfig = [
             icon: 'book-open text-info',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
-          {
-            title: 'NS 순위확인',
-            path: '/advertise/campaigns/info/naver-shopping-rank',
-            iconImage: '/media/ad-brand/naver-shopping.png',
-            iconAbbr: 'NS',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
-          },
+          // {
+          //   title: 'NS 순위확인',
+          //   path: '/advertise/campaigns/info/naver-shopping-rank',
+          //   iconImage: '/media/ad-brand/naver-shopping.png',
+          //   iconAbbr: 'NS',
+          //   authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+          // },
           {
             title: 'NS 트래픽',
             path: '/advertise/campaigns/info/naver-shopping-traffic',
@@ -75,82 +74,82 @@ export const MENU_SIDEBAR: TMenuConfig = [
             iconAbbr: 'NS',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
-          {
-            title: 'NS 가구매',
-            path: '/advertise/campaigns/info/naver-shopping-fakesale',
-            iconImage: '/media/ad-brand/naver-shopping.png',
-            iconAbbr: 'NS',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
+          // {
+          //   title: 'NS 가구매',
+          //   path: '/advertise/campaigns/info/naver-shopping-fakesale',
+          //   iconImage: '/media/ad-brand/naver-shopping.png',
+          //   iconAbbr: 'NS',
+          //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          // },
         ]
       },
-      {
-        title: '네이버 플레이스',
-        iconImage: '/media/ad-brand/naver-place.png',
-        iconAbbr: 'NP',
-        children: [
-          {
-            title: '효과 및 사용법',
-            icon: 'book-open text-info',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 순위확인',
-            path: '/advertise/campaigns/info/naver-place-rank',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
-          },
-          {
-            title: 'NP 트래픽',
-            path: '/advertise/campaigns/info/naver-place-traffic',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 저장하기',
-            path: '/advertise/campaigns/info/naver-place-save',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NP 블로그공유',
-            path: '/advertise/campaigns/info/naver-place-share',
-            iconImage: '/media/ad-brand/naver-place.png',
-            iconAbbr: 'NP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-        ]
-      },
-      {
-        title: '네이버 블로그',
-        iconImage: '/media/ad-brand/naver-blog.png',
-        iconAbbr: 'NB',
-        children: [
-          {
-            title: '효과 및 사용법',
-            icon: 'book-open text-info',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-          {
-            title: 'NB 포스팅',
-            path: '/advertise/campaigns/info/naver-blog-post',
-            iconImage: '/media/ad-brand/naver-blog.png',
-            iconAbbr: 'NB',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
-        ]
-      },
-      {
-        title: 'N 자동완성',
-        disabled: true,
-        path: '/advertise/campaigns/info/naver-auto',
-        iconImage: '/media/ad-brand/naver.png',
-        iconAbbr: 'NA',
-        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-      },
+      // {
+      //   title: '네이버 플레이스',
+      //   iconImage: '/media/ad-brand/naver-place.png',
+      //   iconAbbr: 'NP',
+      //   children: [
+      //     {
+      //       title: '효과 및 사용법',
+      //       icon: 'book-open text-info',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //     {
+      //       title: 'NP 순위확인',
+      //       path: '/advertise/campaigns/info/naver-place-rank',
+      //       iconImage: '/media/ad-brand/naver-place.png',
+      //       iconAbbr: 'NP',
+      //       authCheck: (role) => hasPermissionExcluding(role, PERMISSION_GROUPS.BEGINNER, [USER_ROLES.DISTRIBUTOR]),  // 비기너 등급부터, 총판은 제외
+      //     },
+      //     {
+      //       title: 'NP 트래픽',
+      //       path: '/advertise/campaigns/info/naver-place-traffic',
+      //       iconImage: '/media/ad-brand/naver-place.png',
+      //       iconAbbr: 'NP',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //     {
+      //       title: 'NP 저장하기',
+      //       path: '/advertise/campaigns/info/naver-place-save',
+      //       iconImage: '/media/ad-brand/naver-place.png',
+      //       iconAbbr: 'NP',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //     {
+      //       title: 'NP 블로그공유',
+      //       path: '/advertise/campaigns/info/naver-place-share',
+      //       iconImage: '/media/ad-brand/naver-place.png',
+      //       iconAbbr: 'NP',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //   ]
+      // },
+      // {
+      //   title: '네이버 블로그',
+      //   iconImage: '/media/ad-brand/naver-blog.png',
+      //   iconAbbr: 'NB',
+      //   children: [
+      //     {
+      //       title: '효과 및 사용법',
+      //       icon: 'book-open text-info',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //     {
+      //       title: 'NB 포스팅',
+      //       path: '/advertise/campaigns/info/naver-blog-post',
+      //       iconImage: '/media/ad-brand/naver-blog.png',
+      //       iconAbbr: 'NB',
+      //       authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      //     },
+      //   ]
+      // },
+      // {
+      //   title: 'N 자동완성',
+      //   disabled: true,
+      //   path: '/advertise/campaigns/info/naver-auto',
+      //   iconImage: '/media/ad-brand/naver.png',
+      //   iconAbbr: 'NA',
+      //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      // },
       {
         title: '쿠팡',
         iconImage: '/media/ad-brand/coupang-app.png',
@@ -162,36 +161,36 @@ export const MENU_SIDEBAR: TMenuConfig = [
             iconAbbr: 'CP',
             authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
           },
-          {
-            title: 'CP 가구매',
-            disabled: true,
-            path: '/advertise/campaigns/info/coupang-fakesale',
-            iconImage: '/media/ad-brand/coupang-app.png',
-            iconAbbr: 'CP',
-            authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-          },
+          // {
+          //   title: 'CP 가구매',
+          //   disabled: true,
+          //   path: '/advertise/campaigns/info/coupang-fakesale',
+          //   iconImage: '/media/ad-brand/coupang-app.png',
+          //   iconAbbr: 'CP',
+          //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+          // },
         ]
       },
-      {
-        title: '인스타그램',
-        disabled: true,
-        iconImage: '/media/ad-brand/instagram.png',
-        iconAbbr: 'IG',
-        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-      },
-      {
-        title: '포토&영상 제작',
-        disabled: true,
-        iconImage: '/media/brand-logos/vimeo.svg',
-        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-      },
-      {
-        title: '라이브방송',
-        disabled: true,
-        iconImage: '/media/ad-brand/youtube.png',
-        iconAbbr: 'YT',
-        authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
-      }
+      // {
+      //   title: '인스타그램',
+      //   disabled: true,
+      //   iconImage: '/media/ad-brand/instagram.png',
+      //   iconAbbr: 'IG',
+      //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      // },
+      // {
+      //   title: '포토&영상 제작',
+      //   disabled: true,
+      //   iconImage: '/media/brand-logos/vimeo.svg',
+      //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      // },
+      // {
+      //   title: '라이브방송',
+      //   disabled: true,
+      //   iconImage: '/media/ad-brand/youtube.png',
+      //   iconAbbr: 'YT',
+      //   authCheck: (role) => hasPermission(role, PERMISSION_GROUPS.ADVERTISEMENT),
+      // }
     ]
   },
   {
@@ -218,12 +217,12 @@ export const MENU_SIDEBAR: TMenuConfig = [
       }
     ]
   },
-  {
-    title: '순위 분석',
-    icon: 'graph-up text-warning',
-    authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 광고주 등급부터(총판, 운영자 제외)
-    disabled: true
-  },
+  // {
+  //   title: '순위 분석',
+  //   icon: 'graph-up text-warning',
+  //   authCheck: (role) => role === USER_ROLES.DEVELOPER || hasPermissionExcluding(role, PERMISSION_GROUPS.ADVERTISEMENT, [USER_ROLES.DISTRIBUTOR, USER_ROLES.OPERATOR]),  // 개발자 역할이거나 광고주 등급부터(총판, 운영자 제외)
+  //   disabled: true
+  // },
   {
     heading: '마케팅의 정석',
   },

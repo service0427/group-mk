@@ -177,7 +177,7 @@ export interface ICampaign {
   updatedAt?: string; // 업데이트 시간
   additionalFields?: any; // 추가 필드 (CampaignPreviewModal에서 사용)
   // 보장형 슬롯 관련 필드
-  slotType?: 'standard' | 'guarantee';
+  slotType?: 'standard' | 'guarantee' | 'per-unit';
   guaranteeCount?: string | number;
   guaranteeUnit?: '일' | '회';
   guaranteePeriod?: string | number;

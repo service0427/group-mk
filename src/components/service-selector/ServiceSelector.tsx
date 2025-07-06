@@ -20,6 +20,7 @@ interface ServiceSelectorProps {
   showCount?: boolean;
   serviceCounts?: Record<string, number>;
   guaranteeCounts?: Record<string, number>;
+  perUnitCounts?: Record<string, number>;  // 단건형 슬롯 수
   className?: string;
   requiresKeyword?: boolean;  // 키워드가 필요한 서비스만 표시할지 여부
   userRole?: string;  // 사용자 역할
@@ -28,9 +29,11 @@ interface ServiceSelectorProps {
   initialDisplayCount?: number;  // 초기 표시 개수
   expandableServices?: boolean;  // 서비스별 일반형/보장형 확장 기능 사용 여부
   onGuaranteeSelect?: (service: string) => void;  // 보장형 선택 콜백
+  onPerUnitSelect?: (service: string) => void;  // 단건형 선택 콜백
   getTotalCount?: (serviceType: string) => number;
   getGeneralCount?: (serviceType: string) => number;
   getGuaranteeCount?: (serviceType: string) => number;
+  getPerUnitCount?: (serviceType: string) => number;
 }
 
 export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
@@ -40,6 +43,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   showCount = false,
   serviceCounts = {},
   guaranteeCounts = {},
+  perUnitCounts = {},
   className = '',
   requiresKeyword,
   userRole,
@@ -48,9 +52,11 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   initialDisplayCount = 6,
   expandableServices = false,
   onGuaranteeSelect,
+  onPerUnitSelect,
   getTotalCount,
   getGeneralCount,
-  getGuaranteeCount
+  getGuaranteeCount,
+  getPerUnitCount
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // 모든 서비스를 menu.config.tsx 순서대로 정렬
@@ -287,6 +293,22 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                       {showCount && (
                         <Badge variant="outline" className="text-xs ml-2">
                           {getGuaranteeCount ? getGuaranteeCount(service.code || service.path) : (guaranteeCounts[service.code || service.path] || 0)}
+                        </Badge>
+                      )}
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onPerUnitSelect?.(service.path)}
+                    className="cursor-pointer"
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span className="flex items-center">
+                        <KeenIcon icon="package" className="size-4 mr-2 text-orange-500" />
+                        단건형
+                      </span>
+                      {showCount && (
+                        <Badge variant="outline" className="text-xs ml-2">
+                          {getPerUnitCount ? getPerUnitCount(service.code || service.path) : (perUnitCounts[service.code || service.path] || 0)}
                         </Badge>
                       )}
                     </span>

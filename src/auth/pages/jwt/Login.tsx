@@ -23,51 +23,11 @@ const loginSchema = Yup.object().shape({
   remember: Yup.boolean()
 });
 
-// 초기값에서 테스트 계정 정보 제거
+// 초기값
 const initialValues = {
   email: '',
   password: '',
   remember: false
-};
-
-// 개발 환경에서만 사용할 테스트 계정 정보
-const testCredentials = {
-  beginner: {
-    email: 'test-beginner@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '비기너 (Beginner)'
-  },
-  advertiser: {
-    email: 'test-0315001652@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '광고주 (Advertiser)'
-  },
-  agency: {
-    email: 'test-0416195043@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '대행사 (Agency)'
-  },
-  distributor: {
-    email: 'test-0416153210@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '총판 (Distributor)'
-  },
-  operator: {
-    email: 'test-0314225613@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '운영자 (Operator)'
-  },
-  developer: {
-    email: 'test-0416184612@test.com',
-    password: 'Tech123!',
-    remember: true,
-    label: '개발자 (Developer)'
-  },
 };
 
 const Login = () => {
@@ -75,7 +35,6 @@ const Login = () => {
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordEmail, setResetPasswordEmail] = useState('');
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<keyof typeof testCredentials>('beginner');
   const [showPassword, setShowPassword] = useState(false);
   const [showErrorHelp, setShowErrorHelp] = useState(false);
   const { login, resetPassword } = useAuthContext();
@@ -110,7 +69,7 @@ const Login = () => {
     }
   }, [location.state]);
 
-  // 회원가입 후 전달된 이메일이 있거나 개발 환경에서는 테스트 계정 정보 사용, 그렇지 않으면 빈 값 사용
+  // 회원가입 후 전달된 이메일이 있으면 사용, 그렇지 않으면 빈 값 사용
   const getInitialValues = () => {
     // 회원가입으로부터 전달된 이메일 확인
     const registeredEmail = location.state?.registeredEmail;
@@ -123,13 +82,7 @@ const Login = () => {
       };
     }
 
-    // 개발 환경 체크 (Vite)
-    const isDevelopment = import.meta.env.MODE === 'development';
-    return isDevelopment ? {
-      email: testCredentials[selectedRole].email,
-      password: testCredentials[selectedRole].password,
-      remember: testCredentials[selectedRole].remember
-    } : initialValues;
+    return initialValues;
   };
 
   const formik = useFormik({
@@ -218,36 +171,6 @@ const Login = () => {
         >
           <div className="text-center mb-3">
             <h3 className="text-xl font-medium text-gray-900 leading-none mb-3">로그인</h3>
-
-            {/* 개발 환경에서만 테스트 계정 정보 안내 표시 */}
-            {import.meta.env.MODE === "development" && (
-              <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-xs">
-                <p className="font-semibold">개발 테스트 모드입니다</p>
-                <p>테스트 계정 정보가 자동으로 입력되었습니다</p>
-                <p className="mt-1">이메일: {testCredentials[selectedRole].email}</p>
-                <p>비밀번호: {testCredentials[selectedRole].password}</p>
-
-                {/* 역할 선택 버튼 그룹 */}
-                <div className="mt-3">
-                  <p className="font-semibold mb-1">역할 선택:</p>
-                  <div className="flex flex-wrap justify-center gap-2 mt-1">
-                    {Object.entries(testCredentials).map(([role, data]) => (
-                      <button
-                        key={role}
-                        type="button"
-                        className={`px-2 py-1 rounded text-xs ${selectedRole === role
-                          ? 'bg-blue-600 text-white font-semibold'
-                          : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                          }`}
-                        onClick={() => setSelectedRole(role as keyof typeof testCredentials)}
-                      >
-                        {data.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 회원가입 완료 메시지 표시 */}

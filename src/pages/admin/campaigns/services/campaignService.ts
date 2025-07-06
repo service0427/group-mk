@@ -722,6 +722,39 @@ export const getServiceTypeCode = (uiCode: string): string => {
   return normalizedCode; // 기본값은 원래 입력한 값 그대로 반환
 };
 
+// 단건형 캠페인 데이터 생성
+const createPerUnitCampaign = async (campaignId: number, data: any): Promise<boolean> => {
+  try {
+    // 단건형 캠페인 데이터 준비
+    const perUnitData = {
+      campaign_id: campaignId,
+      min_quantity: parseInt(data.minQuantity) || 300,
+      unit_price: parseFloat(data.unitPrice) || 1000,
+      max_quantity: data.maxQuantity ? parseInt(data.maxQuantity) : null,
+      work_period_days: data.workPeriod ? parseInt(data.workPeriod) : 30,
+      is_negotiable: data.isNegotiable || false,
+      min_negotiable_price: data.isNegotiable && data.minGuaranteePrice ? parseFloat(data.minGuaranteePrice) : null,
+      max_negotiable_price: data.isNegotiable && data.maxGuaranteePrice ? parseFloat(data.maxGuaranteePrice) : null,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+
+    const { error } = await supabaseAdmin
+      .from('per_unit_campaigns')
+      .insert(perUnitData);
+
+    if (error) {
+      console.error('단건형 캠페인 생성 오류:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('단건형 캠페인 생성 중 예외 발생:', err);
+    return false;
+  }
+};
+
 // 캠페인 생성
 export const createCampaign = async (data: any): Promise<{ success: boolean, id?: number, error?: string }> => {
   try {
@@ -840,8 +873,18 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
       return { success: false, error: error.message };
     }
 
-    // 캠페인 생성 성공 시 운영자에게 알림
+    // 캠페인 생성 성공 시 추가 처리
     if (result?.id) {
+      // 단건형 캠페인인 경우 per_unit_campaigns 테이블에도 생성
+      if (data.slotType === 'per-unit') {
+        const perUnitSuccess = await createPerUnitCampaign(result.id, data);
+        if (!perUnitSuccess) {
+          console.error('단건형 캠페인 추가 데이터 생성 실패');
+          // 단건형 데이터 생성 실패 시 캠페인도 롤백해야 하지만, 일단 로그만 남김
+        }
+      }
+
+      // 운영자에게 알림
       try {
         await createCampaignRequestNotification(
           result.id.toString(),

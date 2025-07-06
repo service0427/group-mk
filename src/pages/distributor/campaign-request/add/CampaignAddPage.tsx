@@ -113,6 +113,9 @@ const CampaignAddPage: React.FC = () => {
         min_guarantee_price: data.minGuaranteePrice,
         max_guarantee_price: data.maxGuaranteePrice,
         is_negotiable: data.isNegotiable,
+        // 단건형 관련 필드 추가
+        work_period: data.workPeriod,
+        max_quantity: data.maxQuantity,
         add_info: {
           logo_url: previewUrl || uploadedLogo || '',
           banner_url: bannerImagePreviewUrl || uploadedBannerImage || ''
@@ -300,6 +303,32 @@ const CampaignAddPage: React.FC = () => {
       }
     }
 
+    // 단건형 슬롯 관련 검증
+    if (formData.slotType === 'per-unit') {
+      if (!formData.workPeriod || formData.workPeriod === '0' || formData.workPeriod === '') {
+        setError('작업 일수는 필수이며 0보다 큰 값이어야 합니다.');
+        return false;
+      }
+
+      // 협상 가격이 활성화된 경우 가격 범위 검증
+      if (formData.isNegotiable) {
+        if (!formData.minGuaranteePrice || formData.minGuaranteePrice === '0' || formData.minGuaranteePrice === '') {
+          setError('최소 협상 가격은 필수이며 0보다 큰 값이어야 합니다.');
+          return false;
+        }
+
+        if (!formData.maxGuaranteePrice || formData.maxGuaranteePrice === '0' || formData.maxGuaranteePrice === '') {
+          setError('최대 협상 가격은 필수이며 0보다 큰 값이어야 합니다.');
+          return false;
+        }
+
+        if (Number(formData.minGuaranteePrice) > Number(formData.maxGuaranteePrice)) {
+          setError('최소 협상 가격은 최대 협상 가격보다 작거나 같아야 합니다.');
+          return false;
+        }
+      }
+    }
+
     setError(null);
     return true;
   };
@@ -338,7 +367,10 @@ const CampaignAddPage: React.FC = () => {
         guaranteePeriod: formData.guaranteePeriod,
         targetRank: formData.targetRank || '1',
         minGuaranteePrice: formData.minGuaranteePrice,
-        maxGuaranteePrice: formData.maxGuaranteePrice
+        maxGuaranteePrice: formData.maxGuaranteePrice,
+        // 단건형 관련 필드
+        workPeriod: formData.slotType === 'per-unit' ? formData.workPeriod : undefined,
+        maxQuantity: formData.slotType === 'per-unit' ? formData.maxQuantity : undefined
       });
 
       if (!result.success) {

@@ -2,7 +2,7 @@
 -- 단건형(Per-Unit) 캠페인 테이블 생성 스크립트
 -- =====================================================
 -- 설명: 건별 단가 기반의 캠페인 서비스를 위한 테이블 구조
--- 작성일: 2025-01-06
+-- 작성일: 2025-07-06
 -- =====================================================
 
 -- 1. 캠페인 테이블에 단건형 타입 추가를 위한 수정
@@ -23,7 +23,7 @@ END $$;
 -- 2. 단건형 캠페인 상세 정보 테이블
 CREATE TABLE IF NOT EXISTS per_unit_campaigns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
     
     -- 기본 설정
     min_quantity INTEGER NOT NULL CHECK (min_quantity > 0),           -- 최소 구매 수량
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS per_unit_campaigns (
 -- 3. 단건형 슬롯 견적 요청 테이블
 CREATE TABLE IF NOT EXISTS per_unit_slot_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    campaign_id UUID NOT NULL REFERENCES campaigns(id),
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id),
     user_id UUID NOT NULL REFERENCES users(id),
     distributor_id UUID NOT NULL REFERENCES users(id),
     
@@ -118,9 +118,18 @@ CREATE TABLE IF NOT EXISTS per_unit_negotiations (
 );
 
 -- 5. 단건형 슬롯 (구매 확정) 테이블
+-- 테이블이 이미 존재할 경우를 대비하여 제약조건 먼저 삭제
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'per_unit_slots') THEN
+        ALTER TABLE per_unit_slots DROP CONSTRAINT IF EXISTS per_unit_slots_quantity_check CASCADE;
+        ALTER TABLE per_unit_slots DROP CONSTRAINT IF EXISTS per_unit_slots_dates_check CASCADE;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS per_unit_slots (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    campaign_id UUID NOT NULL REFERENCES campaigns(id),
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id),
     request_id UUID REFERENCES per_unit_slot_requests(id),
     user_id UUID NOT NULL REFERENCES users(id),
     distributor_id UUID NOT NULL REFERENCES users(id),
@@ -158,10 +167,10 @@ CREATE TABLE IF NOT EXISTS per_unit_slots (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    -- 제약조건
-    CONSTRAINT per_unit_slots_quantity_check 
+    -- 제약조건 (타임스탬프를 포함하여 유니크하게)
+    CONSTRAINT per_unit_slots_qty_chk_v1 
         CHECK (completed_quantity + cancelled_quantity <= quantity),
-    CONSTRAINT per_unit_slots_dates_check 
+    CONSTRAINT per_unit_slots_dates_chk_v1 
         CHECK (work_end_date IS NULL OR work_start_date <= work_end_date)
 );
 

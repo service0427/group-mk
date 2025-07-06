@@ -356,6 +356,21 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/manage/guarantee-quotes'
       },
       {
+        title: '단건형 슬롯 관리',
+        icon: 'package text-warning',
+        path: '/manage/per-unit-quotes'
+      },
+      {
+        title: '단건형 작업 관리',
+        icon: 'document text-success',
+        path: '/manage/per-unit-works'
+      },
+      {
+        title: '단건형 정산 관리',
+        icon: 'dollar text-primary',
+        path: '/manage/per-unit-settlements'
+      },
+      {
         title: '환불 요청 관리',
         icon: 'wallet text-danger',
         path: '/manage/refunds'

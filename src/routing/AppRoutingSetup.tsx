@@ -78,6 +78,9 @@ export const WorkInputPage = lazyWithPreload(() => import('@/pages/admin/work-in
 
 // 견적 요청 목록 페이지 lazy loading with preload
 export const GuaranteeQuotesPage = lazyWithPreload(() => import('@/pages/manage/guarantee-quotes/GuaranteeQuotesPage').then(m => ({ default: m.GuaranteeQuotesPage })));
+export const PerUnitQuotesPage = lazyWithPreload(() => import('@/pages/manage/per-unit-quotes/PerUnitQuotesPage').then(m => ({ default: m.PerUnitQuotesPage })));
+export const PerUnitWorksPage = lazyWithPreload(() => import('@/pages/manage/per-unit-works/PerUnitWorksPage').then(m => ({ default: m.PerUnitWorksPage })));
+export const PerUnitSettlementsPage = lazyWithPreload(() => import('@/pages/manage/per-unit-settlements/PerUnitSettlementsPage').then(m => ({ default: m.PerUnitSettlementsPage })));
 
 // 환불 관리 페이지 lazy loading with preload
 export const RefundManagementPage = lazyWithPreload(() => import('@/pages/distributor/refund-management').then(m => ({ default: m.RefundManagementPage })));
@@ -212,6 +215,9 @@ const AppRoutingSetup = (): ReactElement => {
           
           {/* 견적 요청 목록 */}
           <Route path="/manage/guarantee-quotes" element={<SuspenseWrapper><GuaranteeQuotesPage /></SuspenseWrapper>} />
+          <Route path="/manage/per-unit-quotes" element={<SuspenseWrapper><PerUnitQuotesPage /></SuspenseWrapper>} />
+          <Route path="/manage/per-unit-works" element={<SuspenseWrapper><PerUnitWorksPage /></SuspenseWrapper>} />
+          <Route path="/manage/per-unit-settlements" element={<SuspenseWrapper><PerUnitSettlementsPage /></SuspenseWrapper>} />
           
           {/* 환불 관리 */}
           <Route path="/manage/refunds" element={<SuspenseWrapper><RefundManagementPage /></SuspenseWrapper>} />

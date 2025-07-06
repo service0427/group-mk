@@ -63,6 +63,8 @@ const CardAdCampaign = ({
 
   // 보장형 여부 확인
   const isGuaranteeType = rawData?.slot_type === 'guarantee';
+  // 단건형 여부 확인
+  const isPerUnitType = rawData?.slot_type === 'per-unit';
 
   // 운영자/개발자 권한일 때 캠페인 소유자 정보 가져오기
   useEffect(() => {
@@ -166,7 +168,7 @@ const CardAdCampaign = ({
               {/* 총판 또는 운영자 역할이 아닌 경우에만 구매하기 버튼 표시 */}
               {userRole !== USER_ROLES.DISTRIBUTOR && userRole !== USER_ROLES.OPERATOR && (
                 <button
-                  className={`btn btn-sm ${isGuaranteeType 
+                  className={`btn btn-sm ${isGuaranteeType || isPerUnitType
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0' 
                     : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0'}`}
                   onClick={(e) => {
@@ -174,8 +176,8 @@ const CardAdCampaign = ({
                     setSlotModalOpen(true);
                   }}
                 >
-                  <KeenIcon icon={isGuaranteeType ? "message-text" : "purchase"} className="me-0 sm:me-1.5" />
-                  <span className="hidden sm:inline">{isGuaranteeType ? '견적요청' : '구매하기'}</span>
+                  <KeenIcon icon={(isGuaranteeType || isPerUnitType) ? "message-text" : "purchase"} className="me-0 sm:me-1.5" />
+                  <span className="hidden sm:inline">{(isGuaranteeType || isPerUnitType) ? '견적요청' : '구매하기'}</span>
                 </button>
               )}
             </div>
@@ -230,6 +232,21 @@ const CardAdCampaign = ({
 
           <div className="flex items-center justify-center flex-wrap gap-2 lg:gap-5 mt-auto">
             {statistics.map((statistic, index) => {
+              // 단건형인 경우 건당단가를 단건단가로 표시
+              if (isPerUnitType && statistic.description.includes('건당단가')) {
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
+                  >
+                    <span className="text-gray-900 text-sm leading-none font-medium">
+                      {statistic.total}
+                    </span>
+                    <span className="text-gray-700 text-xs">📦단건단가</span>
+                  </div>
+                );
+              }
+
               // 보장형인 경우 건당단가를 가격범위로 표시
               if (isGuaranteeType && statistic.description.includes('건당단가')) {
                 const minPrice = rawData?.min_guarantee_price;
@@ -262,6 +279,21 @@ const CardAdCampaign = ({
                     </div>
                   );
                 }
+              }
+
+              // 단건형인 경우 최소수량을 최소단건수로 표시
+              if (isPerUnitType && statistic.description.includes('최소수량')) {
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-md px-2.5 py-2"
+                  >
+                    <span className="text-gray-900 text-sm leading-none font-medium">
+                      {statistic.total}
+                    </span>
+                    <span className="text-gray-700 text-xs">📊최소단건수</span>
+                  </div>
+                );
               }
 
               // 보장형인 경우 최소수량을 보장으로 표시

@@ -35,6 +35,8 @@ import {
 } from '@/components/ui/dialog';
 import { SlotRefundModal } from '@/components/refund/SlotRefundModal';
 import { MyGuaranteeQuotesContent } from '@/pages/myinfo/components/MyGuaranteeQuotesContent';
+import { MyPerUnitQuotesContent } from '@/pages/myinfo/components/MyPerUnitQuotesContent';
+import { MyPerUnitSlotsContent } from '@/pages/myinfo/components/MyPerUnitSlotsContent';
 import { InquiryChatModal } from '@/components/inquiry';
 
 
@@ -43,7 +45,7 @@ const MyServicesPage: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'standard' | 'guarantee'>('standard'); // 뷰 모드 상태 추가
+  const [viewMode, setViewMode] = useState<'standard' | 'guarantee' | 'per-unit'>('standard'); // 뷰 모드 상태 추가
   const { currentUser, userRole } = useAuthContext();
   const { showSuccess, showError } = useCustomToast();
 
@@ -57,6 +59,8 @@ const MyServicesPage: React.FC = () => {
   const [serviceSlotCounts, setServiceSlotCounts] = useState<Record<string, number>>({});
   // 보장형 서비스별 슬롯 수를 저장할 상태
   const [guaranteeSlotCounts, setGuaranteeSlotCounts] = useState<Record<string, number>>({});
+  // 단건형 서비스별 슬롯 수를 저장할 상태
+  const [perUnitSlotCounts, setPerUnitSlotCounts] = useState<Record<string, number>>({});
   // 슬롯이 있는 서비스 목록 (모든 상태 포함)
   const [servicesWithSlots, setServicesWithSlots] = useState<Set<string>>(new Set());
 
@@ -173,6 +177,8 @@ const MyServicesPage: React.FC = () => {
       // type 파라미터에 따라 뷰모드 설정
       if (typeParam === 'guarantee') {
         setViewMode('guarantee');
+      } else if (typeParam === 'per-unit') {
+        setViewMode('per-unit');
       } else {
         setViewMode('standard');
       }
@@ -202,7 +208,7 @@ const MyServicesPage: React.FC = () => {
     }
   }, [selectedService, currentUser?.id]);
 
-  // 서비스별 슬롯 수를 가져오는 함수 (일반형 + 보장형)
+  // 서비스별 슬롯 수를 가져오는 함수 (일반형 + 보장형 + 단건형)
   const fetchAllServiceCounts = useCallback(async () => {
     if (!currentUser?.id) return;
 
@@ -257,7 +263,32 @@ const MyServicesPage: React.FC = () => {
         console.error('보장형 활성 슬롯 수 조회 오류:', guaranteeActiveError);
       }
 
-      // 3. 모든 상태의 슬롯 확인 (활성화 여부 판단용)
+      // 3. 단건형 active 상태의 슬롯 카운트
+      let perUnitActiveQuery = supabase
+        .from('per_unit_slot_requests')
+        .select(`
+          id,
+          status,
+          per_unit_campaign:per_unit_campaign_id (
+            campaign:campaign_id (
+              service_type
+            )
+          )
+        `)
+        .in('status', ['accepted', 'in_progress', 'pending_payment']);
+
+      // 개발자가 아닌 경우에만 사용자 필터 적용
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        perUnitActiveQuery = perUnitActiveQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: perUnitActiveData, error: perUnitActiveError } = await perUnitActiveQuery;
+
+      if (perUnitActiveError) {
+        console.error('단건형 활성 슬롯 수 조회 오류:', perUnitActiveError);
+      }
+
+      // 4. 모든 상태의 슬롯 확인 (활성화 여부 판단용)
       let allQuery = supabase
         .from('slots')
         .select(`
@@ -278,7 +309,7 @@ const MyServicesPage: React.FC = () => {
         console.error('전체 슬롯 조회 오류:', allError);
       }
 
-      // 4. 모든 보장형 요청 확인
+      // 5. 모든 보장형 요청 확인
       let allGuaranteeQuery = supabase
         .from('guarantee_slot_requests')
         .select(`
@@ -319,7 +350,40 @@ const MyServicesPage: React.FC = () => {
         });
       }
 
-      // 슬롯이 있는 서비스 목록 생성 (일반형 + 보장형)
+      // 6. 모든 단건형 요청 확인
+      let allPerUnitQuery = supabase
+        .from('per_unit_slot_requests')
+        .select(`
+          id,
+          per_unit_campaign:per_unit_campaign_id (
+            campaign:campaign_id (
+              service_type
+            )
+          )
+        `);
+
+      if (userRole !== USER_ROLES.DEVELOPER) {
+        allPerUnitQuery = allPerUnitQuery.eq('user_id', currentUser.id);
+      }
+
+      const { data: allPerUnitData, error: allPerUnitError } = await allPerUnitQuery;
+
+      if (allPerUnitError) {
+        console.error('전체 단건형 요청 조회 오류:', allPerUnitError);
+      }
+
+      // 단건형 active 슬롯 카운트 계산
+      const perUnitCounts: Record<string, number> = {};
+      if (perUnitActiveData) {
+        perUnitActiveData.forEach((request: any) => {
+          if (request.per_unit_campaign?.campaign?.service_type) {
+            const serviceType = request.per_unit_campaign.campaign.service_type;
+            perUnitCounts[serviceType] = (perUnitCounts[serviceType] || 0) + 1;
+          }
+        });
+      }
+
+      // 슬롯이 있는 서비스 목록 생성 (일반형 + 보장형 + 단건형)
       const servicesSet = new Set<string>();
       if (allData) {
         allData.forEach((slot: any) => {
@@ -335,9 +399,17 @@ const MyServicesPage: React.FC = () => {
           }
         });
       }
+      if (allPerUnitData) {
+        allPerUnitData.forEach((request: any) => {
+          if (request.per_unit_campaign?.campaign?.service_type) {
+            servicesSet.add(request.per_unit_campaign.campaign.service_type);
+          }
+        });
+      }
 
       setServiceSlotCounts(generalCounts);
       setGuaranteeSlotCounts(guaranteeCounts);
+      setPerUnitSlotCounts(perUnitCounts);
       setServicesWithSlots(servicesSet);
     } catch (error) {
       console.error('서비스별 슬롯 수 조회 중 오류:', error);
@@ -625,6 +697,7 @@ const MyServicesPage: React.FC = () => {
             showCount={true}
             serviceCounts={serviceSlotCounts}
             guaranteeCounts={guaranteeSlotCounts}
+            perUnitCounts={perUnitSlotCounts}
             servicesWithSlots={servicesWithSlots}
             collapsible={true}
             initialDisplayCount={6}
@@ -640,13 +713,26 @@ const MyServicesPage: React.FC = () => {
               newParams.set('type', 'guarantee');
               navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
             }}
+            onPerUnitSelect={(service) => {
+              // 단건형 선택 시 서비스 설정 및 컴포넌트 모드 전환
+              setSelectedService(service);
+              setViewMode('per-unit');
+              
+              // URL 파라미터 업데이트
+              const newParams = new URLSearchParams();
+              newParams.set('service', service);
+              newParams.set('type', 'per-unit');
+              navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+            }}
             getTotalCount={(serviceType) => {
               const generalCount = serviceSlotCounts[serviceType] || 0;
               const guaranteeCount = guaranteeSlotCounts[serviceType] || 0;
-              return generalCount + guaranteeCount;
+              const perUnitCount = perUnitSlotCounts[serviceType] || 0;
+              return generalCount + guaranteeCount + perUnitCount;
             }}
             getGeneralCount={(serviceType) => serviceSlotCounts[serviceType] || 0}
             getGuaranteeCount={(serviceType) => guaranteeSlotCounts[serviceType] || 0}
+            getPerUnitCount={(serviceType) => perUnitSlotCounts[serviceType] || 0}
           />
         </CardContent>
       </Card>
@@ -654,6 +740,11 @@ const MyServicesPage: React.FC = () => {
       {/* 메인 콘텐츠 - 뷰 모드에 따라 다른 컴포넌트 표시 */}
       {viewMode === 'guarantee' ? (
         <MyGuaranteeQuotesContent selectedService={selectedService} />
+      ) : viewMode === 'per-unit' ? (
+        <>
+          <MyPerUnitQuotesContent selectedService={selectedService} />
+          <MyPerUnitSlotsContent selectedService={selectedService} />
+        </>
       ) : (
         <>
           {/* 검색 카드 */}

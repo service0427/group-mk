@@ -106,6 +106,7 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
 
   // 보장형 서비스 여부 확인
   const isGuaranteeType = campaign.originalData?.slot_type === 'guarantee' || campaign.slotType === 'guarantee';
+  const isPerUnitType = campaign.originalData?.slot_type === 'per-unit' || campaign.slotType === 'per-unit';
   const guaranteeCount = campaign.originalData?.guarantee_count || campaign.guaranteeCount;
   const guaranteeUnit = campaign.originalData?.guarantee_unit || campaign.guaranteeUnit || '일';
   const minGuaranteePrice = campaign.originalData?.min_guarantee_price || campaign.minGuaranteePrice;
@@ -174,12 +175,15 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
 
                   {/* 배지들 - 아이콘 포함 */}
                   <div className="flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${isGuaranteeType
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      isGuaranteeType
                         ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                        : isPerUnitType
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200'
                         : 'bg-blue-50 text-blue-700 border border-blue-200'
-                      }`}>
-                      <KeenIcon icon={isGuaranteeType ? 'shield-tick' : 'element-11'} className="mr-1.5 size-3.5" />
-                      {isGuaranteeType ? '보장형' : '일반형'}
+                    }`}>
+                      <KeenIcon icon={isGuaranteeType ? 'shield-tick' : isPerUnitType ? 'package' : 'element-11'} className="mr-1.5 size-3.5" />
+                      {isGuaranteeType ? '보장형' : isPerUnitType ? '단건형' : '일반형'}
                     </span>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusInfo.color === 'success' ? 'bg-green-50 text-green-700 border-green-200' :
                         statusInfo.color === 'danger' ? 'bg-red-50 text-red-700 border-red-200' :
@@ -217,10 +221,10 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                   <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="wallet" className="text-primary size-5" />
                     <h3 className="text-sm text-muted-foreground">
-                      {isGuaranteeType ? '가격범위' : '건당단가'}
+                      {isGuaranteeType ? '가격범위' : isPerUnitType ? '건당단가' : '건당단가'}
                     </h3>
                   </div>
-                  <p className={`font-bold text-primary ${isGuaranteeType ? 'text-sm' : 'text-xl'}`}>
+                  <p className={`font-bold text-primary ${isGuaranteeType || (isPerUnitType && campaign.originalData?.is_negotiable) ? 'text-sm' : 'text-xl'}`}>
                     {isGuaranteeType ? (
                       minGuaranteePrice && maxGuaranteePrice ? (
                         (() => {
@@ -245,6 +249,8 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                           return `${formatPrice(min)} ~ ${formatPrice(max)}원`;
                         })()
                       ) : '-'
+                    ) : isPerUnitType && campaign.originalData?.is_negotiable && minGuaranteePrice && maxGuaranteePrice ? (
+                      `${Number(minGuaranteePrice).toLocaleString()} ~ ${Number(maxGuaranteePrice).toLocaleString()}원`
                     ) : (
                       `${unitPrice}원`
                     )}
@@ -254,12 +260,14 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                   <div className="flex items-center gap-2 mb-1">
                     <KeenIcon icon="basket" className="text-orange-500 size-5" />
                     <h3 className="text-sm text-muted-foreground">
-                      {isGuaranteeType ? '보장' : '최소수량'}
+                      {isGuaranteeType ? '보장' : isPerUnitType ? '작업기간' : '최소수량'}
                     </h3>
                   </div>
                   <p className="text-xl font-bold text-orange-600">
                     {isGuaranteeType ? (
                       guaranteeCount ? `${guaranteeCount}${guaranteeUnit}` : '-'
+                    ) : isPerUnitType ? (
+                      campaign.originalData?.work_period ? `${campaign.originalData.work_period}일` : '30일'
                     ) : (
                       (() => {
                         const minQty = campaign.minQuantity || '100';
@@ -286,6 +294,42 @@ const CampaignPreviewModal: React.FC<CampaignPreviewModalProps> = ({
                         : `작업 시작 후 ${campaign.originalData.guarantee_period}일 안에 ${campaign.originalData.guarantee_count}회 이상 작업을 보장합니다.`
                       }
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 단건형 요약 정보 - 단건형일 때만 표시 */}
+              {isPerUnitType && (
+                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <KeenIcon icon="package" className="size-5 text-orange-500 flex-shrink-0" />
+                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                        단건형 캠페인 정보
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-orange-600">최소 구매 수량:</span>
+                        <span className="ml-2 font-medium">{campaign.minQuantity || '10개'}</span>
+                      </div>
+                      {campaign.originalData?.max_quantity && (
+                        <div>
+                          <span className="text-orange-600">최대 구매 수량:</span>
+                          <span className="ml-2 font-medium">{campaign.originalData.max_quantity}개</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-orange-600">작업 기간:</span>
+                        <span className="ml-2 font-medium">{campaign.originalData?.work_period || '30'}일</span>
+                      </div>
+                      {campaign.originalData?.is_negotiable && (
+                        <div>
+                          <span className="text-orange-600">가격 협상:</span>
+                          <span className="ml-2 font-medium">가능</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

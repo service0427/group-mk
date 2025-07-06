@@ -2,7 +2,7 @@
 -- 단건형(Per-Unit) 캠페인 함수 및 트리거
 -- =====================================================
 -- 설명: 비즈니스 로직을 위한 저장 프로시저와 트리거
--- 작성일: 2025-01-06
+-- 작성일: 2025-07-06
 -- =====================================================
 
 -- =====================================================
@@ -29,7 +29,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 단건형 캠페인 생성 함수
 CREATE OR REPLACE FUNCTION create_per_unit_campaign(
-    p_campaign_id UUID,
+    p_campaign_id INTEGER,
     p_min_quantity INTEGER,
     p_unit_price NUMERIC,
     p_max_quantity INTEGER DEFAULT NULL,
@@ -81,7 +81,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 견적 요청 생성 함수
 CREATE OR REPLACE FUNCTION create_per_unit_request(
-    p_campaign_id UUID,
+    p_campaign_id INTEGER,
     p_quantity INTEGER,
     p_unit_price NUMERIC DEFAULT NULL,
     p_message TEXT DEFAULT NULL,
@@ -149,8 +149,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION respond_per_unit_request(
     p_request_id UUID,
     p_action VARCHAR, -- 'accept', 'reject', 'negotiate'
-    p_unit_price NUMERIC DEFAULT NULL,
-    p_message TEXT DEFAULT NULL
+    p_unit_price NUMERIC,
+    p_message TEXT
 )
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -319,9 +319,9 @@ CREATE OR REPLACE FUNCTION submit_per_unit_work_log(
     p_slot_id UUID,
     p_work_date DATE,
     p_completed_count INTEGER,
-    p_work_urls JSONB DEFAULT '[]',
-    p_screenshot_urls JSONB DEFAULT '[]',
-    p_notes TEXT DEFAULT NULL
+    p_work_urls JSONB,
+    p_screenshot_urls JSONB,
+    p_notes TEXT
 )
 RETURNS UUID AS $$
 DECLARE
@@ -493,9 +493,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION create_per_unit_refund(
     p_slot_id UUID,
     p_refund_type VARCHAR,
-    p_refund_quantity INTEGER DEFAULT NULL,
     p_reason_category VARCHAR,
     p_reason_detail TEXT,
+    p_refund_quantity INTEGER DEFAULT NULL,
     p_evidence_urls JSONB DEFAULT '[]'
 )
 RETURNS UUID AS $$

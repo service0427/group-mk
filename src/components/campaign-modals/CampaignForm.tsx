@@ -67,7 +67,7 @@ interface CampaignFormInputData {
   unitPrice: string;
   bannerImage?: string;
   minQuantity?: string;
-  slotType?: 'standard' | 'guarantee';
+  slotType?: 'standard' | 'guarantee' | 'per-unit';
   isNegotiable?: boolean;
   guaranteeCount?: string;
   guaranteeUnit?: '일' | '회';
@@ -75,6 +75,9 @@ interface CampaignFormInputData {
   targetRank?: string;
   minGuaranteePrice?: string;
   maxGuaranteePrice?: string;
+  // 단건형 전용 필드
+  maxQuantity?: string;
+  workPeriod?: string;
   refundSettings?: RefundSettings;
   deadline?: string;
 }
@@ -570,7 +573,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                         type="radio"
                         name="slotType"
                         value="standard"
-                        checked={formData.slotType !== 'guarantee'}
+                        checked={formData.slotType === 'standard'}
                         onChange={(e) => handleChange('slotType', e.target.value)}
                         className="size-4"
                         disabled={loading || isEditMode}
@@ -589,15 +592,28 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                       />
                       <span className="text-xs sm:text-sm font-medium">보장형 서비스</span>
                     </label>
+                    <label className={`flex items-center gap-2 ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                      <input
+                        type="radio"
+                        name="slotType"
+                        value="per-unit"
+                        checked={formData.slotType === 'per-unit'}
+                        onChange={(e) => handleChange('slotType', e.target.value)}
+                        className="size-4"
+                        disabled={loading || isEditMode}
+                      />
+                      <span className="text-xs sm:text-sm font-medium">단건형 서비스</span>
+                    </label>
                   </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                    일반형(슬롯기반) 서비스는 작업 기반 서비스이며, 보장형 서비스는 기간 내 보장 서비스입니다.
+                    일반형은 작업 기반, 보장형은 기간 내 보장, 단건형은 건별 단가 기반 서비스입니다.
                     {isEditMode && <span className="text-red-500 block mt-1">※ 서비스타입은 수정할 수 없습니다.</span>}
                   </p>
                 </div>
               </td>
             </tr>
 
+            {/* 건당 단가 - 일반형/단건형일 때 표시 */}
             {formData.slotType !== 'guarantee' && (
               <tr>
                 <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
@@ -621,7 +637,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
             )}
 
 
-            {/* 최소수량 - 일반 서비스일 때만 표시 */}
+            {/* 최소수량 - 일반형/단건형일 때 표시 */}
             {formData.slotType !== 'guarantee' && (
               <tr>
                 <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
@@ -642,7 +658,118 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                     />
                     <span className="text-xs sm:text-sm text-muted-foreground">개</span>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                    {formData.slotType === 'per-unit' 
+                      ? '최소 구매 가능한 수량을 설정하세요. (예: 300개)'
+                      : '캠페인 진행을 위한 최소 구매 수량을 설정하세요. (기본값: 10개)'}
+                  </p>
+                </td>
+              </tr>
+            )}
+
+            {/* 최대수량 - 단건형일 때만 표시 */}
+            {formData.slotType === 'per-unit' && (
+              <tr>
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
+                  최대수량
+                </th>
+                <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      value={formData.maxQuantity || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleChange('maxQuantity', value);
+                      }}
+                      className="w-24 sm:w-32"
+                      placeholder="10000"
+                      disabled={loading}
+                    />
+                    <span className="text-xs sm:text-sm text-muted-foreground">개</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">최대 구매 가능한 수량을 설정하세요. (선택사항)</p>
+                </td>
+              </tr>
+            )}
+
+            {/* 작업 기간 - 단건형일 때만 표시 */}
+            {formData.slotType === 'per-unit' && (
+              <tr>
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
+                  작업 기간 <span className="text-red-500">*</span>
+                </th>
+                <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      value={formData.workPeriod || '30'}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleChange('workPeriod', value);
+                      }}
+                      className="w-24 sm:w-32"
+                      placeholder="30"
+                      disabled={loading}
+                    />
+                    <span className="text-xs sm:text-sm text-muted-foreground">일</span>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">전체 작업을 완료하기 위한 기간을 입력하세요. (기본값: 30일)</p>
+                </td>
+              </tr>
+            )}
+
+            {/* 가격 협상 - 단건형일 때만 표시 */}
+            {formData.slotType === 'per-unit' && (
+              <tr>
+                <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[160px]">
+                  가격 협상
+                </th>
+                <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={formData.isNegotiable || false}
+                        onCheckedChange={(checked) => handleChange('isNegotiable', checked as boolean)}
+                        disabled={loading}
+                      />
+                      <span className="text-xs sm:text-sm">가격 협상 가능</span>
+                    </label>
+                    {formData.isNegotiable && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="10"
+                            value={formData.minGuaranteePrice || ''}
+                            onChange={(e) => handleChange('minGuaranteePrice', e.target.value)}
+                            className="w-24 sm:w-32"
+                            placeholder="최소"
+                            disabled={loading}
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                        </div>
+                        <span className="text-xs sm:text-sm text-muted-foreground">~</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="10"
+                            value={formData.maxGuaranteePrice || ''}
+                            onChange={(e) => handleChange('maxGuaranteePrice', e.target.value)}
+                            className="w-24 sm:w-32"
+                            placeholder="최대"
+                            disabled={loading}
+                          />
+                          <span className="text-xs sm:text-sm text-muted-foreground">원</span>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      가격 협상을 허용하면 광고주가 원하는 단가를 제안할 수 있습니다.
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}

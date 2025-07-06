@@ -179,3 +179,47 @@ export const DEFAULT_BASIC_FIELDS: Record<string, FieldConfig> = {
     }
   }
 };
+
+// service_type과 search_keyword type 매핑
+export const SERVICE_TYPE_TO_KEYWORD_TYPE: Record<string, string> = {
+  'NaverShoppingTraffic': 'shopping',
+  'NaverShoppingRank': 'shopping',
+  'NaverPlaceTraffic': 'place',
+  'NaverPlaceRank': 'place',
+  'NaverBlogTraffic': 'blog',
+  'NaverBlogRank': 'blog',
+  'NaverViewTraffic': 'view',
+  'NaverViewRank': 'view',
+  'NaverKinTraffic': 'kin',
+  'NaverKinRank': 'kin',
+  // 기본값
+  'default': 'shopping'
+};
+
+// 순위 체크 지원 여부
+export const RANKING_SUPPORT_STATUS: Record<string, boolean> = {
+  'shopping': true,  // 지원됨 (테이블 존재)
+  'place': false,    // 미지원 (테이블 없음, 순위 노출 안 함)
+  'blog': false,     // 미지원 (테이블 없음)
+  'view': false,     // 미지원 (테이블 없음)
+  'kin': false       // 미지원 (테이블 없음)
+};
+
+// type별 순위 테이블 매핑 (실제 존재하는 테이블만 정의)
+export const RANKING_TABLE_MAPPING: Record<string, {
+  current: string;
+  daily: string;
+  hourly: string;
+}> = {
+  'shopping': {
+    current: 'shopping_rankings_current',
+    daily: 'shopping_rankings_daily',
+    hourly: 'shopping_rankings_hourly'
+  }
+  // place, blog, view, kin 등은 테이블 생성 후 추가
+};
+
+// keyword type을 가져오는 헬퍼 함수
+export function getKeywordTypeFromServiceType(serviceType: string): string {
+  return SERVICE_TYPE_TO_KEYWORD_TYPE[serviceType] || SERVICE_TYPE_TO_KEYWORD_TYPE.default;
+}

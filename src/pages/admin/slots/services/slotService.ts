@@ -1,6 +1,7 @@
 import { supabase } from '@/supabase';
 import { Slot } from '../components/types';
 import { checkSingleKeywordRanking, checkKeywordsInBatches, extractKeywordsFromSlot } from '@/services/rankingCheckService';
+import { createSlotExtensionRequestNotification, createSlotExtensionApprovedNotification, createSlotExtensionRejectedNotification } from '@/utils/notificationActions';
 
 /**
  * 슬롯 승인 서비스
@@ -180,6 +181,7 @@ const approveSingleSlot = async (
       throw new Error('해당 슬롯이 존재하지 않습니다.');
     }
 
+
     // actionType이 없는 경우에만 pending 체크 (일반 승인)
     if (!actionType && slotData.status !== 'pending') {
       throw new Error(`대기 중인 슬롯만 승인할 수 있습니다. (현재 상태: ${slotData.status})`);
@@ -215,7 +217,8 @@ const approveSingleSlot = async (
     // 이 작업은 사용자가 거래 완료를 눌렀을 때 수행됨
     
     // NS 서비스 타입인 경우 순위 체크 API 호출 (승인 시에만, 스킵 플래그가 없을 때만)
-    if ((!actionType || actionType === 'approve') && !skipRankingCheck && campaignData.service_type && campaignData.service_type.startsWith('NaverShopping')) {
+    // 연장 슬롯인 경우는 순위 체크 스킵
+    if ((!actionType || actionType === 'approve') && !skipRankingCheck && !slotData.is_extension && campaignData.service_type && campaignData.service_type.startsWith('NaverShopping')) {
       // 캠페인의 필드 매핑 정보 가져오기
       const fieldMapping = campaignData.ranking_field_mapping;
       
@@ -269,17 +272,62 @@ const approveSingleSlot = async (
       dueDays = 1;
     }
     
-    // 무조건 날짜 재계산 (승인일 다음날부터 시작)
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    
-    finalStartDate = tomorrow.toISOString().split('T')[0];
-    
-    // 종료일 계산: 시작일 + (dueDays - 1)
-    const endDateObj = new Date(tomorrow);
-    endDateObj.setDate(tomorrow.getDate() + dueDays - 1);
-    finalEndDate = endDateObj.toISOString().split('T')[0];
+    // 연장 슬롯인지 확인
+    if (slotData.is_extension && slotData.parent_slot_id) {
+      // 연장 슬롯인 경우, 무조건 원본 슬롯의 종료일을 기준으로 날짜 재계산
+      const { data: parentSlot, error: parentError } = await supabase
+        .from('slots')
+        .select('end_date')
+        .eq('id', slotData.parent_slot_id)
+        .single();
+      
+      if (parentError || !parentSlot || !parentSlot.end_date) {
+        throw new Error('원본 슬롯의 종료일을 확인할 수 없습니다.');
+      }
+      
+      // 원본 슬롯 종료일 다음날부터 시작
+      const [year, month, day] = parentSlot.end_date.split('-').map(Number);
+      const parentEndDate = new Date(year, month - 1, day);
+      
+      // 하루(밀리초)를 더하는 방식으로 정확히 다음날 계산
+      const extensionStartDate = new Date(parentEndDate.getTime() + 24 * 60 * 60 * 1000);
+      
+      // 날짜를 YYYY-MM-DD 형식으로 변환 (로컬 시간대 유지)
+      const formatDate = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // 연장 슬롯은 무조건 원본 종료일 기준으로 날짜 설정
+      finalStartDate = formatDate(extensionStartDate);
+      
+      const extensionEndDate = new Date(extensionStartDate);
+      extensionEndDate.setDate(extensionStartDate.getDate() + dueDays - 1);
+      finalEndDate = formatDate(extensionEndDate);
+    } else {
+      // 일반 슬롯인 경우 기존 로직 (승인일 다음날부터 시작)
+      // 단, 이미 날짜가 설정되어 있으면 유지
+      if (!finalStartDate || !finalEndDate) {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        finalStartDate = tomorrow.toISOString().split('T')[0];
+        
+        // 종료일 계산: 시작일 + (dueDays - 1)
+        const endDateObj = new Date(tomorrow);
+        endDateObj.setDate(tomorrow.getDate() + dueDays - 1);
+        finalEndDate = endDateObj.toISOString().split('T')[0];
+        
+        console.log('[일반 슬롯] 날짜 계산:', {
+          today: today.toISOString().split('T')[0],
+          tomorrow: finalStartDate,
+          end: finalEndDate
+        });
+      }
+    }
 
     // 3. 슬롯 상태 업데이트 (actionType에 따라 다른 상태로 업데이트)
     let newStatus = 'approved';
@@ -401,6 +449,7 @@ const approveSingleSlot = async (
       .select();
 
     if (updateError) {
+      console.error('[슬롯 승인] 업데이트 오류:', updateError);
       throw updateError;
     }
     
@@ -525,33 +574,44 @@ const approveSingleSlot = async (
       const serviceType = campaignData.service_type || '';
       const slotType = campaignData.slot_type || 'standard';
       
-      // actionType에 따라 다른 알림 내용 사용
-      let notificationType = 'slot_approved';
-      let notificationTitle = '슬롯 승인 완료';
-      let notificationMessage = `귀하의 슬롯이 승인되었습니다.`;
-      
-      if (actionType === 'success') {
-        notificationType = 'slot_success';
-        notificationTitle = '슬롯 작업 완료';
-        notificationMessage = `귀하의 슬롯 작업이 완료되었습니다.`;
-      } else if (actionType === 'refund') {
-        notificationType = 'slot_refund';
-        notificationTitle = '슬롯 환불 처리';
-        notificationMessage = `귀하의 슬롯이 환불 처리되었습니다.`;
+      // 연장 슬롯인 경우 특별 처리
+      if (slotData.is_extension && slotData.parent_slot_id) {
+        // 연장 승인 알림
+        await createSlotExtensionApprovedNotification(
+          slotData.user_id,
+          slotData.id,
+          campaignData.campaign_name || `캠페인 #${slotData.product_id}`,
+          finalEndDate || ''
+        );
+      } else {
+        // actionType에 따라 다른 알림 내용 사용
+        let notificationType = 'slot_approved';
+        let notificationTitle = '슬롯 승인 완료';
+        let notificationMessage = `귀하의 슬롯이 승인되었습니다.`;
+        
+        if (actionType === 'success') {
+          notificationType = 'slot_success';
+          notificationTitle = '슬롯 작업 완료';
+          notificationMessage = `귀하의 슬롯 작업이 완료되었습니다.`;
+        } else if (actionType === 'refund') {
+          notificationType = 'slot_refund';
+          notificationTitle = '슬롯 환불 처리';
+          notificationMessage = `귀하의 슬롯이 환불 처리되었습니다.`;
+        }
+        
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: slotData.user_id,
+            type: notificationType,
+            title: notificationTitle,
+            message: notificationMessage,
+            link: `/my-services?service=${getServiceTypeUrlPath(serviceType)}&type=${slotType}`,
+            status: 'unread',
+            priority: 'medium', // 필수 필드 추가
+            created_at: now
+          });
       }
-      
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: slotData.user_id,
-          type: notificationType,
-          title: notificationTitle,
-          message: notificationMessage,
-          link: `/my-services?service=${getServiceTypeUrlPath(serviceType)}&type=${slotType}`,
-          status: 'unread',
-          priority: 'medium', // 필수 필드 추가
-          created_at: now
-        });
     } catch (notifyError) {
       
       // 알림 생성 실패는 전체 프로세스 실패로 취급하지 않음
@@ -885,19 +945,31 @@ const rejectSingleSlot = async (
 
     // 5. 알림 생성
     try {
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: slotData.user_id,
-          type: 'slot_rejected',
-          title: '슬롯 반려 및 환불 완료',
-          message: `귀하의 슬롯이 다음 사유로 반려되었습니다: ${rejectionReason}. ${unitPrice.toLocaleString()}원이 환불되었습니다.`,
-          link: `/myinfo/services`,
-          reference_id: slotId,
-          status: 'unread',
-          priority: 'high', // 반려는 중요도 높음
-          created_at: now
-        });
+      // 연장 슬롯인지 확인
+      if (slotData.is_extension && slotData.parent_slot_id) {
+        // 연장 반려 알림
+        await createSlotExtensionRejectedNotification(
+          slotData.user_id,
+          slotData.id,
+          campaignData.campaign_name || `캠페인 #${slotData.product_id}`,
+          rejectionReason
+        );
+      } else {
+        // 일반 슬롯 반려 알림
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: slotData.user_id,
+            type: 'slot_rejected',
+            title: '슬롯 반려 및 환불 완료',
+            message: `귀하의 슬롯이 다음 사유로 반려되었습니다: ${rejectionReason}. ${unitPrice.toLocaleString()}원이 환불되었습니다.`,
+            link: `/myinfo/services`,
+            reference_id: slotId,
+            status: 'unread',
+            priority: 'high', // 반려는 중요도 높음
+            created_at: now
+          });
+      }
     } catch (notifyError) {
       
       // 알림 생성 실패는 전체 프로세스 실패로 취급하지 않음
@@ -1472,6 +1544,342 @@ export const confirmSlotByUser = async (
   }
 };
 
+// 슬롯 연장 가능 여부 체크 함수
+export const checkExtensionEligibility = async (
+  slotId: string
+): Promise<{
+  isEligible: boolean;
+  message: string;
+  daysUntilEnd?: number;
+  slotData?: any;
+}> => {
+  try {
+    // 1. 슬롯 정보 조회
+    const { data: slot, error: slotError } = await supabase
+      .from('slots')
+      .select('*, campaigns(*)')
+      .eq('id', slotId)
+      .single();
+
+    if (slotError || !slot) {
+      return {
+        isEligible: false,
+        message: '슬롯 정보를 찾을 수 없습니다.'
+      };
+    }
+
+    // 2. 상태 체크 (active 또는 approved 상태여야 함)
+    if (slot.status !== 'active' && slot.status !== 'approved') {
+      return {
+        isEligible: false,
+        message: '진행 중인 슬롯만 연장 신청이 가능합니다.'
+      };
+    }
+
+    // 3. 종료일 체크
+    if (!slot.end_date) {
+      return {
+        isEligible: false,
+        message: '종료일이 설정되지 않은 슬롯입니다.'
+      };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(slot.end_date);
+    endDate.setHours(0, 0, 0, 0);
+    
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    // 4. 종료일 3일 이내 체크
+    if (daysUntilEnd > 3) {
+      return {
+        isEligible: false,
+        message: `종료 3일 전부터 연장 신청이 가능합니다. (${daysUntilEnd}일 남음)`,
+        daysUntilEnd
+      };
+    }
+
+    // 이미 종료된 슬롯 체크
+    if (daysUntilEnd < 0) {
+      return {
+        isEligible: false,
+        message: '이미 종료된 슬롯은 연장할 수 없습니다.',
+        daysUntilEnd
+      };
+    }
+
+    // 5. 이미 연장 신청한 슬롯이 있는지 체크
+    const { data: existingExtension, error: extensionError } = await supabase
+      .from('slots')
+      .select('id, status')
+      .eq('parent_slot_id', slotId)
+      .eq('is_extension', true)
+      .in('status', ['pending', 'approved', 'active']);
+
+    if (existingExtension && existingExtension.length > 0) {
+      const status = existingExtension[0].status;
+      const statusText = status === 'pending' ? '대기 중인' : 
+                        status === 'approved' ? '승인된' : '진행 중인';
+      return {
+        isEligible: false,
+        message: `이미 ${statusText} 연장 신청이 있습니다.`
+      };
+    }
+
+    // 6. 환불된 슬롯 체크
+    const { data: refundRequest } = await supabase
+      .from('slot_refund_approvals')
+      .select('status')
+      .eq('slot_id', slotId)
+      .in('status', ['pending', 'approved']);
+
+    if (refundRequest && refundRequest.length > 0) {
+      return {
+        isEligible: false,
+        message: '환불 처리 중이거나 환불된 슬롯은 연장할 수 없습니다.'
+      };
+    }
+
+    return {
+      isEligible: true,
+      message: '연장 신청이 가능합니다.',
+      daysUntilEnd,
+      slotData: slot
+    };
+  } catch (error) {
+    console.error('연장 가능 여부 체크 중 오류:', error);
+    return {
+      isEligible: false,
+      message: '연장 가능 여부 확인 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 슬롯 연장 신청 생성 함수
+export const createExtensionRequest = async (
+  originalSlotId: string,
+  userId: string,
+  extensionDays: number,
+  notes?: string
+): Promise<{ success: boolean; message: string; data?: any }> => {
+  try {
+    // 1. 연장 가능 여부 재확인
+    const eligibility = await checkExtensionEligibility(originalSlotId);
+    if (!eligibility.isEligible) {
+      return {
+        success: false,
+        message: eligibility.message
+      };
+    }
+
+    const originalSlot = eligibility.slotData;
+    if (!originalSlot) {
+      throw new Error('원본 슬롯 정보를 찾을 수 없습니다.');
+    }
+
+    // 2. 캠페인 정보 확인
+    const campaign = originalSlot.campaigns;
+    if (!campaign) {
+      throw new Error('캠페인 정보를 찾을 수 없습니다.');
+    }
+
+    const unitPrice = parseFloat(String(campaign.unit_price || 0));
+    const totalPrice = Math.ceil(unitPrice * 1.1); // VAT 포함
+
+    // 3. 사용자 잔액 확인
+    const { data: userBalance, error: balanceError } = await supabase
+      .from('user_balances')
+      .select('paid_balance, free_balance, total_balance')
+      .eq('user_id', userId)
+      .single();
+
+    if (balanceError || !userBalance) {
+      throw new Error('잔액 정보를 확인할 수 없습니다.');
+    }
+
+    const paidBalance = parseFloat(String(userBalance.paid_balance || 0));
+
+    if (paidBalance < totalPrice) {
+      return {
+        success: false,
+        message: `잔액이 부족합니다. 필요 금액: ${totalPrice.toLocaleString()}원, 현재 잔액: ${paidBalance.toLocaleString()}원`
+      };
+    }
+
+    // 4. 새 슬롯 데이터 준비
+    // 원본 슬롯의 종료일 다음날부터 시작하도록 예상 날짜 계산
+    let expectedStartDate = null;
+    let expectedEndDate = null;
+    
+    if (originalSlot.end_date) {
+      // 원본 슬롯의 end_date를 로컬 시간대로 파싱
+      const [year, month, day] = originalSlot.end_date.split('-').map(Number);
+      const originalEndDate = new Date(year, month - 1, day);
+      
+      // 연장 슬롯은 원본 종료일 다음날부터 시작
+      // setDate는 월을 넘어가는 경우를 제대로 처리하지 못할 수 있으므로
+      // 하루(밀리초)를 더하는 방식으로 처리
+      const extensionStartDate = new Date(originalEndDate.getTime() + 24 * 60 * 60 * 1000);
+      
+      // 연장 종료일 계산
+      const extensionEndDate = new Date(extensionStartDate);
+      extensionEndDate.setDate(extensionStartDate.getDate() + extensionDays - 1);
+      
+      // 날짜를 YYYY-MM-DD 형식으로 변환 (로컬 시간대 유지)
+      const formatDate = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      expectedStartDate = formatDate(extensionStartDate);
+      expectedEndDate = formatDate(extensionEndDate);
+    } else {
+      console.log('[연장 슬롯 생성] 경고: 원본 슬롯에 end_date가 없습니다!');
+    }
+    
+    // quantity 값 추출 (원본 슬롯에서)
+    const quantity = originalSlot.quantity || 
+                    originalSlot.input_data?.workCount || 
+                    originalSlot.input_data?.['작업량'] ||
+                    originalSlot.input_data?.quantity || 
+                    originalSlot.input_data?.['타수'] || 
+                    originalSlot.input_data?.['일일 타수'] || 
+                    originalSlot.input_data?.['일일타수'] || 
+                    0;
+    
+    const newSlotData = {
+      mat_id: originalSlot.mat_id,
+      product_id: originalSlot.product_id,
+      user_id: userId,
+      status: 'pending',
+      quantity: quantity,              // quantity 필드 추가
+      start_date: expectedStartDate,   // 예상 시작일 설정
+      end_date: expectedEndDate,       // 예상 종료일 설정
+      input_data: {
+        ...originalSlot.input_data,
+        work_days: extensionDays,
+        extension_note: notes,
+        is_extension: true,
+        original_slot_number: originalSlot.user_slot_number
+      },
+      parent_slot_id: originalSlotId,
+      is_extension: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // 5. 새 슬롯 생성
+    const { data: newSlot, error: insertError } = await supabase
+      .from('slots')
+      .insert(newSlotData)
+      .select()
+      .single();
+
+    if (insertError || !newSlot) {
+      throw new Error('연장 슬롯 생성에 실패했습니다.');
+    }
+
+    // 6. 캐시 차감 처리 (유료 캐시만 사용)
+    // 잔액 업데이트
+    const { error: updateBalanceError } = await supabase
+      .from('user_balances')
+      .update({
+        paid_balance: paidBalance - totalPrice,
+        total_balance: paidBalance - totalPrice,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateBalanceError) {
+      throw new Error('잔액 업데이트에 실패했습니다.');
+    }
+
+    // 7. 캐시 사용 내역 기록
+    await supabase
+      .from('user_cash_history')
+      .insert({
+        user_id: userId,
+        amount: -totalPrice,
+        transaction_type: 'purchase',
+        reference_id: newSlot.id,
+        description: `슬롯 연장: ${campaign.campaign_name}`,
+        transaction_at: new Date().toISOString(),
+        mat_id: originalSlot.mat_id,
+        balance_type: 'paid'
+      });
+
+    // 8. slot_pending_balances 생성
+    await supabase
+      .from('slot_pending_balances')
+      .insert({
+        slot_id: newSlot.id,
+        user_id: userId,
+        product_id: originalSlot.product_id,
+        amount: totalPrice,
+        status: 'pending',
+        notes: JSON.stringify({
+          is_extension: true,
+          original_slot_id: originalSlotId,
+          extension_days: extensionDays,
+          payment_details: {
+            paid_balance_used: totalPrice,
+            total_amount: totalPrice
+          }
+        }),
+        created_at: new Date().toISOString()
+      });
+
+    // 9. 이력 기록
+    await supabase
+      .from('slot_history_logs')
+      .insert({
+        slot_id: newSlot.id,
+        action: 'extension_request',
+        old_status: null,
+        new_status: 'pending',
+        user_id: userId,
+        details: {
+          original_slot_id: originalSlotId,
+          extension_days: extensionDays,
+          notes: notes,
+          amount: totalPrice,
+          payment_details: {
+            paid_balance_used: totalPrice
+          }
+        },
+        created_at: new Date().toISOString()
+      });
+
+    // 10. 알림 생성 (총판에게)
+    try {
+      await createSlotExtensionRequestNotification(
+        originalSlot.mat_id,
+        originalSlot.id,
+        campaign.campaign_name || `캠페인 #${originalSlot.product_id}`,
+        extensionDays,
+        '사용자'
+      );
+    } catch (notifyError) {
+      console.error('알림 생성 실패:', notifyError);
+    }
+
+    return {
+      success: true,
+      message: '슬롯 연장 신청이 완료되었습니다.',
+      data: newSlot
+    };
+  } catch (err: any) {
+    console.error('슬롯 연장 신청 중 오류:', err);
+    return {
+      success: false,
+      message: err.message || '슬롯 연장 신청 중 오류가 발생했습니다.'
+    };
+  }
+};
+
 export default {
   approveSlot,
   rejectSlot,
@@ -1479,5 +1887,7 @@ export default {
   createSlot,
   getSlotList,
   completeSlotByMat,
-  confirmSlotByUser
+  confirmSlotByUser,
+  checkExtensionEligibility,
+  createExtensionRequest
 };

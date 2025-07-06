@@ -34,6 +34,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { SlotRefundModal } from '@/components/refund/SlotRefundModal';
+import { SlotExtensionModal } from '@/components/slot/SlotExtensionModal';
 import { MyGuaranteeQuotesContent } from '@/pages/myinfo/components/MyGuaranteeQuotesContent';
 import { InquiryChatModal } from '@/components/inquiry';
 
@@ -445,6 +446,10 @@ const MyServicesPage: React.FC = () => {
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [slotsToRefund, setSlotsToRefund] = useState<string[]>([]);
 
+  // 연장 모달 상태
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+  const [slotToExtend, setSlotToExtend] = useState<any>(null);
+
   // 슬롯 환불 모달 열기
   const handleOpenRefundModal = useCallback((slotIds: string | string[]) => {
     const idsArray = Array.isArray(slotIds) ? slotIds : [slotIds];
@@ -464,6 +469,57 @@ const MyServicesPage: React.FC = () => {
     setSlotsToRefund(refundableSlots);
     setIsRefundModalOpen(true);
   }, [filteredSlots, showError]);
+
+  // 슬롯 연장 모달 열기
+  const handleOpenExtensionModal = useCallback((slot: any) => {
+    // approved 상태인지 확인
+    if (slot.status !== 'approved') {
+      showError('승인된 슬롯만 연장 신청할 수 있습니다.');
+      return;
+    }
+
+    // 종료일이 있는지 확인
+    if (!slot.endDate) {
+      showError('종료일이 설정되지 않은 슬롯입니다.');
+      return;
+    }
+
+    // 종료 3일 전부터 연장 가능
+    const endDate = new Date(slot.endDate);
+    const today = new Date();
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilEnd > 3) {
+      showError('슬롯 종료 3일 전부터 연장 신청이 가능합니다.');
+      return;
+    }
+
+    if (daysUntilEnd <= 0) {
+      showError('이미 종료된 슬롯입니다.');
+      return;
+    }
+
+    // Slot 타입으로 변환
+    const slotData = {
+      id: slot.id,
+      mat_id: slot.matId || '',
+      user_id: currentUser?.id || '',
+      product_id: slot.productId,
+      status: slot.status,
+      created_at: slot.createdAt,
+      submitted_at: slot.submittedAt,
+      input_data: slot.inputData || {},
+      start_date: slot.startDate,
+      end_date: slot.endDate,
+      campaign: slot.campaign ? {
+        ...slot.campaign,
+        campaign_name: slot.campaign.campaignName || slot.campaign.campaign_name
+      } : undefined
+    };
+
+    setSlotToExtend(slotData);
+    setIsExtensionModalOpen(true);
+  }, [currentUser, showError]);
 
   // 슬롯 취소 실행
   const handleConfirmCancel = useCallback(async () => {
@@ -869,6 +925,7 @@ const MyServicesPage: React.FC = () => {
                 setInquiryModalOpen(true);
               }}
               onRefresh={loadCampaignSlots}
+              onExtension={handleOpenExtensionModal}
             />
             {/* 페이지네이션 컨트롤 */}
             {totalItems > 0 && (
@@ -1008,6 +1065,23 @@ const MyServicesPage: React.FC = () => {
           distributorId={inquiryData?.distributorId}
           initialTitle={inquiryData?.title}
         />
+
+        {/* 슬롯 연장 모달 */}
+        {slotToExtend && (
+          <SlotExtensionModal
+            isOpen={isExtensionModalOpen}
+            onClose={() => {
+              setIsExtensionModalOpen(false);
+              setSlotToExtend(null);
+            }}
+            slot={slotToExtend}
+            onSuccess={async () => {
+              await loadCampaignSlots();
+              await fetchAllServiceCounts();
+              showSuccess('슬롯 연장 신청이 완료되었습니다.');
+            }}
+          />
+        )}
       </>
       )}
     </DashboardTemplate>

@@ -90,8 +90,7 @@ const SlotDetailModal: React.FC<SlotDetailModalProps> = ({
     'keyword1', 'keyword2', 'keyword3', 'keywordId', 
     'mainKeyword', 'mid', 'price', 'service_type', 
     'url', 'workCount', 'keywords', 'main_keyword', 
-    'minimum_purchase', 'work_days', 'is_manual_input',
-    'is_extension', 'original_slot_number', 'extension_notes', 'extension_note'
+    'minimum_purchase', 'work_days', 'is_manual_input'
   ];
   
   const additionalFields = Object.entries(inputData).filter(

@@ -4,9 +4,17 @@ import { Slot, User, Campaign } from './types';
 import { formatDate } from './constants';
 import { supabase } from '@/supabase';
 import { useAlert } from '@/hooks/useAlert';
+import { useCustomToast } from '@/hooks/useCustomToast';
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
 import { getBulkSlotRankingData } from '@/services/rankingService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -82,10 +90,12 @@ interface SlotListProps {
   onComplete?: (slotId: string | string[]) => void; // 완료 처리 함수 추가
   onMemo: (slotId: string) => void;
   onDetail: (slotId: string) => void; // 상세 보기 함수 추가
+  onExtension?: (slot: Slot) => void; // 연장 처리 함수 추가
   selectedSlots?: string[]; // 부모로부터 전달받을 선택된 슬롯 ID 배열 (옵션)
   onSelectedSlotsChange?: (selectedSlots: string[]) => void; // 선택된 슬롯 상태가 변경될 때 호출될 콜백
   onRefresh?: () => void; // 새로고침 콜백
   isLoading?: boolean; // 로딩 상태
+  onRefreshRanking?: () => void; // 순위 새로고침 콜백
 }
 
 const SlotList: React.FC<SlotListProps> = ({ 
@@ -97,12 +107,15 @@ const SlotList: React.FC<SlotListProps> = ({
   onComplete,
   onMemo,
   onDetail,
+  onExtension,
   selectedSlots: externalSelectedSlots,
   onSelectedSlotsChange,
   onRefresh,
-  isLoading = false
+  isLoading = false,
+  onRefreshRanking
 }) => {
   const { showWarning } = useAlert();
+  const { showSuccess, showError } = useCustomToast();
   const [userMap, setUserMap] = useState<Record<string, User>>({});
   // 외부에서 관리되는 selectedSlots가 있으면 사용, 없으면 내부 상태로 관리
   const [internalSelectedSlots, setInternalSelectedSlots] = useState<string[]>([]);
@@ -116,6 +129,7 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   // 순위 데이터 상태 관리
   const [rankingDataMap, setRankingDataMap] = useState<Map<string, RankingData>>(new Map());
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   
   // 내키워드 지원 여부 확인 - 모든 슬롯이 내키워드 미지원인지 체크
   const isKeywordUnsupportedService = useMemo(() => {
@@ -131,7 +145,18 @@ const SlotList: React.FC<SlotListProps> = ({
   const prevSlotIdsRef = useRef<string[]>([]);
   
   // 노출 안할 inputData
-  const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'main_keyword', 'minimum_purchase', 'work_days', 'is_manual_input'];
+  const passItem = ['campaign_name', 'dueDays', 'expected_deadline', 'keyword1' , 'keyword2' , 'keyword3', 'keywordId', 'mainKeyword', 'mid', 'price', 'service_type', 'url', 'workCount', 'keywords', 'main_keyword', 'minimum_purchase', 'work_days', 'is_manual_input', 'is_extension', 'original_slot_number', 'extension_notes', 'extension_note'];
+  
+  // 연장 가능 여부 체크 함수
+  const canExtend = (slot: Slot): boolean => {
+    if (!slot.end_date || slot.status !== 'approved') return false;
+    
+    const endDate = new Date(slot.end_date);
+    const today = new Date();
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysUntilEnd <= 3 && daysUntilEnd > 0;
+  };
   
   // 슬롯이 변경될 때 모든 팝오버와 모달 닫기
   useEffect(() => {
@@ -242,25 +267,58 @@ const SlotList: React.FC<SlotListProps> = ({
     }
   };
   
-  // 순위 데이터 로드
+  // 순위 데이터 로드 - slots나 campaigns가 변경될 때 자동으로 로드
   useEffect(() => {
+    let isMounted = true;
+    
     const loadRankingData = async () => {
-      if (!slots || slots.length === 0 || !campaigns) return;
+      if (!slots || slots.length === 0 || !campaigns) {
+        setRankingDataMap(new Map());
+        return;
+      }
+      
+      // 활성 상태의 슬롯만 필터링 (pending 슬롯은 순위 필요 없음)
+      const activeSlots = slots.filter(slot => 
+        slot.status === 'approved' || slot.status === 'active' || slot.status === 'success'
+      );
+      
+      if (activeSlots.length === 0) {
+        setRankingDataMap(new Map());
+        return;
+      }
       
       // 캠페인별로 슬롯 그룹화
-      const slotsByMatProductId = slots.map(slot => ({
+      const slotsByMatProductId = activeSlots.map(slot => ({
         id: slot.id,
         campaignId: slot.product_id || 0,
         inputData: slot.input_data,
         keywordId: slot.keyword_id?.toString()
       }));
       
-      const rankingMap = await getBulkSlotRankingData(slotsByMatProductId);
-      setRankingDataMap(rankingMap);
+      if (isMounted) {
+        setIsLoadingRanking(true);
+        try {
+          const rankingMap = await getBulkSlotRankingData(slotsByMatProductId);
+          setRankingDataMap(rankingMap);
+        } catch (error) {
+          console.error('순위 데이터 로드 실패:', error);
+        } finally {
+          setIsLoadingRanking(false);
+        }
+      }
     };
     
-    loadRankingData();
-  }, [slots, campaigns]);
+    // 디바운스를 위한 타이머
+    const timer = setTimeout(() => {
+      loadRankingData();
+    }, 500); // 0.5초 디바운스
+    
+    return () => {
+      clearTimeout(timer);
+      isMounted = false;
+    };
+  }, [slots, campaigns]); // slots나 campaigns가 변경될 때마다 실행
+
 
   // 슬롯들의 사용자 정보를 한 번에 로드하는 함수
   useEffect(() => {
@@ -1038,6 +1096,15 @@ const SlotList: React.FC<SlotListProps> = ({
                             완료
                           </button>
                         )}
+                        {onExtension && canExtend(slot) && (
+                          <button
+                            className="px-2 py-0.5 text-xs font-medium rounded bg-purple-500 hover:bg-purple-600 text-white transition-colors"
+                            onClick={() => onExtension(slot)}
+                            title="슬롯 연장"
+                          >
+                            연장
+                          </button>
+                        )}
                         <button
                           className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors"
                           onClick={() => onApprove(slot.id, 'refund')}
@@ -1353,6 +1420,14 @@ const SlotList: React.FC<SlotListProps> = ({
                         onClick={() => onComplete(slot.id)}
                       >
                         완료
+                      </button>
+                    )}
+                    {onExtension && canExtend(slot) && (
+                      <button
+                        className="px-2 py-0.5 text-xs font-medium rounded bg-purple-500 hover:bg-purple-600 text-white transition-colors"
+                        onClick={() => onExtension(slot)}
+                      >
+                        연장
                       </button>
                     )}
                     <button

@@ -19,6 +19,7 @@ import { approveSlot, rejectSlot, updateSlotMemo, completeSlotByMat, deleteSlot 
 // ApproveModal 제거
 import RejectModal from './components/RejectModal';
 import ExcelExportModal, { ExcelTemplate } from './components/ExcelExportModal';
+import { SlotExtensionModal } from '@/components/slot/SlotExtensionModal';
 
 // 컴포넌트 가져오기
 import SearchForm from './components/SearchForm';
@@ -81,13 +82,17 @@ const ApprovePage: React.FC = () => {
 
   // 반려 모달 상태
   const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
-  const [actionSlotId, setActionSlotId] = useState<string | null>(null);
+  const [actionSlotId, setActionSlotId] = useState<string | string[] | null>(null);
   const [actionType, setActionType] = useState<string | undefined>(undefined);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
 
   // 엑셀 내보내기 모달 상태
   const [excelModalOpen, setExcelModalOpen] = useState<boolean>(false);
+
+  // 슬롯 연장 모달 상태
+  const [extensionModalOpen, setExtensionModalOpen] = useState<boolean>(false);
+  const [extensionSlot, setExtensionSlot] = useState<Slot | null>(null);
 
   // 페이지네이션 상태
   const [limit, setLimit] = useState<number>(20);
@@ -116,6 +121,9 @@ const ApprovePage: React.FC = () => {
     // 리스트 새로고침
     setSearchRefreshCounter(prev => prev + 1);
   }, []);
+
+  // 순위 데이터 수동 새로고침 (SlotList에서 직접 구현)
+  const slotListRef = useRef<any>(null);
 
   // 총판 사용자가 가진 서비스 타입들을 계산
   const availableServiceTypes = useMemo(() => {
@@ -901,36 +909,42 @@ const ApprovePage: React.FC = () => {
       // 각 슬롯에 대해 처리
       const results = [];
       for (const slot of slotsToProcess) {
-        // 시작일은 오늘로 설정
-        const today = new Date();   // 현재일
-        const startDateObj = new Date(today);
-        startDateObj.setDate(today.getDate() + 1);
-        const startDate = startDateObj.toISOString().split('T')[0];
-
-        // 종료일 계산: 시작일 + (dueDays - 1)
-        let dueDays = 0;
+        let startDate: string | undefined;
+        let endDate: string | undefined;
         
-        // 다양한 필드명 체크
-        if (slot.input_data?.dueDays) {
-          dueDays = parseInt(String(slot.input_data.dueDays));
-        } else if (slot.input_data?.work_days) {
-          dueDays = parseInt(String(slot.input_data.work_days));
-        } else if (slot.input_data?.workDays) {
-          dueDays = parseInt(String(slot.input_data.workDays));
-        } else if (slot.input_data?.workCount) {
-          dueDays = parseInt(String(slot.input_data.workCount));
+        // 연장 슬롯이 아닌 경우에만 날짜 계산
+        if (!slot.is_extension) {
+          // 시작일은 오늘로 설정
+          const today = new Date();   // 현재일
+          const startDateObj = new Date(today);
+          startDateObj.setDate(today.getDate() + 1);
+          startDate = startDateObj.toISOString().split('T')[0];
+
+          // 종료일 계산: 시작일 + (dueDays - 1)
+          let dueDays = 0;
+          
+          // 다양한 필드명 체크
+          if (slot.input_data?.dueDays) {
+            dueDays = parseInt(String(slot.input_data.dueDays));
+          } else if (slot.input_data?.work_days) {
+            dueDays = parseInt(String(slot.input_data.work_days));
+          } else if (slot.input_data?.workDays) {
+            dueDays = parseInt(String(slot.input_data.workDays));
+          } else if (slot.input_data?.workCount) {
+            dueDays = parseInt(String(slot.input_data.workCount));
+          }
+
+          // dueDays가 없거나 유효하지 않은 경우 1로 설정
+          if (isNaN(dueDays) || dueDays <= 0) {
+            dueDays = 1;
+          }
+
+          const endDateObj = new Date(startDateObj);
+          endDateObj.setDate(startDateObj.getDate() + dueDays - 1);
+          endDate = endDateObj.toISOString().split('T')[0];
         }
 
-        // dueDays가 없거나 유효하지 않은 경우 1로 설정
-        if (isNaN(dueDays) || dueDays <= 0) {
-          dueDays = 1;
-        }
-
-        const endDateObj = new Date(startDateObj);
-        endDateObj.setDate(startDateObj.getDate() + dueDays - 1);
-        const endDate = endDateObj.toISOString().split('T')[0];
-
-        // API 호출 처리
+        // API 호출 처리 - 연장 슬롯의 경우 날짜 파라미터 없이 호출
         const result = await approveSlot(slot.id, currentUser.id, actionType, startDate, endDate);
         results.push(result);
 
@@ -942,12 +956,15 @@ const ApprovePage: React.FC = () => {
           setSlots(prevSlots => {
             return prevSlots.map(s => {
               if (s.id === slot.id) {
+                // 서버에서 반환된 업데이트된 슬롯 데이터 사용
+                const updatedSlotData = result.data?.[0] || {};
                 return {
                   ...s,
                   status: newStatus,
-                  processed_at: new Date().toISOString(),
-                  start_date: startDate,
-                  end_date: endDate
+                  processed_at: updatedSlotData.processed_at || new Date().toISOString(),
+                  // 연장 슬롯의 경우 서버에서 계산된 날짜를 우선 사용
+                  start_date: updatedSlotData.start_date || startDate || s.start_date,
+                  end_date: updatedSlotData.end_date || endDate || s.end_date
                 };
               }
               return s;
@@ -997,11 +1014,12 @@ const ApprovePage: React.FC = () => {
     // 배열인 경우 (다중 반려)
     if (Array.isArray(slotId)) {
       if (slotId.length === 0) {
+        showError('선택된 슬롯이 없습니다.');
         return; // 선택된 슬롯이 없으면 처리하지 않음
       }
 
       // 모달로 대체
-      setActionSlotId(null); // null로 설정하여 배열 처리임을 표시
+      setActionSlotId(slotId); // 배열 자체를 저장
       setRejectModalOpen(true);
       return;
     }
@@ -1274,6 +1292,25 @@ const ApprovePage: React.FC = () => {
     }
   }, [slots, filteredSlots]);
 
+  // 슬롯 연장 모달 열기 함수
+  const handleExtension = useCallback((slot: Slot) => {
+    setExtensionSlot(slot);
+    setExtensionModalOpen(true);
+  }, []);
+
+  // 연장 성공 시 처리
+  const handleExtensionSuccess = useCallback(() => {
+    setExtensionModalOpen(false);
+    setExtensionSlot(null);
+    fetchSlots();
+    showSuccess('슬롯 연장 신청이 완료되었습니다.');
+    
+    // 통계 새로고침
+    if (monthlyStatisticsRef.current) {
+      monthlyStatisticsRef.current.refresh();
+    }
+  }, [fetchSlots, showSuccess]);
+
   // 메모 모달 열기 함수
   const handleOpenMemoModal = useCallback((slotId: string) => {
     // 현재 슬롯의 메모 정보 가져오기
@@ -1509,6 +1546,7 @@ const ApprovePage: React.FC = () => {
               onComplete={handleCompleteSlot}
               onMemo={handleOpenMemoModal}
               onDetail={handleOpenDetailModal}
+              onExtension={handleExtension}
               selectedSlots={selectedSlots}
               onSelectedSlotsChange={setSelectedSlots}
               onRefresh={fetchSlots}
@@ -1600,15 +1638,18 @@ const ApprovePage: React.FC = () => {
             isOpen={rejectModalOpen}
             onClose={() => setRejectModalOpen(false)}
             onConfirm={(reason) => {
-              // actionSlotId가 null이면 배열 처리(선택된 슬롯들), 아니면 단일 슬롯 처리
-              const slotIdToProcess = actionSlotId === null ? selectedSlots : actionSlotId;
-              processRejectSlot(slotIdToProcess, reason);
+              // actionSlotId가 배열이면 다중 처리, 아니면 단일 처리
+              if (actionSlotId) {
+                processRejectSlot(actionSlotId, reason);
+              } else {
+                showError('처리할 슬롯 정보가 없습니다.');
+              }
 
               // 모달 상태 초기화
               setRejectModalOpen(false);
               setActionSlotId(null);
             }}
-            count={selectedSlots.length}
+            count={Array.isArray(actionSlotId) ? actionSlotId.length : (actionSlotId ? 1 : 0)}
           />
 
           {/* 엑셀 내보내기 모달 */}
@@ -1618,6 +1659,19 @@ const ApprovePage: React.FC = () => {
               onClose={() => setExcelModalOpen(false)}
               onExport={handleExcelExport}
               slots={filteredSlots}
+            />
+          )}
+
+          {/* 슬롯 연장 모달 */}
+          {extensionSlot && (
+            <SlotExtensionModal
+              isOpen={extensionModalOpen}
+              onClose={() => {
+                setExtensionModalOpen(false);
+                setExtensionSlot(null);
+              }}
+              slot={extensionSlot}
+              onSuccess={handleExtensionSuccess}
             />
           )}
 

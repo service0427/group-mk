@@ -60,6 +60,8 @@ export interface Slot {
   end_date?: string; // 작업 종료일
   user?: User; // 사용자 정보 (조인된 데이터)
   campaign?: Campaign; // 캠페인 정보 (조인된 데이터)
+  parent_slot_id?: string; // 원본 슬롯 ID (연장된 슬롯인 경우)
+  is_extension?: boolean; // 연장 슬롯 여부
 }
 
 export interface SearchParams {

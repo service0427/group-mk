@@ -34,6 +34,7 @@ interface SlotListProps {
   customStatusLabels?: Record<string, string>; // 커스텀 상태 라벨
   onInquiry?: (slot: SlotItem) => void; // 1:1 문의 핸들러 추가
   onRefresh?: () => void; // 새로고침 핸들러
+  onExtension?: (slot: SlotItem) => void; // 연장 핸들러 추가
 }
 
 // CSS for tooltip
@@ -123,7 +124,8 @@ const SlotList: React.FC<SlotListProps> = ({
   showBulkCancel = false,
   customStatusLabels,
   onInquiry,
-  onRefresh
+  onRefresh,
+  onExtension
 }) => {
   // 환불 가능 여부 확인 함수
   const isRefundable = (slot: any) => {
@@ -139,6 +141,19 @@ const SlotList: React.FC<SlotListProps> = ({
     }
     
     return true;
+  };
+
+  // 연장 가능 여부 확인 함수
+  const canExtend = (slot: SlotItem): boolean => {
+    // approved 상태이고 end_date가 있을 때만 확인
+    if (slot.status !== 'approved' || !slot.endDate) return false;
+    
+    const endDate = new Date(slot.endDate);
+    const today = new Date();
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // 종료 3일 전부터 연장 가능
+    return daysUntilEnd <= 3 && daysUntilEnd > 0;
   };
 
   // 환불 불가 사유 메시지 생성 함수
@@ -220,12 +235,30 @@ const SlotList: React.FC<SlotListProps> = ({
   }, [filteredSlots]);
 
   // 남은 일수 계산 함수
-  const calculateRemainingDays = (endDate: string | null): number | null => {
+  const calculateRemainingDays = (endDate: string | null, startDate?: string | null, status?: string): number | null => {
     if (!endDate) return null;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // 진행예정(approved이고 시작일이 미래)인 경우 작업일수 계산
+    if (status === 'approved' && startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      if (start > today) {
+        // 시작일부터 종료일까지의 일수 계산
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // 시작일과 종료일 모두 포함
+        
+        return diffDays;
+      }
+    }
+    
+    // 기본 로직: 오늘부터 종료일까지의 남은 일수
     const end = new Date(endDate);
     end.setHours(0, 0, 0, 0);
     
@@ -467,9 +500,24 @@ const SlotList: React.FC<SlotListProps> = ({
     if (customStatusLabels && customStatusLabels[status]) {
       // approved 상태를 진행중으로 표시
       if (status === 'approved') {
+        // 시작일자 확인 (오늘 날짜와 비교)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
+        
+        const startDate = slot?.startDate ? new Date(slot.startDate) : null;
+        if (startDate) {
+          startDate.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
+        }
+        
+        // 시작일이 아직 안 됐으면 "진행예정"으로 표시
+        const isNotStarted = startDate && startDate > today;
+        const labelText = isNotStarted ? '진행예정' : customStatusLabels[status];
+        const badgeClass = isNotStarted ? 'badge whitespace-nowrap bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : 'badge badge-success whitespace-nowrap';
+        
+        
         return (
           <div className="flex items-center gap-1">
-            <span className="badge badge-success whitespace-nowrap">{customStatusLabels[status]}</span>
+            <span className={badgeClass}>{labelText}</span>
             {hasRejectedRefund && (
               <div className="relative">
                 <button
@@ -997,7 +1045,7 @@ const SlotList: React.FC<SlotListProps> = ({
                 <thead>
                   <tr className="bg-muted dark:bg-gray-800/60">
                     {showBulkActions && (
-                      <th className="py-2 px-1 text-center w-[5%]">
+                      <th className="py-2 px-1 text-center w-[3%]">
                         <div className="flex items-center justify-center">
                           <input
                             type="checkbox"
@@ -1022,7 +1070,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">상태</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">남은일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">관리</th>
                   </tr>
                 </thead>
@@ -1030,7 +1078,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   {filteredSlots.map((item) => (
                     <tr key={item.id} className="border-b border-border hover:bg-muted/40">
                       {showBulkActions && (
-                        <td className="py-2 px-1 text-center w-[5%]">
+                        <td className="py-2 px-1 text-center w-[3%]">
                           <div className="flex items-center justify-center">
                             {(item.status === 'pending' || item.status === 'submitted') && (
                               <input
@@ -1115,7 +1163,7 @@ const SlotList: React.FC<SlotListProps> = ({
                                 
                                 // input_data에서 표시할 필드들 추출
                                 const displayFields: string[] = [];
-                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days', 'keywords'];
+                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days', 'keywords', 'is_extension', 'original_slot_number', 'extension_notes', 'extension_note'];
                                 
                                 Object.entries(item.inputData || {}).forEach(([key, value]) => {
                                   if (!excludeFields.includes(key) && value && value !== '') {
@@ -1310,10 +1358,25 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 남은일 */}
-                      <td className="py-2 px-3 text-center w-[6%]">
-                        <span className={`text-xs whitespace-nowrap ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate), item)}`}>
-                          {getRemainingDaysText(calculateRemainingDays(item.endDate), item)}
-                        </span>
+                      <td className="py-2 px-3 text-center w-[8%]">
+                        <div className="flex items-center justify-center gap-1">
+                          <span className={`text-xs whitespace-nowrap ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate, item.startDate, item.status), item)}`}>
+                            {getRemainingDaysText(calculateRemainingDays(item.endDate, item.startDate, item.status), item)}
+                          </span>
+                          {/* 연장 버튼 - approved 상태이고 종료 3일 전 */}
+                          {onExtension && item.status === 'approved' && canExtend(item) && (
+                            <button
+                              className="btn btn-sm btn-icon btn-clear btn-purple h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onExtension(item);
+                              }}
+                              title="연장 신청"
+                            >
+                              <KeenIcon icon="calendar-tick" />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* 관리 */}
@@ -1493,8 +1556,8 @@ const SlotList: React.FC<SlotListProps> = ({
                   
                   <div className="flex items-center">
                     <span className="text-gray-600 w-16">남은일:</span>
-                    <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate), item)}`}>
-                      {getRemainingDaysText(calculateRemainingDays(item.endDate), item)}
+                    <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate, item.startDate, item.status), item)}`}>
+                      {getRemainingDaysText(calculateRemainingDays(item.endDate, item.startDate, item.status), item)}
                     </span>
                   </div>
 
@@ -1686,7 +1749,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     <div className="font-medium">
                       {item.endDate ? formatDate(item.endDate) : '-'}
                       {(() => {
-                        const days = calculateRemainingDays(item.endDate);
+                        const days = calculateRemainingDays(item.endDate, item.startDate, item.status);
                         const colorClass = getRemainingDaysColorClass(days, item);
                         const text = getRemainingDaysText(days, item);
                         return text !== '-' ? (
@@ -1887,7 +1950,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   'end_date': '종료일'
                 };
                 
-                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'keywords', 'minimum_purchase', 'work_days'];
+                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'keywords', 'minimum_purchase', 'work_days', 'is_extension', 'original_slot_number', 'extension_notes', 'extension_note'];
                 
                 return Object.entries(slot.inputData || {}).map(([key, value]) => {
                   // excludeFields에 포함된 필드는 제외

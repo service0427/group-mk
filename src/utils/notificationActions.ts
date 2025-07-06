@@ -54,6 +54,79 @@ export const createSlotStatusChangeNotification = async (
 };
 
 /**
+ * 슬롯 연장 신청 알림 생성 (사용자 → 총판)
+ * @param distributorId 총판 ID
+ * @param slotId 슬롯 ID
+ * @param campaignName 캠페인명
+ * @param extensionDays 연장 기간
+ * @param userName 사용자 이름
+ */
+export const createSlotExtensionRequestNotification = async (
+  distributorId: string,
+  slotId: string,
+  campaignName: string,
+  extensionDays: number,
+  userName: string
+) => {
+  return await createNotification({
+    userId: distributorId,
+    type: 'slot_extension_requested' as NotificationType,
+    title: '슬롯 연장 신청',
+    message: `[${campaignName}] ${userName}님이 ${extensionDays}일 연장을 신청했습니다.`,
+    link: '/admin/slots/approve',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 슬롯 연장 승인 알림 생성 (총판 → 사용자)
+ * @param userId 사용자 ID
+ * @param slotId 슬롯 ID
+ * @param campaignName 캠페인명
+ * @param newEndDate 새 종료일
+ */
+export const createSlotExtensionApprovedNotification = async (
+  userId: string,
+  slotId: string,
+  campaignName: string,
+  newEndDate: string
+) => {
+  const endDate = new Date(newEndDate).toLocaleDateString('ko-KR');
+  
+  return await createNotification({
+    userId,
+    type: 'slot_extension_approved' as NotificationType,
+    title: '슬롯 연장 승인',
+    message: `[${campaignName}] 슬롯 연장이 승인되어 ${endDate}까지 연장되었습니다.`,
+    link: '/myinfo/services',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
+ * 슬롯 연장 반려 알림 생성 (총판 → 사용자)
+ * @param userId 사용자 ID
+ * @param slotId 슬롯 ID
+ * @param campaignName 캠페인명
+ * @param reason 반려 사유
+ */
+export const createSlotExtensionRejectedNotification = async (
+  userId: string,
+  slotId: string,
+  campaignName: string,
+  reason: string
+) => {
+  return await createNotification({
+    userId,
+    type: 'slot_extension_rejected' as NotificationType,
+    title: '슬롯 연장 반려',
+    message: `[${campaignName}] 슬롯 연장이 반려되었습니다. 사유: ${reason}`,
+    link: '/myinfo/services',
+    priority: NotificationPriority.HIGH
+  });
+};
+
+/**
  * 신규 서비스 오픈 알림 생성 (모든 사용자)
  * @param serviceName 서비스 이름
  * @param serviceLink 서비스 링크

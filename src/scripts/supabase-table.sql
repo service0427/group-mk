@@ -302,7 +302,10 @@ create table public.notifications (
           'slot_created'::text,
           'slot_approved'::text,
           'slot_success'::text,
-          'slot_refund'::text
+          'slot_refund'::text,
+          'slot_extension_requested'::text,
+          'slot_extension_approved'::text,
+          'slot_extension_rejected'::text
         ]
       )
     )
@@ -804,3 +807,14 @@ create index IF not exists idx_search_keywords_keyword on public.search_keywords
 create index IF not exists idx_search_keywords_type on public.search_keywords using btree (type) TABLESPACE pg_default;
 
 create index IF not exists idx_search_keywords_keyword_type on public.search_keywords using btree (keyword, type) TABLESPACE pg_default;
+
+-- 슬롯 연장 기능을 위한 필드 추가 (2025-07-06)
+-- parent_slot_id: 원본 슬롯 ID (연장된 슬롯인 경우)
+-- is_extension: 연장 슬롯 여부
+ALTER TABLE public.slots 
+ADD COLUMN IF NOT EXISTS parent_slot_id UUID REFERENCES slots(id),
+ADD COLUMN IF NOT EXISTS is_extension BOOLEAN DEFAULT FALSE;
+
+-- 연장 관련 인덱스 추가
+CREATE INDEX IF NOT EXISTS idx_slots_parent_slot_id ON public.slots(parent_slot_id);
+CREATE INDEX IF NOT EXISTS idx_slots_is_extension ON public.slots(is_extension);

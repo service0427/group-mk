@@ -1,4 +1,5 @@
 import { supabase } from '@/supabase';
+import { SERVICE_TYPE_TO_KEYWORD_TYPE, RANKING_TABLE_MAPPING, RANKING_SUPPORT_STATUS, getKeywordTypeFromServiceType } from '@/config/campaign.config';
 
 interface RankingData {
   keyword_id: string;
@@ -78,11 +79,15 @@ export async function getSlotRankingData(
       return null;
     }
 
-    // 4. 먼저 search_keywords 테이블에서 키워드로 UUID 찾기
+    // keyword type 결정
+    const keywordType = getKeywordTypeFromServiceType(campaign.service_type);
+    
+    // 4. 먼저 search_keywords 테이블에서 키워드와 type으로 UUID 찾기
     const { data: keywordData, error: keywordError } = await supabase
       .from('search_keywords')
       .select('id')
       .eq('keyword', keyword)
+      .eq('type', keywordType)
       .single();
     
     if (keywordError || !keywordData) {
@@ -90,8 +95,11 @@ export async function getSlotRankingData(
       return null;
     }
     
+    // type에 맞는 테이블 선택
+    const tableMapping = RANKING_TABLE_MAPPING[keywordType] || RANKING_TABLE_MAPPING.shopping;
+    
     const { data: rankingData, error: rankingError } = await supabase
-      .from('shopping_rankings_current')
+      .from(tableMapping.current)
       .select('*')
       .eq('keyword_id', keywordData.id)
       .eq('product_id', productId)
@@ -152,7 +160,7 @@ export async function getBulkSlotRankingData(
     const campaignMap = new Map(campaigns.map(c => [c.id, c]));
 
     // 3. 각 슬롯에 대해 순위 데이터 검색을 위한 조건 준비
-    const searchConditions: Array<{ keyword: string; product_id: string; slot_id: string }> = [];
+    const searchConditions: Array<{ keyword: string; product_id: string; slot_id: string; campaign_id: number; keyword_type: string }> = [];
     const notTargetSlots = new Set<string>(); // 순위 체크 대상이 아닌 슬롯
 
     for (const slot of slots) {
@@ -162,9 +170,10 @@ export async function getBulkSlotRankingData(
       const campaign = campaignMap.get(slot.campaignId);
       if (!campaign) continue;
       
-      // NaverShopping으로 시작하지 않는 서비스는 순위 체크 대상이 아님
-      if (!campaign.service_type || !campaign.service_type.startsWith('NaverShopping')) {
-        // notTargetSlots.add(slot.id); // 제거 - 그냥 건너뛰기
+      // 순위 체크 지원 여부 확인
+      const keywordType = getKeywordTypeFromServiceType(campaign.service_type);
+      if (!RANKING_SUPPORT_STATUS[keywordType]) {
+        // 순위 체크를 지원하지 않는 타입은 건너뛰기
         continue;
       }
 
@@ -190,7 +199,9 @@ export async function getBulkSlotRankingData(
         searchConditions.push({
           keyword,
           product_id: productId,
-          slot_id: slot.id
+          slot_id: slot.id,
+          campaign_id: campaign.id,
+          keyword_type: keywordType  // 이미 위에서 선언됨
         });
       } else {
         // 키워드나 상품ID를 찾지 못한 경우 (매핑 문제)
@@ -221,32 +232,47 @@ export async function getBulkSlotRankingData(
       return rankingMap;
     }
 
-    // 4. 키워드로 UUID 찾기 (중복 제거)
-    const uniqueKeywords = [...new Set(searchConditions.map(c => c.keyword))];
-    const keywordMap = new Map<string, string>();
+    // 4. type별로 키워드 그룹화하여 UUID 찾기
+    const keywordsByType = new Map<string, Set<string>>();
+    searchConditions.forEach(condition => {
+      if (!keywordsByType.has(condition.keyword_type)) {
+        keywordsByType.set(condition.keyword_type, new Set());
+      }
+      keywordsByType.get(condition.keyword_type)!.add(condition.keyword);
+    });
     
-    if (uniqueKeywords.length > 0) {
-      const { data: keywordData, error: keywordError } = await supabase
-        .from('search_keywords')
-        .select('id, keyword')
-        .in('keyword', uniqueKeywords);
-      
-      if (!keywordError && keywordData) {
-        keywordData.forEach(kw => {
-          keywordMap.set(kw.keyword, kw.id);
-        });
+    // type별로 search_keywords 조회
+    const keywordMap = new Map<string, string>(); // keyword + type을 키로 사용
+    
+    for (const [type, keywords] of keywordsByType) {
+      const uniqueKeywords = [...keywords];
+      if (uniqueKeywords.length > 0) {
+        const { data: keywordData, error: keywordError } = await supabase
+          .from('search_keywords')
+          .select('id, keyword')
+          .in('keyword', uniqueKeywords)
+          .eq('type', type);
+        
+        if (!keywordError && keywordData) {
+          keywordData.forEach(kw => {
+            keywordMap.set(`${kw.keyword}:${type}`, kw.id);
+          });
+        }
       }
     }
     
     for (const condition of searchConditions) {
-      const keywordUuid = keywordMap.get(condition.keyword);
+      const keywordUuid = keywordMap.get(`${condition.keyword}:${condition.keyword_type}`);
       if (!keywordUuid) {
-        console.log('키워드 UUID 없음:', condition.keyword);
+        console.log('키워드 UUID 없음:', condition.keyword, condition.keyword_type);
         continue;
       }
 
+      // type에 맞는 테이블 선택
+      const tableMapping = RANKING_TABLE_MAPPING[condition.keyword_type] || RANKING_TABLE_MAPPING.shopping;
+      
       const { data: rankingData, error: rankingError } = await supabase
-        .from('shopping_rankings_current')
+        .from(tableMapping.current)
         .select('*')
         .eq('keyword_id', keywordUuid)
         .eq('product_id', condition.product_id)
@@ -259,7 +285,7 @@ export async function getBulkSlotRankingData(
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         
         const { data: yesterdayData, error: yesterdayError } = await supabase
-          .from('shopping_rankings_daily')
+          .from(tableMapping.daily)
           .select('rank')
           .eq('keyword_id', keywordUuid)
           .eq('product_id', condition.product_id)
@@ -334,7 +360,7 @@ export async function getGuaranteeSlotRankingData(
     // 1. 캠페인의 필드 매핑 정보 조회
     const { data: campaign, error: campaignError } = await supabase
       .from('campaigns')
-      .select('ranking_field_mapping')
+      .select('ranking_field_mapping, service_type')
       .eq('id', campaignId)
       .single();
 
@@ -389,11 +415,15 @@ export async function getGuaranteeSlotRankingData(
       return null;
     }
 
+    // 캠페인의 keyword type 결정
+    const keywordType = getKeywordTypeFromServiceType(campaign.service_type || 'default');
+    
     // 4. 키워드 UUID 조회
     const { data: keywordData, error: keywordError } = await supabase
       .from('search_keywords')
       .select('id')
       .eq('keyword', keyword)
+      .eq('type', keywordType)
       .single();
 
     if (keywordError || !keywordData) {
@@ -403,9 +433,12 @@ export async function getGuaranteeSlotRankingData(
 
     const keywordId = keywordData.id;
 
+    // type에 맞는 테이블 선택
+    const tableMapping = RANKING_TABLE_MAPPING[keywordType] || RANKING_TABLE_MAPPING.shopping;
+    
     // 5. 작업 기간 내 일별 순위 데이터 조회
     const { data: rankingData, error: rankingError } = await supabase
-      .from('shopping_rankings_daily')
+      .from(tableMapping.daily)
       .select('date, rank')
       .eq('keyword_id', keywordId)
       .eq('product_id', productId)
@@ -421,7 +454,7 @@ export async function getGuaranteeSlotRankingData(
 
     // 6. 현재 순위 조회 (가장 최신)
     const { data: currentRankData } = await supabase
-      .from('shopping_rankings_current')
+      .from(tableMapping.current)
       .select('rank')
       .eq('keyword_id', keywordId)
       .eq('product_id', productId)
@@ -504,7 +537,7 @@ export async function getBulkGuaranteeSlotRankingData(
     
     const { data: campaigns, error: campaignError } = await supabase
       .from('campaigns')
-      .select('id, ranking_field_mapping')
+      .select('id, ranking_field_mapping, service_type')
       .in('id', campaignIds);
 
     if (campaignError || !campaigns) {
@@ -516,7 +549,7 @@ export async function getBulkGuaranteeSlotRankingData(
     const campaignMap = new Map(campaigns.map(c => [c.id, c]));
 
     // 2. 각 슬롯에 대해 순위 데이터 검색을 위한 조건 준비
-    const searchConditions: Array<{ keyword: string; product_id: string; slot_id: string }> = [];
+    const searchConditions: Array<{ keyword: string; product_id: string; slot_id: string; campaign_id: number; keyword_type: string }> = [];
 
     for (const slot of slots) {
       const campaign = campaignMap.get(slot.campaignId);
@@ -551,10 +584,21 @@ export async function getBulkGuaranteeSlotRankingData(
       }
 
       if (keyword && productId) {
+        // 캠페인 정보가 필요하므로 service_type을 조회
+        const { data: campaignData } = await supabase
+          .from('campaigns')
+          .select('service_type')
+          .eq('id', slot.campaignId)
+          .single();
+          
+        const keywordType = getKeywordTypeFromServiceType(campaignData?.service_type || 'default');
+        
         searchConditions.push({
           keyword,
           product_id: productId,
-          slot_id: slot.id
+          slot_id: slot.id,
+          campaign_id: slot.campaignId,
+          keyword_type: keywordType
         });
       }
     }
@@ -563,32 +607,47 @@ export async function getBulkGuaranteeSlotRankingData(
       return rankingMap;
     }
 
-    // 3. 키워드로 UUID 찾기
-    const uniqueKeywords = [...new Set(searchConditions.map(c => c.keyword))];
-    const keywordMap = new Map<string, string>();
+    // 3. type별로 키워드 그룹화하여 UUID 찾기
+    const keywordsByType = new Map<string, Set<string>>();
+    searchConditions.forEach(condition => {
+      if (!keywordsByType.has(condition.keyword_type)) {
+        keywordsByType.set(condition.keyword_type, new Set());
+      }
+      keywordsByType.get(condition.keyword_type)!.add(condition.keyword);
+    });
     
-    if (uniqueKeywords.length > 0) {
-      const { data: keywordData, error: keywordError } = await supabase
-        .from('search_keywords')
-        .select('id, keyword')
-        .in('keyword', uniqueKeywords);
-      
-      if (!keywordError && keywordData) {
-        keywordData.forEach(kw => {
-          keywordMap.set(kw.keyword, kw.id);
-        });
+    // type별로 search_keywords 조회
+    const keywordMap = new Map<string, string>(); // keyword + type을 키로 사용
+    
+    for (const [type, keywords] of keywordsByType) {
+      const uniqueKeywords = [...keywords];
+      if (uniqueKeywords.length > 0) {
+        const { data: keywordData, error: keywordError } = await supabase
+          .from('search_keywords')
+          .select('id, keyword')
+          .in('keyword', uniqueKeywords)
+          .eq('type', type);
+        
+        if (!keywordError && keywordData) {
+          keywordData.forEach(kw => {
+            keywordMap.set(`${kw.keyword}:${type}`, kw.id);
+          });
+        }
       }
     }
 
-    // 4. shopping_rankings_current 테이블에서 순위 데이터 일괄 조회
+    // 4. type에 맞는 테이블에서 순위 데이터 일괄 조회
     for (const condition of searchConditions) {
-      const keywordUuid = keywordMap.get(condition.keyword);
+      const keywordUuid = keywordMap.get(`${condition.keyword}:${condition.keyword_type}`);
       if (!keywordUuid) {
         continue;
       }
+      
+      // type에 맞는 테이블 선택
+      const tableMapping = RANKING_TABLE_MAPPING[condition.keyword_type] || RANKING_TABLE_MAPPING.shopping;
 
       const { data: rankingData, error: rankingError } = await supabase
-        .from('shopping_rankings_current')
+        .from(tableMapping.current)
         .select('*')
         .eq('keyword_id', keywordUuid)
         .eq('product_id', condition.product_id)
@@ -601,7 +660,7 @@ export async function getBulkGuaranteeSlotRankingData(
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         
         const { data: yesterdayData } = await supabase
-          .from('shopping_rankings_daily')
+          .from(tableMapping.daily)
           .select('rank')
           .eq('keyword_id', keywordUuid)
           .eq('product_id', condition.product_id)

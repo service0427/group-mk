@@ -485,6 +485,24 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
 
           {/* 정보 영역 */}
           <div className="space-y-2 mb-3">
+            {/* 진행률 */}
+            {slot.workProgress && (
+              <div className="flex">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">진행률</span>
+                <div className="flex-1">
+                  <div className={`text-sm font-medium ${
+                    slot.workProgress.completionRate >= 90 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : slot.workProgress.completionRate >= 50 
+                        ? 'text-orange-600 dark:text-orange-400' 
+                        : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {slot.workProgress.totalWorkedQuantity.toLocaleString()} / {slot.workProgress.totalRequestedQuantity.toLocaleString()} ({slot.workProgress.completionRate}%)
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* 키워드 */}
             {slot.keywords && (
               <div className="flex">
@@ -1051,6 +1069,9 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                       </div>
                     </th>
                     <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                      진행률
+                    </th>
+                    <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                       상세보기
                     </th>
                     <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
@@ -1061,7 +1082,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={isAdmin ? 12 : 11} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
                         <div className="flex justify-center">
                           <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -1073,7 +1094,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                     </tr>
                   ) : filteredSlots.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center">
+                      <td colSpan={isAdmin ? 12 : 11} className="px-3 py-4 text-center">
                         <div className="flex flex-col items-center py-8">
                           <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -1309,6 +1330,34 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                           <div className="text-sm text-gray-900 dark:text-white">
                             {formatDate(slot.end_date)}
                           </div>
+                        </td>
+
+                        {/* 진행률 */}
+                        <td className="px-3 py-3 text-center whitespace-nowrap">
+                          {slot.workProgress ? (
+                            <div className="text-sm">
+                              <div className={`font-medium ${
+                                slot.workProgress.completionRate >= 90 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : slot.workProgress.completionRate >= 50 
+                                    ? 'text-orange-600 dark:text-orange-400' 
+                                    : 'text-red-600 dark:text-red-400'
+                              }`}>
+                                {slot.workProgress.totalWorkedQuantity.toLocaleString()} / {slot.workProgress.totalRequestedQuantity.toLocaleString()}
+                              </div>
+                              <div className={`text-xs ${
+                                slot.workProgress.completionRate >= 90 
+                                  ? 'text-green-500 dark:text-green-400' 
+                                  : slot.workProgress.completionRate >= 50 
+                                    ? 'text-orange-500 dark:text-orange-400' 
+                                    : 'text-red-500 dark:text-red-400'
+                              }`}>
+                                ({slot.workProgress.completionRate}%)
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
                         </td>
 
                         {/* 상세보기 */}

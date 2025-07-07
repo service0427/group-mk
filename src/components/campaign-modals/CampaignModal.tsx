@@ -1903,7 +1903,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                                   case 'immediate':
                                     return '즉시 환불 가능';
                                   case 'delayed':
-                                    return `작업 시작 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
+                                    return `환불 승인 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
                                   default:
                                     return '즉시 환불 가능';
                                 }

@@ -27,6 +27,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     business_number: '',
     business_name: '',
     representative_name: '',
+    business_phone: '',
     business_email: '',
     business_image_url: '',
     bank_account: {
@@ -40,6 +41,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
   const [businessImage, setBusinessImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [isPdfFile, setIsPdfFile] = useState<boolean>(false);
   const [hasExistingBankAccount, setHasExistingBankAccount] = useState<boolean>(false);
 
   // 초기값 설정
@@ -49,6 +51,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         business_number: initialData.business_number || '',
         business_name: initialData.business_name || '',
         representative_name: initialData.representative_name || '',
+        business_phone: initialData.business_phone || '',
         business_email: initialData.business_email || '',
         business_image_url: initialData.business_image_url || '',
         bank_account: initialData.bank_account || {
@@ -78,6 +81,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     validateField('business_number', formData.business_number);
     validateField('business_name', formData.business_name);
     validateField('representative_name', formData.representative_name);
+    validateField('business_phone', formData.business_phone); // 필수
     validateField('business_email', formData.business_email || ''); // 필수로 변경
     if (!hasExistingBankAccount) {
       validateField('bank_bank_name', formData.bank_account?.bank_name || '');
@@ -155,6 +159,20 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
       }
     }
 
+    // 전화번호 검증 (필수)
+    if (name === 'business_phone') {
+      if (!value) {
+        errors.business_phone = '사업자 전화번호는 필수입니다.';
+      } else {
+        const phoneRegex = /^(\d{2,3}-)?(\d{3,4}-)\d{4}$/;
+        if (!phoneRegex.test(value)) {
+          errors.business_phone = '형식: 02-1234-5678 또는 010-1234-5678';
+        } else {
+          delete errors.business_phone;
+        }
+      }
+    }
+
     // 이메일 검증 (필수)
     if (name === 'business_email') {
       if (!value) {
@@ -206,13 +224,21 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
     // 이미지 미리보기 생성
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      // PDF 파일인지 확인
+      if (file.type === 'application/pdf') {
+        setIsPdfFile(true);
+        setImagePreview(file.name); // PDF는 파일명만 저장
+      } else {
+        setIsPdfFile(false);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
       setImagePreview('');
+      setIsPdfFile(false);
     }
   };
 
@@ -262,8 +288,8 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
     }
 
     // 유효성 검사
-    if (!formData.business_number || !formData.business_name || !formData.representative_name || !formData.business_email) {
-      setError('사업자등록번호, 상호명, 대표자명, 사업자용 이메일은 필수 입력 항목입니다.');
+    if (!formData.business_number || !formData.business_name || !formData.representative_name || !formData.business_phone || !formData.business_email) {
+      setError('사업자등록번호, 상호명, 대표자명, 전화번호, 사업자용 이메일은 필수 입력 항목입니다.');
       setLoading(false);
       return;
     }
@@ -306,6 +332,9 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
 
 
 
+          // 파일 타입에 따른 contentType 설정
+          const contentType = businessImage.type || (fileExt === 'pdf' ? 'application/pdf' : 'image/jpeg');
+          
           // 이미지 업로드 시도
           let uploadResult;
           try {
@@ -313,7 +342,8 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
               .from('business-images')
               .upload(filePath, businessImage, {
                 cacheControl: '3600',
-                upsert: true
+                upsert: true,
+                contentType: contentType
               });
 
 
@@ -442,6 +472,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
         business_number: formData.business_number,
         business_name: formData.business_name,
         representative_name: formData.representative_name,
+        business_phone: formData.business_phone,
         business_email: formData.business_email || null,
         verified: false
       };
@@ -712,6 +743,21 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                         )}
                       </div>
                     </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">사업자 전화번호</label>
+                      <input
+                        type="tel"
+                        name="business_phone"
+                        value={formData.business_phone}
+                        onChange={handleChange}
+                        placeholder="010-0000-0000"
+                        className={`input input-sm w-full ${validationErrors.business_phone ? 'input-error' : ''}`}
+                        required
+                      />
+                      {validationErrors.business_phone && (
+                        <p className="text-xs text-red-500 mt-1">{validationErrors.business_phone}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -818,11 +864,30 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                   <div className="border-2 border-dashed border-gray-200 rounded-lg p-3 bg-gray-50">
                     {imagePreview ? (
                       <div className="relative">
-                        <img
-                          src={imagePreview}
-                          alt="사업자등록증"
-                          className="w-full h-auto rounded object-contain max-h-[150px]"
-                        />
+                        {isPdfFile ? (
+                          // PDF 미리보기
+                          <div className="w-full h-[150px] rounded border border-gray-200 overflow-hidden">
+                            {businessImage ? (
+                              <iframe
+                                src={URL.createObjectURL(businessImage)}
+                                className="w-full h-full"
+                                title="사업자등록증 PDF 미리보기"
+                              />
+                            ) : (
+                              // PDF 아이콘 표시 (미리보기 불가)
+                              <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+                                <KeenIcon icon="file-pdf" className="size-12 text-red-500 mb-2" />
+                                <p className="text-xs text-gray-500">PDF 파일</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <img
+                            src={imagePreview}
+                            alt="사업자등록증"
+                            className="w-full h-auto rounded object-contain max-h-[150px]"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={() => handleImageChange(null)}
@@ -837,7 +902,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                           type="file"
                           id="business-license-upload"
                           className="hidden"
-                          accept="image/*"
+                          accept="image/*,.pdf"
                           onChange={(e) => {
                             const file = e.target.files?.[0] || null;
                             if (file) {
@@ -845,9 +910,9 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                                 alert('파일 크기가 5MB를 초과합니다.');
                                 return;
                               }
-                              const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                              const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
                               if (!validTypes.includes(file.type)) {
-                                alert('JPG 또는 PNG 파일만 업로드 가능합니다.');
+                                alert('JPG, PNG 또는 PDF 파일만 업로드 가능합니다.');
                                 return;
                               }
                               handleImageChange(file);
@@ -860,7 +925,7 @@ const BusinessUpgradeModal: React.FC<BusinessUpgradeModalProps> = ({
                         >
                           <KeenIcon icon="upload" className="size-6 text-gray-400 mb-1" />
                           <span className="text-xs text-gray-600">클릭하여 업로드</span>
-                          <span className="text-xs text-gray-400 mt-1">JPG, PNG (최대 5MB)</span>
+                          <span className="text-xs text-gray-400 mt-1">JPG, PNG, PDF (최대 5MB)</span>
                         </label>
                       </div>
                     )}

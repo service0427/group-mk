@@ -8,7 +8,7 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
     // 1. 필터에 따라 campaigns 테이블 조회 쿼리 구성
     let campaignQuery = supabase
       .from('campaigns')
-      .select('id, campaign_name, service_type, description')
+      .select('id, campaign_name, service_type, description, ranking_field_mapping')
       .in('status', ['pending','active']);
     
     // 서비스 타입으로 필터링
@@ -59,6 +59,10 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
         users!slots_user_id_fkey(
           email,
           full_name
+        ),
+        slot_works_info(
+          work_cnt,
+          date
         )
       `)
       .eq('status', 'approved')
@@ -125,7 +129,7 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
         mat_email: matMap.get(slot.mat_id)?.email,
         mat_name: matMap.get(slot.mat_id)?.full_name || matMap.get(slot.mat_id)?.email,
         user_slot_number: slot.user_slot_number, // 명시적으로 추가
-        // input_data에서 키워드, MID, URL 추출
+        // input_data에서 키워드, MID, URL 추출 (ranking_field_mapping 사용)
         keywords: (() => {
           try {
             const inputData = typeof slot.input_data === 'string' 
@@ -134,8 +138,14 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
             
             if (!inputData) return '';
             
-            // 메인 키워드와 서브 키워드를 구분하여 포맷팅
-            const mainKeyword = inputData.mainKeyword?.trim() || '';
+            // ranking_field_mapping에서 키워드 필드명 가져오기
+            const mapping = campaign.ranking_field_mapping || {};
+            const keywordField = mapping.keyword || '검색어';
+            
+            // 매핑된 필드명으로 키워드 추출
+            const mainKeyword = inputData[keywordField]?.trim() || inputData.mainKeyword?.trim() || '';
+            
+            // 서브 키워드도 확인 (기존 방식 백업)
             const subKeywords = [
               inputData.keyword1,
               inputData.keyword2,
@@ -146,7 +156,7 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
             
             // 메인 키워드 + 줄바꿈 + 각 서브 키워드를 개별 줄로
             let result = mainKeyword;
-            if (subKeywords.length > 0) {
+            if (subKeywords.length > 0 && !mainKeyword.includes(subKeywords[0])) {
               result += '\n' + subKeywords.join('\n');
             }
             
@@ -161,7 +171,14 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
               ? JSON.parse(slot.input_data) 
               : slot.input_data;
             
-            return inputData?.mid || '';
+            if (!inputData) return '';
+            
+            // ranking_field_mapping에서 product_id 필드명 가져오기
+            const mapping = campaign.ranking_field_mapping || {};
+            const productIdField = mapping.product_id || '코드';
+            
+            // 매핑된 필드명으로 MID 추출
+            return inputData[productIdField] || inputData.mid || '';
           } catch (e) {
             return '';
           }
@@ -172,9 +189,78 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
               ? JSON.parse(slot.input_data) 
               : slot.input_data;
             
-            return inputData?.url || '';
+            if (!inputData) return '';
+            
+            // ranking_field_mapping에서 link 필드명 가져오기 (있다면)
+            const mapping = campaign.ranking_field_mapping || {};
+            const linkField = mapping.link || 'url';
+            
+            // 매핑된 필드명으로 URL 추출
+            return inputData[linkField] || inputData.url || '';
           } catch (e) {
             return '';
+          }
+        })(),
+        // 작업 진행률 계산
+        workProgress: (() => {
+          try {
+            // slot_works_info 데이터 확인
+            const worksInfo = (slot as any).slot_works_info || [];
+            
+            // 총 작업 수량 계산
+            const totalWorkedQuantity = worksInfo.reduce((sum: number, work: any) => sum + (work.work_cnt || 0), 0);
+            
+            // 일일 요청 수량 계산 (우선순위: slots.quantity > input_data.quantity > input_data.타수 등)
+            const inputData = typeof slot.input_data === 'string' ? JSON.parse(slot.input_data) : slot.input_data;
+            const dailyQuantity = slot.quantity || 
+                                inputData?.quantity || 
+                                inputData?.['타수'] || 
+                                inputData?.['일타수'] || 
+                                inputData?.['일 타수'] || 
+                                0;
+            
+            // 작업 일수 계산
+            let requestedDays = 0;
+            if (slot.start_date && slot.end_date) {
+              const startDate = new Date(slot.start_date);
+              const endDate = new Date(slot.end_date);
+              requestedDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            } else {
+              // input_data에서 작업일수 찾기
+              requestedDays = inputData?.work_days || 
+                            inputData?.['작업일수'] || 
+                            inputData?.['작업 일수'] || 
+                            inputData?.['작업기간'] || 
+                            0;
+            }
+            
+            // 총 요청 수량 계산
+            const totalRequestedQuantity = dailyQuantity * requestedDays;
+            
+            // 완료율 계산
+            const completionRate = totalRequestedQuantity > 0 
+              ? Math.round((totalWorkedQuantity / totalRequestedQuantity) * 100) 
+              : 0;
+            
+            // 실제 작업한 일수 계산
+            const workedDays = new Set(worksInfo.map((work: any) => work.date)).size;
+            
+            return {
+              totalWorkedQuantity,
+              totalRequestedQuantity,
+              completionRate,
+              workedDays,
+              requestedDays
+            };
+          } catch (e) {
+            console.error('진행률 계산 오류:', e);
+            return {
+              totalWorkedQuantity: 0,
+              totalRequestedQuantity: 0,
+              completionRate: 0,
+              workedDays: 0,
+              requestedDays: 0
+            };
           }
         })()
       } as Slot;

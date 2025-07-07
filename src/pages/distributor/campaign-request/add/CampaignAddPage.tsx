@@ -64,6 +64,7 @@ const CampaignAddPage: React.FC = () => {
     targetRank: '1', // 기본값 1위
     minGuaranteePrice: '',
     maxGuaranteePrice: '',
+    deadline: '18:00', // 마감시간 추가, 기본값 18:00
   });
 
   // 서비스 유형별 추가 필드
@@ -97,6 +98,7 @@ const CampaignAddPage: React.FC = () => {
       logo: previewUrl || uploadedLogo || data.logo || '',
       efficiency: '60%',
       minQuantity: data.minQuantity ? `${data.minQuantity}개` : '10개',
+      deadline: data.deadline || '18:00',
       status: {
         label: '진행중',
         color: 'success',
@@ -338,7 +340,8 @@ const CampaignAddPage: React.FC = () => {
         guaranteePeriod: formData.guaranteePeriod,
         targetRank: formData.targetRank || '1',
         minGuaranteePrice: formData.minGuaranteePrice,
-        maxGuaranteePrice: formData.maxGuaranteePrice
+        maxGuaranteePrice: formData.maxGuaranteePrice,
+        deadline: formData.deadline || '18:00'
       });
 
       if (!result.success) {

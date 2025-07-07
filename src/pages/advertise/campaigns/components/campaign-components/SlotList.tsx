@@ -1020,6 +1020,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">순위</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">상태</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">진행률</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
@@ -1085,50 +1086,23 @@ const SlotList: React.FC<SlotListProps> = ({
                       {/* 상품명 / 입력 정보 */}
                       <td className="py-2 px-3 w-[12%]">
                         {item.inputData?.is_manual_input ? (
-                          // 수동 입력 서비스인 경우 - 입력된 정보들을 나열
-                          <div 
-                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded p-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setInfoPopoverPosition({
-                                top: rect.top + rect.height / 2,
-                                left: rect.left + rect.width
-                              });
-                              setOpenInfoPopoverId(openInfoPopoverId === item.id ? null : item.id);
-                            }}
-                          >
-                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                              {(() => {
-                                // 필드명 한글 매핑
-                                const fieldNameMap: Record<string, string> = {
-                                  'work_days': '작업일',
-                                  'minimum_purchase': '최소 구매수',
-                                  'url': 'URL',
-                                  'mid': '상점 ID',
-                                  'description': '설명',
-                                  'product_name': '상품명',
-                                  'keywords': '키워드',
-                                  'start_date': '시작일',
-                                  'end_date': '종료일'
-                                };
-                                
-                                // input_data에서 표시할 필드들 추출
-                                const displayFields: string[] = [];
-                                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'minimum_purchase', 'work_days', 'keywords'];
-                                
-                                Object.entries(item.inputData || {}).forEach(([key, value]) => {
-                                  if (!excludeFields.includes(key) && value && value !== '') {
-                                    const displayKey = fieldNameMap[key] || key;
-                                    displayFields.push(`${displayKey}: ${value}`);
-                                  }
+                          // 수동 입력 서비스인 경우 - 버튼으로 표시
+                          <div className="flex items-center justify-center">
+                            <button
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setInfoPopoverPosition({
+                                  top: rect.top + rect.height / 2,
+                                  left: rect.left + rect.width
                                 });
-                                
-                                const displayText = displayFields.join(', ');
-                                return displayText.length > 50 ? displayText.substring(0, 50) + '...' : displayText || '-';
-                              })()}
-                            </span>
-                            <KeenIcon icon="information-2" className="text-gray-400 size-4 flex-shrink-0" />
+                                setOpenInfoPopoverId(openInfoPopoverId === item.id ? null : item.id);
+                              }}
+                            >
+                              <KeenIcon icon="information-2" className="size-3" />
+                              <span>입력정보</span>
+                            </button>
                           </div>
                         ) : (
                           // 기존 상품명 표시
@@ -1190,24 +1164,27 @@ const SlotList: React.FC<SlotListProps> = ({
                               <div className="flex items-center justify-center gap-1">
                                 {/* 현재 순위 */}
                                 <span className={`font-semibold text-sm ${
+                                  rankingData.rank === 0 ? 'text-gray-400' :
                                   rankingData.rank <= 10 ? 'text-blue-600' : 'text-gray-700'
                                 }`}>
-                                  {rankingData.rank}위
+                                  {rankingData.rank === 0 ? '측정중' : `${rankingData.rank}위`}
                                 </span>
                                 
-                                {/* 일간 변동만 표시 */}
-                                {rankingData.yesterday_rank ? (
-                                  dailyChange !== null && dailyChange !== 0 ? (
-                                    <span className={`text-xs font-medium ${
-                                      dailyChange > 0 ? 'text-green-600' : 'text-red-600'
-                                    }`}>
-                                      {dailyChange > 0 ? '▲' : '▼'}{Math.abs(dailyChange)}
-                                    </span>
+                                {/* 일간 변동만 표시 (순위가 0이 아닐 때만) */}
+                                {rankingData.rank > 0 && (
+                                  rankingData.yesterday_rank ? (
+                                    dailyChange !== null && dailyChange !== 0 ? (
+                                      <span className={`text-xs font-medium ${
+                                        dailyChange > 0 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {dailyChange > 0 ? '▲' : '▼'}{Math.abs(dailyChange)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    )
                                   ) : (
-                                    <span className="text-xs text-gray-400">-</span>
+                                    <span className="text-xs text-blue-500 font-medium">NEW</span>
                                   )
-                                ) : (
-                                  <span className="text-xs text-blue-500 font-medium">NEW</span>
                                 )}
                               </div>
                             );
@@ -1293,6 +1270,32 @@ const SlotList: React.FC<SlotListProps> = ({
                             getCustomStatusBadge(item.status, item)
                           )}
                         </div>
+                      </td>
+
+                      {/* 진행률 */}
+                      <td className="py-2 px-3 text-center w-[10%]">
+                        {(item.status === 'approved' || item.status === 'active') && item.workProgress ? (
+                          <div className="flex flex-col items-center">
+                            <span className={`text-xs font-medium ${
+                              item.workProgress.completionRate >= 90 ? 'text-green-600' :
+                              item.workProgress.completionRate >= 50 ? 'text-orange-600' :
+                              'text-red-600'
+                            }`}>
+                              {item.workProgress.totalWorkedQuantity.toLocaleString()}/{item.workProgress.totalRequestedQuantity.toLocaleString()}
+                            </span>
+                            <span className={`text-xs ${
+                              item.workProgress.completionRate >= 90 ? 'text-green-500' :
+                              item.workProgress.completionRate >= 50 ? 'text-orange-500' :
+                              'text-red-500'
+                            }`}>
+                              ({item.workProgress.completionRate}%)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            {item.status === 'approved' || item.status === 'active' ? '0/0 (0%)' : '-'}
+                          </span>
+                        )}
                       </td>
 
                       {/* 시작일 */}
@@ -1496,6 +1499,23 @@ const SlotList: React.FC<SlotListProps> = ({
                     <span className={`font-medium ${getRemainingDaysColorClass(calculateRemainingDays(item.endDate), item)}`}>
                       {getRemainingDaysText(calculateRemainingDays(item.endDate), item)}
                     </span>
+                  </div>
+
+                  <div className="flex items-center">
+                    <span className="text-gray-600 w-16">진행률:</span>
+                    {(item.status === 'approved' || item.status === 'active') && item.workProgress ? (
+                      <span className={`font-medium ${
+                        item.workProgress.completionRate >= 90 ? 'text-green-600' :
+                        item.workProgress.completionRate >= 50 ? 'text-orange-600' :
+                        'text-red-600'
+                      }`}>
+                        {item.workProgress.totalWorkedQuantity.toLocaleString()}/{item.workProgress.totalRequestedQuantity.toLocaleString()} ({item.workProgress.completionRate}%)
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">
+                        {item.status === 'approved' || item.status === 'active' ? '0/0 (0%)' : '-'}
+                      </span>
+                    )}
                   </div>
 
                   <div className="overflow-hidden">

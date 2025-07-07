@@ -13,6 +13,7 @@ export interface BusinessInfo {
   business_number: string;  // 사업자 등록번호
   business_name: string;    // 상호명
   representative_name: string; // 대표자명
+  business_phone?: string;  // 사업자 전화번호
 }
 
 // users 테이블의 business 필드 타입
@@ -48,6 +49,7 @@ export interface BusinessFormData {
   business_number: string;
   business_name: string;
   representative_name: string;
+  business_phone: string;  // 사업자 전화번호 (필수)
   business_email?: string;
   business_image_url?: string;
   bank_account?: BankAccountInfo; // 출금 계좌 정보 추가

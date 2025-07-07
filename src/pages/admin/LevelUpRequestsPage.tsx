@@ -83,17 +83,25 @@ const ImageModal = ({
         </div>
 
         <div className="flex justify-center">
-          <img
-            src={imageUrl}
-            alt="사업자등록증"
-            className="max-h-[70vh] object-contain"
-            style={{
-              maxWidth: '100%'
-            }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
-            }}
-          />
+          {imageUrl && (imageUrl.toLowerCase().endsWith('.pdf') || imageUrl.includes('application/pdf')) ? (
+            <iframe
+              src={imageUrl}
+              className="w-full h-[70vh]"
+              title="사업자등록증 PDF"
+            />
+          ) : (
+            <img
+              src={imageUrl}
+              alt="사업자등록증"
+              className="max-h-[70vh] object-contain"
+              style={{
+                maxWidth: '100%'
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
+              }}
+            />
+          )}
         </div>
 
         <div className="flex justify-center items-center gap-4 mt-4 pb-2">
@@ -478,6 +486,9 @@ const LevelUpRequestsPage = () => {
                             <div className="text-xs text-gray-600 dark:text-gray-400">
                               <span>대표자: {request.users?.business?.representative_name || '-'}</span>
                             </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              <span>전화번호: {request.users?.business?.business_phone || '-'}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -700,6 +711,10 @@ const LevelUpRequestsPage = () => {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">대표자</span>
                           <span className="text-sm font-medium">{request.users?.business?.representative_name || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">전화번호</span>
+                          <span className="text-sm font-medium">{request.users?.business?.business_phone || '-'}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">신청일시</span>

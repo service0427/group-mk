@@ -13,7 +13,7 @@ import { KeenIcon } from '@/components';
 import { supabase } from '@/supabase';
 import { useAuthContext } from '@/auth';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { formatDateKorean } from '@/utils/Date';
+import { formatDateTimeKorean } from '@/utils/Date';
 
 interface PerUnitWorkLogModalProps {
   isOpen: boolean;
@@ -233,7 +233,7 @@ export const PerUnitWorkLogModal: React.FC<PerUnitWorkLogModalProps> = ({
                 type="date"
                 value={formData.workDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, workDate: e.target.value }))}
-                max={formatDate(new Date())}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
 

@@ -307,7 +307,7 @@ export async function getBulkSlotRankingData(
             product_id: condition.product_id,
             title: '',
             link: '',
-            rank: 0,
+            rank: -1,  // 0이 아닌 -1로 설정하여 "순위 없음" 표시
             status: 'no-rank'
           } as RankingData);
         }

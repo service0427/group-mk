@@ -7,6 +7,9 @@ import { formatDate, getStatusBadge } from './constants';
 import { hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import TransactionConfirmModal from './TransactionConfirmModal';
 import { getBulkSlotRankingData } from '@/services/rankingService';
+import { SlotModificationRequestModal } from '@/components/slot-modification/SlotModificationRequestModal';
+import { SlotRankingFieldEditModal } from '@/components/slot-modification/SlotRankingFieldEditModal';
+import { getPendingModificationRequest } from '@/services/slotModificationService';
 
 interface SlotListProps {
   filteredSlots: SlotItem[];
@@ -180,9 +183,27 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openRefundRejectionId, setOpenRefundRejectionId] = useState<string | null>(null);
   const [openRefundCompleteId, setOpenRefundCompleteId] = useState<string | null>(null);
   
+  // 드롭다운 메뉴 상태
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  
   // 추가 정보 팝오버 상태 (수동 입력 서비스용)
   const [openInfoPopoverId, setOpenInfoPopoverId] = useState<string | null>(null);
   const [infoPopoverPosition, setInfoPopoverPosition] = useState({ top: 0, left: 0 });
+
+  // 수정 요청 관련 상태
+  const [modificationModalOpen, setModificationModalOpen] = useState(false);
+  const [modificationData, setModificationData] = useState<{
+    slotId: string;
+    slotNumber?: number;
+    field: string;
+    oldValue: string;
+    newValue: string;
+  } | null>(null);
+  const [pendingModificationRequests, setPendingModificationRequests] = useState<Map<string, any>>(new Map());
+  
+  // 키워드 수정 모달 상태
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedEditSlot, setSelectedEditSlot] = useState<SlotItem | null>(null);
 
   // 순위 데이터 가져오기
   useEffect(() => {
@@ -218,6 +239,27 @@ const SlotList: React.FC<SlotListProps> = ({
 
     fetchRankingData();
   }, [filteredSlots]);
+
+  // 수정 요청 데이터 가져오기
+  useEffect(() => {
+    const fetchPendingModificationRequests = async () => {
+      const requestsMap = new Map();
+      
+      for (const slot of filteredSlots) {
+        if (slot.status === 'approved' || slot.status === 'active') {
+          const { data } = await getPendingModificationRequest(slot.id);
+          if (data) {
+            requestsMap.set(slot.id, data);
+          }
+        }
+      }
+      
+      setPendingModificationRequests(requestsMap);
+    };
+
+    fetchPendingModificationRequests();
+  }, [filteredSlots]);
+  
 
   // 남은 일수 계산 함수
   const calculateRemainingDays = (endDate: string | null): number | null => {
@@ -871,6 +913,63 @@ const SlotList: React.FC<SlotListProps> = ({
     }
   };
 
+  // 수정 요청 핸들러
+  const handleModificationRequest = (slotId: string, field: string, newValue: string) => {
+    const slot = filteredSlots.find(s => s.id === slotId);
+    if (!slot) return;
+
+    let oldValue = '';
+    switch (field) {
+      case 'productName':
+        oldValue = slot.inputData.productName;
+        break;
+      case 'mid':
+        oldValue = slot.inputData.mid;
+        break;
+      case 'url':
+        oldValue = slot.inputData.url;
+        break;
+      case 'mainKeyword':
+        oldValue = slot.inputData.mainKeyword || '';
+        break;
+      case 'keywords':
+        oldValue = Array.isArray(slot.inputData.keywords) ? slot.inputData.keywords.join(',') : '';
+        break;
+    }
+
+    setModificationData({
+      slotId,
+      slotNumber: slot.userSlotNumber || slot.user_slot_number,
+      field,
+      oldValue,
+      newValue
+    });
+    setModificationModalOpen(true);
+    
+    // 편집 모드 종료
+    onEditCancel();
+  };
+
+  const handleModificationSuccess = () => {
+    // 수정 요청 목록 새로고침
+    const fetchPendingModificationRequests = async () => {
+      const requestsMap = new Map();
+      
+      for (const slot of filteredSlots) {
+        if (slot.status === 'approved' || slot.status === 'active') {
+          const { data } = await getPendingModificationRequest(slot.id);
+          if (data) {
+            requestsMap.set(slot.id, data);
+          }
+        }
+      }
+      
+      setPendingModificationRequests(requestsMap);
+    };
+
+    fetchPendingModificationRequests();
+  };
+
   if (isLoading) {
     return (
       <div className="card">
@@ -1012,19 +1111,18 @@ const SlotList: React.FC<SlotListProps> = ({
                     {userRole && hasPermission(userRole, PERMISSION_GROUPS.ADMIN) && (
                       <th className="py-2 px-3 text-start font-medium text-xs w-[15%]">사용자</th>
                     )}
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">메인키워드</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">MID</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[7%]">메인키워드</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[7%]">MID</th>
                     <th className="py-2 px-3 text-start font-medium text-xs w-[10%]">
                       {filteredSlots.some(slot => slot.inputData?.is_manual_input) ? '입력 정보' : '상품명'}
                     </th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">순위</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">순위</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">상태</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">진행률</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">시작일</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">마감일</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">상태</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">진행률</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">기간</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[8%]">관리</th>
+                    <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1060,7 +1158,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       )}
 
                       {/* 메인키워드 */}
-                      <td className="py-2 px-3 text-center w-[8%]">
+                      <td className="py-2 px-3 text-center w-[7%]">
                         <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                           {(() => {
                             const mapping = item.campaign?.ranking_field_mapping || {};
@@ -1072,7 +1170,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* MID */}
-                      <td className="py-2 px-3 text-center w-[8%]">
+                      <td className="py-2 px-3 text-center w-[7%]">
                         <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                           {(() => {
                             const mapping = item.campaign?.ranking_field_mapping || {};
@@ -1084,12 +1182,12 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 상품명 / 입력 정보 */}
-                      <td className="py-2 px-3 w-[12%]">
+                      <td className="py-2 px-3 w-[10%]">
                         {item.inputData?.is_manual_input ? (
                           // 수동 입력 서비스인 경우 - 버튼으로 표시
                           <div className="flex items-center justify-center">
                             <button
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                              className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const rect = e.currentTarget.getBoundingClientRect();
@@ -1100,8 +1198,7 @@ const SlotList: React.FC<SlotListProps> = ({
                                 setOpenInfoPopoverId(openInfoPopoverId === item.id ? null : item.id);
                               }}
                             >
-                              <KeenIcon icon="information-2" className="size-3" />
-                              <span>입력정보</span>
+                              입력정보
                             </button>
                           </div>
                         ) : (
@@ -1117,8 +1214,11 @@ const SlotList: React.FC<SlotListProps> = ({
                               onEditChange={onEditChange}
                               onEditSave={onEditSave}
                               onEditCancel={onEditCancel}
+                              onModificationRequest={handleModificationRequest}
                               placeholder="MID를 입력해주세요"
-                              disabled={item.status !== 'pending'}
+                              disabled={item.status !== 'pending' && item.status !== 'approved' && item.status !== 'active'}
+                              slotStatus={item.status}
+                              hasPendingModification={pendingModificationRequests.has(item.id)}
                             >
                               <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                                 {item.inputData?.mid || '-'}
@@ -1135,15 +1235,18 @@ const SlotList: React.FC<SlotListProps> = ({
                               onEditChange={onEditChange}
                               onEditSave={onEditSave}
                               onEditCancel={onEditCancel}
+                              onModificationRequest={handleModificationRequest}
                               isUrl={true}
-                              disabled={item.status !== 'pending'}
+                              disabled={item.status !== 'pending' && item.status !== 'approved' && item.status !== 'active'}
+                              slotStatus={item.status}
+                              hasPendingModification={pendingModificationRequests.has(item.id)}
                             />
                           </div>
                         )}
                       </td>
 
                       {/* 순위 */}
-                      <td className="py-2 px-3 text-center w-[8%]">
+                      <td className="py-2 px-3 text-center w-[6%]">
                         <div className="flex items-center justify-center">
                           {(() => {
                             // approved, pending_user_confirm 상태일 때만 표시
@@ -1165,12 +1268,15 @@ const SlotList: React.FC<SlotListProps> = ({
                                 {/* 현재 순위 */}
                                 <span className={`font-semibold text-sm ${
                                   rankingData.rank === 0 ? 'text-gray-400' :
+                                  rankingData.rank === -1 ? 'text-gray-500' :
                                   rankingData.rank <= 10 ? 'text-blue-600' : 'text-gray-700'
                                 }`}>
-                                  {rankingData.rank === 0 ? '측정중' : `${rankingData.rank}위`}
+                                  {rankingData.rank === 0 ? '측정중' : 
+                                   rankingData.rank === -1 ? '순위없음' : 
+                                   `${rankingData.rank}위`}
                                 </span>
                                 
-                                {/* 일간 변동만 표시 (순위가 0이 아닐 때만) */}
+                                {/* 일간 변동만 표시 (순위가 있을 때만) */}
                                 {rankingData.rank > 0 && (
                                   rankingData.yesterday_rank ? (
                                     dailyChange !== null && dailyChange !== 0 ? (
@@ -1211,7 +1317,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 상태 */}
-                      <td className="py-2 px-3 text-center w-[10%]">
+                      <td className="py-2 px-3 text-center w-[9%]">
                         <div className="flex items-center justify-center">
                           {item.status === 'rejected' ? (
                             <div className="inline-flex items-center gap-1">
@@ -1273,7 +1379,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 진행률 */}
-                      <td className="py-2 px-3 text-center w-[10%]">
+                      <td className="py-2 px-3 text-center w-[9%]">
                         {(item.status === 'approved' || item.status === 'active') && item.workProgress ? (
                           <div className="flex flex-col items-center">
                             <span className={`text-xs font-medium ${
@@ -1298,18 +1404,20 @@ const SlotList: React.FC<SlotListProps> = ({
                         )}
                       </td>
 
-                      {/* 시작일 */}
-                      <td className="py-2 px-3 text-center w-[8%]">
-                        <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                          {item.startDate ? formatDate(item.startDate) : '-'}
-                        </span>
-                      </td>
-
-                      {/* 마감일 */}
-                      <td className="py-2 px-3 text-center w-[8%]">
-                        <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                          {item.endDate ? formatDate(item.endDate) : '-'}
-                        </span>
+                      {/* 기간 (시작일~마감일) */}
+                      <td className="py-2 px-3 text-center w-[9%]">
+                        {item.startDate && item.endDate ? (
+                          <div className="flex flex-col items-center justify-center">
+                            <span className="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                              {formatDate(item.startDate)}
+                            </span>
+                            <span className="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                              ~ {formatDate(item.endDate)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-600 dark:text-gray-400">-</span>
+                        )}
                       </td>
 
                       {/* 남은일 */}
@@ -1320,7 +1428,7 @@ const SlotList: React.FC<SlotListProps> = ({
                       </td>
 
                       {/* 관리 */}
-                      <td className="py-2 px-3 w-[8%]">
+                      <td className="py-2 px-3 w-[10%]">
                         <div className="flex justify-center items-center gap-1">
                           <button
                             className={`btn btn-sm btn-icon btn-clear btn-primary h-8 w-8 relative ${item.userReason ? 'ring-2 ring-yellow-400' : ''}`}
@@ -1330,79 +1438,136 @@ const SlotList: React.FC<SlotListProps> = ({
                             }}
                             title={item.userReason ? "메모 (작성됨)" : "메모"}
                           >
-                            <KeenIcon icon="notepad-edit" />
+                            <KeenIcon icon="notepad" />
                             {item.userReason && (
                               <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
                             )}
                           </button>
-                          {/* 승인 전 상태일 때만 취소 버튼 표시 */}
-                          {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
-                            <button
-                              className="btn btn-sm btn-icon btn-clear btn-warning"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onCancelSlot(item.id);
-                              }}
-                              title="취소"
-                            >
-                              <KeenIcon icon="cross-circle" />
-                            </button>
-                          )}
-                          {/* 진행 중인 슬롯일 때만 환불 버튼 표시 */}
-                          {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
-                            isRefundable(item) ? (
-                              <button
-                                className="btn btn-sm btn-icon btn-clear btn-info"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onRefundSlot(item.id);
-                                }}
-                                title="환불"
-                              >
-                                <KeenIcon icon="wallet"/>
-                              </button>
-                            ) : (
-                              <div className="relative group">
-                                <button
-                                  className="btn btn-sm btn-icon btn-clear btn-secondary opacity-50 cursor-not-allowed"
-                                  disabled
-                                >
-                                  <KeenIcon icon="wallet"/>
-                                </button>
-                                {/* 커스텀 툴팁 */}
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                                  {getRefundDisabledMessage(item)}
-                                  {/* 툴팁 화살표 */}
-                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                </div>
-                              </div>
-                            )
-                          )}
-                          {/* 활성 슬롯일 때만 1:1 문의 버튼 표시 */}
-                          {onInquiry && item.status === 'active' && (
-                            <button
-                              className="btn btn-sm btn-icon btn-clear btn-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onInquiry(item);
-                              }}
-                              title="1:1 문의"
-                            >
-                              <KeenIcon icon="messages" />
-                            </button>
-                          )}
-                          <button
-                            className="btn btn-sm btn-icon btn-clear btn-danger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm('정말 삭제하시겠습니까?')) {
-                                onDeleteSlot(item.id);
-                              }
-                            }}
-                            title="삭제"
+                          
+                          {/* 드롭다운 메뉴 */}
+                          <div 
+                            className="relative"
+                            onMouseEnter={() => setOpenDropdownId(item.id)}
+                            onMouseLeave={() => setOpenDropdownId(null)}
                           >
-                            <KeenIcon icon="trash" />
-                          </button>
+                            <button
+                              id={`dropdown-button-${item.id}`}
+                              className="btn btn-sm btn-icon btn-clear btn-secondary h-8 w-8"
+                              onClick={(e) => e.stopPropagation()}
+                              title="더보기"
+                            >
+                              <KeenIcon icon="dots-vertical" />
+                            </button>
+                            
+                            {openDropdownId === item.id && ReactDOM.createPortal(
+                              <div
+                                id={`dropdown-${item.id}`}
+                                className="fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[9999]"
+                                style={{
+                                  left: (() => {
+                                    const button = document.getElementById(`dropdown-button-${item.id}`);
+                                    if (!button) return '0px';
+                                    const rect = button.getBoundingClientRect();
+                                    return `${rect.left - 200}px`;
+                                  })(),
+                                  top: (() => {
+                                    const button = document.getElementById(`dropdown-button-${item.id}`);
+                                    if (!button) return '0px';
+                                    const rect = button.getBoundingClientRect();
+                                    return `${rect.top}px`;
+                                  })()
+                                }}
+                              >
+                                <div className="py-1 bg-white dark:bg-gray-800 rounded-lg">
+                                  {/* 순위측정 필드 수정 (수동 입력 서비스인 경우만) */}
+                                  {item.inputData?.is_manual_input && 
+                                   (item.status === 'pending' || item.status === 'approved' || item.status === 'active') && 
+                                   !pendingModificationRequests.has(item.id) && (
+                                    <button
+                                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedEditSlot(item);
+                                        setEditModalOpen(true);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      <KeenIcon icon="notepad-edit" className="w-4 h-4 flex-shrink-0" />
+                                      <span>수정</span>
+                                    </button>
+                                  )}
+                                  
+                                  {/* 취소 */}
+                                  {onCancelSlot && (item.status === 'pending' || item.status === 'submitted') && (
+                                    <button
+                                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onCancelSlot(item.id);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      <KeenIcon icon="cross-circle" className="w-4 h-4 text-warning flex-shrink-0" />
+                                      <span>취소</span>
+                                    </button>
+                                  )}
+                                  
+                                  {/* 환불 */}
+                                  {onRefundSlot && (item.status === 'active' || item.status === 'approved') && (
+                                    isRefundable(item) ? (
+                                      <button
+                                        className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onRefundSlot(item.id);
+                                          setOpenDropdownId(null);
+                                        }}
+                                      >
+                                        <KeenIcon icon="wallet" className="w-4 h-4 text-info flex-shrink-0" />
+                                        <span>환불</span>
+                                      </button>
+                                    ) : (
+                                      <div className="px-4 py-2 text-sm text-gray-400 cursor-not-allowed flex items-center gap-2">
+                                        <KeenIcon icon="wallet" className="w-4 h-4 flex-shrink-0" />
+                                        <span>환불 불가</span>
+                                      </div>
+                                    )
+                                  )}
+                                  
+                                  {/* 1:1 문의 */}
+                                  {onInquiry && item.status === 'active' && (
+                                    <button
+                                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onInquiry(item);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      <KeenIcon icon="messages" className="w-4 h-4 text-primary flex-shrink-0" />
+                                      <span>1:1 문의</span>
+                                    </button>
+                                  )}
+                                  
+                                  {/* 삭제 */}
+                                  <button
+                                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-danger"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm('정말 삭제하시겠습니까?')) {
+                                        onDeleteSlot(item.id);
+                                        setOpenDropdownId(null);
+                                      }
+                                    }}
+                                  >
+                                    <KeenIcon icon="trash" className="w-4 h-4 flex-shrink-0" />
+                                    <span>삭제</span>
+                                  </button>
+                                </div>
+                              </div>,
+                              document.body
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -1430,8 +1595,11 @@ const SlotList: React.FC<SlotListProps> = ({
                       onEditChange={onEditChange}
                       onEditSave={onEditSave}
                       onEditCancel={onEditCancel}
+                      onModificationRequest={handleModificationRequest}
                       placeholder="MID를 입력해주세요"
-                      disabled={item.status !== 'pending'}
+                      disabled={item.status !== 'pending' && item.status !== 'approved' && item.status !== 'active'}
+                      slotStatus={item.status}
+                      hasPendingModification={pendingModificationRequests.has(item.id)}
                     >
                       <h4 className="font-medium text-gray-900">
                         {item.inputData?.mid || '-'}
@@ -1532,22 +1700,26 @@ const SlotList: React.FC<SlotListProps> = ({
                           onEditChange={onEditChange}
                           onEditSave={onEditSave}
                           onEditCancel={onEditCancel}
+                          onModificationRequest={handleModificationRequest}
                           isUrl={true}
+                          disabled={item.status !== 'pending' && item.status !== 'approved' && item.status !== 'active'}
+                          slotStatus={item.status}
+                          hasPendingModification={pendingModificationRequests.has(item.id)}
                         />
                       ) : item.inputData?.url ? (
                         <a
                           href={item.inputData.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`text-primary hover:underline text-sm break-all block ${item.status === 'pending' ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                          className={`text-primary hover:underline text-sm break-all block ${(item.status === 'pending' || item.status === 'approved' || item.status === 'active') && !pendingModificationRequests.has(item.id) ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (item.status === 'pending') {
+                            if ((item.status === 'pending' || item.status === 'approved' || item.status === 'active') && !pendingModificationRequests.has(item.id)) {
                               onEditStart(item.id, 'url');
                             }
                           }}
-                          title={item.status !== 'pending' ? "대기중 상태에서만 편집 가능합니다" : ""}
+                          title={pendingModificationRequests.has(item.id) ? "수정 요청 대기중" : (item.status !== 'pending' && item.status !== 'approved' && item.status !== 'active') ? "대기중/승인/진행중 상태에서만 편집 가능합니다" : (item.status === 'approved' || item.status === 'active') ? "클릭하여 수정 요청" : ""}
                         >
                           {item.inputData.url}
                         </a>
@@ -1907,7 +2079,7 @@ const SlotList: React.FC<SlotListProps> = ({
                   'end_date': '종료일'
                 };
                 
-                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'keywords', 'minimum_purchase', 'work_days'];
+                const excludeFields = ['is_manual_input', 'mainKeyword', 'service_type', 'campaign_name', 'price', 'workCount', 'keyword1', 'keyword2', 'keyword3', 'keywords', 'minimum_purchase', 'work_days', 'is_extension', 'extension_note', 'original_slot_number'];
                 
                 return Object.entries(slot.inputData || {}).map(([key, value]) => {
                   // excludeFields에 포함된 필드는 제외
@@ -1956,6 +2128,52 @@ const SlotList: React.FC<SlotListProps> = ({
         </>,
         document.body
       )}
+
+      {/* 수정 요청 모달 */}
+      {modificationData && (
+        <SlotModificationRequestModal
+          isOpen={modificationModalOpen}
+          onClose={() => {
+            setModificationModalOpen(false);
+            setModificationData(null);
+          }}
+          slotId={modificationData.slotId}
+          slotNumber={modificationData.slotNumber}
+          field={modificationData.field}
+          oldValue={modificationData.oldValue}
+          newValue={modificationData.newValue}
+          onSuccess={handleModificationSuccess}
+        />
+      )}
+      
+      {/* 순위측정 필드 수정 모달 */}
+      <SlotRankingFieldEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        slot={selectedEditSlot}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          }
+          // 수정 요청 목록 새로고침
+          const fetchPendingModificationRequests = async () => {
+            const requestsMap = new Map();
+            
+            for (const slot of filteredSlots) {
+              if (slot.status === 'approved' || slot.status === 'active') {
+                const { data } = await getPendingModificationRequest(slot.id);
+                if (data) {
+                  requestsMap.set(slot.id, data);
+                }
+              }
+            }
+            
+            setPendingModificationRequests(requestsMap);
+          };
+          
+          fetchPendingModificationRequests();
+        }}
+      />
     </>
   );
 };

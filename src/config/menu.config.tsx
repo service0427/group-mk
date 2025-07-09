@@ -361,6 +361,11 @@ export const MENU_SIDEBAR: TMenuConfig = [
         path: '/manage/refunds'
       },
       {
+        title: '슬롯 수정 요청 관리',
+        icon: 'pencil text-warning',
+        path: '/manage/slot-modifications'
+      },
+      {
         title: '총판 작업 입력',
         icon: 'dollar text-warning',
         path: '/manage/work-input'

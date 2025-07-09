@@ -88,6 +88,8 @@ export interface SlotItem {
     workedDays: number; // 작업한 일수
     requestedDays: number; // 요청된 작업 일수
   };
+  userSlotNumber?: number; // 사용자 슬롯 번호
+  user_slot_number?: number; // 사용자 슬롯 번호 (대체 형식)
 }
 
 export interface CampaignListItem {

@@ -804,3 +804,21 @@ create index IF not exists idx_search_keywords_keyword on public.search_keywords
 create index IF not exists idx_search_keywords_type on public.search_keywords using btree (type) TABLESPACE pg_default;
 
 create index IF not exists idx_search_keywords_keyword_type on public.search_keywords using btree (keyword, type) TABLESPACE pg_default;
+
+  -- 슬롯 수정 요청 테이블
+  CREATE TABLE slot_modification_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slot_id UUID NOT NULL REFERENCES slots(id),
+    requester_id UUID NOT NULL REFERENCES users(id),
+    approver_id UUID REFERENCES users(id),
+    status TEXT NOT NULL DEFAULT 'pending',
+    request_type TEXT NOT NULL, -- 'keyword', 'mid', 'both'
+    old_data JSONB NOT NULL,
+    new_data JSONB NOT NULL,
+    request_reason TEXT,
+    approval_notes TEXT,
+    request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    approval_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );

@@ -1119,7 +1119,7 @@ const SlotList: React.FC<SlotListProps> = ({
                     <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">순위</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">캠페인</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">상태</th>
-                    <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">진행률</th>
+                    {/* <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">진행률</th> */}
                     <th className="py-2 px-3 text-center font-medium text-xs w-[9%]">기간</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[6%]">남은일</th>
                     <th className="py-2 px-3 text-center font-medium text-xs w-[10%]">관리</th>
@@ -1378,8 +1378,8 @@ const SlotList: React.FC<SlotListProps> = ({
                         </div>
                       </td>
 
-                      {/* 진행률 */}
-                      <td className="py-2 px-3 text-center w-[9%]">
+                      {/* 진행률 - 주석처리됨 */}
+                      {/* <td className="py-2 px-3 text-center w-[9%]">
                         {(item.status === 'approved' || item.status === 'active') && item.workProgress ? (
                           <div className="flex flex-col items-center">
                             <span className={`text-xs font-medium ${
@@ -1402,7 +1402,7 @@ const SlotList: React.FC<SlotListProps> = ({
                             {item.status === 'approved' || item.status === 'active' ? '0/0 (0%)' : '-'}
                           </span>
                         )}
-                      </td>
+                      </td> */}
 
                       {/* 기간 (시작일~마감일) */}
                       <td className="py-2 px-3 text-center w-[9%]">
@@ -1669,7 +1669,8 @@ const SlotList: React.FC<SlotListProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center">
+                  {/* 진행률 - 주석처리됨 */}
+                  {/* <div className="flex items-center">
                     <span className="text-gray-600 w-16">진행률:</span>
                     {(item.status === 'approved' || item.status === 'active') && item.workProgress ? (
                       <span className={`font-medium ${
@@ -1684,7 +1685,7 @@ const SlotList: React.FC<SlotListProps> = ({
                         {item.status === 'approved' || item.status === 'active' ? '0/0 (0%)' : '-'}
                       </span>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="overflow-hidden">
                     <span className="text-gray-600">URL:</span>

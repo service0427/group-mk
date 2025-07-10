@@ -324,6 +324,16 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
 
       // 현재 서비스 타입의 캠페인에 해당하는 슬롯 데이터 가져오기
+      // 서비스 타입에 따른 순위 테이블 결정
+      let rankingTable = 'shopping_rankings_current'; // 기본값
+      if (dbServiceType.includes('naver') && dbServiceType.includes('traffic')) {
+        rankingTable = 'naver_rankings_current';
+      } else if (dbServiceType.includes('naver') && dbServiceType.includes('place')) {
+        rankingTable = 'naver_place_rankings_current';
+      } else if (dbServiceType.includes('coupang')) {
+        rankingTable = 'coupang_rankings_current';
+      }
+      
       let query = supabase
         .from('slots')
         .select(`

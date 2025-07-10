@@ -192,8 +192,10 @@ export async function getBulkSlotRankingData(
       }
 
       const inputData = slotInfo.input_data || slot.inputData;
-      const keyword = inputData?.[keywordField] || inputData?.mainKeyword;
-      const productId = inputData?.[productIdField] || inputData?.mid;
+      const rawKeyword = inputData?.[keywordField] || inputData?.mainKeyword;
+      const keyword = rawKeyword ? rawKeyword.replace(/\r/g, '').trim() : '';
+      const rawProductId = inputData?.[productIdField] || inputData?.mid;
+      const productId = rawProductId ? String(rawProductId).replace(/\r/g, '').trim() : '';
 
       if (keyword && productId) {
         searchConditions.push({
@@ -247,16 +249,31 @@ export async function getBulkSlotRankingData(
     for (const [type, keywords] of keywordsByType) {
       const uniqueKeywords = [...keywords];
       if (uniqueKeywords.length > 0) {
+        console.log('검색하는 키워드들:', uniqueKeywords, 'type:', type);
+        
+        // 특정 키워드 하나만 직접 테스트
+        if (uniqueKeywords.includes('무선충전기')) {
+          const { data: testData } = await supabase
+            .from('search_keywords')
+            .select('*')
+            .eq('keyword', '무선충전기');
+          console.log('무선충전기 직접 조회 결과:', testData);
+        }
+        
         const { data: keywordData, error: keywordError } = await supabase
           .from('search_keywords')
-          .select('id, keyword')
+          .select('id, keyword, type')
           .in('keyword', uniqueKeywords)
           .eq('type', type);
+        
+        console.log('type 필터링 쿼리 결과:', keywordData, '에러:', keywordError);
+        console.log('쿼리 파라미터 - keywords:', uniqueKeywords, 'type:', type);
         
         if (!keywordError && keywordData) {
           keywordData.forEach(kw => {
             keywordMap.set(`${kw.keyword}:${type}`, kw.id);
           });
+          console.log('keywordMap 저장 완료:', [...keywordMap.entries()]);
         }
       }
     }

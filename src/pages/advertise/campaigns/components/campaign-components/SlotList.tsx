@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { SlotItem, Campaign } from './types';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
@@ -205,9 +205,18 @@ const SlotList: React.FC<SlotListProps> = ({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEditSlot, setSelectedEditSlot] = useState<SlotItem | null>(null);
 
-  // 순위 데이터 가져오기
+  // 디바운스를 위한 타이머 ref
+  const rankingFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 순위 데이터 가져오기 (디바운싱 적용)
   useEffect(() => {
-    const fetchRankingData = async () => {
+    // 이전 타이머가 있으면 취소
+    if (rankingFetchTimerRef.current) {
+      clearTimeout(rankingFetchTimerRef.current);
+    }
+
+    // 300ms 후에 실행
+    rankingFetchTimerRef.current = setTimeout(async () => {
       // active, approved, pending_user_confirm 상태의 슬롯만 대상으로 함
       const activeSlots = filteredSlots.filter(slot => 
         slot.status === 'active' || slot.status === 'approved' || 
@@ -235,9 +244,14 @@ const SlotList: React.FC<SlotListProps> = ({
       } finally {
         setIsLoadingRanking(false);
       }
-    };
+    }, 300);
 
-    fetchRankingData();
+    // cleanup
+    return () => {
+      if (rankingFetchTimerRef.current) {
+        clearTimeout(rankingFetchTimerRef.current);
+      }
+    };
   }, [filteredSlots]);
 
   // 수정 요청 데이터 가져오기

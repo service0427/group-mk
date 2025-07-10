@@ -418,9 +418,9 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             processedInputData.keywords = keywords;
           }
 
-          // 작업 진행률 계산 (approved/active 상태일 때만)
+          // 작업 진행률 계산 (approved/active 상태일 때만) - 주석처리됨
           let workProgress = undefined;
-          if ((slot.status === 'approved' || slot.status === 'active') && 
+          /* if ((slot.status === 'approved' || slot.status === 'active') && 
               slot.slot_works_info && Array.isArray(slot.slot_works_info)) {
             // 작업 기간 계산
             let dueDays = 1;
@@ -486,7 +486,7 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
               workedDays,
               completionRate
             };
-          }
+          } */
 
           return {
             id: slot.id,

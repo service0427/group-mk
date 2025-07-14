@@ -822,3 +822,71 @@ create index IF not exists idx_search_keywords_keyword_type on public.search_key
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
+
+  -- =====================================================
+  -- Supabase 쿠팡(CP) 테이블 - 쇼핑과 완전히 동일한 구조
+  -- =====================================================
+
+  -- 1. 현재 순위 테이블
+  CREATE TABLE public.cp_rankings_current (
+    keyword_id uuid not null,
+    product_id character varying(255) not null,
+    rank integer not null,
+    prev_rank integer null,
+    title text not null,
+    lprice integer not null,
+    image text null,
+    mall_name character varying(255) null,
+    brand character varying(255) null,
+    category1 character varying(255) null,
+    category2 character varying(255) null,
+    link text null,
+    collected_at timestamp with time zone not null,
+    updated_at timestamp with time zone null default CURRENT_TIMESTAMP,
+    constraint cp_rankings_current_pkey primary key (keyword_id, product_id),
+    constraint cp_rankings_current_keyword_id_fkey foreign KEY (keyword_id) references search_keywords (id) on delete CASCADE
+  ) TABLESPACE pg_default;
+
+  CREATE INDEX IF not exists idx_cp_rankings_current_keyword_rank on public.cp_rankings_current using btree (keyword_id, rank) TABLESPACE pg_default;
+
+  -- 2. 일별 순위 테이블
+  CREATE TABLE public.cp_rankings_daily (
+    keyword_id uuid not null,
+    product_id character varying(255) not null,
+    date date not null,
+    rank integer not null,
+    title text not null,
+    lprice integer not null,
+    image text null,
+    mall_name character varying(255) null,
+    brand character varying(255) null,
+    category1 character varying(255) null,
+    category2 character varying(255) null,
+    link text null,
+    last_updated timestamp with time zone null default CURRENT_TIMESTAMP,
+    constraint cp_rankings_daily_pkey primary key (keyword_id, product_id, date),
+    constraint cp_rankings_daily_keyword_id_fkey foreign KEY (keyword_id) references search_keywords (id) on delete CASCADE
+  ) TABLESPACE pg_default;
+
+  CREATE INDEX IF not exists idx_cp_rankings_daily_keyword_date on public.cp_rankings_daily using btree (keyword_id, date desc) TABLESPACE pg_default;
+
+  -- 3. 시간별 순위 테이블
+  CREATE TABLE public.cp_rankings_hourly (
+    keyword_id uuid not null,
+    product_id character varying(255) not null,
+    hour timestamp with time zone not null,
+    rank integer not null,
+    title text not null,
+    lprice integer not null,
+    image text null,
+    mall_name character varying(255) null,
+    brand character varying(255) null,
+    category1 character varying(255) null,
+    category2 character varying(255) null,
+    link text null,
+    collected_at timestamp with time zone null default CURRENT_TIMESTAMP,
+    constraint cp_rankings_hourly_pkey primary key (keyword_id, product_id, hour),
+    constraint cp_rankings_hourly_keyword_id_fkey foreign KEY (keyword_id) references search_keywords (id) on delete CASCADE
+  ) TABLESPACE pg_default;
+
+  CREATE INDEX IF not exists idx_cp_rankings_hourly_keyword_hour on public.cp_rankings_hourly using btree (keyword_id, hour desc) TABLESPACE pg_default;

@@ -52,6 +52,7 @@ const AuthProviderV2 = ({ children }: PropsWithChildren) => {
         isLoggingOut,
         authVerified,
         error,
+        isImpersonating,
         login: storeLogin,
         register: storeRegister,
         logout: storeLogout,
@@ -296,7 +297,8 @@ const AuthProviderV2 = ({ children }: PropsWithChildren) => {
         storeChangePassword,
         storeCheckEmailExists,
         storeRefreshUserRole,
-        storeSetLoading
+        storeSetLoading,
+        isImpersonating
     ]);
     
     return (

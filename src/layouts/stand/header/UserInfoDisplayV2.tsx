@@ -27,7 +27,8 @@ import { ChargeModal } from '@/components/cash';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
 import { Badge } from '@/components/ui/badge';
-import { getRoleDisplayName, getRoleThemeColors } from '@/config/roles.config';
+import { getRoleDisplayName, getRoleThemeColors, USER_ROLES } from '@/config/roles.config';
+import { ResolutionChanger } from '@/components/dev-tools/ResolutionChanger';
 
 /**
  * 개선된 UserInfoDisplay 컴포넌트
@@ -39,7 +40,7 @@ const UserInfoDisplayV2 = () => {
   const { settings, storeSettings } = useSettings();
   const { isLoggingOut, safeApiCall, logoutProgress } = useLogoutContext();
   const navigate = useNavigate();
-  const userMenuRef = useRef<any>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [cashBalance, setCashBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -374,6 +375,33 @@ const UserInfoDisplayV2 = () => {
 
                 {/* 메뉴 항목들 */}
                 <div className="py-1 max-h-[300px] overflow-y-auto">
+                  {/* 개발자/운영자 전용 도구들 */}
+                  {(currentUser.role === USER_ROLES.DEVELOPER || currentUser.role === USER_ROLES.OPERATOR) && (
+                    <>
+                      {/* 반응형 미리보기 */}
+                      <div className="px-4 py-2 text-sm text-gray-800 dark:text-white">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <KeenIcon icon="devices" className="text-purple-500 dark:text-purple-400 mr-3" />
+                            <span>반응형 미리보기</span>
+                          </div>
+                          <div onClick={() => setMobileMenuOpen(false)}>
+                            <ResolutionChanger />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 사용자 관리 메뉴 */}
+                      <Link
+                        to="/admin/users"
+                        className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <KeenIcon icon="users" className="text-purple-500 dark:text-purple-400 mr-3" />
+                        사용자 관리
+                      </Link>
+                    </>
+                  )}
                   <Link
                     to="/myinfo/profile"
                     className="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-coal-600 w-full text-left"
@@ -424,6 +452,31 @@ const UserInfoDisplayV2 = () => {
       ) : (
         // 태블릿/데스크톱 버전 - 기존 레이아웃 개선
         <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-1.5 h-12 min-w-0">
+          {/* 개발자/운영자 전용 도구들 */}
+          {(currentUser.role === USER_ROLES.DEVELOPER || currentUser.role === USER_ROLES.OPERATOR) && (
+            <>
+              {/* 반응형 미리보기 버튼 */}
+              <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800">
+                <ResolutionChanger />
+              </div>
+              
+              {/* 사용자 관리 빠른 접근 버튼 */}
+              <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800">
+                <button
+                  onClick={() => navigate('/admin/users')}
+                  className="flex items-center gap-2 px-2 py-1 hover:bg-purple-100/80 dark:hover:bg-purple-800/50 transition-colors rounded-md"
+                  disabled={isLoggingOut}
+                  title="사용자 관리"
+                >
+                  <KeenIcon icon="users" className="text-purple-600 dark:text-purple-300 text-lg flex-shrink-0" />
+                  {!isTablet && (
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-300 whitespace-nowrap">사용자</span>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
           {/* 알림 드롭다운 - 태블릿에서는 아이콘만 표시 */}
           <div className="flex items-center h-9 px-2 border-r border-blue-200 dark:border-blue-800">
             <NotificationDropdown
@@ -547,6 +600,34 @@ const UserInfoDisplayV2 = () => {
                             )}
                           </div>
                         </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 개발자/운영자 전용 도구들 */}
+                  {(currentUser.role === USER_ROLES.DEVELOPER || currentUser.role === USER_ROLES.OPERATOR) && (
+                    <>
+                      {/* 반응형 미리보기 메뉴 */}
+                      <div className="menu-item">
+                        <div className="menu-link dark:hover:bg-coal-600">
+                          <span className="menu-icon">
+                            <KeenIcon icon="devices" className="text-purple-500 dark:text-purple-400 !text-purple-500 dark:!text-purple-400" />
+                          </span>
+                          <span className="menu-title dark:text-white font-medium">반응형 미리보기</span>
+                          <div className="ml-auto">
+                            <ResolutionChanger />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 사용자 관리 메뉴 */}
+                      <div className="menu-item">
+                        <Link to="/admin/users" className="menu-link dark:hover:bg-coal-600">
+                          <span className="menu-icon">
+                            <KeenIcon icon="users" className="text-purple-500 dark:text-purple-400 !text-purple-500 dark:!text-purple-400" />
+                          </span>
+                          <span className="menu-title dark:text-white font-medium">사용자 관리</span>
+                        </Link>
                       </div>
                     </>
                   )}

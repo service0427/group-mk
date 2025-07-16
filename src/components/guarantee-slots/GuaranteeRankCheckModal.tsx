@@ -44,6 +44,8 @@ interface GuaranteeRankCheckModalProps {
   keyword?: string;
   startDate?: string;
   endDate?: string;
+  rankingFieldMapping?: Record<string, string>;
+  inputData?: any;
 }
 
 interface GuaranteeRankingData {
@@ -73,7 +75,9 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
   targetRank,
   keyword,
   startDate,
-  endDate
+  endDate,
+  rankingFieldMapping,
+  inputData
 }) => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<GuaranteeRankingStats | null>(null);
@@ -117,42 +121,65 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
   };
 
   // 차트 데이터 생성
-  const chartData = stats ? {
-    labels: stats.dailyRankings.map(item => {
+  const chartData = stats ? (() => {
+    // 차트에 표시할 데이터 준비
+    let chartRankings = [...stats.dailyRankings];
+    let labels = [];
+    let rankData = [];
+    let pointColors = [];
+    let borderColors = [];
+    
+    // dailyRankings가 없거나 오늘 데이터가 없는 경우 현재 순위 추가
+    if (stats.currentRank && (chartRankings.length === 0 || 
+        (chartRankings.length > 0 && new Date(chartRankings[chartRankings.length - 1].date).toDateString() !== new Date().toDateString()))) {
+      const todayData = {
+        date: new Date().toISOString(),
+        rank: stats.currentRank,
+        isAchieved: stats.currentRank <= targetRank
+      };
+      chartRankings.push(todayData);
+    }
+    
+    // 라벨과 데이터 생성
+    chartRankings.forEach((item) => {
       const date = new Date(item.date);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    }),
-    datasets: [
-      {
-        label: '실제 순위',
-        data: stats.dailyRankings.map(item => item.rank),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 3,
-        pointBackgroundColor: stats.dailyRankings.map(item => 
-          item.isAchieved ? '#10b981' : '#ef4444'
-        ),
-        pointBorderColor: stats.dailyRankings.map(item => 
-          item.isAchieved ? '#059669' : '#dc2626'
-        ),
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        tension: 0.2,
-        fill: false,
-      },
-      {
-        label: '목표 순위',
-        data: new Array(stats.dailyRankings.length).fill(targetRank),
-        borderColor: '#ef4444',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderWidth: 2,
-        borderDash: [5, 5],
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        fill: false,
-      }
-    ]
-  } : null;
+      const isToday = date.toDateString() === new Date().toDateString();
+      labels.push(isToday ? `${date.getMonth() + 1}/${date.getDate()} (오늘)` : `${date.getMonth() + 1}/${date.getDate()}`);
+      rankData.push(item.rank);
+      pointColors.push(item.isAchieved ? '#10b981' : '#ef4444');
+      borderColors.push(item.isAchieved ? '#059669' : '#dc2626');
+    });
+    
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: '실제 순위',
+          data: rankData,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: borderColors,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          tension: 0.2,
+          fill: false,
+        },
+        {
+          label: '목표 순위',
+          data: new Array(labels.length).fill(targetRank),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+        }
+      ]
+    };
+  })() : null;
 
 
   // 차트 옵션
@@ -263,25 +290,60 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
               {/* 캠페인 정보 */}
               <div className="card">
                 <div className="card-body">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-xs text-slate-500 dark:text-gray-500 block">캠페인</span>
-                      <span className="text-sm font-medium mt-0.5 block truncate">
-                        {campaignName || '캠페인'}
-                      </span>
+                  <div className="space-y-4">
+                    {/* 캠페인 정보 테이블 형태로 표시 */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-left px-3 py-2 text-xs font-medium text-slate-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-tl-lg">
+                              캠페인
+                            </th>
+                            {rankingFieldMapping && Object.entries(rankingFieldMapping)
+                              .filter(([key]) => key === 'keyword' || key === 'product_id')
+                              .map(([key, fieldName]) => {
+                                const actualData = inputData?.keywords?.[0]?.input_data || inputData;
+                                const value = actualData?.[fieldName as string];
+                                if (!value) return null;
+                                
+                                return (
+                                  <th key={key} className="text-left px-3 py-2 text-xs font-medium text-slate-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800">
+                                    {key === 'keyword' ? '키워드' : key === 'product_id' ? '상품ID' : fieldName}
+                                  </th>
+                                );
+                              })}
+                            <th className="bg-gray-50 dark:bg-gray-800 rounded-tr-lg"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="px-3 py-2 font-medium text-sm">
+                              {campaignName || '캠페인'}
+                            </td>
+                            {rankingFieldMapping && Object.entries(rankingFieldMapping)
+                              .filter(([key]) => key === 'keyword' || key === 'product_id')
+                              .map(([key, fieldName]) => {
+                                const actualData = inputData?.keywords?.[0]?.input_data || inputData;
+                                const value = actualData?.[fieldName as string];
+                                if (!value) return null;
+                                
+                                return (
+                                  <td key={key} className="px-3 py-2 text-sm truncate" title={value}>
+                                    {value}
+                                  </td>
+                                );
+                              })}
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                    {keyword && (
-                      <div>
-                        <span className="text-xs text-slate-500 dark:text-gray-500 block">키워드</span>
-                        <span className="text-sm font-medium mt-0.5 block truncate">
-                          {keyword}
-                        </span>
-                      </div>
-                    )}
-                    <div className="col-span-2 flex items-center justify-between pt-2 border-t border-slate-200 dark:border-gray-700">
+                    
+                    {/* 목표 순위 */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-gray-700">
                       <span className="text-sm font-medium">목표 순위</span>
-                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary-light dark:bg-primary-dark">
-                        <span className="text-base font-bold text-primary">{targetRank}위</span>
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary-light dark:bg-primary-dark">
+                        <span className="text-lg font-bold text-primary">{targetRank}위</span>
                       </div>
                     </div>
                   </div>
@@ -314,7 +376,7 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
                         </Button>
                       </div>
                     </div>
-                  ) : stats && stats.dailyRankings.length > 0 ? (
+                  ) : stats ? (
                     <div className="space-y-4">
                       {/* 상단 통계 */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-slate-50 dark:bg-gray-800 rounded-lg">
@@ -340,6 +402,97 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
                           <div className="text-xs text-slate-500 dark:text-gray-400 mb-1">달성률</div>
                           <div className="text-lg font-bold text-warning">
                             {stats.achievementRate}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 일별 순위 가로 스크롤 박스 */}
+                      <div className="card">
+                        <div className="card-body">
+                          <h4 className="text-sm font-medium mb-3">일별 순위</h4>
+                          <div className="overflow-x-auto pb-2">
+                            <div className="flex gap-3 min-w-max">
+                              {/* 일별 순위 데이터 또는 오늘 현재 순위 */}
+                              {(() => {
+                                const allRankings = [...stats.dailyRankings];
+                                
+                                // 오늘 데이터가 없으면 현재 순위 추가
+                                if (stats.currentRank && (allRankings.length === 0 || 
+                                    new Date(allRankings[allRankings.length - 1].date).toDateString() !== new Date().toDateString())) {
+                                  allRankings.push({
+                                    date: new Date().toISOString(),
+                                    rank: stats.currentRank,
+                                    isAchieved: stats.currentRank <= targetRank
+                                  });
+                                }
+                                
+                                return allRankings.map((ranking, index) => {
+                                  const date = new Date(ranking.date);
+                                  const isToday = date.toDateString() === new Date().toDateString();
+                                  const prevRank = index > 0 ? allRankings[index - 1].rank : null;
+                                  const rankChange = prevRank ? prevRank - ranking.rank : null;
+                                  
+                                  return (
+                                    <div
+                                      key={ranking.date}
+                                      className="flex-shrink-0 w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                                    >
+                                      {/* 날짜 */}
+                                      <div className="text-center mb-2">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                          {date.getMonth() + 1}월 {date.getDate()}일
+                                        </div>
+                                        {isToday && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 mt-1">
+                                            오늘
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* 순위 */}
+                                      <div className="text-center mb-2">
+                                        <span className={`inline-flex items-center justify-center min-w-[50px] px-3 py-1.5 text-lg font-bold rounded-full ${
+                                          ranking.isAchieved 
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                            : ranking.rank <= targetRank + 3
+                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                        }`}>
+                                          {ranking.rank}위
+                                        </span>
+                                      </div>
+                                      
+                                      {/* 변동 */}
+                                      <div className="text-center">
+                                        {rankChange !== null ? (
+                                          <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${
+                                            rankChange > 0 ? 'text-green-600 dark:text-green-400' : 
+                                            rankChange < 0 ? 'text-red-600 dark:text-red-400' : 
+                                            'text-gray-500 dark:text-gray-400'
+                                          }`}>
+                                            {rankChange > 0 ? (
+                                              <>
+                                                <KeenIcon icon="arrow-up" className="text-xs" />
+                                                {rankChange}
+                                              </>
+                                            ) : rankChange < 0 ? (
+                                              <>
+                                                <KeenIcon icon="arrow-down" className="text-xs" />
+                                                {Math.abs(rankChange)}
+                                              </>
+                                            ) : (
+                                              '-'
+                                            )}
+                                          </span>
+                                        ) : (
+                                          <span className="text-xs text-gray-500 dark:text-gray-400">-</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
                           </div>
                         </div>
                       </div>

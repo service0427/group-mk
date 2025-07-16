@@ -3,6 +3,7 @@ import { useAuthContext } from '@/auth';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { guaranteeSlotRequestService, guaranteeSlotService } from '@/services/guaranteeSlotService';
 import { supabase } from '@/supabase';
+import { getBulkGuaranteeSlotRankingData } from '@/services/rankingService';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | 'all'>('all');
   const [searchDateFrom, setSearchDateFrom] = useState<string>('');
   const [searchDateTo, setSearchDateTo] = useState<string>('');
+  const [rankingDataMap, setRankingDataMap] = useState<Map<string, any>>(new Map());
   const [negotiationModal, setNegotiationModal] = useState<{
     open: boolean;
     requestId: string;
@@ -143,7 +145,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             logo,
             status,
             add_info,
-            refund_settings
+            refund_settings,
+            ranking_field_mapping
           ),
           keywords:keyword_id(
             id,
@@ -196,6 +199,28 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
       if (error) throw error;
 
       setRequests(data || []);
+      
+      // 활성화된 보장형 슬롯들의 순위 데이터 가져오기
+      const activeSlots = (data || [])
+        .filter(req => req.guarantee_slots && req.guarantee_slots.length > 0)
+        .flatMap(req => 
+          req.guarantee_slots
+            ?.filter(slot => slot.status === 'active' || slot.status === 'completed')
+            .map(slot => ({
+              id: slot.id,
+              campaignId: req.campaign_id,
+              inputData: req.input_data || req.keywords
+            })) || []
+        );
+      
+      if (activeSlots.length > 0) {
+        try {
+          const rankingMap = await getBulkGuaranteeSlotRankingData(activeSlots);
+          setRankingDataMap(rankingMap);
+        } catch (error) {
+          console.error('[보장형 순위] 순위 데이터 조회 실패:', error);
+        }
+      }
     } catch (error) {
       showError('보장형 목록을 불러오는데 실패했습니다.');
     } finally {
@@ -373,6 +398,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
     keyword?: string;
     startDate?: string;
     endDate?: string;
+    rankingFieldMapping?: Record<string, string>;
+    inputData?: any;
   } | null>(null);
 
   // 환불 요청 핸들러
@@ -716,6 +743,7 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
             selectedRequests={selectedRequests}
             onSelectedRequestsChange={setSelectedRequests}
             showBulkActions={true}
+            rankingDataMap={rankingDataMap}
             onRefundRequest={handleRefundRequest}
             onInquiry={(request) => {
               setInquiryData({
@@ -740,7 +768,9 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
                   targetRank: request.target_rank,
                   keyword: request.keywords?.main_keyword || request.input_data?.mainKeyword || (request.input_data as any)?.keyword || (request.input_data as any)?.['검색어'],
                   startDate: slot.start_date,
-                  endDate: slot.end_date
+                  endDate: slot.end_date,
+                  rankingFieldMapping: request.campaigns?.ranking_field_mapping,
+                  inputData: request.input_data
                 };
                 setRankCheckSlotData(slotData);
                 setRankCheckModalOpen(true);
@@ -873,6 +903,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         keyword={rankCheckSlotData?.keyword}
         startDate={rankCheckSlotData?.startDate}
         endDate={rankCheckSlotData?.endDate}
+        rankingFieldMapping={rankCheckSlotData?.rankingFieldMapping}
+        inputData={rankCheckSlotData?.inputData}
       />
 
       {/* 환불 모달 */}

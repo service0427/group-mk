@@ -54,6 +54,7 @@ interface GuaranteeItem {
     logo?: string;
     status?: string;
     add_info?: any;
+    ranking_field_mapping?: Record<string, string>;
     refund_settings?: {
       type: 'immediate' | 'delayed' | 'cutoff_based';
       delay_days?: number;
@@ -88,6 +89,7 @@ interface GuaranteeQuotesListProps {
   selectedRequests?: string[];
   onSelectedRequestsChange?: (selected: string[]) => void;
   showBulkActions?: boolean;
+  rankingDataMap?: Map<string, any>;
   onRefundRequest?: (requestId: string) => void;
   onInquiry?: (request: GuaranteeItem) => void;
   onDetailView?: (request: GuaranteeItem) => void;
@@ -104,6 +106,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
   selectedRequests = [],
   onSelectedRequestsChange,
   showBulkActions = false,
+  rankingDataMap,
   onRefundRequest,
   onInquiry,
   onDetailView,
@@ -374,6 +377,7 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                 {isLargeScreen && <th className="py-2 px-1 md:px-2 text-center font-medium"></th>}
                 {isLargeScreen && <th className="py-2 px-1 md:px-2 text-center font-medium">보장</th>}
                 <th className="py-2 px-1 md:px-2 text-center font-medium">캠페인</th>
+                <th className="py-2 px-1 md:px-2 text-center font-medium">순위</th>
                 <th className="py-2 px-1 md:px-2 text-center font-medium">상태</th>
                 {isExtraLargeScreen && <th className="py-2 px-1 md:px-2 text-center font-medium">신청일</th>}
                 {isLargeScreen && <th className="py-2 px-1 md:px-2 text-center font-medium">기간</th>}
@@ -840,6 +844,49 @@ export const GuaranteeQuotesList: React.FC<GuaranteeQuotesListProps> = ({
                         </span>
                         {getCampaignStatusDot(item.campaigns)}
                       </div>
+                    </td>
+
+                    {/* 순위 */}
+                    <td className="py-2 px-1 md:px-2 text-center">
+                      {(() => {
+                        // 활성화된 슬롯의 순위 정보 표시
+                        if (item.guarantee_slots?.[0]?.status === 'active' && rankingDataMap) {
+                          const slotId = item.guarantee_slots[0].id;
+                          const rankingData = rankingDataMap.get(slotId);
+                          
+                          if (rankingData && rankingData.rank > 0) {
+                            const isAchieved = rankingData.rank <= (item.target_rank || 0);
+                            return (
+                              <div className="flex flex-col items-center">
+                                <span className={`text-sm font-medium ${isAchieved ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {rankingData.rank}위
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  목표: {item.target_rank}위
+                                </span>
+                                {rankingData.yesterday_rank && (
+                                  <span className={`text-xs ${
+                                    rankingData.rank < rankingData.yesterday_rank 
+                                      ? 'text-green-600' 
+                                      : rankingData.rank > rankingData.yesterday_rank 
+                                        ? 'text-red-600' 
+                                        : 'text-gray-500'
+                                  }`}>
+                                    {rankingData.rank < rankingData.yesterday_rank && '▲'}
+                                    {rankingData.rank > rankingData.yesterday_rank && '▼'}
+                                    {Math.abs(rankingData.rank - rankingData.yesterday_rank)}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                        }
+                        
+                        // 순위 정보가 없거나 활성화되지 않은 경우
+                        return (
+                          <span className="text-xs text-gray-400">-</span>
+                        );
+                      })()}
                     </td>
 
                     {/* 상태 */}

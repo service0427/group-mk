@@ -4,6 +4,8 @@
 -- user_cash_history 테이블 구조에 맞게 수정
 -- slot_pending_balances 활용하여 정산 처리
 
+-- 주의: auto_complete_overdue_slots 함수는 auto-complete-overdue-slots-fixed.sql을 사용하세요
+
 -- 1. 슬롯의 작업 완료율 및 작업 일수 계산 함수 (기존과 동일)
 CREATE OR REPLACE FUNCTION calculate_slot_work_summary(p_slot_id UUID)
 RETURNS TABLE (

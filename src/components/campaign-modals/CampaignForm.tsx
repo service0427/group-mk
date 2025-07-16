@@ -77,6 +77,8 @@ interface CampaignFormInputData {
   maxGuaranteePrice?: string;
   refundSettings?: RefundSettings;
   deadline?: string;
+  workCompletionMode?: 'manual' | 'auto';
+  autoCompletionHour?: number;
 }
 
 // 서비스 타입별 필드 정보
@@ -191,7 +193,7 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerImageFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (field: keyof CampaignFormInputData, value: string | Array<{ fieldName: string; description: string }> | boolean) => {
+  const handleChange = (field: keyof CampaignFormInputData, value: string | number | Array<{ fieldName: string; description: string }> | boolean) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
@@ -915,6 +917,56 @@ const CampaignForm: React.FC<CampaignFormProps> = ({
                 </tr>
               </>
             )}
+
+            <tr>
+              <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">
+                작업 완료 방식 <span className="text-red-500">*</span>
+              </th>
+              <td className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background">
+                <div className="space-y-3">
+                  <Select 
+                    value={formData.workCompletionMode || 'manual'} 
+                    onValueChange={(value: string) => handleChange('workCompletionMode', value)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">수동완료 (매일 작업입력)</SelectItem>
+                      <SelectItem value="auto">자동완료 (종료일에 일괄처리)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.workCompletionMode === 'auto' && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        자동완료 시간:
+                      </span>
+                      <Select 
+                        value={String(formData.autoCompletionHour || 18)} 
+                        onValueChange={(value: string) => handleChange('autoCompletionHour', parseInt(value))}
+                        disabled={loading}
+                      >
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...Array(24)].map((_, i) => (
+                            <SelectItem key={i} value={String(i)}>
+                              {i}시
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        매일 지정된 시간에 자동으로 작업이 완료됩니다
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </td>
+            </tr>
 
             <tr>
               <th className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-left text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide w-[96px] sm:w-[128px] md:w-[200px]">

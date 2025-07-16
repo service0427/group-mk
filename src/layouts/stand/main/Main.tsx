@@ -8,6 +8,7 @@ import { ContentLoader } from '@/components/loaders';
 import { Chat, ChatSticky } from '@/components/chat';
 import { useAuthContext } from '@/auth';
 import { useMediaQuery } from '@/hooks';
+import { ImpersonationBanner } from '@/components/ImpersonationBanner';
 
 const Main = () => {
   const { layout } = useStandLayout();
@@ -77,6 +78,9 @@ const Main = () => {
         <meta http-equiv="Cache-Control" content="no-store" />
       </Helmet>
 
+      {/* 사용자 전환 배너 */}
+      <ImpersonationBanner />
+      
       <div className="flex h-screen h-[100dvh] overflow-hidden">
         {/* 사이드바 컴포넌트 - 고정 영역 */}
         <Sidebar />

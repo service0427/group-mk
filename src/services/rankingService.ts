@@ -1,4 +1,5 @@
 import { supabase } from '@/supabase';
+import { supabaseRanking } from '@/supabase-ranking'; // Production DB for ranking data
 import { SERVICE_TYPE_TO_KEYWORD_TYPE, RANKING_TABLE_MAPPING, RANKING_SUPPORT_STATUS, getKeywordTypeFromServiceType } from '@/config/campaign.config';
 
 // 캐시 관련 설정
@@ -84,7 +85,7 @@ export async function getSlotRankingData(
     const keywordType = getKeywordTypeFromServiceType(campaign.service_type);
     
     // 4. 먼저 search_keywords 테이블에서 키워드와 type으로 UUID 찾기
-    const { data: keywordData, error: keywordError } = await supabase
+    const { data: keywordData, error: keywordError } = await supabaseRanking
       .from('search_keywords')
       .select('id')
       .eq('keyword', keyword)
@@ -98,7 +99,7 @@ export async function getSlotRankingData(
     // type에 맞는 테이블 선택
     const tableMapping = RANKING_TABLE_MAPPING[keywordType] || RANKING_TABLE_MAPPING.shopping;
     
-    const { data: rankingData, error: rankingError } = await supabase
+    const { data: rankingData, error: rankingError } = await supabaseRanking
       .from(tableMapping.current)
       .select('*')
       .eq('keyword_id', keywordData.id)
@@ -257,7 +258,7 @@ export async function getBulkSlotRankingData(
     for (const [type, keywords] of keywordsByType) {
       const uniqueKeywords = [...keywords];
       if (uniqueKeywords.length > 0) {
-        const { data: keywordData, error: keywordError } = await supabase
+        const { data: keywordData, error: keywordError } = await supabaseRanking
           .from('search_keywords')
           .select('id, keyword, type')
           .in('keyword', uniqueKeywords)
@@ -318,7 +319,7 @@ export async function getBulkSlotRankingData(
       if (items.length > 0) {
         const rankingPromises = items.map(async item => {
           // 현재 순위 조회
-          const currentPromise = supabase
+          const currentPromise = supabaseRanking
             .from(tableMapping.current)
             .select('*')
             .eq('keyword_id', item.keyword_id)
@@ -326,7 +327,7 @@ export async function getBulkSlotRankingData(
             .maybeSingle();
           
           // 전일 순위 조회
-          const yesterdayPromise = supabase
+          const yesterdayPromise = supabaseRanking
             .from(tableMapping.daily)
             .select('rank')
             .eq('keyword_id', item.keyword_id)
@@ -463,20 +464,22 @@ export async function getGuaranteeSlotRankingData(
     const keywordField = mapping.keyword || '검색어';
     const productIdField = mapping.product_id || '코드';
     
-    // 키워드 추출 (중첩 구조 처리)
-    let keyword = inputData?.[keywordField] || inputData?.mainKeyword || inputData?.keyword;
-    let productId = inputData?.[productIdField] || inputData?.mid || inputData?.product_id;
     
-    // 중첩된 keywords 배열에서 추출 시도
-    if (!keyword && inputData?.keywords && Array.isArray(inputData.keywords) && inputData.keywords.length > 0) {
+    // 보장형은 항상 중첩된 구조를 먼저 확인
+    let keyword, productId;
+    
+    if (inputData?.keywords && Array.isArray(inputData.keywords) && inputData.keywords.length > 0) {
       const firstKeywordItem = inputData.keywords[0];
+      
       if (firstKeywordItem?.input_data) {
-        keyword = firstKeywordItem.input_data.keyword || firstKeywordItem.input_data.mainKeyword;
-        // productId도 중첩 구조에서 추출
-        if (!productId) {
-          productId = firstKeywordItem.input_data.mid || firstKeywordItem.input_data.product_id;
-        }
+        // 매핑된 필드 사용
+        keyword = firstKeywordItem.input_data[keywordField] || firstKeywordItem.input_data.keyword || firstKeywordItem.input_data.mainKeyword;
+        productId = firstKeywordItem.input_data[productIdField] || firstKeywordItem.input_data.MID || firstKeywordItem.input_data.mid || firstKeywordItem.input_data.product_id;
       }
+    } else {
+      // 중첩 구조가 없는 경우 직접 접근
+      keyword = inputData?.[keywordField] || inputData?.mainKeyword || inputData?.keyword;
+      productId = inputData?.[productIdField] || inputData?.mid || inputData?.product_id;
     }
 
     if (!keyword || !productId) {
@@ -487,7 +490,7 @@ export async function getGuaranteeSlotRankingData(
     const keywordType = getKeywordTypeFromServiceType(campaign.service_type || 'default');
     
     // 4. 키워드 UUID 조회
-    const { data: keywordData, error: keywordError } = await supabase
+    const { data: keywordData, error: keywordError } = await supabaseRanking
       .from('search_keywords')
       .select('id')
       .eq('keyword', keyword)
@@ -504,7 +507,7 @@ export async function getGuaranteeSlotRankingData(
     const tableMapping = RANKING_TABLE_MAPPING[keywordType] || RANKING_TABLE_MAPPING.shopping;
     
     // 5. 작업 기간 내 일별 순위 데이터 조회
-    const { data: rankingData, error: rankingError } = await supabase
+    const { data: rankingData, error: rankingError } = await supabaseRanking
       .from(tableMapping.daily)
       .select('date, rank')
       .eq('keyword_id', keywordId)
@@ -520,7 +523,7 @@ export async function getGuaranteeSlotRankingData(
 
 
     // 6. 현재 순위 조회 (가장 최신)
-    const { data: currentRankData } = await supabase
+    const { data: currentRankData } = await supabaseRanking
       .from(tableMapping.current)
       .select('rank')
       .eq('keyword_id', keywordId)
@@ -599,6 +602,7 @@ export async function getBulkGuaranteeSlotRankingData(
   const rankingMap = new Map<string, RankingData>();
 
   try {
+    
     // 1. 캠페인 매핑 정보 가져오기
     const campaignIds = [...new Set(slots.map(s => s.campaignId))];
     
@@ -634,6 +638,7 @@ export async function getBulkGuaranteeSlotRankingData(
 
       const inputData = slot.inputData;
       
+      
       // 키워드 추출 (중첩 구조 처리)
       let keyword = inputData?.[keywordField] || inputData?.mainKeyword || inputData?.keyword;
       let productId = inputData?.[productIdField] || inputData?.mid || inputData?.product_id;
@@ -642,10 +647,10 @@ export async function getBulkGuaranteeSlotRankingData(
       if (!keyword && inputData?.keywords && Array.isArray(inputData.keywords) && inputData.keywords.length > 0) {
         const firstKeywordItem = inputData.keywords[0];
         if (firstKeywordItem?.input_data) {
-          keyword = firstKeywordItem.input_data.keyword || firstKeywordItem.input_data.mainKeyword;
+          keyword = firstKeywordItem.input_data[keywordField] || firstKeywordItem.input_data.keyword || firstKeywordItem.input_data.mainKeyword;
           // productId도 중첩 구조에서 추출
           if (!productId) {
-            productId = firstKeywordItem.input_data.mid || firstKeywordItem.input_data.product_id;
+            productId = firstKeywordItem.input_data[productIdField] || firstKeywordItem.input_data.MID || firstKeywordItem.input_data.mid || firstKeywordItem.input_data.product_id;
           }
         }
       }
@@ -689,7 +694,7 @@ export async function getBulkGuaranteeSlotRankingData(
     for (const [type, keywords] of keywordsByType) {
       const uniqueKeywords = [...keywords];
       if (uniqueKeywords.length > 0) {
-        const { data: keywordData, error: keywordError } = await supabase
+        const { data: keywordData, error: keywordError } = await supabaseRanking
           .from('search_keywords')
           .select('id, keyword')
           .in('keyword', uniqueKeywords)
@@ -713,7 +718,7 @@ export async function getBulkGuaranteeSlotRankingData(
       // type에 맞는 테이블 선택
       const tableMapping = RANKING_TABLE_MAPPING[condition.keyword_type] || RANKING_TABLE_MAPPING.shopping;
 
-      const { data: rankingData, error: rankingError } = await supabase
+      const { data: rankingData, error: rankingError } = await supabaseRanking
         .from(tableMapping.current)
         .select('*')
         .eq('keyword_id', keywordUuid)
@@ -726,7 +731,7 @@ export async function getBulkGuaranteeSlotRankingData(
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         
-        const { data: yesterdayData } = await supabase
+        const { data: yesterdayData } = await supabaseRanking
           .from(tableMapping.daily)
           .select('rank')
           .eq('keyword_id', keywordUuid)

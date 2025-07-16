@@ -12,7 +12,7 @@ import { GuaranteeQuotesList } from './GuaranteeQuotesList';
 import GuaranteeRefundModal from '@/components/guarantee-slots/GuaranteeRefundModal';
 import GuaranteeSlotDetailModal from '@/components/guarantee-slots/GuaranteeSlotDetailModal';
 import GuaranteeRankCheckModal from '@/components/guarantee-slots/GuaranteeRankCheckModal';
-import type { GuaranteeSlotRequestStatus } from '@/types/guarantee-slot.types';
+import type { GuaranteeSlotRequestStatus, GuaranteeSlot } from '@/types/guarantee-slot.types';
 import { USER_ROLES, hasPermission, PERMISSION_GROUPS } from '@/config/roles.config';
 import { InquiryChatModal } from '@/components/inquiry';
 import { smartCeil } from '@/utils/mathUtils';
@@ -205,8 +205,8 @@ export const MyGuaranteeQuotesContent: React.FC<MyGuaranteeQuotesContentProps> =
         .filter(req => req.guarantee_slots && req.guarantee_slots.length > 0)
         .flatMap(req => 
           req.guarantee_slots
-            ?.filter(slot => slot.status === 'active' || slot.status === 'completed')
-            .map(slot => ({
+            ?.filter((slot: any) => slot.status === 'active' || slot.status === 'completed')
+            .map((slot: any) => ({
               id: slot.id,
               campaignId: req.campaign_id,
               inputData: req.input_data || req.keywords

@@ -534,11 +534,7 @@ export const useAuthStore = create<AuthState>()(
               email: targetUser.email,
               full_name: targetUser.full_name,
               role: targetUser.role,
-              status: targetUser.status,
-              avatar: targetUser.metadata?.avatar || '',
-              agency_id: targetUser.metadata?.agency_id,
-              distributor_id: targetUser.metadata?.distributor_id,
-              parent_path: targetUser.metadata?.parent_path || []
+              status: targetUser.status
             };
             
             set({

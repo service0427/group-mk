@@ -11,7 +11,7 @@ import { useLanguage } from '@/i18n';
 import { toAbsoluteUrl } from '@/utils';
 import { useSettings } from '@/providers/SettingsProvider';
 import { FormattedMessage } from 'react-intl';
-import { Menu, MenuItem, MenuToggle, MenuSub } from '@/components';
+import { Menu, MenuItem, MenuToggle, MenuSub, IMenuItemRef } from '@/components';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,7 @@ const UserInfoDisplayV2 = () => {
   const { settings, storeSettings } = useSettings();
   const { isLoggingOut, safeApiCall, logoutProgress } = useLogoutContext();
   const navigate = useNavigate();
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<IMenuItemRef>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [cashBalance, setCashBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);

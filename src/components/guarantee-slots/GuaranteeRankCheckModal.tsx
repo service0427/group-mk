@@ -124,10 +124,10 @@ const GuaranteeRankCheckModal: React.FC<GuaranteeRankCheckModalProps> = ({
   const chartData = stats ? (() => {
     // 차트에 표시할 데이터 준비
     let chartRankings = [...stats.dailyRankings];
-    let labels = [];
-    let rankData = [];
-    let pointColors = [];
-    let borderColors = [];
+    let labels: string[] = [];
+    let rankData: number[] = [];
+    let pointColors: string[] = [];
+    let borderColors: string[] = [];
     
     // dailyRankings가 없거나 오늘 데이터가 없는 경우 현재 순위 추가
     if (stats.currentRank && (chartRankings.length === 0 || 

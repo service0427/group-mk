@@ -17,3 +17,4 @@ export { default as ScrollToTop } from './ScrollToTop';
 export * from './PullToRefresh';
 export * from './ScrollToTopButton';
 export * from './StatusBarTap';
+export { ImpersonationBanner } from './ImpersonationBanner';

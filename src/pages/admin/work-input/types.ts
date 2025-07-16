@@ -21,6 +21,8 @@ export interface Slot {
   campaign_id?: number; // 캠페인 ID
   service_type?: string; // 서비스 타입
   description?: string; // 설명
+  work_completion_mode?: 'manual' | 'auto'; // 작업 완료 방식
+  auto_completion_hour?: number; // 자동완료 시간 (0-23)
   
   // 추가 정보 (JOIN으로 가져오는 데이터)
   keywords?: string; // 키워드 정보

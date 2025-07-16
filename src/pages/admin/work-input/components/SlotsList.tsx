@@ -710,15 +710,24 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
               상세보기
             </button>
             {!isExpired && (
-              <button
-                onClick={() => handleWorkInput(slot)}
-                className="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                입력
-              </button>
+              slot.work_completion_mode === 'auto' ? (
+                <div className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-md flex flex-col items-center justify-center">
+                  <div>자동완료</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {slot.auto_completion_hour}시 예정
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleWorkInput(slot)}
+                  className="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                  입력
+                </button>
+              )
             )}
           </div>
         </div>
@@ -1381,12 +1390,26 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                             today.setHours(0, 0, 0, 0);
                             const endDate = slot.end_date ? new Date(slot.end_date) : null;
                             const isExpired = endDate && endDate < today;
+                            
+                            // 자동완료 슬롯 체크
+                            const isAutoComplete = slot.work_completion_mode === 'auto';
 
                             if (isExpired) {
                               return (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   종료됨
                                 </span>
+                              );
+                            }
+                            
+                            if (isAutoComplete) {
+                              return (
+                                <div className="text-xs text-blue-600 dark:text-blue-400">
+                                  <div>자동완료</div>
+                                  <div className="text-gray-500 dark:text-gray-400">
+                                    {slot.auto_completion_hour}시 예정
+                                  </div>
+                                </div>
                               );
                             }
 

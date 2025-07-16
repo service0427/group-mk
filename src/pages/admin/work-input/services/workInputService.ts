@@ -8,7 +8,7 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
     // 1. 필터에 따라 campaigns 테이블 조회 쿼리 구성
     let campaignQuery = supabase
       .from('campaigns')
-      .select('id, campaign_name, service_type, description, ranking_field_mapping')
+      .select('id, campaign_name, service_type, description, ranking_field_mapping, work_completion_mode, auto_completion_hour')
       .in('status', ['pending','active']);
     
     // 서비스 타입으로 필터링
@@ -122,6 +122,9 @@ export const getActiveSlots = async (userId: string | undefined, filterOptions?:
         campaign_id: campaign.id,
         service_type: campaign.service_type,
         description: campaign.description,
+        // 작업 완료 방식 추가
+        work_completion_mode: campaign.work_completion_mode,
+        auto_completion_hour: campaign.auto_completion_hour,
         // 사용자 정보 추가
         user_email: (slot.users as any)?.email,
         user_name: (slot.users as any)?.full_name || (slot.users as any)?.email,

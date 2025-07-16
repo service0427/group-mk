@@ -7,6 +7,7 @@ import { useAlert } from '@/hooks/useAlert';
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { KeenIcon, LucideRefreshIcon } from '@/components';
 import { getBulkSlotRankingData } from '@/services/rankingService';
+import { getSlotWorkProgress } from '../services/slotService';
 
 // CSS for campaign status dot tooltip
 const campaignStatusStyles = `
@@ -116,6 +117,9 @@ const SlotList: React.FC<SlotListProps> = ({
   const [openKeywordTooltipId, setOpenKeywordTooltipId] = useState<string | null>(null);
   // 순위 데이터 상태 관리
   const [rankingDataMap, setRankingDataMap] = useState<Map<string, RankingData>>(new Map());
+  
+  // 작업 진행률 상태 관리
+  const [workProgressMap, setWorkProgressMap] = useState<Record<string, any>>({});
   
   // 내키워드 지원 여부 확인 - 모든 슬롯이 내키워드 미지원인지 체크
   const isKeywordUnsupportedService = useMemo(() => {
@@ -261,6 +265,25 @@ const SlotList: React.FC<SlotListProps> = ({
     
     loadRankingData();
   }, [slots, campaigns]);
+
+  // 작업 진행률 로드
+  useEffect(() => {
+    const loadWorkProgress = async () => {
+      if (!slots || slots.length === 0) return;
+      
+      // approved 상태인 슬롯만 필터링
+      const approvedSlotIds = slots
+        .filter(slot => slot.status === 'approved')
+        .map(slot => slot.id);
+      
+      if (approvedSlotIds.length === 0) return;
+      
+      const progressMap = await getSlotWorkProgress(approvedSlotIds);
+      setWorkProgressMap(progressMap);
+    };
+    
+    loadWorkProgress();
+  }, [slots]);
 
   // 슬롯들의 사용자 정보를 한 번에 로드하는 함수
   useEffect(() => {
@@ -487,6 +510,7 @@ const SlotList: React.FC<SlotListProps> = ({
               <th className="py-2 px-2 text-center font-medium">입력필드</th>
               <th className="py-2 px-2 text-center font-medium">순위</th>
               <th className="py-2 px-2 text-center font-medium">작업수</th>
+              <th className="py-2 px-2 text-center font-medium">작업량</th>
               <th className="py-2 px-2 text-center font-medium">작업기간</th>
               <th className="py-2 px-2 text-center font-medium">캠페인</th>
               <th className="py-2 px-2 text-center font-medium">상태</th>
@@ -792,6 +816,46 @@ const SlotList: React.FC<SlotListProps> = ({
                      slot.input_data?.quantity ? slot.input_data.quantity : 
                      slot.input_data?.workCount ? slot.input_data.workCount : '-'}
                   </div>
+                </td>
+                
+                {/* 작업량 */}
+                <td className="py-2 px-2 text-center">
+                  {(() => {
+                    const dailyQuantity = slot.quantity || 0;
+                    const progress = workProgressMap[slot.id];
+                    
+                    if (!progress || slot.status !== 'approved') {
+                      return <span className="text-sm text-gray-400">-</span>;
+                    }
+                    
+                    // 작업일수 계산
+                    let workDays = 1;
+                    if (slot.start_date && slot.end_date) {
+                      const start = new Date(slot.start_date);
+                      const end = new Date(slot.end_date);
+                      workDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                    }
+                    
+                    // 총 작업량 = 일일 작업량 × 작업일수
+                    const totalQuantity = dailyQuantity * workDays;
+                    const totalWorked = progress.totalWorked || 0;
+                    const percentage = totalQuantity > 0 ? Math.round((totalWorked / totalQuantity) * 100) : 0;
+                    
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="text-sm text-gray-700">
+                          {totalWorked.toLocaleString()}/{totalQuantity.toLocaleString()}
+                        </div>
+                        <div className={`text-xs font-medium ${
+                          percentage >= 100 ? 'text-green-600' : 
+                          percentage >= 50 ? 'text-blue-600' : 
+                          'text-gray-600'
+                        }`}>
+                          ({percentage}%)
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </td>
                 
                 {/* 작업기간 */}

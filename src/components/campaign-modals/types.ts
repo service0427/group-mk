@@ -190,6 +190,8 @@ export interface ICampaign {
   matName?: string;
   matEmail?: string;
   matDisplay?: string;
+  workCompletionMode?: 'manual' | 'auto'; // 작업 완료 방식
+  autoCompletionHour?: number; // 자동 완료 시간 (0-23)
 }
 
 // 확장된 캠페인 인터페이스
@@ -226,6 +228,8 @@ export interface ExtendedCampaign extends ICampaign {
   serviceType?: string;
   additionalInfo?: any; // 추가 항목 정보
   refundSettings?: any; // 환불 설정
+  workCompletionMode?: 'manual' | 'auto'; // 작업 완료 방식
+  autoCompletionHour?: number; // 자동 완료 시간 (0-23)
 }
 
 // 캠페인 상태 관련 유틸리티 함수

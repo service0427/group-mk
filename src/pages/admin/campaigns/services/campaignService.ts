@@ -493,7 +493,10 @@ export const updateCampaign = async (campaignId: number, data: any): Promise<boo
       ...(data.minGuaranteePrice !== undefined ? { min_guarantee_price: parseFloat(data.minGuaranteePrice) || null } : {}),
       ...(data.maxGuaranteePrice !== undefined ? { max_guarantee_price: parseFloat(data.maxGuaranteePrice) || null } : {}),
       // 필드 매핑 정보 추가
-      ...(data.rankingFieldMapping !== undefined ? { ranking_field_mapping: data.rankingFieldMapping } : {})
+      ...(data.rankingFieldMapping !== undefined ? { ranking_field_mapping: data.rankingFieldMapping } : {}),
+      // 작업 완료 방식 추가
+      ...(data.workCompletionMode !== undefined ? { work_completion_mode: data.workCompletionMode } : {}),
+      ...(data.autoCompletionHour !== undefined ? { auto_completion_hour: data.workCompletionMode === 'auto' ? data.autoCompletionHour : null } : {})
     };
 
     // 상태 변경 플래그와 이전 상태 저장
@@ -825,7 +828,10 @@ export const createCampaign = async (data: any): Promise<{ success: boolean, id?
           max_refund_days: 7,
           partial_refund: true
         }
-      }
+      },
+      // 작업 완료 방식 추가
+      work_completion_mode: data.workCompletionMode || 'manual',
+      auto_completion_hour: data.workCompletionMode === 'auto' ? (data.autoCompletionHour || 18) : null
     };
 
     // 관리자 클라이언트를 사용하여 RLS 정책을 우회

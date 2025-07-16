@@ -466,7 +466,27 @@ create table public.campaigns (
   refund_settings jsonb null default '{"type": "immediate", "enabled": true, "delay_days": 0, "cutoff_time": "00:00", "refund_rules": {"refund_rate": 100, "min_usage_days": 0, "partial_refund": true, "max_refund_days": 7}, "approval_roles": ["distributor", "advertiser"], "requires_approval": false}'::jsonb,
   guarantee_period integer null,
   ranking_field_mapping jsonb null,
+  work_completion_mode text null default 'manual'::text,
+  auto_completion_hour integer null default 18,
   constraint campaigns_pkey_new primary key (id),
+  constraint campaigns_slot_type_check check (
+    (
+      (slot_type)::text = any (
+        (
+          array[
+            'standard'::character varying,
+            'guarantee'::character varying,
+            'per-unit'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint campaigns_work_completion_mode_check check (
+    (
+      work_completion_mode = any (array['manual'::text, 'auto'::text])
+    )
+  ),
   constraint guarantee_count_check check (
     (
       (
@@ -528,6 +548,12 @@ create table public.campaigns (
       )
     )
   ),
+  constraint campaigns_auto_completion_hour_check check (
+    (
+      (auto_completion_hour >= 0)
+      and (auto_completion_hour <= 23)
+    )
+  ),
   constraint target_rank_check check (
     (
       (
@@ -561,7 +587,6 @@ create trigger update_campaigns_is_guarantee BEFORE INSERT
 or
 update OF slot_type on campaigns for EACH row
 execute FUNCTION update_is_guarantee_flag ();
-
 
 create table public.slot_refund_approvals (
   id uuid not null default gen_random_uuid (),

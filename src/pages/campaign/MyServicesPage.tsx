@@ -235,16 +235,18 @@ const MyServicesPage: React.FC = () => {
       }
 
       // 2. 보장형 active 상태의 슬롯 카운트
+      // guarantee_slot_requests 테이블에서 협상중, 협상완료, 구매완료 상태 조회
       let guaranteeActiveQuery = supabase
         .from('guarantee_slot_requests')
         .select(`
           id,
           status,
+          campaign_id,
           campaigns:campaign_id (
             service_type
           )
         `)
-        .in('status', ['accepted', 'negotiating']);
+        .in('status', ['accepted', 'negotiating', 'purchased']); // 협상완료, 협상중, 구매완료 상태
 
       // 개발자가 아닌 경우에만 사용자 필터 적용
       if (userRole !== USER_ROLES.DEVELOPER) {
@@ -278,11 +280,12 @@ const MyServicesPage: React.FC = () => {
         console.error('전체 슬롯 조회 오류:', allError);
       }
 
-      // 4. 모든 보장형 요청 확인
+      // 4. 모든 보장형 슬롯 확인 (guarantee_slot_requests 테이블에서)
       let allGuaranteeQuery = supabase
         .from('guarantee_slot_requests')
         .select(`
           id,
+          campaign_id,
           campaigns:campaign_id (
             service_type
           )
@@ -295,7 +298,7 @@ const MyServicesPage: React.FC = () => {
       const { data: allGuaranteeData, error: allGuaranteeError } = await allGuaranteeQuery;
 
       if (allGuaranteeError) {
-        console.error('전체 보장형 요청 조회 오류:', allGuaranteeError);
+        console.error('전체 보장형 슬롯 조회 오류:', allGuaranteeError);
       }
 
       // 일반형 active 슬롯 카운트 계산 (환불 상태 제외)

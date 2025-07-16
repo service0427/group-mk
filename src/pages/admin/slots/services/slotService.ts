@@ -1472,6 +1472,44 @@ export const confirmSlotByUser = async (
   }
 };
 
+// 슬롯의 작업 진행률 정보를 가져오는 함수
+export const getSlotWorkProgress = async (slotIds: string[]): Promise<Record<string, any>> => {
+  try {
+    if (!slotIds || slotIds.length === 0) return {};
+
+    // 슬롯별 작업 정보 조회
+    const { data: workInfos, error } = await supabase
+      .from('slot_works_info')
+      .select('slot_id, work_cnt, date')
+      .in('slot_id', slotIds);
+
+    if (error) {
+      console.error('작업 정보 조회 실패:', error);
+      return {};
+    }
+
+    // 슬롯별로 작업량 집계
+    const progressMap: Record<string, any> = {};
+    
+    slotIds.forEach(slotId => {
+      const slotWorks = workInfos?.filter(w => w.slot_id === slotId) || [];
+      const totalWorked = slotWorks.reduce((sum, work) => sum + (work.work_cnt || 0), 0);
+      const workedDays = slotWorks.length;
+      
+      progressMap[slotId] = {
+        totalWorked,
+        workedDays,
+        works: slotWorks
+      };
+    });
+
+    return progressMap;
+  } catch (err) {
+    console.error('작업 진행률 조회 오류:', err);
+    return {};
+  }
+};
+
 export default {
   approveSlot,
   rejectSlot,

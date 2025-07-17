@@ -21,6 +21,8 @@ export interface Slot {
   campaign_id?: number; // 캠페인 ID
   service_type?: string; // 서비스 타입
   description?: string; // 설명
+  work_completion_mode?: 'manual' | 'auto'; // 작업 완료 방식
+  auto_completion_hour?: number; // 자동완료 시간 (0-23)
   
   // 추가 정보 (JOIN으로 가져오는 데이터)
   keywords?: string; // 키워드 정보
@@ -30,6 +32,19 @@ export interface Slot {
   user_name?: string; // 사용자 이름
   mat_name?: string; // 총판 이름
   mat_email?: string; // 총판 이메일
+  
+  // 작업 진행률 정보
+  workProgress?: {
+    totalWorkedQuantity: number;
+    totalRequestedQuantity: number;
+    completionRate: number;
+    workedDays: number;
+    requestedDays: number;
+  };
+  
+  // input_data 필드 추가 (진행률 계산에 필요)
+  input_data?: any;
+  product_id?: number;
 }
 
 // 작업 입력 폼 데이터 인터페이스

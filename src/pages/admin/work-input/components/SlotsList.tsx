@@ -485,6 +485,24 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
 
           {/* 정보 영역 */}
           <div className="space-y-2 mb-3">
+            {/* 진행률 */}
+            {slot.workProgress && (
+              <div className="flex">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">진행률</span>
+                <div className="flex-1">
+                  <div className={`text-sm font-medium ${
+                    slot.workProgress.completionRate >= 90 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : slot.workProgress.completionRate >= 50 
+                        ? 'text-orange-600 dark:text-orange-400' 
+                        : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {slot.workProgress.totalWorkedQuantity.toLocaleString()} / {slot.workProgress.totalRequestedQuantity.toLocaleString()} ({slot.workProgress.completionRate}%)
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* 키워드 */}
             {slot.keywords && (
               <div className="flex">
@@ -692,15 +710,24 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
               상세보기
             </button>
             {!isExpired && (
-              <button
-                onClick={() => handleWorkInput(slot)}
-                className="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                입력
-              </button>
+              slot.work_completion_mode === 'auto' ? (
+                <div className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-md flex flex-col items-center justify-center">
+                  <div>자동완료</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {slot.auto_completion_hour}시 예정
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleWorkInput(slot)}
+                  className="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                  입력
+                </button>
+              )
             )}
           </div>
         </div>
@@ -1051,6 +1078,9 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                       </div>
                     </th>
                     <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                      진행률
+                    </th>
+                    <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
                       상세보기
                     </th>
                     <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
@@ -1061,7 +1091,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={isAdmin ? 12 : 11} className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
                         <div className="flex justify-center">
                           <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -1073,7 +1103,7 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                     </tr>
                   ) : filteredSlots.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 10} className="px-3 py-4 text-center">
+                      <td colSpan={isAdmin ? 12 : 11} className="px-3 py-4 text-center">
                         <div className="flex flex-col items-center py-8">
                           <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -1311,6 +1341,34 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                           </div>
                         </td>
 
+                        {/* 진행률 */}
+                        <td className="px-3 py-3 text-center whitespace-nowrap">
+                          {slot.workProgress ? (
+                            <div className="text-sm">
+                              <div className={`font-medium ${
+                                slot.workProgress.completionRate >= 90 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : slot.workProgress.completionRate >= 50 
+                                    ? 'text-orange-600 dark:text-orange-400' 
+                                    : 'text-red-600 dark:text-red-400'
+                              }`}>
+                                {slot.workProgress.totalWorkedQuantity.toLocaleString()} / {slot.workProgress.totalRequestedQuantity.toLocaleString()}
+                              </div>
+                              <div className={`text-xs ${
+                                slot.workProgress.completionRate >= 90 
+                                  ? 'text-green-500 dark:text-green-400' 
+                                  : slot.workProgress.completionRate >= 50 
+                                    ? 'text-orange-500 dark:text-orange-400' 
+                                    : 'text-red-500 dark:text-red-400'
+                              }`}>
+                                ({slot.workProgress.completionRate}%)
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </td>
+
                         {/* 상세보기 */}
                         <td className="px-3 py-3 text-center whitespace-nowrap">
                           <button
@@ -1332,12 +1390,26 @@ const SlotsList: React.FC<SlotsListProps> = ({ slots, isLoading, onSubmit, matId
                             today.setHours(0, 0, 0, 0);
                             const endDate = slot.end_date ? new Date(slot.end_date) : null;
                             const isExpired = endDate && endDate < today;
+                            
+                            // 자동완료 슬롯 체크
+                            const isAutoComplete = slot.work_completion_mode === 'auto';
 
                             if (isExpired) {
                               return (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   종료됨
                                 </span>
+                              );
+                            }
+                            
+                            if (isAutoComplete) {
+                              return (
+                                <div className="text-xs text-blue-600 dark:text-blue-400">
+                                  <div>자동완료</div>
+                                  <div className="text-gray-500 dark:text-gray-400">
+                                    {slot.auto_completion_hour}시 예정
+                                  </div>
+                                </div>
                               );
                             }
 

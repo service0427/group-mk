@@ -79,6 +79,17 @@ export interface SlotItem {
     request_date: string;
     approval_date?: string;
   }>;
+  // 작업 진행률 관련 필드 - 주석처리됨
+  quantity?: number; // 일일 작업량
+  /* workProgress?: {
+    totalWorkedQuantity: number; // 완료된 작업 수
+    totalRequestedQuantity: number; // 요청된 총 작업 수
+    completionRate: number; // 완료율 (%)
+    workedDays: number; // 작업한 일수
+    requestedDays: number; // 요청된 작업 일수
+  }; */
+  userSlotNumber?: number; // 사용자 슬롯 번호
+  user_slot_number?: number; // 사용자 슬롯 번호 (대체 형식)
 }
 
 export interface CampaignListItem {

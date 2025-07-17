@@ -14,7 +14,7 @@ import { toAbsoluteUrl } from '@/utils';
 import { supabase } from '@/supabase';
 import ReactApexChart from 'react-apexcharts';
 import { getFilteredRankingData, calculateDataStats } from '@/utils/ChartSampleData';
-import { getStatusColorClass } from '@/utils/CampaignFormat';
+import { getStatusColorClass, formatImageUrl } from '@/utils/CampaignFormat';
 import { ICampaign, getStatusColor, getStatusLabel } from './types';
 import { getCampaignDetail } from '@/pages/advertise/campaigns/services/campaignDetailService';
 
@@ -634,42 +634,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                 {/* 로고 이미지 - 크기 증가 */}
                 <div className="relative">
                   <img
-                    src={(() => {
-                      // 로고가 없으면 기본 이미지 사용
-                      if (!campaign.logo) {
-                        return toAbsoluteUrl('/media/animal/svg/lion.svg');
-                      }
-
-                      // 로고에 경로가 이미 포함된 경우 그대로 사용
-                      if (campaign.logo.startsWith('/media') || campaign.logo.startsWith('http')) {
-                        return campaign.logo;
-                      }
-
-                      // 로고가 파일명(확장자 포함)인 경우 경로 추가
-                      if (campaign.logo.includes('.svg') || campaign.logo.includes('.png')) {
-                        return toAbsoluteUrl(`/media/${campaign.logo}`);
-                      }
-
-                      // 플라밍고-89740과 같은 형식인 경우 플라밍고만 추출 시도
-                      const dashIndex = campaign.logo.indexOf('-');
-                      if (dashIndex > 0) {
-                        const animalName = campaign.logo.substring(0, dashIndex).toLowerCase().trim();
-                        // 알려진 동물 이름인지 확인 (플라밍고, 라이언 등)
-                        if (['플라밍고', 'flamingo'].includes(animalName)) {
-                          return toAbsoluteUrl('/media/animal/svg/flamingo.svg');
-                        }
-                        if (['라이언', '사자', 'lion'].includes(animalName)) {
-                          return toAbsoluteUrl('/media/animal/svg/lion.svg');
-                        }
-                        if (['고양이', 'cat'].includes(animalName)) {
-                          return toAbsoluteUrl('/media/animal/svg/cat.svg');
-                        }
-                        // 다른 동물 이름 추가 필요시 확장
-                      }
-
-                      // 동물 이름으로 간주하고 SVG 경로 생성
-                      return toAbsoluteUrl(`/media/animal/svg/${campaign.logo}.svg`);
-                    })()}
+                    src={formatImageUrl(campaign.logo, campaign.originalData?.add_info, campaign.campaignName)}
                     className="rounded-xl size-16 shrink-0 object-cover border-2 border-gray-200 shadow-md"
                     alt={campaign?.campaignName}
                     onError={(e) => {
@@ -875,7 +840,7 @@ const CampaignDetailViewModal: React.FC<CampaignDetailViewModalProps> = ({
                                 case 'immediate':
                                   return '즉시 환불 가능';
                                 case 'delayed':
-                                  return `작업 시작 ${refundSettings.delay_days || 0}일 후 환불 가능`;
+                                  return `환불 승인 ${refundSettings.delay_days || 0}일 후 환불 가능`;
                                 default:
                                   return '즉시 환불 가능';
                               }

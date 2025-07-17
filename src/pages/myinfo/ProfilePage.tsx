@@ -40,9 +40,11 @@ const ProfilePage = () => {
   const [businessNumber, setBusinessNumber] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
   const [representativeName, setRepresentativeName] = useState<string>('');
+  const [businessPhone, setBusinessPhone] = useState<string>('');
   const [businessEmail, setBusinessEmail] = useState<string>('');
   const [businessImageUrl, setBusinessImageUrl] = useState<string>('');
   const [businessImageFile, setBusinessImageFile] = useState<File | null>(null);
+  const [isPdfFile, setIsPdfFile] = useState<boolean>(false);
   const [isBusinessInfoEditable, setIsBusinessInfoEditable] = useState<boolean>(true);
 
   // 출금 계좌 정보 상태
@@ -131,13 +133,22 @@ const ProfilePage = () => {
           setBusinessNumber(business.business_number || '');
           setBusinessName(business.business_name || '');
           setRepresentativeName(business.representative_name || '');
+          setBusinessPhone(business.business_phone || '');
           setBusinessEmail(business.business_email || '');
           setBusinessImageUrl(business.business_image_url || '');
+          
+          // PDF 파일인지 확인 (파일명으로 판단)
+          if (business.business_image_url && 
+              (business.business_image_url.toLowerCase().endsWith('.pdf') || 
+               business.business_image_storage_type === 'pdf')) {
+            setIsPdfFile(true);
+          }
           
           // 사업자 정보가 하나라도 있으면 수정 불가
           const hasBusinessData = business.business_number || 
             business.business_name || 
             business.representative_name || 
+            business.business_phone ||
             business.business_email;
           setIsBusinessInfoEditable(!hasBusinessData);
 
@@ -246,24 +257,31 @@ const ProfilePage = () => {
 
     // 파일 크기 체크 (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showError('이미지 파일 크기는 5MB를 초과할 수 없습니다.');
+      showError('파일 크기는 5MB를 초과할 수 없습니다.');
       return;
     }
 
     // 파일 타입 체크
-    if (!file.type.startsWith('image/')) {
-      showError('이미지 파일만 업로드 가능합니다.');
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      showError('이미지 파일(JPG, PNG) 또는 PDF 파일만 업로드 가능합니다.');
       return;
     }
 
     setBusinessImageFile(file);
 
-    // 미리보기 생성
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBusinessImageUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // PDF 파일인지 확인
+    if (file.type === 'application/pdf') {
+      setIsPdfFile(true);
+      setBusinessImageUrl(file.name); // PDF는 파일명만 저장
+    } else {
+      setIsPdfFile(false);
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBusinessImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // 등업 신청 처리
@@ -276,18 +294,109 @@ const ProfilePage = () => {
     try {
       setLoading(true);
 
-      // levelup_apply 테이블에 신청 정보 저장
+      // 1. 먼저 사업자 정보를 users 테이블에 저장
+      const businessData: any = {
+        business_number: businessNumber,
+        business_name: businessName,
+        representative_name: representativeName,
+        business_phone: businessPhone,
+        business_email: businessEmail,
+        verified: false
+      };
+
+      // 이미지 처리
+      if (businessImageFile) {
+        // 새로 업로드한 파일이 있는 경우
+        try {
+          const userId = currentUser?.id || 'unknown';
+          const fileName = `business_license_${Date.now()}`;
+          const fileExt = businessImageFile.name.split('.').pop();
+          const filePath = `${userId}/${fileName}.${fileExt}`;
+          
+          // 파일 타입에 따른 contentType 설정
+          const contentType = businessImageFile.type || (fileExt === 'pdf' ? 'application/pdf' : 'image/jpeg');
+          
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from('business-images')
+            .upload(filePath, businessImageFile, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: contentType
+            });
+            
+          if (!uploadError && uploadData) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('business-images')
+              .getPublicUrl(filePath);
+              
+            businessData.business_image_url = publicUrl;
+            businessData.business_image_storage_type = 'supabase_storage';
+            businessData.business_image_bucket = 'business-images';
+          } else {
+            // 업로드 실패 시 Base64로 저장
+            if (businessImageUrl) {
+              businessData.business_image_url = businessImageUrl;
+              businessData.business_image_storage_type = 'base64';
+            }
+          }
+        } catch (err) {
+          console.error('파일 업로드 오류:', err);
+          // 오류 시 Base64로 저장
+          if (businessImageUrl) {
+            businessData.business_image_url = businessImageUrl;
+            businessData.business_image_storage_type = 'base64';
+          }
+        }
+      } else if (businessImageUrl) {
+        // 기존 URL이 있는 경우
+        businessData.business_image_url = businessImageUrl;
+        if (businessImageUrl.startsWith('data:')) {
+          businessData.business_image_storage_type = 'base64';
+        } else {
+          businessData.business_image_storage_type = 'supabase_storage';
+          businessData.business_image_bucket = 'business-images';
+        }
+      }
+
+      // 계좌 정보 추가
+      if (bankName && accountNumber && accountHolder) {
+        businessData.bank_account = {
+          bank_name: bankName,
+          account_number: accountNumber,
+          account_holder: accountHolder,
+          is_editable: false
+        };
+      }
+
+      // users 테이블 업데이트
+      const { error: userUpdateError } = await supabase
+        .from('users')
+        .update({
+          business: businessData
+        })
+        .eq('id', currentUser?.id);
+
+      if (userUpdateError) throw userUpdateError;
+
+      // 2. levelup_apply 테이블에 신청 정보 저장
       const { error } = await supabase
         .from('levelup_apply')
         .insert({
           user_id: currentUser?.id,
-          current_role: currentUser?.role || 'beginner', // 현재 역할 저장
+          current_user_role: currentUser?.role || 'beginner',
           target_role: selectedRole,
-          status: 'pending',
-          created_at: new Date().toISOString()
+          status: 'pending'
         });
 
       if (error) throw error;
+
+      // 3. currentUser 업데이트
+      if (setCurrentUser && currentUser) {
+        setCurrentUser({
+          ...currentUser,
+          business: businessData
+        });
+      }
 
       success('등업 신청이 완료되었습니다. 관리자 승인을 기다려주세요.');
       setShowLevelUpModal(false);
@@ -345,6 +454,7 @@ const ProfilePage = () => {
       business_number: business.business_number || '',
       business_name: business.business_name || '',
       representative_name: business.representative_name || '',
+      business_phone: business.business_phone || '',
       business_email: business.business_email || '',
       business_image_url: business.business_image_url || ''
     };
@@ -539,12 +649,16 @@ const ProfilePage = () => {
           const fileExt = businessImageFile.name.split('.').pop();
           const filePath = `${userId}/${fileName}.${fileExt}`;
 
+          // 파일 타입에 따른 contentType 설정
+          const contentType = businessImageFile.type || (fileExt === 'pdf' ? 'application/pdf' : 'image/jpeg');
+          
           // 이미지 업로드 시도
           const { error: uploadError, data: uploadData } = await supabase.storage
             .from('business-images')
             .upload(filePath, businessImageFile, {
               cacheControl: '3600',
-              upsert: true
+              upsert: true,
+              contentType: contentType
             });
 
           if (uploadError) {
@@ -593,7 +707,7 @@ const ProfilePage = () => {
       }
 
       // 입력된 정보만 저장 (계좌 정보 포함)
-      const hasBusinessInfo = businessNumber || businessName || representativeName || businessEmail || uploadedImageUrl;
+      const hasBusinessInfo = businessNumber || businessName || representativeName || businessPhone || businessEmail || uploadedImageUrl;
       const hasBankInfo = isBankAccountEditable && (bankName || accountNumber || accountHolder);
 
       // 기존 사업자 정보와 비교
@@ -602,6 +716,7 @@ const ProfilePage = () => {
         businessNumber !== (existingBusiness.business_number || '') ||
         businessName !== (existingBusiness.business_name || '') ||
         representativeName !== (existingBusiness.representative_name || '') ||
+        businessPhone !== (existingBusiness.business_phone || '') ||
         businessEmail !== (existingBusiness.business_email || '') ||
         uploadedImageUrl !== (existingBusiness.business_image_url || '')
       );
@@ -612,6 +727,7 @@ const ProfilePage = () => {
         businessData.business_number = businessNumber;
         businessData.business_name = businessName;
         businessData.representative_name = representativeName;
+        businessData.business_phone = businessPhone;
         businessData.business_email = businessEmail;
         businessData.business_image_url = uploadedImageUrl;
 
@@ -991,6 +1107,17 @@ const ProfilePage = () => {
                       />
                     </div>
                     <div>
+                      <label className="form-label text-sm font-medium text-gray-700">사업자 전화번호</label>
+                      <input
+                        type="tel"
+                        className={`input ${!isBusinessInfoEditable ? 'bg-gray-50' : ''}`}
+                        value={businessPhone}
+                        onChange={(e) => setBusinessPhone(e.target.value)}
+                        placeholder="02-1234-5678 또는 010-1234-5678"
+                        disabled={!isBusinessInfoEditable}
+                      />
+                    </div>
+                    <div>
                       <label className="form-label text-sm font-medium text-gray-700">사업자용 이메일</label>
                       <input
                         type="email"
@@ -1010,22 +1137,57 @@ const ProfilePage = () => {
                       {businessImageUrl ? (
                         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                           <div className="flex items-start gap-4">
-                            <div
-                              className="relative cursor-pointer flex-shrink-0"
-                              onClick={() => openImageModal(businessImageUrl)}
-                            >
-                              <img
-                                src={businessImageUrl}
-                                alt="사업자등록증"
-                                className="h-48 w-48 object-cover rounded-lg hover:opacity-90 transition-opacity"
-                              />
-                              <div className="absolute inset-0 bg-black/0 hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
-                                <KeenIcon icon="eye" className="size-6 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                            {isPdfFile ? (
+                              <div
+                                className="relative cursor-pointer flex-shrink-0"
+                                onClick={() => {
+                                  const pdfUrl = businessImageFile ? URL.createObjectURL(businessImageFile) : businessImageUrl;
+                                  if (pdfUrl) openImageModal(pdfUrl);
+                                }}
+                              >
+                                {businessImageFile ? (
+                                  // 새로 업로드한 PDF의 경우 로컬 URL 사용
+                                  <iframe
+                                    src={URL.createObjectURL(businessImageFile)}
+                                    className="h-48 w-48 rounded-lg border border-gray-200 pointer-events-none"
+                                    title="사업자등록증 PDF 미리보기"
+                                  />
+                                ) : businessImageUrl ? (
+                                  // 기존 PDF URL이 있는 경우
+                                  <iframe
+                                    src={businessImageUrl}
+                                    className="h-48 w-48 rounded-lg border border-gray-200 pointer-events-none"
+                                    title="사업자등록증 PDF 미리보기"
+                                  />
+                                ) : (
+                                  // PDF URL이 없는 경우 아이콘 표시
+                                  <div className="h-48 w-48 bg-gray-100 rounded-lg flex flex-col items-center justify-center">
+                                    <KeenIcon icon="file-pdf" className="size-16 text-red-500 mb-2" />
+                                    <p className="text-xs text-gray-500">PDF 파일</p>
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                                  <KeenIcon icon="eye" className="size-6 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              <div
+                                className="relative cursor-pointer flex-shrink-0"
+                                onClick={() => openImageModal(businessImageUrl)}
+                              >
+                                <img
+                                  src={businessImageUrl}
+                                  alt="사업자등록증"
+                                  className="h-48 w-48 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                                />
+                                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                                  <KeenIcon icon="eye" className="size-6 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                            )}
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-700 mb-2">사업자등록증이 등록되었습니다</p>
-                              <p className="text-xs text-gray-500 mb-3">이미지를 클릭하면 크게 볼 수 있습니다</p>
+                              <p className="text-xs text-gray-500 mb-3">클릭하면 크게 볼 수 있습니다</p>
                               {isBusinessInfoEditable ? (
                                 <button
                                   type="button"
@@ -1033,6 +1195,7 @@ const ProfilePage = () => {
                                   onClick={() => {
                                     setBusinessImageUrl('');
                                     setBusinessImageFile(null);
+                                    setIsPdfFile(false);
                                   }}
                                 >
                                   <KeenIcon icon="trash" className="mr-1" />
@@ -1059,7 +1222,7 @@ const ProfilePage = () => {
                                 type="file"
                                 id="business-image-upload"
                                 className="hidden"
-                                accept="image/*"
+                                accept="image/*,.pdf"
                                 onChange={handleBusinessImageUpload}
                               />
                               <label
@@ -1069,7 +1232,7 @@ const ProfilePage = () => {
                                 <KeenIcon icon="upload" className="mr-1" />
                                 사업자등록증 업로드
                               </label>
-                              <p className="text-xs text-gray-500 mt-2">이미지 파일만 업로드 가능합니다 (최대 5MB)</p>
+                              <p className="text-xs text-gray-500 mt-2">JPG, PNG, PDF 파일만 업로드 가능합니다 (최대 5MB)</p>
                             </>
                           ) : (
                             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded inline-flex items-center">
@@ -1192,15 +1355,15 @@ const ProfilePage = () => {
                         <button
                           className="btn btn-success btn-sm"
                           onClick={() => {
-                            // 사업자 정보 체크
-                            const hasCompleteBusinessInfo = businessNumber && businessName && representativeName;
+                            // 사업자 정보 체크 (전화번호 포함)
+                            const hasCompleteBusinessInfo = businessNumber && businessName && representativeName && businessPhone;
                             // 출금 계좌 정보 체크
                             const hasCompleteBankInfo = bankName && accountNumber && accountHolder;
 
                             if (!hasCompleteBusinessInfo || !hasCompleteBankInfo) {
                               showDialog({
                                 title: '등업 신청 불가',
-                                message: '사업자 정보와 출금 계좌 정보가 모두 입력되어야 신청 가능합니다.',
+                                message: '사업자 정보(등록번호, 상호명, 대표자명, 전화번호)와 출금 계좌 정보가 모두 입력되어야 신청 가능합니다.',
                                 variant: 'warning',
                                 confirmText: '확인'
                               });
@@ -1398,16 +1561,25 @@ const ProfilePage = () => {
             }}
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
           >
-            <div className="relative max-w-4xl max-h-[90vh]">
-              <img
-                src={selectedImage}
-                alt="사업자등록증"
-                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
-                }}
-              />
+            <div className="relative max-w-4xl max-h-[90vh] w-full">
+              {isPdfFile || (selectedImage && selectedImage.toLowerCase().includes('.pdf')) ? (
+                <iframe
+                  src={selectedImage}
+                  className="w-full h-[90vh] rounded-lg shadow-2xl bg-white"
+                  title="사업자등록증 PDF"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <img
+                  src={selectedImage}
+                  alt="사업자등록증"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNFQkVCRUIiLz48dGV4dCB4PSIxNTAiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNjY2NjY2Ij7snbTrr7jsp4Drk6TsnZgg67Cc7IOd7J2EIOyeheugpe2VqeyzkuycvOuhnDwvdGV4dD48L3N2Zz4=";
+                  }}
+                />
+              )}
               <button
                 className="absolute top-2 right-2 btn btn-sm btn-light shadow-lg"
                 onClick={() => {

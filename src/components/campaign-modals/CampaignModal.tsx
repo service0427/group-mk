@@ -134,7 +134,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         partial_refund: true
       }
     },
-    deadline: '18:00'
+    deadline: '18:00',
+    workCompletionMode: 'manual' as const,
+    autoCompletionHour: 18
   });
 
   // 초기 폼 데이터 저장 (변경 감지용)
@@ -163,7 +165,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         partial_refund: true
       }
     },
-    deadline: '18:00'
+    deadline: '18:00',
+    workCompletionMode: 'manual' as const,
+    autoCompletionHour: 18
   });
 
   // newCampaign과 formData 동기화
@@ -193,7 +197,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
           partial_refund: true
         }
       },
-      deadline: newCampaign.deadline || '18:00'
+      deadline: newCampaign.deadline || '18:00',
+      workCompletionMode: newCampaign.workCompletionMode || 'manual',
+      autoCompletionHour: newCampaign.autoCompletionHour || 18
     });
   }, [newCampaign]);
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
@@ -402,7 +408,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
         maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || '',
-        refundSettings: refundSettingsValue // 환불 설정 추가
+        refundSettings: refundSettingsValue, // 환불 설정 추가
+        workCompletionMode: campaign.originalData?.work_completion_mode || 'manual',
+        autoCompletionHour: campaign.originalData?.auto_completion_hour || 18
       });
 
       // 초기 폼 데이터도 설정 (변경 감지용)
@@ -422,9 +430,12 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         targetRank: campaign.originalData?.target_rank?.toString() || campaign.targetRank?.toString() || '1',
         minGuaranteePrice: campaign.originalData?.min_guarantee_price?.toString() || campaign.minGuaranteePrice?.toString() || '',
         maxGuaranteePrice: campaign.originalData?.max_guarantee_price?.toString() || campaign.maxGuaranteePrice?.toString() || '',
-        refundSettings: refundSettingsValue
+        refundSettings: refundSettingsValue,
+        workCompletionMode: campaign.originalData?.work_completion_mode || 'manual',
+        autoCompletionHour: campaign.originalData?.auto_completion_hour || 18
       };
       setInitialFormData(initialData);
+      setFormData(initialData); // formData도 업데이트
 
     } else {
       // 새 캠페인 모드일 때 초기화
@@ -475,7 +486,9 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
             max_refund_days: 7,
             partial_refund: true
           }
-        }
+        },
+        workCompletionMode: 'manual' as const,
+        autoCompletionHour: 18
       };
       
       setFormData(initialData);
@@ -843,6 +856,8 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
         maxGuaranteePrice: formData.maxGuaranteePrice,
         refundSettings: formData.refundSettings, // 환불 설정 추가
         rankingFieldMapping: isOperatorMode ? rankingFieldMapping : undefined, // 운영자 모드일 때만 필드 매핑 저장
+        workCompletionMode: formData.workCompletionMode || 'manual',
+        autoCompletionHour: formData.autoCompletionHour || 18,
       };
 
       // 반려 사유가 있으면 항상 전달
@@ -1903,7 +1918,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                                   case 'immediate':
                                     return '즉시 환불 가능';
                                   case 'delayed':
-                                    return `작업 시작 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
+                                    return `환불 승인 ${formData.refundSettings?.delay_days || 0}일 후 환불 가능`;
                                   default:
                                     return '즉시 환불 가능';
                                 }

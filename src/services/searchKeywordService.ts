@@ -1,4 +1,5 @@
 import { supabase } from '@/supabase';
+import { supabaseRanking } from '@/supabase-ranking'; // Production DB for search_keywords
 
 export interface SearchKeyword {
   id?: string;
@@ -30,7 +31,7 @@ class SearchKeywordService {
       // 각 키워드를 개별적으로 저장 (중복 체크를 위해)
       for (const keyword of keywords) {
         // 먼저 해당 키워드가 이미 존재하는지 확인
-        const { data: existing, error: checkError } = await supabase
+        const { data: existing, error: checkError } = await supabaseRanking
           .from('search_keywords')
           .select('id')
           .eq('user_id', userId)
@@ -49,7 +50,7 @@ class SearchKeywordService {
         }
 
         // 새로운 키워드만 저장
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseRanking
           .from('search_keywords')
           .insert({
             user_id: userId,
@@ -79,7 +80,7 @@ class SearchKeywordService {
     try {
       console.log('getUserKeywords 호출됨:', { userId });
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseRanking
         .from('search_keywords')
         .select('*')
         // user_id 필터 제거 - 모든 키워드 조회
@@ -104,7 +105,7 @@ class SearchKeywordService {
    */
   async checkExistingKeywords(userId: string, keywords: string[]): Promise<string[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseRanking
         .from('search_keywords')
         .select('keyword')
         .in('keyword', keywords);
@@ -126,7 +127,7 @@ class SearchKeywordService {
    */
   async deleteKeywords(userId: string, keywordIds: string[]): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseRanking
         .from('search_keywords')
         .delete()
         .eq('user_id', userId)
@@ -149,7 +150,7 @@ class SearchKeywordService {
     try {
       console.log('deleteKeywordByText 호출됨:', { userId, keyword });
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseRanking
         .from('search_keywords')
         .delete()
         .eq('keyword', keyword)  // user_id 필터 제거
@@ -176,7 +177,7 @@ class SearchKeywordService {
    */
   async deleteAllUserKeywords(userId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseRanking
         .from('search_keywords')
         .delete()
         .eq('user_id', userId);

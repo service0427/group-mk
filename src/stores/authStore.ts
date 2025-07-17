@@ -41,6 +41,14 @@ export interface AuthState {
   requestPasswordResetLink: (email: string) => Promise<void>;
   changePassword: (email: string, token: string, newPassword: string, confirmPassword: string) => Promise<void>;
   
+  // 사용자 전환 기능
+  impersonateUser: (targetUserId: string, reason?: string) => Promise<boolean>;
+  stopImpersonation: () => Promise<boolean>;
+  getActiveImpersonation: () => Promise<any>;
+  originalAuth?: AuthModel;
+  originalUser?: CustomUser;
+  isImpersonating: boolean;
+  
   // 헬퍼 메서드
   clearError: () => void;
   setLoading: (loading: boolean) => void;
@@ -62,6 +70,9 @@ export const useAuthStore = create<AuthState>()(
         isLoggingOut: false,
         authVerified: false,
         error: null,
+        isImpersonating: false,
+        originalAuth: undefined,
+        originalUser: undefined,
         
         // 로그인
         login: async (email: string, password: string) => {
@@ -487,6 +498,131 @@ export const useAuthStore = create<AuthState>()(
           }
         },
         
+        // 사용자 전환 시작
+        impersonateUser: async (targetUserId: string, reason?: string) => {
+          set({ isLoading: true, error: null });
+          
+          try {
+            // 현재 인증 정보 백업
+            const currentAuth = get().auth;
+            const currentUser = get().currentUser;
+            
+            if (!currentAuth || !currentUser) {
+              throw new Error('현재 사용자 정보를 찾을 수 없습니다');
+            }
+            
+            // 권한 확인
+            if (currentUser.role !== USER_ROLES.DEVELOPER && currentUser.role !== USER_ROLES.OPERATOR) {
+              throw new Error('권한이 없습니다');
+            }
+            
+            // RPC 함수 호출
+            const { data, error } = await supabase.rpc('impersonate_user', {
+              p_target_user_id: targetUserId,
+              p_reason: reason
+            });
+            
+            if (error || !data?.success) {
+              throw new Error(data?.error || error?.message || '사용자 전환에 실패했습니다');
+            }
+            
+            const targetUser = data.target_user;
+            
+            // 대상 사용자 정보로 상태 업데이트
+            const impersonatedUser: CustomUser = {
+              id: targetUser.id,
+              email: targetUser.email,
+              full_name: targetUser.full_name,
+              role: targetUser.role,
+              status: targetUser.status
+            };
+            
+            set({
+              originalAuth: currentAuth,
+              originalUser: currentUser,
+              currentUser: impersonatedUser,
+              isImpersonating: true,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+            
+            return true;
+          } catch (error: any) {
+            set({ 
+              error: {
+                code: 'IMPERSONATION_ERROR',
+                message: error.message || '사용자 전환 중 오류가 발생했습니다'
+              },
+              isLoading: false
+            });
+            return false;
+          }
+        },
+        
+        // 사용자 전환 종료
+        stopImpersonation: async () => {
+          set({ isLoading: true, error: null });
+          
+          try {
+            const originalAuth = get().originalAuth;
+            const originalUser = get().originalUser;
+            
+            if (!originalAuth || !originalUser) {
+              throw new Error('원래 사용자 정보를 찾을 수 없습니다');
+            }
+            
+            // RPC 함수 호출
+            const { error } = await supabase.rpc('stop_impersonation');
+            
+            if (error) {
+              throw error;
+            }
+            
+            // 원래 사용자로 복원
+            set({
+              auth: originalAuth,
+              currentUser: originalUser,
+              originalAuth: undefined,
+              originalUser: undefined,
+              isImpersonating: false,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+            
+            // 인증 정보 저장
+            authHelper.setAuth(originalAuth);
+            
+            return true;
+          } catch (error: any) {
+            set({ 
+              error: {
+                code: 'STOP_IMPERSONATION_ERROR',
+                message: error.message || '전환 종료 중 오류가 발생했습니다'
+              },
+              isLoading: false
+            });
+            return false;
+          }
+        },
+        
+        // 활성 전환 확인
+        getActiveImpersonation: async () => {
+          try {
+            const { data, error } = await supabase.rpc('get_active_impersonation');
+            
+            if (error) {
+              throw error;
+            }
+            
+            return data;
+          } catch (error) {
+            console.error('활성 전환 확인 실패:', error);
+            return null;
+          }
+        },
+        
         // 에러 클리어
         clearError: () => {
           set({ error: null });
@@ -514,10 +650,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       {
         name: 'auth-store',
-        // 로컬스토리지에 저장할 필드 선택
+        // 로컬스토리지에 저장할 필드 선택 (사용자 전환 정보는 제외)
         partialize: (state) => ({
-          auth: state.auth,
-          currentUser: state.currentUser
+          auth: state.isImpersonating ? state.originalAuth : state.auth,
+          currentUser: state.isImpersonating ? state.originalUser : state.currentUser
         })
       }
     )

@@ -64,6 +64,7 @@ const CampaignAddPage: React.FC = () => {
     targetRank: '1', // 기본값 1위
     minGuaranteePrice: '',
     maxGuaranteePrice: '',
+    deadline: '18:00', // 마감시간 추가, 기본값 18:00
   });
 
   // 서비스 유형별 추가 필드
@@ -97,6 +98,7 @@ const CampaignAddPage: React.FC = () => {
       logo: previewUrl || uploadedLogo || data.logo || '',
       efficiency: '60%',
       minQuantity: data.minQuantity ? `${data.minQuantity}개` : '10개',
+      deadline: data.deadline || '18:00',
       status: {
         label: '진행중',
         color: 'success',
@@ -244,7 +246,7 @@ const CampaignAddPage: React.FC = () => {
     }
 
     // 입력필드 내용 검증 - 필드명만 필수
-    const invalidFields = formData.userInputFields.filter(field => 
+    const invalidFields = formData.userInputFields.filter(field =>
       !field.fieldName.trim()
     );
     if (invalidFields.length > 0) {
@@ -254,7 +256,7 @@ const CampaignAddPage: React.FC = () => {
 
     // 입력필드명 중복 검증
     const fieldNames = formData.userInputFields.map(field => field.fieldName.trim());
-    const duplicateFields = fieldNames.filter((name, index) => 
+    const duplicateFields = fieldNames.filter((name, index) =>
       name && fieldNames.indexOf(name) !== index
     );
     if (duplicateFields.length > 0) {
@@ -370,7 +372,8 @@ const CampaignAddPage: React.FC = () => {
         maxGuaranteePrice: formData.maxGuaranteePrice,
         // 단건형 관련 필드
         workPeriod: formData.slotType === 'per-unit' ? formData.workPeriod : undefined,
-        maxQuantity: formData.slotType === 'per-unit' ? formData.maxQuantity : undefined
+        maxQuantity: formData.slotType === 'per-unit' ? formData.maxQuantity : undefined,
+        deadline: formData.deadline || '18:00'
       });
 
       if (!result.success) {

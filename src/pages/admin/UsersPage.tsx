@@ -6,15 +6,61 @@ import { supabase } from '@/supabase';
 import { AdminUserModal } from './block/AdminUserModal';
 import { USER_ROLES, USER_ROLE_BADGE_COLORS, USER_ROLE_THEME_COLORS, getRoleBadgeColor, getRoleDisplayName, getRoleThemeColors, RoleThemeColors } from '@/config/roles.config';
 import { useAuthContext } from '@/auth';
+import { useAuthStore } from '@/stores/authStore';
+import { useNavigate } from 'react-router-dom';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import ConfirmModal from '@/components/ui/confirm-modal';
 
-const MakeUserRow = ({ user, getUserList, currentPage, isSelected, onSelect }: { user: any, getUserList: (page: number) => Promise<void>, currentPage: number, isSelected: boolean, onSelect: () => void }) => {
+const MakeUserRow = ({ user, getUserList, currentPage, isSelected, onSelect, canImpersonate }: { 
+    user: any, 
+    getUserList: (page: number) => Promise<void>, 
+    currentPage: number, 
+    isSelected: boolean, 
+    onSelect: () => void,
+    canImpersonate: boolean 
+}) => {
     const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
     const [insertModalOpen, setInsertModalOpen] = useState<boolean>(false);
+    const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+    const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
+    const { impersonateUser, currentUser } = useAuthStore();
+    const navigate = useNavigate();
+    const { showSuccess, showError } = useCustomToast();
 
     // 회원 정보 모달 열기
     const openUserModalOpen = () => setUserModalOpen(true);
     // 회원 정보 모달 닫기
     const closeUserModalOpen = () => setUserModalOpen(false);
+    
+    // 사용자로 로그인
+    const handleImpersonate = () => {
+        setConfirmModalOpen(true);
+    };
+
+    // 사용자 전환 확인 후 실행
+    const confirmImpersonate = async (reason?: string) => {
+        setIsImpersonating(true);
+        setConfirmModalOpen(false);
+        
+        const success = await impersonateUser(user.id, reason || undefined);
+        if (success) {
+            showSuccess(`${user.full_name} 계정으로 전환되었습니다.`);
+            // 약간의 딜레이 후 네비게이션 (상태 업데이트 대기)
+            setTimeout(() => {
+                navigate('/');
+            }, 100);
+        } else {
+            showError('사용자 전환에 실패했습니다.');
+        }
+        
+        setIsImpersonating(false);
+    };
+    
+    // 자기 자신으로는 전환 불가
+    const isSelf = currentUser?.id === user.id;
+    
+    // 운영자나 개발자로는 전환 불가 (권한 상향 방지)
+    const isHigherRole = user.role === USER_ROLES.OPERATOR || user.role === USER_ROLES.DEVELOPER;
 
     const renderRoleBadge = (role: string): { name: string, class: string, style?: React.CSSProperties } => {
         // 기본 스타일 설정
@@ -119,6 +165,15 @@ const MakeUserRow = ({ user, getUserList, currentPage, isSelected, onSelect }: {
                 </td>
                 <td className="py-4 px-5 text-end">
                     <div className="flex justify-end gap-2">
+                        {canImpersonate && !isSelf && !isHigherRole && (
+                            <button 
+                                className="btn btn-icon btn-sm btn-light"
+                                onClick={handleImpersonate}
+                                title={`${user.full_name} 계정으로 로그인`}
+                            >
+                                <KeenIcon icon="user-tick" className='text-primary' />
+                            </button>
+                        )}
                         <button className="btn btn-icon btn-sm btn-light" onClick={openUserModalOpen} data-user-id={user.id}>
                             <KeenIcon icon="setting-2" className='text-gray-900' />
                         </button>
@@ -135,12 +190,30 @@ const MakeUserRow = ({ user, getUserList, currentPage, isSelected, onSelect }: {
                 onClose={closeUserModalOpen}
                 onUpdate={() => getUserList(currentPage)}
             />
+
+            <ConfirmModal
+                isOpen={confirmModalOpen}
+                onClose={() => setConfirmModalOpen(false)}
+                onConfirm={confirmImpersonate}
+                title="사용자 전환 확인"
+                message={`${user.full_name}(${user.email}) 계정으로 전환하시겠습니까?`}
+                confirmText="전환"
+                cancelText="취소"
+                icon="user-tick"
+                confirmButtonClass="bg-primary hover:bg-primary/90 text-white"
+                isLoading={isImpersonating}
+                showReasonInput={true}
+                reasonPlaceholder="전환 사유를 입력하세요 (선택사항)"
+            />
         </>
     )
 }
 
 const UsersPage = () => {
     const { userRole } = useAuthContext();
+    const { currentUser, impersonateUser } = useAuthStore();
+    const navigate = useNavigate();
+    const { showSuccess, showError } = useCustomToast();
 
     const [users, setUsers] = useState<any[]>([]);
     const [limit, setLimit] = useState<number>(10);
@@ -152,6 +225,40 @@ const UsersPage = () => {
     const [searchName, setSearchName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [mobileConfirmModalOpen, setMobileConfirmModalOpen] = useState<boolean>(false);
+    const [selectedUserForImpersonate, setSelectedUserForImpersonate] = useState<any>(null);
+    const [isMobileImpersonating, setIsMobileImpersonating] = useState<boolean>(false);
+
+    // 현재 사용자가 개발자나 운영자인지 확인
+    const canImpersonate = userRole === USER_ROLES.DEVELOPER || userRole === USER_ROLES.OPERATOR;
+
+    // 사용자로 로그인 (모바일용)
+    const handleImpersonate = (user: any) => {
+        setSelectedUserForImpersonate(user);
+        setMobileConfirmModalOpen(true);
+    };
+
+    // 모바일 사용자 전환 확인 후 실행
+    const confirmMobileImpersonate = async (reason?: string) => {
+        if (!selectedUserForImpersonate) return;
+        
+        setIsMobileImpersonating(true);
+        setMobileConfirmModalOpen(false);
+        
+        const success = await impersonateUser(selectedUserForImpersonate.id, reason || undefined);
+        if (success) {
+            showSuccess(`${selectedUserForImpersonate.full_name} 계정으로 전환되었습니다.`);
+            // 약간의 딜레이 후 네비게이션 (상태 업데이트 대기)
+            setTimeout(() => {
+                navigate('/');
+            }, 100);
+        } else {
+            showError('사용자 전환에 실패했습니다.');
+        }
+        
+        setIsMobileImpersonating(false);
+        setSelectedUserForImpersonate(null);
+    };
 
     const getUserList = async (page: number) => {
         setLoading(true);
@@ -501,6 +608,7 @@ const UsersPage = () => {
                                                             currentPage={currentPage}
                                                             isSelected={selectedUsers.has(user.id)}
                                                             onSelect={() => handleSelectUser(user.id)}
+                                                            canImpersonate={canImpersonate}
                                                         />
                                                     ))
                                                 }
@@ -609,6 +717,18 @@ const UsersPage = () => {
 
                                                             {/* 액션 버튼 */}
                                                             <div className="flex justify-end gap-2 mt-3">
+                                                                {canImpersonate && currentUser?.id !== user.id && !(user.role === USER_ROLES.OPERATOR || user.role === USER_ROLES.DEVELOPER) && (
+                                                                    <button
+                                                                        className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleImpersonate(user);
+                                                                        }}
+                                                                    >
+                                                                        <KeenIcon icon="user-tick" className="h-5 w-5 text-primary" />
+                                                                        <span>로그인</span>
+                                                                    </button>
+                                                                )}
                                                                 <button
                                                                     className="btn btn-sm btn-outline flex items-center gap-1 px-3 py-1 h-9"
                                                                     onClick={(e) => {
@@ -691,6 +811,22 @@ const UsersPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 모바일 사용자 전환 확인 모달 */}
+            <ConfirmModal
+                isOpen={mobileConfirmModalOpen}
+                onClose={() => setMobileConfirmModalOpen(false)}
+                onConfirm={confirmMobileImpersonate}
+                title="사용자 전환 확인"
+                message={selectedUserForImpersonate ? `${selectedUserForImpersonate.full_name}(${selectedUserForImpersonate.email}) 계정으로 전환하시겠습니까?` : ''}
+                confirmText="전환"
+                cancelText="취소"
+                icon="user-tick"
+                confirmButtonClass="bg-primary hover:bg-primary/90 text-white"
+                isLoading={isMobileImpersonating}
+                showReasonInput={true}
+                reasonPlaceholder="전환 사유를 입력하세요 (선택사항)"
+            />
         </CommonTemplate>
     );
 };

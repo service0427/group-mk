@@ -5,6 +5,7 @@ import { ScreenLoader } from '@/components/loaders';
 import { SafeHashNavigation } from '@/utils/safeHashNavigation';
 import { useLogoutContext } from '@/contexts/LogoutContext';
 import { useUI } from '@/providers/UIProvider';
+import { useAuthStore } from '@/stores/authStore';
 import * as authHelper from '../_helpers';
 
 // 인증 없이 접근 가능한 경로 정의
@@ -26,6 +27,9 @@ const AuthMiddlewareV2: React.FC<React.PropsWithChildren> = ({ children }) => {
     authVerified
   } = useAuthContext();
   
+  // AuthStore에서 사용자 전환 상태 확인
+  const { isImpersonating } = useAuthStore();
+  
   const { setScreenLoader } = useUI();
   const { isLoggingOut, safeApiCall } = useLogoutContext();
   const [initialCheck, setInitialCheck] = useState(true);
@@ -38,7 +42,7 @@ const AuthMiddlewareV2: React.FC<React.PropsWithChildren> = ({ children }) => {
     return currentPath.startsWith(publicPath);
   });
   
-  // 현재 인증 상태
+  // 현재 인증 상태 (사용자 전환 상태 고려)
   const isAuthenticated = !!auth && !!currentUser;
   
   // 초기 인증 확인 (한 번만 실행)
@@ -107,7 +111,7 @@ const AuthMiddlewareV2: React.FC<React.PropsWithChildren> = ({ children }) => {
         });
       }
     }
-  }, [initialCheck, loading, authVerified, isPublicPath, isAuthenticated, navigate, isLoggingOut]);
+  }, [initialCheck, loading, authVerified, isPublicPath, isAuthenticated, navigate, isLoggingOut, isImpersonating]);
   
   // 로딩 상태 계산
   const isLoading = initialCheck || (loading && !isPublicPath) || (isLoggingOut && !isPublicPath);

@@ -324,12 +324,23 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
 
 
       // 현재 서비스 타입의 캠페인에 해당하는 슬롯 데이터 가져오기
+      // 서비스 타입에 따른 순위 테이블 결정
+      let rankingTable = 'shopping_rankings_current'; // 기본값
+      if (dbServiceType.includes('naver') && dbServiceType.includes('traffic')) {
+        rankingTable = 'naver_rankings_current';
+      } else if (dbServiceType.includes('naver') && dbServiceType.includes('place')) {
+        rankingTable = 'naver_place_rankings_current';
+      } else if (dbServiceType.includes('coupang')) {
+        rankingTable = 'coupang_rankings_current';
+      }
+      
       let query = supabase
         .from('slots')
         .select(`
           *,
           start_date,
           end_date,
+          quantity,
           user:users(id, email, full_name),
           refund_requests:slot_refund_approvals(
             id,
@@ -338,6 +349,10 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             approval_notes,
             request_date,
             approval_date
+          ),
+          slot_works_info(
+            work_cnt,
+            date
           )
         `, { count: 'exact' });
 
@@ -413,6 +428,76 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             processedInputData.keywords = keywords;
           }
 
+          // 작업 진행률 계산 (approved/active 상태일 때만) - 주석처리됨
+          let workProgress = undefined;
+          /* if ((slot.status === 'approved' || slot.status === 'active') && 
+              slot.slot_works_info && Array.isArray(slot.slot_works_info)) {
+            // 작업 기간 계산
+            let dueDays = 1;
+            if (slot.start_date && slot.end_date) {
+              const start = new Date(slot.start_date);
+              const end = new Date(slot.end_date);
+              dueDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            } else if (processedInputData.work_days && Number(processedInputData.work_days) > 0) {
+              dueDays = Number(processedInputData.work_days);
+            } else if (processedInputData.dueDays && Number(processedInputData.dueDays) > 0) {
+              dueDays = Number(processedInputData.dueDays);
+            } else if (processedInputData.workCount && Number(processedInputData.workCount) > 0) {
+              dueDays = Number(processedInputData.workCount);
+            }
+
+            // 일일 작업량 가져오기
+            let dailyQuantity = 0;
+            if (slot.quantity && Number(slot.quantity) > 0) {
+              dailyQuantity = Number(slot.quantity);
+            } else if (processedInputData.quantity && Number(processedInputData.quantity) > 0) {
+              dailyQuantity = Number(processedInputData.quantity);
+            } else if (processedInputData.타수 && Number(processedInputData.타수) > 0) {
+              dailyQuantity = Number(processedInputData.타수);
+            } else if (processedInputData['일일 타수'] && Number(processedInputData['일일 타수']) > 0) {
+              dailyQuantity = Number(processedInputData['일일 타수']);
+            } else if (processedInputData['작업량'] && Number(processedInputData['작업량']) > 0) {
+              dailyQuantity = Number(processedInputData['작업량']);
+            }
+
+            // 총 요청 수량 계산
+            const totalRequestedQuantity = dailyQuantity * dueDays;
+
+            // 실제 작업량 계산
+            const totalWorkedQuantity = slot.slot_works_info.reduce((sum: number, work: any) => 
+              sum + (work.work_cnt || 0), 0
+            );
+
+            // 작업 일수 계산
+            const workedDays = slot.slot_works_info.length;
+
+            // 완료율 계산 (100% 상한)
+            const completionRate = totalRequestedQuantity > 0
+              ? Math.min(100, Math.round((totalWorkedQuantity / totalRequestedQuantity) * 100))
+              : 0;
+
+            // 디버깅용 로그
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`Slot ${slot.id} 진행률 계산:`, {
+                dailyQuantity,
+                dueDays,
+                totalRequestedQuantity,
+                totalWorkedQuantity,
+                workedDays,
+                completionRate,
+                slot_works_info: slot.slot_works_info
+              });
+            }
+
+            workProgress = {
+              totalRequestedQuantity,
+              totalWorkedQuantity,
+              requestedDays: dueDays,
+              workedDays,
+              completionRate
+            };
+          } */
+
           return {
             id: slot.id,
             matId: slot.mat_id,
@@ -429,6 +514,8 @@ export const useCampaignSlots = (serviceType: string, userId: string | undefined
             updatedAt: slot.updated_at,
             startDate: slot.start_date,
             endDate: slot.end_date,
+            quantity: slot.quantity,
+            workProgress,
             campaign: matchingCampaign ? {
               id: matchingCampaign.id,
               campaignName: matchingCampaign.campaign_name,

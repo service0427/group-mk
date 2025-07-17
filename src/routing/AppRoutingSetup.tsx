@@ -85,6 +85,9 @@ export const PerUnitSettlementsPage = lazyWithPreload(() => import('@/pages/mana
 // 환불 관리 페이지 lazy loading with preload
 export const RefundManagementPage = lazyWithPreload(() => import('@/pages/distributor/refund-management').then(m => ({ default: m.RefundManagementPage })));
 
+// 슬롯 수정 요청 관리 페이지 lazy loading with preload
+export const SlotModificationRequestsPage = lazyWithPreload(() => import('@/pages/distributor/slot-modifications/SlotModificationRequestsPage'));
+
 // 테스트 페이지 lazy loading with preload (숨김 페이지)
 export const RefundTestPage = lazyWithPreload(() => import('@/pages/test/RefundTestPage'));
 
@@ -221,6 +224,7 @@ const AppRoutingSetup = (): ReactElement => {
           
           {/* 환불 관리 */}
           <Route path="/manage/refunds" element={<SuspenseWrapper><RefundManagementPage /></SuspenseWrapper>} />
+          <Route path="/manage/slot-modifications" element={<SuspenseWrapper><SlotModificationRequestsPage /></SuspenseWrapper>} />
         </Route>
       </Route>
 
@@ -355,6 +359,9 @@ initializeComponentMap({
   
   // 환불 관리 페이지
   '/manage/refunds': RefundManagementPage,
+  
+  // 슬롯 수정 요청 관리 페이지
+  '/manage/slot-modifications': SlotModificationRequestsPage,
   
   // 테스트 페이지
   '/test/refund': RefundTestPage,

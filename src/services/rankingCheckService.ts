@@ -105,8 +105,13 @@ export function extractKeywordsFromSlot(inputData: any, fieldMapping?: any): str
     return keywords;
   }
 
-  console.log('[순위체크API] 키워드 추출 시작, inputData:', inputData);
-  console.log('[순위체크API] fieldMapping:', fieldMapping);
+  // 보장형 슬롯의 경우 keywords 배열 안에 실제 데이터가 있는지 확인
+  if (inputData.keywords && Array.isArray(inputData.keywords) && inputData.keywords.length > 0) {
+    const actualData = inputData.keywords[0].input_data || inputData.keywords[0];
+    
+    // 실제 데이터로 재귀 호출
+    return extractKeywordsFromSlot(actualData, fieldMapping);
+  }
 
   // 필드 매핑이 있으면 매핑에 따라 키워드 추출
   if (fieldMapping && fieldMapping.keyword) {

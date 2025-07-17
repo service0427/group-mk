@@ -38,6 +38,7 @@ export interface CustomUser {
     business_number: string;
     business_name: string;
     representative_name: string;
+    business_phone?: string;
     verified: boolean;
     verification_date?: string;
     business_email?: string;

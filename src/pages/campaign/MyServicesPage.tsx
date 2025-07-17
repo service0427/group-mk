@@ -68,7 +68,7 @@ const MyServicesPage: React.FC = () => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [slotsToCancel, setSlotsToCancel] = useState<string[]>([]);
   const [isCancelling, setIsCancelling] = useState(false);
-  
+
   // 문의 모달 상태
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [inquiryData, setInquiryData] = useState<{
@@ -77,7 +77,7 @@ const MyServicesPage: React.FC = () => {
     distributorId?: string;
     title?: string;
   } | null>(null);
-  
+
   // 페이지네이션 상태
   const [limit, setLimit] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -170,10 +170,10 @@ const MyServicesPage: React.FC = () => {
   useEffect(() => {
     const serviceParam = searchParams.get('service');
     const typeParam = searchParams.get('type');
-    
+
     if (serviceParam && serviceParam !== selectedService) {
       setSelectedService(serviceParam);
-      
+
       // type 파라미터에 따라 뷰모드 설정
       if (typeParam === 'guarantee') {
         setViewMode('guarantee');
@@ -193,7 +193,7 @@ const MyServicesPage: React.FC = () => {
     setStatusFilter('all');
     setSlotSearchDateFrom('');
     setSlotSearchDateTo('');
-    
+
     // URL 파라미터 업데이트
     const newParams = new URLSearchParams();
     newParams.set('service', path);
@@ -241,16 +241,18 @@ const MyServicesPage: React.FC = () => {
       }
 
       // 2. 보장형 active 상태의 슬롯 카운트
+      // guarantee_slot_requests 테이블에서 협상중, 협상완료, 구매완료 상태 조회
       let guaranteeActiveQuery = supabase
         .from('guarantee_slot_requests')
         .select(`
           id,
           status,
+          campaign_id,
           campaigns:campaign_id (
             service_type
           )
         `)
-        .in('status', ['accepted', 'negotiating']);
+        .in('status', ['accepted', 'negotiating', 'purchased']); // 협상완료, 협상중, 구매완료 상태
 
       // 개발자가 아닌 경우에만 사용자 필터 적용
       if (userRole !== USER_ROLES.DEVELOPER) {
@@ -310,10 +312,12 @@ const MyServicesPage: React.FC = () => {
       }
 
       // 5. 모든 보장형 요청 확인
+      // 4. 모든 보장형 슬롯 확인 (guarantee_slot_requests 테이블에서)
       let allGuaranteeQuery = supabase
         .from('guarantee_slot_requests')
         .select(`
           id,
+          campaign_id,
           campaigns:campaign_id (
             service_type
           )
@@ -326,7 +330,7 @@ const MyServicesPage: React.FC = () => {
       const { data: allGuaranteeData, error: allGuaranteeError } = await allGuaranteeQuery;
 
       if (allGuaranteeError) {
-        console.error('전체 보장형 요청 조회 오류:', allGuaranteeError);
+        console.error('전체 보장형 슬롯 조회 오류:', allGuaranteeError);
       }
 
       // 일반형 active 슬롯 카운트 계산 (환불 상태 제외)
@@ -524,8 +528,8 @@ const MyServicesPage: React.FC = () => {
     // 환불 가능한 슬롯만 필터링 (active 또는 approved 상태, 이미 환불 관련 상태는 제외)
     const refundableSlots = idsArray.filter(id => {
       const slot = filteredSlots.find(s => s.id === id);
-      return slot && (slot.status === 'active' || slot.status === 'approved') && 
-             !['refund_pending', 'refund_approved', 'refunded', 'cancelled'].includes(slot.status);
+      return slot && (slot.status === 'active' || slot.status === 'approved') &&
+        !['refund_pending', 'refund_approved', 'refunded', 'cancelled'].includes(slot.status);
     });
 
     if (refundableSlots.length === 0) {
@@ -706,7 +710,7 @@ const MyServicesPage: React.FC = () => {
               // 보장형 선택 시 서비스 설정 및 컴포넌트 모드 전환
               setSelectedService(service);
               setViewMode('guarantee');
-              
+
               // URL 파라미터 업데이트
               const newParams = new URLSearchParams();
               newParams.set('service', service);
@@ -717,7 +721,7 @@ const MyServicesPage: React.FC = () => {
               // 단건형 선택 시 서비스 설정 및 컴포넌트 모드 전환
               setSelectedService(service);
               setViewMode('per-unit');
-              
+
               // URL 파라미터 업데이트
               const newParams = new URLSearchParams();
               newParams.set('service', service);
@@ -759,347 +763,347 @@ const MyServicesPage: React.FC = () => {
                 <>
                   <h3 className="text-base font-medium mb-4">일반형 슬롯 검색</h3>
 
-              {/* 데스크톱 검색 폼 */}
-              <div className="hidden md:block space-y-4">
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-4">
-                    <div className="flex items-center h-9">
-                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">캠페인</label>
-                      <select
-                        className="select select-bordered select-sm w-full"
-                        value={selectedCampaignId}
-                        onChange={(e) => setSelectedCampaignId(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                        disabled={isLoading}
-                      >
-                        <option value="all">전체</option>
-                        {campaignList.map((campaign) => (
-                          <option key={campaign.id} value={campaign.id}>
-                            {campaign.campaignName}
-                          </option>
-                        ))}
-                      </select>
+                  {/* 데스크톱 검색 폼 */}
+                  <div className="hidden md:block space-y-4">
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-4">
+                        <div className="flex items-center h-9">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">캠페인</label>
+                          <select
+                            className="select select-bordered select-sm w-full"
+                            value={selectedCampaignId}
+                            onChange={(e) => setSelectedCampaignId(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                            disabled={isLoading}
+                          >
+                            <option value="all">전체</option>
+                            {campaignList.map((campaign) => (
+                              <option key={campaign.id} value={campaign.id}>
+                                {campaign.campaignName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-span-3">
+                        <div className="flex items-center h-9">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">상태</label>
+                          <select
+                            className="select select-bordered select-sm w-full"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                          >
+                            <option value="all">전체</option>
+                            {STATUS_OPTIONS.map(status => (
+                              <option key={status.value} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-span-5">
+                        <div className="flex items-center h-9">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">검색어</label>
+                          <input
+                            type="text"
+                            className="input input-bordered input-sm w-full"
+                            placeholder="제품명, MID, URL, 키워드 검색"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-span-3">
-                    <div className="flex items-center h-9">
-                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">상태</label>
-                      <select
-                        className="select select-bordered select-sm w-full"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                      >
-                        <option value="all">전체</option>
-                        {STATUS_OPTIONS.map(status => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-span-5">
-                    <div className="flex items-center h-9">
-                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">검색어</label>
-                      <input
-                        type="text"
-                        className="input input-bordered input-sm w-full"
-                        placeholder="제품명, MID, URL, 키워드 검색"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-7">
-                    <div className="flex items-center h-9">
-                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">등록일</label>
-                      <div className="flex items-center gap-2 w-full">
-                        <input
-                          type="date"
-                          className="input input-bordered input-sm flex-1"
-                          value={slotSearchDateFrom}
-                          onChange={(e) => setSlotSearchDateFrom(e.target.value)}
-                        />
-                        <span className="text-sm">~</span>
-                        <input
-                          type="date"
-                          className="input input-bordered input-sm flex-1"
-                          value={slotSearchDateTo}
-                          onChange={(e) => setSlotSearchDateTo(e.target.value)}
-                        />
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-7">
+                        <div className="flex items-center h-9">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[80px]">등록일</label>
+                          <div className="flex items-center gap-2 w-full">
+                            <input
+                              type="date"
+                              className="input input-bordered input-sm flex-1"
+                              value={slotSearchDateFrom}
+                              onChange={(e) => setSlotSearchDateFrom(e.target.value)}
+                            />
+                            <span className="text-sm">~</span>
+                            <input
+                              type="date"
+                              className="input input-bordered input-sm flex-1"
+                              value={slotSearchDateTo}
+                              onChange={(e) => setSlotSearchDateTo(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-5 flex justify-end">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleSearch}
+                          className="btn-primary bg-primary hover:bg-primary/90"
+                        >
+                          <KeenIcon icon="magnifier" className="size-4" />
+                          검색
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-5 flex justify-end">
+
+                  {/* 모바일 검색 폼 */}
+                  <div className="block md:hidden space-y-3">
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      value={selectedCampaignId}
+                      onChange={(e) => setSelectedCampaignId(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                      disabled={isLoading}
+                    >
+                      <option value="all">전체 캠페인</option>
+                      {campaignList.map((campaign) => (
+                        <option key={campaign.id} value={campaign.id}>
+                          {campaign.campaignName}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">전체 상태</option>
+                      {STATUS_OPTIONS.map(status => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      className="input input-bordered input-sm w-full"
+                      placeholder="제품명, MID, URL, 키워드 검색"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        className="input input-bordered input-sm"
+                        value={slotSearchDateFrom}
+                        onChange={(e) => setSlotSearchDateFrom(e.target.value)}
+                      />
+                      <input
+                        type="date"
+                        className="input input-bordered input-sm"
+                        value={slotSearchDateTo}
+                        onChange={(e) => setSlotSearchDateTo(e.target.value)}
+                      />
+                    </div>
+
                     <Button
                       variant="default"
                       size="sm"
                       onClick={handleSearch}
-                      className="btn-primary bg-primary hover:bg-primary/90"
+                      className="btn-primary w-full bg-primary hover:bg-primary/90"
                     >
                       <KeenIcon icon="magnifier" className="size-4" />
                       검색
                     </Button>
                   </div>
-                </div>
-              </div>
-
-              {/* 모바일 검색 폼 */}
-              <div className="block md:hidden space-y-3">
-                <select
-                  className="select select-bordered select-sm w-full"
-                  value={selectedCampaignId}
-                  onChange={(e) => setSelectedCampaignId(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                  disabled={isLoading}
-                >
-                  <option value="all">전체 캠페인</option>
-                  {campaignList.map((campaign) => (
-                    <option key={campaign.id} value={campaign.id}>
-                      {campaign.campaignName}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="select select-bordered select-sm w-full"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">전체 상태</option>
-                  {STATUS_OPTIONS.map(status => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="text"
-                  className="input input-bordered input-sm w-full"
-                  placeholder="제품명, MID, URL, 키워드 검색"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    className="input input-bordered input-sm"
-                    value={slotSearchDateFrom}
-                    onChange={(e) => setSlotSearchDateFrom(e.target.value)}
-                  />
-                  <input
-                    type="date"
-                    className="input input-bordered input-sm"
-                    value={slotSearchDateTo}
-                    onChange={(e) => setSlotSearchDateTo(e.target.value)}
-                  />
-                </div>
-
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleSearch}
-                  className="btn-primary w-full bg-primary hover:bg-primary/90"
-                >
-                  <KeenIcon icon="magnifier" className="size-4" />
-                  검색
-                </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 슬롯 목록 */}
-        {!selectedService ? (
-          <Card className="mt-6">
-            <CardContent className="p-6">
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">서비스를 선택하면 슬롯 목록이 표시됩니다</p>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
-        ) : (
-          <>
-            <SlotList
-              filteredSlots={paginatedSlots || []}
-              isLoading={isLoading}
-              error={slotsError}
-              serviceType={selectedService}
-              editingCell={editingCell}
-              editingValue={editingValue}
-              onEditStart={handleEditStart}
-              onEditChange={handleEditChange}
-              onEditSave={saveEdit}
-              onEditCancel={handleEditCancel}
-              onDeleteSlot={handleDeleteSlot}
-              onOpenMemoModal={handleOpenMemoModal}
-              onConfirmTransaction={handleConfirmTransaction}
-              userRole={userRole}
-              hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
-              isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
-              onCancelSlot={handleOpenCancelModal}
-              onRefundSlot={handleOpenRefundModal}
-              showBulkActions={true}
-              selectedSlots={selectedSlots}
-              onSelectedSlotsChange={setSelectedSlots}
-              showBulkCancel={true}
-              customStatusLabels={{
-                approved: '진행중'
-              }}
-              onInquiry={(slot) => {
-                setInquiryData({
-                  slotId: slot.id,
-                  campaignId: slot.campaign?.id,
-                  distributorId: slot.campaign?.distributor_id,
-                  title: `슬롯 문의: ${slot.campaign?.campaignName || '캠페인'}`
-                });
-                setInquiryModalOpen(true);
-              }}
-              onRefresh={loadCampaignSlots}
-            />
-            {/* 페이지네이션 컨트롤 */}
-            {totalItems > 0 && (
-              <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
-                <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
-                  <select 
-                    className="select select-sm select-bordered flex-grow min-w-[100px]" 
-                    name="perpage"
-                    value={limit}
-                    onChange={handleChangeLimit}
-                  >
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                </div>
 
-                {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
-                <div className="flex items-center gap-3 order-1 md:order-2">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
-                  <div className="flex">
-                    <button 
-                      className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage <= 1}
+          {/* 슬롯 목록 */}
+          {!selectedService ? (
+            <Card className="mt-6">
+              <CardContent className="p-6">
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">서비스를 선택하면 슬롯 목록이 표시됩니다</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <SlotList
+                filteredSlots={paginatedSlots || []}
+                isLoading={isLoading}
+                error={slotsError}
+                serviceType={selectedService}
+                editingCell={editingCell}
+                editingValue={editingValue}
+                onEditStart={handleEditStart}
+                onEditChange={handleEditChange}
+                onEditSave={saveEdit}
+                onEditCancel={handleEditCancel}
+                onDeleteSlot={handleDeleteSlot}
+                onOpenMemoModal={handleOpenMemoModal}
+                onConfirmTransaction={handleConfirmTransaction}
+                userRole={userRole}
+                hasFilters={!!searchInput || statusFilter !== 'all' || !!slotSearchDateFrom || !!slotSearchDateTo}
+                isAllData={userRole ? hasPermission(userRole, PERMISSION_GROUPS.ADMIN) : false}
+                onCancelSlot={handleOpenCancelModal}
+                onRefundSlot={handleOpenRefundModal}
+                showBulkActions={true}
+                selectedSlots={selectedSlots}
+                onSelectedSlotsChange={setSelectedSlots}
+                showBulkCancel={true}
+                customStatusLabels={{
+                  approved: '진행중'
+                }}
+                onInquiry={(slot) => {
+                  setInquiryData({
+                    slotId: slot.id,
+                    campaignId: slot.campaign?.id,
+                    distributorId: slot.campaign?.distributor_id,
+                    title: `슬롯 문의: ${slot.campaign?.campaignName || '캠페인'}`
+                  });
+                  setInquiryModalOpen(true);
+                }}
+                onRefresh={loadCampaignSlots}
+              />
+              {/* 페이지네이션 컨트롤 */}
+              {totalItems > 0 && (
+                <div className="card-footer p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                  {/* 왼쪽: 페이지당 표시 수 선택 (데스크탑만) */}
+                  <div className="hidden md:flex items-center gap-3 order-2 md:order-1 min-w-[200px]">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">페이지당 표시:</span>
+                    <select
+                      className="select select-sm select-bordered flex-grow min-w-[100px]"
+                      name="perpage"
+                      value={limit}
+                      onChange={handleChangeLimit}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button 
-                      className="btn btn-icon btn-sm btn-light rounded-l-none"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= getTotalPages()}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+
+                  {/* 오른쪽: 페이지 정보 및 네비게이션 버튼 */}
+                  <div className="flex items-center gap-3 order-1 md:order-2">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">{getDisplayRange()}</span>
+                    <div className="flex">
+                      <button
+                        className="btn btn-icon btn-sm btn-light rounded-r-none border-r-0"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn btn-icon btn-sm btn-light rounded-l-none"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= getTotalPages()}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
 
-        {/* 모달들 */}
-        <CampaignSlotWithKeywordModal
-          open={isAddModalOpen}
-          onClose={() => {
-            setIsAddModalOpen(false);
-            loadCampaignSlots();
-            fetchAllServiceCounts(); // 서비스별 카운트 업데이트
-          }}
-          onSave={() => {
-            // 구매 성공 시 데이터 즉시 갱신
-            loadCampaignSlots();
-            fetchAllServiceCounts();
-          }}
-          serviceCode={selectedService || ''}
-          category={serviceCategoryLabel}
-        />
+          {/* 모달들 */}
+          <CampaignSlotWithKeywordModal
+            open={isAddModalOpen}
+            onClose={() => {
+              setIsAddModalOpen(false);
+              loadCampaignSlots();
+              fetchAllServiceCounts(); // 서비스별 카운트 업데이트
+            }}
+            onSave={() => {
+              // 구매 성공 시 데이터 즉시 갱신
+              loadCampaignSlots();
+              fetchAllServiceCounts();
+            }}
+            serviceCode={selectedService || ''}
+            category={serviceCategoryLabel}
+          />
 
-        <MemoModal
-          isOpen={isMemoModalOpen}
-          onClose={() => {
-            setIsMemoModalOpen(false);
-            setSelectedSlotForMemo(null);
-            setMemoText('');
-          }}
-          memoText={memoText}
-          setMemoText={setMemoText}
-          onSave={handleSaveMemo}
-        />
+          <MemoModal
+            isOpen={isMemoModalOpen}
+            onClose={() => {
+              setIsMemoModalOpen(false);
+              setSelectedSlotForMemo(null);
+              setMemoText('');
+            }}
+            memoText={memoText}
+            setMemoText={setMemoText}
+            onSave={handleSaveMemo}
+          />
 
-        {/* 취소 모달 */}
-        <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-          <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
-            <DialogHeader>
-              <DialogTitle>슬롯 취소</DialogTitle>
-            </DialogHeader>
-            <DialogBody>
-              <p className="text-sm text-gray-700">
-                선택한 {slotsToCancel.length}개의 슬롯을 취소하시겠습니까?
-                <br />
-                취소된 슬롯의 결제 금액은 캐시로 환불됩니다.
-              </p>
-            </DialogBody>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
-                취소
-              </Button>
-              <Button onClick={handleConfirmCancel} disabled={isCancelling}>
-                {isCancelling ? '처리 중...' : '확인'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          {/* 취소 모달 */}
+          <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+            <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>슬롯 취소</DialogTitle>
+              </DialogHeader>
+              <DialogBody>
+                <p className="text-sm text-gray-700">
+                  선택한 {slotsToCancel.length}개의 슬롯을 취소하시겠습니까?
+                  <br />
+                  취소된 슬롯의 결제 금액은 캐시로 환불됩니다.
+                </p>
+              </DialogBody>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCancelModalOpen(false)}>
+                  취소
+                </Button>
+                <Button onClick={handleConfirmCancel} disabled={isCancelling}>
+                  {isCancelling ? '처리 중...' : '확인'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-        {/* 환불 모달 */}
-        <SlotRefundModal
-          isOpen={isRefundModalOpen}
-          onClose={() => {
-            setIsRefundModalOpen(false);
-            setSlotsToRefund([]);
-          }}
-          slots={filteredSlots.filter(slot => slotsToRefund.includes(slot.id)).map(slot => ({
-            id: slot.id,
-            startDate: slot.startDate,
-            endDate: slot.endDate,
-            product_id: slot.productId,
-            status: slot.status,
-            campaign: slot.campaign ? {
-              campaignName: slot.campaign.campaignName,
-              refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
-            } : undefined
-          }))}
-          onSuccess={async () => {
-            await loadCampaignSlots();
-            await fetchAllServiceCounts();
-            setSelectedSlots([]);
-          }}
-        />
+          {/* 환불 모달 */}
+          <SlotRefundModal
+            isOpen={isRefundModalOpen}
+            onClose={() => {
+              setIsRefundModalOpen(false);
+              setSlotsToRefund([]);
+            }}
+            slots={filteredSlots.filter(slot => slotsToRefund.includes(slot.id)).map(slot => ({
+              id: slot.id,
+              startDate: slot.startDate,
+              endDate: slot.endDate,
+              product_id: slot.productId,
+              status: slot.status,
+              campaign: slot.campaign ? {
+                campaignName: slot.campaign.campaignName,
+                refund_settings: (slot.campaign as any).refund_settings || (slot.campaign as any).refundSettings
+              } : undefined
+            }))}
+            onSuccess={async () => {
+              await loadCampaignSlots();
+              await fetchAllServiceCounts();
+              setSelectedSlots([]);
+            }}
+          />
 
-        {/* 1:1 문의 모달 */}
-        <InquiryChatModal
-          open={inquiryModalOpen}
-          onClose={() => {
-            setInquiryModalOpen(false);
-            setInquiryData(null);
-          }}
-          slotId={inquiryData?.slotId}
-          campaignId={inquiryData?.campaignId}
-          distributorId={inquiryData?.distributorId}
-          initialTitle={inquiryData?.title}
-        />
-      </>
+          {/* 1:1 문의 모달 */}
+          <InquiryChatModal
+            open={inquiryModalOpen}
+            onClose={() => {
+              setInquiryModalOpen(false);
+              setInquiryData(null);
+            }}
+            slotId={inquiryData?.slotId}
+            campaignId={inquiryData?.campaignId}
+            distributorId={inquiryData?.distributorId}
+            initialTitle={inquiryData?.title}
+          />
+        </>
       )}
     </DashboardTemplate>
   );
